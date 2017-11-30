@@ -1,23 +1,3 @@
-// Copyright (c) 2017 Ableton AG, Berlin
-//
-// Permission is hereby granted, free of charge, to any person obtaining a
-// copy of this software and associated documentation files (the "Software"),
-// to deal in the Software without restriction, including without limitation
-// the rights to use, copy, modify, merge, publish, distribute, sublicense,
-// and/or sell copies of the Software, and to permit persons to whom the
-// Software is furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
-// THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-// DEALINGS IN THE SOFTWARE.
-
 #include "Push2Demo.h"
 #include <cctype>
 
@@ -70,7 +50,6 @@ NBase::Result Demo::Init()
 NBase::Result Demo::openMidiDevice()
 {
   // Look for an input device matching push 2
-
   auto devices = MidiInput::getDevices();
   int deviceIndex = -1;
   int index = 0;
@@ -96,6 +75,17 @@ NBase::Result Demo::openMidiDevice()
     return NBase::Result("Failed to open input device");
   }
 
+  /*
+   https://github.com/Ableton/push-interface/blob/master/doc/AbletonPush2MIDIDisplayInterface.asc#Aftertouch
+   In channel pressure mode (default), the pad with the highest pressure determines the value sent. The pressure range that produces aftertouch is given by the aftertouch threshold pad parameters. The value curve is linear to the pressure and in range 0 to 127. See Pad Parameters.
+   
+   In polyphonic key pressure mode, aftertouch for each pressed key is sent individually. The value is defined by the pad velocity curve and in range 1…​127. See Velocity Curve.
+   */
+  MidiOutput *midiOutput = MidiOutput::openDevice(deviceIndex);
+  unsigned char setAftertouchModeSysExCommand[7] = { 0x00, 0x21, 0x1D, 0x01, 0x01, 0x1E, 0x01 };
+  MidiMessage sysExMessage = MidiMessage::createSysExMessage(setAftertouchModeSysExCommand, 7);
+
+  midiOutput->sendMessageNow(sysExMessage);
   // Store and starts listening to the device
   midiInput_.reset(input);
   midiInput_->start();

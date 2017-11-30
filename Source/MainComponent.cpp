@@ -1,23 +1,3 @@
-// Copyright (c) 2017 Ableton AG, Berlin
-//
-// Permission is hereby granted, free of charge, to any person obtaining a
-// copy of this software and associated documentation files (the "Software"),
-// to deal in the Software without restriction, including without limitation
-// the rights to use, copy, modify, merge, publish, distribute, sublicense,
-// and/or sell copies of the Software, and to permit persons to whom the
-// Software is furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
-// THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-// DEALINGS IN THE SOFTWARE.
-
 /*
   ==============================================================================
 
@@ -82,10 +62,18 @@ public:
         shutdownAudio();
     }
 
-    void processMidiInput(const MidiMessage& message)
-    {
-      if (message.getRawDataSize() == 3)
-      {
+    void processMidiInput(const MidiMessage& message) {
+        if (message.isAftertouch()) {
+            const MessageManagerLock lock;
+            status_.setText("Aftertouch", juce::dontSendNotification);
+            return;
+        } else if (message.isChannelPressure()) {
+            const MessageManagerLock lock;
+            status_.setText("Channel pressure", juce::dontSendNotification);
+            return;
+        }
+      if (message.getRawDataSize() == 3) {
+        
         auto data = message.getRawData();
         std::ostringstream oss;
         oss << "Midi ("
@@ -95,19 +83,20 @@ public:
           << "0x" << std::uppercase << std::setfill('0') << std::setw(2) << std::hex << int(data[2]);
 
         midiMessageStack_.push_back(oss.str());
-        if (midiMessageStack_.size() > 4)
-        {
+        if (midiMessageStack_.size() > 4) {
           midiMessageStack_.pop_front();
         }
 
         const MessageManagerLock lock;
 
         std::string status;
-        for (auto s : midiMessageStack_)
-        {
+        for (auto s : midiMessageStack_) {
           status += s + "\n";
         }
         status_.setText(status, juce::dontSendNotification);
+      } else {
+          const MessageManagerLock lock;
+          status_.setText("MIDI!!!", juce::dontSendNotification);
       }
     }
 
