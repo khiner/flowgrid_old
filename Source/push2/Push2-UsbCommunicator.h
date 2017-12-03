@@ -12,94 +12,94 @@
 // which leads to declaration conflicts with juce
 
 class libusb_transfer;
+
 class libusb_device_handle;
 
-namespace ableton
-{
-  /*!
-   *  This class manages the communication with the Push 2 display over usb.
-   *
-   */
-
-  class UsbCommunicator
-  {
-  public:
-    using pixel_t = Push2DisplayBitmap::pixel_t;
-
-    // The display frame size is 960*160*2=300k, but we use 64 extra filler
-    // pixels per line so that we get exactly 2048 bytes per line. The purpose
-    // is that the device receives exactly 4 buffers of 512 bytes each per line,
-    // so that the line boundary (which is where we save to SDRAM) does not fall
-    // into the middle of a received buffer. Therefore we actually send
-    // 1024*160*2=320k bytes per frame.
-
-    static const int kLineSize        = 2048; // total line size
-    static const int kLineCountPerSendBuffer   = 8;
-
-    // The data sent to the display is sliced into chunks of kLineCountPerSendBuffer
-    // and we use kSendBufferCount buffers to communicate so we can prepare the next
-    // request without having to wait for the current one to be finished
-    // The sent buffer size (kSendBufferSize) must a multiple of these 2k per line,
-    // and is selected for optimal performance.
-
-    static const int kSendBufferCount = 3;
-    static const int kSendBufferSize  = kLineCountPerSendBuffer * kLineSize; // buffer length in bytes
-
-    UsbCommunicator();
-    ~UsbCommunicator();
-
+namespace ableton {
     /*!
-     *  Inialises the communicator. This will look for the usb descriptor matching
-     *  the display, allocate transfer buffers and start sending data.
+     *  This class manages the communication with the Push 2 display over usb.
      *
-     *  \param dataSource: The buffer holding the data to be sent to the display.
-     *  \return the result of the initialisation
      */
 
-    NBase::Result Init(const pixel_t* dataSource);
+    class UsbCommunicator {
+    public:
+        using pixel_t = Push2DisplayBitmap::pixel_t;
 
-    /*!
-     *  Callback for when a transfer is finished and the next one needs to be
-     *  initiated
-     */
+        // The display frame size is 960*160*2=300k, but we use 64 extra filler
+        // pixels per line so that we get exactly 2048 bytes per line. The purpose
+        // is that the device receives exactly 4 buffers of 512 bytes each per line,
+        // so that the line boundary (which is where we save to SDRAM) does not fall
+        // into the middle of a received buffer. Therefore we actually send
+        // 1024*160*2=320k bytes per frame.
 
-    void OnTransferFinished(libusb_transfer* transfer);
+        static const int kLineSize = 2048; // total line size
+        static const int kLineCountPerSendBuffer = 8;
 
-    /*!
-     *  Continuously poll events from libusb, possibly treating any error reported
-     */
+        // The data sent to the display is sliced into chunks of kLineCountPerSendBuffer
+        // and we use kSendBufferCount buffers to communicate so we can prepare the next
+        // request without having to wait for the current one to be finished
+        // The sent buffer size (kSendBufferSize) must a multiple of these 2k per line,
+        // and is selected for optimal performance.
 
-    void PollUsbForEvents();
+        static const int kSendBufferCount = 3;
+        static const int kSendBufferSize = kLineCountPerSendBuffer * kLineSize; // buffer length in bytes
 
-  private:
+        UsbCommunicator();
 
-    /*!
-     *  Initiate the send process
-     */
+        ~UsbCommunicator();
 
-    NBase::Result startSending();
+        /*!
+         *  Inialises the communicator. This will look for the usb descriptor matching
+         *  the display, allocate transfer buffers and start sending data.
+         *
+         *  \param dataSource: The buffer holding the data to be sent to the display.
+         *  \return the result of the initialisation
+         */
 
-    /*!
-     *  Send the next slice of data using the provided transfer struct
-     */
+        NBase::Result Init(const pixel_t *dataSource);
 
-    NBase::Result sendNextSlice(libusb_transfer* transfer);
+        /*!
+         *  Callback for when a transfer is finished and the next one needs to be
+         *  initiated
+         */
 
-    /*!
-     *  Callback for when a full frame has been sent
-     *  Note that there's no real need of doing double buffering since the
-     *  display deals nicely with it already
-     */
+        void OnTransferFinished(libusb_transfer *transfer);
 
-    void onFrameCompleted();
+        /*!
+         *  Continuously poll events from libusb, possibly treating any error reported
+         */
 
-    const pixel_t* dataSource_;
-    libusb_device_handle* handle_;
-    libusb_transfer* frameHeaderTransfer_;
-    std::thread pollThread_;
-    uint8_t currentLine_;
-    std::atomic<bool> terminate_;
-    unsigned char sendBuffers_[kSendBufferCount * kSendBufferSize];
+        void PollUsbForEvents();
 
-  };
+    private:
+
+        /*!
+         *  Initiate the send process
+         */
+
+        NBase::Result startSending();
+
+        /*!
+         *  Send the next slice of data using the provided transfer struct
+         */
+
+        NBase::Result sendNextSlice(libusb_transfer *transfer);
+
+        /*!
+         *  Callback for when a full frame has been sent
+         *  Note that there's no real need of doing double buffering since the
+         *  display deals nicely with it already
+         */
+
+        void onFrameCompleted();
+
+        const pixel_t *dataSource_;
+        libusb_device_handle *handle_;
+        libusb_transfer *frameHeaderTransfer_;
+        std::thread pollThread_;
+        uint8_t currentLine_;
+        std::atomic<bool> terminate_;
+        unsigned char sendBuffers_[kSendBufferCount * kSendBufferSize];
+
+    };
 }

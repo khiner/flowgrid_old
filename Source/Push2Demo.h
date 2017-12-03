@@ -9,63 +9,61 @@
  */
 
 class Demo
-  : public Timer
-  , public MidiInputCallback
-{
+        : public Timer, public MidiInputCallback {
 public:
 
-  /*!
-   *  Initialises and starts the demo
-   *
-   *  \return the result of the initialisation process
-   */
+    /*!
+     *  Initialises and starts the demo
+     *
+     *  \return the result of the initialisation process
+     */
 
-  NBase::Result Init();
+    NBase::Result Init();
 
 
-  using midicb_t = std::function<void(const MidiMessage&)>;
+    using midicb_t = std::function<void(const MidiMessage &)>;
 
-  /*!
-   *  Allows a client to hook a collback in order to process midi messages recieved from push2
-   */
+    /*!
+     *  Allows a client to hook a collback in order to process midi messages recieved from push2
+     */
 
-  void SetMidiInputCallback(const midicb_t& func);
-
-private:
-
-  /*!
-   *  renders a frame and send it to the push display
-   */
-
-  void drawFrame();
-
-  /*!
-   *  look for the push 2 input device and starts listening to it
-   *
-   *  \return the result of the initialisation process
-   */
-
-  NBase::Result openMidiDevice();
-
-  /*!
-   *  the juce midi incoming message callback
-   *  @see juce::MidiInputCallback
-   */
-
-  void handleIncomingMidiMessage (MidiInput *source, const MidiMessage &message) override;
-
-  /*!
-   *  the juce timer callback
-   *  @see juce::Timer
-   */
-
-  void timerCallback() override;
-
+    void SetMidiInputCallback(const midicb_t &func);
 
 private:
-  ableton::Push2DisplayBridge bridge_;    /*!< The bridge allowing to use juce::graphics for push */
-  ableton::Push2Display push2Display_;                  /*!< The low-level push2 class */
-  std::unique_ptr<MidiInput> midiInput_;  /*!< Push2's midi input */
-  midicb_t midiCallback_;                 /*!> The midi callback to call when incoming messages are recieved */
-  float elapsed_;                         /*!> Fake elapsed time used for the animation */
+
+    /*!
+     *  renders a frame and send it to the push display
+     */
+
+    void drawFrame();
+
+    /*!
+     *  look for the push 2 input device and starts listening to it
+     *
+     *  \return the result of the initialisation process
+     */
+
+    NBase::Result openMidiDevice();
+
+    /*!
+     *  the juce midi incoming message callback
+     *  @see juce::MidiInputCallback
+     */
+
+    void handleIncomingMidiMessage(MidiInput *source, const MidiMessage &message) override;
+
+    /*!
+     *  the juce timer callback
+     *  @see juce::Timer
+     */
+
+    void timerCallback() override;
+
+
+private:
+    ableton::Push2DisplayBridge bridge_;    /*!< The bridge allowing to use juce::graphics for push */
+    ableton::Push2Display push2Display_;                  /*!< The low-level push2 class */
+    std::unique_ptr<MidiInput> midiInput_;  /*!< Push2's midi input */
+    midicb_t midiCallback_;                 /*!> The midi callback to call when incoming messages are recieved */
+    float elapsed_;                         /*!> Fake elapsed time used for the animation */
 };
