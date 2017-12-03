@@ -1,4 +1,4 @@
-#include "Push2-UsbCommunicator.h"
+#include "Push2UsbCommunicator.h"
 
 #ifdef _WIN32
 // see following link for a discussion of the

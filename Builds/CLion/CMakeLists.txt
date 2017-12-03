@@ -21,12 +21,12 @@ project ("sound-machine" C CXX)
 
 add_executable (APP
     "../../Resources/PushStartup.png"
-    "../../Source/push2/Push2-Usb-Communicator.cpp"
-    "../../Source/push2/Push2-UsbCommunicator.h"
+    "../../Source/push2/Push2UsbCommunicator.cpp"
+    "../../Source/push2/Push2UsbCommunicator.h"
     "../../Source/push2/JuceToPush2DisplayBridge.h"
     "../../Source/push2/JuceToPush2DisplayBridge.cpp"
-    "../../Source/push2/Push2-Bitmap.h"
-    "../../Source/push2/Push2-Display.h"
+    "../../Source/push2/Push2Bitmap.h"
+    "../../Source/push2/Push2Display.h"
     "../../Source/libusb/libusb_platform_wrapper.c"
     "../../Source/Push2Demo.cpp"
     "../../Source/Push2Demo.h"
@@ -1167,10 +1167,10 @@ add_executable (APP
 )
 
 set_source_files_properties ("../../Resources/PushStartup.png" PROPERTIES HEADER_FILE_ONLY TRUE)
-set_source_files_properties ("../../Source/push2/Push2-UsbCommunicator.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/push2/Push2UsbCommunicator.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/push2/JuceToPush2DisplayBridge.h" PROPERTIES HEADER_FILE_ONLY TRUE)
-set_source_files_properties ("../../Source/push2/Push2-Bitmap.h" PROPERTIES HEADER_FILE_ONLY TRUE)
-set_source_files_properties ("../../Source/push2/Push2-Display.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/push2/Push2Bitmap.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/push2/Push2Display.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/Push2Demo.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/Macros.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/Result.h" PROPERTIES HEADER_FILE_ONLY TRUE)

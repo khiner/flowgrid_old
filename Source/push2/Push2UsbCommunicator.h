@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Result.h"
-#include "Push2-Bitmap.h"
+#include "Push2Bitmap.h"
 
 #include <thread>
 #include <assert.h>

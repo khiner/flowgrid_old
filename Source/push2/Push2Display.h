@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Result.h"
-#include "Push2-UsbCommunicator.h"
+#include "Push2UsbCommunicator.h"
 #include <memory>
 #include <atomic>
 

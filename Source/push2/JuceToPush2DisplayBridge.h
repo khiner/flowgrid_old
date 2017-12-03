@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Push2-Display.h"
+#include "Push2Display.h"
 #include "../JuceLibraryCode/JuceHeader.h"
 
 namespace ableton {

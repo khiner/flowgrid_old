@@ -11,16 +11,16 @@
     </GROUP>
     <GROUP id="{761B4731-1AF1-A0A5-B2D1-52848B03899C}" name="Source">
       <GROUP id="{5E779719-D34F-BC02-9B56-752D5B49ED12}" name="push2">
-        <FILE id="RGU2Wn" name="Push2-Usb-Communicator.cpp" compile="1" resource="0"
-              file="Source/push2/Push2-Usb-Communicator.cpp"/>
-        <FILE id="piN044" name="Push2-UsbCommunicator.h" compile="0" resource="0"
-              file="Source/push2/Push2-UsbCommunicator.h"/>
+        <FILE id="RGU2Wn" name="Push2Usb-Communicator.cpp" compile="1" resource="0"
+              file="Source/push2/Push2UsbCommunicator.cpp"/>
+        <FILE id="piN044" name="Push2UsbCommunicator.h" compile="0" resource="0"
+              file="Source/push2/Push2UsbCommunicator.h"/>
         <FILE id="ZNAHNe" name="JuceToPush2DisplayBridge.h" compile="0" resource="0"
               file="Source/push2/JuceToPush2DisplayBridge.h"/>
         <FILE id="R9cjcb" name="JuceToPush2DisplayBridge.cpp" compile="1" resource="0"
               file="Source/push2/JuceToPush2DisplayBridge.cpp"/>
-        <FILE id="SlpyFl" name="Push2-Bitmap.h" compile="0" resource="0" file="Source/push2/Push2-Bitmap.h"/>
-        <FILE id="vgiKhz" name="Push2-Display.h" compile="0" resource="0" file="Source/push2/Push2-Display.h"/>
+        <FILE id="SlpyFl" name="Push2Bitmap.h" compile="0" resource="0" file="Source/push2/Push2Bitmap.h"/>
+        <FILE id="vgiKhz" name="Push2Display.h" compile="0" resource="0" file="Source/push2/Push2Display.h"/>
       </GROUP>
       <GROUP id="{ED4412F7-7364-433F-FB0E-58CC42D2AA5E}" name="libusb">
         <FILE id="Ihb72c" name="libusb_platform_wrapper.c" compile="1" resource="0"
