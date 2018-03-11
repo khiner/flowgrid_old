@@ -1,10 +1,9 @@
 #pragma once
 
 #include "Result.h"
-#include "Push2Bitmap.h"
 
 #include <thread>
-#include <assert.h>
+#include <cassert>
 
 #include <atomic>
 
@@ -12,7 +11,6 @@
 // which leads to declaration conflicts with juce
 
 class libusb_transfer;
-
 class libusb_device_handle;
 
 namespace ableton {
@@ -20,10 +18,9 @@ namespace ableton {
      *  This class manages the communication with the Push 2 display over usb.
      *
      */
-
     class UsbCommunicator {
     public:
-        using pixel_t = Push2DisplayBitmap::pixel_t;
+
 
         // The display frame size is 960*160*2=300k, but we use 64 extra filler
         // pixels per line so that we get exactly 2048 bytes per line. The purpose
@@ -32,17 +29,17 @@ namespace ableton {
         // into the middle of a received buffer. Therefore we actually send
         // 1024*160*2=320k bytes per frame.
 
-        static const int kLineSize = 2048; // total line size
-        static const int kLineCountPerSendBuffer = 8;
+        static const int LINE_SIZE = 2048; // total line size
+        static const int LINE_COUNT_PER_SEND_BUFFER = 8;
 
-        // The data sent to the display is sliced into chunks of kLineCountPerSendBuffer
-        // and we use kSendBufferCount buffers to communicate so we can prepare the next
+        // The data sent to the display is sliced into chunks of LINE_COUNT_PER_SEND_BUFFER
+        // and we use SEND_BUFFER_COUNT buffers to communicate so we can prepare the next
         // request without having to wait for the current one to be finished
-        // The sent buffer size (kSendBufferSize) must a multiple of these 2k per line,
+        // The sent buffer size (SEND_BUFFER_SIZE) must a multiple of these 2k per line,
         // and is selected for optimal performance.
 
-        static const int kSendBufferCount = 3;
-        static const int kSendBufferSize = kLineCountPerSendBuffer * kLineSize; // buffer length in bytes
+        static const int SEND_BUFFER_COUNT = 3;
+        static const int SEND_BUFFER_SIZE = LINE_COUNT_PER_SEND_BUFFER * LINE_SIZE; // buffer length in bytes
 
         UsbCommunicator();
 
@@ -55,20 +52,17 @@ namespace ableton {
          *  \param dataSource: The buffer holding the data to be sent to the display.
          *  \return the result of the initialisation
          */
-
-        NBase::Result Init(const pixel_t *dataSource);
+        NBase::Result init(const u_int16_t *dataSource);
 
         /*!
          *  Callback for when a transfer is finished and the next one needs to be
          *  initiated
          */
-
-        void OnTransferFinished(libusb_transfer *transfer);
+        void onTransferFinished(libusb_transfer *transfer);
 
         /*!
          *  Continuously poll events from libusb, possibly treating any error reported
          */
-
         void PollUsbForEvents();
 
     private:
@@ -76,13 +70,11 @@ namespace ableton {
         /*!
          *  Initiate the send process
          */
-
         NBase::Result startSending();
 
         /*!
          *  Send the next slice of data using the provided transfer struct
          */
-
         NBase::Result sendNextSlice(libusb_transfer *transfer);
 
         /*!
@@ -90,16 +82,14 @@ namespace ableton {
          *  Note that there's no real need of doing double buffering since the
          *  display deals nicely with it already
          */
-
         void onFrameCompleted();
 
-        const pixel_t *dataSource_;
-        libusb_device_handle *handle_;
-        libusb_transfer *frameHeaderTransfer_;
-        std::thread pollThread_;
-        uint8_t currentLine_;
-        std::atomic<bool> terminate_;
-        unsigned char sendBuffers_[kSendBufferCount * kSendBufferSize];
-
+        const uint16_t *dataSource;
+        libusb_device_handle *handle;
+        libusb_transfer *frameHeaderTransfer;
+        std::thread pollThread;
+        uint8_t currentLine;
+        std::atomic<bool> terminate;
+        unsigned char sendBuffers[SEND_BUFFER_COUNT * SEND_BUFFER_SIZE];
     };
 }

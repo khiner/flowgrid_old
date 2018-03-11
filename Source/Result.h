@@ -6,10 +6,9 @@
 namespace NBase {
     class Result {
     public:
+        explicit Result(const std::string &error);
 
-        Result(const std::string &error);
-
-        Result(const std::ostringstream &error);
+        explicit Result(const std::ostringstream &error);
 
         Result(Result &cause, const std::string &error);
 
@@ -17,11 +16,11 @@ namespace NBase {
 
         Result(const Result &other);
 
-        bool Failed();
+        bool failed();
 
-        bool Succeeded();
+        bool succeeded();
 
-        std::string GetDescription();
+        std::string getDescription();
 
         Result &operator=(const Result &);
 
@@ -30,14 +29,12 @@ namespace NBase {
         Result();
 
     private:
-        bool success_;
-        std::string error_;
-        mutable bool checked_;
-        mutable Result *child_;
+        bool success;
+        std::string error;
+        mutable bool checked;
+        mutable Result *child;
     };
 }
 
-#define RETURN_IF_FAILED_MESSAGE(r, m) if (r.Failed()) { return NBase::Result(r,m) ; }
-#define RETURN_IF_FAILED(r) if (r.Failed()) { return r ; }
-#define LOG_IF_FAILED(r, m) if (r.Failed()) { NBase::Result __combined(r,m); Trace::Error(__combined.GetDescription().c_str()) ; __combined.Failed();}
-
+#define RETURN_IF_FAILED_MESSAGE(r, m) if ((r).failed()) { return NBase::Result(r,m) ; }
+#define RETURN_IF_FAILED(r) if ((r).failed()) { return r ; }

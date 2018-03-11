@@ -1,6 +1,5 @@
 #include "Push2Demo.h"
-
-//------------------------------------------------------------------------------
+using namespace std::chrono;
 
 namespace {
     bool SMatchSubStringNoCase(const std::string &haystack, const std::string &needle) {
@@ -16,15 +15,13 @@ namespace {
 }
 
 
-//------------------------------------------------------------------------------
-
-NBase::Result Demo::Init() {
+NBase::Result Demo::init() {
     // First we initialise the low level push2 object
-    NBase::Result result = push2Display_.Init();
+    NBase::Result result = push2Display.init();
     RETURN_IF_FAILED_MESSAGE(result, "Failed to init push2");
 
     // Then we initialise the juce to push bridge
-    result = bridge_.Init(push2Display_);
+    result = bridge.init(push2Display);
     RETURN_IF_FAILED_MESSAGE(result, "Failed to init bridge");
 
     // Initialises the midi input
@@ -32,7 +29,7 @@ NBase::Result Demo::Init() {
     RETURN_IF_FAILED_MESSAGE(result, "Failed to open midi device");
 
     // Reset elapsed time
-    elapsed_ = 0;
+    elapsed = 0;
 
     // Start the timer to draw the animation
     startTimerHz(60);
@@ -78,8 +75,8 @@ NBase::Result Demo::openMidiDevice() {
 
     midiOutput->sendMessageNow(sysExMessage);
     // Store and starts listening to the device
-    midiInput_.reset(input);
-    midiInput_->start();
+    midiInput.reset(input);
+    midiInput->start();
 
     return NBase::Result::NoError;
 }
@@ -88,7 +85,7 @@ NBase::Result Demo::openMidiDevice() {
 //------------------------------------------------------------------------------
 
 void Demo::SetMidiInputCallback(const midicb_t &callback) {
-    midiCallback_ = callback;
+    midiCallback = callback;
 }
 
 
@@ -96,8 +93,8 @@ void Demo::SetMidiInputCallback(const midicb_t &callback) {
 
 void Demo::handleIncomingMidiMessage(MidiInput * /*source*/, const MidiMessage &message) {
     // if a callback has been set, forward the incoming message
-    if (midiCallback_) {
-        midiCallback_(message);
+    if (midiCallback) {
+        midiCallback(message);
     }
 }
 
@@ -105,7 +102,7 @@ void Demo::handleIncomingMidiMessage(MidiInput * /*source*/, const MidiMessage &
 //------------------------------------------------------------------------------
 
 void Demo::timerCallback() {
-    elapsed_ += 0.02f;
+    elapsed += 0.02f;
     drawFrame();
 }
 
@@ -114,14 +111,14 @@ void Demo::timerCallback() {
 
 void Demo::drawFrame() {
     // Request a juce::Graphics from the bridge
-    auto &g = bridge_.GetGraphic();
+    auto &g = bridge.getGraphics();
 
     // Clear previous frame
     g.fillAll(juce::Colour(0xff000000));
 
     // Create a path for the animated wave
-    const auto height = ableton::Push2DisplayBitmap::kHeight;
-    const auto width = ableton::Push2DisplayBitmap::kWidth;
+    const auto height = ableton::Push2Display::HEIGHT;
+    const auto width = ableton::Push2Display::WIDTH;
 
     Path wavePath;
 
@@ -130,8 +127,8 @@ void Demo::drawFrame() {
     int i = 0;
 
     for (float x = waveStep * 0.5f; x < width; x += waveStep) {
-        const float y1 = waveY + height * 0.10f * std::sin(i * 0.38f + elapsed_);
-        const float y2 = waveY + height * 0.20f * std::sin(i * 0.20f + elapsed_ * 2.0f);
+        const float y1 = waveY + height * 0.10f * std::sin(i * 0.38f + elapsed);
+        const float y2 = waveY + height * 0.20f * std::sin(i * 0.20f + elapsed * 2.0f);
 
         wavePath.addLineSegment(Line<float>(x, y1, x, y2), 2.0f);
         wavePath.addEllipse(x - waveStep * 0.3f, y1 - waveStep * 0.3f, waveStep * 0.6f, waveStep * 0.6f);
@@ -149,5 +146,5 @@ void Demo::drawFrame() {
     g.drawImageAt(logo, (width - logo.getWidth()) / 2, (height - logo.getHeight()) / 2);
 
     // Tells the bridge we're done with drawing and the frame can be sent to the display
-    bridge_.Flip();
+    bridge.flip();
 }

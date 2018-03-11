@@ -17,7 +17,7 @@ Component *createMainContentComponent();
 class SoundMachineApplication : public JUCEApplication {
 public:
     //==============================================================================
-    SoundMachineApplication() {}
+    SoundMachineApplication() = default;
 
     const String getApplicationName() override { return ProjectInfo::projectName; }
 
@@ -60,7 +60,7 @@ public:
     */
     class MainWindow : public DocumentWindow {
     public:
-        MainWindow(String name) : DocumentWindow(name,
+        explicit MainWindow(String name) : DocumentWindow(name,
                                                  Colours::lightgrey,
                                                  DocumentWindow::allButtons) {
             setUsingNativeTitleBar(true);

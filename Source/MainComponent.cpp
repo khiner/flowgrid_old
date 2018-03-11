@@ -1,11 +1,3 @@
-/*
-  ==============================================================================
-
-    This file was auto-generated!
-
-  ==============================================================================
-*/
-
 #ifndef MAINCOMPONENT_H_INCLUDED
 #define MAINCOMPONENT_H_INCLUDED
 
@@ -23,7 +15,6 @@
 */
 class MainContentComponent : public AudioAppComponent {
 public:
-    //==============================================================================
     MainContentComponent() {
         setSize(960, 600);
 
@@ -31,39 +22,38 @@ public:
         setAudioChannels(2, 2);
 
         // Initialize a label to show the status of the connection
-        status_.setColour(Label::textColourId, Colours::white);
-        status_.setJustificationType(Justification::bottomLeft);
-        addAndMakeVisible(status_);
+        status.setColour(Label::textColourId, Colours::white);
+        status.setJustificationType(Justification::bottomLeft);
+        addAndMakeVisible(status);
 
         // Starts the demo class animating the display
-        NBase::Result result = demo_.Init();
-        if (result.Succeeded()) {
-            status_.setText("Push 2 connected", juce::dontSendNotification);
-            demo_.SetMidiInputCallback(
+        NBase::Result result = demo.init();
+        if (result.succeeded()) {
+            status.setText("Push 2 connected", juce::dontSendNotification);
+            demo.SetMidiInputCallback(
                     [this](const MidiMessage &message) {
                         this->processMidiInput(message);
                     });
         } else {
-            status_.setText(result.GetDescription(), juce::dontSendNotification);
+            status.setText(result.getDescription(), juce::dontSendNotification);
         }
     }
 
-    ~MainContentComponent() {
+    ~MainContentComponent() override {
         shutdownAudio();
     }
 
     void processMidiInput(const MidiMessage &message) {
         if (message.isAftertouch()) {
             const MessageManagerLock lock;
-            status_.setText("Aftertouch", juce::dontSendNotification);
+            status.setText("Aftertouch", juce::dontSendNotification);
             return;
         } else if (message.isChannelPressure()) {
             const MessageManagerLock lock;
-            status_.setText("Channel pressure", juce::dontSendNotification);
+            status.setText("Channel pressure", juce::dontSendNotification);
             return;
         }
         if (message.getRawDataSize() == 3) {
-
             auto data = message.getRawData();
             std::ostringstream oss;
             oss << "Midi ("
@@ -72,21 +62,21 @@ public:
                 << "0x" << std::uppercase << std::setfill('0') << std::setw(2) << std::hex << int(data[1]) << " - "
                 << "0x" << std::uppercase << std::setfill('0') << std::setw(2) << std::hex << int(data[2]);
 
-            midiMessageStack_.push_back(oss.str());
-            if (midiMessageStack_.size() > 4) {
-                midiMessageStack_.pop_front();
+            midiMessageStack.push_back(oss.str());
+            if (midiMessageStack.size() > 4) {
+                midiMessageStack.pop_front();
             }
 
             const MessageManagerLock lock;
 
-            std::string status;
-            for (auto s : midiMessageStack_) {
-                status += s + "\n";
+            std::string statusStr;
+            for (const auto &s : midiMessageStack) {
+                statusStr += s + "\n";
             }
-            status_.setText(status, juce::dontSendNotification);
+            status.setText(statusStr, juce::dontSendNotification);
         } else {
             const MessageManagerLock lock;
-            status_.setText("MIDI!!!", juce::dontSendNotification);
+            status.setText("MIDI!!!", juce::dontSendNotification);
         }
     }
 
@@ -133,18 +123,14 @@ public:
 
     void resized() override {
         const int kStatusSize = 100;
-        status_.setBounds(0, getHeight() - kStatusSize, getWidth(), kStatusSize);
+        status.setBounds(0, getHeight() - kStatusSize, getWidth(), kStatusSize);
     }
 
 
 private:
-    //==============================================================================
-
-    // Your private member variables go here...
-
-    Demo demo_;
-    Label status_;
-    std::deque<std::string> midiMessageStack_;
+    Demo demo;
+    Label status;
+    std::deque<std::string> midiMessageStack;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainContentComponent)
 };

@@ -1,64 +1,64 @@
 #include "Result.h"
-#include <assert.h>
+#include <cassert>
 
 using namespace NBase;
 
 Result Result::NoError;
 
 Result::Result()
-        : success_(true), error_("success"), checked_(true), child_(0) {}
+        : success(true), error("success"), checked(true), child(nullptr) {}
 
 Result::Result(const std::string &error)
-        : success_(false), error_(error), checked_(false), child_(0) {}
+        : success(false), error(error), checked(false), child(nullptr) {}
 
 Result::Result(const std::ostringstream &error)
-        : success_(false), error_(error.str()), checked_(false), child_(0) {}
+        : success(false), error(error.str()), checked(false), child(nullptr) {}
 
 Result::Result(Result &cause, const std::string &error)
-        : success_(false), error_(error), checked_(false), child_(new Result(cause)) {
-    cause.checked_ = true;
-    child_->checked_ = true;
+        : success(false), error(error), checked(false), child(new Result(cause)) {
+    cause.checked = true;
+    child->checked = true;
 }
 
 Result::Result(const Result &other) {
-    success_ = other.success_;
-    error_ = other.error_;
-    checked_ = false;
-    other.checked_ = true;
-    child_ = other.child_;
-    other.child_ = 0;
+    success = other.success;
+    error = other.error;
+    checked = false;
+    other.checked = true;
+    child = other.child;
+    other.child = nullptr;
 }
 
 Result::~Result() {
-    assert(checked_);
-    delete (child_);
+    assert(checked);
+    delete (child);
 }
 
 Result &Result::operator=(const Result &other) {
-    success_ = other.success_;
-    error_ = other.error_;
-    checked_ = false;
-    other.checked_ = true;
-    child_ = other.child_;
-    other.child_ = 0;
+    success = other.success;
+    error = other.error;
+    checked = false;
+    other.checked = true;
+    child = other.child;
+    other.child = nullptr;
     return *this;
 }
 
-bool Result::Failed() {
-    checked_ = true;
-    return !success_;
+bool Result::failed() {
+    checked = true;
+    return !success;
 }
 
-bool Result::Succeeded() {
-    checked_ = true;
-    return success_;
+bool Result::succeeded() {
+    checked = true;
+    return success;
 }
 
-std::string Result::GetDescription() {
-    std::string description = error_;
-    if (child_) {
+std::string Result::getDescription() {
+    std::string description = error;
+    if (child) {
         description += "\n>>>> ";
-        description += child_->GetDescription();
+        description += child->getDescription();
     }
     return description;
 }
