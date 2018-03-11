@@ -2,7 +2,7 @@
 
 <JUCERPROJECT id="khUpu8" name="sound-machine" projectType="guiapp" version="1.0.0"
               bundleIdentifier="com.odangludo.soundmachine" includeBinaryInAppConfig="1"
-              jucerVersion="5.2.0" companyWebsite="www.karlhiner.com" companyName="odangludo"
+              jucerVersion="5.2.1" companyWebsite="www.karlhiner.com" companyName="odangludo"
               displaySplashScreen="1" reportAppUsage="1" splashScreenColour="Dark"
               cppLanguageStandard="14" companyCopyright="odangludo" companyEmail="karl.hiner@gmail.com">
   <MAINGROUP id="zuLs1h" name="sound-machine">
@@ -11,7 +11,7 @@
     </GROUP>
     <GROUP id="{761B4731-1AF1-A0A5-B2D1-52848B03899C}" name="Source">
       <GROUP id="{5E779719-D34F-BC02-9B56-752D5B49ED12}" name="push2">
-        <FILE id="RGU2Wn" name="Push2Usb-Communicator.cpp" compile="1" resource="0"
+        <FILE id="RGU2Wn" name="Push2UsbCommunicator.cpp" compile="1" resource="0"
               file="Source/push2/Push2UsbCommunicator.cpp"/>
         <FILE id="piN044" name="Push2UsbCommunicator.h" compile="0" resource="0"
               file="Source/push2/Push2UsbCommunicator.h"/>
@@ -39,13 +39,13 @@
   <EXPORTFORMATS>
     <XCODE_MAC targetFolder="Builds/MacOSX">
       <CONFIGURATIONS>
-        <CONFIGURATION name="Debug" osxSDK="default" osxCompatibility="10.7 SDK" osxArchitecture="default"
-                       isDebug="1" optimisation="1" targetName="sound-machine" cppLanguageStandard="c++11"
-                       cppLibType="libc++" headerPath="../../Source&#10;../../Source/libusb&#10;../../modules/libusb/libusb&#10;"
+        <CONFIGURATION name="Debug" osxCompatibility="10.7 SDK" isDebug="1" optimisation="1"
+                       targetName="sound-machine" cppLanguageStandard="c++11" cppLibType="libc++"
+                       headerPath="../../Source&#10;../../Source/libusb&#10;../../modules/libusb/libusb&#10;"
                        enablePluginBinaryCopyStep="1"/>
-        <CONFIGURATION name="Release" osxSDK="10.7 SDK" osxCompatibility="default" osxArchitecture="default"
-                       isDebug="0" optimisation="3" targetName="sound-machine" cppLanguageStandard="c++11"
-                       cppLibType="libc++" headerPath="../../Source&#10;../../Source/libusb&#10;../../modules/libusb/libusb&#10;"
+        <CONFIGURATION name="Release" osxSDK="10.7 SDK" isDebug="0" optimisation="3"
+                       targetName="sound-machine" cppLanguageStandard="c++11" cppLibType="libc++"
+                       headerPath="../../Source&#10;../../Source/libusb&#10;../../modules/libusb/libusb&#10;"
                        enablePluginBinaryCopyStep="1"/>
       </CONFIGURATIONS>
       <MODULEPATHS>

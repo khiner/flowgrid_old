@@ -58,5 +58,3 @@ void Push2DisplayBridge::Flip() {
     NBase::Result result = push2Display_->Flip(g);
     assert(result.Succeeded());
 }
-
-

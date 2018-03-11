@@ -13,10 +13,6 @@ endif (NOT CMAKE_BUILD_TYPE)
 
 if (APPLE)
 
-if (CMAKE_BUILD_TYPE STREQUAL Release)
-    set (CMAKE_OSX_SYSROOT macosx10.7)
-endif()
-
 project ("sound-machine" C CXX)
 
 add_executable (APP
@@ -2402,6 +2398,7 @@ target_compile_definitions (APP PRIVATE
 target_compile_options (APP PRIVATE
     -mmacosx-version-min=10.11
     -O3
+    -flto
     -stdlib=libc++
 )
 
@@ -2421,7 +2418,6 @@ set_target_properties (APP PROPERTIES
     XCODE_ATTRIBUTE_INSTALL_PATH "$(HOME)/Applications"
     XCODE_ATTRIBUTE_MACOSX_DEPLOYMENT_TARGET_ppc 10.4
     XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER com.odangludo.soundmachine
-    XCODE_ATTRIBUTE_SDKROOT macosx10.7
     XCODE_ATTRIBUTE_SDKROOT_ppc macosx10.5
     XCODE_ATTRIBUTE_USE_HEADERMAP NO
     MACOSX_BUNDLE_INFO_PLIST "/Users/khiner/Development/sound-machine/Builds/CLion/Release-Info-App.plist"
