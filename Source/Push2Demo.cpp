@@ -4,36 +4,28 @@
 using namespace std;
 
 namespace {
-    bool SMatchSubStringNoCase(const std::string &haystack, const std::string &needle) {
+    bool matchSubStringIgnoreCase(const std::string &haystack, const std::string &needle) {
         auto it = std::search(
                 haystack.begin(), haystack.end(),
                 needle.begin(), needle.end(),
-                [](char ch1, char ch2)                // case insensitive
-                {
-                    return std::toupper(ch1) == std::toupper(ch2);
-                });
+                [](char ch1, char ch2) { return std::toupper(ch1) == std::toupper(ch2); });
         return it != haystack.end();
     }
 }
 
 Demo::Demo():  bridge() {
-    // Initialises the midi input
     openMidiDevice();
-
-    // Reset elapsed time
     elapsed = 0;
-
-    // Start the timer to draw the animation
-    startTimerHz(60);
+    startTimerHz(60); // animation timer
 }
 
 void Demo::openMidiDevice() {
-    // Look for an input device matching push 2
+    // Look for an input device matching Push 2
     auto devices = MidiInput::getDevices();
     int deviceIndex = -1;
     int index = 0;
     for (auto &device: devices) {
-        if (SMatchSubStringNoCase(device.toStdString(), "ableton push 2")) {
+        if (matchSubStringIgnoreCase(device.toStdString(), "ableton push 2")) {
             deviceIndex = index;
             break;
         }
@@ -66,25 +58,15 @@ void Demo::openMidiDevice() {
     midiInput->start();
 }
 
-
-//------------------------------------------------------------------------------
-
-void Demo::SetMidiInputCallback(const midicb_t &callback) {
+void Demo::setMidiInputCallback(const midicb_t &callback) {
     midiCallback = callback;
 }
 
-
-//------------------------------------------------------------------------------
-
 void Demo::handleIncomingMidiMessage(MidiInput * /*source*/, const MidiMessage &message) {
-    // if a callback has been set, forward the incoming message
     if (midiCallback) {
         midiCallback(message);
     }
 }
-
-
-//------------------------------------------------------------------------------
 
 void Demo::timerCallback() {
     elapsed += 0.02f;
@@ -93,16 +75,12 @@ void Demo::timerCallback() {
     //std::cout << std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - t1).count() << '\n';
 }
 
-
-//------------------------------------------------------------------------------
-
 void Demo::drawFrame() {
     static const juce::Colour CLEAR_COLOR = juce::Colour(0xff000000);
 
     auto &g = bridge.getGraphics();
     g.fillAll(CLEAR_COLOR);
 
-    // Create a path for the animated wave
     const auto height = ableton::Push2Display::HEIGHT;
     const auto width = ableton::Push2Display::WIDTH;
 
@@ -123,11 +101,9 @@ void Demo::drawFrame() {
         ++i;
     }
 
-    // Draw the path
     g.setColour(juce::Colour::greyLevel(0.5f));
     g.fillPath(wavePath);
 
-    // Blit the logo on top
     auto logo = ImageCache::getFromMemory(BinaryData::PushStartup_png, BinaryData::PushStartup_pngSize);
     g.drawImageAt(logo, (width - logo.getWidth()) / 2, (height - logo.getHeight()) / 2);
 

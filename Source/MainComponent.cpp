@@ -27,7 +27,7 @@ public:
         addAndMakeVisible(status);
 
         status.setText("Push 2 connected", juce::dontSendNotification);
-        demo.SetMidiInputCallback(
+        demo.setMidiInputCallback(
                 [this](const MidiMessage &message) {
                     this->processMidiInput(message);
                 });

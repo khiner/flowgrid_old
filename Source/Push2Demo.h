@@ -9,36 +9,28 @@
 
 class Demo : public Timer, public MidiInputCallback {
 public:
-    /*!
-     *  Initialises and starts the demo
-     *
-     *  also instantiates the result of the initialisation process
-     */
     Demo();
 
     using midicb_t = std::function<void(const MidiMessage &)>;
 
     /*!
-     *  Allows a client to hook a collback in order to process midi messages recieved from push2
+     *  Hook up a callback to process MIDI messages received from Push 2
      */
-    void SetMidiInputCallback(const midicb_t &func);
+    void setMidiInputCallback(const midicb_t &func);
 
 private:
-
     /*!
-     *  renders a frame and send it to the push display
+     *  Render a frame and send it to the Push 2 display
      */
     void drawFrame();
 
     /*!
-     *  look for the push 2 input device and starts listening to it
-     *
-     *  \return the result of the initialisation process
+     *  Look for the Push 2 input device and starts listening to it
      */
     void openMidiDevice();
 
     /*!
-     *  the juce midi incoming message callback
+     *  The Juce MIDI incoming message callback
      *  @see juce::MidiInputCallback
      */
     void handleIncomingMidiMessage(MidiInput *source, const MidiMessage &message) override;
