@@ -12,7 +12,7 @@ namespace ableton {
     class Push2DisplayBridge {
     public:
         Push2DisplayBridge(): image(Image::RGB, Push2Display::WIDTH, Push2Display::HEIGHT, !K(clearImage)),
-        graphics(image), bitmapData(image, juce::Image::BitmapData::readOnly) {}
+        graphics(image) {}
 
         juce::Graphics &getGraphics() {
             return graphics;
@@ -22,7 +22,7 @@ namespace ableton {
             static const Push2Display::pixel_t xOrMasks[2] = {0xf3e7, 0xffe7};
             for (int y = 0; y < Push2Display::HEIGHT; y++) {
                 for (int x = 0; x < Push2Display::WIDTH; x++) {
-                    usbCommunicator.setPixelValue(x, y, pixelFromColour(bitmapData.getPixelColour(x, y)) ^ xOrMasks[x % 2]);
+                    usbCommunicator.setPixelValue(x, y, pixelFromColour(image.getPixelAt(x, y)) ^ xOrMasks[x % 2]);
                 }
             }
             usbCommunicator.onFrameFillCompleted();
@@ -46,7 +46,6 @@ namespace ableton {
     private:
         juce::Image image;
         juce::Graphics graphics;
-        juce::Image::BitmapData bitmapData;
         Push2UsbCommunicator usbCommunicator;
     };
 }

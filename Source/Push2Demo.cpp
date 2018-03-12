@@ -1,4 +1,6 @@
 #include "Push2Demo.h"
+#include "chrono"
+
 using namespace std;
 
 namespace {
@@ -86,7 +88,9 @@ void Demo::handleIncomingMidiMessage(MidiInput * /*source*/, const MidiMessage &
 
 void Demo::timerCallback() {
     elapsed += 0.02f;
+    //auto t1 = std::chrono::high_resolution_clock::now();
     drawFrame();
+    //std::cout << std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - t1).count() << '\n';
 }
 
 
