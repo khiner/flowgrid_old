@@ -15,10 +15,6 @@ namespace ableton {
 
         Push2Display(): communicator(dataSource) {
             pixel_t *pData = dataSource;
-            for (uint8_t line = 0; line < DATA_SOURCE_HEIGHT; line++) {
-                memset(pData, 0, DATA_SOURCE_WIDTH * sizeof(pixel_t));
-                pData += DATA_SOURCE_WIDTH;
-            }
         }
 
         // Transfers the bitmap into the output buffer sent to
