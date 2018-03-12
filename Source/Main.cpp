@@ -40,7 +40,7 @@ public:
     */
     class MainWindow : public DocumentWindow {
     public:
-        explicit MainWindow(String name) : DocumentWindow(name,
+        explicit MainWindow(const String &name) : DocumentWindow(name,
                                                  Colours::lightgrey,
                                                  DocumentWindow::allButtons) {
             setUsingNativeTitleBar(true);
