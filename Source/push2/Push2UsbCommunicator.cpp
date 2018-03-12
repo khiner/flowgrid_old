@@ -12,7 +12,6 @@
 #endif
 
 #include "../libusb/libusb.h"
-#include "Push2Display.h"
 
 namespace {
     using namespace ableton;
@@ -41,9 +40,8 @@ namespace {
         libusb_device *device;
         libusb_device_handle *device_handle = nullptr;
 
-        char errorMsg[256];
-
         // set message in case we get to the end of the list w/o finding a device
+        char errorMsg[256];
         sprintf(errorMsg, "display device not found\n");
 
         for (int i = 0; (device = devices[i]) != nullptr; i++) {
@@ -171,7 +169,7 @@ void UsbCommunicator::sendNextSlice(libusb_transfer *transfer) {
     // to the transfer buffer
     unsigned char *dst = transfer->buffer;
 
-    const char *src = (const char *) dataSource + LINE_SIZE * currentLine;
+    const char *src = (const char *) dataSource + LINE_SIZE_BYTES * currentLine;
     unsigned char *end = dst + SEND_BUFFER_SIZE;
 
     while (dst < end) {
@@ -186,7 +184,7 @@ void UsbCommunicator::sendNextSlice(libusb_transfer *transfer) {
     // Update slice position
     currentLine += LINE_COUNT_PER_SEND_BUFFER;
 
-    if (currentLine >= Push2Display::HEIGHT) {
+    if (currentLine >= NUM_LINES) {
         currentLine = 0;
     }
 }

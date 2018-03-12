@@ -18,13 +18,16 @@ namespace ableton {
      */
     class UsbCommunicator {
     public:
+        static const int LINE_WIDTH = 1024;
+        static const int NUM_LINES = Push2Display::HEIGHT;
+
         // The display frame size is 960*160*2=300k, but we use 64 extra filler
         // pixels per line so that we get exactly 2048 bytes per line. The purpose
         // is that the device receives exactly 4 buffers of 512 bytes each per line,
         // so that the line boundary (which is where we save to SDRAM) does not fall
         // into the middle of a received buffer. Therefore we actually send
         // 1024*160*2=320k bytes per frame.
-        static const int LINE_SIZE = 2048; // total line size
+        static const int LINE_SIZE_BYTES = LINE_WIDTH * 2;
         static const int LINE_COUNT_PER_SEND_BUFFER = 8;
 
         // The data sent to the display is sliced into chunks of LINE_COUNT_PER_SEND_BUFFER
@@ -33,7 +36,7 @@ namespace ableton {
         // The sent buffer size (SEND_BUFFER_SIZE) must a multiple of these 2k per line,
         // and is selected for optimal performance.
         static const int SEND_BUFFER_COUNT = 3;
-        static const int SEND_BUFFER_SIZE = LINE_COUNT_PER_SEND_BUFFER * LINE_SIZE; // buffer length in bytes
+        static const int SEND_BUFFER_SIZE = LINE_COUNT_PER_SEND_BUFFER * LINE_SIZE_BYTES; // buffer length in bytes
 
 
         /*!

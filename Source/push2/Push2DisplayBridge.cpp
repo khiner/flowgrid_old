@@ -20,6 +20,7 @@ void Push2DisplayBridge::flip() {
             const auto pixel = pixelFromRGB(c.getRed(), c.getGreen(), c.getBlue());
             *data++ = pixel ^ xOrMasks[x % 2];
         }
-        data += Push2Display::DATA_SOURCE_WIDTH - Push2Display::WIDTH;
+        // account for difference in USB line-width stride and display width stride
+        data += UsbCommunicator::LINE_WIDTH - Push2Display::WIDTH;
     }
 }
