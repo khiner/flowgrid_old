@@ -17,9 +17,6 @@ public:
      */
     Demo();
 
-    NBase::Result getInitializationResult() {
-        return initializationResult;
-    }
     using midicb_t = std::function<void(const MidiMessage &)>;
 
     /*!
@@ -39,7 +36,7 @@ private:
      *
      *  \return the result of the initialisation process
      */
-    NBase::Result openMidiDevice();
+    void openMidiDevice();
 
     /*!
      *  the juce midi incoming message callback
@@ -58,5 +55,4 @@ private:
     std::unique_ptr<MidiInput> midiInput;  /*!< Push2's midi input */
     midicb_t midiCallback;                 /*!> The midi callback to call when incoming messages are recieved */
     float elapsed;                         /*!> Fake elapsed time used for the animation */
-    NBase::Result initializationResult;
 };

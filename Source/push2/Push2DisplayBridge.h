@@ -16,7 +16,7 @@ namespace ableton {
          *
          *  \return the result of the initialisation process
          */
-        NBase::Result init(ableton::Push2Display &push2Display);
+        void init(ableton::Push2Display &push2Display);
 
         /*!
          * Access a reference to the juce::Graphics of the bridge

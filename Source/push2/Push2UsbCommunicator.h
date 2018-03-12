@@ -1,7 +1,5 @@
 #pragma once
 
-#include "Result.h"
-
 #include <thread>
 #include <cassert>
 
@@ -52,7 +50,7 @@ namespace ableton {
          *  \param dataSource: The buffer holding the data to be sent to the display.
          *  \return the result of the initialisation
          */
-        NBase::Result init(const u_int16_t *dataSource);
+        void init(const u_int16_t *dataSource);
 
         /*!
          *  Callback for when a transfer is finished and the next one needs to be
@@ -70,12 +68,12 @@ namespace ableton {
         /*!
          *  Initiate the send process
          */
-        NBase::Result startSending();
+        void startSending();
 
         /*!
          *  Send the next slice of data using the provided transfer struct
          */
-        NBase::Result sendNextSlice(libusb_transfer *transfer);
+        void sendNextSlice(libusb_transfer *transfer);
 
         /*!
          *  Callback for when a full frame has been sent

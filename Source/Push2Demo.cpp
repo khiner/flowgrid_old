@@ -1,5 +1,5 @@
 #include "Push2Demo.h"
-using namespace std::chrono;
+using namespace std;
 
 namespace {
     bool SMatchSubStringNoCase(const std::string &haystack, const std::string &needle) {
@@ -16,37 +16,22 @@ namespace {
 
 Demo::Demo() {
     // First we initialise the low level push2 object
-    NBase::Result result = push2Display.init();
-    if (result.failed()) {
-        initializationResult =  NBase::Result(result, "Failed to init push2");
-        return;
-    }
+    push2Display.init();
 
     // Then we initialise the juce to push bridge
-    result = bridge.init(push2Display);
-    if (result.failed()) {
-        initializationResult =  NBase::Result(result, "Failed to init bridge");
-        return;
-    }
+    bridge.init(push2Display);
 
     // Initialises the midi input
-    result = openMidiDevice();
-    if (result.failed()) {
-        initializationResult =  NBase::Result(result, "Failed to open midi device");
-        return;
-    }
+    openMidiDevice();
 
     // Reset elapsed time
     elapsed = 0;
 
     // Start the timer to draw the animation
     startTimerHz(60);
-    initializationResult = NBase::Result::NoError;
 }
 
-//------------------------------------------------------------------------------
-
-NBase::Result Demo::openMidiDevice() {
+void Demo::openMidiDevice() {
     // Look for an input device matching push 2
     auto devices = MidiInput::getDevices();
     int deviceIndex = -1;
@@ -60,13 +45,13 @@ NBase::Result Demo::openMidiDevice() {
     }
 
     if (deviceIndex == -1) {
-        return NBase::Result("Failed to find input midi device for push2");
+        throw runtime_error("Failed to find input midi device for push2");
     }
 
     // Try opening the device
     auto input = MidiInput::openDevice(deviceIndex, this);
     if (!input) {
-        return NBase::Result("Failed to open input device");
+        throw runtime_error("Failed to open input device");
     }
 
     /*
@@ -83,8 +68,6 @@ NBase::Result Demo::openMidiDevice() {
     // Store and starts listening to the device
     midiInput.reset(input);
     midiInput->start();
-
-    return NBase::Result::NoError;
 }
 
 

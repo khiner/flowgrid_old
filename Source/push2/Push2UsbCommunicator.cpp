@@ -17,19 +17,14 @@
 
 namespace {
     using namespace ableton;
-
-    //----------------------------------------------------------------------------
-
+    using namespace std;
     // Uses libusb to create a device handle for the push display
-
-    NBase::Result SFindPushDisplayDeviceHandle(libusb_device_handle **pHandle) {
-        using namespace NBase;
-
+    void SFindPushDisplayDeviceHandle(libusb_device_handle **pHandle) {
         int errorCode = libusb_init(nullptr);
 
         // Initialises the library
         if (errorCode < 0) {
-            return NBase::Result("Failed to initialize usblib");
+            throw runtime_error("Failed to initialize usblib");
         }
 
         libusb_set_debug(nullptr, LIBUSB_LOG_LEVEL_ERROR);
@@ -39,22 +34,22 @@ namespace {
         ssize_t count;
         count = libusb_get_device_list(nullptr, &devices);
         if (count < 0) {
-            return Result("could not get usb device list");
+            throw runtime_error("could not get usb device list");
         }
 
         // Look for the one matching push2's decriptors
         libusb_device *device;
         libusb_device_handle *device_handle = nullptr;
 
-        char ErrorMsg[256];
+        char errorMsg[256];
 
         // set message in case we get to the end of the list w/o finding a device
-        sprintf(ErrorMsg, "display device not found\n");
+        sprintf(errorMsg, "display device not found\n");
 
         for (int i = 0; (device = devices[i]) != nullptr; i++) {
             struct libusb_device_descriptor descriptor{};
             if ((errorCode = libusb_get_device_descriptor(device, &descriptor)) < 0) {
-                sprintf(ErrorMsg, "could not get usb device descriptor, error: %d", errorCode);
+                sprintf(errorMsg, "could not get usb device descriptor, error: %d", errorCode);
                 continue;
             }
 
@@ -65,9 +60,9 @@ namespace {
                 && descriptor.idVendor == kAbletonVendorID
                 && descriptor.idProduct == kPush2ProductID) {
                 if ((errorCode = libusb_open(device, &device_handle)) < 0) {
-                    sprintf(ErrorMsg, "could not open device, error: %d", errorCode);
+                    sprintf(errorMsg, "could not open device, error: %d", errorCode);
                 } else if ((errorCode = libusb_claim_interface(device_handle, 0)) < 0) {
-                    sprintf(ErrorMsg, "could not claim device with interface 0, error: %d", errorCode);
+                    sprintf(errorMsg, "could not claim device with interface 0, error: %d", errorCode);
                     libusb_close(device_handle);
                     device_handle = nullptr;
                 } else {
@@ -79,7 +74,9 @@ namespace {
         *pHandle = device_handle;
         libusb_free_device_list(devices, 1);
 
-        return device_handle ? Result::NoError : Result(ErrorMsg);
+        if (!device_handle) {
+            throw runtime_error(errorMsg);
+        }
     }
 
     //----------------------------------------------------------------------------
@@ -127,26 +124,19 @@ UsbCommunicator::UsbCommunicator()
 
 //------------------------------------------------------------------------------
 
-NBase::Result UsbCommunicator::init(const uint16_t *dataSource) {
-    using namespace NBase;
-
+void UsbCommunicator::init(const uint16_t *dataSource) {
     // Capture the data source
     this->dataSource = dataSource;
 
     // Initialise the handle
-    NBase::Result result = SFindPushDisplayDeviceHandle(&handle);
-    RETURN_IF_FAILED_MESSAGE(result, "Failed to initialize handle");
-    assert(handle != nullptr);
+    SFindPushDisplayDeviceHandle(&handle);
 
     // Initialise the transfer
-    result = startSending();
-    RETURN_IF_FAILED_MESSAGE(result, "Failed to initiate send");
+    startSending();
 
     // We initiate a thread so we can recieve events from libusb
     terminate = false;
     pollThread = std::thread(&UsbCommunicator::PollUsbForEvents, this);
-
-    return NBase::Result::NoError;
 }
 
 
@@ -163,13 +153,10 @@ UsbCommunicator::~UsbCommunicator() {
 
 //------------------------------------------------------------------------------
 
-NBase::Result UsbCommunicator::startSending() {
-    using namespace NBase;
-
+void UsbCommunicator::startSending() {
     currentLine = 0;
 
-    // Allocates a transfer struct for the frame header
-
+    // transfer struct for the frame header
     static unsigned char frameHeader[16] =
             {
                     0xFF, 0xCC, 0xAA, 0x88,
@@ -185,34 +172,24 @@ NBase::Result UsbCommunicator::startSending() {
         unsigned char *buffer = (sendBuffers + i * SEND_BUFFER_SIZE);
 
         // Allocates a transfer struct for the send buffers
-
         libusb_transfer *transfer =
                 SAllocateAndPrepareTransferChunk(handle, this, buffer, SEND_BUFFER_SIZE);
 
         // Start a request for this buffer
-        Result result = sendNextSlice(transfer);
-        RETURN_IF_FAILED(result);
+        sendNextSlice(transfer);
     }
-
-    return Result::NoError;
 }
 
-
-//------------------------------------------------------------------------------
-
-NBase::Result UsbCommunicator::sendNextSlice(libusb_transfer *transfer) {
-    using namespace NBase;
-
+void UsbCommunicator::sendNextSlice(libusb_transfer *transfer) {
     // Start of a new frame, so send header first
     if (currentLine == 0) {
         if (libusb_submit_transfer(frameHeaderTransfer) < 0) {
-            return Result("could not submit frame header transfer");
+            throw runtime_error("could not submit frame header transfer");
         }
     }
 
     // Copy the next slice of the source data (represented by currentLine)
     // to the transfer buffer
-
     unsigned char *dst = transfer->buffer;
 
     const char *src = (const char *) dataSource + LINE_SIZE * currentLine;
@@ -224,7 +201,7 @@ NBase::Result UsbCommunicator::sendNextSlice(libusb_transfer *transfer) {
 
     // Send it
     if (libusb_submit_transfer(transfer) < 0) {
-        return Result("could not submit display data transfer,");
+        throw runtime_error("could not submit display data transfer");
     }
 
     // Update slice position
@@ -233,8 +210,6 @@ NBase::Result UsbCommunicator::sendNextSlice(libusb_transfer *transfer) {
     if (currentLine >= 160) {
         currentLine = 0;
     }
-
-    return Result::NoError;
 }
 
 
@@ -267,13 +242,13 @@ void UsbCommunicator::onTransferFinished(libusb_transfer *transfer) {
                 break;
         }
     } else if (transfer->length != transfer->actual_length) {
-        assert(false);
-        printf("only transferred %d of %d bytes\n", transfer->actual_length, transfer->length);
+        char errorMsg[256];
+        sprintf(errorMsg, "only transferred %d of %d bytes\n", transfer->actual_length, transfer->length);
+        throw runtime_error(errorMsg);
     } else if (transfer == frameHeaderTransfer) {
         onFrameCompleted();
     } else {
-        NBase::Result result = sendNextSlice(transfer);
-        assert(result.succeeded());
+        sendNextSlice(transfer);
     }
 }
 

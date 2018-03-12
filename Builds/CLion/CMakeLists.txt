@@ -28,9 +28,7 @@ add_executable (APP
     "../../Source/Macros.h"
     "../../Source/MainComponent.cpp"
     "../../Source/Main.cpp"
-    "../../Source/Result.h"
-    "../../Source/Result.cpp"
-    "../../modules/JUCE/modules/juce_audio_basics/buffers/juce_AudioChannelSet.cpp"
+        "../../modules/JUCE/modules/juce_audio_basics/buffers/juce_AudioChannelSet.cpp"
     "../../modules/JUCE/modules/juce_audio_basics/buffers/juce_AudioChannelSet.h"
     "../../modules/JUCE/modules/juce_audio_basics/buffers/juce_AudioDataConverters.cpp"
     "../../modules/JUCE/modules/juce_audio_basics/buffers/juce_AudioDataConverters.h"
@@ -1167,7 +1165,6 @@ set_source_files_properties ("../../Source/push2/Push2DisplayBridge.h" PROPERTIE
 set_source_files_properties ("../../Source/push2/Push2Display.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/Push2Demo.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/Macros.h" PROPERTIES HEADER_FILE_ONLY TRUE)
-set_source_files_properties ("../../Source/Result.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../modules/JUCE/modules/juce_audio_basics/buffers/juce_AudioChannelSet.cpp" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../modules/JUCE/modules/juce_audio_basics/buffers/juce_AudioChannelSet.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../modules/JUCE/modules/juce_audio_basics/buffers/juce_AudioDataConverters.cpp" PROPERTIES HEADER_FILE_ONLY TRUE)

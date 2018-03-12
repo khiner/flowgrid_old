@@ -7,6 +7,7 @@
 
 #include <iomanip>
 #include <deque>
+#include <sstream>
 
 //==============================================================================
 /*
@@ -26,17 +27,11 @@ public:
         status.setJustificationType(Justification::bottomLeft);
         addAndMakeVisible(status);
 
-        // Starts the demo class animating the display
-        NBase::Result result = demo.getInitializationResult();
-        if (result.succeeded()) {
-            status.setText("Push 2 connected", juce::dontSendNotification);
-            demo.SetMidiInputCallback(
-                    [this](const MidiMessage &message) {
-                        this->processMidiInput(message);
-                    });
-        } else {
-            status.setText(result.getDescription(), juce::dontSendNotification);
-        }
+        status.setText("Push 2 connected", juce::dontSendNotification);
+        demo.SetMidiInputCallback(
+                [this](const MidiMessage &message) {
+                    this->processMidiInput(message);
+                });
     }
 
     ~MainContentComponent() override {

@@ -11,9 +11,8 @@ Push2DisplayBridge::Push2DisplayBridge()
           image(Image::RGB, Push2Display::WIDTH, Push2Display::HEIGHT, !K(clearImage)),
           graphics(image) {};
 
-NBase::Result Push2DisplayBridge::init(ableton::Push2Display &push2Display) {
+void Push2DisplayBridge::init(ableton::Push2Display &push2Display) {
     this->push2Display = &push2Display;
-    return NBase::Result::NoError;
 }
 
 juce::Graphics &Push2DisplayBridge::getGraphics() {
@@ -39,6 +38,5 @@ void Push2DisplayBridge::flip() {
     }
 
     // Send the constructed push2 bitmap to the display
-    NBase::Result result = push2Display->flip();
-    assert(result.succeeded());
+    push2Display->flip();
 }

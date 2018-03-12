@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Result.h"
 #include "Push2UsbCommunicator.h"
 #include <memory>
 #include <atomic>
@@ -22,14 +21,14 @@ namespace ableton {
             }
         }
 
-        NBase::Result init() {
+        void init() {
             return communicator.init(dataSource);
         }
 
         // Transfers the bitmap into the output buffer sent to
         // the push display. The push display buffer has a larger stride
         // than the given pixel data.
-        NBase::Result flip() {
+        void flip() {
             const pixel_t *src = pixelData;
             pixel_t *dst = dataSource;
 
@@ -38,8 +37,6 @@ namespace ableton {
                 src += WIDTH;
                 dst += DATA_SOURCE_WIDTH;
             }
-
-            return NBase::Result::NoError;
         }
 
         pixel_t *getPixelData() {
