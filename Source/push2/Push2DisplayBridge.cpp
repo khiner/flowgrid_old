@@ -30,6 +30,5 @@ void Push2DisplayBridge::flip() {
         }
     }
 
-    // Send the constructed push2 bitmap to the display
     push2Display->flip();
 }

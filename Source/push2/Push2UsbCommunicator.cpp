@@ -12,6 +12,7 @@
 #endif
 
 #include "../libusb/libusb.h"
+#include "Push2Display.h"
 
 namespace {
     using namespace ableton;
@@ -185,7 +186,7 @@ void UsbCommunicator::sendNextSlice(libusb_transfer *transfer) {
     // Update slice position
     currentLine += LINE_COUNT_PER_SEND_BUFFER;
 
-    if (currentLine >= 160) {
+    if (currentLine >= Push2Display::HEIGHT) {
         currentLine = 0;
     }
 }

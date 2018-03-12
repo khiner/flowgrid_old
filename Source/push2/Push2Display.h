@@ -17,7 +17,7 @@ namespace ableton {
             pixel_t *pData = dataSource;
         }
 
-        // Transfers the bitmap into the output buffer sent to
+        // Transfers the pixel data into the output buffer sent to
         // the push display. The push display buffer has a larger stride
         // than the given pixel data.
         void flip() {
