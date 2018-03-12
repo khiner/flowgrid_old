@@ -12,7 +12,7 @@ namespace ableton {
     class Push2DisplayBridge {
     public:
         Push2DisplayBridge(): image(Image::RGB, Push2Display::WIDTH, Push2Display::HEIGHT, !K(clearImage)),
-        graphics(image), communicator() {}
+        graphics(image), communicator(), bitmapData(image, juce::Image::BitmapData::readOnly) {}
 
         /*!
          * Access a reference to the juce::Graphics of the bridge
@@ -45,5 +45,6 @@ namespace ableton {
         Push2UsbCommunicator communicator;
         juce::Image image;        /*< The image used to render the pixel data */
         juce::Graphics graphics;  /*< The graphics associated to the image */
+        juce::Image::BitmapData bitmapData;
     };
 }
