@@ -13,9 +13,7 @@ namespace ableton {
         static const int WIDTH = 960;
         static const int HEIGHT = 160;
 
-        Push2Display(): communicator(dataSource) {
-            pixel_t *pData = dataSource;
-        }
+        Push2Display(): communicator(dataSource) {}
 
         // Transfers the pixel data into the output buffer sent to
         // the push display. The push display buffer has a larger stride
