@@ -82,10 +82,6 @@ public:
         // but be careful - it will be called on the audio thread, not the GUI thread.
 
         // For more details, see the help for AudioProcessor::prepareToPlay()
-
-        MUnused(samplesPerBlockExpected);
-        MUnused(sampleRate);
-
     }
 
     void getNextAudioBlock(const AudioSourceChannelInfo &bufferToFill) override {

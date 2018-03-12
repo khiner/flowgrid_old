@@ -2,7 +2,6 @@
 
 #include "Push2Display.h"
 #include "Push2UsbCommunicator.h"
-#include "Macros.h"
 #include "../JuceLibraryCode/JuceHeader.h"
 
 namespace ableton {
@@ -11,7 +10,7 @@ namespace ableton {
      */
     class Push2DisplayBridge {
     public:
-        Push2DisplayBridge(): image(Image::RGB, Push2Display::WIDTH, Push2Display::HEIGHT, !K(clearImage)),
+        Push2DisplayBridge(): image(Image::RGB, Push2Display::WIDTH, Push2Display::HEIGHT, false),
         graphics(image) {}
 
         juce::Graphics &getGraphics() {
