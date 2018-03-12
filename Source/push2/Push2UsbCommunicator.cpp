@@ -106,8 +106,7 @@ namespace {
     }
 }
 
-Push2UsbCommunicator::Push2UsbCommunicator()
-        : handle(nullptr) {
+Push2UsbCommunicator::Push2UsbCommunicator() {
     // Initialise the handle
     findPushDisplayDeviceHandle(&handle);
 

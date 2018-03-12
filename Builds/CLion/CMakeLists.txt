@@ -20,7 +20,6 @@ add_executable (APP
     "../../Source/push2/Push2UsbCommunicator.cpp"
     "../../Source/push2/Push2UsbCommunicator.h"
     "../../Source/push2/Push2DisplayBridge.h"
-    "../../Source/push2/Push2DisplayBridge.cpp"
         "../../Source/push2/Push2Display.h"
     "../../Source/libusb/libusb_platform_wrapper.c"
     "../../Source/Push2Demo.cpp"

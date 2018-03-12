@@ -127,6 +127,5 @@ void Demo::drawFrame() {
     auto logo = ImageCache::getFromMemory(BinaryData::PushStartup_png, BinaryData::PushStartup_pngSize);
     g.drawImageAt(logo, (width - logo.getWidth()) / 2, (height - logo.getHeight()) / 2);
 
-    // Tells the bridge we're done with drawing and the frame can be sent to the display
-    bridge.flip();
+    bridge.writeFrameToDisplay();
 }

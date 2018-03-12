@@ -12,19 +12,21 @@ namespace ableton {
     class Push2DisplayBridge {
     public:
         Push2DisplayBridge(): image(Image::RGB, Push2Display::WIDTH, Push2Display::HEIGHT, !K(clearImage)),
-        graphics(image), communicator(), bitmapData(image, juce::Image::BitmapData::readOnly) {}
+        graphics(image), bitmapData(image, juce::Image::BitmapData::readOnly) {}
 
-        /*!
-         * Access a reference to the juce::Graphics of the bridge
-         * the returned object can be used with juce's drawing primitives
-         */
-        juce::Graphics &getGraphics();
+        juce::Graphics &getGraphics() {
+            return graphics;
+        }
 
-        /*!
-         * Tells the bridge the drawing is done and the pixel data can be sent to
-         * the push display
-         */
-        void flip();
+        inline void writeFrameToDisplay() {
+            static const Push2Display::pixel_t xOrMasks[2] = {0xf3e7, 0xffe7};
+            for (int y = 0; y < Push2Display::HEIGHT; y++) {
+                for (int x = 0; x < Push2Display::WIDTH; x++) {
+                    usbCommunicator.setPixelValue(x, y, pixelFromColour(bitmapData.getPixelColour(x, y)) ^ xOrMasks[x % 2]);
+                }
+            }
+            usbCommunicator.onFrameFillCompleted();
+        }
 
         /*!
          * \return pixel_t value in push display format from (r, g, b)
@@ -42,9 +44,9 @@ namespace ableton {
         }
 
     private:
-        Push2UsbCommunicator communicator;
-        juce::Image image;        /*< The image used to render the pixel data */
-        juce::Graphics graphics;  /*< The graphics associated to the image */
+        juce::Image image;
+        juce::Graphics graphics;
         juce::Image::BitmapData bitmapData;
+        Push2UsbCommunicator usbCommunicator;
     };
 }
