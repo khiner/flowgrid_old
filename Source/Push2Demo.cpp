@@ -14,7 +14,7 @@ namespace {
     }
 }
 
-Demo::Demo(): push2Display(), bridge(push2Display) {
+Demo::Demo():  bridge() {
     // Initialises the midi input
     openMidiDevice();
 

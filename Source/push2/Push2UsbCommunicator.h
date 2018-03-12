@@ -4,6 +4,7 @@
 #include <cassert>
 
 #include <atomic>
+#include "Push2Display.h"
 
 // Forward declarations. This avoid having to include libusb.h from here
 // which leads to declaration conflicts with juce
@@ -41,7 +42,7 @@ namespace ableton {
          *
          *  \param dataSource: The buffer holding the data to be sent to the display.
          */
-        explicit UsbCommunicator(const u_int16_t *dataSource);
+        explicit UsbCommunicator(const Push2Display::pixel_t *dataSource);
 
         ~UsbCommunicator();
 
@@ -75,7 +76,7 @@ namespace ableton {
          */
         void onFrameCompleted();
 
-        const uint16_t *dataSource;
+        const Push2Display::pixel_t *dataSource;
         libusb_device_handle *handle;
         libusb_transfer *frameHeaderTransfer;
         std::thread pollThread;

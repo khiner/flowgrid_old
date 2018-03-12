@@ -2,12 +2,6 @@
 
 using namespace ableton;
 
-Push2DisplayBridge::Push2DisplayBridge(Push2Display &push2Display)
-        : image(Image::RGB, Push2Display::WIDTH, Push2Display::HEIGHT, !K(clearImage)),
-          graphics(image) {
-    this->push2Display = &push2Display;
-};
-
 juce::Graphics &Push2DisplayBridge::getGraphics() {
     return graphics;
 }
@@ -15,7 +9,7 @@ juce::Graphics &Push2DisplayBridge::getGraphics() {
 void Push2DisplayBridge::flip() {
     // Create a bitmap data to access the pixel rgb values
     juce::Image::BitmapData bitmapData(image, juce::Image::BitmapData::readOnly);
-    Push2Display::pixel_t *data = push2Display->getPixelData();
+    Push2Display::pixel_t *data = dataSource;
 
     // Convert the pixels, applying the xor masking needed for the display to work
     static const uint16_t xOrMasks[2] = {0xf3e7, 0xffe7};

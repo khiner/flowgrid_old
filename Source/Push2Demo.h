@@ -51,7 +51,6 @@ private:
     void timerCallback() override;
 private:
     ableton::Push2DisplayBridge bridge;    /*!< The bridge allowing to use juce::graphics for push */
-    ableton::Push2Display push2Display;                  /*!< The low-level push2 class */
     std::unique_ptr<MidiInput> midiInput;  /*!< Push2's midi input */
     midicb_t midiCallback;                 /*!> The midi callback to call when incoming messages are recieved */
     float elapsed;                         /*!> Fake elapsed time used for the animation */

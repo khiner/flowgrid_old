@@ -1,6 +1,8 @@
 #pragma once
 
 #include "Push2Display.h"
+#include "Push2UsbCommunicator.h"
+#include "Macros.h"
 #include "../JuceLibraryCode/JuceHeader.h"
 
 namespace ableton {
@@ -9,7 +11,8 @@ namespace ableton {
      */
     class Push2DisplayBridge {
     public:
-        explicit Push2DisplayBridge(ableton::Push2Display &push2Display);
+        Push2DisplayBridge(): image(Image::RGB, Push2Display::WIDTH, Push2Display::HEIGHT, !K(clearImage)),
+        graphics(image), communicator(dataSource) {}
 
         /*!
          * Access a reference to the juce::Graphics of the bridge
@@ -39,7 +42,8 @@ namespace ableton {
         }
 
     private:
-        ableton::Push2Display *push2Display;    /*< The push display the bridge works on */
+        Push2Display::pixel_t dataSource[Push2Display::DATA_SOURCE_WIDTH * Push2Display::DATA_SOURCE_HEIGHT]{};
+        UsbCommunicator communicator;
         juce::Image image;        /*< The image used to render the pixel data */
         juce::Graphics graphics;  /*< The graphics associated to the image */
     };
