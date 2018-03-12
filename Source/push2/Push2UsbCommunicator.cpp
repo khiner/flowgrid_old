@@ -80,14 +80,14 @@ namespace {
     // Callback received whenever a transfer has been completed.
     // We defer the processing to the communicator class
     void LIBUSB_CALL onTransferFinished(libusb_transfer *transfer) {
-        static_cast<ableton::UsbCommunicator *>(transfer->user_data)->onTransferFinished(transfer);
+        static_cast<ableton::Push2UsbCommunicator *>(transfer->user_data)->onTransferFinished(transfer);
     }
 
     // Allocate a libusb_transfer mapped to a transfer buffer. It also sets
     // up the callback needed to communicate the transfer is done
     libusb_transfer *allocateAndPrepareTransferChunk(
             libusb_device_handle *handle,
-            UsbCommunicator *instance,
+            Push2UsbCommunicator *instance,
             unsigned char *buffer,
             int bufferSize) {
         // Allocate a transfer structure
@@ -106,7 +106,7 @@ namespace {
     }
 }
 
-UsbCommunicator::UsbCommunicator(const Push2Display::pixel_t *dataSource)
+Push2UsbCommunicator::Push2UsbCommunicator(const Push2Display::pixel_t *dataSource)
         : handle(nullptr) {
     // Capture the data source
     this->dataSource = dataSource;
@@ -116,10 +116,10 @@ UsbCommunicator::UsbCommunicator(const Push2Display::pixel_t *dataSource)
 
     // Initiate a thread so we can receive events from libusb
     terminate = false;
-    pollThread = std::thread(&UsbCommunicator::pollUsbForEvents, this);
+    pollThread = std::thread(&Push2UsbCommunicator::pollUsbForEvents, this);
 }
 
-UsbCommunicator::~UsbCommunicator() {
+Push2UsbCommunicator::~Push2UsbCommunicator() {
     // shutdown the polling thread
     terminate = true;
     if (pollThread.joinable()) {
@@ -127,7 +127,7 @@ UsbCommunicator::~UsbCommunicator() {
     }
 }
 
-void UsbCommunicator::startSending() {
+void Push2UsbCommunicator::startSending() {
     currentLine = 0;
 
     // transfer struct for the frame header
@@ -154,7 +154,7 @@ void UsbCommunicator::startSending() {
     }
 }
 
-void UsbCommunicator::sendNextSlice(libusb_transfer *transfer) {
+void Push2UsbCommunicator::sendNextSlice(libusb_transfer *transfer) {
     // Start of a new frame, so send header first
     if (currentLine == 0) {
         if (libusb_submit_transfer(frameHeaderTransfer) < 0) {
@@ -186,7 +186,7 @@ void UsbCommunicator::sendNextSlice(libusb_transfer *transfer) {
     }
 }
 
-void LIBUSB_CALL UsbCommunicator::onTransferFinished(libusb_transfer *transfer) {
+void LIBUSB_CALL Push2UsbCommunicator::onTransferFinished(libusb_transfer *transfer) {
     if (transfer->status != LIBUSB_TRANSFER_COMPLETED) {
         assert(false);
         switch (transfer->status) {
@@ -223,11 +223,11 @@ void LIBUSB_CALL UsbCommunicator::onTransferFinished(libusb_transfer *transfer) 
     }
 }
 
-void UsbCommunicator::onFrameCompleted() {
+void Push2UsbCommunicator::onFrameCompleted() {
     // Insert code here if you want anything to happen after each frame
 }
 
-void UsbCommunicator::pollUsbForEvents() {
+void Push2UsbCommunicator::pollUsbForEvents() {
     static struct timeval timeout_500ms = {0, 500000};
     int terminate_main_loop = 0;
 

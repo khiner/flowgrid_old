@@ -14,7 +14,7 @@ void Push2DisplayBridge::flip() {
     for (int y = 0; y < Push2Display::HEIGHT; y++) {
         for (int x = 0; x < Push2Display::WIDTH; x++) {
             // account for difference in USB line-width stride and display width stride
-            dataSource[y * UsbCommunicator::LINE_WIDTH + x] = pixelFromColour(bitmapData.getPixelColour(x, y)) ^ xOrMasks[x % 2];
+            dataSource[y * Push2UsbCommunicator::LINE_WIDTH + x] = pixelFromColour(bitmapData.getPixelColour(x, y)) ^ xOrMasks[x % 2];
         }
     }
     if (firstFrame) {

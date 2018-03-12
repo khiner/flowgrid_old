@@ -42,8 +42,8 @@ namespace ableton {
         }
 
     private:
-        Push2Display::pixel_t dataSource[UsbCommunicator::LINE_WIDTH * UsbCommunicator::NUM_LINES]{};
-        UsbCommunicator communicator;
+        Push2Display::pixel_t dataSource[Push2UsbCommunicator::LINE_WIDTH * Push2UsbCommunicator::NUM_LINES]{};
+        Push2UsbCommunicator communicator;
         juce::Image image;        /*< The image used to render the pixel data */
         juce::Graphics graphics;  /*< The graphics associated to the image */
         bool firstFrame = true;

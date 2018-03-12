@@ -16,7 +16,7 @@ namespace ableton {
      *  This class manages the communication with the Push 2 display over usb.
      *
      */
-    class UsbCommunicator {
+    class Push2UsbCommunicator {
     public:
         static const int LINE_WIDTH = 1024;
         static const int NUM_LINES = Push2Display::HEIGHT;
@@ -45,9 +45,9 @@ namespace ableton {
          *
          *  \param dataSource: The buffer holding the data to be sent to the display.
          */
-        explicit UsbCommunicator(const Push2Display::pixel_t *dataSource);
+        explicit Push2UsbCommunicator(const Push2Display::pixel_t *dataSource);
 
-        ~UsbCommunicator();
+        ~Push2UsbCommunicator();
 
         /*!
          *  Callback for when a transfer is finished and the next one needs to be
