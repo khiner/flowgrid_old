@@ -18,6 +18,36 @@ namespace ableton {
      */
     class Push2UsbCommunicator {
     public:
+        Push2UsbCommunicator();
+        ~Push2UsbCommunicator();
+
+        /*!
+         *  Callback for when a transfer is finished and the next one needs to be
+         *  initiated
+         */
+        void onTransferFinished(libusb_transfer *transfer);
+
+        /*!
+         *  Continuously poll events from libusb, possibly treating any error reported
+         */
+        void pollUsbForEvents();
+
+        inline void setPixelValue(int x, int y, Push2Display::pixel_t value) {
+            pixels[y * LINE_WIDTH + x] = value;
+        }
+
+        inline void onFrameFillCompleted() {
+            if (frameHeaderTransfer == nullptr) {
+                startSending();
+            }
+        }
+
+        /*!
+         *  Initiate the send process
+         */
+        void startSending();
+
+    private:
         static const int LINE_WIDTH = 1024;
         static const int NUM_LINES = Push2Display::HEIGHT;
 
@@ -38,34 +68,6 @@ namespace ableton {
         static const int SEND_BUFFER_COUNT = 3;
         static const int SEND_BUFFER_SIZE = LINE_COUNT_PER_SEND_BUFFER * LINE_SIZE_BYTES; // buffer length in bytes
 
-
-        /*!
-         *  Initializes the communicator. This will look for the usb descriptor matching
-         *  the display, allocate transfer buffers and start sending data.
-         *
-         *  \param dataSource: The buffer holding the data to be sent to the display.
-         */
-        explicit Push2UsbCommunicator(const Push2Display::pixel_t *dataSource);
-
-        ~Push2UsbCommunicator();
-
-        /*!
-         *  Callback for when a transfer is finished and the next one needs to be
-         *  initiated
-         */
-        void onTransferFinished(libusb_transfer *transfer);
-
-        /*!
-         *  Continuously poll events from libusb, possibly treating any error reported
-         */
-        void pollUsbForEvents();
-
-        /*!
-         *  Initiate the send process
-         */
-        void startSending();
-
-    private:
         /*!
          *  Send the next slice of data using the provided transfer struct
          */
@@ -76,9 +78,9 @@ namespace ableton {
          *  Note that there's no real need of doing double buffering since the
          *  display deals nicely with it already
          */
-        void onFrameCompleted();
+        void onFrameSendCompleted();
 
-        const Push2Display::pixel_t *dataSource;
+        Push2Display::pixel_t pixels[Push2UsbCommunicator::LINE_WIDTH * Push2UsbCommunicator::NUM_LINES]{};
         libusb_device_handle *handle;
         libusb_transfer *frameHeaderTransfer;
         std::thread pollThread;

@@ -13,12 +13,8 @@ void Push2DisplayBridge::flip() {
     static const Push2Display::pixel_t xOrMasks[2] = {0xf3e7, 0xffe7};
     for (int y = 0; y < Push2Display::HEIGHT; y++) {
         for (int x = 0; x < Push2Display::WIDTH; x++) {
-            // account for difference in USB line-width stride and display width stride
-            dataSource[y * Push2UsbCommunicator::LINE_WIDTH + x] = pixelFromColour(bitmapData.getPixelColour(x, y)) ^ xOrMasks[x % 2];
+            communicator.setPixelValue(x, y, pixelFromColour(bitmapData.getPixelColour(x, y)) ^ xOrMasks[x % 2]);
         }
     }
-    if (firstFrame) {
-        communicator.startSending();
-        firstFrame = false;
-    }
+    communicator.onFrameFillCompleted();
 }

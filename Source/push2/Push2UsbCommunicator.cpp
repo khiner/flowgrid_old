@@ -106,11 +106,8 @@ namespace {
     }
 }
 
-Push2UsbCommunicator::Push2UsbCommunicator(const Push2Display::pixel_t *dataSource)
+Push2UsbCommunicator::Push2UsbCommunicator()
         : handle(nullptr) {
-    // Capture the data source
-    this->dataSource = dataSource;
-
     // Initialise the handle
     findPushDisplayDeviceHandle(&handle);
 
@@ -166,7 +163,7 @@ void Push2UsbCommunicator::sendNextSlice(libusb_transfer *transfer) {
     // to the transfer buffer
     unsigned char *dst = transfer->buffer;
 
-    const unsigned char *src = (const unsigned char *) dataSource + LINE_SIZE_BYTES * currentLine;
+    const unsigned char *src = (const unsigned char *) pixels + LINE_SIZE_BYTES * currentLine;
     unsigned char *end = dst + SEND_BUFFER_SIZE;
 
     while (dst < end) {
@@ -217,13 +214,13 @@ void LIBUSB_CALL Push2UsbCommunicator::onTransferFinished(libusb_transfer *trans
         sprintf(errorMsg, "only transferred %d of %d bytes\n", transfer->actual_length, transfer->length);
         throw runtime_error(errorMsg);
     } else if (transfer == frameHeaderTransfer) {
-        onFrameCompleted();
+        onFrameSendCompleted();
     } else {
         sendNextSlice(transfer);
     }
 }
 
-void Push2UsbCommunicator::onFrameCompleted() {
+void Push2UsbCommunicator::onFrameSendCompleted() {
     // Insert code here if you want anything to happen after each frame
 }
 
