@@ -9,14 +9,7 @@ namespace ableton {
      */
     class Push2DisplayBridge {
     public:
-        Push2DisplayBridge();
-
-        /*!
-         * Initialises the bridge
-         *
-         *  \return the result of the initialisation process
-         */
-        void init(ableton::Push2Display &push2Display);
+        explicit Push2DisplayBridge(ableton::Push2Display &push2Display);
 
         /*!
          * Access a reference to the juce::Graphics of the bridge

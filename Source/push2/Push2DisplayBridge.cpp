@@ -1,19 +1,12 @@
 #include "Push2DisplayBridge.h"
-#include "Push2Display.h"
-#include <cstdint>
-
-#include "Macros.h"
 
 using namespace ableton;
 
-Push2DisplayBridge::Push2DisplayBridge()
-        : push2Display(nullptr),
-          image(Image::RGB, Push2Display::WIDTH, Push2Display::HEIGHT, !K(clearImage)),
-          graphics(image) {};
-
-void Push2DisplayBridge::init(ableton::Push2Display &push2Display) {
+Push2DisplayBridge::Push2DisplayBridge(Push2Display &push2Display)
+        : image(Image::RGB, Push2Display::WIDTH, Push2Display::HEIGHT, !K(clearImage)),
+          graphics(image) {
     this->push2Display = &push2Display;
-}
+};
 
 juce::Graphics &Push2DisplayBridge::getGraphics() {
     return graphics;

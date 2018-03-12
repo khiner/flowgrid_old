@@ -14,12 +14,9 @@ namespace {
     }
 }
 
-Demo::Demo() {
+Demo::Demo(): push2Display(), bridge(push2Display) {
     // First we initialise the low level push2 object
     push2Display.init();
-
-    // Then we initialise the juce to push bridge
-    bridge.init(push2Display);
 
     // Initialises the midi input
     openMidiDevice();
