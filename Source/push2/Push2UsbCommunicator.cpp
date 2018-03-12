@@ -17,11 +17,9 @@ namespace {
     using namespace ableton;
     using namespace std;
 
-    // Uses libusb to create a device handle for the push display
-    void findPushDisplayDeviceHandle(libusb_device_handle **pHandle) {
-        int errorCode = libusb_init(nullptr);
-
-        // Initialises the library
+    // Uses libusb to create a device handle for the Push 2 display
+    libusb_device_handle* findPushDisplayDeviceHandle() {
+        auto errorCode = libusb_init(nullptr);
         if (errorCode < 0) {
             throw runtime_error("Failed to initialize usblib");
         }
@@ -30,13 +28,12 @@ namespace {
 
         // Get a list of connected devices
         libusb_device **devices;
-        ssize_t count;
-        count = libusb_get_device_list(nullptr, &devices);
+        auto count = libusb_get_device_list(nullptr, &devices);
         if (count < 0) {
             throw runtime_error("could not get usb device list");
         }
 
-        // Look for the one matching push2's decriptors
+        // Look for the one matching Push 2's descriptors
         libusb_device *device;
         libusb_device_handle *device_handle = nullptr;
 
@@ -51,8 +48,8 @@ namespace {
                 continue;
             }
 
-            const uint16_t kAbletonVendorID = 0x2982;
-            const uint16_t kPush2ProductID = 0x1967;
+            const static auto kAbletonVendorID = 0x2982;
+            const static auto kPush2ProductID = 0x1967;
 
             if (descriptor.bDeviceClass == LIBUSB_CLASS_PER_INTERFACE
                 && descriptor.idVendor == kAbletonVendorID
@@ -69,12 +66,12 @@ namespace {
             }
         }
 
-        *pHandle = device_handle;
         libusb_free_device_list(devices, 1);
 
         if (!device_handle) {
             throw runtime_error(errorMsg);
         }
+        return device_handle;
     }
 
     // Callback received whenever a transfer has been completed.
@@ -91,7 +88,7 @@ namespace {
             unsigned char *buffer,
             int bufferSize) {
         // Allocate a transfer structure
-        libusb_transfer *transfer = libusb_alloc_transfer(0);
+        auto transfer = libusb_alloc_transfer(0);
         if (!transfer) {
             return nullptr;
         }
@@ -108,7 +105,7 @@ namespace {
 
 Push2UsbCommunicator::Push2UsbCommunicator() {
     // Initialise the handle
-    findPushDisplayDeviceHandle(&handle);
+    handle = findPushDisplayDeviceHandle();
 
     // Initiate a thread so we can receive events from libusb
     terminate = false;

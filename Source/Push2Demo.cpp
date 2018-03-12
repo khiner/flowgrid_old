@@ -37,9 +37,9 @@ void Demo::openMidiDevice() {
     }
 
     // Try opening the device
-    auto input = MidiInput::openDevice(deviceIndex, this);
-    if (!input) {
-        throw runtime_error("Failed to open input device");
+    midiInput.reset(MidiInput::openDevice(deviceIndex, this));
+    if (!midiInput) {
+        throw runtime_error("Failed to open MIDI input device");
     }
 
     /*
@@ -48,13 +48,14 @@ void Demo::openMidiDevice() {
 
      In polyphonic key pressure mode, aftertouch for each pressed key is sent individually. The value is defined by the pad velocity curve and in range 1…​127. See Velocity Curve.
      */
-    MidiOutput *midiOutput = MidiOutput::openDevice(deviceIndex);
+    midiOutput.reset(MidiOutput::openDevice(deviceIndex));
+    if (!midiOutput) {
+        throw runtime_error("Failed to open MIDI output device");
+    }
     unsigned char setAftertouchModeSysExCommand[7] = {0x00, 0x21, 0x1D, 0x01, 0x01, 0x1E, 0x01};
     MidiMessage sysExMessage = MidiMessage::createSysExMessage(setAftertouchModeSysExCommand, 7);
 
     midiOutput->sendMessageNow(sysExMessage);
-    // Store and starts listening to the device
-    midiInput.reset(input);
     midiInput->start();
 }
 
