@@ -93,11 +93,10 @@ void Demo::timerCallback() {
 //------------------------------------------------------------------------------
 
 void Demo::drawFrame() {
-    // Request a juce::Graphics from the bridge
-    auto &g = bridge.getGraphics();
+    static const juce::Colour CLEAR_COLOR = juce::Colour(0xff000000);
 
-    // Clear previous frame
-    g.fillAll(juce::Colour(0xff000000));
+    auto &g = bridge.getGraphics();
+    g.fillAll(CLEAR_COLOR);
 
     // Create a path for the animated wave
     const auto height = ableton::Push2Display::HEIGHT;

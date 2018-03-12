@@ -18,7 +18,7 @@ namespace {
     using namespace std;
 
     // Uses libusb to create a device handle for the push display
-    void SFindPushDisplayDeviceHandle(libusb_device_handle **pHandle) {
+    void findPushDisplayDeviceHandle(libusb_device_handle **pHandle) {
         int errorCode = libusb_init(nullptr);
 
         // Initialises the library
@@ -79,13 +79,13 @@ namespace {
 
     // Callback received whenever a transfer has been completed.
     // We defer the processing to the communicator class
-    void LIBUSB_CALL SOnTransferFinished(libusb_transfer *transfer) {
+    void LIBUSB_CALL onTransferFinished(libusb_transfer *transfer) {
         static_cast<ableton::UsbCommunicator *>(transfer->user_data)->onTransferFinished(transfer);
     }
 
     // Allocate a libusb_transfer mapped to a transfer buffer. It also sets
     // up the callback needed to communicate the transfer is done
-    libusb_transfer *SAllocateAndPrepareTransferChunk(
+    libusb_transfer *allocateAndPrepareTransferChunk(
             libusb_device_handle *handle,
             UsbCommunicator *instance,
             unsigned char *buffer,
@@ -101,18 +101,18 @@ namespace {
 
         libusb_fill_bulk_transfer(transfer, handle, kPush2BulkEPOut,
                                   buffer, bufferSize,
-                                  SOnTransferFinished, instance, 1000);
+                                  onTransferFinished, instance, 1000);
         return transfer;
     }
 }
 
-UsbCommunicator::UsbCommunicator(const u_int16_t *dataSource)
+UsbCommunicator::UsbCommunicator(const Push2Display::pixel_t *dataSource)
         : handle(nullptr) {
     // Capture the data source
     this->dataSource = dataSource;
 
     // Initialise the handle
-    SFindPushDisplayDeviceHandle(&handle);
+    findPushDisplayDeviceHandle(&handle);
 
     // Initialise the transfer
     startSending();
@@ -143,14 +143,14 @@ void UsbCommunicator::startSending() {
             };
 
     frameHeaderTransfer =
-            SAllocateAndPrepareTransferChunk(handle, this, frameHeader, sizeof(frameHeader));
+            allocateAndPrepareTransferChunk(handle, this, frameHeader, sizeof(frameHeader));
 
     for (int i = 0; i < SEND_BUFFER_COUNT; i++) {
         unsigned char *buffer = (sendBuffers + i * SEND_BUFFER_SIZE);
 
         // Allocates a transfer struct for the send buffers
         libusb_transfer *transfer =
-                SAllocateAndPrepareTransferChunk(handle, this, buffer, SEND_BUFFER_SIZE);
+                allocateAndPrepareTransferChunk(handle, this, buffer, SEND_BUFFER_SIZE);
 
         // Start a request for this buffer
         sendNextSlice(transfer);
@@ -169,11 +169,11 @@ void UsbCommunicator::sendNextSlice(libusb_transfer *transfer) {
     // to the transfer buffer
     unsigned char *dst = transfer->buffer;
 
-    const char *src = (const char *) dataSource + LINE_SIZE_BYTES * currentLine;
+    const unsigned char *src = (const unsigned char *) dataSource + LINE_SIZE_BYTES * currentLine;
     unsigned char *end = dst + SEND_BUFFER_SIZE;
 
     while (dst < end) {
-        *dst++ = static_cast<unsigned char>(*src++);
+        *dst++ = *src++;
     }
 
     // Send it
@@ -189,7 +189,7 @@ void UsbCommunicator::sendNextSlice(libusb_transfer *transfer) {
     }
 }
 
-void UsbCommunicator::onTransferFinished(libusb_transfer *transfer) {
+void LIBUSB_CALL UsbCommunicator::onTransferFinished(libusb_transfer *transfer) {
     if (transfer->status != LIBUSB_TRANSFER_COMPLETED) {
         assert(false);
         switch (transfer->status) {
@@ -230,7 +230,7 @@ void UsbCommunicator::onFrameCompleted() {
     // Insert code here if you want anything to happen after each frame
 }
 
-void UsbCommunicator::PollUsbForEvents() {
+void UsbCommunicator::pollUsbForEvents() {
     static struct timeval timeout_500ms = {0, 500000};
     int terminate_main_loop = 0;
 

@@ -58,7 +58,7 @@ namespace ableton {
         /*!
          *  Continuously poll events from libusb, possibly treating any error reported
          */
-        void PollUsbForEvents();
+        void pollUsbForEvents();
 
     private:
 

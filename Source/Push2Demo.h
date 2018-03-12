@@ -7,8 +7,7 @@
  *  and listen to incoming midi input from push
  */
 
-class Demo
-        : public Timer, public MidiInputCallback {
+class Demo : public Timer, public MidiInputCallback {
 public:
     /*!
      *  Initialises and starts the demo

@@ -32,12 +32,12 @@ namespace ableton {
          *      MSB                           LSB
          *      b b b b|b g g g|g g g r|r r r r
          */
-        inline static Push2Display::pixel_t pixelFromRGB(unsigned char r, unsigned char g, unsigned char b) {
-            auto pixel = static_cast<Push2Display::pixel_t>((b & 0xF8) >> 3);
+        inline static Push2Display::pixel_t pixelFromColour(juce::Colour&& colour) {
+            auto pixel = static_cast<Push2Display::pixel_t>((colour.getBlue() & 0xF8) >> 3);
             pixel <<= 6;
-            pixel += (g & 0xFC) >> 2;
+            pixel += (colour.getGreen() & 0xFC) >> 2;
             pixel <<= 5;
-            pixel += (r & 0xF8) >> 3;
+            pixel += (colour.getRed() & 0xF8) >> 3;
             return pixel;
         }
 
