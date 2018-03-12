@@ -9,7 +9,6 @@
 #include <deque>
 #include <sstream>
 
-//==============================================================================
 /*
     This component lives inside our window, and this is where you should put all
     your controls and content.
@@ -75,7 +74,6 @@ public:
         }
     }
 
-    //=======================================================================
     void prepareToPlay(int samplesPerBlockExpected, double sampleRate) override {
         // This function will be called when the audio device is started, or when
         // its settings (i.e. sample rate, block size, etc) are changed.
@@ -107,7 +105,6 @@ public:
         // For more details, see the help for AudioProcessor::releaseResources()
     }
 
-    //=======================================================================
     void paint(Graphics &g) override {
         // (Our component is opaque, so we must completely fill the background with a solid colour)
         g.fillAll(Colours::black);

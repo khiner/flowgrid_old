@@ -13,11 +13,10 @@
 
 #include "../libusb/libusb.h"
 
-//------------------------------------------------------------------------------
-
 namespace {
     using namespace ableton;
     using namespace std;
+
     // Uses libusb to create a device handle for the push display
     void SFindPushDisplayDeviceHandle(libusb_device_handle **pHandle) {
         int errorCode = libusb_init(nullptr);
@@ -79,20 +78,14 @@ namespace {
         }
     }
 
-    //----------------------------------------------------------------------------
-
     // Callback received whenever a transfer has been completed.
     // We defer the processing to the communicator class
-
     void LIBUSB_CALL SOnTransferFinished(libusb_transfer *transfer) {
         static_cast<ableton::UsbCommunicator *>(transfer->user_data)->onTransferFinished(transfer);
     }
 
-    //----------------------------------------------------------------------------
-
     // Allocate a libusb_transfer mapped to a transfer buffer. It also sets
     // up the callback needed to communicate the transfer is done
-
     libusb_transfer *SAllocateAndPrepareTransferChunk(
             libusb_device_handle *handle,
             UsbCommunicator *instance,
@@ -114,17 +107,8 @@ namespace {
     }
 }
 
-
-//------------------------------------------------------------------------------
-
-UsbCommunicator::UsbCommunicator()
+UsbCommunicator::UsbCommunicator(const u_int16_t *dataSource)
         : handle(nullptr) {
-}
-
-
-//------------------------------------------------------------------------------
-
-void UsbCommunicator::init(const uint16_t *dataSource) {
     // Capture the data source
     this->dataSource = dataSource;
 
@@ -139,9 +123,6 @@ void UsbCommunicator::init(const uint16_t *dataSource) {
     pollThread = std::thread(&UsbCommunicator::PollUsbForEvents, this);
 }
 
-
-//------------------------------------------------------------------------------
-
 UsbCommunicator::~UsbCommunicator() {
     // shutdown the polling thread
     terminate = true;
@@ -149,9 +130,6 @@ UsbCommunicator::~UsbCommunicator() {
         pollThread.join();
     }
 }
-
-
-//------------------------------------------------------------------------------
 
 void UsbCommunicator::startSending() {
     currentLine = 0;
@@ -212,9 +190,6 @@ void UsbCommunicator::sendNextSlice(libusb_transfer *transfer) {
     }
 }
 
-
-//------------------------------------------------------------------------------
-
 void UsbCommunicator::onTransferFinished(libusb_transfer *transfer) {
     if (transfer->status != LIBUSB_TRANSFER_COMPLETED) {
         assert(false);
@@ -252,15 +227,9 @@ void UsbCommunicator::onTransferFinished(libusb_transfer *transfer) {
     }
 }
 
-
-//------------------------------------------------------------------------------
-
 void UsbCommunicator::onFrameCompleted() {
     // Insert code here if you want anything to happen after each frame
 }
-
-
-//------------------------------------------------------------------------------
 
 void UsbCommunicator::PollUsbForEvents() {
     static struct timeval timeout_500ms = {0, 500000};

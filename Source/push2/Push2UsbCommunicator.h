@@ -7,7 +7,6 @@
 
 // Forward declarations. This avoid having to include libusb.h from here
 // which leads to declaration conflicts with juce
-
 class libusb_transfer;
 class libusb_device_handle;
 
@@ -18,15 +17,12 @@ namespace ableton {
      */
     class UsbCommunicator {
     public:
-
-
         // The display frame size is 960*160*2=300k, but we use 64 extra filler
         // pixels per line so that we get exactly 2048 bytes per line. The purpose
         // is that the device receives exactly 4 buffers of 512 bytes each per line,
         // so that the line boundary (which is where we save to SDRAM) does not fall
         // into the middle of a received buffer. Therefore we actually send
         // 1024*160*2=320k bytes per frame.
-
         static const int LINE_SIZE = 2048; // total line size
         static const int LINE_COUNT_PER_SEND_BUFFER = 8;
 
@@ -35,22 +31,19 @@ namespace ableton {
         // request without having to wait for the current one to be finished
         // The sent buffer size (SEND_BUFFER_SIZE) must a multiple of these 2k per line,
         // and is selected for optimal performance.
-
         static const int SEND_BUFFER_COUNT = 3;
         static const int SEND_BUFFER_SIZE = LINE_COUNT_PER_SEND_BUFFER * LINE_SIZE; // buffer length in bytes
 
-        UsbCommunicator();
-
-        ~UsbCommunicator();
 
         /*!
-         *  Inialises the communicator. This will look for the usb descriptor matching
+         *  Initializes the communicator. This will look for the usb descriptor matching
          *  the display, allocate transfer buffers and start sending data.
          *
          *  \param dataSource: The buffer holding the data to be sent to the display.
-         *  \return the result of the initialisation
          */
-        void init(const u_int16_t *dataSource);
+        explicit UsbCommunicator(const u_int16_t *dataSource);
+
+        ~UsbCommunicator();
 
         /*!
          *  Callback for when a transfer is finished and the next one needs to be

@@ -13,16 +13,12 @@ namespace ableton {
         static const int WIDTH = 960;
         static const int HEIGHT = 160;
 
-        Push2Display() {
+        Push2Display(): communicator(dataSource) {
             pixel_t *pData = dataSource;
             for (uint8_t line = 0; line < DATA_SOURCE_HEIGHT; line++) {
                 memset(pData, 0, DATA_SOURCE_WIDTH * sizeof(pixel_t));
                 pData += DATA_SOURCE_WIDTH;
             }
-        }
-
-        void init() {
-            return communicator.init(dataSource);
         }
 
         // Transfers the bitmap into the output buffer sent to
