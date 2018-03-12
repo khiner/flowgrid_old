@@ -14,29 +14,35 @@ namespace {
     }
 }
 
-
-NBase::Result Demo::init() {
+Demo::Demo() {
     // First we initialise the low level push2 object
     NBase::Result result = push2Display.init();
-    RETURN_IF_FAILED_MESSAGE(result, "Failed to init push2");
+    if (result.failed()) {
+        initializationResult =  NBase::Result(result, "Failed to init push2");
+        return;
+    }
 
     // Then we initialise the juce to push bridge
     result = bridge.init(push2Display);
-    RETURN_IF_FAILED_MESSAGE(result, "Failed to init bridge");
+    if (result.failed()) {
+        initializationResult =  NBase::Result(result, "Failed to init bridge");
+        return;
+    }
 
     // Initialises the midi input
     result = openMidiDevice();
-    RETURN_IF_FAILED_MESSAGE(result, "Failed to open midi device");
+    if (result.failed()) {
+        initializationResult =  NBase::Result(result, "Failed to open midi device");
+        return;
+    }
 
     // Reset elapsed time
     elapsed = 0;
 
     // Start the timer to draw the animation
     startTimerHz(60);
-
-    return NBase::Result::NoError;
+    initializationResult = NBase::Result::NoError;
 }
-
 
 //------------------------------------------------------------------------------
 

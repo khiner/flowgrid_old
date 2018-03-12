@@ -25,7 +25,7 @@ namespace NBase {
         Result &operator=(const Result &);
 
         static Result NoError;
-    protected:
+
         Result();
 
     private:

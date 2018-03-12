@@ -10,15 +10,16 @@
 class Demo
         : public Timer, public MidiInputCallback {
 public:
-
     /*!
      *  Initialises and starts the demo
      *
-     *  \return the result of the initialisation process
+     *  also instantiates the result of the initialisation process
      */
-    NBase::Result init();
+    Demo();
 
-
+    NBase::Result getInitializationResult() {
+        return initializationResult;
+    }
     using midicb_t = std::function<void(const MidiMessage &)>;
 
     /*!
@@ -51,11 +52,11 @@ private:
      *  @see juce::Timer
      */
     void timerCallback() override;
-
 private:
     ableton::Push2DisplayBridge bridge;    /*!< The bridge allowing to use juce::graphics for push */
     ableton::Push2Display push2Display;                  /*!< The low-level push2 class */
     std::unique_ptr<MidiInput> midiInput;  /*!< Push2's midi input */
     midicb_t midiCallback;                 /*!> The midi callback to call when incoming messages are recieved */
     float elapsed;                         /*!> Fake elapsed time used for the animation */
+    NBase::Result initializationResult;
 };

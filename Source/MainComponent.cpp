@@ -27,7 +27,7 @@ public:
         addAndMakeVisible(status);
 
         // Starts the demo class animating the display
-        NBase::Result result = demo.init();
+        NBase::Result result = demo.getInitializationResult();
         if (result.succeeded()) {
             status.setText("Push 2 connected", juce::dontSendNotification);
             demo.SetMidiInputCallback(
