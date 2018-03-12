@@ -15,8 +15,6 @@ juce::Graphics &Push2DisplayBridge::getGraphics() {
 void Push2DisplayBridge::flip() {
     // Create a bitmap data to access the pixel rgb values
     juce::Image::BitmapData bitmapData(image, juce::Image::BitmapData::readOnly);
-
-    // Get access to the pixel data
     Push2Display::pixel_t *data = push2Display->getPixelData();
 
     // Convert the pixels, applying the xor masking needed for the display to work
@@ -28,7 +26,6 @@ void Push2DisplayBridge::flip() {
             const auto pixel = pixelFromRGB(c.getRed(), c.getGreen(), c.getBlue());
             *data++ = pixel ^ xOrMasks[x % 2];
         }
+        data += Push2Display::DATA_SOURCE_WIDTH - Push2Display::WIDTH;
     }
-
-    push2Display->flip();
 }
