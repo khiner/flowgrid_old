@@ -17,4 +17,8 @@ void Push2DisplayBridge::flip() {
             dataSource[y * UsbCommunicator::LINE_WIDTH + x] = pixelFromColour(bitmapData.getPixelColour(x, y)) ^ xOrMasks[x % 2];
         }
     }
+    if (firstFrame) {
+        communicator.startSending();
+        firstFrame = false;
+    }
 }

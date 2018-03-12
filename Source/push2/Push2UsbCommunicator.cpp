@@ -114,12 +114,9 @@ UsbCommunicator::UsbCommunicator(const Push2Display::pixel_t *dataSource)
     // Initialise the handle
     findPushDisplayDeviceHandle(&handle);
 
-    // Initialise the transfer
-    startSending();
-
-    // We initiate a thread so we can recieve events from libusb
+    // Initiate a thread so we can receive events from libusb
     terminate = false;
-    pollThread = std::thread(&UsbCommunicator::PollUsbForEvents, this);
+    pollThread = std::thread(&UsbCommunicator::pollUsbForEvents, this);
 }
 
 UsbCommunicator::~UsbCommunicator() {

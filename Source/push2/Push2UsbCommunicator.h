@@ -60,13 +60,12 @@ namespace ableton {
          */
         void pollUsbForEvents();
 
-    private:
-
         /*!
          *  Initiate the send process
          */
         void startSending();
 
+    private:
         /*!
          *  Send the next slice of data using the provided transfer struct
          */

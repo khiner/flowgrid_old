@@ -46,5 +46,6 @@ namespace ableton {
         UsbCommunicator communicator;
         juce::Image image;        /*< The image used to render the pixel data */
         juce::Graphics graphics;  /*< The graphics associated to the image */
+        bool firstFrame = true;
     };
 }
