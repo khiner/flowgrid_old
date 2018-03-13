@@ -5,13 +5,16 @@
 #include "../JuceLibraryCode/JuceHeader.h"
 
 namespace ableton {
+    static const int PUSH_2_VENDOR_ID = 0x2982;
+    static const int PUSH_2_PRODUCT_ID = 0x1967;
+
     /*!
      *  Implements a bridge between juce::Graphics and push2 display format.
      */
     class Push2DisplayBridge {
     public:
         Push2DisplayBridge(): image(Image::RGB, Push2Display::WIDTH, Push2Display::HEIGHT, false),
-        graphics(image) {}
+        graphics(image), usbCommunicator(PUSH_2_VENDOR_ID, PUSH_2_PRODUCT_ID) {}
 
         juce::Graphics &getGraphics() {
             return graphics;

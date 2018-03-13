@@ -17,11 +17,12 @@ project ("sound-machine" C CXX)
 
 add_executable (APP
     "../../Resources/PushStartup.png"
+        "../../Source/usb/UsbCommunicator.h"
     "../../Source/push2/Push2UsbCommunicator.cpp"
     "../../Source/push2/Push2UsbCommunicator.h"
     "../../Source/push2/Push2DisplayBridge.h"
         "../../Source/push2/Push2Display.h"
-    "../../Source/libusb/libusb_platform_wrapper.c"
+        "../../Source/usb/libusb/libusb_platform_wrapper.c"
     "../../Source/Push2Demo.cpp"
     "../../Source/Push2Demo.h"
         "../../Source/MainComponent.cpp"
@@ -1155,7 +1156,7 @@ add_executable (APP
     "../../JuceLibraryCode/include_juce_gui_basics.mm"
     "../../JuceLibraryCode/include_juce_gui_extra.mm"
     "../../JuceLibraryCode/JuceHeader.h"
-)
+        ../../Source/usb/UsbCommunicator.cpp)
 
 set_source_files_properties ("../../Resources/PushStartup.png" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/push2/Push2UsbCommunicator.h" PROPERTIES HEADER_FILE_ONLY TRUE)
@@ -2292,7 +2293,7 @@ target_include_directories (APP PRIVATE
     "../../JuceLibraryCode"
     "../../modules/JUCE/modules"
     "../../Source"
-    "../../Source/libusb"
+    "../../Source/usb/libusb"
     "../../modules/libusb/libusb"
 )
 
@@ -2369,7 +2370,7 @@ target_include_directories (APP PRIVATE
     "../../JuceLibraryCode"
     "../../modules/JUCE/modules"
     "../../Source"
-    "../../Source/libusb"
+    "../../Source/usb/libusb"
     "../../modules/libusb/libusb"
 )
 

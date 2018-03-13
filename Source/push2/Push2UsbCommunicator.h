@@ -4,6 +4,7 @@
 #include <cassert>
 
 #include <atomic>
+#include <usb/UsbCommunicator.h>
 #include "Push2Display.h"
 
 // Forward declarations. This avoid having to include libusb.h from here
@@ -16,21 +17,10 @@ namespace ableton {
      *  This class manages the communication with the Push 2 display over usb.
      *
      */
-    class Push2UsbCommunicator {
+    class Push2UsbCommunicator : UsbCommunicator {
     public:
-        Push2UsbCommunicator();
-        ~Push2UsbCommunicator();
-
-        /*!
-         *  Callback for when a transfer is finished and the next one needs to be
-         *  initiated
-         */
-        void onTransferFinished(libusb_transfer *transfer);
-
-        /*!
-         *  Continuously poll events from libusb, possibly treating any error reported
-         */
-        void pollUsbForEvents();
+        Push2UsbCommunicator(const uint16_t vendorId, const uint16_t productId):
+                UsbCommunicator(vendorId, productId), currentLine(0) {}
 
         inline void setPixelValue(int x, int y, Push2Display::pixel_t value) {
             pixels[y * LINE_WIDTH + x] = value;
@@ -41,11 +31,23 @@ namespace ableton {
                 startSending();
             }
         }
-
+    protected:
         /*!
          *  Initiate the send process
          */
-        void startSending();
+        void startSending() override;
+
+        /*!
+         *  Send the next slice of data using the provided transfer struct
+         */
+        void sendNextSlice(libusb_transfer *transfer) override;
+
+        /*!
+         *  Callback for when a full frame has been sent
+         *  Note that there's no real need of doing double buffering since the
+         *  display deals nicely with it already
+         */
+        void onFrameSendCompleted() override;
 
     private:
         static const int LINE_WIDTH = 1024;
@@ -68,24 +70,8 @@ namespace ableton {
         static const int SEND_BUFFER_COUNT = 3;
         static const int SEND_BUFFER_SIZE = LINE_COUNT_PER_SEND_BUFFER * LINE_SIZE_BYTES; // buffer length in bytes
 
-        /*!
-         *  Send the next slice of data using the provided transfer struct
-         */
-        void sendNextSlice(libusb_transfer *transfer);
-
-        /*!
-         *  Callback for when a full frame has been sent
-         *  Note that there's no real need of doing double buffering since the
-         *  display deals nicely with it already
-         */
-        void onFrameSendCompleted();
-
         Push2Display::pixel_t pixels[Push2UsbCommunicator::LINE_WIDTH * Push2UsbCommunicator::NUM_LINES]{};
-        libusb_device_handle *handle;
-        libusb_transfer *frameHeaderTransfer;
-        std::thread pollThread;
+        unsigned char sendBuffers[SEND_BUFFER_COUNT * SEND_BUFFER_SIZE]{};
         uint8_t currentLine;
-        std::atomic<bool> terminate;
-        unsigned char sendBuffers[SEND_BUFFER_COUNT * SEND_BUFFER_SIZE];
     };
 }
