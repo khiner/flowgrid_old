@@ -3,7 +3,7 @@
 
 #include "../JuceLibraryCode/JuceHeader.h"
 
-#include "Push2Demo.h"
+#include "Push2Animator.h"
 
 #include <iomanip>
 #include <deque>
@@ -27,7 +27,7 @@ public:
         addAndMakeVisible(status);
 
         status.setText("Push 2 connected", juce::dontSendNotification);
-        demo.setMidiInputCallback(
+        push2MidiCommunicator.setMidiInputCallback(
                 [this](const MidiMessage &message) {
                     this->processMidiInput(message);
                 });
@@ -116,7 +116,8 @@ public:
 
 
 private:
-    Demo demo;
+    Push2Animator push2Animator;
+    Push2MidiCommunicator push2MidiCommunicator;
     Label status;
     std::deque<std::string> midiMessageStack;
 

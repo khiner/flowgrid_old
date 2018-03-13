@@ -23,9 +23,9 @@ add_executable (APP
     "../../Source/push2/Push2DisplayBridge.h"
         "../../Source/push2/Push2Display.h"
         "../../Source/usb/libusb/libusb_platform_wrapper.c"
-    "../../Source/Push2Demo.cpp"
-    "../../Source/Push2Demo.h"
-        "../../Source/MainComponent.cpp"
+    "../../Source/Push2Animator.cpp"
+    "../../Source/Push2Animator.h"
+        "../../Source/MainContentComponent.cpp"
     "../../Source/Main.cpp"
         "../../modules/JUCE/modules/juce_audio_basics/buffers/juce_AudioChannelSet.cpp"
     "../../modules/JUCE/modules/juce_audio_basics/buffers/juce_AudioChannelSet.h"
@@ -1156,13 +1156,13 @@ add_executable (APP
     "../../JuceLibraryCode/include_juce_gui_basics.mm"
     "../../JuceLibraryCode/include_juce_gui_extra.mm"
     "../../JuceLibraryCode/JuceHeader.h"
-        ../../Source/usb/UsbCommunicator.cpp)
+        ../../Source/usb/UsbCommunicator.cpp ../../Source/midi/MidiCommunicator.cpp ../../Source/midi/MidiCommunicator.h ../../Source/push2/Push2MidiCommunicator.h)
 
 set_source_files_properties ("../../Resources/PushStartup.png" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/push2/Push2UsbCommunicator.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/push2/Push2DisplayBridge.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/push2/Push2Display.h" PROPERTIES HEADER_FILE_ONLY TRUE)
-set_source_files_properties ("../../Source/Push2Demo.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/Push2Animator.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/Macros.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../modules/JUCE/modules/juce_audio_basics/buffers/juce_AudioChannelSet.cpp" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../modules/JUCE/modules/juce_audio_basics/buffers/juce_AudioChannelSet.h" PROPERTIES HEADER_FILE_ONLY TRUE)
