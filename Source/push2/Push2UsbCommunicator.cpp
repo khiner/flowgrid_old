@@ -11,20 +11,18 @@
 #pragma warning(disable:4200)
 #endif
 
-using namespace ableton;
 using namespace std;
 
 void Push2UsbCommunicator::startSending() {
     currentLine = 0;
 
     // transfer struct for the frame header
-    static unsigned char frameHeader[16] =
-            {
-                    0xFF, 0xCC, 0xAA, 0x88,
-                    0x00, 0x00, 0x00, 0x00,
-                    0x00, 0x00, 0x00, 0x00,
-                    0x00, 0x00, 0x00, 0x00
-            };
+    static unsigned char frameHeader[16] = {
+            0xFF, 0xCC, 0xAA, 0x88,
+            0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00
+    };
 
     static const unsigned char push2BulkEPOut = 0x01;
     frameHeaderTransfer =

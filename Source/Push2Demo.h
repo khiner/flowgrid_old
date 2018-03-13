@@ -41,7 +41,7 @@ private:
      */
     void timerCallback() override;
 private:
-    ableton::Push2DisplayBridge bridge;    /*!< The bridge allowing to use juce::graphics for push */
+    Push2DisplayBridge bridge;    /*!< The bridge allowing to use juce::graphics for push */
     std::unique_ptr<MidiInput> midiInput;  /*!< Push2's midi input */
     std::unique_ptr<MidiOutput> midiOutput;  /*!< Push2's midi output */
     midicb_t midiCallback;                 /*!> The midi callback to call when incoming messages are recieved */

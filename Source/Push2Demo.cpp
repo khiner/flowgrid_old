@@ -82,8 +82,8 @@ void Demo::drawFrame() {
     auto &g = bridge.getGraphics();
     g.fillAll(CLEAR_COLOR);
 
-    const auto height = ableton::Push2Display::HEIGHT;
-    const auto width = ableton::Push2Display::WIDTH;
+    const auto height = Push2Display::HEIGHT;
+    const auto width = Push2Display::WIDTH;
 
     Path wavePath;
 
