@@ -1,9 +1,8 @@
 #pragma once
 
-#include <thread>
-#include <cassert>
-
 #include <atomic>
+#include <thread>
+
 #include "../libusb/libusb.h"
 
 // Forward declarations. This avoid having to include libusb.h from here

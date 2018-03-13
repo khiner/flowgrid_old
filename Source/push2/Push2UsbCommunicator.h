@@ -1,9 +1,7 @@
 #pragma once
 
 #include <thread>
-#include <cassert>
 
-#include <atomic>
 #include <usb/UsbCommunicator.h>
 #include "Push2Display.h"
 

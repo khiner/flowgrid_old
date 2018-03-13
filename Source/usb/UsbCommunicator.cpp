@@ -1,6 +1,8 @@
 #include "../libusb/libusb.h"
 #include "UsbCommunicator.h"
 
+#include <cassert>
+
 using namespace std;
 
 // Allocate a libusb_transfer mapped to a transfer buffer. It also sets

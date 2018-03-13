@@ -6,7 +6,6 @@
  *  A simple demo class that will draw some animation on the push display
  *  and listen to incoming midi input from push
  */
-
 class Demo : public Timer, public MidiInputCallback {
 public:
     Demo();
@@ -41,9 +40,9 @@ private:
      */
     void timerCallback() override;
 private:
-    Push2DisplayBridge bridge;    /*!< The bridge allowing to use juce::graphics for push */
-    std::unique_ptr<MidiInput> midiInput;  /*!< Push2's midi input */
-    std::unique_ptr<MidiOutput> midiOutput;  /*!< Push2's midi output */
-    midicb_t midiCallback;                 /*!> The midi callback to call when incoming messages are recieved */
-    float elapsed;                         /*!> Fake elapsed time used for the animation */
+    Push2DisplayBridge bridge;              /*! The bridge between juce::graphics object and Push 2 display */
+    std::unique_ptr<MidiInput> midiInput;   /*! Push 2's midi input */
+    std::unique_ptr<MidiOutput> midiOutput; /*! Push 2's midi output */
+    midicb_t midiCallback;                  /*! The midi callback to call when incoming messages are recieved */
+    float elapsed;                          /*! Fake elapsed time used for the animation */
 };
