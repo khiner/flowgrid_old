@@ -1,6 +1,7 @@
 #pragma once
 
 #include <midi/MidiCommunicator.h>
+#include <unordered_map>
 
 namespace SysExCommands {
     static const int MESSAGE_SIZE = 7;
@@ -20,4 +21,32 @@ public:
         auto polyphonicAftertouchSysExMessage = MidiMessage::createSysExMessage(SysExCommands::SET_AFTERTOUCH_MODE_POLYPHONIC, SysExCommands::MESSAGE_SIZE);
         midiOutput->sendMessageNow(polyphonicAftertouchSysExMessage);
     }
+
+    enum ControlLabel {
+        topKnob1, topKnob2, topKnob3, topKnob4, topKnob5, topKnob6, topKnob7, topKnob8, topKnob9, topKnob10, masterKnob,
+
+        tapTempo, metronome, setup, user,
+
+        topDisplayButton1, topDisplayButton2, topDisplayButton3, topDisplayButton4, topDisplayButton5, topDisplayButton6, topDisplayButton7, topDisplayButton8,
+
+        bottomDisplayButton1, bottomDisplayButton2, bottomDisplayButton3, bottomDisplayButton4, bottomDisplayButton5, bottomDisplayButton6, bottomDisplayButton7, bottomDisplayButton8,
+
+        delele_, undo, addDevice, addTrack, device, mix, browse, clip,
+
+        mute, solo, stopClip, master,
+
+        convert, doubleLoop, quantize, duplicate, new_, fixedLength, automate, record, play,
+
+        divide_1_32t, divide_1_32, divide_1_16_t, divide_1_16, divide_1_8_t, divide_1_8, divide_1_4t, divide_1_4,
+
+        left, right, up, down,
+
+        repeat, accent, scale, layout, note, session,
+
+        octaveUp, octaveDown, pageLeft, pageRight,
+
+        shift, select,
+    };
+
+    const static std::unordered_map<ControlLabel, int> ccNumberForControlLabel;
 };

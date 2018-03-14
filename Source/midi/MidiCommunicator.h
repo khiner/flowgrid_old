@@ -30,8 +30,8 @@ public:
         return -1;
     }
 
-    void setMidiInputCallback(const midi_callback_t &callback) {
-        midiCallback = callback;
+    void setMidiInputCallback(const midi_callback_t &midiCallback) {
+        this->midiCallback = midiCallback;
     }
 
     /*!

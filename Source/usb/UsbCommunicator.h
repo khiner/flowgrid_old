@@ -19,7 +19,7 @@ public:
         pollThread = std::thread(&UsbCommunicator::pollUsbForEvents, this);
     }
 
-    ~UsbCommunicator() {
+    virtual ~UsbCommunicator() {
         // shutdown the polling thread
         terminate = true;
         if (pollThread.joinable()) {
