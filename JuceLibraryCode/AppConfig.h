@@ -90,8 +90,20 @@
  //#define JUCE_JACK 0
 #endif
 
+#ifndef    JUCE_USE_ANDROID_OBOE
+ //#define JUCE_USE_ANDROID_OBOE 0
+#endif
+
 #ifndef    JUCE_USE_ANDROID_OPENSLES
  //#define JUCE_USE_ANDROID_OPENSLES 0
+#endif
+
+#ifndef    JUCE_USE_WINRT_MIDI
+ //#define JUCE_USE_WINRT_MIDI 0
+#endif
+
+#ifndef    JUCE_DISABLE_AUDIO_MIXING_WITH_OTHER_APPS
+ //#define JUCE_DISABLE_AUDIO_MIXING_WITH_OTHER_APPS 0
 #endif
 
 //==============================================================================
@@ -179,6 +191,13 @@
 #endif
 
 //==============================================================================
+// juce_events flags:
+
+#ifndef    JUCE_EXECUTE_APP_SUSPEND_ON_IOS_BACKGROUND_TASK
+ //#define JUCE_EXECUTE_APP_SUSPEND_ON_IOS_BACKGROUND_TASK 0
+#endif
+
+//==============================================================================
 // juce_graphics flags:
 
 #ifndef    JUCE_USE_COREIMAGE_LOADER
@@ -194,6 +213,14 @@
 
 #ifndef    JUCE_ENABLE_REPAINT_DEBUGGING
  //#define JUCE_ENABLE_REPAINT_DEBUGGING 0
+#endif
+
+#ifndef    JUCE_USE_XRANDR
+ //#define JUCE_USE_XRANDR 1
+#endif
+
+#ifndef    JUCE_USE_XINERAMA
+ //#define JUCE_USE_XINERAMA 1
 #endif
 
 #ifndef    JUCE_USE_XSHM

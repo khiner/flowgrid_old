@@ -2,7 +2,7 @@
 
 <JUCERPROJECT id="khUpu8" name="sound-machine" projectType="guiapp" version="1.0.0"
               bundleIdentifier="com.odangludo.soundmachine" includeBinaryInAppConfig="1"
-              jucerVersion="5.2.1" companyWebsite="www.karlhiner.com" companyName="odangludo"
+              jucerVersion="5.3.0" companyWebsite="www.karlhiner.com" companyName="odangludo"
               displaySplashScreen="1" reportAppUsage="1" splashScreenColour="Dark"
               cppLanguageStandard="14" companyCopyright="odangludo" companyEmail="karl.hiner@gmail.com">
   <MAINGROUP id="zuLs1h" name="sound-machine">
@@ -10,30 +10,56 @@
       <FILE id="BnMMBa" name="PushStartup.png" compile="0" resource="1" file="Resources/PushStartup.png"/>
     </GROUP>
     <GROUP id="{761B4731-1AF1-A0A5-B2D1-52848B03899C}" name="Source">
+      <GROUP id="{E0419F18-B022-CDD2-A936-286F9ADFD699}" name="Source">
+        <GROUP id="{05B4FD3A-2298-3D76-6904-E535F039356C}" name="midi">
+          <FILE id="yjDw8E" name="MidiCommunicator.cpp" compile="1" resource="0"
+                file="Source/midi/MidiCommunicator.cpp"/>
+          <FILE id="TlGpmI" name="MidiCommunicator.h" compile="0" resource="0"
+                file="Source/midi/MidiCommunicator.h"/>
+        </GROUP>
+        <GROUP id="{2C6CEABF-152B-D76A-EED6-131B1D1708D4}" name="push2">
+          <FILE id="AoVMZ4" name="Push2DisplayBridge.h" compile="0" resource="0"
+                file="Source/push2/Push2DisplayBridge.h"/>
+          <FILE id="CGjY5J" name="Push2MidiCommunicator.cpp" compile="1" resource="0"
+                file="Source/push2/Push2MidiCommunicator.cpp"/>
+          <FILE id="ajkOTP" name="Push2MidiCommunicator.h" compile="0" resource="0"
+                file="Source/push2/Push2MidiCommunicator.h"/>
+        </GROUP>
+        <GROUP id="{7E7CF410-D73F-09D1-2011-6C03C70FBAC2}" name="usb">
+          <GROUP id="{FB7A2C52-9447-862A-2A8A-228CBAA76DEE}" name="libusb">
+            <FILE id="lVXAGf" name="libusb_platform_wrapper.c" compile="1" resource="0"
+                  file="Source/usb/libusb/libusb_platform_wrapper.c"/>
+          </GROUP>
+          <FILE id="gSN0RT" name="UsbCommunicator.cpp" compile="1" resource="0"
+                file="Source/usb/UsbCommunicator.cpp"/>
+          <FILE id="MRHAQr" name="UsbCommunicator.h" compile="0" resource="0"
+                file="Source/usb/UsbCommunicator.h"/>
+        </GROUP>
+        <FILE id="QlTXXz" name="AppState.cpp" compile="1" resource="0" file="Source/AppState.cpp"/>
+        <FILE id="rTrmo3" name="AppState.h" compile="0" resource="0" file="Source/AppState.h"/>
+        <FILE id="jztOFP" name="MainContentComponent.cpp" compile="1" resource="0"
+              file="Source/MainContentComponent.cpp"/>
+        <FILE id="XW7p3M" name="MainParameters.cpp" compile="1" resource="0"
+              file="Source/MainParameters.cpp"/>
+        <FILE id="ylOMAv" name="MainParameters.h" compile="0" resource="0"
+              file="Source/MainParameters.h"/>
+        <FILE id="o66vAp" name="MidiParameterTranslator.cpp" compile="1" resource="0"
+              file="Source/MidiParameterTranslator.cpp"/>
+        <FILE id="e00Egb" name="MidiParameterTranslator.h" compile="0" resource="0"
+              file="Source/MidiParameterTranslator.h"/>
+        <FILE id="TMA6Nf" name="Push2Animator.cpp" compile="1" resource="0"
+              file="Source/Push2Animator.cpp"/>
+        <FILE id="coVeKA" name="Push2Animator.h" compile="0" resource="0" file="Source/Push2Animator.h"/>
+      </GROUP>
       <GROUP id="{5E779719-D34F-BC02-9B56-752D5B49ED12}" name="push2">
         <FILE id="RGU2Wn" name="Push2UsbCommunicator.cpp" compile="1" resource="0"
               file="Source/push2/Push2UsbCommunicator.cpp"/>
         <FILE id="piN044" name="Push2UsbCommunicator.h" compile="0" resource="0"
               file="Source/push2/Push2UsbCommunicator.h"/>
-        <FILE id="ZNAHNe" name="JuceToPush2DisplayBridge.h" compile="0" resource="0"
-              file="Source/push2/JuceToPush2DisplayBridge.h"/>
-        <FILE id="R9cjcb" name="JuceToPush2DisplayBridge.cpp" compile="1" resource="0"
-              file="Source/push2/JuceToPush2DisplayBridge.cpp"/>
-        <FILE id="SlpyFl" name="Push2Bitmap.h" compile="0" resource="0" file="Source/push2/Push2Bitmap.h"/>
         <FILE id="vgiKhz" name="Push2Display.h" compile="0" resource="0" file="Source/push2/Push2Display.h"/>
       </GROUP>
-      <GROUP id="{ED4412F7-7364-433F-FB0E-58CC42D2AA5E}" name="libusb">
-        <FILE id="Ihb72c" name="libusb_platform_wrapper.c" compile="1" resource="0"
-              file="Source/libusb/libusb_platform_wrapper.c"/>
-      </GROUP>
-      <FILE id="QbLuHs" name="Push2Demo.cpp" compile="1" resource="0" file="Source/Push2Demo.cpp"/>
-      <FILE id="PA7cWJ" name="Push2Demo.h" compile="0" resource="0" file="Source/Push2Demo.h"/>
-      <FILE id="hhm3w6" name="Macros.h" compile="0" resource="0" file="Source/Macros.h"/>
-      <FILE id="W3o3n5" name="MainComponent.cpp" compile="1" resource="0"
-            file="Source/MainComponent.cpp"/>
+      <GROUP id="{ED4412F7-7364-433F-FB0E-58CC42D2AA5E}" name="libusb"/>
       <FILE id="xcjVu6" name="Main.cpp" compile="1" resource="0" file="Source/Main.cpp"/>
-      <FILE id="i53amQ" name="Result.h" compile="0" resource="0" file="Source/Result.h"/>
-      <FILE id="I8xLPA" name="Result.cpp" compile="1" resource="0" file="Source/Result.cpp"/>
     </GROUP>
   </MAINGROUP>
   <EXPORTFORMATS>
