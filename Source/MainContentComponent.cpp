@@ -6,6 +6,7 @@
 #include "Push2Animator.h"
 #include "AppState.h"
 #include "MidiParameterTranslator.h"
+#include "AudioSettings.h"
 
 /*
     This component lives inside our window, and this is where you should put all
@@ -13,7 +14,7 @@
 */
 class MainContentComponent : public AudioAppComponent {
 public:
-    MainContentComponent(): midiParameterTranslator(appState) {
+    MainContentComponent(): audioSettings(deviceManager), midiParameterTranslator(appState) {
         setSize(960, 600);
         setAudioChannels(2, 2);
 
@@ -24,7 +25,9 @@ public:
         push2MidiCommunicator.setMidiInputCallback([this](const MidiMessage &message) {
             AudioProcessorParameter *parameter = midiParameterTranslator.translate(message);
         });
-    }
+
+        addAndMakeVisible(audioSettings.getAudioDeviceSelectorComponent().get());
+   }
 
     ~MainContentComponent() override {
         shutdownAudio();
@@ -57,19 +60,30 @@ public:
         // For more details, see the help for AudioProcessor::releaseResources()
     }
 
-    void paint(Graphics &g) override {
-        // (Our component is opaque, so we must completely fill the background with a solid colour)
-        g.fillAll(Colours::black);
+    inline Colour getUIColourIfAvailable (LookAndFeel_V4::ColourScheme::UIColour uiColour, Colour fallback = Colour (0xff4d4d4d)) noexcept
+    {
+        if (auto* v4 = dynamic_cast<LookAndFeel_V4*> (&LookAndFeel::getDefaultLookAndFeel()))
+            return v4->getCurrentColourScheme().getUIColour (uiColour);
 
-        auto logo = ImageCache::getFromMemory(BinaryData::PushStartup_png, BinaryData::PushStartup_pngSize);
-        g.drawImageAt(logo, (getWidth() - logo.getWidth()) / 2, (getHeight() - logo.getHeight()) / 2);
+        return fallback;
+    }
+
+    void paint(Graphics &g) override {
+        g.fillAll(getUIColourIfAvailable(LookAndFeel_V4::ColourScheme::UIColour::windowBackground));
     }
 
     void resized() override {
         const int kStatusSize = 100;
         status.setBounds(0, getHeight() - kStatusSize, getWidth(), kStatusSize);
+
+        auto r =  getLocalBounds().reduced (4);
+        audioSettings.getAudioDeviceSelectorComponent()->setBounds(r.removeFromTop (proportionOfHeight (0.65f)));
+        audioSettings.getDiagnosticsBox().setBounds(r);
     }
 
+    void lookAndFeelChanged() override {
+        audioSettings.getDiagnosticsBox().applyFontToAllText(audioSettings.getDiagnosticsBox().getFont());
+    }
 
 private:
     Push2Animator push2Animator;
@@ -79,6 +93,7 @@ private:
     AppState appState;
     MidiParameterTranslator midiParameterTranslator;
 
+    AudioSettings audioSettings;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainContentComponent)
 };
 
