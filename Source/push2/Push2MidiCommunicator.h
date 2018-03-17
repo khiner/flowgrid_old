@@ -22,7 +22,7 @@ public:
         midiOutput->sendMessageNow(polyphonicAftertouchSysExMessage);
     }
 
-    enum ControlLabel {
+    const enum ControlLabel {
         topKnob1, topKnob2, topKnob3, topKnob4, topKnob5, topKnob6, topKnob7, topKnob8, topKnob9, topKnob10, masterKnob,
 
         tapTempo, metronome, setup, user,
@@ -47,6 +47,28 @@ public:
 
         shift, select,
     };
+
+    // From https://github.com/Ableton/push-interface/blob/master/doc/AbletonPush2MIDIDisplayInterface.asc#Encoders:
+    //
+    // The value 0xxxxxx or 1yyyyyy gives the amount of accumulated movement since the last message. The faster you move, the higher the value.
+    // The value is given as a 7 bit relative value encoded in two’s complement. 0xxxxxx indicates a movement to the right,
+    // with decimal values from 1 to 63 (in practice, values above 20 are unlikely). 1yyyyyy means movement to the left, with decimal values from 127 to 64.
+    // The total step count sent for a 360° turn is approx. 210, except for the detented tempo encoder, where one turn is 18 steps.
+    //
+    // This function returns a value between -1 and 1 normalized so that (roughly) the magnitude of a full rotation would sum to 1.
+    // i.e. Turning 210 'steps' to the left would total to ~-1, and turning 210 steps to the right would total ~1.
+    static float encoderCcMessageToRotationChange(const MidiMessage& message) {
+        if (message.getRawDataSize() != 3)
+            throw std::runtime_error("Expected CC message to have 24 bits");
+
+        const uint8 *rawData = message.getRawData();
+        const uint8 byteValue = *(rawData + 2);
+        if (byteValue <= 63) {
+            return static_cast<float>(byteValue) / 210.0f;
+        } else {
+            return (static_cast<float>(byteValue) - 128.0f) / 210.0f;
+        }
+    }
 
     const static std::unordered_map<ControlLabel, int> ccNumberForControlLabel;
 };

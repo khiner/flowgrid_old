@@ -5,7 +5,6 @@
 
 #include "Push2Animator.h"
 #include "AppState.h"
-#include "MidiParameterTranslator.h"
 #include "AudioSettings.h"
 
 /*
@@ -15,7 +14,7 @@
 class MainContentComponent : public Component {
 public:
     MainContentComponent():
-            audioSettings(deviceManager), midiParameterTranslator(appState), mainProcessor(2, 2) {
+            audioSettings(deviceManager), mainProcessor(2, 2) {
 
         setSize(960, 600);
         deviceManager.initialiseWithDefaultDevices(2, 2);
@@ -27,7 +26,7 @@ public:
         addAndMakeVisible(status);
 
         push2MidiCommunicator.setMidiInputCallback([this](const MidiMessage &message) {
-            AudioProcessorParameter *parameter = midiParameterTranslator.translate(message);
+            mainProcessor.handleControlMidi(message);
         });
 
         addAndMakeVisible(audioSettings.getAudioDeviceSelectorComponent().get());
@@ -63,7 +62,6 @@ private:
     AppState appState;
 
     AudioSettings audioSettings;
-    MidiParameterTranslator midiParameterTranslator;
     MainProcessor mainProcessor;
     AudioProcessorPlayer player;
 

@@ -1,4 +1,8 @@
+#include <push2/Push2MidiCommunicator.h>
 #include "MainProcessor.h"
+
+typedef Push2MidiCommunicator Push2;
+const auto& ccNumberForControlLabel = Push2::ccNumberForControlLabel;
 
 MainProcessor::MainProcessor(int inputChannelCount, int outputChannelCount): source(new ToneGeneratorAudioSource) {
 
@@ -10,6 +14,30 @@ MainProcessor::MainProcessor(int inputChannelCount, int outputChannelCount): sou
     // and blockSize values will get sent to us again when our prepareToPlay()
     // method is called before playback begins.
     this->setPlayConfigDetails(inputChannelCount, outputChannelCount, 0, 0);
+    addParameter(new AudioParameterFloat("masterVolume", "Volume", 0.0f, 1.0f, 0.5f));
+}
+
+int MainProcessor::parameterIndexForMidiCcNumber(const int midiCcNumber) const {
+    static const int MASTER_KNOB = ccNumberForControlLabel.at(Push2::ControlLabel::masterKnob);
+    if (midiCcNumber == MASTER_KNOB) {
+        return MAIN_VOLUME_INDEX;
+    }
+
+    return -1;
+}
+
+// listened to and called on a non-audio thread, called by MainContentComponent
+void MainProcessor::handleControlMidi(const MidiMessage &midiMessage) {
+    if (!midiMessage.isController())
+        return;
+
+    const int ccNumber = midiMessage.getControllerNumber();
+    const int parameterIndex = parameterIndexForMidiCcNumber(ccNumber);
+
+    if (parameterIndex < 0)
+        return;
+    float value = Push2::encoderCcMessageToRotationChange(midiMessage);
+    setParameter(parameterIndex, value);
 }
 
 const String MainProcessor::getName() const {
@@ -115,3 +143,4 @@ void MainProcessor::setStateInformation(const void* data, int sizeInBytes) {
 double MainProcessor::getTailLengthSeconds() const {
     return 0;
 }
+

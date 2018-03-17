@@ -28,11 +28,7 @@ add_executable (APP
     "../../Source/AppState.cpp"
     "../../Source/AppState.h"
     "../../Source/MainContentComponent.cpp"
-    "../../Source/MainParameters.cpp"
-    "../../Source/MainParameters.h"
-    "../../Source/MidiParameterTranslator.cpp"
-    "../../Source/MidiParameterTranslator.h"
-    "../../Source/Push2Animator.cpp"
+        "../../Source/Push2Animator.cpp"
     "../../Source/Push2Animator.h"
     "../../Source/push2/Push2UsbCommunicator.cpp"
     "../../Source/push2/Push2UsbCommunicator.h"
@@ -1223,8 +1219,6 @@ set_source_files_properties ("../../Source/push2/Push2DisplayBridge.h" PROPERTIE
 set_source_files_properties ("../../Source/push2/Push2MidiCommunicator.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/usb/UsbCommunicator.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/AppState.h" PROPERTIES HEADER_FILE_ONLY TRUE)
-set_source_files_properties ("../../Source/MainParameters.h" PROPERTIES HEADER_FILE_ONLY TRUE)
-set_source_files_properties ("../../Source/MidiParameterTranslator.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/Push2Animator.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/push2/Push2UsbCommunicator.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/push2/Push2Display.h" PROPERTIES HEADER_FILE_ONLY TRUE)

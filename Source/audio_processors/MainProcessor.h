@@ -1,66 +1,73 @@
 #pragma once
 
-
 #include "../../JuceLibraryCode/JuceHeader.h"
 
 class MainProcessor : public AudioProcessor {
 public:
-   explicit MainProcessor(int inputChannelCount = 1, int outputChannelCount=0);
+    explicit MainProcessor(int inputChannelCount = 1, int outputChannelCount = 0);
 
-   const String getName() const override;
+    void handleControlMidi(const MidiMessage &midiMessage);
 
-   void prepareToPlay(double sampleRate, int estimatedSamplesPerBlock) override;
+    int parameterIndexForMidiCcNumber(const int midiCcNumber) const;
 
-   void releaseResources() override;
+    /*** JUCE override methods ***/
 
-   void processBlock(AudioSampleBuffer& buffer, MidiBuffer& midiMessages) override;
+    const String getName() const override;
 
-   const String getInputChannelName(int channelIndex) const override;
+    void prepareToPlay(double sampleRate, int estimatedSamplesPerBlock) override;
 
-   const String getOutputChannelName(int channelIndex) const override;
+    void releaseResources() override;
 
-   bool isInputChannelStereoPair(int index) const override;
+    void processBlock(AudioSampleBuffer &buffer, MidiBuffer &midiMessages) override;
 
-   bool isOutputChannelStereoPair(int index) const override;
+    const String getInputChannelName(int channelIndex) const override;
 
-   bool silenceInProducesSilenceOut() const override;
+    const String getOutputChannelName(int channelIndex) const override;
 
-   bool acceptsMidi() const override;
+    bool isInputChannelStereoPair(int index) const override;
 
-   bool producesMidi() const override;
+    bool isOutputChannelStereoPair(int index) const override;
 
-   AudioProcessorEditor* createEditor() override;
+    bool silenceInProducesSilenceOut() const override;
 
-   bool hasEditor() const override;
+    bool acceptsMidi() const override;
 
-   int getNumParameters() override;
+    bool producesMidi() const override;
 
-   const String getParameterName(int parameterIndex) override;
+    AudioProcessorEditor *createEditor() override;
 
-   float getParameter(int parameterIndex) override;
+    bool hasEditor() const override;
 
-   const String getParameterText(int parameterIndex) override;
+    int getNumParameters() override;
 
-   void setParameter(int parameterIndex, float newValue) override;
+    const String getParameterName(int parameterIndex) override;
 
-   int getNumPrograms() override;
+    float getParameter(int parameterIndex) override;
 
-   int getCurrentProgram() override;
+    const String getParameterText(int parameterIndex) override;
 
-   void setCurrentProgram(int index) override;
+    void setParameter(int parameterIndex, float newValue) override;
 
-   const String getProgramName(int index) override;
+    int getNumPrograms() override;
 
-   void changeProgramName(int index, const String& newName) override;
+    int getCurrentProgram() override;
 
-   void getStateInformation(juce::MemoryBlock& destData) override;
+    void setCurrentProgram(int index) override;
 
-   void setStateInformation(const void* data, int sizeInBytes) override;
+    const String getProgramName(int index) override;
+
+    void changeProgramName(int index, const String &newName) override;
+
+    void getStateInformation(juce::MemoryBlock &destData) override;
+
+    void setStateInformation(const void *data, int sizeInBytes) override;
 
     double getTailLengthSeconds() const override;
 
 private:
-   //JUCE_DECLARE_NON_COPYABLE(MainProcessor);
+    //JUCE_DECLARE_NON_COPYABLE(MainProcessor);
 
     std::unique_ptr<AudioSource> source;
+
+    const int MAIN_VOLUME_INDEX = 0;
 };
