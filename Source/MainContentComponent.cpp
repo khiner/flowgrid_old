@@ -2,7 +2,6 @@
 #define MAINCOMPONENT_H_INCLUDED
 
 #include <audio_processors/MainProcessor.h>
-#include "../JuceLibraryCode/JuceHeader.h"
 
 #include "Push2Animator.h"
 #include "AppState.h"
@@ -15,9 +14,10 @@
 */
 class MainContentComponent : public Component {
 public:
-    MainContentComponent(): audioSettings(deviceManager), midiParameterTranslator(appState), mainProcessor(2, 2) {
-        setSize(960, 600);
+    MainContentComponent():
+            audioSettings(deviceManager), midiParameterTranslator(appState), mainProcessor(2, 2) {
 
+        setSize(960, 600);
         deviceManager.initialiseWithDefaultDevices(2, 2);
         player.setProcessor(&mainProcessor);
         deviceManager.addAudioCallback(&player);
@@ -37,16 +37,8 @@ public:
         deviceManager.removeAudioCallback(&player);
     }
 
-    inline Colour getUIColourIfAvailable (LookAndFeel_V4::ColourScheme::UIColour uiColour, Colour fallback = Colour (0xff4d4d4d)) noexcept
-    {
-        if (auto* v4 = dynamic_cast<LookAndFeel_V4*> (&LookAndFeel::getDefaultLookAndFeel()))
-            return v4->getCurrentColourScheme().getUIColour (uiColour);
-
-        return fallback;
-    }
-
     void paint(Graphics &g) override {
-        g.fillAll(getUIColourIfAvailable(LookAndFeel_V4::ColourScheme::UIColour::windowBackground));
+        g.fillAll(backgroundColor);
     }
 
     void resized() override {
@@ -63,6 +55,7 @@ public:
     }
 
 private:
+    const Colour backgroundColor = dynamic_cast<LookAndFeel_V4&>(LookAndFeel::getDefaultLookAndFeel()).getCurrentColourScheme().getUIColour((LookAndFeel_V4::ColourScheme::UIColour::windowBackground));
     AudioDeviceManager deviceManager;
     Push2Animator push2Animator;
     Push2MidiCommunicator push2MidiCommunicator;
