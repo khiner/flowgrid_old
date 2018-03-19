@@ -2,15 +2,19 @@
 
 #include "../../JuceLibraryCode/JuceHeader.h"
 
-class MainProcessor : public AudioProcessor {
+class MainProcessor : public AudioProcessor, AudioProcessorValueTreeState::Listener {
 public:
     explicit MainProcessor(int inputChannelCount = 1, int outputChannelCount = 0);
 
     void handleControlMidi(const MidiMessage &midiMessage);
 
-    int parameterIndexForMidiCcNumber(const int midiCcNumber) const;
+    const String& parameterIndexForMidiCcNumber(int midiCcNumber) const;
+
+    /** This callback method is called by the AudioProcessorValueTreeState when a parameter changes. */
+    void parameterChanged (const String& parameterID, float newValue);
 
     /*** JUCE override methods ***/
+
 
     const String getName() const override;
 
@@ -42,11 +46,7 @@ public:
 
     const String getParameterName(int parameterIndex) override;
 
-    float getParameter(int parameterIndex) override;
-
     const String getParameterText(int parameterIndex) override;
-
-    void setParameter(int parameterIndex, float newValue) override;
 
     int getNumPrograms() override;
 
@@ -67,7 +67,15 @@ public:
 private:
     //JUCE_DECLARE_NON_COPYABLE(MainProcessor);
 
-    std::unique_ptr<AudioSource> source;
+    AudioProcessorValueTreeState treeState;
 
-    const int MAIN_VOLUME_INDEX = 0;
+    std::unique_ptr<ToneGeneratorAudioSource> toneSource1;
+    std::unique_ptr<ToneGeneratorAudioSource> toneSource2;
+    std::unique_ptr<ToneGeneratorAudioSource> toneSource3;
+    std::unique_ptr<ToneGeneratorAudioSource> toneSource4;
+
+    const String amp1Id = "amp1";
+    const String freq1Id = "freq1";
+    const String amp2Id = "amp2";
+    const String freq2Id = "freq2";
 };
