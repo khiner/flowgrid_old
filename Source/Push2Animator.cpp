@@ -5,6 +5,9 @@ using namespace std;
 
 Push2Animator::Push2Animator(): fakeElapsedTime(0) {
     startTimerHz(60); // animation timer
+    dial.setSliderStyle(Slider::SliderStyle::RotaryHorizontalVerticalDrag);
+    dial.setBounds(0, 0, Push2Display::WIDTH / 8, Push2Display::WIDTH / 8);
+    dial.setTextBoxStyle(Slider::TextEntryBoxPosition::TextBoxAbove, false, Push2Display::HEIGHT, Push2Display::HEIGHT / 5);;
 }
 
 void Push2Animator::timerCallback() {
@@ -45,6 +48,8 @@ void Push2Animator::drawFrame() {
 
     auto logo = ImageCache::getFromMemory(BinaryData::PushStartup_png, BinaryData::PushStartup_pngSize);
     g.drawImageAt(logo, (width - logo.getWidth()) / 2, (height - logo.getHeight()) / 2);
+
+    dial.paintEntireComponent(g, true);
 
     displayBridge.writeFrameToDisplay();
 }

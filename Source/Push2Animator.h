@@ -23,4 +23,6 @@ private:
 
 private:
     float fakeElapsedTime;
+
+    Slider dial;
 };
