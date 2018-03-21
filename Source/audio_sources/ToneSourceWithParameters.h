@@ -29,6 +29,9 @@ public:
         } else if (parameterID == freqParamId) {
             source->setFrequency(newValue);
         }
+        if (slider != nullptr) {
+            slider->setValue(newValue);
+        }
     };
 
     StringRef getAmpParamId() const {
@@ -43,12 +46,18 @@ public:
         return source.get();
     }
 
+    void setSlider(Slider* slider) {
+        this->slider = slider;
+    }
+
 private:
     std::unique_ptr<ToneGeneratorAudioSource> source;
     AudioProcessorValueTreeState& treeState;
 
     String ampParamId;
     String freqParamId;
+
+    Slider* slider;
 };
 
 

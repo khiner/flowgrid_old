@@ -3,9 +3,9 @@
 #include <push2/Push2MidiCommunicator.h>
 #include "push2/Push2DisplayBridge.h"
 
-class Push2Animator : public Timer {
+class Push2Animator : public Timer, public Component {
 public:
-    Push2Animator();
+    explicit Push2Animator();
 
 private:
     /*!
@@ -24,5 +24,5 @@ private:
 private:
     float fakeElapsedTime;
 
-    Slider dial;
+    std::vector<std::unique_ptr<Slider> > sliders;
 };

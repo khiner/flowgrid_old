@@ -30,6 +30,7 @@ public:
         });
 
         addAndMakeVisible(audioSettings.getAudioDeviceSelectorComponent().get());
+        addAndMakeVisible(push2Animator);
    }
 
     ~MainContentComponent() override {
@@ -64,7 +65,6 @@ private:
     AudioSettings audioSettings;
     MainProcessor mainProcessor;
     AudioProcessorPlayer player;
-
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainContentComponent)
 };
 
