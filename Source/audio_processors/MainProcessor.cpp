@@ -10,7 +10,8 @@ MainProcessor::MainProcessor(int inputChannelCount, int outputChannelCount):
         toneSource1(treeState, "1"),
         toneSource2(treeState, "2"),
         toneSource3(treeState, "3"),
-        toneSource4(treeState, "4") {
+        toneSource4(treeState, "4"),
+        masterVolumeParamId("masterVolume") {
 
     this->setLatencySamples(0);
 
@@ -22,7 +23,7 @@ MainProcessor::MainProcessor(int inputChannelCount, int outputChannelCount):
     // method is called before playback begins.
     this->setPlayConfigDetails(inputChannelCount, outputChannelCount, 0, 0);
 
-    treeState.createAndAddParameter("masterVolume", "Volume", "Volume",
+    masterVolumeParam = treeState.createAndAddParameter("masterVolume", "Volume", "Volume",
                                     NormalisableRange<float>(0.0f, 1.0f),
                                     0.5f,
                                     [](float value) { return String(value*1000) + "ms"; },
@@ -48,7 +49,7 @@ const StringRef MainProcessor::parameterIdForMidiCcNumber(const int midiCcNumber
     static const int KNOB_10 = ccForCL.at(Push2CL::topKnob10);
 
     if (midiCcNumber == MASTER_KNOB) {
-        return "";
+        return masterVolumeParamId;
     } else if (midiCcNumber == KNOB_3) {
         return toneSource1.getAmpParamId();
     } else if (midiCcNumber == KNOB_4) {
@@ -85,10 +86,11 @@ void MainProcessor::handleControlMidi(const MidiMessage &midiMessage) {
     float value = Push2::encoderCcMessageToRotationChange(midiMessage);
     auto param = treeState.getParameter(parameterId);
 
-    auto newValue = param->getValue() + value / 10.0f;
+    auto newValue = param->getValue() + value / 5.0f; // todo move manual scaling to param
 
     if (newValue > 0)
         param->setValueNotifyingHost(newValue);
+
 
 }
 
@@ -106,6 +108,7 @@ void MainProcessor::releaseResources() {
 
 void MainProcessor::processBlock(AudioSampleBuffer& buffer, MidiBuffer& midiMessages) {
     mixerAudioSource.getNextAudioBlock(AudioSourceChannelInfo(buffer));
+    buffer.applyGain(masterVolumeParam->getValue() * 50.0f); // todo get rid of manual scaling and replace with LinearSmoothedValue (or dsp::Gain object)
 }
 
 const String MainProcessor::getInputChannelName(int channelIndex) const {

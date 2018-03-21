@@ -67,6 +67,8 @@ private:
 
     AudioProcessorValueTreeState treeState;
 
+    AudioProcessorParameterWithID* masterVolumeParam;
+    StringRef masterVolumeParamId;
     MixerAudioSource mixerAudioSource;
     ToneSourceWithParameters toneSource1;
     ToneSourceWithParameters toneSource2;
