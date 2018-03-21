@@ -1,17 +1,15 @@
 #pragma once
 
+#include <audio_sources/ToneSourceWithParameters.h>
 #include "../../JuceLibraryCode/JuceHeader.h"
 
-class MainProcessor : public AudioProcessor, AudioProcessorValueTreeState::Listener {
+class MainProcessor : public AudioProcessor {
 public:
     explicit MainProcessor(int inputChannelCount = 1, int outputChannelCount = 0);
 
     void handleControlMidi(const MidiMessage &midiMessage);
 
-    const String& parameterIndexForMidiCcNumber(int midiCcNumber) const;
-
-    /** This callback method is called by the AudioProcessorValueTreeState when a parameter changes. */
-    void parameterChanged (const String& parameterID, float newValue);
+    const StringRef parameterIdForMidiCcNumber(int midiCcNumber) const;
 
     /*** JUCE override methods ***/
 
@@ -69,13 +67,9 @@ private:
 
     AudioProcessorValueTreeState treeState;
 
-    std::unique_ptr<ToneGeneratorAudioSource> toneSource1;
-    std::unique_ptr<ToneGeneratorAudioSource> toneSource2;
-    std::unique_ptr<ToneGeneratorAudioSource> toneSource3;
-    std::unique_ptr<ToneGeneratorAudioSource> toneSource4;
-
-    const String amp1Id = "amp1";
-    const String freq1Id = "freq1";
-    const String amp2Id = "amp2";
-    const String freq2Id = "freq2";
+    MixerAudioSource mixerAudioSource;
+    ToneSourceWithParameters toneSource1;
+    ToneSourceWithParameters toneSource2;
+    ToneSourceWithParameters toneSource3;
+    ToneSourceWithParameters toneSource4;
 };

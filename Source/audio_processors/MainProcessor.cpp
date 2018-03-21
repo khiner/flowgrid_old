@@ -2,13 +2,15 @@
 #include "MainProcessor.h"
 
 typedef Push2MidiCommunicator Push2;
-const auto& ccNumberForControlLabel = Push2::ccNumberForControlLabel;
+typedef Push2::ControlLabel Push2CL;
+const static auto& ccForCL = Push2::ccNumberForControlLabel;
 
 MainProcessor::MainProcessor(int inputChannelCount, int outputChannelCount):
-        toneSource1(new ToneGeneratorAudioSource),
-        toneSource2(new ToneGeneratorAudioSource),
-        toneSource3(new ToneGeneratorAudioSource),
-        toneSource4(new ToneGeneratorAudioSource), treeState(*this, nullptr) {
+        treeState(*this, nullptr),
+        toneSource1(treeState, "1"),
+        toneSource2(treeState, "2"),
+        toneSource3(treeState, "3"),
+        toneSource4(treeState, "4") {
 
     this->setLatencySamples(0);
 
@@ -26,75 +28,48 @@ MainProcessor::MainProcessor(int inputChannelCount, int outputChannelCount):
                                     [](float value) { return String(value*1000) + "ms"; },
                                     [](const String& text) { return text.getFloatValue()/1000.0f; });
 
-
-    treeState.createAndAddParameter(amp1Id, "Amp1", "Amp1",
-                                    NormalisableRange<float>(0.0f, 1.0f),
-                                    0.5f,
-                                    [](float value) { return String(value*1000) + "ms"; },
-                                    [](const String& text) { return text.getFloatValue()/1000.0f; });
-    treeState.createAndAddParameter(freq1Id, "Freq1", "Freq1",
-                                    NormalisableRange<float> (440.0f, 10000.0f, 0.0f, 0.3f, false),
-                                    880.0f,
-                                    [](float value) { return String(value*1000) + "ms"; },
-                                    [](const String& text) { return text.getFloatValue()/1000.0f; });
-
-    treeState.createAndAddParameter(amp2Id, "Amp2", "Amp2",
-                                    NormalisableRange<float>(0.0f, 1.0f),
-                                    0.5f,
-                                    [](float value) { return String(value*1000) + "ms"; },
-                                    [](const String& text) { return text.getFloatValue()/1000.0f; });
-    treeState.createAndAddParameter(freq2Id, "Freq2", "Freq2",
-                                    NormalisableRange<float> (440.0f, 10000.0f, 0.0f, 0.3f, false),
-                                    880.0f,
-                                    [](float value) { return String(value*1000) + "ms"; },
-                                    [](const String& text) { return text.getFloatValue()/1000.0f; });
-    treeState.addParameterListener(amp1Id, this);
-    treeState.addParameterListener(freq1Id, this);
-    treeState.addParameterListener(amp2Id, this);
-    treeState.addParameterListener(freq2Id, this);
+    mixerAudioSource.addInputSource(toneSource1.get(), false);
+    mixerAudioSource.addInputSource(toneSource2.get(), false);
+    mixerAudioSource.addInputSource(toneSource3.get(), false);
+    mixerAudioSource.addInputSource(toneSource4.get(), false);
 }
 
-void MainProcessor::parameterChanged(const String& parameterID, float newValue) {
-    if (parameterID == amp1Id) {
-        toneSource1->setAmplitude(newValue);
-    } else if (parameterID == freq1Id) {
-        toneSource1->setFrequency(newValue);
-    } else if (parameterID == amp2Id) {
-        toneSource2->setAmplitude(newValue);
-    } else if (parameterID == freq2Id) {
-        toneSource2->setFrequency(newValue);
-    }
-};
-
-const String& MainProcessor::parameterIndexForMidiCcNumber(const int midiCcNumber) const {
-    static const int MASTER_KNOB = ccNumberForControlLabel.at(Push2::ControlLabel::masterKnob);
-    static const int KNOB_1 = ccNumberForControlLabel.at(Push2::ControlLabel::topKnob1);
-    static const int KNOB_2 = ccNumberForControlLabel.at(Push2::ControlLabel::topKnob2);
-    static const int KNOB_3 = ccNumberForControlLabel.at(Push2::ControlLabel::topKnob3);
-    static const int KNOB_4 = ccNumberForControlLabel.at(Push2::ControlLabel::topKnob4);
-    static const int KNOB_5 = ccNumberForControlLabel.at(Push2::ControlLabel::topKnob5);
-    static const int KNOB_6 = ccNumberForControlLabel.at(Push2::ControlLabel::topKnob6);
-    static const int KNOB_7 = ccNumberForControlLabel.at(Push2::ControlLabel::topKnob7);
-    static const int KNOB_8 = ccNumberForControlLabel.at(Push2::ControlLabel::topKnob8);
-    static const int KNOB_9 = ccNumberForControlLabel.at(Push2::ControlLabel::topKnob9);
-    static const int KNOB_10 = ccNumberForControlLabel.at(Push2::ControlLabel::topKnob10);
+const StringRef MainProcessor::parameterIdForMidiCcNumber(const int midiCcNumber) const {
+    static const int MASTER_KNOB = ccForCL.at(Push2::ControlLabel::masterKnob);
+    static const int KNOB_1 = ccForCL.at(Push2CL::topKnob1);
+    static const int KNOB_2 = ccForCL.at(Push2CL::topKnob2);
+    static const int KNOB_3 = ccForCL.at(Push2CL::topKnob3);
+    static const int KNOB_4 = ccForCL.at(Push2CL::topKnob4);
+    static const int KNOB_5 = ccForCL.at(Push2CL::topKnob5);
+    static const int KNOB_6 = ccForCL.at(Push2CL::topKnob6);
+    static const int KNOB_7 = ccForCL.at(Push2CL::topKnob7);
+    static const int KNOB_8 = ccForCL.at(Push2CL::topKnob8);
+    static const int KNOB_9 = ccForCL.at(Push2CL::topKnob9);
+    static const int KNOB_10 = ccForCL.at(Push2CL::topKnob10);
 
     if (midiCcNumber == MASTER_KNOB) {
         return "";
     } else if (midiCcNumber == KNOB_3) {
-        return amp1Id;
+        return toneSource1.getAmpParamId();
     } else if (midiCcNumber == KNOB_4) {
-        return freq1Id;
+        return toneSource1.getFreqParamdId();
     } else if (midiCcNumber == KNOB_5) {
-        return amp2Id;
+        return toneSource2.getAmpParamId();
     } else if (midiCcNumber == KNOB_6) {
-        return freq2Id;
+        return toneSource2.getFreqParamdId();
+    } else if (midiCcNumber == KNOB_7) {
+        return toneSource3.getAmpParamId();
+    } else if (midiCcNumber == KNOB_8) {
+        return toneSource3.getFreqParamdId();
+    } else if (midiCcNumber == KNOB_9) {
+        return toneSource4.getAmpParamId();
+    } else if (midiCcNumber == KNOB_10) {
+        return toneSource4.getFreqParamdId();
     }
 
-
-    return "";
+    const static String emptyString {};
+    return emptyString;
 }
-int i = 0;
 
 // listened to and called on a non-audio thread, called by MainContentComponent
 void MainProcessor::handleControlMidi(const MidiMessage &midiMessage) {
@@ -102,17 +77,14 @@ void MainProcessor::handleControlMidi(const MidiMessage &midiMessage) {
         return;
 
     const int ccNumber = midiMessage.getControllerNumber();
-    const String& parameterIndex = parameterIndexForMidiCcNumber(ccNumber);
+    const StringRef parameterId = parameterIdForMidiCcNumber(ccNumber);
 
-    if (parameterIndex == "")
+    if (parameterId.isEmpty())
         return;
 
     float value = Push2::encoderCcMessageToRotationChange(midiMessage);
-    auto param = treeState.getParameter(parameterIndex);
-    const NormalisableRange<float> &range = treeState.getParameterRange(parameterIndex);
+    auto param = treeState.getParameter(parameterId);
 
-    std::cout << "param val: " << param->getValue() << '\n';
-    std::cout << "value: " << value << '\n';
     auto newValue = param->getValue() + value / 10.0f;
 
     if (newValue > 0)
@@ -133,13 +105,7 @@ void MainProcessor::releaseResources() {
 }
 
 void MainProcessor::processBlock(AudioSampleBuffer& buffer, MidiBuffer& midiMessages) {
-    MixerAudioSource mixerAudioSource;
-    mixerAudioSource.addInputSource(toneSource1.get(), false);
-    mixerAudioSource.addInputSource(toneSource2.get(), false);
     mixerAudioSource.getNextAudioBlock(AudioSourceChannelInfo(buffer));
-    //toneSource2->getNextAudioBlock(AudioSourceChannelInfo(buffer));
-    //toneSource3->getNextAudioBlock(AudioSourceChannelInfo(buffer));
-    //toneSource4->getNextAudioBlock(AudioSourceChannelInfo(buffer));
 }
 
 const String MainProcessor::getInputChannelName(int channelIndex) const {
