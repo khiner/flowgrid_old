@@ -1,6 +1,6 @@
 #include "Push2Animator.h"
 
-Push2Animator::Push2Animator(): fakeElapsedTime() {
+Push2Animator::Push2Animator() {
     startTimerHz(60); // animation timer
 
     setSize(Push2Display::WIDTH, Push2Display::HEIGHT);
@@ -17,7 +17,6 @@ Push2Animator::Push2Animator(): fakeElapsedTime() {
 }
 
 void Push2Animator::timerCallback() {
-    fakeElapsedTime += 0.02f;
     //auto t1 = std::chrono::high_resolution_clock::now();
     drawFrame();
     //std::cout << std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - t1).count() << '\n';

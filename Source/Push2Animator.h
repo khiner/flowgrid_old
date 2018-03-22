@@ -22,7 +22,5 @@ private:
     Push2DisplayBridge displayBridge;
 
 private:
-    float fakeElapsedTime;
-
     std::vector<std::unique_ptr<Slider> > sliders;
 };
