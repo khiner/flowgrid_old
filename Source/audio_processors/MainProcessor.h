@@ -13,7 +13,7 @@ public:
 
     void handleControlMidi(const MidiMessage &midiMessage);
 
-    void sliderValueChanged (Slider* slider);
+    void sliderValueChanged (Slider* slider) override;
 
     std::vector<std::unique_ptr<Slider> >& getSliders() {
         return sliders;
@@ -85,15 +85,17 @@ private:
 
     std::vector<std::unique_ptr<Slider> > sliders;
 
-    std::unordered_map<int, StringRef> parameterIdForMidiNumber {
+    std::unordered_map<int, String> parameterIdForMidiNumber {
             {Push2::ccNumberForControlLabel.at(Push2::ControlLabel::masterKnob), masterVolumeParamId},
-            {Push2::ccNumberForControlLabel.at(Push2CL::topKnob1), toneSource1.getAmpParamId()},
-            {Push2::ccNumberForControlLabel.at(Push2CL::topKnob2), toneSource1.getFreqParamId()},
-            {Push2::ccNumberForControlLabel.at(Push2CL::topKnob3), toneSource2.getAmpParamId()},
-            {Push2::ccNumberForControlLabel.at(Push2CL::topKnob4), toneSource2.getFreqParamId()},
-            {Push2::ccNumberForControlLabel.at(Push2CL::topKnob5), toneSource3.getAmpParamId()},
-            {Push2::ccNumberForControlLabel.at(Push2CL::topKnob6), toneSource3.getFreqParamId()},
-            {Push2::ccNumberForControlLabel.at(Push2CL::topKnob7), toneSource4.getAmpParamId()},
-            {Push2::ccNumberForControlLabel.at(Push2CL::topKnob8), toneSource4.getAmpParamId()},
+            {Push2::ccNumberForControlLabel.at(Push2CL::topKnob3), toneSource1.getAmpParamId()},
+            {Push2::ccNumberForControlLabel.at(Push2CL::topKnob4), toneSource1.getFreqParamId()},
+            {Push2::ccNumberForControlLabel.at(Push2CL::topKnob5), toneSource2.getAmpParamId()},
+            {Push2::ccNumberForControlLabel.at(Push2CL::topKnob6), toneSource2.getFreqParamId()},
+            {Push2::ccNumberForControlLabel.at(Push2CL::topKnob7), toneSource3.getAmpParamId()},
+            {Push2::ccNumberForControlLabel.at(Push2CL::topKnob8), toneSource3.getFreqParamId()},
+            {Push2::ccNumberForControlLabel.at(Push2CL::topKnob9), toneSource4.getAmpParamId()},
+            {Push2::ccNumberForControlLabel.at(Push2CL::topKnob10), toneSource4.getAmpParamId()},
     };
+
+    std::unordered_map<String, Slider*> sliderForParameterId;
 };

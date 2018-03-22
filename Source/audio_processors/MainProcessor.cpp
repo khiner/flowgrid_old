@@ -26,16 +26,16 @@ MainProcessor::MainProcessor(int inputChannelCount, int outputChannelCount):
                                     [](float value) { return String(value*1000) + "ms"; },
                                     [](const String& text) { return text.getFloatValue()/1000.0f; });
 
+    mixerAudioSource.addInputSource(toneSource1.get(), false);
+    mixerAudioSource.addInputSource(toneSource2.get(), false);
+    mixerAudioSource.addInputSource(toneSource3.get(), false);
+    mixerAudioSource.addInputSource(toneSource4.get(), false);
+
     for (int sliderIndex = 0; sliderIndex < 8; sliderIndex++) {
         auto slider = std::make_unique<Slider>();
         slider->addListener(this);
         sliders.push_back(std::move(slider));
     }
-
-    mixerAudioSource.addInputSource(toneSource1.get(), false);
-    mixerAudioSource.addInputSource(toneSource2.get(), false);
-    mixerAudioSource.addInputSource(toneSource3.get(), false);
-    mixerAudioSource.addInputSource(toneSource4.get(), false);
 
     sliders[0]->setComponentID(toneSource1.getAmpParamId());
     sliders[1]->setComponentID(toneSource1.getFreqParamId());
@@ -45,8 +45,13 @@ MainProcessor::MainProcessor(int inputChannelCount, int outputChannelCount):
     sliders[5]->setComponentID(toneSource3.getFreqParamId());
     sliders[6]->setComponentID(toneSource4.getAmpParamId());
     sliders[7]->setComponentID(toneSource4.getFreqParamId());
+
+    for (auto& slider : sliders) {
+        sliderForParameterId[slider->getComponentID()] = slider.get();
+    }
 }
 
+// Sliders control params. Midi controls params _and_ corresponding sliders.
 void MainProcessor::sliderValueChanged(Slider* slider) {
     treeState.getParameter(slider->getComponentID())->setValueNotifyingHost(static_cast<float>(slider->getValue()));
 }
@@ -55,6 +60,7 @@ void MainProcessor::sliderValueChanged(Slider* slider) {
 void MainProcessor::handleControlMidi(const MidiMessage &midiMessage) {
     if (!midiMessage.isController())
         return;
+
 
     const int ccNumber = midiMessage.getControllerNumber();
     auto parameterIdEntry = parameterIdForMidiNumber.find(ccNumber);
@@ -69,6 +75,15 @@ void MainProcessor::handleControlMidi(const MidiMessage &midiMessage) {
 
     if (newValue > 0)
         param->setValueNotifyingHost(newValue);
+
+    // If this param also has a slider, update it. We do this here (rather than, say, in the param itself),
+    // to avoid infinite notifications (slider notifies param notifies slider).
+    //
+    // Sliders control params. Midi controls params _and_ corresponding sliders.
+    auto sliderEntry = sliderForParameterId.find(parameterIdEntry->second);
+    if (sliderEntry != sliderForParameterId.end()) {
+        sliderEntry->second->setValue(newValue, dontSendNotification);
+    }
 }
 
 const String MainProcessor::getName() const {
