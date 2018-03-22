@@ -1,11 +1,12 @@
 #pragma once
 
 #include <push2/Push2MidiCommunicator.h>
+#include <audio_processors/MainProcessor.h>
 #include "push2/Push2DisplayBridge.h"
 
 class Push2Animator : public Timer, public Component {
 public:
-    explicit Push2Animator();
+    explicit Push2Animator(const std::vector<std::unique_ptr<Slider> >& sliders);
 
 private:
     /*!
@@ -22,5 +23,4 @@ private:
     Push2DisplayBridge displayBridge;
 
 private:
-    std::vector<std::unique_ptr<Slider> > sliders;
 };

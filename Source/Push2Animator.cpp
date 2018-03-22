@@ -1,18 +1,16 @@
 #include "Push2Animator.h"
 
-Push2Animator::Push2Animator() {
+Push2Animator::Push2Animator(const std::vector<std::unique_ptr<Slider> >& sliders) {
     startTimerHz(60); // animation timer
 
     setSize(Push2Display::WIDTH, Push2Display::HEIGHT);
 
-    for (int sliderIndex = 0; sliderIndex < 8; sliderIndex++) {
-        auto slider = std::make_unique<Slider>();
+    for (int sliderIndex = 0; sliderIndex < sliders.size(); sliderIndex++) {
+        auto& slider = sliders[sliderIndex];
         addAndMakeVisible(slider.get());
         slider->setSliderStyle(Slider::SliderStyle::RotaryHorizontalVerticalDrag);
         slider->setBounds(sliderIndex * Push2Display::WIDTH / 8, 0, Push2Display::WIDTH / 8, Push2Display::WIDTH / 8);
         slider->setTextBoxStyle(Slider::TextEntryBoxPosition::TextBoxAbove, false, Push2Display::HEIGHT, Push2Display::HEIGHT / 5);
-
-        sliders.push_back(std::move(slider));
     }
 }
 

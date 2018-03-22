@@ -14,7 +14,7 @@
 class MainContentComponent : public Component {
 public:
     MainContentComponent():
-            audioSettings(deviceManager), mainProcessor(2, 2) {
+            audioSettings(deviceManager), mainProcessor(2, 2), push2Animator(mainProcessor.getSliders()) {
 
         setSize(960, 600);
         deviceManager.initialiseWithDefaultDevices(2, 2);
@@ -57,13 +57,13 @@ public:
 private:
     const Colour backgroundColor = dynamic_cast<LookAndFeel_V4&>(LookAndFeel::getDefaultLookAndFeel()).getCurrentColourScheme().getUIColour((LookAndFeel_V4::ColourScheme::UIColour::windowBackground));
     AudioDeviceManager deviceManager;
-    Push2Animator push2Animator;
     Push2MidiCommunicator push2MidiCommunicator;
     Label status;
     AppState appState;
 
     AudioSettings audioSettings;
     MainProcessor mainProcessor;
+    Push2Animator push2Animator;
     AudioProcessorPlayer player;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainContentComponent)
 };

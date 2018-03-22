@@ -34,11 +34,11 @@ public:
         }
     };
 
-    StringRef getAmpParamId() const {
+    const String & getAmpParamId() const {
         return ampParamId;
     }
 
-    StringRef getFreqParamdId() const {
+    const String & getFreqParamdId() const {
         return freqParamId;
     }
 

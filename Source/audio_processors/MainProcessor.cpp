@@ -29,10 +29,29 @@ MainProcessor::MainProcessor(int inputChannelCount, int outputChannelCount):
                                     [](float value) { return String(value*1000) + "ms"; },
                                     [](const String& text) { return text.getFloatValue()/1000.0f; });
 
+    for (int sliderIndex = 0; sliderIndex < 8; sliderIndex++) {
+        auto slider = std::make_unique<Slider>();
+        slider->addListener(this);
+        sliders.push_back(std::move(slider));
+    }
+
     mixerAudioSource.addInputSource(toneSource1.get(), false);
     mixerAudioSource.addInputSource(toneSource2.get(), false);
     mixerAudioSource.addInputSource(toneSource3.get(), false);
     mixerAudioSource.addInputSource(toneSource4.get(), false);
+
+    sliders[0]->setComponentID(toneSource1.getAmpParamId());
+    sliders[1]->setComponentID(toneSource1.getFreqParamdId());
+    sliders[2]->setComponentID(toneSource2.getAmpParamId());
+    sliders[3]->setComponentID(toneSource2.getFreqParamdId());
+    sliders[4]->setComponentID(toneSource3.getAmpParamId());
+    sliders[5]->setComponentID(toneSource3.getFreqParamdId());
+    sliders[6]->setComponentID(toneSource4.getAmpParamId());
+    sliders[7]->setComponentID(toneSource4.getFreqParamdId());
+}
+
+void MainProcessor::sliderValueChanged(Slider* slider) {
+    treeState.getParameter(slider->getComponentID())->setValueNotifyingHost(static_cast<float>(slider->getValue()));
 }
 
 const StringRef MainProcessor::parameterIdForMidiCcNumber(const int midiCcNumber) const {

@@ -3,13 +3,19 @@
 #include <audio_sources/ToneSourceWithParameters.h>
 #include "../../JuceLibraryCode/JuceHeader.h"
 
-class MainProcessor : public AudioProcessor {
+class MainProcessor : public AudioProcessor, public Slider::Listener {
 public:
     explicit MainProcessor(int inputChannelCount = 1, int outputChannelCount = 0);
 
     void handleControlMidi(const MidiMessage &midiMessage);
 
     const StringRef parameterIdForMidiCcNumber(int midiCcNumber) const;
+
+    void sliderValueChanged (Slider* slider);
+
+    std::vector<std::unique_ptr<Slider> >& getSliders() {
+        return sliders;
+    }
 
     /*** JUCE override methods ***/
 
@@ -74,4 +80,6 @@ private:
     ToneSourceWithParameters toneSource2;
     ToneSourceWithParameters toneSource3;
     ToneSourceWithParameters toneSource4;
+
+    std::vector<std::unique_ptr<Slider> > sliders;
 };
