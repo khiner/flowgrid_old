@@ -38,7 +38,7 @@ public:
         return ampParamId;
     }
 
-    const String & getFreqParamdId() const {
+    const String & getFreqParamId() const {
         return freqParamId;
     }
 

@@ -2,14 +2,16 @@
 
 #include <audio_sources/ToneSourceWithParameters.h>
 #include "../../JuceLibraryCode/JuceHeader.h"
+#include "push2/Push2MidiCommunicator.h"
 
 class MainProcessor : public AudioProcessor, public Slider::Listener {
+    typedef Push2MidiCommunicator Push2;
+    typedef Push2::ControlLabel Push2CL;
+
 public:
     explicit MainProcessor(int inputChannelCount = 1, int outputChannelCount = 0);
 
     void handleControlMidi(const MidiMessage &midiMessage);
-
-    const StringRef parameterIdForMidiCcNumber(int midiCcNumber) const;
 
     void sliderValueChanged (Slider* slider);
 
@@ -82,4 +84,16 @@ private:
     ToneSourceWithParameters toneSource4;
 
     std::vector<std::unique_ptr<Slider> > sliders;
+
+    std::unordered_map<int, StringRef> parameterIdForMidiNumber {
+            {Push2::ccNumberForControlLabel.at(Push2::ControlLabel::masterKnob), masterVolumeParamId},
+            {Push2::ccNumberForControlLabel.at(Push2CL::topKnob1), toneSource1.getAmpParamId()},
+            {Push2::ccNumberForControlLabel.at(Push2CL::topKnob2), toneSource1.getFreqParamId()},
+            {Push2::ccNumberForControlLabel.at(Push2CL::topKnob3), toneSource2.getAmpParamId()},
+            {Push2::ccNumberForControlLabel.at(Push2CL::topKnob4), toneSource2.getFreqParamId()},
+            {Push2::ccNumberForControlLabel.at(Push2CL::topKnob5), toneSource3.getAmpParamId()},
+            {Push2::ccNumberForControlLabel.at(Push2CL::topKnob6), toneSource3.getFreqParamId()},
+            {Push2::ccNumberForControlLabel.at(Push2CL::topKnob7), toneSource4.getAmpParamId()},
+            {Push2::ccNumberForControlLabel.at(Push2CL::topKnob8), toneSource4.getAmpParamId()},
+    };
 };

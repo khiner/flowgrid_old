@@ -1,9 +1,6 @@
 #include <push2/Push2MidiCommunicator.h>
 #include "MainProcessor.h"
 
-typedef Push2MidiCommunicator Push2;
-typedef Push2::ControlLabel Push2CL;
-const static auto& ccForCL = Push2::ccNumberForControlLabel;
 
 MainProcessor::MainProcessor(int inputChannelCount, int outputChannelCount):
         treeState(*this, nullptr),
@@ -41,54 +38,17 @@ MainProcessor::MainProcessor(int inputChannelCount, int outputChannelCount):
     mixerAudioSource.addInputSource(toneSource4.get(), false);
 
     sliders[0]->setComponentID(toneSource1.getAmpParamId());
-    sliders[1]->setComponentID(toneSource1.getFreqParamdId());
+    sliders[1]->setComponentID(toneSource1.getFreqParamId());
     sliders[2]->setComponentID(toneSource2.getAmpParamId());
-    sliders[3]->setComponentID(toneSource2.getFreqParamdId());
+    sliders[3]->setComponentID(toneSource2.getFreqParamId());
     sliders[4]->setComponentID(toneSource3.getAmpParamId());
-    sliders[5]->setComponentID(toneSource3.getFreqParamdId());
+    sliders[5]->setComponentID(toneSource3.getFreqParamId());
     sliders[6]->setComponentID(toneSource4.getAmpParamId());
-    sliders[7]->setComponentID(toneSource4.getFreqParamdId());
+    sliders[7]->setComponentID(toneSource4.getFreqParamId());
 }
 
 void MainProcessor::sliderValueChanged(Slider* slider) {
     treeState.getParameter(slider->getComponentID())->setValueNotifyingHost(static_cast<float>(slider->getValue()));
-}
-
-const StringRef MainProcessor::parameterIdForMidiCcNumber(const int midiCcNumber) const {
-    static const int MASTER_KNOB = ccForCL.at(Push2::ControlLabel::masterKnob);
-    static const int KNOB_1 = ccForCL.at(Push2CL::topKnob1);
-    static const int KNOB_2 = ccForCL.at(Push2CL::topKnob2);
-    static const int KNOB_3 = ccForCL.at(Push2CL::topKnob3);
-    static const int KNOB_4 = ccForCL.at(Push2CL::topKnob4);
-    static const int KNOB_5 = ccForCL.at(Push2CL::topKnob5);
-    static const int KNOB_6 = ccForCL.at(Push2CL::topKnob6);
-    static const int KNOB_7 = ccForCL.at(Push2CL::topKnob7);
-    static const int KNOB_8 = ccForCL.at(Push2CL::topKnob8);
-    static const int KNOB_9 = ccForCL.at(Push2CL::topKnob9);
-    static const int KNOB_10 = ccForCL.at(Push2CL::topKnob10);
-
-    if (midiCcNumber == MASTER_KNOB) {
-        return masterVolumeParamId;
-    } else if (midiCcNumber == KNOB_3) {
-        return toneSource1.getAmpParamId();
-    } else if (midiCcNumber == KNOB_4) {
-        return toneSource1.getFreqParamdId();
-    } else if (midiCcNumber == KNOB_5) {
-        return toneSource2.getAmpParamId();
-    } else if (midiCcNumber == KNOB_6) {
-        return toneSource2.getFreqParamdId();
-    } else if (midiCcNumber == KNOB_7) {
-        return toneSource3.getAmpParamId();
-    } else if (midiCcNumber == KNOB_8) {
-        return toneSource3.getFreqParamdId();
-    } else if (midiCcNumber == KNOB_9) {
-        return toneSource4.getAmpParamId();
-    } else if (midiCcNumber == KNOB_10) {
-        return toneSource4.getFreqParamdId();
-    }
-
-    const static String emptyString {};
-    return emptyString;
 }
 
 // listened to and called on a non-audio thread, called by MainContentComponent
@@ -97,20 +57,18 @@ void MainProcessor::handleControlMidi(const MidiMessage &midiMessage) {
         return;
 
     const int ccNumber = midiMessage.getControllerNumber();
-    const StringRef parameterId = parameterIdForMidiCcNumber(ccNumber);
-
-    if (parameterId.isEmpty())
+    auto parameterIdEntry = parameterIdForMidiNumber.find(ccNumber);
+    if (parameterIdEntry == parameterIdForMidiNumber.end()) {
         return;
+    }
 
     float value = Push2::encoderCcMessageToRotationChange(midiMessage);
-    auto param = treeState.getParameter(parameterId);
+    auto param = treeState.getParameter(parameterIdEntry->second);
 
     auto newValue = param->getValue() + value / 5.0f; // todo move manual scaling to param
 
     if (newValue > 0)
         param->setValueNotifyingHost(newValue);
-
-
 }
 
 const String MainProcessor::getName() const {
