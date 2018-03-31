@@ -94,7 +94,7 @@ private:
             {Push2::ccNumberForControlLabel.at(Push2CL::topKnob7), toneSource3.getAmpParamId()},
             {Push2::ccNumberForControlLabel.at(Push2CL::topKnob8), toneSource3.getFreqParamId()},
             {Push2::ccNumberForControlLabel.at(Push2CL::topKnob9), toneSource4.getAmpParamId()},
-            {Push2::ccNumberForControlLabel.at(Push2CL::topKnob10), toneSource4.getAmpParamId()},
+            {Push2::ccNumberForControlLabel.at(Push2CL::topKnob10), toneSource4.getFreqParamId()},
     };
 
     std::unordered_map<String, Slider*> sliderForParameterId;
