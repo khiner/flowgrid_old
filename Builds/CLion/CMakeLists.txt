@@ -1270,7 +1270,7 @@ add_executable (APP
     "../../JuceLibraryCode/include_juce_gui_basics.mm"
     "../../JuceLibraryCode/include_juce_gui_extra.mm"
     "../../JuceLibraryCode/JuceHeader.h"
-)
+        ../../Source/view/Push2ViewComponent.cpp ../../Source/view/Push2ViewComponent.h ../../Source/view/InstrumentViewComponent.cpp ../../Source/view/InstrumentViewComponent.h ../../Source/audio_sources/Instrument.h)
 
 set_source_files_properties ("../../Resources/PushStartup.png" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/audio_processors/MainProcessor.h" PROPERTIES HEADER_FILE_ONLY TRUE)

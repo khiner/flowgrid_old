@@ -2,11 +2,15 @@
 
 #include <push2/Push2MidiCommunicator.h>
 #include <audio_processors/MainProcessor.h>
+#include <view/Push2ViewComponent.h>
 #include "push2/Push2DisplayBridge.h"
 
-class Push2Animator : public Timer, public Component {
+class Push2Animator : public Timer {
 public:
-    explicit Push2Animator(const std::vector<std::unique_ptr<Slider> >& sliders);
+    explicit Push2Animator(Push2ViewComponent* push2ViewComponent) {
+        this->push2ViewComponent = push2ViewComponent;
+        startTimer(60);
+    }
 
 private:
     /*!
@@ -21,6 +25,5 @@ private:
     void timerCallback() override;
 private:
     Push2DisplayBridge displayBridge;
-
-private:
+    Push2ViewComponent* push2ViewComponent;
 };

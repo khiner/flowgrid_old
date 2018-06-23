@@ -13,7 +13,7 @@
 class MainContentComponent : public Component {
 public:
     MainContentComponent():
-            audioSettings(deviceManager), mainProcessor(2, 2), push2Animator(mainProcessor.getSliders()) {
+            audioSettings(deviceManager), mainProcessor(2, 2), instrumentViewComponent(mainProcessor.getSliders()), push2Animator(&push2ViewComponent) {
 
         setSize(960, 600);
         deviceManager.initialiseWithDefaultDevices(2, 2);
@@ -28,8 +28,9 @@ public:
             mainProcessor.handleControlMidi(message);
         });
 
+        push2ViewComponent.addAndMakeVisible(instrumentViewComponent);
+        addAndMakeVisible(push2ViewComponent);
         addAndMakeVisible(audioSettings.getAudioDeviceSelectorComponent().get());
-        addAndMakeVisible(push2Animator);
    }
 
     ~MainContentComponent() override {
@@ -61,6 +62,8 @@ private:
 
     AudioSettings audioSettings;
     MainProcessor mainProcessor;
+    InstrumentViewComponent instrumentViewComponent;
+    Push2ViewComponent push2ViewComponent;
     Push2Animator push2Animator;
     AudioProcessorPlayer player;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainContentComponent)
