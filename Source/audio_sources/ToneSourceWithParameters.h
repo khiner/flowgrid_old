@@ -6,17 +6,17 @@
 class ToneSourceWithParameters: AudioProcessorValueTreeState::Listener {
 public:
     explicit ToneSourceWithParameters(AudioProcessorValueTreeState& treeState, const String &idSuffix):
-            source(new ToneGeneratorAudioSource), treeState(treeState),
+            source(new ToneGeneratorAudioSource),
             ampParamId("amp_" + idSuffix), freqParamId("freq_" + idSuffix) {
-        treeState.createAndAddParameter(ampParamId, "Amp1", "Amp1",
+        treeState.createAndAddParameter(ampParamId, "Amp" + idSuffix, "Amp" + idSuffix,
                                         NormalisableRange<float>(0.0f, 1.0f),
                                         0.5f,
                                         [](float value) { return String(value*1000) + "ms"; },
                                         [](const String& text) { return text.getFloatValue()/1000.0f; });
-        treeState.createAndAddParameter(freqParamId, "Freq1", "Freq1",
+        treeState.createAndAddParameter(freqParamId, "Freq" + idSuffix, "Freq" + idSuffix,
                                         NormalisableRange<float> (440.0f, 10000.0f, 0.0f, 0.3f, false),
                                         880.0f,
-                                        [](float value) { return String(value*1000) + "ms"; },
+                                        [](float value) { return String(value*1000) + "Hz"; },
                                         [](const String& text) { return text.getFloatValue()/1000.0f; });
 
         treeState.addParameterListener(ampParamId, this);
@@ -28,9 +28,6 @@ public:
             source->setAmplitude(newValue);
         } else if (parameterID == freqParamId) {
             source->setFrequency(newValue);
-        }
-        if (slider != nullptr) {
-            slider->setValue(newValue);
         }
     };
 
@@ -46,18 +43,11 @@ public:
         return source.get();
     }
 
-    void setSlider(Slider* slider) {
-        this->slider = slider;
-    }
-
 private:
     std::unique_ptr<ToneGeneratorAudioSource> source;
-    AudioProcessorValueTreeState& treeState;
 
     String ampParamId;
     String freqParamId;
-
-    Slider* slider;
 };
 
 

@@ -29,7 +29,7 @@ public:
     void dumpDeviceInfo() {
         logMessage ("--------------------------------------");
         logMessage ("Current audio device type: " + (audioDeviceManager.getCurrentDeviceTypeObject() != nullptr
-                                                     ? audioDeviceManager.getCurrentDeviceTypeObject()->getTypeName()
+                                                     ? String (audioDeviceManager.getCurrentDeviceTypeObject()->getTypeName())
                                                      : "<none>"));
 
         if (AudioIODevice* device = audioDeviceManager.getCurrentAudioDevice())

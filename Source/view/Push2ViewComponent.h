@@ -1,5 +1,4 @@
-#ifndef SOUND_MACHINE_PUSH2VIEWCOMPONENT_H
-#define SOUND_MACHINE_PUSH2VIEWCOMPONENT_H
+#pragma once
 
 #include "JuceHeader.h"
 #include "InstrumentViewComponent.h"
@@ -11,6 +10,3 @@ public:
         setSize(Push2Display::WIDTH, Push2Display::HEIGHT);
     }
 };
-
-
-#endif //SOUND_MACHINE_PUSH2VIEWCOMPONENT_H

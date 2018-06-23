@@ -70,5 +70,19 @@ public:
         }
     }
 
+    static int ccNumberForTopKnobIndex(int topKnobIndex) {
+        switch (topKnobIndex) {
+            case 0: return ccNumberForControlLabel.at(topKnob3);
+            case 1: return ccNumberForControlLabel.at(topKnob4);
+            case 2: return ccNumberForControlLabel.at(topKnob5);
+            case 3: return ccNumberForControlLabel.at(topKnob6);
+            case 4: return ccNumberForControlLabel.at(topKnob7);
+            case 5: return ccNumberForControlLabel.at(topKnob8);
+            case 6: return ccNumberForControlLabel.at(topKnob9);
+            case 7: return ccNumberForControlLabel.at(topKnob10);
+            default: return -1;
+        }
+    }
+
     const static std::unordered_map<ControlLabel, int> ccNumberForControlLabel;
 };

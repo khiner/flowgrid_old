@@ -1,12 +1,12 @@
-#ifndef SOUND_MACHINE_INSTRUMENTVIEWCOMPONENT_H
-#define SOUND_MACHINE_INSTRUMENTVIEWCOMPONENT_H
+#pragma once
 
 #include "JuceHeader.h"
+#include <intruments/Instrument.h>
 
 class InstrumentViewComponent : public Component {
 public:
-    explicit InstrumentViewComponent(const std::vector<std::unique_ptr<Slider> >& sliders);
+    explicit InstrumentViewComponent(Instrument *instrument);
+
+private:
+    Instrument* instrument;
 };
-
-
-#endif //SOUND_MACHINE_INSTRUMENTVIEWCOMPONENT_H

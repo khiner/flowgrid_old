@@ -1,13 +1,9 @@
 #include <push2/Push2MidiCommunicator.h>
+#include <intruments/SineBank.h>
 #include "MainProcessor.h"
 
-
 MainProcessor::MainProcessor(int inputChannelCount, int outputChannelCount):
-        treeState(*this, nullptr),
-        toneSource1(treeState, "1"),
-        toneSource2(treeState, "2"),
-        toneSource3(treeState, "3"),
-        toneSource4(treeState, "4"),
+        undoManager(30000,30), treeState(*this, &undoManager),
         masterVolumeParamId("masterVolume") {
 
     this->setLatencySamples(0);
@@ -20,47 +16,25 @@ MainProcessor::MainProcessor(int inputChannelCount, int outputChannelCount):
     // method is called before playback begins.
     this->setPlayConfigDetails(inputChannelCount, outputChannelCount, 0, 0);
 
+    currentInstrument = std::make_unique<SineBank>(treeState);
+    for (int i = 0; i < currentInstrument->getNumParameters(); i++) {
+        parameterIdForMidiNumber.insert(std::make_pair<int, String>(Push2::ccNumberForTopKnobIndex(i), currentInstrument->getParameterId(i)));
+    }
+
     masterVolumeParam = treeState.createAndAddParameter("masterVolume", "Volume", "Volume",
                                     NormalisableRange<float>(0.0f, 1.0f),
                                     0.5f,
                                     [](float value) { return String(value*1000) + "ms"; },
                                     [](const String& text) { return text.getFloatValue()/1000.0f; });
 
-    mixerAudioSource.addInputSource(toneSource1.get(), false);
-    mixerAudioSource.addInputSource(toneSource2.get(), false);
-    mixerAudioSource.addInputSource(toneSource3.get(), false);
-    mixerAudioSource.addInputSource(toneSource4.get(), false);
-
-    for (int sliderIndex = 0; sliderIndex < 8; sliderIndex++) {
-        auto slider = std::make_unique<Slider>();
-        slider->addListener(this);
-        sliders.push_back(std::move(slider));
-    }
-
-    sliders[0]->setComponentID(toneSource1.getAmpParamId());
-    sliders[1]->setComponentID(toneSource1.getFreqParamId());
-    sliders[2]->setComponentID(toneSource2.getAmpParamId());
-    sliders[3]->setComponentID(toneSource2.getFreqParamId());
-    sliders[4]->setComponentID(toneSource3.getAmpParamId());
-    sliders[5]->setComponentID(toneSource3.getFreqParamId());
-    sliders[6]->setComponentID(toneSource4.getAmpParamId());
-    sliders[7]->setComponentID(toneSource4.getFreqParamId());
-
-    for (auto& slider : sliders) {
-        sliderForParameterId[slider->getComponentID()] = slider.get();
-    }
+    mixerAudioSource.addInputSource(currentInstrument->getAudioSource(), false);
 }
 
-// Sliders control params. Midi controls params _and_ corresponding sliders.
-void MainProcessor::sliderValueChanged(Slider* slider) {
-    treeState.getParameter(slider->getComponentID())->setValueNotifyingHost(static_cast<float>(slider->getValue()));
-}
 
 // listened to and called on a non-audio thread, called by MainContentComponent
 void MainProcessor::handleControlMidi(const MidiMessage &midiMessage) {
     if (!midiMessage.isController())
         return;
-
 
     const int ccNumber = midiMessage.getControllerNumber();
     auto parameterIdEntry = parameterIdForMidiNumber.find(ccNumber);
@@ -68,21 +42,15 @@ void MainProcessor::handleControlMidi(const MidiMessage &midiMessage) {
         return;
     }
 
+    String parameterId = parameterIdEntry->second;
+
     float value = Push2::encoderCcMessageToRotationChange(midiMessage);
-    auto param = treeState.getParameter(parameterIdEntry->second);
+    auto param = treeState.getParameter(parameterId);
 
     auto newValue = param->getValue() + value / 5.0f; // todo move manual scaling to param
 
-    if (newValue > 0)
-        param->setValueNotifyingHost(newValue);
-
-    // If this param also has a slider, update it. We do this here (rather than, say, in the param itself),
-    // to avoid infinite notifications (slider notifies param notifies slider).
-    //
-    // Sliders control params. Midi controls params _and_ corresponding sliders.
-    auto sliderEntry = sliderForParameterId.find(parameterIdEntry->second);
-    if (sliderEntry != sliderForParameterId.end()) {
-        sliderEntry->second->setValue(newValue, dontSendNotification);
+    if (newValue > 0) {
+        param->setValue(newValue);
     }
 }
 
