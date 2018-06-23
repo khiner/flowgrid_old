@@ -11,13 +11,11 @@ public:
         treeState.createAndAddParameter(ampParamId, "Amp" + idSuffix, "Amp" + idSuffix,
                                         NormalisableRange<float>(0.0f, 1.0f),
                                         0.5f,
-                                        [](float value) { return String(value*1000) + "ms"; },
-                                        [](const String& text) { return text.getFloatValue()/1000.0f; });
+                                        [](float value) { return String(Decibels::gainToDecibels(value), 3) + "dB"; }, nullptr);
         treeState.createAndAddParameter(freqParamId, "Freq" + idSuffix, "Freq" + idSuffix,
                                         NormalisableRange<float> (440.0f, 10000.0f, 0.0f, 0.3f, false),
                                         880.0f,
-                                        [](float value) { return String(value*1000) + "Hz"; },
-                                        [](const String& text) { return text.getFloatValue()/1000.0f; });
+                                        [](float value) { return String(value, 1) + "Hz"; }, nullptr);
 
         treeState.addParameterListener(ampParamId, this);
         treeState.addParameterListener(freqParamId, this);

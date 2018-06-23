@@ -5,8 +5,11 @@
 
 class InstrumentViewComponent : public Component {
 public:
-    explicit InstrumentViewComponent(Instrument *instrument);
+    InstrumentViewComponent(Instrument *instrument);
 
 private:
-    Instrument* instrument;
+    Instrument *instrument;
+    std::vector<std::unique_ptr<Slider> > sliders;
+    std::vector<std::unique_ptr<Label> > labels;
+    std::vector<std::unique_ptr<AudioProcessorValueTreeState::SliderAttachment> > sliderAttachments;
 };

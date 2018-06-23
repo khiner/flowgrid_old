@@ -6,24 +6,17 @@
 
 class SineBank : public Instrument {
 public:
-    explicit SineBank(AudioProcessorValueTreeState &treeState) :
-            treeState(&treeState),
-            toneSource1(treeState, "1"),
-            toneSource2(treeState, "2"),
-            toneSource3(treeState, "3"),
-            toneSource4(treeState, "4") {
+    explicit SineBank(AudioProcessorValueTreeState &state) :
+            Instrument(state),
+            toneSource1(state, "1"),
+            toneSource2(state, "2"),
+            toneSource3(state, "3"),
+            toneSource4(state, "4") {
 
         mixerAudioSource.addInputSource(toneSource1.get(), false);
         mixerAudioSource.addInputSource(toneSource2.get(), false);
         mixerAudioSource.addInputSource(toneSource3.get(), false);
         mixerAudioSource.addInputSource(toneSource4.get(), false);
-
-        for (int sliderIndex = 0; sliderIndex < 8; sliderIndex++) {
-            auto slider = std::make_unique<Slider>();
-            auto sliderAttachment = std::make_unique<AudioProcessorValueTreeState::SliderAttachment>(treeState, getParameterId(sliderIndex), *slider);
-            sliders.push_back(std::move(slider));
-            sliderAttachments.push_back(std::move(sliderAttachment));
-        }
     }
 
     int getNumParameters() override {
@@ -44,18 +37,11 @@ public:
         }
     }
 
-    Slider* getSlider(int parameterIndex) override {
-        return sliders[parameterIndex].get();
-    }
-
     AudioSource* getAudioSource() override {
         return &mixerAudioSource;
     }
 
 private:
-    AudioProcessorValueTreeState *treeState;
-    std::vector<std::unique_ptr<Slider> > sliders;
-    std::vector<std::unique_ptr<AudioProcessorValueTreeState::SliderAttachment> > sliderAttachments;
 
     ToneSourceWithParameters toneSource1;
     ToneSourceWithParameters toneSource2;
