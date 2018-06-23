@@ -35,9 +35,6 @@ add_executable (APP
     "../../Source/usb/libusb/libusb_platform_wrapper.c"
     "../../Source/usb/UsbCommunicator.cpp"
     "../../Source/usb/UsbCommunicator.h"
-    "../../Source/AppState.cpp"
-    "../../Source/AppState.h"
-    "../../Source/AudioSettings.cpp"
     "../../Source/AudioSettings.h"
     "../../Source/Main.cpp"
     "../../Source/MainContentComponent.cpp"
@@ -1287,7 +1284,6 @@ set_source_files_properties ("../../Source/usb/libusb/config.h" PROPERTIES HEADE
 set_source_files_properties ("../../Source/usb/libusb/config_msvc.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/usb/libusb/config_xcode.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/usb/UsbCommunicator.h" PROPERTIES HEADER_FILE_ONLY TRUE)
-set_source_files_properties ("../../Source/AppState.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/AudioSettings.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/Push2Animator.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../modules/JUCE/modules/juce_audio_basics/audio_play_head/juce_AudioPlayHead.h" PROPERTIES HEADER_FILE_ONLY TRUE)

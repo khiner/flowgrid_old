@@ -1,5 +1,5 @@
 #pragma once
-#include "../JuceLibraryCode/JuceHeader.h"
+#include "JuceHeader.h"
 
 namespace {
     bool matchSubStringIgnoreCase(const std::string &haystack, const std::string &needle) {

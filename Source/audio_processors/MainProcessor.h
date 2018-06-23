@@ -1,7 +1,7 @@
 #pragma once
 
 #include <audio_sources/ToneSourceWithParameters.h>
-#include "../../JuceLibraryCode/JuceHeader.h"
+#include "JuceHeader.h"
 #include "push2/Push2MidiCommunicator.h"
 
 class MainProcessor : public AudioProcessor, public Slider::Listener {

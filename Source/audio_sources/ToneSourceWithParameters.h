@@ -1,7 +1,7 @@
 #pragma once
 
 #include <list>
-#include "../../JuceLibraryCode/JuceHeader.h"
+#include "JuceHeader.h"
 
 class ToneSourceWithParameters: AudioProcessorValueTreeState::Listener {
 public:

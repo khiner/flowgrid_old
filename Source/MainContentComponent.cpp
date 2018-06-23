@@ -4,7 +4,6 @@
 #include <audio_processors/MainProcessor.h>
 
 #include "Push2Animator.h"
-#include "AppState.h"
 #include "AudioSettings.h"
 
 /*
@@ -59,7 +58,6 @@ private:
     AudioDeviceManager deviceManager;
     Push2MidiCommunicator push2MidiCommunicator;
     Label status;
-    AppState appState;
 
     AudioSettings audioSettings;
     MainProcessor mainProcessor;

@@ -2,7 +2,7 @@
 
 #include "Push2Display.h"
 #include "Push2UsbCommunicator.h"
-#include "../JuceLibraryCode/JuceHeader.h"
+#include "JuceHeader.h"
 
 /*!
  *  Implements a bridge between juce::Graphics and push2 display format.
