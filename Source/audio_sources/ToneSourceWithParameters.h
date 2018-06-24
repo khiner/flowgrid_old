@@ -8,11 +8,11 @@ public:
     explicit ToneSourceWithParameters(AudioProcessorValueTreeState& state, const String &idSuffix):
             source(new ToneGeneratorAudioSource),
             ampParamId("amp_" + idSuffix), freqParamId("freq_" + idSuffix) {
-        state.createAndAddParameter(ampParamId, "Amp" + idSuffix, "Amp" + idSuffix,
+        state.createAndAddParameter(ampParamId, "Amp" + idSuffix, "dB",
                                         NormalisableRange<float>(0.0f, 1.0f),
                                         0.5f,
                                         [](float value) { return String(Decibels::gainToDecibels(value), 3) + "dB"; }, nullptr);
-        state.createAndAddParameter(freqParamId, "Freq" + idSuffix, "Freq" + idSuffix,
+        state.createAndAddParameter(freqParamId, "Freq" + idSuffix, "Hz",
                                         NormalisableRange<float> (440.0f, 10000.0f, 0.0f, 0.3f, false),
                                         880.0f,
                                         [](float value) { return String(value, 1) + "Hz"; }, nullptr);

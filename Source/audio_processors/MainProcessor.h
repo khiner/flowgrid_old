@@ -80,12 +80,11 @@ private:
     AudioProcessorValueTreeState state;
     std::unique_ptr<Instrument> currentInstrument;
 
-    AudioProcessorParameterWithID* masterVolumeParam;
     StringRef masterVolumeParamId;
     MixerAudioSource mixerAudioSource;
     LinearSmoothedValue<float> gain;
 
     std::unordered_map<int, String> parameterIdForMidiNumber {
-            {Push2::ccNumberForControlLabel.at(Push2::ControlLabel::masterKnob), masterVolumeParamId},
+            {Push2::getCcNumberForControlLabel(Push2::ControlLabel::masterKnob), masterVolumeParamId},
     };
 };

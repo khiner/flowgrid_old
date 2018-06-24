@@ -21,13 +21,16 @@ MainProcessor::MainProcessor(int inputChannelCount, int outputChannelCount):
         parameterIdForMidiNumber.insert(std::make_pair<int, String>(Push2::ccNumberForTopKnobIndex(i), currentInstrument->getParameterId(i)));
     }
 
-    masterVolumeParam = state.createAndAddParameter("masterVolume", "Volume", "Volume",
+    state.createAndAddParameter("masterVolume", "Volume", "dB",
                                     NormalisableRange<float>(0.0f, 1.0f),
                                     0.5f,
                                     [](float value) { return String(Decibels::gainToDecibels<float>(value, 0), 3) + "dB"; }, nullptr);
 
     state.addParameterListener(masterVolumeParamId, this);
+    gain.setValue(0.5f);
     mixerAudioSource.addInputSource(currentInstrument->getAudioSource(), false);
+
+    state.state = ValueTree(Identifier("sound-machine"));
 }
 
 
@@ -37,6 +40,11 @@ void MainProcessor::handleControlMidi(const MidiMessage &midiMessage) {
         return;
 
     const int ccNumber = midiMessage.getControllerNumber();
+
+    if (ccNumber == Push2::getCcNumberForControlLabel(Push2::ControlLabel::undo)) {
+        undoManager.undo();
+    }
+
     auto parameterIdEntry = parameterIdForMidiNumber.find(ccNumber);
     if (parameterIdEntry == parameterIdForMidiNumber.end()) {
         return;

@@ -84,5 +84,10 @@ public:
         }
     }
 
+    static int getCcNumberForControlLabel(ControlLabel controlLabel) {
+        return ccNumberForControlLabel.at(controlLabel);
+    }
+
+private:
     const static std::unordered_map<ControlLabel, int> ccNumberForControlLabel;
 };
