@@ -3,7 +3,7 @@
 #include "MainProcessor.h"
 
 MainProcessor::MainProcessor(int inputChannelCount, int outputChannelCount):
-        undoManager(30000,30), treeState(*this, &undoManager),
+        undoManager(30000,30), state(*this, &undoManager),
         masterVolumeParamId("masterVolume") {
 
     this->setLatencySamples(0);
@@ -16,17 +16,17 @@ MainProcessor::MainProcessor(int inputChannelCount, int outputChannelCount):
     // method is called before playback begins.
     this->setPlayConfigDetails(inputChannelCount, outputChannelCount, 0, 0);
 
-    currentInstrument = std::make_unique<SineBank>(treeState);
+    currentInstrument = std::make_unique<SineBank>(state);
     for (int i = 0; i < currentInstrument->getNumParameters(); i++) {
         parameterIdForMidiNumber.insert(std::make_pair<int, String>(Push2::ccNumberForTopKnobIndex(i), currentInstrument->getParameterId(i)));
     }
 
-    masterVolumeParam = treeState.createAndAddParameter("masterVolume", "Volume", "Volume",
+    masterVolumeParam = state.createAndAddParameter("masterVolume", "Volume", "Volume",
                                     NormalisableRange<float>(0.0f, 1.0f),
                                     0.5f,
-                                    [](float value) { return String(value*1000) + "ms"; },
-                                    [](const String& text) { return text.getFloatValue()/1000.0f; });
+                                    [](float value) { return String(Decibels::gainToDecibels<float>(value, 0), 3) + "dB"; }, nullptr);
 
+    state.addParameterListener(masterVolumeParamId, this);
     mixerAudioSource.addInputSource(currentInstrument->getAudioSource(), false);
 }
 
@@ -45,7 +45,7 @@ void MainProcessor::handleControlMidi(const MidiMessage &midiMessage) {
     String parameterId = parameterIdEntry->second;
 
     float value = Push2::encoderCcMessageToRotationChange(midiMessage);
-    auto param = treeState.getParameter(parameterId);
+    auto param = state.getParameter(parameterId);
 
     auto newValue = param->getValue() + value / 5.0f; // todo move manual scaling to param
 
@@ -67,8 +67,9 @@ void MainProcessor::releaseResources() {
 }
 
 void MainProcessor::processBlock(AudioSampleBuffer& buffer, MidiBuffer& midiMessages) {
-    mixerAudioSource.getNextAudioBlock(AudioSourceChannelInfo(buffer));
-    buffer.applyGain(masterVolumeParam->getValue() * 50.0f); // todo get rid of manual scaling and replace with LinearSmoothedValue (or dsp::Gain object)
+    const AudioSourceChannelInfo &channelInfo = AudioSourceChannelInfo(buffer);
+    mixerAudioSource.getNextAudioBlock(channelInfo);
+    gain.applyGain(buffer, channelInfo.numSamples);
 }
 
 const String MainProcessor::getInputChannelName(int channelIndex) const {

@@ -5,7 +5,7 @@
 #include "JuceHeader.h"
 #include "push2/Push2MidiCommunicator.h"
 
-class MainProcessor : public AudioProcessor {
+class MainProcessor : public AudioProcessor, AudioProcessorValueTreeState::Listener {
     typedef Push2MidiCommunicator Push2;
 
 public:
@@ -19,6 +19,11 @@ public:
 
     /*** JUCE override methods ***/
 
+    void parameterChanged(const String& parameterID, float newValue) override {
+        if (parameterID == masterVolumeParamId) {
+            gain.setValue(newValue);
+        }
+    };
 
     const String getName() const override;
 
@@ -72,12 +77,13 @@ private:
     //JUCE_DECLARE_NON_COPYABLE(MainProcessor);
 
     UndoManager undoManager;
-    AudioProcessorValueTreeState treeState;
+    AudioProcessorValueTreeState state;
     std::unique_ptr<Instrument> currentInstrument;
 
     AudioProcessorParameterWithID* masterVolumeParam;
     StringRef masterVolumeParamId;
     MixerAudioSource mixerAudioSource;
+    LinearSmoothedValue<float> gain;
 
     std::unordered_map<int, String> parameterIdForMidiNumber {
             {Push2::ccNumberForControlLabel.at(Push2::ControlLabel::masterKnob), masterVolumeParamId},
