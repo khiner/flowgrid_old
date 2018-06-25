@@ -7,7 +7,7 @@
 class SineBank : public Instrument {
 public:
     explicit SineBank(AudioProcessorValueTreeState &state) :
-            Instrument(state),
+            Instrument(0, 2, state),
             toneSource1(state, "1"),
             toneSource2(state, "2"),
             toneSource3(state, "3"),
@@ -18,6 +18,8 @@ public:
         mixerAudioSource.addInputSource(toneSource3.get(), false);
         mixerAudioSource.addInputSource(toneSource4.get(), false);
     }
+
+    const String getName() const override { return "Sine Bank"; }
 
     int getNumParameters() override {
         return 8;
@@ -37,8 +39,9 @@ public:
         }
     }
 
-    AudioSource* getAudioSource() override {
-        return &mixerAudioSource;
+    void processBlock(AudioSampleBuffer& buffer, MidiBuffer& midiMessages) {
+        const AudioSourceChannelInfo &channelInfo = AudioSourceChannelInfo(buffer);
+        mixerAudioSource.getNextAudioBlock(channelInfo);
     }
 
 private:

@@ -19,15 +19,11 @@ MainProcessor::MainProcessor(int inputChannelCount, int outputChannelCount):
 
 
 void MainProcessor::setInstrument(const Identifier& instrumentId) {
-    if (currentInstrument != nullptr) {
-        mixerAudioSource.removeInputSource(currentInstrument->getAudioSource());
-    }
     if (instrumentId == IDs::SINE_BANK_INSTRUMENT) {
         currentInstrument = std::make_unique<SineBank>(state);
     }
 
     state.state = ValueTree(Identifier("sound-machine"));
-    mixerAudioSource.addInputSource(currentInstrument->getAudioSource(), false);
 }
 
 // listened to and called on a non-audio thread, called by MainContentComponent
@@ -67,7 +63,7 @@ void MainProcessor::handleControlMidi(const MidiMessage &midiMessage) {
 
 void MainProcessor::processBlock(AudioSampleBuffer& buffer, MidiBuffer& midiMessages) {
     const AudioSourceChannelInfo &channelInfo = AudioSourceChannelInfo(buffer);
-    mixerAudioSource.getNextAudioBlock(channelInfo);
+    currentInstrument->processBlock(buffer, midiMessages);
     gain.applyGain(buffer, channelInfo.numSamples);
 }
 

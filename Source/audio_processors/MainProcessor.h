@@ -41,6 +41,5 @@ private:
     std::unique_ptr<Instrument> currentInstrument;
 
     StringRef masterVolumeParamId;
-    MixerAudioSource mixerAudioSource;
     LinearSmoothedValue<float> gain;
 };

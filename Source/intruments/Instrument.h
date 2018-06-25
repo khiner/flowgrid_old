@@ -1,18 +1,18 @@
 #pragma once
 
+#include <audio_processors/DefaultAudioProcessor.h>
 #include "JuceHeader.h"
 
-class Instrument {
+class Instrument : public DefaultAudioProcessor {
 public:
-    explicit Instrument(AudioProcessorValueTreeState &state) : state(&state) {};
+    explicit Instrument(int inputChannelCount, int outputChannelCount, AudioProcessorValueTreeState &state) :
+            DefaultAudioProcessor(inputChannelCount, outputChannelCount), state(&state) {};
 
     AudioProcessorValueTreeState *getState() const {
         return state;
     }
 
-    virtual int getNumParameters() = 0;
     virtual String getParameterId(int parameterIndex) = 0;
-    virtual AudioSource* getAudioSource() = 0;
 protected:
     AudioProcessorValueTreeState *state;
 };
