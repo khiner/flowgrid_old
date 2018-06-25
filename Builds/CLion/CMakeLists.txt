@@ -17,9 +17,7 @@ project ("sound-machine" C CXX)
 
 add_executable (APP
     "../../Resources/PushStartup.png"
-    "../../Source/audio_processors/MainProcessor.cpp"
-    "../../Source/audio_processors/MainProcessor.h"
-    "../../Source/audio_sources/ToneSourceWithParameters.cpp"
+        "../../Source/audio_sources/ToneSourceWithParameters.cpp"
     "../../Source/audio_sources/ToneSourceWithParameters.h"
     "../../Source/midi/MidiCommunicator.cpp"
     "../../Source/midi/MidiCommunicator.h"
@@ -1280,7 +1278,6 @@ add_executable (APP
         ../../Source/view/Push2ViewComponent.cpp ../../Source/view/Push2ViewComponent.h ../../Source/view/InstrumentViewComponent.cpp ../../Source/view/InstrumentViewComponent.h ../../Source/intruments/Instrument.h ../../Source/intruments/SineBank.cpp ../../Source/intruments/SineBank.h ../../Source/audio_processors/DefaultAudioProcessor.h ../../Source/AudioGraphBuilder.h)
 
 set_source_files_properties ("../../Resources/PushStartup.png" PROPERTIES HEADER_FILE_ONLY TRUE)
-set_source_files_properties ("../../Source/audio_processors/MainProcessor.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/audio_sources/ToneSourceWithParameters.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/midi/MidiCommunicator.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/push2/Push2Display.h" PROPERTIES HEADER_FILE_ONLY TRUE)

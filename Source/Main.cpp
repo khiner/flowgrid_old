@@ -5,7 +5,6 @@
 #include "AudioGraphBuilder.h"
 #include <ArrangeView.h>
 #include <ValueTreesDemo.h>
-#include <audio_processors/MainProcessor.h>
 #include <view/InstrumentViewComponent.h>
 #include <view/Push2ViewComponent.h>
 
@@ -26,7 +25,7 @@ ValueTree loadOrCreateDefaultEdit()
 
 class SoundMachineApplication : public JUCEApplication {
 public:
-    SoundMachineApplication(): mainProcessor(2, 2), push2Animator(&push2ViewComponent), editTree(loadOrCreateDefaultEdit()), audioGraphBuilder(editTree) {}
+    SoundMachineApplication(): push2Animator(&push2ViewComponent), editTree(loadOrCreateDefaultEdit()), audioGraphBuilder(editTree) {}
 
     const String getApplicationName() override { return ProjectInfo::projectName; }
 
@@ -35,15 +34,15 @@ public:
     bool moreThanOneInstanceAllowed() override { return true; }
 
     void initialise(const String &) override {
-        player.setProcessor(&mainProcessor);
+        player.setProcessor(audioGraphBuilder.getMainAudioProcessor());
         deviceManager.addAudioCallback(&player);
 
         push2MidiCommunicator.setMidiInputCallback([this](const MidiMessage &message) {
-            mainProcessor.handleControlMidi(message);
+            audioGraphBuilder.getMainAudioProcessor()->handleControlMidi(message);
         });
 
-        mainProcessor.setInstrument(IDs::SINE_BANK_INSTRUMENT);
-        instrumentViewComponent.setInstrument(mainProcessor.getCurrentInstrument());
+        audioGraphBuilder.getMainAudioProcessor()->setInstrument(IDs::SINE_BANK_INSTRUMENT);
+        instrumentViewComponent.setInstrument(audioGraphBuilder.getMainAudioProcessor()->getCurrentInstrument());
         push2ViewComponent.addAndMakeVisible(instrumentViewComponent);
 
         deviceManager.initialiseWithDefaultDevices(2, 2);
@@ -126,7 +125,6 @@ private:
 
     Push2MidiCommunicator push2MidiCommunicator;
 
-    MainProcessor mainProcessor;
     InstrumentViewComponent instrumentViewComponent;
     Push2ViewComponent push2ViewComponent;
     Push2Animator push2Animator;
