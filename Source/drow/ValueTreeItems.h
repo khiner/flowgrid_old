@@ -61,8 +61,7 @@ namespace Helpers
 
         Helpers::createUuidProperty (edit);
 
-        for (int tn = 0; tn < 8; ++tn)
-        {
+        for (int tn = 0; tn < 1; ++tn) {
             ValueTree t (IDs::TRACK);
             const String trackName ("Track " + String (tn + 1));
             t.setProperty (IDs::colour, Colour::fromHSV ((1.0f / 8.0f) * tn, 0.65f, 0.65f, 1.0f).toString(), nullptr);

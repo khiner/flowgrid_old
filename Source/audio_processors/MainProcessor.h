@@ -10,7 +10,7 @@ class MainProcessor : public DefaultAudioProcessor, AudioProcessorValueTreeState
     typedef Push2MidiCommunicator Push2;
 
 public:
-    explicit MainProcessor(int inputChannelCount = 1, int outputChannelCount = 0);
+    explicit MainProcessor(int inputChannelCount, int outputChannelCount);
 
     void handleControlMidi(const MidiMessage &midiMessage);
 

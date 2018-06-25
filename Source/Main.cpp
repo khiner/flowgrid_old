@@ -2,6 +2,7 @@
 #include <drow/ValueTreeItems.h>
 #include "JuceHeader.h"
 #include "Push2Animator.h"
+#include "AudioGraphBuilder.h"
 #include <ArrangeView.h>
 #include <ValueTreesDemo.h>
 #include <audio_processors/MainProcessor.h>
@@ -25,7 +26,7 @@ ValueTree loadOrCreateDefaultEdit()
 
 class SoundMachineApplication : public JUCEApplication {
 public:
-    SoundMachineApplication(): mainProcessor(2, 2), push2Animator(&push2ViewComponent) {}
+    SoundMachineApplication(): mainProcessor(2, 2), push2Animator(&push2ViewComponent), editTree(loadOrCreateDefaultEdit()), audioGraphBuilder(editTree) {}
 
     const String getApplicationName() override { return ProjectInfo::projectName; }
 
@@ -49,7 +50,6 @@ public:
         Process::makeForegroundProcess();
         // This method is where you should put your application's initialisation code..
         push2Window = new MainWindow(getApplicationName(), &push2ViewComponent);
-        editTree = loadOrCreateDefaultEdit();
         treeWindow = new MainWindow("Tree Editor", new ValueTreesDemo (editTree));
         arrangeWindow = new MainWindow("Overview", new ArrangeView (editTree));
 
@@ -120,7 +120,6 @@ public:
     };
 
 private:
-    ValueTree editTree;
     ScopedPointer<MainWindow> treeWindow, arrangeWindow, audioSetupWindow;
     ScopedPointer<MainWindow> push2Window;
     AudioDeviceManager deviceManager;
@@ -133,6 +132,8 @@ private:
     Push2Animator push2Animator;
     AudioProcessorPlayer player;
 
+    ValueTree editTree;
+    AudioGraphBuilder audioGraphBuilder;
 };
 
 // This macro generates the main() routine that launches the app.
