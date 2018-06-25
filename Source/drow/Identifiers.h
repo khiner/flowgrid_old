@@ -9,6 +9,10 @@ namespace IDs
     DECLARE_ID (TREE)
     DECLARE_ID (pi)
 
+    DECLARE_ID(MASTER_GAIN)
+
+    DECLARE_ID(SINE_BANK_INSTRUMENT)
+
     DECLARE_ID (EDIT)
     DECLARE_ID (uuid)
     DECLARE_ID (mediaId)

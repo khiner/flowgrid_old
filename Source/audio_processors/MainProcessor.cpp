@@ -1,5 +1,6 @@
 #include <push2/Push2MidiCommunicator.h>
 #include <intruments/SineBank.h>
+#include <drow/Identifiers.h>
 #include "MainProcessor.h"
 
 MainProcessor::MainProcessor(int inputChannelCount, int outputChannelCount):
@@ -16,11 +17,6 @@ MainProcessor::MainProcessor(int inputChannelCount, int outputChannelCount):
     // method is called before playback begins.
     this->setPlayConfigDetails(inputChannelCount, outputChannelCount, 0, 0);
 
-    currentInstrument = std::make_unique<SineBank>(state);
-    for (int i = 0; i < currentInstrument->getNumParameters(); i++) {
-        parameterIdForMidiNumber.insert(std::make_pair<int, String>(Push2::ccNumberForTopKnobIndex(i), currentInstrument->getParameterId(i)));
-    }
-
     state.createAndAddParameter("masterVolume", "Volume", "dB",
                                     NormalisableRange<float>(0.0f, 1.0f),
                                     0.5f,
@@ -28,11 +24,20 @@ MainProcessor::MainProcessor(int inputChannelCount, int outputChannelCount):
 
     state.addParameterListener(masterVolumeParamId, this);
     gain.setValue(0.5f);
-    mixerAudioSource.addInputSource(currentInstrument->getAudioSource(), false);
-
-    state.state = ValueTree(Identifier("sound-machine"));
 }
 
+
+void MainProcessor::setInstrument(const Identifier& instrumentId) {
+    if (currentInstrument != nullptr) {
+        mixerAudioSource.removeInputSource(currentInstrument->getAudioSource());
+    }
+    if (instrumentId == IDs::SINE_BANK_INSTRUMENT) {
+        currentInstrument = std::make_unique<SineBank>(state);
+    }
+
+    state.state = ValueTree(Identifier("sound-machine"));
+    mixerAudioSource.addInputSource(currentInstrument->getAudioSource(), false);
+}
 
 // listened to and called on a non-audio thread, called by MainContentComponent
 void MainProcessor::handleControlMidi(const MidiMessage &midiMessage) {
@@ -43,14 +48,21 @@ void MainProcessor::handleControlMidi(const MidiMessage &midiMessage) {
 
     if (ccNumber == Push2::getCcNumberForControlLabel(Push2::ControlLabel::undo)) {
         undoManager.undo();
-    }
-
-    auto parameterIdEntry = parameterIdForMidiNumber.find(ccNumber);
-    if (parameterIdEntry == parameterIdForMidiNumber.end()) {
         return;
     }
 
-    String parameterId = parameterIdEntry->second;
+    StringRef parameterId;
+    if (ccNumber == Push2::getCcNumberForControlLabel(Push2::ControlLabel::masterKnob)) {
+        parameterId = masterVolumeParamId;
+    } else {
+        for (int i = 0; i < 8; i ++) {
+            if (ccNumber == Push2::ccNumberForTopKnobIndex(i)) {
+                parameterId = currentInstrument->getParameterId(i);
+                break;
+            }
+        }
+
+    }
 
     float value = Push2::encoderCcMessageToRotationChange(midiMessage);
     auto param = state.getParameter(parameterId);

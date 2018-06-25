@@ -13,6 +13,8 @@ public:
 
     void handleControlMidi(const MidiMessage &midiMessage);
 
+    void setInstrument(const Identifier &instrumentId);
+
     Instrument* getCurrentInstrument() {
         return currentInstrument.get();
     }
@@ -83,8 +85,4 @@ private:
     StringRef masterVolumeParamId;
     MixerAudioSource mixerAudioSource;
     LinearSmoothedValue<float> gain;
-
-    std::unordered_map<int, String> parameterIdForMidiNumber {
-            {Push2::getCcNumberForControlLabel(Push2::ControlLabel::masterKnob), masterVolumeParamId},
-    };
 };

@@ -56,6 +56,9 @@ namespace Helpers
     {
         ValueTree edit (IDs::EDIT);
         edit.setProperty (IDs::name, "My First Edit", nullptr);
+
+        edit.setProperty(IDs::MASTER_GAIN, 0.5, nullptr);
+
         Helpers::createUuidProperty (edit);
 
         for (int tn = 0; tn < 8; ++tn)
@@ -161,6 +164,7 @@ public:
         if (auto* ov = getOwnerView())
             if (auto* cb = dynamic_cast<ChangeBroadcaster*> (ov->getRootItem()))
                 cb->sendChangeMessage();
+
     }
 
     var getDragSourceDescription() override
@@ -236,6 +240,10 @@ public:
         : ValueTreeItem (v, um)
     {
         jassert (state.hasType (IDs::TRACK));
+    }
+
+    void itemSelectionChanged (bool isNowSelected) override {
+        ValueTreeItem::itemSelectionChanged(isNowSelected);
     }
 
     bool isInterestedInDragSource (const DragAndDropTarget::SourceDetails& dragSourceDetails) override

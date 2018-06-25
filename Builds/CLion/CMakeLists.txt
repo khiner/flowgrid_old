@@ -38,7 +38,9 @@ add_executable (APP
     "../../Source/Main.cpp"
         "../../Source/Push2Animator.cpp"
     "../../Source/Push2Animator.h"
-    "../../Source/ValueTreesDemo.h"
+        "../../Source/ValueTreesDemo.h"
+        "../../Source/ArrangeView.h"
+
     "../../Source/drow/Components.h"
     "../../Source/drow/drow_Utilities.h"
     "../../Source/drow/drow_ValueTreeObjectList.h"

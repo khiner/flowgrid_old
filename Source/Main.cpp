@@ -25,7 +25,7 @@ ValueTree loadOrCreateDefaultEdit()
 
 class SoundMachineApplication : public JUCEApplication {
 public:
-    SoundMachineApplication(): mainProcessor(2, 2), instrumentViewComponent(mainProcessor.getCurrentInstrument()), push2Animator(&push2ViewComponent) {}
+    SoundMachineApplication(): mainProcessor(2, 2), push2Animator(&push2ViewComponent) {}
 
     const String getApplicationName() override { return ProjectInfo::projectName; }
 
@@ -41,6 +41,8 @@ public:
             mainProcessor.handleControlMidi(message);
         });
 
+        mainProcessor.setInstrument(IDs::SINE_BANK_INSTRUMENT);
+        instrumentViewComponent.setInstrument(mainProcessor.getCurrentInstrument());
         push2ViewComponent.addAndMakeVisible(instrumentViewComponent);
 
         deviceManager.initialiseWithDefaultDevices(2, 2);

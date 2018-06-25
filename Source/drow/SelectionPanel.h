@@ -110,7 +110,7 @@ private:
         resized();
     }
 
-    void changeListenerCallback (ChangeBroadcaster*) override
+    void changeListenerCallback (ChangeBroadcaster* cb) override
     {
         refresh();
     }

@@ -1,8 +1,16 @@
 #include <push2/Push2Display.h>
 #include "InstrumentViewComponent.h"
 
-InstrumentViewComponent::InstrumentViewComponent(Instrument *instrument) {
+InstrumentViewComponent::InstrumentViewComponent() {
     setSize(Push2Display::WIDTH, Push2Display::HEIGHT);
+}
+
+void InstrumentViewComponent::setInstrument(Instrument *instrument) {
+    removeAllChildren();
+
+    sliderAttachments.clear();
+    labels.clear();
+    sliders.clear();
 
     for (int sliderIndex = 0; sliderIndex < instrument->getNumParameters(); sliderIndex++) {
         auto slider = std::make_unique<Slider>();
