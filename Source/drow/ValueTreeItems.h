@@ -66,6 +66,7 @@ namespace Helpers
             const String trackName ("Track " + String (tn + 1));
             t.setProperty (IDs::colour, Colour::fromHSV ((1.0f / 8.0f) * tn, 0.65f, 0.65f, 1.0f).toString(), nullptr);
             t.setProperty (IDs::name, trackName, nullptr);
+            t.setProperty(IDs::selected, true, nullptr);
             Helpers::createUuidProperty (t);
 
             for (int cn = 0; cn < 3; ++cn)
@@ -75,6 +76,8 @@ namespace Helpers
                 c.setProperty (IDs::name, trackName + ", Clip " + String (cn + 1), nullptr);
                 c.setProperty (IDs::start, cn, nullptr);
                 c.setProperty (IDs::length, 1.0, nullptr);
+                c.setProperty(IDs::selected, false, nullptr);
+
                 t.addChild (c, -1, nullptr);
             }
 
@@ -158,8 +161,9 @@ public:
             clearSubItems();
     }
 
-    void itemSelectionChanged (bool /*isNowSelected*/) override
+    void itemSelectionChanged (bool isNowSelected) override
     {
+        state.setProperty(IDs::selected, isNowSelected, nullptr);
         if (auto* ov = getOwnerView())
             if (auto* cb = dynamic_cast<ChangeBroadcaster*> (ov->getRootItem()))
                 cb->sendChangeMessage();

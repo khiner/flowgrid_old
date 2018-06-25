@@ -21,6 +21,7 @@ namespace IDs
     DECLARE_ID (colour)
     DECLARE_ID (name)
     DECLARE_ID (image)
+    DECLARE_ID (selected)
 
     DECLARE_ID (CLIP)
     DECLARE_ID (start)

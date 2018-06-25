@@ -41,7 +41,6 @@ public:
             audioGraphBuilder.getMainAudioProcessor()->handleControlMidi(message);
         });
 
-        audioGraphBuilder.getMainAudioProcessor()->setInstrument(IDs::SINE_BANK_INSTRUMENT);
         instrumentViewComponent.setInstrument(audioGraphBuilder.getMainAudioProcessor()->getCurrentInstrument());
         push2ViewComponent.addAndMakeVisible(instrumentViewComponent);
 
