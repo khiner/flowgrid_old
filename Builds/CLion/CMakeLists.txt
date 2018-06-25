@@ -35,11 +35,16 @@ add_executable (APP
     "../../Source/usb/libusb/libusb_platform_wrapper.c"
     "../../Source/usb/UsbCommunicator.cpp"
     "../../Source/usb/UsbCommunicator.h"
-    "../../Source/AudioSettings.h"
     "../../Source/Main.cpp"
-    "../../Source/MainContentComponent.cpp"
-    "../../Source/Push2Animator.cpp"
+        "../../Source/Push2Animator.cpp"
     "../../Source/Push2Animator.h"
+    "../../Source/ValueTreesDemo.h"
+    "../../Source/drow/Components.h"
+    "../../Source/drow/drow_Utilities.h"
+    "../../Source/drow/drow_ValueTreeObjectList.h"
+    "../../Source/drow/Identifiers.h"
+    "../../Source/drow/SelectionPanel.h"
+    "../../Source/drow/ValueTreeItems.h"
     "../../modules/JUCE/modules/juce_audio_basics/audio_play_head/juce_AudioPlayHead.h"
     "../../modules/JUCE/modules/juce_audio_basics/buffers/juce_AudioChannelSet.cpp"
     "../../modules/JUCE/modules/juce_audio_basics/buffers/juce_AudioChannelSet.h"
@@ -1284,7 +1289,6 @@ set_source_files_properties ("../../Source/usb/libusb/config.h" PROPERTIES HEADE
 set_source_files_properties ("../../Source/usb/libusb/config_msvc.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/usb/libusb/config_xcode.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/usb/UsbCommunicator.h" PROPERTIES HEADER_FILE_ONLY TRUE)
-set_source_files_properties ("../../Source/AudioSettings.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/Push2Animator.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../modules/JUCE/modules/juce_audio_basics/audio_play_head/juce_AudioPlayHead.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../modules/JUCE/modules/juce_audio_basics/buffers/juce_AudioChannelSet.cpp" PROPERTIES HEADER_FILE_ONLY TRUE)

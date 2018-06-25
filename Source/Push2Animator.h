@@ -1,7 +1,5 @@
 #pragma once
 
-#include <push2/Push2MidiCommunicator.h>
-#include <audio_processors/MainProcessor.h>
 #include <view/Push2ViewComponent.h>
 #include "push2/Push2DisplayBridge.h"
 

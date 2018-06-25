@@ -1,10 +1,31 @@
+#include <drow/drow_Utilities.h>
+#include <drow/ValueTreeItems.h>
 #include "JuceHeader.h"
+#include "Push2Animator.h"
+#include <ArrangeView.h>
+#include <ValueTreesDemo.h>
+#include <audio_processors/MainProcessor.h>
+#include <view/InstrumentViewComponent.h>
+#include <view/Push2ViewComponent.h>
 
-Component *createMainContentComponent();
+File getSaveFile()
+{
+    return File::getSpecialLocation (File::userDesktopDirectory).getChildFile ("ValueTreeDemoEdit.xml");
+}
+
+ValueTree loadOrCreateDefaultEdit()
+{
+    ValueTree v (drow::loadValueTree (getSaveFile(), true));
+
+    if (! v.isValid())
+        v =  Helpers::createDefaultEdit();
+
+    return v;
+}
 
 class SoundMachineApplication : public JUCEApplication {
 public:
-    SoundMachineApplication() = default;
+    SoundMachineApplication(): mainProcessor(2, 2), instrumentViewComponent(mainProcessor.getCurrentInstrument()), push2Animator(&push2ViewComponent) {}
 
     const String getApplicationName() override { return ProjectInfo::projectName; }
 
@@ -12,14 +33,40 @@ public:
 
     bool moreThanOneInstanceAllowed() override { return true; }
 
-    void initialise(const String &commandLine) override {
+    void initialise(const String &) override {
+        player.setProcessor(&mainProcessor);
+        deviceManager.addAudioCallback(&player);
+
+        push2MidiCommunicator.setMidiInputCallback([this](const MidiMessage &message) {
+            mainProcessor.handleControlMidi(message);
+        });
+
+        push2ViewComponent.addAndMakeVisible(instrumentViewComponent);
+
+        deviceManager.initialiseWithDefaultDevices(2, 2);
+        Process::makeForegroundProcess();
         // This method is where you should put your application's initialisation code..
-        mainWindow = new MainWindow(getApplicationName());
+        push2Window = new MainWindow(getApplicationName(), &push2ViewComponent);
+        editTree = loadOrCreateDefaultEdit();
+        treeWindow = new MainWindow("Tree Editor", new ValueTreesDemo (editTree));
+        arrangeWindow = new MainWindow("Overview", new ArrangeView (editTree));
+
+        audioSetupWindow = new MainWindow("Audio Setup", new AudioDeviceSelectorComponent(deviceManager, 0, 256, 0, 256, true, true, true, false));
+
+        treeWindow->setBoundsRelative(0.15, 0.25, 0.35, 0.35);
+        arrangeWindow->setBoundsRelative(0.50, 0.25, 0.35, 0.35);
+        audioSetupWindow->setBoundsRelative(0.15, 0.60, 0.35, 0.50);
+        push2Window->setBounds(treeWindow->getPosition().x, treeWindow->getPosition().y - Push2Display::HEIGHT - 30, Push2Display::WIDTH, Push2Display::HEIGHT + 30);
     }
 
     void shutdown() override {
         // Add your application's shutdown code here..
-        mainWindow = nullptr; // (deletes our window)
+        push2Window = nullptr; // (deletes our window)
+        treeWindow = nullptr;
+        audioSetupWindow = nullptr;
+        arrangeWindow = nullptr;
+        deviceManager.removeAudioCallback(&player);
+        drow::saveValueTree (editTree, getSaveFile(), true);
     }
 
     void systemRequestedQuit() override {
@@ -40,15 +87,15 @@ public:
     */
     class MainWindow : public DocumentWindow {
     public:
-        explicit MainWindow(const String &name) : DocumentWindow(name,
+        explicit MainWindow(const String &name, Component* contentComponent) : DocumentWindow(name,
                                                  Colours::lightgrey,
                                                  DocumentWindow::allButtons) {
-            setUsingNativeTitleBar(true);
-            setContentOwned(createMainContentComponent(), true);
+            setContentOwned(contentComponent, true);
             setResizable(true, true);
 
             centreWithSize(getWidth(), getHeight());
             setVisible(true);
+            setBackgroundColour(backgroundColor);
         }
 
         void closeButtonPressed() override {
@@ -66,11 +113,24 @@ public:
         */
 
     private:
+        const Colour backgroundColor = dynamic_cast<LookAndFeel_V4&>(LookAndFeel::getDefaultLookAndFeel()).getCurrentColourScheme().getUIColour((LookAndFeel_V4::ColourScheme::UIColour::windowBackground));
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainWindow)
     };
 
 private:
-    ScopedPointer<MainWindow> mainWindow;
+    ValueTree editTree;
+    ScopedPointer<MainWindow> treeWindow, arrangeWindow, audioSetupWindow;
+    ScopedPointer<MainWindow> push2Window;
+    AudioDeviceManager deviceManager;
+
+    Push2MidiCommunicator push2MidiCommunicator;
+
+    MainProcessor mainProcessor;
+    InstrumentViewComponent instrumentViewComponent;
+    Push2ViewComponent push2ViewComponent;
+    Push2Animator push2Animator;
+    AudioProcessorPlayer player;
+
 };
 
 // This macro generates the main() routine that launches the app.
