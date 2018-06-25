@@ -96,7 +96,7 @@ struct AudioGraphClasses {
                 currentInstrument = std::make_unique<SineBank>(state);
             }
 
-            state.state = ValueTree(Identifier("sound-machine"));
+            state.state = parent;
         }
 
         Instrument *getCurrentInstrument() {
