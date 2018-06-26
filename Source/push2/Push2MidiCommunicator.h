@@ -31,7 +31,7 @@ public:
 
         bottomDisplayButton1, bottomDisplayButton2, bottomDisplayButton3, bottomDisplayButton4, bottomDisplayButton5, bottomDisplayButton6, bottomDisplayButton7, bottomDisplayButton8,
 
-        delele_, undo, addDevice, addTrack, device, mix, browse, clip,
+        delete_, undo, addDevice, addTrack, device, mix, browse, clip,
 
         mute, solo, stopClip, master,
 

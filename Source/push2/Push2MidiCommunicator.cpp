@@ -34,7 +34,7 @@ const std::unordered_map<Push2MidiCommunicator::ControlLabel, int> Push2MidiComm
         {bottomDisplayButton7, 26},
         {bottomDisplayButton8, 27},
 
-        {delele_, 118},
+        {delete_, 118},
         {undo, 119},
         {addDevice, 52},
         {addTrack, 53},
