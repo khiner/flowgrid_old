@@ -6,7 +6,6 @@
 #include "MidiControlHandler.h"
 #include <ArrangeView.h>
 #include <ValueTreesDemo.h>
-#include <view/Push2ProcessorViewComponent.h>
 #include <push2/Push2MidiCommunicator.h>
 
 File getSaveFile()
@@ -46,7 +45,7 @@ public:
 
         Process::makeForegroundProcess();
         push2Window = std::make_unique<MainWindow>("Push 2 Mirror", new Push2Animator(audioGraphBuilder));
-        treeWindow = std::make_unique<MainWindow>("Tree Editor", new ValueTreesDemo (editTree, undoManager));
+        treeWindow = std::make_unique<MainWindow>("Tree Editor", new ValueTreesDemo (editTree, undoManager, audioGraphBuilder));
         arrangeWindow = std::make_unique<MainWindow>("Arrange View", new ArrangeView (editTree));
 
         auto *audioDeviceSelectorComponent = new AudioDeviceSelectorComponent(deviceManager, 0, 256, 0, 256, true, true, true, false);

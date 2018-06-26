@@ -18,19 +18,18 @@ public:
 
         const int ccNumber = midiMessage.getControllerNumber();
 
-        if (Push2::isAboveScreenEncoderCcNumber(ccNumber)) {
+        if (Push2::isEncoderCcNumber(ccNumber)) {
             AudioProcessorParameter *parameter = nullptr;
             if (ccNumber == Push2::masterKnob) {
                 parameter = audioGraphBuilder.getMainAudioProcessor()->getParameterByIdentifier(
                         IDs::MASTER_GAIN.toString());
-            } else {
+            } else if (Push2::isAboveScreenEncoderCcNumber(ccNumber)) {
                 AudioGraphClasses::AudioTrack *selectedTrack = audioGraphBuilder.getMainAudioProcessor()->findSelectedAudioTrack();
                 parameter = findParameterAssumingTopKnobCc(selectedTrack, ccNumber);
             }
 
             if (parameter) {
                 float value = Push2::encoderCcMessageToRotationChange(midiMessage);
-
                 auto newValue = parameter->getValue() + value / 5.0f; // todo move manual scaling to param
 
                 if (newValue > 0) {
@@ -75,7 +74,10 @@ private:
 
         for (int i = 0; i < track->getNumParameters(); i++) {
             if (ccNumber == Push2::ccNumberForTopKnobIndex(i)) {
-                return track->getCurrentAudioProcessor()->getParameterByIndex(i);
+                StatefulAudioProcessor *selectedAudioProcessor = track->getSelectedAudioProcessor();
+                if (selectedAudioProcessor != nullptr) {
+                    return selectedAudioProcessor->getParameterByIndex(i);
+                }
             }
         }
         return nullptr;

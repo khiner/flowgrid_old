@@ -25,6 +25,9 @@ struct AudioGraphClasses {
             source->getState()->state = v;
         }
 
+        ~AudioProcessorWrapper() {
+
+        }
         ValueTree state;
 
         std::unique_ptr<StatefulAudioProcessor> source;
@@ -74,7 +77,9 @@ struct AudioGraphClasses {
             delete at;
         }
 
-        void objectRemoved(AudioProcessorWrapper *) override {}
+        void objectRemoved(AudioProcessorWrapper *) override {
+
+        }
 
         void objectOrderChanged() override {}
 
@@ -95,11 +100,19 @@ struct AudioGraphClasses {
         int getNumParameters() override { return 8; }
 
         void processBlock(AudioSampleBuffer &buffer, MidiBuffer &midiMessages) override {
-            getCurrentAudioProcessor()->processBlock(buffer, midiMessages);
+            StatefulAudioProcessor *firstAudioProcessor = getFirstAudioProcessor();
+            if (firstAudioProcessor != nullptr) {
+                firstAudioProcessor->processBlock(buffer, midiMessages);
+            }
         }
 
-        StatefulAudioProcessor *getCurrentAudioProcessor() {
+        StatefulAudioProcessor *getFirstAudioProcessor() {
             AudioProcessorWrapper *selectedProcessor = processorList->findFirstProcessor(); // TODO this will make more sense with AudioGraphs
+            return selectedProcessor != nullptr ? selectedProcessor->source.get() : nullptr;
+        }
+
+        StatefulAudioProcessor *getSelectedAudioProcessor() {
+            AudioProcessorWrapper *selectedProcessor = processorList->findSelectedProcessor(); // TODO this will make more sense with AudioGraphs
             return selectedProcessor != nullptr ? selectedProcessor->source.get() : nullptr;
         }
 
@@ -143,13 +156,13 @@ struct AudioGraphClasses {
             freeObjects();
         }
 
-        StatefulAudioProcessor *getCurrentAudioProcessor() {
+        StatefulAudioProcessor *getSelectedAudioProcessor() {
             AudioTrack *selectedTrack = findSelectedAudioTrack();
-            return selectedTrack != nullptr ? selectedTrack->getCurrentAudioProcessor() : nullptr;
+            return selectedTrack != nullptr ? selectedTrack->getSelectedAudioProcessor() : nullptr;
         }
 
         void newObjectAdded(AudioTrack *audioTrack) override {
-            //mixerAudioSource.addInputSource(audioTrack->getCurrentAudioProcessor(), false);
+            //mixerAudioSource.addInputSource(audioTrack->getSelectedAudioProcessor(), false);
         }
 
         AudioTrack *findSelectedAudioTrack() {
@@ -183,10 +196,7 @@ struct AudioGraphClasses {
             const AudioSourceChannelInfo &channelInfo = AudioSourceChannelInfo(buffer);
 
             for (auto *track : objects) {
-                auto currentProcessor = track->getCurrentAudioProcessor();
-                if (currentProcessor != nullptr) {
-                    currentProcessor->processBlock(buffer, midiMessages);
-                }
+                track->processBlock(buffer, midiMessages);
             }
 
             gain.applyGain(buffer, channelInfo.numSamples);

@@ -231,6 +231,9 @@ public:
         jassert (state.hasType(IDs::PROCESSOR));
     }
 
+    ~Processor() {
+
+    }
     bool mightContainSubItems() override {
         return false;
     }

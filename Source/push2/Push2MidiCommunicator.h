@@ -69,6 +69,10 @@ public:
         }
     }
 
+    static bool isEncoderCcNumber(int ccNumber) {
+        return ccNumber == topKnob1 || ccNumber == topKnob2 || ccNumber == masterKnob || isAboveScreenEncoderCcNumber(ccNumber);
+    }
+
     static bool isAboveScreenEncoderCcNumber(int ccNumber) {
         return ccNumber >= topKnob3 && ccNumber <= topKnob10;
     }

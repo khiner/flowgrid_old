@@ -7,8 +7,8 @@
 class SelectionPanel : public Component,
                        private ChangeListener {
 public:
-    SelectionPanel(TreeView &tv, Edit &e)
-            : treeView(tv), edit(e) {
+    SelectionPanel(TreeView &tv, Edit &e, AudioGraphBuilder &audioGraphBuilder)
+            : treeView(tv), edit(e), audioGraphBuilder(audioGraphBuilder) {
         drow::addAndMakeVisible(*this, {&titleLabel, &nameEditor, &colourButton, &startSlider, &lengthSlider});
 
         colourButton.setButtonText("Set colour");
@@ -20,6 +20,14 @@ public:
                               [this](Component *c) {
                                   labels.add(new Label(String(), c->getName()))->attachToComponent(c, true);
                               });
+
+        for (int paramIndex = 0; paramIndex < MAX_PROCESSOR_PARAMS_TO_DISPLAY; paramIndex++) {
+            Slider *slider = new Slider("Param " + String(paramIndex) + ": ");
+            addAndMakeVisible(slider);
+            
+            processorLabels.add(new Label(String(), slider->getName()))->attachToComponent(slider, true);
+            processorSliders.add(slider);
+        }
 
         edit.addChangeListener(this);
 
@@ -41,18 +49,31 @@ public:
         r = r.withTrimmedLeft(70).withWidth(250);
 
         drow::visitComponents({&nameEditor, &colourButton, &startSlider, &lengthSlider},
-                              [this, &r](Component *c) { if (c->isVisible()) c->setBounds(r.removeFromTop(22)); });
+                              [&r](Component *c) { if (c->isVisible()) c->setBounds(r.removeFromTop(22)); });
+
+        for (auto* slider : processorSliders) {
+            if (slider->isVisible()) {
+                slider->setBounds(r.removeFromTop(22));
+            }
+        }
     }
 
 private:
+    const static int MAX_PROCESSOR_PARAMS_TO_DISPLAY = 8;
+
     TreeView &treeView;
     Edit &edit;
+    AudioGraphBuilder &audioGraphBuilder;
 
     Label titleLabel;
     TextEditor nameEditor{"Name: "};
     ColourChangeButton colourButton{"Colour: "};
     Slider startSlider{"Start: "}, lengthSlider{"Length: "};
     OwnedArray<Label> labels;
+
+    OwnedArray<Label> processorLabels;
+    OwnedArray<Slider> processorSliders;
+    OwnedArray<AudioProcessorValueTreeState::SliderAttachment> processorSliderAttachements;
 
     template<typename Type>
     inline Type *getFirstSelectedItemOfType() const {
@@ -72,7 +93,24 @@ private:
         titleLabel.setText("No item selected", dontSendNotification);
         titleLabel.setVisible(true);
 
-        if (auto *clip = getFirstSelectedItemOfType<Clip>()) {
+        if (auto *processor = getFirstSelectedItemOfType<Processor>()) {
+            titleLabel.setText("Processor Selected: " + processor->getDisplayText(), dontSendNotification);
+
+            processorSliderAttachements.clear(true);
+
+            StatefulAudioProcessor *currentAudioProcessor = audioGraphBuilder.getMainAudioProcessor()->getSelectedAudioProcessor();
+            if (currentAudioProcessor != nullptr) {
+                for (int i = 0; i < 8; i++) {
+                    auto *slider = processorSliders[i];
+                    slider->setVisible(true);
+                    slider->getValueObject().refersToSameSourceAs(processor->getState().getChild(i).getPropertyAsValue(IDs::value, processor->getUndoManager()));
+                    auto sliderAttachment = new AudioProcessorValueTreeState::SliderAttachment(
+                            *currentAudioProcessor->getState(), currentAudioProcessor->getParameterIdentifier(i),
+                            *slider);
+                    processorSliderAttachements.add(sliderAttachment);
+                }
+            }
+        } else if (auto *clip = getFirstSelectedItemOfType<Clip>()) {
             titleLabel.setText("Clip Selected: " + clip->getDisplayText(), dontSendNotification);
             nameEditor.setVisible(true);
             startSlider.setVisible(true);

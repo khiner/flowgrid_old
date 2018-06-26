@@ -9,7 +9,7 @@ class ValueTreesDemo : public Component,
                        private Button::Listener,
                        private Timer {
 public:
-    ValueTreesDemo(ValueTree editToUse, UndoManager &undoManager) : undoManager(undoManager) {
+    ValueTreesDemo(ValueTree editToUse, UndoManager &undoManager, AudioGraphBuilder &audioGraphBuilder) : undoManager(undoManager) {
         addAndMakeVisible(tree);
         tree.setColour(TreeView::backgroundColourId,
                        getUIColourIfAvailable(LookAndFeel_V4::ColourScheme::UIColour::windowBackground));
@@ -19,7 +19,7 @@ public:
 
         tree.setRootItem((rootItem = std::make_unique<Edit>(editToUse, undoManager)).get());
 
-        addAndMakeVisible(*(selectionPanel = std::make_unique<SelectionPanel>(tree, *rootItem)));
+        addAndMakeVisible(*(selectionPanel = std::make_unique<SelectionPanel>(tree, *rootItem, audioGraphBuilder)));
 
         addAndMakeVisible(undoButton);
         addAndMakeVisible(redoButton);
