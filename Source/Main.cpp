@@ -41,14 +41,14 @@ public:
         });
 
         deviceManager.initialiseWithDefaultDevices(2, 2);
+
         Process::makeForegroundProcess();
-        // This method is where you should put your application's initialisation code..
-        push2Window = std::make_unique<MainWindow>(getApplicationName(), new Push2Animator(audioGraphBuilder));
+        push2Window = std::make_unique<MainWindow>("Push 2 Mirror", new Push2Animator(audioGraphBuilder));
         treeWindow = std::make_unique<MainWindow>("Tree Editor", new ValueTreesDemo (editTree, undoManager));
-        arrangeWindow = std::make_unique<MainWindow>("Overview", new ArrangeView (editTree));
+        arrangeWindow = std::make_unique<MainWindow>("Arrange View", new ArrangeView (editTree));
 
         auto *audioDeviceSelectorComponent = new AudioDeviceSelectorComponent(deviceManager, 0, 256, 0, 256, true, true, true, false);
-        audioDeviceSelectorComponent->setBoundsRelative(0, 0, 100, 100);
+        audioDeviceSelectorComponent->setBoundsRelative(0, 0, 100, 100); // needs some nonzero initial size or warnings are thrown
         audioSetupWindow = std::make_unique<MainWindow>("Audio Setup", audioDeviceSelectorComponent);
 
         treeWindow->setBoundsRelative(0.15, 0.25, 0.35, 0.35);
@@ -58,8 +58,7 @@ public:
     }
 
     void shutdown() override {
-        // Add your application's shutdown code here..
-        push2Window = nullptr; // (deletes our window)
+        push2Window = nullptr;
         treeWindow = nullptr;
         audioSetupWindow = nullptr;
         arrangeWindow = nullptr;
