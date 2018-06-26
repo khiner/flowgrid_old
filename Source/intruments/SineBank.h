@@ -39,7 +39,7 @@ public:
         }
     }
 
-    void processBlock(AudioSampleBuffer& buffer, MidiBuffer& midiMessages) {
+    void processBlock(AudioSampleBuffer& buffer, MidiBuffer& midiMessages) override {
         const AudioSourceChannelInfo &channelInfo = AudioSourceChannelInfo(buffer);
         mixerAudioSource.getNextAudioBlock(channelInfo);
     }

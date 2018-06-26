@@ -29,7 +29,6 @@ public:
             startSending();
         }
     }
-
 protected:
     /*!
      *  Initiate the send process

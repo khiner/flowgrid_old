@@ -6,7 +6,6 @@
 #include <ArrangeView.h>
 #include <ValueTreesDemo.h>
 #include <view/InstrumentViewComponent.h>
-#include <view/Push2ViewComponent.h>
 
 File getSaveFile()
 {
@@ -25,7 +24,7 @@ ValueTree loadOrCreateDefaultEdit()
 
 class SoundMachineApplication : public JUCEApplication {
 public:
-    SoundMachineApplication(): push2Animator(&push2ViewComponent), editTree(loadOrCreateDefaultEdit()), audioGraphBuilder(editTree) {}
+    SoundMachineApplication(): editTree(loadOrCreateDefaultEdit()), audioGraphBuilder(editTree) {}
 
     const String getApplicationName() override { return ProjectInfo::projectName; }
 
@@ -41,17 +40,16 @@ public:
             audioGraphBuilder.getMainAudioProcessor()->handleControlMidi(message);
         });
 
-        instrumentViewComponent.setInstrument(audioGraphBuilder.getMainAudioProcessor()->getCurrentInstrument());
-        push2ViewComponent.addAndMakeVisible(instrumentViewComponent);
-
         deviceManager.initialiseWithDefaultDevices(2, 2);
         Process::makeForegroundProcess();
         // This method is where you should put your application's initialisation code..
-        push2Window = new MainWindow(getApplicationName(), &push2ViewComponent);
-        treeWindow = new MainWindow("Tree Editor", new ValueTreesDemo (editTree));
-        arrangeWindow = new MainWindow("Overview", new ArrangeView (editTree));
+        push2Window = std::make_unique<MainWindow>(getApplicationName(), new Push2Animator(audioGraphBuilder));
+        treeWindow = std::make_unique<MainWindow>("Tree Editor", new ValueTreesDemo (editTree));
+        arrangeWindow = std::make_unique<MainWindow>("Overview", new ArrangeView (editTree));
 
-        audioSetupWindow = new MainWindow("Audio Setup", new AudioDeviceSelectorComponent(deviceManager, 0, 256, 0, 256, true, true, true, false));
+        auto *audioDeviceSelectorComponent = new AudioDeviceSelectorComponent(deviceManager, 0, 256, 0, 256, true, true, true, false);
+        audioDeviceSelectorComponent->setBoundsRelative(0, 0, 100, 100);
+        audioSetupWindow = std::make_unique<MainWindow>("Audio Setup", audioDeviceSelectorComponent);
 
         treeWindow->setBoundsRelative(0.15, 0.25, 0.35, 0.35);
         arrangeWindow->setBoundsRelative(0.50, 0.25, 0.35, 0.35);
@@ -118,15 +116,11 @@ public:
     };
 
 private:
-    ScopedPointer<MainWindow> treeWindow, arrangeWindow, audioSetupWindow;
-    ScopedPointer<MainWindow> push2Window;
+    std::unique_ptr<MainWindow> treeWindow, arrangeWindow, audioSetupWindow, push2Window;
     AudioDeviceManager deviceManager;
 
     Push2MidiCommunicator push2MidiCommunicator;
 
-    InstrumentViewComponent instrumentViewComponent;
-    Push2ViewComponent push2ViewComponent;
-    Push2Animator push2Animator;
     AudioProcessorPlayer player;
 
     ValueTree editTree;

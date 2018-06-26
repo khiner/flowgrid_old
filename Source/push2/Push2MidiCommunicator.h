@@ -22,7 +22,7 @@ public:
         midiOutput->sendMessageNow(polyphonicAftertouchSysExMessage);
     }
 
-    const enum ControlLabel {
+    enum ControlLabel {
         topKnob1, topKnob2, topKnob3, topKnob4, topKnob5, topKnob6, topKnob7, topKnob8, topKnob9, topKnob10, masterKnob,
 
         tapTempo, metronome, setup, user,

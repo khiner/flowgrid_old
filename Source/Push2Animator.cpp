@@ -11,6 +11,6 @@ void Push2Animator::drawFrame() {
 
     auto &g = displayBridge.getGraphics();
     g.fillAll(CLEAR_COLOR);
-    push2ViewComponent->paintEntireComponent(g, true);
+    paintEntireComponent(g, true);
     displayBridge.writeFrameToDisplay();
 }

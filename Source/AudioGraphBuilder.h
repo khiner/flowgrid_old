@@ -22,7 +22,6 @@ struct AudioGraphClasses {
         int getNumParameters() override { return 8; }
 
         void processBlock(AudioSampleBuffer &buffer, MidiBuffer &midiMessages) override {
-            const AudioSourceChannelInfo &channelInfo = AudioSourceChannelInfo(buffer);
             currentInstrument->processBlock(buffer, midiMessages);
         }
 
@@ -38,8 +37,8 @@ struct AudioGraphClasses {
             processorState.state = state;
         }
 
-        AudioProcessorValueTreeState processorState;
         ValueTree state;
+        AudioProcessorValueTreeState processorState;
 
     private:
         void valueTreePropertyChanged(juce::ValueTree &v, const juce::Identifier &i) override {
@@ -59,8 +58,8 @@ struct AudioGraphClasses {
         typedef Push2MidiCommunicator Push2;
 
     public:
-        explicit AudioTrackList(ValueTree editTree) : drow::ValueTreeObjectList<AudioTrack>(editTree),
-                                                      DefaultAudioProcessor(2, 2),
+        explicit AudioTrackList(ValueTree editTree) : DefaultAudioProcessor(2, 2),
+                                                      drow::ValueTreeObjectList<AudioTrack>(editTree),
                                                       undoManager(30000, 30), state(*this, &undoManager),
                                                       masterVolumeParamId("masterVolume") {
 
@@ -74,6 +73,8 @@ struct AudioGraphClasses {
 
             state.addParameterListener(masterVolumeParamId, this);
             gain.setValue(0.5f);
+
+            state.state = parent;
         }
 
         ~AudioTrackList() override {
@@ -88,7 +89,7 @@ struct AudioGraphClasses {
             return nullptr;
         }
 
-        void newObjectAdded (AudioTrack *audioTrack) {
+        void newObjectAdded (AudioTrack *audioTrack) override {
             //mixerAudioSource.addInputSource(audioTrack->getCurrentInstrument(), false);
         }
 
