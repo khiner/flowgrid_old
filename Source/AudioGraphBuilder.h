@@ -11,9 +11,11 @@
 #include "push2/Push2MidiCommunicator.h"
 #include <audio_processors/DefaultAudioProcessor.h>
 
-static std::unique_ptr<InstrumentSource> createInstrumentSourceFromId(const String id) {
+static std::unique_ptr<InstrumentSource> createInstrumentSourceFromId(const String &id) {
     if (id == IDs::SINE_BANK_INSTRUMENT.toString()) {
         return std::make_unique<SineBank>();
+    } else {
+        return nullptr;
     }
 }
 
@@ -72,7 +74,7 @@ struct AudioGraphClasses {
 
         void objectOrderChanged() override {}
 
-        void newObjectAdded (Instrument *instrument) override {
+        void newObjectAdded(Instrument *instrument) override {
         }
     };
 
@@ -144,7 +146,7 @@ struct AudioGraphClasses {
             return nullptr;
         }
 
-        void newObjectAdded (AudioTrack *audioTrack) override {
+        void newObjectAdded(AudioTrack *audioTrack) override {
             //mixerAudioSource.addInputSource(audioTrack->getCurrentInstrument(), false);
         }
 
@@ -213,7 +215,7 @@ struct AudioGraphClasses {
         void processBlock(AudioSampleBuffer &buffer, MidiBuffer &midiMessages) override {
             const AudioSourceChannelInfo &channelInfo = AudioSourceChannelInfo(buffer);
 
-            for (auto* track : objects) {
+            for (auto *track : objects) {
                 auto currentInstrument = track->getCurrentInstrument();
                 if (currentInstrument != nullptr) {
                     currentInstrument->processBlock(buffer, midiMessages);
@@ -246,18 +248,16 @@ struct AudioGraphClasses {
         UndoManager undoManager;
         AudioProcessorValueTreeState state;
 
-        MixerAudioSource mixerAudioSource;
         StringRef masterVolumeParamId;
         LinearSmoothedValue<float> gain;
     };
 };
 
 
-
 class AudioGraphBuilder {
 public:
-    explicit AudioGraphBuilder (ValueTree editToUse) {
-        trackList = std::make_unique<AudioGraphClasses::AudioTrackList> (editToUse);
+    explicit AudioGraphBuilder(ValueTree editToUse) {
+        trackList = std::make_unique<AudioGraphClasses::AudioTrackList>(editToUse);
     }
 
     AudioGraphClasses::AudioTrackList *getMainAudioProcessor() {

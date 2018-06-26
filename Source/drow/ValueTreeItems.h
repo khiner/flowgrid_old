@@ -87,13 +87,13 @@ namespace Helpers {
     }
 }
 
-//==============================================================================
+
 class ValueTreeItem;
 
 /** Creates the various concrete types below. */
 ValueTreeItem *createValueTreeItemForType(const ValueTree &, UndoManager &);
 
-//==============================================================================
+
 class ValueTreeItem : public TreeViewItem,
                       protected ValueTree::Listener {
 public:
@@ -196,7 +196,7 @@ private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ValueTreeItem)
 };
 
-//==============================================================================
+
 class Clip : public ValueTreeItem {
 public:
     Clip(const ValueTree &v, UndoManager &um)
@@ -219,7 +219,7 @@ public:
     }
 };
 
-//==============================================================================
+
 class Instrument : public ValueTreeItem {
 public:
     Instrument(const ValueTree &v, UndoManager &um)
@@ -236,7 +236,7 @@ public:
     }
 };
 
-//==============================================================================
+
 class Track : public ValueTreeItem {
 public:
     Track(const ValueTree &v, UndoManager &um)
@@ -250,7 +250,7 @@ public:
 
     bool isInterestedInDragSource(const DragAndDropTarget::SourceDetails &dragSourceDetails) override {
         return dragSourceDetails.description == IDs::CLIP.toString() ||
-                dragSourceDetails.description == IDs::INSTRUMENT.toString();
+               dragSourceDetails.description == IDs::INSTRUMENT.toString();
     }
 
     void itemDropped(const DragAndDropTarget::SourceDetails &, int insertIndex) override {
@@ -259,7 +259,7 @@ public:
     }
 };
 
-//==============================================================================
+
 class Edit : public ValueTreeItem,
              public ChangeBroadcaster {
 public:
@@ -282,7 +282,7 @@ public:
     }
 };
 
-//==============================================================================
+
 inline ValueTreeItem *createValueTreeItemForType(const ValueTree &v, UndoManager &um) {
     if (v.hasType(IDs::EDIT)) return new Edit(v, um);
     if (v.hasType(IDs::TRACK)) return new Track(v, um);
