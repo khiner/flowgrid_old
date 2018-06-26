@@ -18,13 +18,15 @@ public:
 
         const int ccNumber = midiMessage.getControllerNumber();
 
-        if (ccNumber == Push2::getCcNumberForControlLabel(Push2::ControlLabel::undo)) {
-            undoManager.undo();
-            return;
+        if (Push2::isButtonPressControlMessage(midiMessage)) {
+            if (ccNumber == Push2::ccForControlLabel(Push2::ControlLabel::undo)) {
+                undoManager.undo();
+                return;
+            }
         }
 
         AudioProcessorParameter *parameter = nullptr;
-        if (ccNumber == Push2::getCcNumberForControlLabel(Push2::ControlLabel::masterKnob)) {
+        if (ccNumber == Push2::ccForControlLabel(Push2::ControlLabel::masterKnob)) {
             parameter = audioGraphBuilder.getMainAudioProcessor()->getParameterByIdentifier(IDs::MASTER_GAIN.toString());
         } else {
             AudioGraphClasses::AudioTrack *selectedTrack = audioGraphBuilder.getMainAudioProcessor()->findSelectedAudioTrack();

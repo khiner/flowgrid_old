@@ -58,11 +58,7 @@ public:
     // This function returns a value between -1 and 1 normalized so that (roughly) the magnitude of a full rotation would sum to 1.
     // i.e. Turning 210 'steps' to the left would total to ~-1, and turning 210 steps to the right would total ~1.
     static float encoderCcMessageToRotationChange(const MidiMessage& message) {
-        if (message.getRawDataSize() != 3)
-            throw std::runtime_error("Expected CC message to have 24 bits");
-
-        const uint8 *rawData = message.getRawData();
-        const uint8 byteValue = *(rawData + 2);
+        const int byteValue = message.getControllerValue();
         if (byteValue <= 63) {
             return static_cast<float>(byteValue) / 210.0f;
         } else {
@@ -70,7 +66,7 @@ public:
         }
     }
 
-    static int ccNumberForTopKnobIndex(int topKnobIndex) {
+    static int ccNumberForTopKnobIndex(const int topKnobIndex) {
         switch (topKnobIndex) {
             case 0: return ccNumberForControlLabel.at(topKnob3);
             case 1: return ccNumberForControlLabel.at(topKnob4);
@@ -84,8 +80,12 @@ public:
         }
     }
 
-    static int getCcNumberForControlLabel(ControlLabel controlLabel) {
+    static int ccForControlLabel(const ControlLabel controlLabel) {
         return ccNumberForControlLabel.at(controlLabel);
+    }
+
+    static int isButtonPressControlMessage(const MidiMessage &message) {
+        return message.getControllerValue() == 127;
     }
 
 private:
