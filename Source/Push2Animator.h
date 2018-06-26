@@ -1,6 +1,6 @@
 #pragma once
 
-#include <view/InstrumentViewComponent.h>
+#include <view/Push2ProcessorViewComponent.h>
 #include "push2/Push2DisplayBridge.h"
 #include "AudioGraphBuilder.h"
 
@@ -28,6 +28,6 @@ private:
      */
     void timerCallback() override;
 private:
-    InstrumentViewComponent audioProcessorViewComponent;
+    Push2ProcessorViewComponent audioProcessorViewComponent;
     Push2DisplayBridge displayBridge;
 };

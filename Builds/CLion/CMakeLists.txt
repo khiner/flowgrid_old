@@ -1273,7 +1273,7 @@ add_executable (APP
     "../../JuceLibraryCode/include_juce_gui_basics.mm"
     "../../JuceLibraryCode/include_juce_gui_extra.mm"
     "../../JuceLibraryCode/JuceHeader.h"
-        ../../Source/view/InstrumentViewComponent.cpp ../../Source/view/InstrumentViewComponent.h ../../Source/intruments/SineBank.h ../../Source/audio_processors/DefaultAudioProcessor.h ../../Source/AudioGraphBuilder.h ../../Source/MidiControlHandler.h ../../Source/audio_processors/StatefulAudioProcessor.h)
+        ../../Source/view/Push2ProcessorViewComponent.cpp ../../Source/view/Push2ProcessorViewComponent.h ../../Source/intruments/SineBank.h ../../Source/audio_processors/DefaultAudioProcessor.h ../../Source/AudioGraphBuilder.h ../../Source/MidiControlHandler.h ../../Source/audio_processors/StatefulAudioProcessor.h)
 
 set_source_files_properties ("../../Resources/PushStartup.png" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/audio_sources/ToneSourceWithParameters.h" PROPERTIES HEADER_FILE_ONLY TRUE)

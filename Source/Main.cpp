@@ -6,7 +6,7 @@
 #include "MidiControlHandler.h"
 #include <ArrangeView.h>
 #include <ValueTreesDemo.h>
-#include <view/InstrumentViewComponent.h>
+#include <view/Push2ProcessorViewComponent.h>
 #include <push2/Push2MidiCommunicator.h>
 
 File getSaveFile()

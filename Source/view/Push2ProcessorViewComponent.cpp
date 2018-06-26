@@ -1,11 +1,11 @@
 #include <push2/Push2Display.h>
-#include "InstrumentViewComponent.h"
+#include "Push2ProcessorViewComponent.h"
 
-InstrumentViewComponent::InstrumentViewComponent() {
+Push2ProcessorViewComponent::Push2ProcessorViewComponent() {
     setSize(Push2Display::WIDTH, Push2Display::HEIGHT);
 }
 
-void InstrumentViewComponent::setStatefulAudioProcessor(StatefulAudioProcessor *statefulAudioProcessor) {
+void Push2ProcessorViewComponent::setStatefulAudioProcessor(StatefulAudioProcessor *statefulAudioProcessor) {
     removeAllChildren();
 
     sliderAttachments.clear();

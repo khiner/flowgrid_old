@@ -3,9 +3,9 @@
 #include <audio_processors/StatefulAudioProcessor.h>
 #include "JuceHeader.h"
 
-class InstrumentViewComponent : public Component {
+class Push2ProcessorViewComponent : public Component {
 public:
-    InstrumentViewComponent();
+    Push2ProcessorViewComponent();
 
     void setStatefulAudioProcessor(StatefulAudioProcessor *statefulAudioProcessor);
 
