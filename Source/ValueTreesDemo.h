@@ -9,7 +9,7 @@ class ValueTreesDemo : public Component,
                        private Button::Listener,
                        private Timer {
 public:
-    ValueTreesDemo(ValueTree editToUse) {
+    ValueTreesDemo(ValueTree editToUse, UndoManager &undoManager) : undoManager(undoManager) {
         addAndMakeVisible(tree);
         tree.setColour(TreeView::backgroundColourId,
                        getUIColourIfAvailable(LookAndFeel_V4::ColourScheme::UIColour::windowBackground));
@@ -91,7 +91,7 @@ private:
     TreeView tree;
     TextButton undoButton{"Undo"}, redoButton{"Redo"};
     std::unique_ptr<Edit> rootItem;
-    UndoManager undoManager;
+    UndoManager &undoManager;
 
     std::unique_ptr<SelectionPanel> selectionPanel;
 

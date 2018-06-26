@@ -5,8 +5,8 @@
 
 class InstrumentSource : public DefaultAudioProcessor {
 public:
-    explicit InstrumentSource(int inputChannelCount, int outputChannelCount) :
-            DefaultAudioProcessor(inputChannelCount, outputChannelCount), state(*this, nullptr) {};
+    explicit InstrumentSource(int inputChannelCount, int outputChannelCount, UndoManager &undoManager) :
+            DefaultAudioProcessor(inputChannelCount, outputChannelCount), state(*this, &undoManager) {};
 
     AudioProcessorValueTreeState *getState() {
         return &state;

@@ -24,7 +24,7 @@ ValueTree loadOrCreateDefaultEdit()
 
 class SoundMachineApplication : public JUCEApplication {
 public:
-    SoundMachineApplication(): editTree(loadOrCreateDefaultEdit()), audioGraphBuilder(editTree) {}
+    SoundMachineApplication(): editTree(loadOrCreateDefaultEdit()), audioGraphBuilder(editTree, undoManager) {}
 
     const String getApplicationName() override { return ProjectInfo::projectName; }
 
@@ -44,7 +44,7 @@ public:
         Process::makeForegroundProcess();
         // This method is where you should put your application's initialisation code..
         push2Window = std::make_unique<MainWindow>(getApplicationName(), new Push2Animator(audioGraphBuilder));
-        treeWindow = std::make_unique<MainWindow>("Tree Editor", new ValueTreesDemo (editTree));
+        treeWindow = std::make_unique<MainWindow>("Tree Editor", new ValueTreesDemo (editTree, undoManager));
         arrangeWindow = std::make_unique<MainWindow>("Overview", new ArrangeView (editTree));
 
         auto *audioDeviceSelectorComponent = new AudioDeviceSelectorComponent(deviceManager, 0, 256, 0, 256, true, true, true, false);
@@ -117,6 +117,7 @@ public:
 
 private:
     std::unique_ptr<MainWindow> treeWindow, arrangeWindow, audioSetupWindow, push2Window;
+    UndoManager undoManager;
     AudioDeviceManager deviceManager;
 
     Push2MidiCommunicator push2MidiCommunicator;

@@ -67,6 +67,7 @@ namespace Helpers {
             ValueTree i(IDs::INSTRUMENT);
             Helpers::createUuidProperty(i);
             i.setProperty(IDs::name, IDs::SINE_BANK_INSTRUMENT.toString(), nullptr);
+            i.setProperty(IDs::selected, true, nullptr);
             t.addChild(i, -1, nullptr);
 
             for (int cn = 0; cn < 3; ++cn) {
@@ -166,7 +167,10 @@ protected:
     ValueTree state;
     UndoManager &undoManager;
 
-    void valueTreePropertyChanged(ValueTree &, const Identifier &) override { repaintItem(); }
+    void valueTreePropertyChanged(ValueTree & tree, const Identifier &identifier) override {
+        if (tree.getType() != IDs::PARAM) // TODO revisit if I ever stop using AudioProcessorValueTreeStates for my processors
+            repaintItem();
+    }
 
     void valueTreeChildAdded(ValueTree &parentTree, ValueTree &) override { treeChildrenChanged(parentTree); }
 

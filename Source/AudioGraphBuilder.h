@@ -11,9 +11,9 @@
 #include "push2/Push2MidiCommunicator.h"
 #include <audio_processors/DefaultAudioProcessor.h>
 
-static std::unique_ptr<InstrumentSource> createInstrumentSourceFromId(const String &id) {
+static std::unique_ptr<InstrumentSource> createInstrumentSourceFromId(const String &id, UndoManager &undoManager) {
     if (id == IDs::SINE_BANK_INSTRUMENT.toString()) {
-        return std::make_unique<SineBank>();
+        return std::make_unique<SineBank>(undoManager);
     } else {
         return nullptr;
     }
@@ -21,7 +21,7 @@ static std::unique_ptr<InstrumentSource> createInstrumentSourceFromId(const Stri
 
 struct AudioGraphClasses {
     struct Instrument : drow::ValueTreePropertyChangeListener {
-        explicit Instrument(ValueTree v) : state(v), source(createInstrumentSourceFromId(v[IDs::name])) {
+        explicit Instrument(ValueTree v, UndoManager &undoManager) : state(v), source(createInstrumentSourceFromId(v[IDs::name], undoManager)) {
             source->getState()->state = v;
         }
 
@@ -40,7 +40,7 @@ struct AudioGraphClasses {
     class InstrumentList
             : public drow::ValueTreeObjectList<Instrument> {
     public:
-        explicit InstrumentList(ValueTree v) : drow::ValueTreeObjectList<Instrument>(v) {
+        explicit InstrumentList(ValueTree v, UndoManager &undoManager) : drow::ValueTreeObjectList<Instrument>(v), undoManager(undoManager) {
             rebuildObjects();
         }
 
@@ -62,7 +62,7 @@ struct AudioGraphClasses {
         }
 
         Instrument *createNewObject(const juce::ValueTree &v) override {
-            auto *instrument = new Instrument(v);
+            auto *instrument = new Instrument(v, undoManager);
             return instrument;
         }
 
@@ -76,11 +76,14 @@ struct AudioGraphClasses {
 
         void newObjectAdded(Instrument *instrument) override {
         }
+
+    private:
+        UndoManager &undoManager;
     };
 
     struct AudioTrack : public DefaultAudioProcessor, public drow::ValueTreePropertyChangeListener {
-        explicit AudioTrack(ValueTree v) : state(v) {
-            instrumentList = std::make_unique<AudioGraphClasses::InstrumentList>(v);
+        explicit AudioTrack(ValueTree v, UndoManager &undoManager) : state(v) {
+            instrumentList = std::make_unique<AudioGraphClasses::InstrumentList>(v, undoManager);
         }
 
         const String getName() const override { return "MainProcessor"; }
@@ -92,7 +95,8 @@ struct AudioGraphClasses {
         }
 
         InstrumentSource *getCurrentInstrument() {
-            return instrumentList->findSelectedInstrument()->source.get();
+            Instrument *selectedInstrument = instrumentList->findSelectedInstrument();
+            return selectedInstrument != nullptr ? selectedInstrument->source.get() : nullptr;
         }
 
         ValueTree state;
@@ -115,10 +119,9 @@ struct AudioGraphClasses {
         typedef Push2MidiCommunicator Push2;
 
     public:
-        explicit AudioTrackList(ValueTree editTree) : DefaultAudioProcessor(2, 2),
+        explicit AudioTrackList(ValueTree editTree, UndoManager &undoManager) : DefaultAudioProcessor(2, 2),
                                                       drow::ValueTreeObjectList<AudioTrack>(editTree),
-                                                      undoManager(30000, 30), state(*this, &undoManager),
-                                                      masterVolumeParamId("masterVolume") {
+                                                      state(*this, &undoManager) {
 
             rebuildObjects();
             state.createAndAddParameter(IDs::MASTER_GAIN.toString(), "Gain", "dB",
@@ -128,7 +131,7 @@ struct AudioGraphClasses {
                                             return String(Decibels::gainToDecibels<float>(value, 0), 3) + "dB";
                                         }, nullptr);
 
-            state.addParameterListener(masterVolumeParamId, this);
+            state.addParameterListener(IDs::MASTER_GAIN, this);
             gain.setValue(0.5f);
 
             state.state = parent;
@@ -167,14 +170,14 @@ struct AudioGraphClasses {
             const int ccNumber = midiMessage.getControllerNumber();
 
             if (ccNumber == Push2::getCcNumberForControlLabel(Push2::ControlLabel::undo)) {
-                undoManager.undo();
+                state.undoManager->undo();
                 return;
             }
 
             StringRef parameterId;
             AudioProcessorValueTreeState *stateToUse = nullptr;
             if (ccNumber == Push2::getCcNumberForControlLabel(Push2::ControlLabel::masterKnob)) {
-                parameterId = masterVolumeParamId;
+                parameterId = IDs::MASTER_GAIN;
                 stateToUse = &state;
             } else {
                 AudioTrack *selectedTrack = findSelectedAudioTrack();
@@ -207,7 +210,7 @@ struct AudioGraphClasses {
         int getNumParameters() override { return 8; }
 
         void parameterChanged(const String &parameterID, float newValue) override {
-            if (parameterID == masterVolumeParamId) {
+            if (parameterID == IDs::MASTER_GAIN.toString()) {
                 gain.setValue(newValue);
             }
         };
@@ -230,7 +233,7 @@ struct AudioGraphClasses {
         }
 
         AudioTrack *createNewObject(const juce::ValueTree &v) override {
-            auto *at = new AudioTrack(v);
+            auto *at = new AudioTrack(v, *state.undoManager);
             return at;
         }
 
@@ -245,10 +248,8 @@ struct AudioGraphClasses {
     private:
         //JUCE_DECLARE_NON_COPYABLE(MainProcessor);
 
-        UndoManager undoManager;
         AudioProcessorValueTreeState state;
 
-        StringRef masterVolumeParamId;
         LinearSmoothedValue<float> gain;
     };
 };
@@ -256,8 +257,8 @@ struct AudioGraphClasses {
 
 class AudioGraphBuilder {
 public:
-    explicit AudioGraphBuilder(ValueTree editToUse) {
-        trackList = std::make_unique<AudioGraphClasses::AudioTrackList>(editToUse);
+    explicit AudioGraphBuilder(ValueTree editToUse, UndoManager &undoManager) {
+        trackList = std::make_unique<AudioGraphClasses::AudioTrackList>(editToUse, undoManager);
     }
 
     AudioGraphClasses::AudioTrackList *getMainAudioProcessor() {

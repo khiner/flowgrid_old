@@ -191,7 +191,7 @@ struct ArrangeClasses {
 
 class ArrangeView : public Component {
 public:
-    ArrangeView(ValueTree editToUse) {
+    explicit ArrangeView(ValueTree editToUse) {
         addAndMakeVisible(*(trackList = std::make_unique<ArrangeClasses::TrackList>(editToUse)));
 
         setSize(800, 600);

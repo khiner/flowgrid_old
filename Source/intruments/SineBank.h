@@ -6,8 +6,8 @@
 
 class SineBank : public InstrumentSource {
 public:
-    explicit SineBank() :
-            InstrumentSource(0, 2),
+    explicit SineBank(UndoManager &undoManager) :
+            InstrumentSource(0, 2, undoManager),
             toneSource1(state, "1"),
             toneSource2(state, "2"),
             toneSource3(state, "3"),
