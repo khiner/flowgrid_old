@@ -110,9 +110,13 @@ void LIBUSB_CALL UsbCommunicator::onTransferFinished(libusb_transfer *transfer) 
         sprintf(errorMsg, "only transferred %d of %d bytes\n", transfer->actual_length, transfer->length);
         throw runtime_error(errorMsg);
     } else if (transfer == frameHeaderTransfer) {
-        onFrameSendCompleted();
+        if (!terminate.load()) {
+            onFrameSendCompleted();
+        }
     } else {
-        sendNextSlice(transfer);
+        if (!terminate.load()) {
+            sendNextSlice(transfer);
+        }
     }
 }
 
