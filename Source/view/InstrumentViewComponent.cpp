@@ -5,20 +5,20 @@ InstrumentViewComponent::InstrumentViewComponent() {
     setSize(Push2Display::WIDTH, Push2Display::HEIGHT);
 }
 
-void InstrumentViewComponent::setInstrument(InstrumentSource *instrument) {
+void InstrumentViewComponent::setStatefulAudioProcessor(StatefulAudioProcessor *statefulAudioProcessor) {
     removeAllChildren();
 
     sliderAttachments.clear();
     labels.clear();
     sliders.clear();
 
-    for (int sliderIndex = 0; sliderIndex < instrument->getNumParameters(); sliderIndex++) {
+    for (int sliderIndex = 0; sliderIndex < statefulAudioProcessor->getNumParameters(); sliderIndex++) {
         auto slider = std::make_unique<Slider>();
-        const String &parameterId = instrument->getParameterId(sliderIndex);
-        auto sliderAttachment = std::make_unique<AudioProcessorValueTreeState::SliderAttachment>(*(instrument->getState()), parameterId, *slider);
+        const String &parameterId = statefulAudioProcessor->getParameterID(sliderIndex);
+        auto sliderAttachment = std::make_unique<AudioProcessorValueTreeState::SliderAttachment>(*(statefulAudioProcessor->getState()), parameterId, *slider);
 
         auto label = std::make_unique<Label>();
-        label->setText(instrument->getState()->getParameter(parameterId)->name, dontSendNotification);
+        label->setText(statefulAudioProcessor->getState()->getParameter(parameterId)->name, dontSendNotification);
         addAndMakeVisible(*slider);
         addAndMakeVisible(*label);
         slider->setSliderStyle(Slider::SliderStyle::RotaryHorizontalVerticalDrag);

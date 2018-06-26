@@ -1,13 +1,12 @@
 #pragma once
 
 #include <audio_sources/ToneSourceWithParameters.h>
-#include "InstrumentSource.h"
 #include "JuceHeader.h"
 
-class SineBank : public InstrumentSource {
+class SineBank : public StatefulAudioProcessor {
 public:
     explicit SineBank(UndoManager &undoManager) :
-            InstrumentSource(0, 2, undoManager),
+            StatefulAudioProcessor(0, 2, undoManager),
             toneSource1(state, "1"),
             toneSource2(state, "2"),
             toneSource3(state, "3"),
@@ -25,7 +24,7 @@ public:
         return 8;
     }
 
-    String getParameterId(int parameterIndex) override {
+    const String &getParameterIdentifier(int parameterIndex) override {
         switch (parameterIndex) {
             case 0: return toneSource1.getAmpParamId();
             case 1: return toneSource1.getFreqParamId();
@@ -35,7 +34,7 @@ public:
             case 5: return toneSource3.getFreqParamId();
             case 6: return toneSource4.getAmpParamId();
             case 7: return toneSource4.getFreqParamId();
-            default: return "";
+            default: return IDs::PARAM_NA.toString();
         }
     }
 

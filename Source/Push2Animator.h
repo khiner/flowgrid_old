@@ -8,11 +8,11 @@ class Push2Animator : public Timer, public Component {
 public:
     explicit Push2Animator(AudioGraphBuilder &audioGraphBuilder) {
         setSize(Push2Display::WIDTH, Push2Display::HEIGHT);
-        InstrumentSource *currentInstrument = audioGraphBuilder.getMainAudioProcessor()->getCurrentInstrument();
-        if (currentInstrument != nullptr) {
-            instrumentViewComponent.setInstrument(currentInstrument);
+        StatefulAudioProcessor *currentAudioProcessor = audioGraphBuilder.getMainAudioProcessor()->getCurrentAudioProcessor();
+        if (currentAudioProcessor != nullptr) {
+            audioProcessorViewComponent.setStatefulAudioProcessor(currentAudioProcessor);
         }
-        addAndMakeVisible(instrumentViewComponent);
+        addAndMakeVisible(audioProcessorViewComponent);
         startTimer(60);
     }
 
@@ -28,6 +28,6 @@ private:
      */
     void timerCallback() override;
 private:
-    InstrumentViewComponent instrumentViewComponent;
+    InstrumentViewComponent audioProcessorViewComponent;
     Push2DisplayBridge displayBridge;
 };

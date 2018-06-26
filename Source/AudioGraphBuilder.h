@@ -6,12 +6,10 @@
 
 #include "JuceHeader.h"
 #include <audio_sources/ToneSourceWithParameters.h>
-#include <intruments/InstrumentSource.h>
 #include <intruments/SineBank.h>
-#include "push2/Push2MidiCommunicator.h"
 #include <audio_processors/DefaultAudioProcessor.h>
 
-static std::unique_ptr<InstrumentSource> createInstrumentSourceFromId(const String &id, UndoManager &undoManager) {
+static std::unique_ptr<StatefulAudioProcessor> createInstrumentSourceFromId(const String &id, UndoManager &undoManager) {
     if (id == IDs::SINE_BANK_INSTRUMENT.toString()) {
         return std::make_unique<SineBank>(undoManager);
     } else {
@@ -27,7 +25,7 @@ struct AudioGraphClasses {
 
         ValueTree state;
 
-        std::unique_ptr<InstrumentSource> source;
+        std::unique_ptr<StatefulAudioProcessor> source;
     private:
         void valueTreePropertyChanged(juce::ValueTree &v, const juce::Identifier &i) override {
             if (v == state) {
@@ -94,7 +92,7 @@ struct AudioGraphClasses {
             getCurrentInstrument()->processBlock(buffer, midiMessages);
         }
 
-        InstrumentSource *getCurrentInstrument() {
+        StatefulAudioProcessor *getCurrentInstrument() {
             Instrument *selectedInstrument = instrumentList->findSelectedInstrument();
             return selectedInstrument != nullptr ? selectedInstrument->source.get() : nullptr;
         }
@@ -113,15 +111,13 @@ struct AudioGraphClasses {
     };
 
     class AudioTrackList
-            : public DefaultAudioProcessor,
+            : public StatefulAudioProcessor,
               public AudioProcessorValueTreeState::Listener,
               public drow::ValueTreeObjectList<AudioTrack> {
-        typedef Push2MidiCommunicator Push2;
 
     public:
-        explicit AudioTrackList(ValueTree editTree, UndoManager &undoManager) : DefaultAudioProcessor(2, 2),
-                                                      drow::ValueTreeObjectList<AudioTrack>(editTree),
-                                                      state(*this, &undoManager) {
+        explicit AudioTrackList(ValueTree editTree, UndoManager &undoManager) : StatefulAudioProcessor(2, 2, undoManager),
+                                                      drow::ValueTreeObjectList<AudioTrack>(editTree) {
 
             rebuildObjects();
             state.createAndAddParameter(IDs::MASTER_GAIN.toString(), "Gain", "dB",
@@ -141,16 +137,13 @@ struct AudioGraphClasses {
             freeObjects();
         }
 
-        InstrumentSource *getCurrentInstrument() {
+        StatefulAudioProcessor *getCurrentAudioProcessor() {
             AudioTrack *selectedTrack = findSelectedAudioTrack();
-            if (selectedTrack) {
-                return selectedTrack->getCurrentInstrument();
-            }
-            return nullptr;
+            return selectedTrack != nullptr ? selectedTrack->getCurrentInstrument() : nullptr;
         }
 
         void newObjectAdded(AudioTrack *audioTrack) override {
-            //mixerAudioSource.addInputSource(audioTrack->getCurrentInstrument(), false);
+            //mixerAudioSource.addInputSource(audioTrack->getCurrentAudioProcessor(), false);
         }
 
         AudioTrack *findSelectedAudioTrack() {
@@ -162,52 +155,17 @@ struct AudioGraphClasses {
             return nullptr;
         }
 
-        // listened to and called on a non-audio thread, called by MainContentComponent
-        void handleControlMidi(const MidiMessage &midiMessage) {
-            if (!midiMessage.isController())
-                return;
-
-            const int ccNumber = midiMessage.getControllerNumber();
-
-            if (ccNumber == Push2::getCcNumberForControlLabel(Push2::ControlLabel::undo)) {
-                state.undoManager->undo();
-                return;
-            }
-
-            StringRef parameterId;
-            AudioProcessorValueTreeState *stateToUse = nullptr;
-            if (ccNumber == Push2::getCcNumberForControlLabel(Push2::ControlLabel::masterKnob)) {
-                parameterId = IDs::MASTER_GAIN;
-                stateToUse = &state;
-            } else {
-                AudioTrack *selectedTrack = findSelectedAudioTrack();
-                if (selectedTrack) {
-                    for (int i = 0; i < selectedTrack->getNumParameters(); i++) {
-                        if (ccNumber == Push2::ccNumberForTopKnobIndex(i)) {
-                            parameterId = selectedTrack->getCurrentInstrument()->getParameterId(i);
-                            stateToUse = selectedTrack->getCurrentInstrument()->getState();
-                            break;
-                        }
-                    }
-                }
-            }
-
-            if (stateToUse) {
-                float value = Push2::encoderCcMessageToRotationChange(midiMessage);
-                auto param = stateToUse->getParameter(parameterId);
-
-                auto newValue = param->getValue() + value / 5.0f; // todo move manual scaling to param
-
-                if (newValue > 0) {
-                    param->setValue(newValue);
-                }
-            }
-        }
-
         /*** JUCE override methods ***/
         const String getName() const override { return "MainProcessor"; }
 
         int getNumParameters() override { return 8; }
+
+        const String &getParameterIdentifier(int parameterIndex) override {
+            switch(parameterIndex) {
+                case 0: return IDs::MASTER_GAIN.toString();
+                default: return IDs::PARAM_NA.toString();
+            }
+        }
 
         void parameterChanged(const String &parameterID, float newValue) override {
             if (parameterID == IDs::MASTER_GAIN.toString()) {
@@ -246,10 +204,6 @@ struct AudioGraphClasses {
         void objectOrderChanged() override {}
 
     private:
-        //JUCE_DECLARE_NON_COPYABLE(MainProcessor);
-
-        AudioProcessorValueTreeState state;
-
         LinearSmoothedValue<float> gain;
     };
 };

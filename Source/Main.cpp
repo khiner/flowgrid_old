@@ -3,9 +3,11 @@
 #include "JuceHeader.h"
 #include "Push2Animator.h"
 #include "AudioGraphBuilder.h"
+#include "MidiControlHandler.h"
 #include <ArrangeView.h>
 #include <ValueTreesDemo.h>
 #include <view/InstrumentViewComponent.h>
+#include <push2/Push2MidiCommunicator.h>
 
 File getSaveFile()
 {
@@ -24,7 +26,7 @@ ValueTree loadOrCreateDefaultEdit()
 
 class SoundMachineApplication : public JUCEApplication {
 public:
-    SoundMachineApplication(): editTree(loadOrCreateDefaultEdit()), audioGraphBuilder(editTree, undoManager) {}
+    SoundMachineApplication(): editTree(loadOrCreateDefaultEdit()), audioGraphBuilder(editTree, undoManager), midiControlHandler(audioGraphBuilder, undoManager) {}
 
     const String getApplicationName() override { return ProjectInfo::projectName; }
 
@@ -37,7 +39,7 @@ public:
         deviceManager.addAudioCallback(&player);
 
         push2MidiCommunicator.setMidiInputCallback([this](const MidiMessage &message) {
-            audioGraphBuilder.getMainAudioProcessor()->handleControlMidi(message);
+            midiControlHandler.handleControlMidi(message);
         });
 
         deviceManager.initialiseWithDefaultDevices(2, 2);
@@ -125,6 +127,7 @@ private:
 
     ValueTree editTree;
     AudioGraphBuilder audioGraphBuilder;
+    MidiControlHandler midiControlHandler;
 };
 
 // This macro generates the main() routine that launches the app.

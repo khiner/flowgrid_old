@@ -33,5 +33,7 @@ namespace IDs
     DECLARE_ID (timestretchOptions)
     DECLARE_ID (NOTE)
 
+    DECLARE_ID(PARAM_NA)
+
     #undef DECLARE_ID
 }

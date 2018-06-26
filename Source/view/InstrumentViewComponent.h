@@ -1,13 +1,13 @@
 #pragma once
 
+#include <audio_processors/StatefulAudioProcessor.h>
 #include "JuceHeader.h"
-#include <intruments/InstrumentSource.h>
 
 class InstrumentViewComponent : public Component {
 public:
     InstrumentViewComponent();
 
-    void setInstrument(InstrumentSource *instrument);
+    void setStatefulAudioProcessor(StatefulAudioProcessor *statefulAudioProcessor);
 
 private:
     std::vector<std::unique_ptr<Slider> > sliders;
