@@ -6,15 +6,79 @@
 
 #include "JuceHeader.h"
 #include <audio_sources/ToneSourceWithParameters.h>
-#include <intruments/Instrument.h>
+#include <intruments/InstrumentSource.h>
 #include <intruments/SineBank.h>
 #include "push2/Push2MidiCommunicator.h"
 #include <audio_processors/DefaultAudioProcessor.h>
 
+static std::unique_ptr<InstrumentSource> createInstrumentSourceFromId(const String id) {
+    if (id == IDs::SINE_BANK_INSTRUMENT.toString()) {
+        return std::make_unique<SineBank>();
+    }
+}
+
 struct AudioGraphClasses {
+    struct Instrument : drow::ValueTreePropertyChangeListener {
+        explicit Instrument(ValueTree v) : state(v), source(createInstrumentSourceFromId(v[IDs::name])) {
+            source->getState()->state = v;
+        }
+
+        ValueTree state;
+
+        std::unique_ptr<InstrumentSource> source;
+    private:
+        void valueTreePropertyChanged(juce::ValueTree &v, const juce::Identifier &i) override {
+            if (v == state) {
+                if (i == IDs::name || i == IDs::colour) {
+                }
+            }
+        }
+    };
+
+    class InstrumentList
+            : public drow::ValueTreeObjectList<Instrument> {
+    public:
+        explicit InstrumentList(ValueTree v) : drow::ValueTreeObjectList<Instrument>(v) {
+            rebuildObjects();
+        }
+
+        ~InstrumentList() override {
+            freeObjects();
+        }
+
+        bool isSuitableType(const juce::ValueTree &v) const override {
+            return v.hasType(IDs::INSTRUMENT);
+        }
+
+        Instrument *findSelectedInstrument() {
+            for (auto *instrument : objects) {
+                if (instrument->state[IDs::selected]) {
+                    return instrument;
+                }
+            }
+            return nullptr;
+        }
+
+        Instrument *createNewObject(const juce::ValueTree &v) override {
+            auto *instrument = new Instrument(v);
+            return instrument;
+        }
+
+        void deleteObject(Instrument *at) override {
+            delete at;
+        }
+
+        void objectRemoved(Instrument *) override {}
+
+        void objectOrderChanged() override {}
+
+        void newObjectAdded (Instrument *instrument) override {
+        }
+    };
+
     struct AudioTrack : public DefaultAudioProcessor, public drow::ValueTreePropertyChangeListener {
-        explicit AudioTrack(ValueTree v) : state(v), processorState(*this, nullptr) {
-            setInstrument(IDs::SINE_BANK_INSTRUMENT);
+        explicit AudioTrack(ValueTree v) : state(v) {
+            instrumentList = std::make_unique<AudioGraphClasses::InstrumentList>(v);
         }
 
         const String getName() const override { return "MainProcessor"; }
@@ -22,23 +86,14 @@ struct AudioGraphClasses {
         int getNumParameters() override { return 8; }
 
         void processBlock(AudioSampleBuffer &buffer, MidiBuffer &midiMessages) override {
-            currentInstrument->processBlock(buffer, midiMessages);
+            getCurrentInstrument()->processBlock(buffer, midiMessages);
         }
 
-        Instrument *getCurrentInstrument() {
-            return currentInstrument.get();
-        }
-
-        void setInstrument(const Identifier &instrumentId) {
-            if (instrumentId == IDs::SINE_BANK_INSTRUMENT) {
-                currentInstrument = std::make_unique<SineBank>(processorState);
-            }
-
-            processorState.state = state;
+        InstrumentSource *getCurrentInstrument() {
+            return instrumentList->findSelectedInstrument()->source.get();
         }
 
         ValueTree state;
-        AudioProcessorValueTreeState processorState;
 
     private:
         void valueTreePropertyChanged(juce::ValueTree &v, const juce::Identifier &i) override {
@@ -48,7 +103,7 @@ struct AudioGraphClasses {
             }
         }
 
-        std::unique_ptr<Instrument> currentInstrument;
+        std::unique_ptr<AudioGraphClasses::InstrumentList> instrumentList;
     };
 
     class AudioTrackList
@@ -64,7 +119,7 @@ struct AudioGraphClasses {
                                                       masterVolumeParamId("masterVolume") {
 
             rebuildObjects();
-            state.createAndAddParameter("masterVolume", "Volume", "dB",
+            state.createAndAddParameter(IDs::MASTER_GAIN.toString(), "Gain", "dB",
                                         NormalisableRange<float>(0.0f, 1.0f),
                                         0.5f,
                                         [](float value) {
@@ -81,7 +136,7 @@ struct AudioGraphClasses {
             freeObjects();
         }
 
-        Instrument *getCurrentInstrument() {
+        InstrumentSource *getCurrentInstrument() {
             AudioTrack *selectedTrack = findSelectedAudioTrack();
             if (selectedTrack) {
                 return selectedTrack->getCurrentInstrument();
@@ -125,7 +180,7 @@ struct AudioGraphClasses {
                     for (int i = 0; i < selectedTrack->getNumParameters(); i++) {
                         if (ccNumber == Push2::ccNumberForTopKnobIndex(i)) {
                             parameterId = selectedTrack->getCurrentInstrument()->getParameterId(i);
-                            stateToUse = &selectedTrack->processorState;
+                            stateToUse = selectedTrack->getCurrentInstrument()->getState();
                             break;
                         }
                     }
@@ -160,7 +215,9 @@ struct AudioGraphClasses {
 
             for (auto* track : objects) {
                 auto currentInstrument = track->getCurrentInstrument();
-                currentInstrument->processBlock(buffer, midiMessages);
+                if (currentInstrument != nullptr) {
+                    currentInstrument->processBlock(buffer, midiMessages);
+                }
             }
 
             gain.applyGain(buffer, channelInfo.numSamples);

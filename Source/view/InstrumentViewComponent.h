@@ -1,13 +1,13 @@
 #pragma once
 
 #include "JuceHeader.h"
-#include <intruments/Instrument.h>
+#include <intruments/InstrumentSource.h>
 
 class InstrumentViewComponent : public Component {
 public:
     InstrumentViewComponent();
 
-    void setInstrument(Instrument *instrument);
+    void setInstrument(InstrumentSource *instrument);
 
 private:
     std::vector<std::unique_ptr<Slider> > sliders;

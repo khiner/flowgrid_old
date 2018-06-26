@@ -5,7 +5,7 @@ InstrumentViewComponent::InstrumentViewComponent() {
     setSize(Push2Display::WIDTH, Push2Display::HEIGHT);
 }
 
-void InstrumentViewComponent::setInstrument(Instrument *instrument) {
+void InstrumentViewComponent::setInstrument(InstrumentSource *instrument) {
     removeAllChildren();
 
     sliderAttachments.clear();

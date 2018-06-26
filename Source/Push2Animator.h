@@ -8,7 +8,7 @@ class Push2Animator : public Timer, public Component {
 public:
     explicit Push2Animator(AudioGraphBuilder &audioGraphBuilder) {
         setSize(Push2Display::WIDTH, Push2Display::HEIGHT);
-        Instrument *currentInstrument = audioGraphBuilder.getMainAudioProcessor()->getCurrentInstrument();
+        InstrumentSource *currentInstrument = audioGraphBuilder.getMainAudioProcessor()->getCurrentInstrument();
         if (currentInstrument != nullptr) {
             instrumentViewComponent.setInstrument(currentInstrument);
         }

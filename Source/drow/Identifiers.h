@@ -23,6 +23,8 @@ namespace IDs
     DECLARE_ID (image)
     DECLARE_ID (selected)
 
+    DECLARE_ID(INSTRUMENT)
+
     DECLARE_ID (CLIP)
     DECLARE_ID (start)
     DECLARE_ID (length)

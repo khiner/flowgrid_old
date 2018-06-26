@@ -1,13 +1,13 @@
 #pragma once
 
 #include <audio_sources/ToneSourceWithParameters.h>
-#include "Instrument.h"
+#include "InstrumentSource.h"
 #include "JuceHeader.h"
 
-class SineBank : public Instrument {
+class SineBank : public InstrumentSource {
 public:
-    explicit SineBank(AudioProcessorValueTreeState &state) :
-            Instrument(0, 2, state),
+    explicit SineBank() :
+            InstrumentSource(0, 2),
             toneSource1(state, "1"),
             toneSource2(state, "2"),
             toneSource3(state, "3"),
