@@ -280,6 +280,10 @@ public:
     {
         Helpers::moveItems (*getOwnerView(), Helpers::getSelectedTreeViewItems<Track> (*getOwnerView()), state, insertIndex, undoManager);
     }
+
+    bool canBeSelected() const override {
+        return false;
+    }
 };
 
 //==============================================================================
