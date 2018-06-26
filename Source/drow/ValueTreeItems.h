@@ -64,9 +64,9 @@ namespace Helpers {
             t.setProperty(IDs::selected, true, nullptr);
             Helpers::createUuidProperty(t);
 
-            ValueTree i(IDs::INSTRUMENT);
+            ValueTree i(IDs::PROCESSOR);
             Helpers::createUuidProperty(i);
-            i.setProperty(IDs::name, IDs::SINE_BANK_INSTRUMENT.toString(), nullptr);
+            i.setProperty(IDs::name, IDs::SINE_BANK_PROCESSOR.toString(), nullptr);
             i.setProperty(IDs::selected, true, nullptr);
             t.addChild(i, -1, nullptr);
 
@@ -224,11 +224,11 @@ public:
 };
 
 
-class Instrument : public ValueTreeItem {
+class Processor : public ValueTreeItem {
 public:
-    Instrument(const ValueTree &v, UndoManager &um)
+    Processor(const ValueTree &v, UndoManager &um)
             : ValueTreeItem(v, um) {
-        jassert (state.hasType(IDs::INSTRUMENT));
+        jassert (state.hasType(IDs::PROCESSOR));
     }
 
     bool mightContainSubItems() override {
@@ -254,7 +254,7 @@ public:
 
     bool isInterestedInDragSource(const DragAndDropTarget::SourceDetails &dragSourceDetails) override {
         return dragSourceDetails.description == IDs::CLIP.toString() ||
-               dragSourceDetails.description == IDs::INSTRUMENT.toString();
+               dragSourceDetails.description == IDs::PROCESSOR.toString();
     }
 
     void itemDropped(const DragAndDropTarget::SourceDetails &, int insertIndex) override {
@@ -291,7 +291,7 @@ inline ValueTreeItem *createValueTreeItemForType(const ValueTree &v, UndoManager
     if (v.hasType(IDs::EDIT)) return new Edit(v, um);
     if (v.hasType(IDs::TRACK)) return new Track(v, um);
     if (v.hasType(IDs::CLIP)) return new Clip(v, um);
-    if (v.hasType(IDs::INSTRUMENT)) return new Instrument(v, um);
+    if (v.hasType(IDs::PROCESSOR)) return new Processor(v, um);
 
     //jassertfalse;
     return nullptr;

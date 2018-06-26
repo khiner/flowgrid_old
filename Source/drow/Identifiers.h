@@ -13,7 +13,7 @@ namespace IDs
 
     DECLARE_ID(MASTER_GAIN)
 
-    DECLARE_ID(SINE_BANK_INSTRUMENT)
+    DECLARE_ID(SINE_BANK_PROCESSOR)
 
     DECLARE_ID (EDIT)
     DECLARE_ID (uuid)
@@ -25,7 +25,7 @@ namespace IDs
     DECLARE_ID (image)
     DECLARE_ID (selected)
 
-    DECLARE_ID(INSTRUMENT)
+    DECLARE_ID(PROCESSOR)
 
     DECLARE_ID (CLIP)
     DECLARE_ID (start)

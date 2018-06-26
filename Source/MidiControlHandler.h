@@ -75,7 +75,7 @@ private:
 
         for (int i = 0; i < track->getNumParameters(); i++) {
             if (ccNumber == Push2::ccNumberForTopKnobIndex(i)) {
-                return track->getCurrentInstrument()->getParameterByIndex(i);
+                return track->getCurrentAudioProcessor()->getParameterByIndex(i);
             }
         }
         return nullptr;

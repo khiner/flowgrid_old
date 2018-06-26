@@ -9,8 +9,9 @@
 #include <intruments/SineBank.h>
 #include <audio_processors/DefaultAudioProcessor.h>
 
-static std::unique_ptr<StatefulAudioProcessor> createInstrumentSourceFromId(const String &id, UndoManager &undoManager) {
-    if (id == IDs::SINE_BANK_INSTRUMENT.toString()) {
+static std::unique_ptr<StatefulAudioProcessor> createStatefulAudioProcessorFromId(const String &id,
+                                                                                  UndoManager &undoManager) {
+    if (id == IDs::SINE_BANK_PROCESSOR.toString()) {
         return std::make_unique<SineBank>(undoManager);
     } else {
         return nullptr;
@@ -18,8 +19,9 @@ static std::unique_ptr<StatefulAudioProcessor> createInstrumentSourceFromId(cons
 }
 
 struct AudioGraphClasses {
-    struct Instrument : drow::ValueTreePropertyChangeListener {
-        explicit Instrument(ValueTree v, UndoManager &undoManager) : state(v), source(createInstrumentSourceFromId(v[IDs::name], undoManager)) {
+    struct AudioProcessorWrapper : drow::ValueTreePropertyChangeListener {
+        explicit AudioProcessorWrapper(ValueTree v, UndoManager &undoManager) : state(v), source(
+                createStatefulAudioProcessorFromId(v[IDs::name], undoManager)) {
             source->getState()->state = v;
         }
 
@@ -35,44 +37,48 @@ struct AudioGraphClasses {
         }
     };
 
-    class InstrumentList
-            : public drow::ValueTreeObjectList<Instrument> {
+    class ProcessorList
+            : public drow::ValueTreeObjectList<AudioProcessorWrapper> {
     public:
-        explicit InstrumentList(ValueTree v, UndoManager &undoManager) : drow::ValueTreeObjectList<Instrument>(v), undoManager(undoManager) {
+        explicit ProcessorList(ValueTree v, UndoManager &undoManager) : drow::ValueTreeObjectList<AudioProcessorWrapper>(v), undoManager(undoManager) {
             rebuildObjects();
         }
 
-        ~InstrumentList() override {
+        ~ProcessorList() override {
             freeObjects();
         }
 
         bool isSuitableType(const juce::ValueTree &v) const override {
-            return v.hasType(IDs::INSTRUMENT);
+            return v.hasType(IDs::PROCESSOR);
         }
 
-        Instrument *findSelectedInstrument() {
-            for (auto *instrument : objects) {
-                if (instrument->state[IDs::selected]) {
-                    return instrument;
+        AudioProcessorWrapper *findSelectedProcessor() {
+            for (auto *processor : objects) {
+                if (processor->state[IDs::selected]) {
+                    return processor;
                 }
             }
             return nullptr;
         }
 
-        Instrument *createNewObject(const juce::ValueTree &v) override {
-            auto *instrument = new Instrument(v, undoManager);
-            return instrument;
+        AudioProcessorWrapper *findFirstProcessor() {
+            return objects.getFirst();
         }
 
-        void deleteObject(Instrument *at) override {
+        AudioProcessorWrapper *createNewObject(const juce::ValueTree &v) override {
+            auto *processor = new AudioProcessorWrapper(v, undoManager);
+            return processor;
+        }
+
+        void deleteObject(AudioProcessorWrapper *at) override {
             delete at;
         }
 
-        void objectRemoved(Instrument *) override {}
+        void objectRemoved(AudioProcessorWrapper *) override {}
 
         void objectOrderChanged() override {}
 
-        void newObjectAdded(Instrument *instrument) override {
+        void newObjectAdded(AudioProcessorWrapper *processor) override {
         }
 
     private:
@@ -81,7 +87,7 @@ struct AudioGraphClasses {
 
     struct AudioTrack : public DefaultAudioProcessor, public drow::ValueTreePropertyChangeListener {
         explicit AudioTrack(ValueTree v, UndoManager &undoManager) : state(v) {
-            instrumentList = std::make_unique<AudioGraphClasses::InstrumentList>(v, undoManager);
+            processorList = std::make_unique<AudioGraphClasses::ProcessorList>(v, undoManager);
         }
 
         const String getName() const override { return "MainProcessor"; }
@@ -89,12 +95,12 @@ struct AudioGraphClasses {
         int getNumParameters() override { return 8; }
 
         void processBlock(AudioSampleBuffer &buffer, MidiBuffer &midiMessages) override {
-            getCurrentInstrument()->processBlock(buffer, midiMessages);
+            getCurrentAudioProcessor()->processBlock(buffer, midiMessages);
         }
 
-        StatefulAudioProcessor *getCurrentInstrument() {
-            Instrument *selectedInstrument = instrumentList->findSelectedInstrument();
-            return selectedInstrument != nullptr ? selectedInstrument->source.get() : nullptr;
+        StatefulAudioProcessor *getCurrentAudioProcessor() {
+            AudioProcessorWrapper *selectedProcessor = processorList->findFirstProcessor(); // TODO this will make more sense with AudioGraphs
+            return selectedProcessor != nullptr ? selectedProcessor->source.get() : nullptr;
         }
 
         ValueTree state;
@@ -107,7 +113,7 @@ struct AudioGraphClasses {
             }
         }
 
-        std::unique_ptr<AudioGraphClasses::InstrumentList> instrumentList;
+        std::unique_ptr<AudioGraphClasses::ProcessorList> processorList;
     };
 
     class AudioTrackList
@@ -139,7 +145,7 @@ struct AudioGraphClasses {
 
         StatefulAudioProcessor *getCurrentAudioProcessor() {
             AudioTrack *selectedTrack = findSelectedAudioTrack();
-            return selectedTrack != nullptr ? selectedTrack->getCurrentInstrument() : nullptr;
+            return selectedTrack != nullptr ? selectedTrack->getCurrentAudioProcessor() : nullptr;
         }
 
         void newObjectAdded(AudioTrack *audioTrack) override {
@@ -177,9 +183,9 @@ struct AudioGraphClasses {
             const AudioSourceChannelInfo &channelInfo = AudioSourceChannelInfo(buffer);
 
             for (auto *track : objects) {
-                auto currentInstrument = track->getCurrentInstrument();
-                if (currentInstrument != nullptr) {
-                    currentInstrument->processBlock(buffer, midiMessages);
+                auto currentProcessor = track->getCurrentAudioProcessor();
+                if (currentProcessor != nullptr) {
+                    currentProcessor->processBlock(buffer, midiMessages);
                 }
             }
 
