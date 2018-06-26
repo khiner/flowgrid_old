@@ -32,11 +32,15 @@ namespace Helpers
 
             if (v.getParent().isValid() && newParent != v && ! newParent.isAChildOf (v))
             {
-                if (v.getParent() == newParent && newParent.indexOf (v) < insertIndex)
-                    --insertIndex;
-
-                v.getParent().removeChild (v, &undoManager);
-                newParent.addChild (v, insertIndex, &undoManager);
+                if (v.getParent() == newParent) {
+                    if (newParent.indexOf(v) < insertIndex) {
+                        --insertIndex;
+                    }
+                    v.getParent().moveChild(v.getParent().indexOf(v), insertIndex, &undoManager);
+                } else {
+                    v.getParent().removeChild(v, &undoManager);
+                    newParent.addChild(v, insertIndex, &undoManager);
+                }
             }
         }
 
@@ -61,7 +65,7 @@ namespace Helpers
 
         Helpers::createUuidProperty (edit);
 
-        for (int tn = 0; tn < 1; ++tn) {
+        for (int tn = 0; tn < 2; ++tn) {
             ValueTree t (IDs::TRACK);
             const String trackName ("Track " + String (tn + 1));
             t.setProperty (IDs::colour, Colour::fromHSV ((1.0f / 8.0f) * tn, 0.65f, 0.65f, 1.0f).toString(), nullptr);
