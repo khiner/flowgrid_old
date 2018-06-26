@@ -20,7 +20,7 @@ public:
 
         if (Push2::isButtonPressControlMessage(midiMessage)) {
             if (ccNumber == Push2::ccForControlLabel(Push2::ControlLabel::undo)) {
-                undoManager.undo();
+                MessageManager::callAsync([&] () { undoManager.undo(); });
                 return;
             }
         }
