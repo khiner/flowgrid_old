@@ -180,7 +180,7 @@ struct TrackList    : public Component,
     void resized() override
     {
         auto r = getLocalBounds();
-        const int h = r.getHeight() / objects.size();
+        const int h = objects.size() > 0 ? r.getHeight() / objects.size() : 0;
 
         for (auto* at : objects)
             at->setBounds (r.removeFromTop (h));
