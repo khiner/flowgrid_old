@@ -107,14 +107,14 @@ private:
 
             processorSliderAttachements.clear(true);
 
-            StatefulAudioProcessor *currentAudioProcessor = audioGraphBuilder.getMainAudioProcessor()->getSelectedAudioProcessor();
-            if (currentAudioProcessor != nullptr) {
+            StatefulAudioProcessor *selectedAudioProcessor = audioGraphBuilder.getAudioProcessorWithUuid(processor->getState().getProperty(IDs::uuid, processor->getUndoManager()));
+            if (selectedAudioProcessor != nullptr) {
                 for (int i = 0; i < 8; i++) {
                     auto *slider = processorSliders[i];
                     slider->setVisible(true);
                     slider->getValueObject().refersToSameSourceAs(processor->getState().getChild(i).getPropertyAsValue(IDs::value, processor->getUndoManager()));
                     auto sliderAttachment = new AudioProcessorValueTreeState::SliderAttachment(
-                            *currentAudioProcessor->getState(), currentAudioProcessor->getParameterIdentifier(i),
+                            *selectedAudioProcessor->getState(), selectedAudioProcessor->getParameterIdentifier(i),
                             *slider);
                     processorSliderAttachements.add(sliderAttachment);
                 }

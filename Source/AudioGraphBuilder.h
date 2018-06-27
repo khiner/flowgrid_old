@@ -55,6 +55,14 @@ struct AudioGraphClasses {
             return v.hasType(IDs::PROCESSOR);
         }
 
+        StatefulAudioProcessor *getAudioProcessorWithUuid(String& uuid) {
+            for (auto *processor : objects) {
+                if (processor->state[IDs::uuid] == uuid) {
+                    return processor->source.get();
+                }
+            }
+        }
+
         AudioProcessorWrapper *findSelectedProcessor() {
             for (auto *processor : objects) {
                 if (processor->state[IDs::selected]) {
@@ -106,6 +114,10 @@ struct AudioGraphClasses {
             }
         }
 
+        StatefulAudioProcessor *getAudioProcessorWithUuid(String& uuid) {
+            return processorList->getAudioProcessorWithUuid(uuid);
+        }
+
         StatefulAudioProcessor *getFirstAudioProcessor() {
             AudioProcessorWrapper *selectedProcessor = processorList->findFirstProcessor(); // TODO this will make more sense with AudioGraphs
             return selectedProcessor != nullptr ? selectedProcessor->source.get() : nullptr;
@@ -154,6 +166,16 @@ struct AudioGraphClasses {
 
         ~AudioTrackList() override {
             freeObjects();
+        }
+
+        StatefulAudioProcessor *getAudioProcessorWithUuid(String& uuid) {
+            for (auto *track : objects) {
+                StatefulAudioProcessor* audioProcessor = track->getAudioProcessorWithUuid(uuid);
+                if (audioProcessor != nullptr) {
+                    return audioProcessor;
+                }
+            }
+            return nullptr;
         }
 
         StatefulAudioProcessor *getSelectedAudioProcessor() {
@@ -235,6 +257,9 @@ public:
         return trackList.get();
     }
 
+    StatefulAudioProcessor *getAudioProcessorWithUuid(String uuid) {
+        return trackList->getAudioProcessorWithUuid(uuid);
+    }
 private:
     std::unique_ptr<AudioGraphClasses::AudioTrackList> trackList;
 
