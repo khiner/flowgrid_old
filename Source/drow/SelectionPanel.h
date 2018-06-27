@@ -45,15 +45,24 @@ public:
     void resized() override {
         auto r = getLocalBounds();
 
-        titleLabel.setBounds(r.removeFromTop(22));
-        r = r.withTrimmedLeft(70).withWidth(250);
+        static const int ITEM_WIDTH = 250, ITEM_HEIGHT = 22;
+        titleLabel.setBounds(r.removeFromTop(ITEM_HEIGHT));
+        r = r.withTrimmedLeft(70).withWidth(ITEM_WIDTH);
 
         drow::visitComponents({&nameEditor, &colourButton, &startSlider, &lengthSlider},
-                              [&r](Component *c) { if (c->isVisible()) c->setBounds(r.removeFromTop(22)); });
+                              [&r](Component *c) { if (c->isVisible()) c->setBounds(r.removeFromTop(ITEM_HEIGHT)); });
 
-        for (auto* slider : processorSliders) {
+        for (int sliderIndex = 0; sliderIndex < processorSliders.size(); sliderIndex++) {
+            auto* slider = processorSliders[sliderIndex];
             if (slider->isVisible()) {
-                slider->setBounds(r.removeFromTop(22));
+                slider->setBounds(r.removeFromTop(ITEM_HEIGHT));
+                if (sliderIndex == processorSliders.size() / 2 - 1) {
+                    // layout the other column to the right of the first
+                    r = getLocalBounds()
+                            .withTrimmedLeft(ITEM_WIDTH + slider->getTextBoxWidth() + processorLabels[sliderIndex]->getWidth())
+                            .withTrimmedTop(ITEM_HEIGHT)
+                            .withWidth(ITEM_WIDTH);
+                }
             }
         }
     }
