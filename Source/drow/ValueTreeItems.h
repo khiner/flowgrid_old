@@ -88,8 +88,71 @@ namespace Helpers {
     }
 }
 
-
 class ValueTreeItem;
+
+class ProjectChangeListener {
+public:
+    virtual void itemSelected(ValueTreeItem*) = 0;
+};
+
+// Adapted from JUCE::ChangeBroadcaster to support messaging specific changes to the project.
+class ProjectChangeBroadcaster {
+public:
+    ProjectChangeBroadcaster() = default;
+
+    ~ProjectChangeBroadcaster() {};
+
+    /** Registers a listener to receive change callbacks from this broadcaster.
+        Trying to add a listener that's already on the list will have no effect.
+    */
+    void addChangeListener (ProjectChangeListener* listener) {
+        // Listeners can only be safely added when the event thread is locked
+        // You can  use a MessageManagerLock if you need to call this from another thread.
+        jassert (MessageManager::getInstance()->currentThreadHasLockedMessageManager());
+
+        changeListeners.add(listener);
+    }
+
+    /** Unregisters a listener from the list.
+        If the listener isn't on the list, this won't have any effect.
+    */
+    void removeChangeListener (ProjectChangeListener* listener) {
+        // Listeners can only be safely removed when the event thread is locked
+        // You can  use a MessageManagerLock if you need to call this from another thread.
+        jassert (MessageManager::getInstance()->currentThreadHasLockedMessageManager());
+
+        changeListeners.remove(listener);
+    }
+
+    /** Removes all listeners from the list. */
+    void removeAllChangeListeners() {
+        // Listeners can only be safely removed when the event thread is locked
+        // You can  use a MessageManagerLock if you need to call this from another thread.
+        jassert (MessageManager::getInstance()->currentThreadHasLockedMessageManager());
+
+        changeListeners.clear();
+    }
+
+    //==============================================================================
+    /** Causes an asynchronous change message to be sent to all the registered listeners.
+
+        The message will be delivered asynchronously by the main message thread, so this
+        method will return immediately. To call the listeners synchronously use
+        sendSynchronousChangeMessage().
+    */
+    void sendItemSelectedMessage(ValueTreeItem *item) {
+        if (MessageManager::getInstance()->isThisTheMessageThread()) {
+            changeListeners.call (&ProjectChangeListener::itemSelected, item);
+        } else {
+            MessageManager::callAsync([this, item] { changeListeners.call(&ProjectChangeListener::itemSelected, item); });
+        }
+    }
+
+private:
+    ListenerList <ProjectChangeListener> changeListeners;
+
+    JUCE_DECLARE_NON_COPYABLE (ProjectChangeBroadcaster)
+};
 
 /** Creates the various concrete types below. */
 ValueTreeItem *createValueTreeItemForType(const ValueTree &, UndoManager &);
@@ -153,9 +216,13 @@ public:
 
     void itemSelectionChanged(bool isNowSelected) override {
         state.setProperty(IDs::selected, isNowSelected, nullptr);
-        if (auto *ov = getOwnerView())
-            if (auto *cb = dynamic_cast<ChangeBroadcaster *> (ov->getRootItem()))
-                cb->sendChangeMessage();
+        if (isNowSelected) {
+            if (auto *ov = getOwnerView()) {
+                if (auto *cb = dynamic_cast<ProjectChangeBroadcaster *> (ov->getRootItem())) {
+                    cb->sendItemSelectedMessage(this);
+                }
+            }
+        }
 
     }
 
@@ -268,7 +335,7 @@ public:
 
 
 class Edit : public ValueTreeItem,
-             public ChangeBroadcaster {
+             public ProjectChangeBroadcaster {
 public:
     Edit(const ValueTree &v, UndoManager &um)
             : ValueTreeItem(v, um) {

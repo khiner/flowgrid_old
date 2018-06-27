@@ -5,7 +5,7 @@
 #include "drow_Utilities.h"
 
 class SelectionPanel : public Component,
-                       private ChangeListener {
+                       private ProjectChangeListener {
 public:
     SelectionPanel(TreeView &tv, Edit &e, AudioGraphBuilder &audioGraphBuilder)
             : treeView(tv), edit(e), audioGraphBuilder(audioGraphBuilder) {
@@ -31,7 +31,7 @@ public:
 
         edit.addChangeListener(this);
 
-        refresh();
+        itemSelected(nullptr);
     }
 
     ~SelectionPanel() {
@@ -84,25 +84,14 @@ private:
     OwnedArray<Slider> processorSliders;
     OwnedArray<AudioProcessorValueTreeState::SliderAttachment> processorSliderAttachements;
 
-    template<typename Type>
-    inline Type *getFirstSelectedItemOfType() const {
-        const int numSelected = treeView.getNumSelectedItems();
-
-        for (int i = 0; i < numSelected; ++i)
-            if (auto *t = dynamic_cast<Type *> (treeView.getSelectedItem(i)))
-                return t;
-
-        return nullptr;
-    }
-
-    void refresh() {
+    void itemSelected(ValueTreeItem *item) override {
         for (auto *c : getChildren())
             c->setVisible(false);
 
-        titleLabel.setText("No item selected", dontSendNotification);
-        titleLabel.setVisible(true);
-
-        if (auto *processor = getFirstSelectedItemOfType<Processor>()) {
+        if (item == nullptr) {
+            titleLabel.setText("No item selected", dontSendNotification);
+            titleLabel.setVisible(true);
+        } else if (auto *processor = dynamic_cast<Processor *> (item)) {
             titleLabel.setText("Processor Selected: " + processor->getDisplayText(), dontSendNotification);
 
             processorSliderAttachements.clear(true);
@@ -119,7 +108,7 @@ private:
                     processorSliderAttachements.add(sliderAttachment);
                 }
             }
-        } else if (auto *clip = getFirstSelectedItemOfType<Clip>()) {
+        } else if (auto *clip = dynamic_cast<Clip *> (item)) {
             titleLabel.setText("Clip Selected: " + clip->getDisplayText(), dontSendNotification);
             nameEditor.setVisible(true);
             startSlider.setVisible(true);
@@ -130,7 +119,7 @@ private:
                     clip->getState().getPropertyAsValue(IDs::start, clip->getUndoManager()));
             lengthSlider.getValueObject().referTo(
                     clip->getState().getPropertyAsValue(IDs::length, clip->getUndoManager()));
-        } else if (auto *track = getFirstSelectedItemOfType<Track>()) {
+        } else if (auto *track = dynamic_cast<Track *> (item)) {
             titleLabel.setText("Track Selected: " + track->getDisplayText(), dontSendNotification);
             nameEditor.setVisible(true);
             colourButton.setVisible(true);
@@ -138,18 +127,9 @@ private:
             nameEditor.getTextValue().referTo(track->getState().getPropertyAsValue(IDs::name, track->getUndoManager()));
             colourButton.getColourValueObject().referTo(
                     track->getState().getPropertyAsValue(IDs::colour, track->getUndoManager()));
-        } else if (auto *ed = getFirstSelectedItemOfType<Edit>()) {
-            titleLabel.setText("Edit Selected: " + ed->getDisplayText(), dontSendNotification);
-            nameEditor.setVisible(true);
-
-            nameEditor.getTextValue().referTo(ed->getState().getPropertyAsValue(IDs::name, ed->getUndoManager()));
         }
 
         repaint();
         resized();
-    }
-
-    void changeListenerCallback(ChangeBroadcaster *cb) override {
-        refresh();
     }
 };
