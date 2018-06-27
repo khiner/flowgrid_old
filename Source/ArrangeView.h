@@ -149,8 +149,8 @@ struct ArrangeClasses {
 
     struct TrackList : public Component,
                        public drow::ValueTreeObjectList<ArrangeTrack> {
-        TrackList(ValueTree editTree)
-                : drow::ValueTreeObjectList<ArrangeTrack>(editTree) {
+        TrackList(ValueTree state)
+                : drow::ValueTreeObjectList<ArrangeTrack>(state) {
             rebuildObjects();
         }
 
@@ -191,8 +191,8 @@ struct ArrangeClasses {
 
 class ArrangeView : public Component {
 public:
-    explicit ArrangeView(ValueTree editToUse) {
-        addAndMakeVisible(*(trackList = std::make_unique<ArrangeClasses::TrackList>(editToUse)));
+    explicit ArrangeView(ValueTree state) {
+        addAndMakeVisible(*(trackList = std::make_unique<ArrangeClasses::TrackList>(state)));
 
         setSize(800, 600);
     }

@@ -7,8 +7,8 @@
 class SelectionPanel : public Component,
                        private ProjectChangeListener {
 public:
-    SelectionPanel(TreeView &tv, Edit &e, AudioGraphBuilder &audioGraphBuilder)
-            : treeView(tv), edit(e), audioGraphBuilder(audioGraphBuilder) {
+    SelectionPanel(Project &e, AudioGraphBuilder &audioGraphBuilder)
+            : project(e), audioGraphBuilder(audioGraphBuilder) {
         drow::addAndMakeVisible(*this, {&titleLabel, &nameEditor, &colourButton, &startSlider, &lengthSlider});
 
         colourButton.setButtonText("Set colour");
@@ -29,13 +29,13 @@ public:
             processorSliders.add(slider);
         }
 
-        edit.addChangeListener(this);
+        project.addChangeListener(this);
 
         itemSelected(nullptr);
     }
 
     ~SelectionPanel() {
-        edit.removeChangeListener(this);
+        project.removeChangeListener(this);
     }
 
     void paint(Graphics &g) override {
@@ -70,8 +70,7 @@ public:
 private:
     const static int MAX_PROCESSOR_PARAMS_TO_DISPLAY = 8;
 
-    TreeView &treeView;
-    Edit &edit;
+    Project &project;
     AudioGraphBuilder &audioGraphBuilder;
 
     Label titleLabel;

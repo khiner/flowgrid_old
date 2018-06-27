@@ -4,12 +4,12 @@
 #include <drow/ValueTreeItems.h>
 #include <drow/SelectionPanel.h>
 
-class ValueTreesDemo : public Component,
+class ValueTreeEditor : public Component,
                        public DragAndDropContainer,
                        private Button::Listener,
                        private Timer {
 public:
-    ValueTreesDemo(ValueTree editToUse, UndoManager &undoManager, AudioGraphBuilder &audioGraphBuilder) : undoManager(undoManager) {
+    ValueTreeEditor(ValueTree editToUse, UndoManager &undoManager, AudioGraphBuilder &audioGraphBuilder) : undoManager(undoManager) {
         addAndMakeVisible(tree);
         tree.setColour(TreeView::backgroundColourId,
                        getUIColourIfAvailable(LookAndFeel_V4::ColourScheme::UIColour::windowBackground));
@@ -17,9 +17,9 @@ public:
         tree.setDefaultOpenness(true);
         tree.setMultiSelectEnabled(true);
 
-        tree.setRootItem((rootItem = std::make_unique<Edit>(editToUse, undoManager)).get());
+        tree.setRootItem((rootItem = std::make_unique<Project>(editToUse, undoManager)).get());
 
-        addAndMakeVisible(*(selectionPanel = std::make_unique<SelectionPanel>(tree, *rootItem, audioGraphBuilder)));
+        addAndMakeVisible(*(selectionPanel = std::make_unique<SelectionPanel>(*rootItem, audioGraphBuilder)));
 
         addAndMakeVisible(undoButton);
         addAndMakeVisible(redoButton);
@@ -27,11 +27,10 @@ public:
         redoButton.addListener(this);
 
         startTimer(500);
-
         setSize(800, 600);
     }
 
-    ~ValueTreesDemo() {
+    ~ValueTreeEditor() {
         tree.setRootItem(nullptr);
     }
 
@@ -90,7 +89,7 @@ public:
 private:
     TreeView tree;
     TextButton undoButton{"Undo"}, redoButton{"Redo"};
-    std::unique_ptr<Edit> rootItem;
+    std::unique_ptr<Project> rootItem;
     UndoManager &undoManager;
 
     std::unique_ptr<SelectionPanel> selectionPanel;
@@ -99,5 +98,5 @@ private:
         undoManager.beginNewTransaction();
     }
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ValueTreesDemo)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ValueTreeEditor)ValueTreeEditor
 };

@@ -18,7 +18,7 @@ namespace IDs
 
     DECLARE_ID(SINE_BANK_PROCESSOR)
 
-    DECLARE_ID (EDIT)
+    DECLARE_ID (PROJECT)
     DECLARE_ID (uuid)
     DECLARE_ID (mediaId)
 

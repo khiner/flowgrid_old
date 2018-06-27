@@ -50,11 +50,11 @@ namespace Helpers {
         return v;
     }
 
-    inline ValueTree createDefaultEdit() {
-        ValueTree edit(IDs::EDIT);
-        edit.setProperty(IDs::name, "My First Edit", nullptr);
+    inline ValueTree createDefaultProject() {
+        ValueTree project(IDs::PROJECT);
+        project.setProperty(IDs::name, "My First Project", nullptr);
 
-        Helpers::createUuidProperty(edit);
+        Helpers::createUuidProperty(project);
 
         for (int tn = 0; tn < 1; ++tn) {
             ValueTree t(IDs::TRACK);
@@ -81,10 +81,10 @@ namespace Helpers {
                 t.addChild(c, -1, nullptr);
             }
 
-            edit.addChild(t, -1, nullptr);
+            project.addChild(t, -1, nullptr);
         }
 
-        return edit;
+        return project;
     }
 }
 
@@ -334,12 +334,12 @@ public:
 };
 
 
-class Edit : public ValueTreeItem,
+class Project : public ValueTreeItem,
              public ProjectChangeBroadcaster {
 public:
-    Edit(const ValueTree &v, UndoManager &um)
+    Project(const ValueTree &v, UndoManager &um)
             : ValueTreeItem(v, um) {
-        jassert (state.hasType(IDs::EDIT));
+        jassert (state.hasType(IDs::PROJECT));
     }
 
     bool isInterestedInDragSource(const DragAndDropTarget::SourceDetails &dragSourceDetails) override {
@@ -358,7 +358,7 @@ public:
 
 
 inline ValueTreeItem *createValueTreeItemForType(const ValueTree &v, UndoManager &um) {
-    if (v.hasType(IDs::EDIT)) return new Edit(v, um);
+    if (v.hasType(IDs::PROJECT)) return new Project(v, um);
     if (v.hasType(IDs::TRACK)) return new Track(v, um);
     if (v.hasType(IDs::CLIP)) return new Clip(v, um);
     if (v.hasType(IDs::PROCESSOR)) return new Processor(v, um);
