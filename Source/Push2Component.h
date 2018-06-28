@@ -5,9 +5,9 @@
 #include "push2/Push2DisplayBridge.h"
 #include "AudioGraphBuilder.h"
 
-class Push2Animator : public Timer, public Component, private ProjectChangeListener {
+class Push2Component : public Timer, public Component, private ProjectChangeListener {
 public:
-    explicit Push2Animator(Project &project, AudioGraphBuilder &audioGraphBuilder) : audioGraphBuilder(audioGraphBuilder) {
+    explicit Push2Component(Project &project, AudioGraphBuilder &audioGraphBuilder) : audioGraphBuilder(audioGraphBuilder) {
         setSize(Push2Display::WIDTH, Push2Display::HEIGHT);
         startTimer(60);
 

@@ -1,7 +1,7 @@
 #include <drow/drow_Utilities.h>
 #include <drow/ValueTreeItems.h>
 #include "JuceHeader.h"
-#include "Push2Animator.h"
+#include "Push2Component.h"
 #include "AudioGraphBuilder.h"
 #include "MidiControlHandler.h"
 #include <ArrangeView.h>
@@ -43,7 +43,7 @@ public:
         deviceManager.initialiseWithDefaultDevices(2, 2);
 
         Process::makeForegroundProcess();
-        push2Window = std::make_unique<MainWindow>("Push 2 Mirror", new Push2Animator(project, audioGraphBuilder));
+        push2Window = std::make_unique<MainWindow>("Push 2 Mirror", new Push2Component(project, audioGraphBuilder));
         treeWindow = std::make_unique<MainWindow>("Tree Editor", new ValueTreeEditor(projectState, undoManager, project, audioGraphBuilder));
         arrangeWindow = std::make_unique<MainWindow>("Arrange View", new ArrangeView(projectState));
 
