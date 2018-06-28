@@ -61,11 +61,11 @@ namespace Helpers {
             const String trackName("Track " + String(tn + 1));
             t.setProperty(IDs::colour, Colour::fromHSV((1.0f / 8.0f) * tn, 0.65f, 0.65f, 1.0f).toString(), nullptr);
             t.setProperty(IDs::name, trackName, nullptr);
-            t.setProperty(IDs::selected, true, nullptr);
             Helpers::createUuidProperty(t);
 
             ValueTree i(IDs::PROCESSOR);
             Helpers::createUuidProperty(i);
+            i.setProperty(IDs::selected, true, nullptr);
             i.setProperty(IDs::name, IDs::SINE_BANK_PROCESSOR.toString(), nullptr);
             t.addChild(i, -1, nullptr);
 
@@ -157,7 +157,7 @@ public:
             : state(std::move(v)), undoManager(um) {
         state.addListener(this);
         if (state[IDs::selected]) {
-            setSelected(true, true, dontSendNotification);
+            setSelected(true, false, dontSendNotification);
         }
     }
 
@@ -307,10 +307,6 @@ public:
     Track(const ValueTree &v, UndoManager &um)
             : ValueTreeItem(v, um) {
         jassert (state.hasType(IDs::TRACK));
-    }
-
-    void itemSelectionChanged(bool isNowSelected) override {
-        ValueTreeItem::itemSelectionChanged(isNowSelected);
     }
 
     bool isInterestedInDragSource(const DragAndDropTarget::SourceDetails &dragSourceDetails) override {

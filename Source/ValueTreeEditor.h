@@ -9,7 +9,7 @@ class ValueTreeEditor : public Component,
                        private Button::Listener,
                        private Timer {
 public:
-    ValueTreeEditor(ValueTree state, UndoManager &undoManager, Project& rootItem, AudioGraphBuilder &audioGraphBuilder) : undoManager(undoManager) {
+    ValueTreeEditor(const ValueTree &state, UndoManager &undoManager, Project& rootItem, AudioGraphBuilder &audioGraphBuilder) : undoManager(undoManager) {
         addAndMakeVisible(tree);
         tree.setColour(TreeView::backgroundColourId,
                        getUIColourIfAvailable(LookAndFeel_V4::ColourScheme::UIColour::windowBackground));
@@ -30,7 +30,7 @@ public:
         setSize(800, 600);
     }
 
-    ~ValueTreeEditor() {
+    ~ValueTreeEditor() override {
         tree.setRootItem(nullptr);
     }
 
@@ -84,6 +84,12 @@ public:
             undoManager.undo();
         else if (b == &redoButton)
             undoManager.redo();
+    }
+
+    void sendSelectMessageForFirstSelectedItem() {
+        if (tree.getNumSelectedItems() > 0) {
+            tree.getSelectedItem(0)->itemSelectionChanged(true);
+        }
     }
 
 private:

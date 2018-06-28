@@ -44,7 +44,8 @@ public:
 
         Process::makeForegroundProcess();
         push2Window = std::make_unique<MainWindow>("Push 2 Mirror", new Push2Component(project, audioGraphBuilder));
-        treeWindow = std::make_unique<MainWindow>("Tree Editor", new ValueTreeEditor(projectState, undoManager, project, audioGraphBuilder));
+        ValueTreeEditor *valueTreeEditor = new ValueTreeEditor(projectState, undoManager, project, audioGraphBuilder);
+        treeWindow = std::make_unique<MainWindow>("Tree Editor", valueTreeEditor);
         arrangeWindow = std::make_unique<MainWindow>("Arrange View", new ArrangeView(projectState));
 
         auto *audioDeviceSelectorComponent = new AudioDeviceSelectorComponent(deviceManager, 0, 256, 0, 256, true, true, true, false);
@@ -55,6 +56,8 @@ public:
         arrangeWindow->setBoundsRelative(0.50, 0.25, 0.35, 0.35);
         audioSetupWindow->setBoundsRelative(0.15, 0.60, 0.35, 0.50);
         push2Window->setBounds(treeWindow->getPosition().x, treeWindow->getPosition().y - Push2Display::HEIGHT - 30, Push2Display::WIDTH, Push2Display::HEIGHT + 30);
+
+        valueTreeEditor->sendSelectMessageForFirstSelectedItem();
     }
 
     void shutdown() override {
