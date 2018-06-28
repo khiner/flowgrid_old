@@ -322,10 +322,10 @@ public:
         Helpers::createUuidProperty(state);
 
         for (int tn = 0; tn < 1; ++tn) {
-            ValueTree track = createAndAddTrack(false);
+            ValueTree track = createAndAddTrack(true);
             const String& trackName = track.getProperty(IDs::name);
 
-            createAndAddProcessor(track, IDs::SINE_BANK_PROCESSOR.toString(), false);
+            createAndAddProcessor(track, IDs::SINE_BANK_PROCESSOR.toString(), true);
 
             for (int cn = 0; cn < 3; ++cn) {
                 ValueTree c(IDs::CLIP);
