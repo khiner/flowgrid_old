@@ -61,7 +61,7 @@ public:
     }
 
     bool keyPressed(const KeyPress &key) override {
-        if (key == KeyPress::deleteKey) {
+        if (key == KeyPress::deleteKey || key == KeyPress::backspaceKey) {
             deleteSelectedItems();
             return true;
         }
