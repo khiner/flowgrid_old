@@ -49,42 +49,6 @@ namespace Helpers {
 
         return v;
     }
-
-    inline ValueTree createDefaultProject() {
-        ValueTree project(IDs::PROJECT);
-        project.setProperty(IDs::name, "My First Project", nullptr);
-
-        Helpers::createUuidProperty(project);
-
-        for (int tn = 0; tn < 1; ++tn) {
-            ValueTree t(IDs::TRACK);
-            const String trackName("Track " + String(tn + 1));
-            t.setProperty(IDs::colour, Colour::fromHSV((1.0f / 8.0f) * tn, 0.65f, 0.65f, 1.0f).toString(), nullptr);
-            t.setProperty(IDs::name, trackName, nullptr);
-            Helpers::createUuidProperty(t);
-
-            ValueTree i(IDs::PROCESSOR);
-            Helpers::createUuidProperty(i);
-            i.setProperty(IDs::selected, true, nullptr);
-            i.setProperty(IDs::name, IDs::SINE_BANK_PROCESSOR.toString(), nullptr);
-            t.addChild(i, -1, nullptr);
-
-            for (int cn = 0; cn < 3; ++cn) {
-                ValueTree c(IDs::CLIP);
-                Helpers::createUuidProperty(c);
-                c.setProperty(IDs::name, trackName + ", Clip " + String(cn + 1), nullptr);
-                c.setProperty(IDs::start, cn, nullptr);
-                c.setProperty(IDs::length, 1.0, nullptr);
-                c.setProperty(IDs::selected, false, nullptr);
-
-                t.addChild(c, -1, nullptr);
-            }
-
-            project.addChild(t, -1, nullptr);
-        }
-
-        return project;
-    }
 }
 
 class ValueTreeItem;
@@ -292,10 +256,6 @@ public:
         jassert (state.hasType(IDs::PROCESSOR));
     }
 
-    ~Processor() {
-        std::cout << "killing p" << '\n';
-    }
-
     bool mightContainSubItems() override {
         return false;
     }
@@ -330,19 +290,61 @@ class Project : public ValueTreeItem,
 public:
     Project(const ValueTree &v, UndoManager &um)
             : ValueTreeItem(v, um) {
+        if (!state.isValid()) {
+            state = createDefaultProject();
+        }
         jassert (state.hasType(IDs::PROJECT));
     }
 
-    inline void createAndAddTrack() {
+    ValueTree createDefaultProject() {
+        state = ValueTree(IDs::PROJECT);
+        state.setProperty(IDs::name, "My First Project", nullptr);
+
+        Helpers::createUuidProperty(state);
+
+        for (int tn = 0; tn < 1; ++tn) {
+            ValueTree track = createAndAddTrack(false);
+            const String& trackName = track.getProperty(IDs::name);
+
+            createAndAddProcessor(track, IDs::SINE_BANK_PROCESSOR.toString(), false);
+
+            for (int cn = 0; cn < 3; ++cn) {
+                ValueTree c(IDs::CLIP);
+                Helpers::createUuidProperty(c);
+                c.setProperty(IDs::name, trackName + ", Clip " + String(cn + 1), nullptr);
+                c.setProperty(IDs::start, cn, nullptr);
+                c.setProperty(IDs::length, 1.0, nullptr);
+                c.setProperty(IDs::selected, false, nullptr);
+
+                track.addChild(c, -1, nullptr);
+            }
+        }
+
+        return state;
+    }
+
+    ValueTree createAndAddTrack(bool undoable=true) {
         int numTracks = this->getNumSubItems();
 
         ValueTree track(IDs::TRACK);
         const String trackName("Track " + String(numTracks + 1));
+        Helpers::createUuidProperty(track);
         track.setProperty(IDs::colour, Colour::fromHSV((1.0f / 8.0f) * numTracks, 0.65f, 0.65f, 1.0f).toString(), nullptr);
         track.setProperty(IDs::name, trackName, nullptr);
-        Helpers::createUuidProperty(track);
 
-        state.addChild(track, -1, &undoManager);
+        state.addChild(track, -1, undoable ? &undoManager : nullptr);
+
+        return track;
+    }
+
+    ValueTree createAndAddProcessor(ValueTree &track, const String& name, bool undoable=true) {
+        ValueTree processor(IDs::PROCESSOR);
+        Helpers::createUuidProperty(processor);
+        processor.setProperty(IDs::name, name, nullptr);
+        processor.setProperty(IDs::selected, true, nullptr);
+        track.addChild(processor, -1, undoable ? &undoManager : nullptr);
+
+        return processor;
     }
 
     bool isInterestedInDragSource(const DragAndDropTarget::SourceDetails &dragSourceDetails) override {

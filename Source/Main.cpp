@@ -8,24 +8,17 @@
 #include <view/ValueTreeEditor.h>
 #include <push2/Push2MidiCommunicator.h>
 
-File getSaveFile()
-{
+File getSaveFile() {
     return File::getSpecialLocation (File::userDesktopDirectory).getChildFile ("ValueTreeDemoEdit.xml");
 }
 
-ValueTree loadOrCreateDefaultEdit()
-{
-    ValueTree v (drow::loadValueTree (getSaveFile(), true));
-
-    if (! v.isValid())
-        v = Helpers::createDefaultProject();
-
-    return v;
+ValueTree loadOrCreateDefaultEdit() {
+    return drow::loadValueTree(getSaveFile(), true);
 }
 
 class SoundMachineApplication : public JUCEApplication {
 public:
-    SoundMachineApplication(): projectState(loadOrCreateDefaultEdit()), project(projectState, undoManager), audioGraphBuilder(projectState, undoManager), midiControlHandler(project, audioGraphBuilder, undoManager) {}
+    SoundMachineApplication(): project(loadOrCreateDefaultEdit(), undoManager), audioGraphBuilder(project.getState(), undoManager), midiControlHandler(project, audioGraphBuilder, undoManager) {}
 
     const String getApplicationName() override { return ProjectInfo::projectName; }
 
@@ -44,9 +37,9 @@ public:
 
         Process::makeForegroundProcess();
         push2Window = std::make_unique<MainWindow>("Push 2 Mirror", new Push2Component(project, audioGraphBuilder));
-        ValueTreeEditor *valueTreeEditor = new ValueTreeEditor(projectState, undoManager, project, audioGraphBuilder);
+        ValueTreeEditor *valueTreeEditor = new ValueTreeEditor(project.getState(), undoManager, project, audioGraphBuilder);
         treeWindow = std::make_unique<MainWindow>("Tree Editor", valueTreeEditor);
-        arrangeWindow = std::make_unique<MainWindow>("Arrange View", new ArrangeView(projectState));
+        arrangeWindow = std::make_unique<MainWindow>("Arrange View", new ArrangeView(project.getState()));
 
         auto *audioDeviceSelectorComponent = new AudioDeviceSelectorComponent(deviceManager, 0, 256, 0, 256, true, true, true, false);
         audioDeviceSelectorComponent->setBoundsRelative(0, 0, 100, 100); // needs some nonzero initial size or warnings are thrown
@@ -66,7 +59,7 @@ public:
         audioSetupWindow = nullptr;
         arrangeWindow = nullptr;
         deviceManager.removeAudioCallback(&player);
-        drow::saveValueTree (projectState, getSaveFile(), true);
+        drow::saveValueTree (project.getState(), getSaveFile(), true);
     }
 
     void systemRequestedQuit() override {
@@ -126,7 +119,6 @@ private:
 
     AudioProcessorPlayer player;
 
-    ValueTree projectState;
     Project project;
     AudioGraphBuilder audioGraphBuilder;
     MidiControlHandler midiControlHandler;

@@ -102,10 +102,10 @@ public:
 
 private:
     TreeView tree;
-    Project &project;
 
     TextButton undoButton{"Undo"}, redoButton{"Redo"}, createTrackButton {"Create Track"};
     UndoManager &undoManager;
+    Project &project;
 
     std::unique_ptr<SelectionPanel> selectionPanel;
 
