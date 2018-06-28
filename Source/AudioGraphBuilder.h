@@ -20,7 +20,7 @@ static std::unique_ptr<StatefulAudioProcessor> createStatefulAudioProcessorFromI
 
 struct AudioGraphClasses {
     struct AudioProcessorWrapper : drow::ValueTreePropertyChangeListener {
-        explicit AudioProcessorWrapper(const ValueTree &v, UndoManager &undoManager) : state(v), source(std::move(createStatefulAudioProcessorFromId(v[IDs::name], undoManager))) {
+        explicit AudioProcessorWrapper(const ValueTree &v, UndoManager &undoManager) : state(v), source(createStatefulAudioProcessorFromId(v[IDs::name], undoManager)) {
             source->getState()->state = v;
         }
 

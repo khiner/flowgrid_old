@@ -333,6 +333,18 @@ public:
         jassert (state.hasType(IDs::PROJECT));
     }
 
+    inline void createAndAddTrack() {
+        int numTracks = this->getNumSubItems();
+
+        ValueTree track(IDs::TRACK);
+        const String trackName("Track " + String(numTracks + 1));
+        track.setProperty(IDs::colour, Colour::fromHSV((1.0f / 8.0f) * numTracks, 0.65f, 0.65f, 1.0f).toString(), nullptr);
+        track.setProperty(IDs::name, trackName, nullptr);
+        Helpers::createUuidProperty(track);
+
+        state.addChild(track, -1, &undoManager);
+    }
+
     bool isInterestedInDragSource(const DragAndDropTarget::SourceDetails &dragSourceDetails) override {
         return dragSourceDetails.description == IDs::TRACK.toString();
     }

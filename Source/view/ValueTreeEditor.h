@@ -9,7 +9,7 @@ class ValueTreeEditor : public Component,
                        private Button::Listener,
                        private Timer {
 public:
-    ValueTreeEditor(const ValueTree &state, UndoManager &undoManager, Project& rootItem, AudioGraphBuilder &audioGraphBuilder) : undoManager(undoManager) {
+    ValueTreeEditor(const ValueTree &state, UndoManager &undoManager, Project& project, AudioGraphBuilder &audioGraphBuilder) : undoManager(undoManager), project(project) {
         addAndMakeVisible(tree);
         tree.setColour(TreeView::backgroundColourId,
                        getUIColourIfAvailable(LookAndFeel_V4::ColourScheme::UIColour::windowBackground));
@@ -17,14 +17,17 @@ public:
         tree.setDefaultOpenness(true);
         tree.setMultiSelectEnabled(true);
 
-        tree.setRootItem(&rootItem);
+        tree.setRootItem(&project);
 
-        addAndMakeVisible(*(selectionPanel = std::make_unique<SelectionPanel>(rootItem, audioGraphBuilder)));
+        addAndMakeVisible(*(selectionPanel = std::make_unique<SelectionPanel>(project, audioGraphBuilder)));
 
         addAndMakeVisible(undoButton);
         addAndMakeVisible(redoButton);
+        addAndMakeVisible(createTrackButton);
+
         undoButton.addListener(this);
         redoButton.addListener(this);
+        createTrackButton.addListener(this);
 
         startTimer(500);
         setSize(800, 600);
@@ -41,6 +44,8 @@ public:
         undoButton.setBounds(buttons.removeFromLeft(100));
         buttons.removeFromLeft(6);
         redoButton.setBounds(buttons.removeFromLeft(100));
+
+        createTrackButton.setBounds(buttons.removeFromLeft(100));
 
         r.removeFromBottom(4);
         selectionPanel->setBounds(r.removeFromBottom(120));
@@ -84,6 +89,9 @@ public:
             undoManager.undo();
         else if (b == &redoButton)
             undoManager.redo();
+        else if (b == &createTrackButton) {
+            project.createAndAddTrack();
+        }
     }
 
     void sendSelectMessageForFirstSelectedItem() {
@@ -94,7 +102,9 @@ public:
 
 private:
     TreeView tree;
-    TextButton undoButton{"Undo"}, redoButton{"Redo"};
+    Project &project;
+
+    TextButton undoButton{"Undo"}, redoButton{"Redo"}, createTrackButton {"Create Track"};
     UndoManager &undoManager;
 
     std::unique_ptr<SelectionPanel> selectionPanel;
