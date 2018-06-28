@@ -20,14 +20,10 @@ static std::unique_ptr<StatefulAudioProcessor> createStatefulAudioProcessorFromI
 
 struct AudioGraphClasses {
     struct AudioProcessorWrapper : drow::ValueTreePropertyChangeListener {
-        explicit AudioProcessorWrapper(ValueTree v, UndoManager &undoManager) : state(v), source(
-                createStatefulAudioProcessorFromId(v[IDs::name], undoManager)) {
+        explicit AudioProcessorWrapper(const ValueTree &v, UndoManager &undoManager) : state(v), source(createStatefulAudioProcessorFromId(v[IDs::name], undoManager)) {
             source->getState()->state = v;
         }
 
-        ~AudioProcessorWrapper() {
-
-        }
         ValueTree state;
 
         std::unique_ptr<StatefulAudioProcessor> source;
@@ -43,7 +39,7 @@ struct AudioGraphClasses {
     class ProcessorList
             : public drow::ValueTreeObjectList<AudioProcessorWrapper> {
     public:
-        explicit ProcessorList(ValueTree v, UndoManager &undoManager) : drow::ValueTreeObjectList<AudioProcessorWrapper>(v), undoManager(undoManager) {
+        explicit ProcessorList(const ValueTree &v, UndoManager &undoManager) : drow::ValueTreeObjectList<AudioProcessorWrapper>(v), undoManager(undoManager) {
             rebuildObjects();
         }
 
@@ -59,15 +55,6 @@ struct AudioGraphClasses {
             for (auto *processor : objects) {
                 if (processor->state[IDs::uuid] == uuid) {
                     return processor->source.get();
-                }
-            }
-            return nullptr;
-        }
-
-        AudioProcessorWrapper *findSelectedProcessor() {
-            for (auto *processor : objects) {
-                if (processor->state[IDs::selected]) {
-                    return processor;
                 }
             }
             return nullptr;
@@ -120,13 +107,8 @@ struct AudioGraphClasses {
         }
 
         StatefulAudioProcessor *getFirstAudioProcessor() {
-            AudioProcessorWrapper *selectedProcessor = processorList->findFirstProcessor(); // TODO this will make more sense with AudioGraphs
-            return selectedProcessor != nullptr ? selectedProcessor->source.get() : nullptr;
-        }
-
-        StatefulAudioProcessor *getSelectedAudioProcessor() {
-            AudioProcessorWrapper *selectedProcessor = processorList->findSelectedProcessor(); // TODO this will make more sense with AudioGraphs
-            return selectedProcessor != nullptr ? selectedProcessor->source.get() : nullptr;
+            AudioProcessorWrapper *firstProcessor = processorList->findFirstProcessor(); // TODO this will make more sense with AudioGraphs
+            return firstProcessor != nullptr ? firstProcessor->source.get() : nullptr;
         }
 
         ValueTree state;
@@ -148,7 +130,7 @@ struct AudioGraphClasses {
               public drow::ValueTreeObjectList<AudioTrack> {
 
     public:
-        explicit AudioTrackList(ValueTree editTree, UndoManager &undoManager) : StatefulAudioProcessor(2, 2, undoManager),
+        explicit AudioTrackList(const ValueTree &editTree, UndoManager &undoManager) : StatefulAudioProcessor(2, 2, undoManager),
                                                       drow::ValueTreeObjectList<AudioTrack>(editTree) {
 
             rebuildObjects();
@@ -179,22 +161,8 @@ struct AudioGraphClasses {
             return nullptr;
         }
 
-        StatefulAudioProcessor *getSelectedAudioProcessor() {
-            AudioTrack *selectedTrack = findSelectedAudioTrack();
-            return selectedTrack != nullptr ? selectedTrack->getSelectedAudioProcessor() : nullptr;
-        }
-
         void newObjectAdded(AudioTrack *audioTrack) override {
             //mixerAudioSource.addInputSource(audioTrack->getSelectedAudioProcessor(), false);
-        }
-
-        AudioTrack *findSelectedAudioTrack() {
-            for (auto *track : objects) {
-                if (track->state[IDs::selected]) {
-                    return track;
-                }
-            }
-            return nullptr;
         }
 
         /*** JUCE override methods ***/
