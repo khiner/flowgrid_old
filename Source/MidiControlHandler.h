@@ -10,8 +10,12 @@ using Push2 = Push2MidiCommunicator;
 class MidiControlHandler : private ProjectChangeListener {
 public:
     explicit MidiControlHandler(Project &project, AudioGraphBuilder &audioGraphBuilder, UndoManager &undoManager) :
-            audioGraphBuilder(audioGraphBuilder), undoManager(undoManager) {
+            project(project), audioGraphBuilder(audioGraphBuilder), undoManager(undoManager) {
         project.addChangeListener(this);
+    }
+
+    ~MidiControlHandler() {
+        project.removeChangeListener(this);
     }
 
     // listened to and called on a non-audio thread
@@ -67,6 +71,7 @@ public:
     }
 
 private:
+    Project &project;
     AudioGraphBuilder &audioGraphBuilder;
     UndoManager &undoManager;
     StatefulAudioProcessor *currentProcessorToControl;
@@ -86,12 +91,16 @@ private:
         return nullptr;
     }
 
-    void itemSelected(ValueTreeItem *item) override {
+    void itemSelected(ValueTree *item) override {
         if (item == nullptr) {
-        } else if (auto *processor = dynamic_cast<Processor *> (item)) {
-            currentProcessorToControl = audioGraphBuilder.getAudioProcessorWithUuid(processor->getState().getProperty(IDs::uuid, processor->getUndoManager()));
-        } else if (auto *clip = dynamic_cast<Clip *> (item)) {
-        } else if (auto *track = dynamic_cast<Track *> (item)) {
+        } else if (item->hasType(IDs::PROCESSOR)) {
+            currentProcessorToControl = audioGraphBuilder.getAudioProcessorWithUuid(item->getProperty(IDs::uuid, project.getUndoManager()));
+        }
+    }
+
+    void itemRemoved(ValueTree *item) override {
+        if (item->hasType(IDs::PROCESSOR)) {
+            currentProcessorToControl = nullptr;
         }
     }
 };

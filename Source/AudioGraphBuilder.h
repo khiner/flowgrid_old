@@ -47,7 +47,7 @@ struct AudioGraphClasses {
             freeObjects();
         }
 
-        bool isSuitableType(const juce::ValueTree &v) const override {
+        bool isSuitableType(const ValueTree &v) const override {
             return v.hasType(IDs::PROCESSOR);
         }
 
@@ -64,13 +64,13 @@ struct AudioGraphClasses {
             return objects.getFirst();
         }
 
-        AudioProcessorWrapper *createNewObject(const juce::ValueTree &v) override {
+        AudioProcessorWrapper *createNewObject(const ValueTree &v) override {
             auto *processor = new AudioProcessorWrapper(v, undoManager);
             return processor;
         }
 
-        void deleteObject(AudioProcessorWrapper *at) override {
-            delete at;
+        void deleteObject(AudioProcessorWrapper *processor) override {
+            delete processor;
         }
 
         void objectRemoved(AudioProcessorWrapper *) override {
@@ -115,10 +115,6 @@ struct AudioGraphClasses {
 
     private:
         void valueTreePropertyChanged(juce::ValueTree &v, const juce::Identifier &i) override {
-            if (v == state) {
-                if (i == IDs::name || i == IDs::colour) {
-                }
-            }
         }
 
         std::unique_ptr<AudioGraphClasses::ProcessorList> processorList;

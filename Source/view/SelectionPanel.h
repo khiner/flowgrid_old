@@ -1,8 +1,6 @@
 #pragma once
 
 #include "view/ColourChangeButton.h"
-#include "ValueTreeItems.h"
-#include "Utilities.h"
 
 class SelectionPanel : public Component,
                        private ProjectChangeListener {
@@ -36,6 +34,7 @@ public:
 
     ~SelectionPanel() override {
         project.removeChangeListener(this);
+        detachAudioProcessor();
     }
 
     void paint(Graphics &g) override {
@@ -72,6 +71,7 @@ private:
 
     Project &project;
     AudioGraphBuilder &audioGraphBuilder;
+    StatefulAudioProcessor *attachedAudioProcessor;
 
     Label titleLabel;
     TextEditor nameEditor{"Name: "};
@@ -81,56 +81,79 @@ private:
 
     OwnedArray<Label> processorLabels;
     OwnedArray<Slider> processorSliders;
-    OwnedArray<AudioProcessorValueTreeState::SliderAttachment> processorSliderAttachements;
 
-    void itemSelected(ValueTreeItem *item) override {
+    void itemSelected(ValueTree *item) override {
         for (auto *c : getChildren())
             c->setVisible(false);
 
         if (item == nullptr) {
             titleLabel.setText("No item selected", dontSendNotification);
             titleLabel.setVisible(true);
-        } else if (auto *processor = dynamic_cast<Processor *> (item)) {
-            titleLabel.setText("Processor Selected: " + processor->getDisplayText(), dontSendNotification);
+            detachAudioProcessor();
+        } else if (item->hasType(IDs::PROCESSOR)) {
+            detachAudioProcessor();
+            const String &name = item->getProperty(IDs::name);
+            titleLabel.setText("Processor Selected: " + name, dontSendNotification);
 
-            processorSliderAttachements.clear(true);
-            
-            StatefulAudioProcessor *selectedAudioProcessor = audioGraphBuilder.getAudioProcessorWithUuid(processor->getState().getProperty(IDs::uuid, processor->getUndoManager()));
-            if (selectedAudioProcessor != nullptr) {
+            attachedAudioProcessor = audioGraphBuilder.getAudioProcessorWithUuid(item->getProperty(IDs::uuid, project.getUndoManager()));
+            if (attachedAudioProcessor != nullptr) {
                 for (int i = 0; i < processorSliders.size(); i++) {
                     auto *slider = processorSliders[i];
                     auto *label = processorLabels[i];
                     slider->setVisible(true);
 
-                    String parameterId = selectedAudioProcessor->getParameterIdentifier(i);
-                    label->setText(selectedAudioProcessor->getState()->getParameter(parameterId)->name, dontSendNotification);
-                    slider->getValueObject().refersToSameSourceAs(processor->getState().getChild(i).getPropertyAsValue(IDs::value, processor->getUndoManager()));
-                    auto sliderAttachment = new AudioProcessorValueTreeState::SliderAttachment(*selectedAudioProcessor->getState(), parameterId, *slider);
-                    processorSliderAttachements.add(sliderAttachment);
+                    const String& parameterId = attachedAudioProcessor->getParameterIdentifier(i);
+                    label->setText(attachedAudioProcessor->getState()->getParameter(parameterId)->name, dontSendNotification);
+                    slider->getValueObject().refersToSameSourceAs(item->getChild(i).getPropertyAsValue(IDs::value, project.getUndoManager()));
+                    attachedAudioProcessor->attachSlider(slider, parameterId);
                 }
             }
-        } else if (auto *clip = dynamic_cast<Clip *> (item)) {
-            titleLabel.setText("Clip Selected: " + clip->getDisplayText(), dontSendNotification);
+        } else if (item->hasType(IDs::CLIP)) {
+            const String &name = item->getProperty(IDs::name);
+            titleLabel.setText("Clip Selected: " + name, dontSendNotification);
             nameEditor.setVisible(true);
             startSlider.setVisible(true);
             lengthSlider.setVisible(true);
 
-            nameEditor.getTextValue().referTo(clip->getState().getPropertyAsValue(IDs::name, clip->getUndoManager()));
+            nameEditor.getTextValue().referTo(item->getPropertyAsValue(IDs::name, project.getUndoManager()));
             startSlider.getValueObject().referTo(
-                    clip->getState().getPropertyAsValue(IDs::start, clip->getUndoManager()));
+                    item->getPropertyAsValue(IDs::start, project.getUndoManager()));
             lengthSlider.getValueObject().referTo(
-                    clip->getState().getPropertyAsValue(IDs::length, clip->getUndoManager()));
-        } else if (auto *track = dynamic_cast<Track *> (item)) {
-            titleLabel.setText("Track Selected: " + track->getDisplayText(), dontSendNotification);
+                    item->getPropertyAsValue(IDs::length, project.getUndoManager()));
+        } else if (item->hasType(IDs::TRACK)) {
+            const String &name = item->getProperty(IDs::name);
+            titleLabel.setText("Track Selected: " + name, dontSendNotification);
             nameEditor.setVisible(true);
             colourButton.setVisible(true);
 
-            nameEditor.getTextValue().referTo(track->getState().getPropertyAsValue(IDs::name, track->getUndoManager()));
-            colourButton.getColourValueObject().referTo(
-                    track->getState().getPropertyAsValue(IDs::colour, track->getUndoManager()));
+            nameEditor.getTextValue().referTo(item->getPropertyAsValue(IDs::name, project.getUndoManager()));
+            colourButton.getColourValueObject().referTo(item->getPropertyAsValue(IDs::colour, project.getUndoManager()));
         }
 
         repaint();
         resized();
+    }
+
+    void itemRemoved(ValueTree *item) override {
+        if (item->hasType(IDs::PROCESSOR)) {
+            if (attachedAudioProcessor != nullptr && attachedAudioProcessor->getState()->state.getProperty(IDs::uuid) == item->getProperty(IDs::uuid)) {
+                for (auto *processorSlider : processorSliders) {
+                    processorSlider->setVisible(false);
+                }
+                for (auto *processorLabel : processorLabels) {
+                    processorLabel->setVisible(false);
+                }
+                attachedAudioProcessor = nullptr;
+            }
+        }
+    }
+
+    void detachAudioProcessor() {
+        if (attachedAudioProcessor != nullptr) {
+            for (auto *slider : processorSliders) {
+                attachedAudioProcessor->detachSlider(slider);
+            }
+            attachedAudioProcessor = nullptr;
+        }
     }
 };

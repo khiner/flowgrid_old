@@ -55,7 +55,9 @@ class ValueTreeItem;
 
 class ProjectChangeListener {
 public:
-    virtual void itemSelected(ValueTreeItem*) = 0;
+    virtual void itemSelected(ValueTree*) = 0;
+    virtual void itemRemoved(ValueTree*) = 0;
+    virtual ~ProjectChangeListener() {}
 };
 
 // Adapted from JUCE::ChangeBroadcaster to support messaging specific changes to the project.
@@ -63,7 +65,7 @@ class ProjectChangeBroadcaster {
 public:
     ProjectChangeBroadcaster() = default;
 
-    virtual ~ProjectChangeBroadcaster() = default;;
+    ~ProjectChangeBroadcaster() = default;;
 
     /** Registers a listener to receive change callbacks from this broadcaster.
         Trying to add a listener that's already on the list will have no effect.
@@ -87,19 +89,22 @@ public:
         changeListeners.remove(listener);
     }
 
-    //==============================================================================
-    /** Causes an asynchronous change message to be sent to all the registered listeners.
-
-        The message will be delivered asynchronously by the main message thread, so this
-        method will return immediately. To call the listeners synchronously use
-        sendSynchronousChangeMessage().
-    */
-    void sendItemSelectedMessage(ValueTreeItem *item) {
+    void sendItemSelectedMessage(ValueTree *item) {
         if (MessageManager::getInstance()->isThisTheMessageThread()) {
             changeListeners.call(&ProjectChangeListener::itemSelected, item);
         } else {
             MessageManager::callAsync([this, item] {
                 changeListeners.call(&ProjectChangeListener::itemSelected, item);
+            });
+        }
+    }
+
+    void sendItemRemovedMessage(ValueTree *item) {
+        if (MessageManager::getInstance()->isThisTheMessageThread()) {
+            changeListeners.call(&ProjectChangeListener::itemRemoved, item);
+        } else {
+            MessageManager::callAsync([this, item] {
+                changeListeners.call(&ProjectChangeListener::itemRemoved, item);
             });
         }
     }
@@ -178,7 +183,7 @@ public:
         if (isNowSelected) {
             if (auto *ov = getOwnerView()) {
                 if (auto *cb = dynamic_cast<ProjectChangeBroadcaster *> (ov->getRootItem())) {
-                    cb->sendItemSelectedMessage(this);
+                    cb->sendItemSelectedMessage(&state);
                 }
             }
         }
@@ -197,9 +202,23 @@ protected:
             repaintItem();
     }
 
-    void valueTreeChildAdded(ValueTree &parentTree, ValueTree &) override { treeChildrenChanged(parentTree); }
+    void valueTreeChildAdded(ValueTree &parentTree, ValueTree &child) override {
+        treeChildrenChanged(parentTree);
+        if (auto *ov = getOwnerView()) {
+            if (auto *cb = dynamic_cast<ProjectChangeBroadcaster *> (ov->getRootItem())) {
+                cb->sendItemSelectedMessage(&child);
+            }
+        }
+    }
 
-    void valueTreeChildRemoved(ValueTree &parentTree, ValueTree &, int) override { treeChildrenChanged(parentTree); }
+    void valueTreeChildRemoved(ValueTree &parentTree, ValueTree &child, int) override {
+        if (auto *ov = getOwnerView()) {
+            if (auto *cb = dynamic_cast<ProjectChangeBroadcaster *> (ov->getRootItem())) {
+                cb->sendItemRemovedMessage(&child);
+            }
+        }
+        treeChildrenChanged(parentTree);
+    }
 
     void valueTreeChildOrderChanged(ValueTree &parentTree, int, int) override { treeChildrenChanged(parentTree); }
 
