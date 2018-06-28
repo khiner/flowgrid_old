@@ -1,44 +1,46 @@
 #pragma once
 
 #include <list>
+#include <Parameter.h>
 #include "JuceHeader.h"
 
-class ToneSourceWithParameters: AudioProcessorValueTreeState::Listener {
+class ToneSourceWithParameters: Utilities::ValueTreePropertyChangeListener {
 public:
-    explicit ToneSourceWithParameters(AudioProcessorValueTreeState& state, const String &idSuffix):
+    explicit ToneSourceWithParameters(ValueTree& state, const String &idSuffix):
             source(new ToneGeneratorAudioSource), state(state),
-            ampParamId("amp_" + idSuffix), freqParamId("freq_" + idSuffix) {
-        state.createAndAddParameter(ampParamId, "Amp" + idSuffix, "dB",
-                                        NormalisableRange<float>(0.0f, 1.0f),
-                                        0.5f,
-                                        nullptr, nullptr);
-        state.createAndAddParameter(freqParamId, "Freq" + idSuffix, "Hz",
-                                        NormalisableRange<float> (440.0f, 10000.0f, 0.0f, 0.3f, false),
-                                        880.0f,
-                                        nullptr, nullptr);
-
-        state.addParameterListener(ampParamId, this);
-        state.addParameterListener(freqParamId, this);
+            ampParamId("amp_" + idSuffix), freqParamId("freq_" + idSuffix),
+            ampParameter(state, ampParamId, "Amp" + idSuffix, "dB", NormalisableRange<double>(0.0f, 1.0f), 0.5f, [](float value) { return String(Decibels::gainToDecibels(value), 3) + " dB"; }, nullptr),
+            freqParameter(state, freqParamId, "Freq" + idSuffix, "Hz", NormalisableRange<double> (440.0f, 10000.0f, 0.0f, 0.3f, false), 880.0f, [](float value) { return String(value, 1) + " Hz"; }, nullptr) {
+        state.addListener(this);
     }
 
     ~ToneSourceWithParameters() {
-        state.removeParameterListener(ampParamId, this);
-        state.removeParameterListener(freqParamId, this);
+        state.removeListener(this);
     }
 
-    void parameterChanged(const String& parameterID, float newValue) override {
-        if (parameterID == ampParamId) {
-            source->setAmplitude(newValue);
-        } else if (parameterID == freqParamId) {
-            source->setFrequency(newValue);
+    void valueTreePropertyChanged (ValueTree& tree, const Identifier& p) {
+        if (p == IDs::value) {
+            if (tree.getProperty(IDs::id) == ampParamId) {
+                source->setAmplitude(tree[IDs::value]);
+            } else if (tree.getProperty(IDs::id) == freqParamId) {
+                source->setFrequency(tree[IDs::value]);
+            }
         }
-    };
+    }
 
-    const String & getAmpParamId() const {
+    Parameter *getAmpParameter() {
+        return &ampParameter;
+    }
+
+    Parameter *getFreqParameter() {
+        return &freqParameter;
+    }
+
+    const String & getAmpParameterId() const {
         return ampParamId;
     }
 
-    const String & getFreqParamId() const {
+    const String & getFreqParameterId() const {
         return freqParamId;
     }
 
@@ -48,11 +50,12 @@ public:
 
 private:
     std::unique_ptr<ToneGeneratorAudioSource> source;
-
-    AudioProcessorValueTreeState& state;
+    ValueTree& state;
 
     String ampParamId;
     String freqParamId;
+
+    Parameter ampParameter, freqParameter;
 };
 
 

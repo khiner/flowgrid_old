@@ -10,10 +10,11 @@ namespace IDs
     DECLARE_ID (pi)
 
     DECLARE_ID(PARAM)
+    DECLARE_ID(value)
+    DECLARE_ID(id)
 
     DECLARE_ID(MASTER_GAIN)
 
-    DECLARE_ID(value)
     DECLARE_ID(freq_1)
 
     DECLARE_ID(SINE_BANK_PROCESSOR)

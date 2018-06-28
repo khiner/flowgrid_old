@@ -10,36 +10,29 @@
 #include <processors/DefaultAudioProcessor.h>
 
 static std::unique_ptr<StatefulAudioProcessor> createStatefulAudioProcessorFromId(const String &id,
-                                                                                  UndoManager &undoManager) {
+                                                                                  ValueTree &state, UndoManager &undoManager) {
     if (id == IDs::SINE_BANK_PROCESSOR.toString()) {
-        return std::make_unique<SineBank>(undoManager);
+        return std::make_unique<SineBank>(state, undoManager);
     } else {
         return nullptr;
     }
 }
 
 struct AudioGraphClasses {
-    struct AudioProcessorWrapper : drow::ValueTreePropertyChangeListener {
-        explicit AudioProcessorWrapper(const ValueTree &v, UndoManager &undoManager) : state(v), source(createStatefulAudioProcessorFromId(v[IDs::name], undoManager)) {
-            source->getState()->state = v;
+    struct AudioProcessorWrapper {
+        explicit AudioProcessorWrapper(const ValueTree &v, UndoManager &undoManager) : state(v), source(createStatefulAudioProcessorFromId(v[IDs::name], state, undoManager)) {
+            source->updateValueTree();
         }
 
         ValueTree state;
 
         std::unique_ptr<StatefulAudioProcessor> source;
-    private:
-        void valueTreePropertyChanged(juce::ValueTree &v, const juce::Identifier &i) override {
-            if (v == state) {
-                if (i == IDs::name || i == IDs::colour) {
-                }
-            }
-        }
     };
 
     class ProcessorList
-            : public drow::ValueTreeObjectList<AudioProcessorWrapper> {
+            : public Utilities::ValueTreeObjectList<AudioProcessorWrapper> {
     public:
-        explicit ProcessorList(const ValueTree &v, UndoManager &undoManager) : drow::ValueTreeObjectList<AudioProcessorWrapper>(v), undoManager(undoManager) {
+        explicit ProcessorList(const ValueTree &v, UndoManager &undoManager) : Utilities::ValueTreeObjectList<AudioProcessorWrapper>(v), undoManager(undoManager) {
             rebuildObjects();
         }
 
@@ -86,7 +79,7 @@ struct AudioGraphClasses {
         UndoManager &undoManager;
     };
 
-    struct AudioTrack : public DefaultAudioProcessor, public drow::ValueTreePropertyChangeListener {
+    struct AudioTrack : public DefaultAudioProcessor, public Utilities::ValueTreePropertyChangeListener {
         explicit AudioTrack(ValueTree v, UndoManager &undoManager) : state(v) {
             processorList = std::make_unique<AudioGraphClasses::ProcessorList>(v, undoManager);
         }
@@ -121,30 +114,27 @@ struct AudioGraphClasses {
     };
 
     class AudioTrackList
-            : public StatefulAudioProcessor,
-              public AudioProcessorValueTreeState::Listener,
-              public drow::ValueTreeObjectList<AudioTrack> {
+            : public StatefulAudioProcessor, public Utilities::ValueTreeObjectList<AudioTrack> {
 
     public:
-        explicit AudioTrackList(const ValueTree &editTree, UndoManager &undoManager) : StatefulAudioProcessor(2, 2, undoManager),
-                                                      drow::ValueTreeObjectList<AudioTrack>(editTree) {
+        explicit AudioTrackList(ValueTree &editTree, UndoManager &undoManager) :
+                StatefulAudioProcessor(2, 2, editTree, undoManager),
+                Utilities::ValueTreeObjectList<AudioTrack>(editTree),
+                gainParameterInfo(state, IDs::MASTER_GAIN.toString(), "Gain", "dB",
+                                  NormalisableRange<double>(0.0f, 1.0f), 0.5f,
+                                  [](float value) { return String(Decibels::gainToDecibels<float>(value, 0), 3) + "dB"; }, nullptr) {
 
             rebuildObjects();
-            state.createAndAddParameter(IDs::MASTER_GAIN.toString(), "Gain", "dB",
-                                        NormalisableRange<float>(0.0f, 1.0f),
-                                        0.5f,
-                                        [](float value) {
-                                            return String(Decibels::gainToDecibels<float>(value, 0), 3) + "dB";
-                                        }, nullptr);
 
-            state.addParameterListener(IDs::MASTER_GAIN, this);
-            gain.setValue(0.5f);
+            gain.setValue(gainParameterInfo.defaultValue);
+            state.addListener(this);
 
-            state.state = parent;
+            updateValueTree();
         }
 
         ~AudioTrackList() override {
             freeObjects();
+            state.removeListener(this);
         }
 
         StatefulAudioProcessor *getAudioProcessorWithUuid(String& uuid) {
@@ -164,7 +154,7 @@ struct AudioGraphClasses {
         /*** JUCE override methods ***/
         const String getName() const override { return "MainProcessor"; }
 
-        int getNumParameters() override { return 8; }
+        int getNumParameters() override { return 1; }
 
         const String &getParameterIdentifier(int parameterIndex) override {
             switch(parameterIndex) {
@@ -173,11 +163,20 @@ struct AudioGraphClasses {
             }
         }
 
-        void parameterChanged(const String &parameterID, float newValue) override {
-            if (parameterID == IDs::MASTER_GAIN.toString()) {
-                gain.setValue(newValue);
+        Parameter *getParameterInfo(int parameterIndex) override {
+            switch(parameterIndex) {
+                case 0: return &gainParameterInfo;
+                default: return nullptr;
             }
-        };
+        }
+
+        void valueTreePropertyChanged (ValueTree& tree, const Identifier& p) {
+            if (p == IDs::value) {
+                if (tree.getProperty(IDs::id) == IDs::MASTER_GAIN.toString()) {
+                    gain.setValue(tree[IDs::value]);
+                }
+            }
+        }
 
         void processBlock(AudioSampleBuffer &buffer, MidiBuffer &midiMessages) override {
             const AudioSourceChannelInfo &channelInfo = AudioSourceChannelInfo(buffer);
@@ -194,7 +193,7 @@ struct AudioGraphClasses {
         }
 
         AudioTrack *createNewObject(const juce::ValueTree &v) override {
-            auto *at = new AudioTrack(v, *state.undoManager);
+            auto *at = new AudioTrack(v, undoManager);
             return at;
         }
 
@@ -208,6 +207,8 @@ struct AudioGraphClasses {
 
     private:
         LinearSmoothedValue<float> gain;
+
+        Parameter gainParameterInfo;
     };
 };
 

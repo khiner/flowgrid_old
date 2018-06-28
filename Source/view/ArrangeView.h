@@ -11,7 +11,7 @@ struct ArrangeClasses {
 
 
     struct ArrangeClip : public Component,
-                         public drow::ValueTreePropertyChangeListener {
+                         public Utilities::ValueTreePropertyChangeListener {
         ArrangeClip(ValueTree v, ArrangeTrack &at)
                 : state(v), track(at) {
             state.addListener(this);
@@ -46,9 +46,9 @@ struct ArrangeClasses {
 
 
     struct ClipList : public Component,
-                      public drow::ValueTreeObjectList<ArrangeClip> {
+                      public Utilities::ValueTreeObjectList<ArrangeClip> {
         ClipList(ArrangeTrack &at)
-                : drow::ValueTreeObjectList<ArrangeClip>(at.state),
+                : Utilities::ValueTreeObjectList<ArrangeClip>(at.state),
                   track(at) {
             rebuildObjects();
         }
@@ -98,13 +98,13 @@ struct ArrangeClasses {
                 if (i == IDs::start || i == IDs::length)
                     resized();
 
-            drow::ValueTreeObjectList<ArrangeClip>::valueTreePropertyChanged(v, i);
+            Utilities::ValueTreeObjectList<ArrangeClip>::valueTreePropertyChanged(v, i);
         }
     };
 
 
     struct ArrangeTrack : public Component,
-                          public drow::ValueTreePropertyChangeListener {
+                          public Utilities::ValueTreePropertyChangeListener {
         ArrangeTrack(ValueTree v) : state(v) {
             addAndMakeVisible(*(clipList = std::make_unique<ClipList>(*this)));
             state.addListener(this);
@@ -148,9 +148,9 @@ struct ArrangeClasses {
 
 
     struct TrackList : public Component,
-                       public drow::ValueTreeObjectList<ArrangeTrack> {
+                       public Utilities::ValueTreeObjectList<ArrangeTrack> {
         TrackList(ValueTree state)
-                : drow::ValueTreeObjectList<ArrangeTrack>(state) {
+                : Utilities::ValueTreeObjectList<ArrangeTrack>(state) {
             rebuildObjects();
         }
 

@@ -24,7 +24,6 @@ public:
 
     ~Push2Component() override {
         project.removeChangeListener(this);
-        detachAudioProcessor();
     }
 
 private:
@@ -48,37 +47,34 @@ private:
         //std::cout << std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - t1).count() << '\n';
     }
 
-    void itemSelected(ValueTree *item) override {
+    void itemSelected(ValueTree item) override {
         for (auto *c : getChildren())
             c->setVisible(false);
 
-        if (item == nullptr) {
-            detachAudioProcessor();
-        } else if (item->hasType(IDs::PROCESSOR)) {
-            detachAudioProcessor();
-            attachedAudioProcessor = audioGraphBuilder.getAudioProcessorWithUuid(item->getProperty(IDs::uuid, project.getUndoManager()));
-            if (attachedAudioProcessor != nullptr) {
-                for (int sliderIndex = 0; sliderIndex < attachedAudioProcessor->getNumParameters(); sliderIndex++) {
-                    Slider *slider = sliders[sliderIndex];
-                    Label *label = labels[sliderIndex];
+        if (!item.isValid()) {
+        } else if (item.hasType(IDs::PROCESSOR)) {
+            attachedProcessorUuid = item.getProperty(IDs::uuid, project.getUndoManager());
+            StatefulAudioProcessor *processor = audioGraphBuilder.getAudioProcessorWithUuid(attachedProcessorUuid);
+            if (processor != nullptr) {
+                for (int i = 0; i < processor->getNumParameters(); i++) {
+                    Slider *slider = sliders[i];
+                    Label *label = labels[i];
 
                     slider->setVisible(true);
-
-                    const String &parameterId = attachedAudioProcessor->getParameterIdentifier(sliderIndex);
-                    label->setText(attachedAudioProcessor->getState()->getParameter(parameterId)->name, dontSendNotification);
                     slider->setSliderStyle(Slider::SliderStyle::RotaryHorizontalVerticalDrag);
-                    slider->setBounds(sliderIndex * Push2Display::WIDTH / 8, 20, Push2Display::WIDTH / 8, Push2Display::WIDTH / 8);
+                    slider->setBounds(i * Push2Display::WIDTH / 8, 20, Push2Display::WIDTH / 8, Push2Display::WIDTH / 8);
                     slider->setTextBoxStyle(Slider::TextEntryBoxPosition::TextBoxBelow, false, Push2Display::HEIGHT, Push2Display::HEIGHT / 5);
                     label->setJustificationType(Justification::centred);
-                    attachedAudioProcessor->attachSlider(slider, parameterId);
+
+                    processor->getParameterInfo(i)->attachSlider(slider, label);
                 }
             }
         }
     }
 
-    void itemRemoved(ValueTree *item) override {
-        if (attachedAudioProcessor != nullptr && attachedAudioProcessor->getState()->state.getProperty(IDs::uuid) == item->getProperty(IDs::uuid)) {
-            if (item->hasType(IDs::PROCESSOR)) {
+    void itemRemoved(ValueTree item) override {
+        if (attachedProcessorUuid == item.getProperty(IDs::uuid).toString()) {
+            if (item.hasType(IDs::PROCESSOR)) {
                 for (auto *slider : sliders) {
                     slider->setVisible(false);
                 }
@@ -86,25 +82,15 @@ private:
                     label->setVisible(false);
                 }
             }
-            attachedAudioProcessor = nullptr;
         }
     }
 
 private:
     Project &project;
     AudioGraphBuilder &audioGraphBuilder;
-    StatefulAudioProcessor *attachedAudioProcessor;
+    String attachedProcessorUuid;
 
     OwnedArray<Slider> sliders;
     OwnedArray<Label> labels;
     Push2DisplayBridge displayBridge;
-
-    void detachAudioProcessor() {
-        if (attachedAudioProcessor != nullptr) {
-            for (auto *slider : sliders) {
-                attachedAudioProcessor->detachSlider(slider);
-            }
-            attachedAudioProcessor = nullptr;
-        }
-    }
 };

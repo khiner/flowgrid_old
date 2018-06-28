@@ -55,8 +55,8 @@ class ValueTreeItem;
 
 class ProjectChangeListener {
 public:
-    virtual void itemSelected(ValueTree*) = 0;
-    virtual void itemRemoved(ValueTree*) = 0;
+    virtual void itemSelected(ValueTree) = 0;
+    virtual void itemRemoved(ValueTree) = 0;
     virtual ~ProjectChangeListener() {}
 };
 
@@ -89,7 +89,7 @@ public:
         changeListeners.remove(listener);
     }
 
-    void sendItemSelectedMessage(ValueTree *item) {
+    void sendItemSelectedMessage(ValueTree item) {
         if (MessageManager::getInstance()->isThisTheMessageThread()) {
             changeListeners.call(&ProjectChangeListener::itemSelected, item);
         } else {
@@ -99,7 +99,7 @@ public:
         }
     }
 
-    void sendItemRemovedMessage(ValueTree *item) {
+    void sendItemRemovedMessage(ValueTree item) {
         if (MessageManager::getInstance()->isThisTheMessageThread()) {
             changeListeners.call(&ProjectChangeListener::itemRemoved, item);
         } else {
@@ -183,7 +183,7 @@ public:
         if (isNowSelected) {
             if (auto *ov = getOwnerView()) {
                 if (auto *cb = dynamic_cast<ProjectChangeBroadcaster *> (ov->getRootItem())) {
-                    cb->sendItemSelectedMessage(&state);
+                    cb->sendItemSelectedMessage(state);
                 }
             }
         }
@@ -206,7 +206,7 @@ protected:
         treeChildrenChanged(parentTree);
         if (auto *ov = getOwnerView()) {
             if (auto *cb = dynamic_cast<ProjectChangeBroadcaster *> (ov->getRootItem())) {
-                cb->sendItemSelectedMessage(&child);
+                cb->sendItemSelectedMessage(child);
             }
         }
     }
@@ -214,7 +214,7 @@ protected:
     void valueTreeChildRemoved(ValueTree &parentTree, ValueTree &child, int) override {
         if (auto *ov = getOwnerView()) {
             if (auto *cb = dynamic_cast<ProjectChangeBroadcaster *> (ov->getRootItem())) {
-                cb->sendItemRemovedMessage(&child);
+                cb->sendItemRemovedMessage(child);
             }
         }
         treeChildrenChanged(parentTree);

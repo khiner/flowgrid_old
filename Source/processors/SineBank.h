@@ -5,8 +5,8 @@
 
 class SineBank : public StatefulAudioProcessor {
 public:
-    explicit SineBank(UndoManager &undoManager) :
-            StatefulAudioProcessor(0, 2, undoManager),
+    explicit SineBank(ValueTree &state, UndoManager &undoManager) :
+            StatefulAudioProcessor(0, 2, state, undoManager),
             toneSource1(state, "1"),
             toneSource2(state, "2"),
             toneSource3(state, "3"),
@@ -24,16 +24,30 @@ public:
         return 8;
     }
 
+    Parameter *getParameterInfo(int parameterIndex) override {
+        switch (parameterIndex) {
+            case 0: return toneSource1.getAmpParameter();
+            case 1: return toneSource1.getFreqParameter();
+            case 2: return toneSource2.getAmpParameter();
+            case 3: return toneSource2.getFreqParameter();
+            case 4: return toneSource3.getAmpParameter();
+            case 5: return toneSource3.getFreqParameter();
+            case 6: return toneSource4.getAmpParameter();
+            case 7: return toneSource4.getFreqParameter();
+            default: return nullptr;
+        }
+    }
+
     const String &getParameterIdentifier(int parameterIndex) override {
         switch (parameterIndex) {
-            case 0: return toneSource1.getAmpParamId();
-            case 1: return toneSource1.getFreqParamId();
-            case 2: return toneSource2.getAmpParamId();
-            case 3: return toneSource2.getFreqParamId();
-            case 4: return toneSource3.getAmpParamId();
-            case 5: return toneSource3.getFreqParamId();
-            case 6: return toneSource4.getAmpParamId();
-            case 7: return toneSource4.getFreqParamId();
+            case 0: return toneSource1.getAmpParameterId();
+            case 1: return toneSource1.getFreqParameterId();
+            case 2: return toneSource2.getAmpParameterId();
+            case 3: return toneSource2.getFreqParameterId();
+            case 4: return toneSource3.getAmpParameterId();
+            case 5: return toneSource3.getFreqParameterId();
+            case 6: return toneSource4.getAmpParameterId();
+            case 7: return toneSource4.getFreqParameterId();
             default: return IDs::PARAM_NA.toString();
         }
     }

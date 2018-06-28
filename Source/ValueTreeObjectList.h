@@ -2,7 +2,7 @@
 
 #include "JuceHeader.h"
 
-namespace drow {
+namespace Utilities {
     template<typename ObjectType, typename CriticalSectionType = juce::DummyCriticalSection>
     class ValueTreeObjectList : public juce::ValueTree::Listener {
     public:

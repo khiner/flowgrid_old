@@ -2,7 +2,7 @@
 
 #include "JuceHeader.h"
 
-namespace drow {
+namespace Utilities {
 
 /** Iterates through a list of Components, calling a function on each.
     @param fn   The signature of the fn should be equivalent to "void fn (Component* c)"

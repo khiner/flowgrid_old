@@ -26,23 +26,22 @@ public:
         const int ccNumber = midiMessage.getControllerNumber();
 
         if (Push2::isEncoderCcNumber(ccNumber)) {
-            AudioProcessorParameter *parameter = nullptr;
+            Parameter *parameter = nullptr;
             if (ccNumber == Push2::masterKnob) {
-                parameter = audioGraphBuilder.getMainAudioProcessor()->getParameterByIdentifier(IDs::MASTER_GAIN.toString());
+                parameter = audioGraphBuilder.getMainAudioProcessor()->getParameterInfo(0);
             } else if (Push2::isAboveScreenEncoderCcNumber(ccNumber)) {
                 if (currentProcessorToControl != nullptr) {
-
-                    parameter = findParameterAssumingTopKnobCc(currentProcessorToControl, ccNumber);
+                    int parameterIndex = ccNumber - Push2::ccNumberForTopKnobIndex(0);
+                    parameter = currentProcessorToControl->getParameterInfo(parameterIndex);
                 }
             }
 
-            if (parameter) {
+            if (parameter != nullptr) {
                 float value = Push2::encoderCcMessageToRotationChange(midiMessage);
-                auto newValue = parameter->getValue() + value / 5.0f; // todo move manual scaling to param
+                float parameterValue = parameter->getValue();
+                auto newValue = parameterValue + value / 5.0f; // todo move manual scaling to param
 
-                if (newValue > 0) {
-                    parameter->setValue(newValue);
-                }
+                parameter->setValue(newValue);
             }
             return;
         }
@@ -78,28 +77,15 @@ private:
 
     bool isShiftHeld = false;
 
-    AudioProcessorParameter *findParameterAssumingTopKnobCc(StatefulAudioProcessor *processor, const int ccNumber) {
-        if (processor == nullptr)
-            return nullptr;
-
-        for (int i = 0; i < processor->getNumParameters(); i++) {
-            if (ccNumber == Push2::ccNumberForTopKnobIndex(i)) {
-                return processor->getParameterByIndex(i);
-            }
-        }
-
-        return nullptr;
-    }
-
-    void itemSelected(ValueTree *item) override {
-        if (item == nullptr) {
-        } else if (item->hasType(IDs::PROCESSOR)) {
-            currentProcessorToControl = audioGraphBuilder.getAudioProcessorWithUuid(item->getProperty(IDs::uuid, project.getUndoManager()));
+    void itemSelected(ValueTree item) override {
+        if (!item.isValid()) {
+        } else if (item.hasType(IDs::PROCESSOR)) {
+            currentProcessorToControl = audioGraphBuilder.getAudioProcessorWithUuid(item.getProperty(IDs::uuid, project.getUndoManager()));
         }
     }
 
-    void itemRemoved(ValueTree *item) override {
-        if (item->hasType(IDs::PROCESSOR)) {
+    void itemRemoved(ValueTree item) override {
+        if (item.hasType(IDs::PROCESSOR)) {
             currentProcessorToControl = nullptr;
         }
     }
