@@ -9,7 +9,7 @@ class ValueTreeEditor : public Component,
                        private Button::Listener,
                        private Timer {
 public:
-    ValueTreeEditor(ValueTree editToUse, UndoManager &undoManager, AudioGraphBuilder &audioGraphBuilder) : undoManager(undoManager) {
+    ValueTreeEditor(ValueTree state, UndoManager &undoManager, Project& rootItem, AudioGraphBuilder &audioGraphBuilder) : undoManager(undoManager) {
         addAndMakeVisible(tree);
         tree.setColour(TreeView::backgroundColourId,
                        getUIColourIfAvailable(LookAndFeel_V4::ColourScheme::UIColour::windowBackground));
@@ -17,9 +17,9 @@ public:
         tree.setDefaultOpenness(true);
         tree.setMultiSelectEnabled(true);
 
-        tree.setRootItem((rootItem = std::make_unique<Project>(editToUse, undoManager)).get());
+        tree.setRootItem(&rootItem);
 
-        addAndMakeVisible(*(selectionPanel = std::make_unique<SelectionPanel>(*rootItem, audioGraphBuilder)));
+        addAndMakeVisible(*(selectionPanel = std::make_unique<SelectionPanel>(rootItem, audioGraphBuilder)));
 
         addAndMakeVisible(undoButton);
         addAndMakeVisible(redoButton);
@@ -89,7 +89,6 @@ public:
 private:
     TreeView tree;
     TextButton undoButton{"Undo"}, redoButton{"Redo"};
-    std::unique_ptr<Project> rootItem;
     UndoManager &undoManager;
 
     std::unique_ptr<SelectionPanel> selectionPanel;
@@ -98,5 +97,5 @@ private:
         undoManager.beginNewTransaction();
     }
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ValueTreeEditor)ValueTreeEditor
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ValueTreeEditor)
 };

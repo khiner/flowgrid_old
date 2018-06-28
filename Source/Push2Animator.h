@@ -1,51 +1,34 @@
 #pragma once
 
 #include <audio_processors/StatefulAudioProcessor.h>
+#include <drow/ValueTreeItems.h>
 #include "push2/Push2DisplayBridge.h"
 #include "AudioGraphBuilder.h"
 
-class Push2Animator : public Timer, public Component {
+class Push2Animator : public Timer, public Component, private ProjectChangeListener {
 public:
-    explicit Push2Animator(AudioGraphBuilder &audioGraphBuilder) {
+    explicit Push2Animator(Project &project, AudioGraphBuilder &audioGraphBuilder) : audioGraphBuilder(audioGraphBuilder) {
         setSize(Push2Display::WIDTH, Push2Display::HEIGHT);
-        StatefulAudioProcessor *currentAudioProcessor = audioGraphBuilder.getMainAudioProcessor()->getSelectedAudioProcessor();
-        if (currentAudioProcessor != nullptr) {
-            setStatefulAudioProcessor(currentAudioProcessor);
-        }
         startTimer(60);
-    }
 
-    void setStatefulAudioProcessor(StatefulAudioProcessor *statefulAudioProcessor) {
-        removeAllChildren();
+        for (int paramIndex = 0; paramIndex < MAX_PROCESSOR_PARAMS_TO_DISPLAY; paramIndex++) {
+            Slider *slider = new Slider("Param " + String(paramIndex) + ": ");
+            addAndMakeVisible(slider);
 
-        sliderAttachments.clear();
-        labels.clear();
-        sliders.clear();
-
-        for (int sliderIndex = 0; sliderIndex < statefulAudioProcessor->getNumParameters(); sliderIndex++) {
-            auto slider = std::make_unique<Slider>();
-            const String &parameterId = statefulAudioProcessor->getParameterIdentifier(sliderIndex);
-            auto sliderAttachment = std::make_unique<AudioProcessorValueTreeState::SliderAttachment>(*(statefulAudioProcessor->getState()), parameterId, *slider);
-
-            auto label = std::make_unique<Label>();
-            label->setText(statefulAudioProcessor->getState()->getParameter(parameterId)->name, dontSendNotification);
-            addAndMakeVisible(*slider);
-            addAndMakeVisible(*label);
-            slider->setSliderStyle(Slider::SliderStyle::RotaryHorizontalVerticalDrag);
-            slider->setBounds(sliderIndex * Push2Display::WIDTH / 8, 20, Push2Display::WIDTH / 8, Push2Display::WIDTH / 8);
-            slider->setTextBoxStyle(Slider::TextEntryBoxPosition::TextBoxBelow, false, Push2Display::HEIGHT, Push2Display::HEIGHT / 5);
-            label->attachToComponent(slider.get(), false);
-            label->setJustificationType(Justification::centred);
-            labels.push_back(std::move(label));
-            sliders.push_back(std::move(slider));
-            sliderAttachments.push_back(std::move(sliderAttachment));
+            labels.add(new Label(String(), slider->getName()))->attachToComponent(slider, false);
+            sliders.add(slider);
         }
+
+        project.addChangeListener(this);
     }
+
 private:
+    const static int MAX_PROCESSOR_PARAMS_TO_DISPLAY = 8;
+
     /*!
      *  Render a frame and send it to the Push 2 display
      */
-    void drawFrame() {
+    void inline drawFrame() {
         static const juce::Colour CLEAR_COLOR = juce::Colour(0xff000000);
 
         auto &g = displayBridge.getGraphics();
@@ -54,19 +37,49 @@ private:
         displayBridge.writeFrameToDisplay();
     }
 
-    /*!
-     *  the juce timer callback
-     *  @see juce::Timer
-     */
-    void timerCallback() {
+    void timerCallback() override {
         //auto t1 = std::chrono::high_resolution_clock::now();
         drawFrame();
         //std::cout << std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - t1).count() << '\n';
     }
 
+    void itemSelected(ValueTreeItem *item) override {
+        for (auto *c : getChildren())
+            c->setVisible(false);
+
+        if (item == nullptr) {
+        } else if (auto *processor = dynamic_cast<Processor *> (item)) {
+            StatefulAudioProcessor *selectedAudioProcessor = audioGraphBuilder.getAudioProcessorWithUuid(processor->getState().getProperty(IDs::uuid, processor->getUndoManager()));
+            if (selectedAudioProcessor != nullptr) {
+                sliderAttachments.clear();
+
+                for (int sliderIndex = 0; sliderIndex < selectedAudioProcessor->getNumParameters(); sliderIndex++) {
+                    Slider *slider = sliders[sliderIndex];
+                    Label *label = labels[sliderIndex];
+
+                    slider->setVisible(true);
+
+                    const String &parameterId = selectedAudioProcessor->getParameterIdentifier(sliderIndex);
+                    label->setText(selectedAudioProcessor->getState()->getParameter(parameterId)->name, dontSendNotification);
+                    slider->setSliderStyle(Slider::SliderStyle::RotaryHorizontalVerticalDrag);
+                    slider->setBounds(sliderIndex * Push2Display::WIDTH / 8, 20, Push2Display::WIDTH / 8, Push2Display::WIDTH / 8);
+                    slider->setTextBoxStyle(Slider::TextEntryBoxPosition::TextBoxBelow, false, Push2Display::HEIGHT, Push2Display::HEIGHT / 5);
+                    label->setJustificationType(Justification::centred);
+
+                    auto sliderAttachment = new AudioProcessorValueTreeState::SliderAttachment(*selectedAudioProcessor->getState(), parameterId, *slider);
+                    sliderAttachments.add(sliderAttachment);
+                }
+            }
+        } else if (auto *clip = dynamic_cast<Clip *> (item)) {
+        } else if (auto *track = dynamic_cast<Track *> (item)) {
+        }
+    }
+
 private:
-    std::vector<std::unique_ptr<Slider> > sliders;
-    std::vector<std::unique_ptr<Label> > labels;
-    std::vector<std::unique_ptr<AudioProcessorValueTreeState::SliderAttachment> > sliderAttachments;
+    AudioGraphBuilder &audioGraphBuilder;
+
+    OwnedArray<Slider> sliders;
+    OwnedArray<Label> labels;
+    OwnedArray<AudioProcessorValueTreeState::SliderAttachment> sliderAttachments;
     Push2DisplayBridge displayBridge;
 };

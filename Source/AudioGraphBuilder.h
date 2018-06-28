@@ -61,6 +61,7 @@ struct AudioGraphClasses {
                     return processor->source.get();
                 }
             }
+            return nullptr;
         }
 
         AudioProcessorWrapper *findSelectedProcessor() {

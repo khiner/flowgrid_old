@@ -7,9 +7,12 @@
 
 using Push2 = Push2MidiCommunicator;
 
-class MidiControlHandler {
+class MidiControlHandler : private ProjectChangeListener {
 public:
-    explicit MidiControlHandler(AudioGraphBuilder &audioGraphBuilder, UndoManager &undoManager) : audioGraphBuilder(audioGraphBuilder), undoManager(undoManager) {}
+    explicit MidiControlHandler(Project &project, AudioGraphBuilder &audioGraphBuilder, UndoManager &undoManager) :
+            audioGraphBuilder(audioGraphBuilder), undoManager(undoManager) {
+        project.addChangeListener(this);
+    }
 
     // listened to and called on a non-audio thread
     void handleControlMidi(const MidiMessage &midiMessage) {
@@ -21,11 +24,12 @@ public:
         if (Push2::isEncoderCcNumber(ccNumber)) {
             AudioProcessorParameter *parameter = nullptr;
             if (ccNumber == Push2::masterKnob) {
-                parameter = audioGraphBuilder.getMainAudioProcessor()->getParameterByIdentifier(
-                        IDs::MASTER_GAIN.toString());
+                parameter = audioGraphBuilder.getMainAudioProcessor()->getParameterByIdentifier(IDs::MASTER_GAIN.toString());
             } else if (Push2::isAboveScreenEncoderCcNumber(ccNumber)) {
-                AudioGraphClasses::AudioTrack *selectedTrack = audioGraphBuilder.getMainAudioProcessor()->findSelectedAudioTrack();
-                parameter = findParameterAssumingTopKnobCc(selectedTrack, ccNumber);
+                if (currentProcessorToControl != nullptr) {
+
+                    parameter = findParameterAssumingTopKnobCc(currentProcessorToControl, ccNumber);
+                }
             }
 
             if (parameter) {
@@ -65,21 +69,29 @@ public:
 private:
     AudioGraphBuilder &audioGraphBuilder;
     UndoManager &undoManager;
+    StatefulAudioProcessor *currentProcessorToControl;
 
     bool isShiftHeld = false;
 
-    AudioProcessorParameter *findParameterAssumingTopKnobCc(AudioGraphClasses::AudioTrack *track, const int ccNumber) {
-        if (track == nullptr)
+    AudioProcessorParameter *findParameterAssumingTopKnobCc(StatefulAudioProcessor *processor, const int ccNumber) {
+        if (processor == nullptr)
             return nullptr;
 
-        for (int i = 0; i < track->getNumParameters(); i++) {
+        for (int i = 0; i < processor->getNumParameters(); i++) {
             if (ccNumber == Push2::ccNumberForTopKnobIndex(i)) {
-                StatefulAudioProcessor *selectedAudioProcessor = track->getSelectedAudioProcessor();
-                if (selectedAudioProcessor != nullptr) {
-                    return selectedAudioProcessor->getParameterByIndex(i);
-                }
+                return processor->getParameterByIndex(i);
             }
         }
+
         return nullptr;
+    }
+
+    void itemSelected(ValueTreeItem *item) override {
+        if (item == nullptr) {
+        } else if (auto *processor = dynamic_cast<Processor *> (item)) {
+            currentProcessorToControl = audioGraphBuilder.getAudioProcessorWithUuid(processor->getState().getProperty(IDs::uuid, processor->getUndoManager()));
+        } else if (auto *clip = dynamic_cast<Clip *> (item)) {
+        } else if (auto *track = dynamic_cast<Track *> (item)) {
+        }
     }
 };

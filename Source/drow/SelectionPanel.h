@@ -7,8 +7,8 @@
 class SelectionPanel : public Component,
                        private ProjectChangeListener {
 public:
-    SelectionPanel(Project &e, AudioGraphBuilder &audioGraphBuilder)
-            : project(e), audioGraphBuilder(audioGraphBuilder) {
+    SelectionPanel(Project &project, AudioGraphBuilder &audioGraphBuilder)
+            : project(project), audioGraphBuilder(audioGraphBuilder) {
         drow::addAndMakeVisible(*this, {&titleLabel, &nameEditor, &colourButton, &startSlider, &lengthSlider});
 
         colourButton.setButtonText("Set colour");
@@ -34,7 +34,7 @@ public:
         itemSelected(nullptr);
     }
 
-    ~SelectionPanel() {
+    ~SelectionPanel() override {
         project.removeChangeListener(this);
     }
 
@@ -94,16 +94,18 @@ private:
             titleLabel.setText("Processor Selected: " + processor->getDisplayText(), dontSendNotification);
 
             processorSliderAttachements.clear(true);
-
+            
             StatefulAudioProcessor *selectedAudioProcessor = audioGraphBuilder.getAudioProcessorWithUuid(processor->getState().getProperty(IDs::uuid, processor->getUndoManager()));
             if (selectedAudioProcessor != nullptr) {
-                for (int i = 0; i < 8; i++) {
+                for (int i = 0; i < processorSliders.size(); i++) {
                     auto *slider = processorSliders[i];
+                    auto *label = processorLabels[i];
                     slider->setVisible(true);
+
+                    String parameterId = selectedAudioProcessor->getParameterIdentifier(i);
+                    label->setText(selectedAudioProcessor->getState()->getParameter(parameterId)->name, dontSendNotification);
                     slider->getValueObject().refersToSameSourceAs(processor->getState().getChild(i).getPropertyAsValue(IDs::value, processor->getUndoManager()));
-                    auto sliderAttachment = new AudioProcessorValueTreeState::SliderAttachment(
-                            *selectedAudioProcessor->getState(), selectedAudioProcessor->getParameterIdentifier(i),
-                            *slider);
+                    auto sliderAttachment = new AudioProcessorValueTreeState::SliderAttachment(*selectedAudioProcessor->getState(), parameterId, *slider);
                     processorSliderAttachements.add(sliderAttachment);
                 }
             }
