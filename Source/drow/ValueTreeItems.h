@@ -67,7 +67,6 @@ namespace Helpers {
             ValueTree i(IDs::PROCESSOR);
             Helpers::createUuidProperty(i);
             i.setProperty(IDs::name, IDs::SINE_BANK_PROCESSOR.toString(), nullptr);
-            i.setProperty(IDs::selected, true, nullptr);
             t.addChild(i, -1, nullptr);
 
             for (int cn = 0; cn < 3; ++cn) {
@@ -100,7 +99,7 @@ class ProjectChangeBroadcaster {
 public:
     ProjectChangeBroadcaster() = default;
 
-    virtual ~ProjectChangeBroadcaster() {};
+    virtual ~ProjectChangeBroadcaster() = default;;
 
     /** Registers a listener to receive change callbacks from this broadcaster.
         Trying to add a listener that's already on the list will have no effect.
@@ -124,15 +123,6 @@ public:
         changeListeners.remove(listener);
     }
 
-    /** Removes all listeners from the list. */
-    void removeAllChangeListeners() {
-        // Listeners can only be safely removed when the event thread is locked
-        // You can  use a MessageManagerLock if you need to call this from another thread.
-        jassert (MessageManager::getInstance()->currentThreadHasLockedMessageManager());
-
-        changeListeners.clear();
-    }
-
     //==============================================================================
     /** Causes an asynchronous change message to be sent to all the registered listeners.
 
@@ -142,9 +132,11 @@ public:
     */
     void sendItemSelectedMessage(ValueTreeItem *item) {
         if (MessageManager::getInstance()->isThisTheMessageThread()) {
-            changeListeners.call (&ProjectChangeListener::itemSelected, item);
+            changeListeners.call(&ProjectChangeListener::itemSelected, item);
         } else {
-            MessageManager::callAsync([this, item] { changeListeners.call(&ProjectChangeListener::itemSelected, item); });
+            MessageManager::callAsync([this, item] {
+                changeListeners.call(&ProjectChangeListener::itemSelected, item);
+            });
         }
     }
 
@@ -161,9 +153,12 @@ ValueTreeItem *createValueTreeItemForType(const ValueTree &, UndoManager &);
 class ValueTreeItem : public TreeViewItem,
                       protected ValueTree::Listener {
 public:
-    ValueTreeItem(const ValueTree &v, UndoManager &um)
-            : state(v), undoManager(um) {
+    ValueTreeItem(ValueTree v, UndoManager &um)
+            : state(std::move(v)), undoManager(um) {
         state.addListener(this);
+        if (state[IDs::selected]) {
+            setSelected(true, true, dontSendNotification);
+        }
     }
 
     ValueTree getState() const {
@@ -223,7 +218,6 @@ public:
                 }
             }
         }
-
     }
 
     var getDragSourceDescription() override {
@@ -298,9 +292,6 @@ public:
         jassert (state.hasType(IDs::PROCESSOR));
     }
 
-    ~Processor() {
-
-    }
     bool mightContainSubItems() override {
         return false;
     }
