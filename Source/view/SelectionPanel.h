@@ -1,8 +1,8 @@
 #pragma once
 
-#include "ColourChangeButton.h"
+#include "view/ColourChangeButton.h"
 #include "ValueTreeItems.h"
-#include "drow_Utilities.h"
+#include "Utilities.h"
 
 class SelectionPanel : public Component,
                        private ProjectChangeListener {

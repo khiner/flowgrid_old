@@ -1,8 +1,8 @@
 #include <JuceHeader.h>
-#include <drow/drow_Utilities.h>
-#include <drow/Identifiers.h>
-#include <drow/ValueTreeItems.h>
-#include <drow/SelectionPanel.h>
+#include <Utilities.h>
+#include <Identifiers.h>
+#include <ValueTreeItems.h>
+#include <view/SelectionPanel.h>
 
 class ValueTreeEditor : public Component,
                        public DragAndDropContainer,

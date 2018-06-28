@@ -1,11 +1,11 @@
-#include <drow/drow_Utilities.h>
-#include <drow/ValueTreeItems.h>
+#include <Utilities.h>
+#include <ValueTreeItems.h>
 #include "JuceHeader.h"
-#include "Push2Component.h"
+#include "view/Push2Component.h"
 #include "AudioGraphBuilder.h"
 #include "MidiControlHandler.h"
-#include <ArrangeView.h>
-#include <ValueTreeEditor.h>
+#include <view/ArrangeView.h>
+#include <view/ValueTreeEditor.h>
 #include <push2/Push2MidiCommunicator.h>
 
 File getSaveFile()

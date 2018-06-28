@@ -1,10 +1,10 @@
 #pragma once
 
 #include <JuceHeader.h>
-#include <drow/drow_Utilities.h>
-#include <drow/drow_ValueTreeObjectList.h>
-#include <drow/Identifiers.h>
-#include <drow/ValueTreeItems.h>
+#include <Utilities.h>
+#include <ValueTreeObjectList.h>
+#include <Identifiers.h>
+#include <ValueTreeItems.h>
 
 struct ArrangeClasses {
     struct ArrangeTrack;

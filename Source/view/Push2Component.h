@@ -1,7 +1,7 @@
 #pragma once
 
-#include <audio_processors/StatefulAudioProcessor.h>
-#include <drow/ValueTreeItems.h>
+#include <processors/StatefulAudioProcessor.h>
+#include <ValueTreeItems.h>
 #include "push2/Push2DisplayBridge.h"
 #include "AudioGraphBuilder.h"
 

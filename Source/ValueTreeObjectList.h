@@ -6,7 +6,7 @@ namespace drow {
     template<typename ObjectType, typename CriticalSectionType = juce::DummyCriticalSection>
     class ValueTreeObjectList : public juce::ValueTree::Listener {
     public:
-        ValueTreeObjectList(const juce::ValueTree &parentTree)
+        explicit ValueTreeObjectList(const juce::ValueTree &parentTree)
                 : parent(parentTree) {
             parent.addListener(this);
         }

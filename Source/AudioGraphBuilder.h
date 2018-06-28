@@ -1,13 +1,13 @@
 #pragma once
 
-#include <drow/drow_Utilities.h>
-#include <drow/drow_ValueTreeObjectList.h>
-#include <drow/Identifiers.h>
+#include <Utilities.h>
+#include <ValueTreeObjectList.h>
+#include <Identifiers.h>
 
 #include "JuceHeader.h"
 #include <audio_sources/ToneSourceWithParameters.h>
-#include <intruments/SineBank.h>
-#include <audio_processors/DefaultAudioProcessor.h>
+#include <processors/SineBank.h>
+#include <processors/DefaultAudioProcessor.h>
 
 static std::unique_ptr<StatefulAudioProcessor> createStatefulAudioProcessorFromId(const String &id,
                                                                                   UndoManager &undoManager) {
@@ -20,7 +20,7 @@ static std::unique_ptr<StatefulAudioProcessor> createStatefulAudioProcessorFromI
 
 struct AudioGraphClasses {
     struct AudioProcessorWrapper : drow::ValueTreePropertyChangeListener {
-        explicit AudioProcessorWrapper(const ValueTree &v, UndoManager &undoManager) : state(v), source(createStatefulAudioProcessorFromId(v[IDs::name], undoManager)) {
+        explicit AudioProcessorWrapper(const ValueTree &v, UndoManager &undoManager) : state(v), source(std::move(createStatefulAudioProcessorFromId(v[IDs::name], undoManager))) {
             source->getState()->state = v;
         }
 

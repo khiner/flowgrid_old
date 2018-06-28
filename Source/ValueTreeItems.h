@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ColourChangeButton.h"
+#include "view/ColourChangeButton.h"
 #include "Identifiers.h"
 
 namespace Helpers {
@@ -290,6 +290,10 @@ public:
     Processor(const ValueTree &v, UndoManager &um)
             : ValueTreeItem(v, um) {
         jassert (state.hasType(IDs::PROCESSOR));
+    }
+
+    ~Processor() {
+        std::cout << "killing p" << '\n';
     }
 
     bool mightContainSubItems() override {

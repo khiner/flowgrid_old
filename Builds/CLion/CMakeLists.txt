@@ -32,16 +32,16 @@ add_executable (APP
     "../../Source/usb/UsbCommunicator.cpp"
     "../../Source/usb/UsbCommunicator.h"
     "../../Source/Main.cpp"
-        "../../Source/Push2Component.h"
-        "../../Source/ValueTreeEditor.h"
-        "../../Source/ArrangeView.h"
+        "../../Source/view/Push2Component.h"
+        "../../Source/view/ValueTreeEditor.h"
+        "../../Source/view/ArrangeView.h"
 
-    "../../Source/drow/ColourChangeButton.h"
-    "../../Source/drow/drow_Utilities.h"
-    "../../Source/drow/drow_ValueTreeObjectList.h"
-    "../../Source/drow/Identifiers.h"
-    "../../Source/drow/SelectionPanel.h"
-    "../../Source/drow/ValueTreeItems.h"
+    "../../Source/view/ColourChangeButton.h"
+    "../../Source/Utilities.h"
+    "../../Source/ValueTreeObjectList.h"
+    "../../Source/Identifiers.h"
+    "../../Source/view/SelectionPanel.h"
+    "../../Source/ValueTreeItems.h"
     "../../modules/JUCE/modules/juce_audio_basics/audio_play_head/juce_AudioPlayHead.h"
     "../../modules/JUCE/modules/juce_audio_basics/buffers/juce_AudioChannelSet.cpp"
     "../../modules/JUCE/modules/juce_audio_basics/buffers/juce_AudioChannelSet.h"
@@ -1272,7 +1272,7 @@ add_executable (APP
     "../../JuceLibraryCode/include_juce_gui_basics.mm"
     "../../JuceLibraryCode/include_juce_gui_extra.mm"
     "../../JuceLibraryCode/JuceHeader.h"
-        ../../Source/intruments/SineBank.h ../../Source/audio_processors/DefaultAudioProcessor.h ../../Source/AudioGraphBuilder.h ../../Source/MidiControlHandler.h ../../Source/audio_processors/StatefulAudioProcessor.h)
+        ../../Source/processors/SineBank.h ../../Source/processors/DefaultAudioProcessor.h ../../Source/AudioGraphBuilder.h ../../Source/MidiControlHandler.h ../../Source/processors/StatefulAudioProcessor.h)
 
 set_source_files_properties ("../../Resources/PushStartup.png" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/audio_sources/ToneSourceWithParameters.h" PROPERTIES HEADER_FILE_ONLY TRUE)
@@ -1285,7 +1285,7 @@ set_source_files_properties ("../../Source/usb/libusb/config.h" PROPERTIES HEADE
 set_source_files_properties ("../../Source/usb/libusb/config_msvc.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/usb/libusb/config_xcode.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/usb/UsbCommunicator.h" PROPERTIES HEADER_FILE_ONLY TRUE)
-set_source_files_properties ("../../Source/Push2Component.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/view/Push2Component.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../modules/JUCE/modules/juce_audio_basics/audio_play_head/juce_AudioPlayHead.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../modules/JUCE/modules/juce_audio_basics/buffers/juce_AudioChannelSet.cpp" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../modules/JUCE/modules/juce_audio_basics/buffers/juce_AudioChannelSet.h" PROPERTIES HEADER_FILE_ONLY TRUE)
