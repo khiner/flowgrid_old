@@ -380,6 +380,7 @@ public:
         }
 
         ValueTree masterTrack(IDs::MASTER_TRACK);
+        Helpers::createUuidProperty(masterTrack);
         masterTrack.setProperty(IDs::name, "Master", nullptr);
         createAndAddProcessor(masterTrack, IDs::MASTER_GAIN.toString(), false);
 
