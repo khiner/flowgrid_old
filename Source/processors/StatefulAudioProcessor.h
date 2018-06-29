@@ -36,7 +36,6 @@ public:
         return v;
     }
 
-    UndoManager &undoManager;
-
     ValueTree &state;
+    UndoManager &undoManager;
 };

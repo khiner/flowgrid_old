@@ -16,6 +16,8 @@ static std::unique_ptr<StatefulAudioProcessor> createStatefulAudioProcessorFromI
         return std::make_unique<SineBank>(state, undoManager);
     } else if (id == IDs::MASTER_GAIN.toString()) {
         return std::make_unique<GainProcessor>(state, undoManager);
+    } else {
+        return nullptr;
     }
 }
 
