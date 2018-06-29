@@ -13,6 +13,7 @@ namespace IDs
     DECLARE_ID(value)
     DECLARE_ID(id)
 
+    DECLARE_ID(MASTER_TRACK)
     DECLARE_ID(MASTER_GAIN)
 
     DECLARE_ID(freq_1)

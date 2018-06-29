@@ -57,8 +57,8 @@ private:
             StatefulAudioProcessor *processor = audioGraphBuilder.getAudioProcessorWithUuid(attachedProcessorUuid);
             if (processor != nullptr) {
                 for (int i = 0; i < processor->getNumParameters(); i++) {
-                    Slider *slider = sliders[i];
-                    Label *label = labels[i];
+                    Slider *slider = sliders.getUnchecked(i);
+                    Label *label = labels.getUnchecked(i);
 
                     slider->setVisible(true);
                     slider->setSliderStyle(Slider::SliderStyle::RotaryHorizontalVerticalDrag);

@@ -28,7 +28,7 @@ public:
         if (Push2::isEncoderCcNumber(ccNumber)) {
             Parameter *parameter = nullptr;
             if (ccNumber == Push2::masterKnob) {
-                parameter = audioGraphBuilder.getMainAudioProcessor()->getParameterInfo(0);
+                parameter = audioGraphBuilder.getGainProcessor()->getParameterInfo(0);
             } else if (Push2::isAboveScreenEncoderCcNumber(ccNumber)) {
                 if (currentProcessorToControl != nullptr) {
                     int parameterIndex = ccNumber - Push2::ccNumberForTopKnobIndex(0);

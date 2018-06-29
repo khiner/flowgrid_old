@@ -8,19 +8,21 @@
 #include <audio_sources/ToneSourceWithParameters.h>
 #include <processors/SineBank.h>
 #include <processors/DefaultAudioProcessor.h>
+#include <processors/GainProcessor.h>
 
 static std::unique_ptr<StatefulAudioProcessor> createStatefulAudioProcessorFromId(const String &id,
                                                                                   ValueTree &state, UndoManager &undoManager) {
     if (id == IDs::SINE_BANK_PROCESSOR.toString()) {
         return std::make_unique<SineBank>(state, undoManager);
-    } else {
-        return nullptr;
+    } else if (id == IDs::MASTER_GAIN.toString()) {
+        return std::make_unique<GainProcessor>(state, undoManager);
     }
 }
 
 struct AudioGraphClasses {
     struct AudioProcessorWrapper {
-        explicit AudioProcessorWrapper(const ValueTree &v, UndoManager &undoManager) : state(v), source(createStatefulAudioProcessorFromId(v[IDs::name], state, undoManager)) {
+        explicit AudioProcessorWrapper(const ValueTree &state, UndoManager &undoManager)
+                : state(state), source(createStatefulAudioProcessorFromId(state[IDs::name], this->state, undoManager)) {
             source->updateValueTree();
         }
 
@@ -32,7 +34,7 @@ struct AudioGraphClasses {
     class ProcessorList
             : public Utilities::ValueTreeObjectList<AudioProcessorWrapper> {
     public:
-        explicit ProcessorList(const ValueTree &v, UndoManager &undoManager) : Utilities::ValueTreeObjectList<AudioProcessorWrapper>(v), undoManager(undoManager) {
+        explicit ProcessorList(const ValueTree &state, UndoManager &undoManager) : Utilities::ValueTreeObjectList<AudioProcessorWrapper>(state), undoManager(undoManager) {
             rebuildObjects();
         }
 
@@ -40,8 +42,8 @@ struct AudioGraphClasses {
             freeObjects();
         }
 
-        bool isSuitableType(const ValueTree &v) const override {
-            return v.hasType(IDs::PROCESSOR);
+        bool isSuitableType(const ValueTree &state) const override {
+            return state.hasType(IDs::PROCESSOR);
         }
 
         StatefulAudioProcessor *getAudioProcessorWithUuid(String& uuid) {
@@ -53,12 +55,21 @@ struct AudioGraphClasses {
             return nullptr;
         }
 
+        StatefulAudioProcessor *getAudioProcessorWithName(const String &name) {
+            for (auto *processor : objects) {
+                if (processor->state[IDs::name] == name) {
+                    return processor->source.get();
+                }
+            }
+            return nullptr;
+        }
+
         AudioProcessorWrapper *findFirstProcessor() {
             return objects.getFirst();
         }
 
-        AudioProcessorWrapper *createNewObject(const ValueTree &v) override {
-            auto *processor = new AudioProcessorWrapper(v, undoManager);
+        AudioProcessorWrapper *createNewObject(const ValueTree &state) override {
+            auto *processor = new AudioProcessorWrapper(state, undoManager);
             return processor;
         }
 
@@ -80,13 +91,13 @@ struct AudioGraphClasses {
     };
 
     struct AudioTrack : public DefaultAudioProcessor, public Utilities::ValueTreePropertyChangeListener {
-        explicit AudioTrack(ValueTree v, UndoManager &undoManager) : state(v) {
-            processorList = std::make_unique<AudioGraphClasses::ProcessorList>(v, undoManager);
+        explicit AudioTrack(ValueTree state, UndoManager &undoManager) : state(state) {
+            processorList = std::make_unique<AudioGraphClasses::ProcessorList>(state, undoManager);
         }
 
         const String getName() const override { return "MainProcessor"; }
 
-        int getNumParameters() override { return 8; }
+        int getNumParameters() override { return 0; }
 
         void processBlock(AudioSampleBuffer &buffer, MidiBuffer &midiMessages) override {
             StatefulAudioProcessor *firstAudioProcessor = getFirstAudioProcessor();
@@ -97,6 +108,10 @@ struct AudioGraphClasses {
 
         StatefulAudioProcessor *getAudioProcessorWithUuid(String& uuid) {
             return processorList->getAudioProcessorWithUuid(uuid);
+        }
+
+        StatefulAudioProcessor *getAudioProcessorWithName(const String &name) {
+            return processorList->getAudioProcessorWithName(name);
         }
 
         StatefulAudioProcessor *getFirstAudioProcessor() {
@@ -114,21 +129,15 @@ struct AudioGraphClasses {
     };
 
     class AudioTrackList
-            : public StatefulAudioProcessor, public Utilities::ValueTreeObjectList<AudioTrack> {
+            : public DefaultAudioProcessor, public Utilities::ValueTreeObjectList<AudioTrack> {
 
     public:
-        explicit AudioTrackList(ValueTree &editTree, UndoManager &undoManager) :
-                StatefulAudioProcessor(2, 2, editTree, undoManager),
-                Utilities::ValueTreeObjectList<AudioTrack>(editTree),
-                gainParameterInfo(state, IDs::MASTER_GAIN.toString(), "Gain", "dB",
-                                  NormalisableRange<double>(0.0f, 1.0f), 0.5f,
-                                  [](float value) { return String(Decibels::gainToDecibels<float>(value, 0), 3) + "dB"; }, nullptr) {
+        explicit AudioTrackList(ValueTree &projectState, UndoManager &undoManager) :
+                DefaultAudioProcessor(2, 2),
+                Utilities::ValueTreeObjectList<AudioTrack>(projectState),
+                undoManager(undoManager) {
 
             rebuildObjects();
-
-            gain.setValue(gainParameterInfo.defaultValue);
-
-            updateValueTree();
         }
 
         ~AudioTrackList() override {
@@ -152,38 +161,12 @@ struct AudioGraphClasses {
         /*** JUCE override methods ***/
         const String getName() const override { return "MainProcessor"; }
 
-        int getNumParameters() override { return 1; }
-
-        const String &getParameterIdentifier(int parameterIndex) override {
-            switch(parameterIndex) {
-                case 0: return IDs::MASTER_GAIN.toString();
-                default: return IDs::PARAM_NA.toString();
-            }
-        }
-
-        Parameter *getParameterInfo(int parameterIndex) override {
-            switch(parameterIndex) {
-                case 0: return &gainParameterInfo;
-                default: return nullptr;
-            }
-        }
-
-        void valueTreePropertyChanged (ValueTree& tree, const Identifier& p) override {
-            if (p == IDs::value) {
-                if (tree.getProperty(IDs::id) == IDs::MASTER_GAIN.toString()) {
-                    gain.setValue(tree[IDs::value]);
-                }
-            }
-        }
+        int getNumParameters() override { return 0; }
 
         void processBlock(AudioSampleBuffer &buffer, MidiBuffer &midiMessages) override {
-            const AudioSourceChannelInfo &channelInfo = AudioSourceChannelInfo(buffer);
-
             for (auto *track : objects) {
                 track->processBlock(buffer, midiMessages);
             }
-
-            gain.applyGain(buffer, channelInfo.numSamples);
         }
 
         bool isSuitableType(const juce::ValueTree &v) const override {
@@ -204,28 +187,42 @@ struct AudioGraphClasses {
         void objectOrderChanged() override {}
 
     private:
-        LinearSmoothedValue<float> gain;
-
-        Parameter gainParameterInfo;
+        UndoManager &undoManager;
     };
 };
 
 
-class AudioGraphBuilder {
+class AudioGraphBuilder : public DefaultAudioProcessor {
 public:
-    explicit AudioGraphBuilder(ValueTree editToUse, UndoManager &undoManager) {
-        trackList = std::make_unique<AudioGraphClasses::AudioTrackList>(editToUse, undoManager);
+    explicit AudioGraphBuilder(ValueTree projectState, UndoManager &undoManager)
+            : DefaultAudioProcessor(0, 2) {
+        trackList = std::make_unique<AudioGraphClasses::AudioTrackList>(projectState, undoManager);
+        masterTrack = std::make_unique<AudioGraphClasses::AudioTrack>(projectState.getChildWithName(IDs::MASTER_TRACK), undoManager);
     }
 
-    AudioProcessor *getMainAudioProcessor() {
-        return trackList.get();
+    StatefulAudioProcessor *getGainProcessor() {
+        return masterTrack->getAudioProcessorWithName(IDs::MASTER_GAIN.toString());
     }
 
     StatefulAudioProcessor *getAudioProcessorWithUuid(String uuid) {
+        if (auto *processor = masterTrack->getAudioProcessorWithUuid(uuid)) {
+            return processor;
+        }
         return trackList->getAudioProcessorWithUuid(uuid);
     }
+
+    /*** JUCE override methods ***/
+    const String getName() const override { return "MainProcessor"; }
+
+    int getNumParameters() override { return 0; }
+
+    void processBlock(AudioSampleBuffer &buffer, MidiBuffer &midiMessages) override {
+        trackList->processBlock(buffer, midiMessages);
+        masterTrack->processBlock(buffer, midiMessages);
+    }
+
 private:
     std::unique_ptr<AudioGraphClasses::AudioTrackList> trackList;
-
+    std::unique_ptr<AudioGraphClasses::AudioTrack> masterTrack;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AudioGraphBuilder)
 };

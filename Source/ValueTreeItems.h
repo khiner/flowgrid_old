@@ -142,6 +142,10 @@ public:
         return state[IDs::name].toString();
     }
 
+    virtual bool isItemDeletable() {
+        return true;
+    }
+
     String getUniqueName() const override {
         if (state.hasProperty(IDs::uuid))
             return state[IDs::uuid].toString();
@@ -287,8 +291,8 @@ public:
 
 class Track : public ValueTreeItem {
 public:
-    Track(const ValueTree &v, UndoManager &um)
-            : ValueTreeItem(v, um) {
+    Track(const ValueTree &state, UndoManager &um)
+            : ValueTreeItem(state, um) {
         jassert (state.hasType(IDs::TRACK));
     }
 
@@ -300,6 +304,27 @@ public:
     void itemDropped(const DragAndDropTarget::SourceDetails &, int insertIndex) override {
         Helpers::moveItems(*getOwnerView(), Helpers::getSelectedTreeViewItems<Clip>(*getOwnerView()), state,
                            insertIndex, undoManager);
+    }
+};
+
+class MasterTrack : public ValueTreeItem {
+public:
+    MasterTrack(const ValueTree &state, UndoManager &um)
+            : ValueTreeItem(state, um) {
+        jassert (state.hasType(IDs::MASTER_TRACK));
+    }
+
+    bool isInterestedInDragSource(const DragAndDropTarget::SourceDetails &dragSourceDetails) override {
+        return dragSourceDetails.description == IDs::PROCESSOR.toString();
+    }
+
+    void itemDropped(const DragAndDropTarget::SourceDetails &, int insertIndex) override {
+        Helpers::moveItems(*getOwnerView(), Helpers::getSelectedTreeViewItems<Processor>(*getOwnerView()), state,
+                           insertIndex, undoManager);
+    }
+
+    bool isItemDeletable() override {
+        return false;
     }
 };
 
@@ -325,7 +350,8 @@ public:
             ValueTree track = createAndAddTrack(true);
             const String& trackName = track.getProperty(IDs::name);
 
-            createAndAddProcessor(track, IDs::SINE_BANK_PROCESSOR.toString(), true);
+            ValueTree processor = createAndAddProcessor(track, IDs::SINE_BANK_PROCESSOR.toString(), true);
+            processor.setProperty(IDs::selected, true, nullptr);
 
             for (int cn = 0; cn < 3; ++cn) {
                 ValueTree c(IDs::CLIP);
@@ -338,6 +364,12 @@ public:
                 track.addChild(c, -1, nullptr);
             }
         }
+
+        ValueTree masterTrack(IDs::MASTER_TRACK);
+        masterTrack.setProperty(IDs::name, "Master", nullptr);
+        createAndAddProcessor(masterTrack, IDs::MASTER_GAIN.toString(), false);
+
+        state.addChild(masterTrack, -1, nullptr);
 
         return state;
     }
@@ -360,7 +392,6 @@ public:
         ValueTree processor(IDs::PROCESSOR);
         Helpers::createUuidProperty(processor);
         processor.setProperty(IDs::name, name, nullptr);
-        processor.setProperty(IDs::selected, true, nullptr);
         track.addChild(processor, -1, undoable ? &undoManager : nullptr);
 
         return processor;
@@ -383,6 +414,7 @@ public:
 
 inline ValueTreeItem *createValueTreeItemForType(const ValueTree &v, UndoManager &um) {
     if (v.hasType(IDs::PROJECT)) return new Project(v, um);
+    if (v.hasType(IDs::MASTER_TRACK)) return new MasterTrack(v, um);
     if (v.hasType(IDs::TRACK)) return new Track(v, um);
     if (v.hasType(IDs::CLIP)) return new Clip(v, um);
     if (v.hasType(IDs::PROCESSOR)) return new Processor(v, um);

@@ -30,7 +30,7 @@ public:
         return 8;
     }
 
-    void valueTreePropertyChanged(ValueTree& tree, const Identifier& p) {
+    void valueTreePropertyChanged(ValueTree& tree, const Identifier& p) override {
         if (p == IDs::value) {
             String parameterId = tree.getProperty(IDs::id);
             float value = tree.getProperty(IDs::value);

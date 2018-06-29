@@ -95,9 +95,9 @@ private:
             attachedProcessorUuid = item.getProperty(IDs::uuid, project.getUndoManager());
             StatefulAudioProcessor *processor = audioGraphBuilder.getAudioProcessorWithUuid(attachedProcessorUuid);
             if (processor != nullptr) {
-                for (int i = 0; i < processorSliders.size(); i++) {
-                    auto *slider = processorSliders[i];
-                    auto *label = processorLabels[i];
+                for (int i = 0; i < processor->getNumParameters(); i++) {
+                    auto *slider = processorSliders.getUnchecked(i);
+                    auto *label = processorLabels.getUnchecked(i);
                     slider->setVisible(true);
                     processor->getParameterInfo(i)->attachSlider(slider, label);
                 }

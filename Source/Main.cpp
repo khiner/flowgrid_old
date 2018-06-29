@@ -27,7 +27,7 @@ public:
     bool moreThanOneInstanceAllowed() override { return true; }
 
     void initialise(const String &) override {
-        player.setProcessor(audioGraphBuilder.getMainAudioProcessor());
+        player.setProcessor(&audioGraphBuilder);
         deviceManager.addAudioCallback(&player);
 
         push2MidiCommunicator.setMidiInputCallback([this](const MidiMessage &message) {
