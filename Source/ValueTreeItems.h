@@ -385,10 +385,10 @@ public:
         Helpers::createUuidProperty(state);
 
         for (int tn = 0; tn < 1; ++tn) {
-            ValueTree track = createAndAddTrack(true);
+            ValueTree track = createAndAddTrack(false);
             const String& trackName = track.getProperty(IDs::name);
 
-            ValueTree processor = createAndAddProcessor(track, IDs::SINE_BANK_PROCESSOR.toString(), true);
+            ValueTree processor = createAndAddProcessor(track, IDs::SINE_BANK_PROCESSOR.toString(), false);
             processor.setProperty(IDs::selected, true, nullptr);
 
             for (int cn = 0; cn < 3; ++cn) {
