@@ -165,11 +165,14 @@ protected:
 
     void valueTreeChildAdded(ValueTree &parentTree, ValueTree &child) override {
         treeChildrenChanged(parentTree);
-        if (parentTree == getState()) {
+        if (parentTree == state) {
             TreeViewItem *childItem = this->getSubItem(parentTree.indexOf(child));
             if (childItem != nullptr) {
-                childItem->setSelected(true, true, dontSendNotification);
-                child.sendPropertyChangeMessage(IDs::selected);
+                if (child[IDs::selected]) {
+                    child.sendPropertyChangeMessage(IDs::selected);
+                } else {
+                    childItem->setSelected(true, true, sendNotification);
+                }
             }
         }
     }
