@@ -163,23 +163,44 @@ protected:
 
     void valueTreeChildAdded(ValueTree &parentTree, ValueTree &child) override {
         treeChildrenChanged(parentTree);
-        if (auto *ov = getOwnerView()) {
-            if (auto *cb = dynamic_cast<ProjectChangeBroadcaster *> (ov->getRootItem())) {
-                cb->sendItemSelectedMessage(child);
+        if (parentTree == getState()) {
+            TreeViewItem *childItem = this->getSubItem(parentTree.indexOf(child));
+            if (childItem != nullptr) {
+                childItem->setSelected(true, true, dontSendNotification);
+                child.sendPropertyChangeMessage(IDs::selected);
             }
         }
     }
 
-    void valueTreeChildRemoved(ValueTree &parentTree, ValueTree &child, int) override {
+    void valueTreeChildRemoved(ValueTree &parentTree, ValueTree &child, int indexFromWhichChildWasRemoved) override {
+        if (parentTree != state)
+            return;
+
         if (auto *ov = getOwnerView()) {
             if (auto *cb = dynamic_cast<ProjectChangeBroadcaster *> (ov->getRootItem())) {
                 cb->sendItemRemovedMessage(child);
             }
         }
         treeChildrenChanged(parentTree);
+
+        if (getOwnerView()->getNumSelectedItems() == 0) {
+            ValueTree itemToSelect;
+            if (parentTree.getNumChildren() == 0)
+                itemToSelect = parentTree;
+            else if (indexFromWhichChildWasRemoved - 1 >= 0)
+                itemToSelect = parentTree.getChild(indexFromWhichChildWasRemoved - 1);
+            else
+                itemToSelect = parentTree.getChild(indexFromWhichChildWasRemoved);
+
+            if (itemToSelect.isValid()) {
+                itemToSelect.setProperty(IDs::selected, true, nullptr);
+            }
+        }
     }
 
-    void valueTreeChildOrderChanged(ValueTree &parentTree, int, int) override { treeChildrenChanged(parentTree); }
+    void valueTreeChildOrderChanged(ValueTree &parentTree, int, int) override {
+        treeChildrenChanged(parentTree);
+    }
 
     void valueTreeParentChanged(ValueTree &) override {}
 

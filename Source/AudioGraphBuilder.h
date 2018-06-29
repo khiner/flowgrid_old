@@ -84,6 +84,13 @@ struct AudioGraphClasses {
         void objectOrderChanged() override {}
 
         void newObjectAdded(AudioProcessorWrapper *processor) override {
+            // Kind of crappy - the order of the listeners seems to be nondeterministic,
+            // so send (maybe _another_) select message that will update the UI in case this was already selected.
+            if (processor->state[IDs::selected]) {
+                processor->state.sendPropertyChangeMessage(IDs::selected);
+            } else {
+                processor->state.setProperty(IDs::selected, true, nullptr);
+            }
         }
 
     private:
