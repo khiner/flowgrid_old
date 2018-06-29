@@ -136,13 +136,6 @@ public:
 
     void itemSelectionChanged(bool isNowSelected) override {
         state.setProperty(IDs::selected, isNowSelected, nullptr);
-        if (isNowSelected) {
-            if (auto *ov = getOwnerView()) {
-                if (auto *cb = dynamic_cast<ProjectChangeBroadcaster *> (ov->getRootItem())) {
-                    cb->sendItemSelectedMessage(state);
-                }
-            }
-        }
     }
 
     var getDragSourceDescription() override {
@@ -154,11 +147,17 @@ protected:
     UndoManager &undoManager;
 
     void valueTreePropertyChanged(ValueTree & tree, const Identifier &identifier) override {
-        if (tree != state)
+        if (tree != state || tree.getType() == IDs::PARAM)
             return;
 
-        if (tree.getType() != IDs::PARAM) {
-            repaintItem();
+        repaintItem();
+        if (identifier == IDs::selected && tree[IDs::selected]) {
+            if (auto *ov = getOwnerView()) {
+                if (auto *cb = dynamic_cast<ProjectChangeBroadcaster *> (ov->getRootItem())) {
+                    setSelected(true, false, dontSendNotification); // make sure TreeView UI is up-to-date
+                    cb->sendItemSelectedMessage(state);
+                }
+            }
         }
     }
 

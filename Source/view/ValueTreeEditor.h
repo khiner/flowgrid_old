@@ -57,11 +57,26 @@ public:
     void deleteSelectedItems() {
         auto selectedItems(Helpers::getSelectedAndDeletableTreeViewItems<ValueTreeItem>(tree));
 
+        if (selectedItems.isEmpty())
+            return;
+
+        ValueTree itemToSelectAfterDelete = selectedItems.getFirst()->getSibling(-1);
+        if (!itemToSelectAfterDelete.isValid()) {
+            itemToSelectAfterDelete = selectedItems.getLast()->getSibling(1);
+            if (!itemToSelectAfterDelete.isValid()) {
+                itemToSelectAfterDelete = selectedItems.getFirst()->getParent();
+            }
+        }
+
         for (int i = selectedItems.size(); --i >= 0;) {
             ValueTree &v = *selectedItems.getUnchecked(i);
 
             if (v.getParent().isValid())
                 v.getParent().removeChild(v, &undoManager);
+        }
+
+        if (itemToSelectAfterDelete.isValid()) {
+            itemToSelectAfterDelete.setProperty(IDs::selected, true, nullptr);
         }
     }
 
@@ -96,7 +111,10 @@ public:
 
     void sendSelectMessageForFirstSelectedItem() {
         if (tree.getNumSelectedItems() > 0) {
-            tree.getSelectedItem(0)->itemSelectionChanged(true);
+            TreeViewItem *selectedItem = tree.getSelectedItem(0);
+            // cycle to make sure state changes
+            selectedItem->itemSelectionChanged(false);
+            selectedItem->itemSelectionChanged(true);
         }
     }
 
