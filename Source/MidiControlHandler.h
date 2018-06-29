@@ -59,6 +59,18 @@ public:
                 case Push2::shift:
                     isShiftHeld = true;
                     return;
+                case Push2::up:
+                    project.moveSelectionUp();
+                    return;
+                case Push2::down:
+                    project.moveSelectionDown();
+                    return;
+                case Push2::left:
+                    project.moveSelectionLeft();
+                    return;
+                case Push2::right:
+                    project.moveSelectionRight();
+                    return;
                 default: return;
             }
         } else if (Push2::isButtonReleaseControlMessage(midiMessage)) {

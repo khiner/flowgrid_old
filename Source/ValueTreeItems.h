@@ -378,6 +378,22 @@ public:
         jassert (state.hasType(IDs::PROJECT));
     }
 
+    void moveSelectionUp() {
+        getOwnerView()->keyPressed(KeyPress(KeyPress::upKey));
+    }
+
+    void moveSelectionDown() {
+        getOwnerView()->keyPressed(KeyPress(KeyPress::downKey));
+    }
+
+    void moveSelectionLeft() {
+        getOwnerView()->keyPressed(KeyPress(KeyPress::leftKey));
+    }
+
+    void moveSelectionRight() {
+        getOwnerView()->keyPressed(KeyPress(KeyPress::rightKey));
+    }
+
     ValueTree createDefaultProject() {
         state = ValueTree(IDs::PROJECT);
         state.setProperty(IDs::name, "My First Project", nullptr);
