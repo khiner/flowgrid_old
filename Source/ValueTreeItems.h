@@ -287,6 +287,17 @@ namespace Helpers {
 
         return v;
     }
+
+    inline void deleteSelectedItems(TreeView &treeView, UndoManager &undoManager) {
+        auto selectedItems(Helpers::getSelectedAndDeletableTreeViewItems<ValueTreeItem>(treeView));
+
+        for (int i = selectedItems.size(); --i >= 0;) {
+            ValueTree &v = *selectedItems.getUnchecked(i);
+
+            if (v.getParent().isValid())
+                v.getParent().removeChild(v, &undoManager);
+        }
+    }
 }
 
 class Clip : public ValueTreeItem {
@@ -394,6 +405,10 @@ public:
 
     void moveSelectionRight() {
         getOwnerView()->keyPressed(KeyPress(KeyPress::rightKey));
+    }
+
+    void deleteSelectedItems() {
+        Helpers::deleteSelectedItems(*getOwnerView(), undoManager);
     }
 
     ValueTree createDefaultProject() {

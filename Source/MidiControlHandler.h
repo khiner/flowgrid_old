@@ -48,6 +48,9 @@ public:
 
         if (Push2::isButtonPressControlMessage(midiMessage)) {
             switch(ccNumber) {
+                case Push2::shift:
+                    isShiftHeld = true;
+                    return;
                 case Push2::undo:
                     if (isShiftHeld) {
                         undoManager.redo();
@@ -56,21 +59,16 @@ public:
                         undoManager.undo();
                         return;
                     }
-                case Push2::shift:
-                    isShiftHeld = true;
-                    return;
+                case Push2::delete_:
+                    return project.deleteSelectedItems();
                 case Push2::up:
-                    project.moveSelectionUp();
-                    return;
+                    return project.moveSelectionUp();
                 case Push2::down:
-                    project.moveSelectionDown();
-                    return;
+                    return project.moveSelectionDown();
                 case Push2::left:
-                    project.moveSelectionLeft();
-                    return;
+                    return project.moveSelectionLeft();
                 case Push2::right:
-                    project.moveSelectionRight();
-                    return;
+                    return project.moveSelectionRight();
                 default: return;
             }
         } else if (Push2::isButtonReleaseControlMessage(midiMessage)) {

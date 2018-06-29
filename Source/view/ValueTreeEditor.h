@@ -12,14 +12,14 @@ class ValueTreeEditor : public Component,
                         private Timer {
 public:
     ValueTreeEditor(const ValueTree &state, UndoManager &undoManager, Project& project, AudioGraphBuilder &audioGraphBuilder) : undoManager(undoManager), project(project) {
-        addAndMakeVisible(tree);
-        tree.setColour(TreeView::backgroundColourId,
+        addAndMakeVisible(treeView);
+        treeView.setColour(TreeView::backgroundColourId,
                        getUIColourIfAvailable(LookAndFeel_V4::ColourScheme::UIColour::windowBackground));
 
-        tree.setDefaultOpenness(true);
-        tree.setMultiSelectEnabled(true);
+        treeView.setDefaultOpenness(true);
+        treeView.setMultiSelectEnabled(true);
 
-        tree.setRootItem(&project);
+        treeView.setRootItem(&project);
         project.addChangeListener(this);
         addAndMakeVisible(*(selectionPanel = std::make_unique<SelectionPanel>(project, audioGraphBuilder)));
 
@@ -37,7 +37,7 @@ public:
     }
 
     ~ValueTreeEditor() override {
-        tree.setRootItem(nullptr);
+        treeView.setRootItem(nullptr);
     }
 
     void resized() override {
@@ -58,23 +58,12 @@ public:
         selectionPanel->setBounds(r.removeFromBottom(120));
 
         r.removeFromBottom(4);
-        tree.setBounds(r);
-    }
-
-    void deleteSelectedItems() {
-        auto selectedItems(Helpers::getSelectedAndDeletableTreeViewItems<ValueTreeItem>(tree));
-
-        for (int i = selectedItems.size(); --i >= 0;) {
-            ValueTree &v = *selectedItems.getUnchecked(i);
-
-            if (v.getParent().isValid())
-                v.getParent().removeChild(v, &undoManager);
-        }
+        treeView.setBounds(r);
     }
 
     bool keyPressed(const KeyPress &key) override {
         if (key == KeyPress::deleteKey || key == KeyPress::backspaceKey) {
-            deleteSelectedItems();
+            Helpers::deleteSelectedItems(treeView, undoManager);
             return true;
         }
 
@@ -111,8 +100,8 @@ public:
     }
 
     void sendSelectMessageForFirstSelectedItem() {
-        if (tree.getNumSelectedItems() > 0) {
-            TreeViewItem *selectedItem = tree.getSelectedItem(0);
+        if (treeView.getNumSelectedItems() > 0) {
+            TreeViewItem *selectedItem = treeView.getSelectedItem(0);
             selectedItem->itemSelectionChanged(false);
             selectedItem->itemSelectionChanged(true);
         }
@@ -137,7 +126,7 @@ public:
     }
 
 private:
-    TreeView tree;
+    TreeView treeView;
     ValueTree selectedTrack;
     StringArray processorNames { GainProcessor::name(), SineBank::name() };
     TextButton undoButton{"Undo"}, redoButton{"Redo"}, createTrackButton{"Create Track"};
