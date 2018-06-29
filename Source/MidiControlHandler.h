@@ -50,9 +50,11 @@ public:
             switch(ccNumber) {
                 case Push2::undo:
                     if (isShiftHeld) {
-                        return MessageManager::callAsync([&]() { undoManager.redo(); });
+                        undoManager.redo();
+                        return;
                     } else {
-                        return MessageManager::callAsync([&]() { undoManager.undo(); });
+                        undoManager.undo();
+                        return;
                     }
                 case Push2::shift:
                     isShiftHeld = true;

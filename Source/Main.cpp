@@ -31,7 +31,7 @@ public:
         deviceManager.addAudioCallback(&player);
 
         push2MidiCommunicator.setMidiInputCallback([this](const MidiMessage &message) {
-            midiControlHandler.handleControlMidi(message);
+            MessageManager::callAsync([this, message]() { midiControlHandler.handleControlMidi(message); });
         });
         deviceManager.initialiseWithDefaultDevices(2, 2);
 
