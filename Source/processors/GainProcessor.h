@@ -10,9 +10,10 @@ public:
             StatefulAudioProcessor(0, 2, state, undoManager),
             gainParameter(state, "gain", "Gain", "dB",
                           NormalisableRange<double>(0.0f, 1.0f), 0.5f,
-                          [](float value) { return String(Decibels::gainToDecibels(value), 3) + " dB"; }, nullptr)  {
+                          [](float value) { return String(Decibels::gainToDecibels(value), 3) + " dB"; }, nullptr),
+            gain(gainParameter.defaultValue) {
 
-        gain.setValue(gainParameter.defaultValue);
+        gain.reset(44100, 0.05); // TODO use actual sample rate from device manager
         state.addListener(this);
     }
 
@@ -55,6 +56,6 @@ public:
     }
 
 private:
-    LinearSmoothedValue<float> gain;
     Parameter gainParameter;
+    LinearSmoothedValue<float> gain;
 };
