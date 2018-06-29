@@ -61,6 +61,9 @@ public:
                     }
                 case Push2::delete_:
                     return project.deleteSelectedItems();
+                case Push2::addTrack:
+                    project.createAndAddTrack();
+                    return;
                 case Push2::up:
                     return project.moveSelectionUp();
                 case Push2::down:
