@@ -23,15 +23,15 @@ public:
         project.addChangeListener(this);
         addAndMakeVisible(*(selectionPanel = std::make_unique<SelectionPanel>(project, audioGraphBuilder)));
 
-        Utilities::visitComponents({&undoButton, &redoButton, &createTrackButton, &createProcessorComboBox},
+        Utilities::visitComponents({&undoButton, &redoButton, &createTrackButton, &addProcessorComboBox},
                                    [this](Component *c) { addAndMakeVisible(c); });
 
         undoButton.addListener(this);
         redoButton.addListener(this);
         createTrackButton.addListener(this);
-        createProcessorComboBox.addListener(this);
-        createProcessorComboBox.addItemList(processorNames, 1);
-        createProcessorComboBox.setTextWhenNothingSelected("Create processor");
+        addProcessorComboBox.addListener(this);
+        addProcessorComboBox.addItemList(processorNames, 1);
+        addProcessorComboBox.setTextWhenNothingSelected("Create processor");
         startTimer(500);
         setSize(800, 600);
     }
@@ -52,7 +52,7 @@ public:
         createTrackButton.setBounds(buttons.removeFromLeft(100));
 
         buttons.removeFromLeft(6);
-        createProcessorComboBox.setBounds(buttons.removeFromLeft(200));
+        addProcessorComboBox.setBounds(buttons.removeFromLeft(200));
 
         r.removeFromBottom(4);
         selectionPanel->setBounds(r.removeFromBottom(120));
@@ -91,7 +91,7 @@ public:
     }
 
     void comboBoxChanged(ComboBox* cb) override  {
-        if (cb == &createProcessorComboBox) {
+        if (cb == &addProcessorComboBox) {
             if (selectedTrack.isValid()) {
                 project.createAndAddProcessor(selectedTrack, processorNames[cb->getSelectedId() - 1]);
             }
@@ -110,12 +110,12 @@ public:
     void itemSelected(ValueTree item) override {
         if (item.hasType(IDs::TRACK)) {
             selectedTrack = item;
-            createProcessorComboBox.setVisible(true);
+            addProcessorComboBox.setVisible(true);
         } else if (item.getParent().hasType(IDs::TRACK)) {
             selectedTrack = item.getParent();
-            createProcessorComboBox.setVisible(true);
+            addProcessorComboBox.setVisible(true);
         } else {
-            createProcessorComboBox.setVisible(false);
+            addProcessorComboBox.setVisible(false);
         }
     }
 
@@ -123,7 +123,7 @@ public:
         if (item.hasType(IDs::TRACK)) {
             if (selectedTrack.isValid() && selectedTrack[IDs::uuid] == item[IDs::uuid]) {
                 selectedTrack = ValueTree();
-                createProcessorComboBox.setVisible(false);
+                addProcessorComboBox.setVisible(false);
             }
         }
     }
@@ -132,9 +132,9 @@ private:
     TreeView treeView;
     ValueTree selectedTrack;
     StringArray processorNames { GainProcessor::name(), SineBank::name() };
-    TextButton undoButton{"Undo"}, redoButton{"Redo"}, createTrackButton{"Create Track"};
+    TextButton undoButton{"Undo"}, redoButton{"Redo"}, createTrackButton{"Add Track"};
 
-    ComboBox createProcessorComboBox{"Create Processor"};
+    ComboBox addProcessorComboBox{"Add Processor"};
 
     UndoManager &undoManager;
     Project &project;
