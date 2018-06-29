@@ -154,8 +154,12 @@ protected:
     UndoManager &undoManager;
 
     void valueTreePropertyChanged(ValueTree & tree, const Identifier &identifier) override {
-        if (tree.getType() != IDs::PARAM) // TODO revisit if I ever stop using AudioProcessorValueTreeStates for my processors
+        if (tree != state)
+            return;
+
+        if (tree.getType() != IDs::PARAM) {
             repaintItem();
+        }
     }
 
     void valueTreeChildAdded(ValueTree &parentTree, ValueTree &child) override {
