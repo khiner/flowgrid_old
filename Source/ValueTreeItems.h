@@ -1,5 +1,7 @@
 #pragma once
 
+#include <processors/SineBank.h>
+#include <processors/GainProcessor.h>
 #include "view/ColourChangeButton.h"
 #include "Identifiers.h"
 
@@ -404,7 +406,7 @@ public:
             ValueTree track = createAndAddTrack(false);
             const String& trackName = track.getProperty(IDs::name);
 
-            ValueTree processor = createAndAddProcessor(track, IDs::SINE_BANK_PROCESSOR.toString(), false);
+            ValueTree processor = createAndAddProcessor(track, SineBank::name(), false);
             processor.setProperty(IDs::selected, true, nullptr);
 
             for (int cn = 0; cn < 3; ++cn) {
@@ -422,7 +424,7 @@ public:
         ValueTree masterTrack(IDs::MASTER_TRACK);
         Helpers::createUuidProperty(masterTrack);
         masterTrack.setProperty(IDs::name, "Master", nullptr);
-        createAndAddProcessor(masterTrack, IDs::MASTER_GAIN.toString(), false);
+        createAndAddProcessor(masterTrack, GainProcessor::name(), false);
 
         state.addChild(masterTrack, -1, nullptr);
 

@@ -4,10 +4,10 @@
 #include "Identifiers.h"
 
 struct Parameter {
-    Parameter(ValueTree& state, String paramID, String paramName, const String labelText, NormalisableRange<double> range,
+    Parameter(ValueTree& state, UndoManager &undoManager, String paramID, String paramName, const String labelText, NormalisableRange<double> range,
                   float defaultVal, std::function<String (const float)> valueToTextFunction,
                   std::function<float(const String &)> textToValueFunction)
-    : state(state), paramId(std::move(paramID)), paramName(std::move(paramName)), labelText(labelText), range(std::move(range)), defaultValue(defaultVal),
+    : state(state), undoManager(undoManager), paramId(std::move(paramID)), paramName(std::move(paramName)), labelText(labelText), range(std::move(range)), defaultValue(defaultVal),
       valueToTextFunction(std::move(valueToTextFunction)), textToValueFunction(std::move(textToValueFunction)) {}
 
     float getValue() const {
@@ -16,7 +16,7 @@ struct Parameter {
 
     void setValue (float newValue) {
         float clampedNewValue = newValue < 0 ? 0 : (newValue > 1 ? 1 : newValue);
-        state.getChildWithProperty(IDs::id, paramId).setProperty(IDs::value, range.convertFrom0to1(clampedNewValue), nullptr);
+        state.getChildWithProperty(IDs::id, paramId).setProperty(IDs::value, range.convertFrom0to1(clampedNewValue), &undoManager);
     }
 
     float getRawValue() const {
@@ -24,7 +24,7 @@ struct Parameter {
     }
 
     Value getValueObject() {
-        return state.getChildWithProperty(IDs::id, paramId).getPropertyAsValue(IDs::value, nullptr);
+        return state.getChildWithProperty(IDs::id, paramId).getPropertyAsValue(IDs::value, &undoManager);
     }
 
     void attachSlider(Slider *slider, Label *label=nullptr) {
@@ -38,6 +38,8 @@ struct Parameter {
     }
 
     ValueTree &state;
+    UndoManager &undoManager;
+
     const String paramId;
     const String paramName;
     const String labelText;

@@ -2,15 +2,16 @@
 
 #include <audio_sources/ToneSourceWithParameters.h>
 #include "JuceHeader.h"
+#include "StatefulAudioProcessor.h"
 
 class SineBank : public StatefulAudioProcessor, public Utilities::ValueTreePropertyChangeListener  {
 public:
     explicit SineBank(ValueTree &state, UndoManager &undoManager) :
             StatefulAudioProcessor(0, 2, state, undoManager),
-            toneSource1(state, "1"),
-            toneSource2(state, "2"),
-            toneSource3(state, "3"),
-            toneSource4(state, "4") {
+            toneSource1(state, undoManager, "1"),
+            toneSource2(state, undoManager, "2"),
+            toneSource3(state, undoManager, "3"),
+            toneSource4(state, undoManager, "4") {
 
         mixerAudioSource.addInputSource(toneSource1.get(), false);
         mixerAudioSource.addInputSource(toneSource2.get(), false);
@@ -24,7 +25,9 @@ public:
         state.removeListener(this);
     }
 
-    const String getName() const override { return "Sine Bank"; }
+    static const String name() { return "Sine Bank"; }
+
+    const String getName() const override { return SineBank::name(); }
 
     int getNumParameters() override {
         return 8;

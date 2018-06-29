@@ -12,9 +12,9 @@
 
 static std::unique_ptr<StatefulAudioProcessor> createStatefulAudioProcessorFromId(const String &id,
                                                                                   ValueTree &state, UndoManager &undoManager) {
-    if (id == IDs::SINE_BANK_PROCESSOR.toString()) {
+    if (id == SineBank::name()) {
         return std::make_unique<SineBank>(state, undoManager);
-    } else if (id == IDs::MASTER_GAIN.toString()) {
+    } else if (id == GainProcessor::name()) {
         return std::make_unique<GainProcessor>(state, undoManager);
     } else {
         return nullptr;
@@ -109,9 +109,8 @@ struct AudioGraphClasses {
         int getNumParameters() override { return 0; }
 
         void processBlock(AudioSampleBuffer &buffer, MidiBuffer &midiMessages) override {
-            StatefulAudioProcessor *firstAudioProcessor = getFirstAudioProcessor();
-            if (firstAudioProcessor != nullptr) {
-                firstAudioProcessor->processBlock(buffer, midiMessages);
+            for (auto *processor : processorList->objects) {
+                processor->source->processBlock(buffer, midiMessages);
             }
         }
 
@@ -210,7 +209,7 @@ public:
     }
 
     StatefulAudioProcessor *getGainProcessor() {
-        return masterTrack->getAudioProcessorWithName(IDs::MASTER_GAIN.toString());
+        return masterTrack->getAudioProcessorWithName(GainProcessor::name());
     }
 
     StatefulAudioProcessor *getAudioProcessorWithUuid(String uuid) {

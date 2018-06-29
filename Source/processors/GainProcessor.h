@@ -8,7 +8,7 @@ class GainProcessor : public StatefulAudioProcessor, public Utilities::ValueTree
 public:
     explicit GainProcessor(ValueTree &state, UndoManager &undoManager) :
             StatefulAudioProcessor(0, 2, state, undoManager),
-            gainParameter(state, "gain", "Gain", "dB",
+            gainParameter(state, undoManager, "gain", "Gain", "dB",
                           NormalisableRange<double>(0.0f, 1.0f), 0.5f,
                           [](float value) { return String(Decibels::gainToDecibels(value), 3) + " dB"; }, nullptr),
             gain(gainParameter.defaultValue) {
@@ -21,7 +21,8 @@ public:
         state.removeListener(this);
     }
 
-    const String getName() const override { return "Sine Bank"; }
+    static const String name() { return "Gain"; }
+    const String getName() const override { return GainProcessor::name(); }
 
     int getNumParameters() override {
         return 1;
