@@ -111,6 +111,9 @@ public:
         if (item.hasType(IDs::TRACK)) {
             selectedTrack = item;
             createProcessorComboBox.setVisible(true);
+        } else if (item.getParent().hasType(IDs::TRACK)) {
+            selectedTrack = item.getParent();
+            createProcessorComboBox.setVisible(true);
         } else {
             createProcessorComboBox.setVisible(false);
         }
