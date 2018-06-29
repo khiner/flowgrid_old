@@ -3,7 +3,7 @@
 #include <audio_sources/ToneSourceWithParameters.h>
 #include "JuceHeader.h"
 
-class SineBank : public StatefulAudioProcessor {
+class SineBank : public StatefulAudioProcessor, public Utilities::ValueTreePropertyChangeListener  {
 public:
     explicit SineBank(ValueTree &state, UndoManager &undoManager) :
             StatefulAudioProcessor(0, 2, state, undoManager),
@@ -16,12 +16,42 @@ public:
         mixerAudioSource.addInputSource(toneSource2.get(), false);
         mixerAudioSource.addInputSource(toneSource3.get(), false);
         mixerAudioSource.addInputSource(toneSource4.get(), false);
+
+        state.addListener(this);
+    }
+
+    ~SineBank() {
+        state.removeListener(this);
     }
 
     const String getName() const override { return "Sine Bank"; }
 
     int getNumParameters() override {
         return 8;
+    }
+
+    void valueTreePropertyChanged(ValueTree& tree, const Identifier& p) {
+        if (p == IDs::value) {
+            String parameterId = tree.getProperty(IDs::id);
+            float value = tree.getProperty(IDs::value);
+            if (parameterId == toneSource1.getAmpParameterId()) {
+                toneSource1.get()->setAmplitude(value);
+            } else if (parameterId == toneSource1.getFreqParameterId()) {
+                toneSource1.get()->setFrequency(value);
+            } else if (parameterId == toneSource2.getAmpParameterId()) {
+                toneSource2.get()->setAmplitude(value);
+            } else if (parameterId == toneSource2.getFreqParameterId()) {
+                toneSource2.get()->setFrequency(value);
+            } else if (parameterId == toneSource3.getAmpParameterId()) {
+                toneSource3.get()->setAmplitude(value);
+            } else if (parameterId == toneSource3.getFreqParameterId()) {
+                toneSource3.get()->setFrequency(value);
+            } else if (parameterId == toneSource4.getAmpParameterId()) {
+                toneSource4.get()->setAmplitude(value);
+            } else if (parameterId == toneSource4.getFreqParameterId()) {
+                toneSource4.get()->setFrequency(value);
+            }
+        }
     }
 
     Parameter *getParameterInfo(int parameterIndex) override {

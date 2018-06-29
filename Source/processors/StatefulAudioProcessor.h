@@ -25,7 +25,7 @@ public:
     }
 
     ValueTree getOrCreateChildValueTree (const String& paramID) {
-        ValueTree v (state.getChildWithProperty (IDs::id, paramID));
+        ValueTree v(state.getChildWithProperty(IDs::id, paramID));
 
         if (!v.isValid()) {
             v = ValueTree(IDs::PARAM);

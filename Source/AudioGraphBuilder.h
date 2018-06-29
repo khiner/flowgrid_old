@@ -127,14 +127,12 @@ struct AudioGraphClasses {
             rebuildObjects();
 
             gain.setValue(gainParameterInfo.defaultValue);
-            state.addListener(this);
 
             updateValueTree();
         }
 
         ~AudioTrackList() override {
             freeObjects();
-            state.removeListener(this);
         }
 
         StatefulAudioProcessor *getAudioProcessorWithUuid(String& uuid) {
@@ -170,7 +168,7 @@ struct AudioGraphClasses {
             }
         }
 
-        void valueTreePropertyChanged (ValueTree& tree, const Identifier& p) {
+        void valueTreePropertyChanged (ValueTree& tree, const Identifier& p) override {
             if (p == IDs::value) {
                 if (tree.getProperty(IDs::id) == IDs::MASTER_GAIN.toString()) {
                     gain.setValue(tree[IDs::value]);
@@ -219,7 +217,7 @@ public:
         trackList = std::make_unique<AudioGraphClasses::AudioTrackList>(editToUse, undoManager);
     }
 
-    AudioGraphClasses::AudioTrackList *getMainAudioProcessor() {
+    AudioProcessor *getMainAudioProcessor() {
         return trackList.get();
     }
 
