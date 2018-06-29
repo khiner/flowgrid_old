@@ -3,54 +3,6 @@
 #include "view/ColourChangeButton.h"
 #include "Identifiers.h"
 
-namespace Helpers {
-    template<typename TreeViewItemType>
-    inline OwnedArray<ValueTree> getSelectedTreeViewItems(TreeView &treeView) {
-        OwnedArray<ValueTree> items;
-        const int numSelected = treeView.getNumSelectedItems();
-
-        for (int i = 0; i < numSelected; ++i)
-            if (auto *vti = dynamic_cast<TreeViewItemType *> (treeView.getSelectedItem(i)))
-                items.add(new ValueTree(vti->getState()));
-
-        return items;
-    }
-
-    inline void moveItems(TreeView &treeView, const OwnedArray<ValueTree> &items,
-                          ValueTree newParent, int insertIndex, UndoManager &undoManager) {
-        if (items.isEmpty())
-            return;
-
-        std::unique_ptr<XmlElement> oldOpenness(treeView.getOpennessState(false));
-
-        for (int i = items.size(); --i >= 0;) {
-            ValueTree &v = *items.getUnchecked(i);
-
-            if (v.getParent().isValid() && newParent != v && !newParent.isAChildOf(v)) {
-                if (v.getParent() == newParent) {
-                    if (newParent.indexOf(v) < insertIndex) {
-                        --insertIndex;
-                    }
-                    v.getParent().moveChild(v.getParent().indexOf(v), insertIndex, &undoManager);
-                } else {
-                    v.getParent().removeChild(v, &undoManager);
-                    newParent.addChild(v, insertIndex, &undoManager);
-                }
-            }
-        }
-
-        if (oldOpenness != nullptr)
-            treeView.restoreOpennessState(*oldOpenness, false);
-    }
-
-    inline ValueTree createUuidProperty(ValueTree &v) {
-        if (!v.hasProperty(IDs::uuid))
-            v.setProperty(IDs::uuid, Uuid().toString(), nullptr);
-
-        return v;
-    }
-}
-
 class ValueTreeItem;
 
 class ProjectChangeListener {
@@ -248,6 +200,68 @@ private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ValueTreeItem)
 };
 
+namespace Helpers {
+    template<typename TreeViewItemType>
+    inline OwnedArray<ValueTree> getSelectedTreeViewItems(TreeView &treeView) {
+        OwnedArray<ValueTree> items;
+        const int numSelected = treeView.getNumSelectedItems();
+
+        for (int i = 0; i < numSelected; ++i)
+            if (auto *vti = dynamic_cast<TreeViewItemType *> (treeView.getSelectedItem(i)))
+                items.add(new ValueTree(vti->getState()));
+
+        return items;
+    }
+
+    template<typename TreeViewItemType>
+    inline OwnedArray<ValueTree> getSelectedAndDeletableTreeViewItems(TreeView &treeView) {
+        OwnedArray<ValueTree> items;
+        const int numSelected = treeView.getNumSelectedItems();
+
+        for (int i = 0; i < numSelected; ++i)
+            if (auto *vti = dynamic_cast<TreeViewItemType *> (treeView.getSelectedItem(i))) {
+                if (vti->isItemDeletable()) {
+                    items.add(new ValueTree(vti->getState()));
+                }
+            }
+
+        return items;
+    }
+
+    inline void moveItems(TreeView &treeView, const OwnedArray<ValueTree> &items,
+                          ValueTree newParent, int insertIndex, UndoManager &undoManager) {
+        if (items.isEmpty())
+            return;
+
+        std::unique_ptr<XmlElement> oldOpenness(treeView.getOpennessState(false));
+
+        for (int i = items.size(); --i >= 0;) {
+            ValueTree &v = *items.getUnchecked(i);
+
+            if (v.getParent().isValid() && newParent != v && !newParent.isAChildOf(v)) {
+                if (v.getParent() == newParent) {
+                    if (newParent.indexOf(v) < insertIndex) {
+                        --insertIndex;
+                    }
+                    v.getParent().moveChild(v.getParent().indexOf(v), insertIndex, &undoManager);
+                } else {
+                    v.getParent().removeChild(v, &undoManager);
+                    newParent.addChild(v, insertIndex, &undoManager);
+                }
+            }
+        }
+
+        if (oldOpenness != nullptr)
+            treeView.restoreOpennessState(*oldOpenness, false);
+    }
+
+    inline ValueTree createUuidProperty(ValueTree &v) {
+        if (!v.hasProperty(IDs::uuid))
+            v.setProperty(IDs::uuid, Uuid().toString(), nullptr);
+
+        return v;
+    }
+}
 
 class Clip : public ValueTreeItem {
 public:

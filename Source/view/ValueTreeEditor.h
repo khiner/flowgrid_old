@@ -55,7 +55,7 @@ public:
     }
 
     void deleteSelectedItems() {
-        auto selectedItems(Helpers::getSelectedTreeViewItems<ValueTreeItem>(tree));
+        auto selectedItems(Helpers::getSelectedAndDeletableTreeViewItems<ValueTreeItem>(tree));
 
         for (int i = selectedItems.size(); --i >= 0;) {
             ValueTree &v = *selectedItems.getUnchecked(i);
