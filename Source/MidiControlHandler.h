@@ -14,6 +14,10 @@ public:
         project.addChangeListener(this);
     }
 
+    void setPush2Component(Push2Component *push2Component) {
+        this->push2Component = push2Component;
+    }
+
     ~MidiControlHandler() {
         project.removeChangeListener(this);
     }
@@ -65,7 +69,8 @@ public:
                     project.createAndAddTrack();
                     return;
                 case Push2::addDevice:
-                    project.createAndAddProcessor(GainProcessor::name()); // TODO bring up selection menu instead
+                    if (push2Component != nullptr)
+                        push2Component->openProcessorSelector();
                     return;
                 case Push2::up:
                     return project.moveSelectionUp();
@@ -91,6 +96,8 @@ private:
     Project &project;
     AudioGraphBuilder &audioGraphBuilder;
     UndoManager &undoManager;
+
+    Push2Component *push2Component;
     StatefulAudioProcessor *currentProcessorToControl;
 
     bool isShiftHeld = false;

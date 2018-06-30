@@ -1,7 +1,7 @@
 #include <Utilities.h>
 #include <ValueTreeItems.h>
 #include "JuceHeader.h"
-#include "view/Push2Component.h"
+#include "view/push2/Push2Component.h"
 #include "AudioGraphBuilder.h"
 #include "MidiControlHandler.h"
 #include <view/ArrangeView.h>
@@ -36,7 +36,8 @@ public:
         deviceManager.initialiseWithDefaultDevices(2, 2);
 
         Process::makeForegroundProcess();
-        push2Window = std::make_unique<MainWindow>("Push 2 Mirror", new Push2Component(project, audioGraphBuilder));
+        Push2Component *push2Component = new Push2Component(project, audioGraphBuilder);
+        push2Window = std::make_unique<MainWindow>("Push 2 Mirror", push2Component);
         ValueTreeEditor *valueTreeEditor = new ValueTreeEditor(project.getState(), undoManager, project, audioGraphBuilder);
         treeWindow = std::make_unique<MainWindow>("Tree Editor", valueTreeEditor);
         arrangeWindow = std::make_unique<MainWindow>("Arrange View", new ArrangeView(project.getState()));
@@ -50,6 +51,7 @@ public:
         audioSetupWindow->setBoundsRelative(0.15, 0.60, 0.35, 0.50);
         push2Window->setBounds(treeWindow->getPosition().x, treeWindow->getPosition().y - Push2Display::HEIGHT - 30, Push2Display::WIDTH, Push2Display::HEIGHT + 30);
 
+        midiControlHandler.setPush2Component(push2Component);
         valueTreeEditor->sendSelectMessageForFirstSelectedItem();
     }
 

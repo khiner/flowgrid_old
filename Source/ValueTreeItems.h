@@ -401,6 +401,10 @@ public:
         return selectedProcessor;
     }
 
+    StringArray& getProcessorNames() {
+        return processorNames;
+    }
+
     void moveSelectionUp() {
         getOwnerView()->keyPressed(KeyPress(KeyPress::upKey));
     }
@@ -530,6 +534,8 @@ public:
 private:
     ValueTree selectedTrack;
     ValueTree selectedProcessor;
+
+    StringArray processorNames { GainProcessor::name(), SineBank::name() };
 };
 
 

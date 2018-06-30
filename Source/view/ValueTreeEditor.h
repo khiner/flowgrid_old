@@ -30,7 +30,7 @@ public:
         redoButton.addListener(this);
         createTrackButton.addListener(this);
         addProcessorComboBox.addListener(this);
-        addProcessorComboBox.addItemList(processorNames, 1);
+        addProcessorComboBox.addItemList(project.getProcessorNames(), 1);
         addProcessorComboBox.setTextWhenNothingSelected("Create processor");
         startTimer(500);
         setSize(800, 600);
@@ -93,7 +93,7 @@ public:
     void comboBoxChanged(ComboBox* cb) override  {
         if (cb == &addProcessorComboBox) {
             if (project.getSelectedTrack().isValid()) {
-                project.createAndAddProcessor(processorNames[cb->getSelectedId() - 1]);
+                project.createAndAddProcessor(project.getProcessorNames()[cb->getSelectedId() - 1]);
             }
         }
         cb->setSelectedItemIndex(-1, dontSendNotification); // don't keep displaying the selected item
@@ -119,7 +119,6 @@ public:
 
 private:
     TreeView treeView;
-    StringArray processorNames { GainProcessor::name(), SineBank::name() };
     TextButton undoButton{"Undo"}, redoButton{"Redo"}, createTrackButton{"Add Track"};
 
     ComboBox addProcessorComboBox{"Add Processor"};

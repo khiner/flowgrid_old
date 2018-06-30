@@ -1,34 +1,37 @@
 #pragma once
 
 #include <processors/StatefulAudioProcessor.h>
+#include <ValueTreeItems.h>
 #include "push2/Push2DisplayBridge.h"
 #include "AudioGraphBuilder.h"
+#include "Push2ProcessorView.h"
+#include "Push2FileBrowser.h"
 
-class Push2Component : public Timer, public Component, private ProjectChangeListener {
+class Push2Component :
+        public Timer,
+        public Component,
+        private ProjectChangeListener {
 public:
     explicit Push2Component(Project &project, AudioGraphBuilder &audioGraphBuilder)
             : project(project), audioGraphBuilder(audioGraphBuilder) {
-        setSize(Push2Display::WIDTH, Push2Display::HEIGHT);
         startTimer(60);
 
-        for (int paramIndex = 0; paramIndex < MAX_PROCESSOR_PARAMS_TO_DISPLAY; paramIndex++) {
-            Slider *slider = new Slider("Param " + String(paramIndex) + ": ");
-            addAndMakeVisible(slider);
-
-            labels.add(new Label(String(), slider->getName()))->attachToComponent(slider, false);
-            sliders.add(slider);
-        }
+        addChildComponent(processorView);
 
         project.addChangeListener(this);
+        setSize(Push2Display::WIDTH, Push2Display::HEIGHT);
+        processorView.setBounds(getBounds());
     }
 
     ~Push2Component() override {
         project.removeChangeListener(this);
     }
 
-private:
-    const static int MAX_PROCESSOR_PARAMS_TO_DISPLAY = 8;
+    void openProcessorSelector() {
 
+    }
+
+private:
     /*!
      *  Render a frame and send it to the Push 2 display
      */
@@ -55,18 +58,8 @@ private:
         } else if (item.hasType(IDs::PROCESSOR)) {
             StatefulAudioProcessor *processor = audioGraphBuilder.getAudioProcessor(project.getSelectedProcessor());
             if (processor != nullptr) {
-                for (int i = 0; i < processor->getNumParameters(); i++) {
-                    Slider *slider = sliders.getUnchecked(i);
-                    Label *label = labels.getUnchecked(i);
-
-                    slider->setVisible(true);
-                    slider->setSliderStyle(Slider::SliderStyle::RotaryHorizontalVerticalDrag);
-                    slider->setBounds(i * Push2Display::WIDTH / 8, 20, Push2Display::WIDTH / 8, Push2Display::WIDTH / 8);
-                    slider->setTextBoxStyle(Slider::TextEntryBoxPosition::TextBoxBelow, false, Push2Display::HEIGHT, Push2Display::HEIGHT / 5);
-                    label->setJustificationType(Justification::centred);
-
-                    processor->getParameterInfo(i)->attachSlider(slider, label);
-                }
+                processorView.setProcessor(processor);
+                processorView.setVisible(true);
             }
         }
     }
@@ -78,10 +71,10 @@ private:
     }
 
 private:
+    Push2DisplayBridge displayBridge;
+
     Project &project;
     AudioGraphBuilder &audioGraphBuilder;
 
-    OwnedArray<Slider> sliders;
-    OwnedArray<Label> labels;
-    Push2DisplayBridge displayBridge;
+    Push2ProcessorView processorView;
 };
