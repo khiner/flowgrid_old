@@ -92,8 +92,8 @@ public:
 
     void comboBoxChanged(ComboBox* cb) override  {
         if (cb == &addProcessorComboBox) {
-            if (selectedTrack.isValid()) {
-                project.createAndAddProcessor(selectedTrack, processorNames[cb->getSelectedId() - 1]);
+            if (project.getSelectedTrack().isValid()) {
+                project.createAndAddProcessor(processorNames[cb->getSelectedId() - 1]);
             }
         }
         cb->setSelectedItemIndex(-1, dontSendNotification); // don't keep displaying the selected item
@@ -108,29 +108,17 @@ public:
     }
 
     void itemSelected(ValueTree item) override {
-        if (item.hasType(IDs::TRACK)) {
-            selectedTrack = item;
-            addProcessorComboBox.setVisible(true);
-        } else if (item.getParent().hasType(IDs::TRACK)) {
-            selectedTrack = item.getParent();
-            addProcessorComboBox.setVisible(true);
-        } else {
-            addProcessorComboBox.setVisible(false);
-        }
+        addProcessorComboBox.setVisible(project.getSelectedTrack().isValid());
     }
 
     void itemRemoved(ValueTree item) override {
-        if (item.hasType(IDs::TRACK)) {
-            if (selectedTrack.isValid() && selectedTrack[IDs::uuid] == item[IDs::uuid]) {
-                selectedTrack = ValueTree();
-                addProcessorComboBox.setVisible(false);
-            }
+        if (item == project.getSelectedTrack()) {
+            addProcessorComboBox.setVisible(false);
         }
     }
 
 private:
     TreeView treeView;
-    ValueTree selectedTrack;
     StringArray processorNames { GainProcessor::name(), SineBank::name() };
     TextButton undoButton{"Undo"}, redoButton{"Redo"}, createTrackButton{"Add Track"};
 

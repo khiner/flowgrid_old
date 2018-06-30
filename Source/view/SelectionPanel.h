@@ -70,7 +70,6 @@ private:
 
     Project &project;
     AudioGraphBuilder &audioGraphBuilder;
-    String attachedProcessorUuid;
 
     Label titleLabel;
     TextEditor nameEditor{"Name: "};
@@ -92,8 +91,7 @@ private:
             const String &name = item.getProperty(IDs::name);
             titleLabel.setText("Processor Selected: " + name, dontSendNotification);
 
-            attachedProcessorUuid = item.getProperty(IDs::uuid, project.getUndoManager());
-            StatefulAudioProcessor *processor = audioGraphBuilder.getAudioProcessorWithUuid(attachedProcessorUuid);
+            StatefulAudioProcessor *processor = audioGraphBuilder.getAudioProcessor(project.getSelectedProcessor());
             if (processor != nullptr) {
                 for (int i = 0; i < processor->getNumParameters(); i++) {
                     auto *slider = processorSliders.getUnchecked(i);
@@ -129,13 +127,8 @@ private:
     }
 
     void itemRemoved(ValueTree item) override {
-        if (attachedProcessorUuid == item.getProperty(IDs::uuid).toString()) {
-            for (auto *processorSlider : processorSliders) {
-                processorSlider->setVisible(false);
-            }
-            for (auto *processorLabel : processorLabels) {
-                processorLabel->setVisible(false);
-            }
+        if (item == project.getSelectedProcessor()) {
+            itemSelected(ValueTree());
         }
     }
 };

@@ -53,8 +53,7 @@ private:
 
         if (!item.isValid()) {
         } else if (item.hasType(IDs::PROCESSOR)) {
-            attachedProcessorUuid = item.getProperty(IDs::uuid, project.getUndoManager());
-            StatefulAudioProcessor *processor = audioGraphBuilder.getAudioProcessorWithUuid(attachedProcessorUuid);
+            StatefulAudioProcessor *processor = audioGraphBuilder.getAudioProcessor(project.getSelectedProcessor());
             if (processor != nullptr) {
                 for (int i = 0; i < processor->getNumParameters(); i++) {
                     Slider *slider = sliders.getUnchecked(i);
@@ -73,22 +72,14 @@ private:
     }
 
     void itemRemoved(ValueTree item) override {
-        if (attachedProcessorUuid == item.getProperty(IDs::uuid).toString()) {
-            if (item.hasType(IDs::PROCESSOR)) {
-                for (auto *slider : sliders) {
-                    slider->setVisible(false);
-                }
-                for (auto *label : labels) {
-                    label->setVisible(false);
-                }
-            }
+        if (item == project.getSelectedProcessor()) {
+            itemSelected(ValueTree());
         }
     }
 
 private:
     Project &project;
     AudioGraphBuilder &audioGraphBuilder;
-    String attachedProcessorUuid;
 
     OwnedArray<Slider> sliders;
     OwnedArray<Label> labels;

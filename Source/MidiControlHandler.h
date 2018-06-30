@@ -64,6 +64,9 @@ public:
                 case Push2::addTrack:
                     project.createAndAddTrack();
                     return;
+                case Push2::addDevice:
+                    project.createAndAddProcessor(GainProcessor::name()); // TODO bring up selection menu instead
+                    return;
                 case Push2::up:
                     return project.moveSelectionUp();
                 case Push2::down:
@@ -93,14 +96,13 @@ private:
     bool isShiftHeld = false;
 
     void itemSelected(ValueTree item) override {
-        if (!item.isValid()) {
-        } else if (item.hasType(IDs::PROCESSOR)) {
-            currentProcessorToControl = audioGraphBuilder.getAudioProcessorWithUuid(item.getProperty(IDs::uuid, project.getUndoManager()));
+        if (item.hasType(IDs::PROCESSOR)) {
+            currentProcessorToControl = audioGraphBuilder.getAudioProcessor(project.getSelectedProcessor());
         }
     }
 
     void itemRemoved(ValueTree item) override {
-        if (item.hasType(IDs::PROCESSOR)) {
+        if (item == project.getSelectedProcessor()) {
             currentProcessorToControl = nullptr;
         }
     }

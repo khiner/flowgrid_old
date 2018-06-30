@@ -43,7 +43,7 @@ public:
         changeListeners.remove(listener);
     }
 
-    void sendItemSelectedMessage(ValueTree item) {
+    virtual void sendItemSelectedMessage(ValueTree item) {
         if (MessageManager::getInstance()->isThisTheMessageThread()) {
             changeListeners.call(&ProjectChangeListener::itemSelected, item);
         } else {
@@ -53,7 +53,7 @@ public:
         }
     }
 
-    void sendItemRemovedMessage(ValueTree item) {
+    virtual void sendItemRemovedMessage(ValueTree item) {
         if (MessageManager::getInstance()->isThisTheMessageThread()) {
             changeListeners.call(&ProjectChangeListener::itemRemoved, item);
         } else {
@@ -168,10 +168,9 @@ protected:
         if (parentTree == state) {
             TreeViewItem *childItem = this->getSubItem(parentTree.indexOf(child));
             if (childItem != nullptr) {
+                childItem->setSelected(true, true, sendNotification);
                 if (child[IDs::selected]) {
                     child.sendPropertyChangeMessage(IDs::selected);
-                } else {
-                    childItem->setSelected(true, true, sendNotification);
                 }
             }
         }
@@ -384,7 +383,7 @@ public:
 
 
 class Project : public ValueTreeItem,
-             public ProjectChangeBroadcaster {
+                public ProjectChangeBroadcaster {
 public:
     Project(const ValueTree &v, UndoManager &um)
             : ValueTreeItem(v, um) {
@@ -392,6 +391,14 @@ public:
             state = createDefaultProject();
         }
         jassert (state.hasType(IDs::PROJECT));
+    }
+
+    ValueTree getSelectedTrack() {
+        return selectedTrack;
+    }
+
+    ValueTree getSelectedProcessor() {
+        return selectedProcessor;
     }
 
     void moveSelectionUp() {
@@ -463,6 +470,15 @@ public:
         return track;
     }
 
+    ValueTree createAndAddProcessor(const String& name, bool undoable=true) {
+        ValueTree selectedTrack = getSelectedTrack();
+        if (selectedTrack.isValid()) {
+            return createAndAddProcessor(selectedTrack, name, undoable);
+        } else {
+            return ValueTree();
+        }
+    }
+
     ValueTree createAndAddProcessor(ValueTree &track, const String& name, bool undoable=true) {
         ValueTree processor(IDs::PROCESSOR);
         Helpers::createUuidProperty(processor);
@@ -484,6 +500,37 @@ public:
     bool canBeSelected() const override {
         return false;
     }
+
+    void sendItemSelectedMessage(ValueTree item) override {
+        if (item.hasType(IDs::TRACK)) {
+            selectedTrack = item;
+        } else if (item.getParent().hasType(IDs::TRACK)) {
+            selectedTrack = item.getParent();
+        } else {
+            selectedTrack = ValueTree();
+        }
+        if (item.hasType(IDs::PROCESSOR)) {
+            selectedProcessor = item;
+        } else {
+            selectedProcessor = ValueTree();
+        }
+
+        ProjectChangeBroadcaster::sendItemSelectedMessage(item);
+    }
+
+    void sendItemRemovedMessage(ValueTree item) override {
+        if (item == selectedTrack) {
+            selectedTrack = ValueTree();
+        }
+        if (item == selectedProcessor) {
+            selectedProcessor = ValueTree();
+        }
+        ProjectChangeBroadcaster::sendItemSelectedMessage(item);
+    }
+
+private:
+    ValueTree selectedTrack;
+    ValueTree selectedProcessor;
 };
 
 

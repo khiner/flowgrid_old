@@ -48,9 +48,9 @@ struct AudioGraphClasses {
             return state.hasType(IDs::PROCESSOR);
         }
 
-        StatefulAudioProcessor *getAudioProcessorWithUuid(String& uuid) {
+        StatefulAudioProcessor *getAudioProcessor(ValueTree &state) {
             for (auto *processor : objects) {
-                if (processor->state[IDs::uuid] == uuid) {
+                if (processor->state == state) {
                     return processor->source.get();
                 }
             }
@@ -114,8 +114,8 @@ struct AudioGraphClasses {
             }
         }
 
-        StatefulAudioProcessor *getAudioProcessorWithUuid(String& uuid) {
-            return processorList->getAudioProcessorWithUuid(uuid);
+        StatefulAudioProcessor *getAudioProcessor(ValueTree &state) {
+            return processorList->getAudioProcessor(state);
         }
 
         StatefulAudioProcessor *getAudioProcessorWithName(const String &name) {
@@ -152,9 +152,9 @@ struct AudioGraphClasses {
             freeObjects();
         }
 
-        StatefulAudioProcessor *getAudioProcessorWithUuid(String& uuid) {
+        StatefulAudioProcessor *getAudioProcessor(ValueTree &state) {
             for (auto *track : objects) {
-                StatefulAudioProcessor* audioProcessor = track->getAudioProcessorWithUuid(uuid);
+                StatefulAudioProcessor* audioProcessor = track->getAudioProcessor(state);
                 if (audioProcessor != nullptr) {
                     return audioProcessor;
                 }
@@ -212,11 +212,11 @@ public:
         return masterTrack->getAudioProcessorWithName(GainProcessor::name());
     }
 
-    StatefulAudioProcessor *getAudioProcessorWithUuid(String uuid) {
-        if (auto *processor = masterTrack->getAudioProcessorWithUuid(uuid)) {
+    StatefulAudioProcessor *getAudioProcessor(ValueTree state) {
+        if (auto *processor = masterTrack->getAudioProcessor(state)) {
             return processor;
         }
-        return trackList->getAudioProcessorWithUuid(uuid);
+        return trackList->getAudioProcessor(state);
     }
 
     /*** JUCE override methods ***/
