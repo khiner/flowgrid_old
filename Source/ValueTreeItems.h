@@ -432,7 +432,6 @@ public:
             const String& trackName = track.getProperty(IDs::name);
 
             ValueTree processor = createAndAddProcessor(track, SineBank::name(), false);
-            processor.setProperty(IDs::selected, true, nullptr);
 
             for (int cn = 0; cn < 3; ++cn) {
                 ValueTree c(IDs::CLIP);
