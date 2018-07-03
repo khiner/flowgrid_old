@@ -5,7 +5,7 @@
 #include "push2/Push2DisplayBridge.h"
 #include "AudioGraphBuilder.h"
 #include "Push2ProcessorView.h"
-#include "Push2FileBrowser.h"
+#include "Push2ProcessorSelector.h"
 
 class Push2Component :
         public Timer,
@@ -13,14 +13,16 @@ class Push2Component :
         private ProjectChangeListener {
 public:
     explicit Push2Component(Project &project, AudioGraphBuilder &audioGraphBuilder)
-            : project(project), audioGraphBuilder(audioGraphBuilder) {
+            : project(project), audioGraphBuilder(audioGraphBuilder), processorSelector(project.getProcessorNames()) {
         startTimer(60);
 
         addChildComponent(processorView);
+        addChildComponent(processorSelector);
 
         project.addChangeListener(this);
         setSize(Push2Display::WIDTH, Push2Display::HEIGHT);
         processorView.setBounds(getBounds());
+        processorSelector.setBounds(getBounds());
     }
 
     ~Push2Component() override {
@@ -28,7 +30,18 @@ public:
     }
 
     void openProcessorSelector() {
+        for (auto *c : getChildren())
+            c->setVisible(false);
+        processorSelector.setVisible(true);
+    }
 
+    void aboveScreenButtonPressed(int buttonIndex) {
+        if (processorSelector.isVisible()) {
+            const String &processorId = processorSelector.selectProcessor(buttonIndex);
+            if (!processorId.isEmpty()) {
+                project.createAndAddProcessor(processorId);
+            }
+        }
     }
 
 private:
@@ -77,4 +90,5 @@ private:
     AudioGraphBuilder &audioGraphBuilder;
 
     Push2ProcessorView processorView;
+    Push2ProcessorSelector processorSelector;
 };

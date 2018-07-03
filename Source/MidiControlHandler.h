@@ -51,6 +51,9 @@ public:
         }
 
         if (Push2::isButtonPressControlMessage(midiMessage)) {
+            if (Push2::isAboveScreenButtonCcNumber(ccNumber)) {
+                push2Component->aboveScreenButtonPressed(ccNumber - Push2::topDisplayButton1);
+            }
             switch(ccNumber) {
                 case Push2::shift:
                     isShiftHeld = true;

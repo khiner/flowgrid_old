@@ -77,6 +77,10 @@ public:
         return ccNumber >= topKnob3 && ccNumber <= topKnob10;
     }
 
+    static bool isAboveScreenButtonCcNumber(int ccNumber) {
+        return ccNumber >= topDisplayButton1 && ccNumber <= topDisplayButton8;
+    }
+
     static bool isButtonPressControlMessage(const MidiMessage &message) {
         return message.getControllerValue() == 127;
     }
