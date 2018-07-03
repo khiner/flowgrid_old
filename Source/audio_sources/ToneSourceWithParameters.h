@@ -6,7 +6,7 @@
 
 class ToneSourceWithParameters {
 public:
-    explicit ToneSourceWithParameters(ValueTree& state, UndoManager &undoManager, const String &idSuffix):
+    explicit ToneSourceWithParameters(const ValueTree& state, UndoManager &undoManager, const String &idSuffix):
             source(new ToneGeneratorAudioSource), state(state),
             ampParamId("amp_" + idSuffix), freqParamId("freq_" + idSuffix),
             ampParameter(state, undoManager, ampParamId, "Amp" + idSuffix, "dB", NormalisableRange<double>(0.0f, 1.0f), 0.2f, [](float value) { return String(Decibels::gainToDecibels(value), 3) + " dB"; }, nullptr),
@@ -34,7 +34,7 @@ public:
 
 private:
     std::unique_ptr<ToneGeneratorAudioSource> source;
-    ValueTree& state;
+    ValueTree state;
 
     String ampParamId;
     String freqParamId;

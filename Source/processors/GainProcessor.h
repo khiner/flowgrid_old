@@ -6,15 +6,15 @@
 
 class GainProcessor : public StatefulAudioProcessor, public Utilities::ValueTreePropertyChangeListener  {
 public:
-    explicit GainProcessor(ValueTree &state, UndoManager &undoManager) :
-            StatefulAudioProcessor(0, 2, state, undoManager),
+    explicit GainProcessor(const ValueTree &state, UndoManager &undoManager) :
+            StatefulAudioProcessor(2, 2, state, undoManager),
             gainParameter(state, undoManager, "gain", "Gain", "dB",
                           NormalisableRange<double>(0.0f, 1.0f), 0.5f,
                           [](float value) { return String(Decibels::gainToDecibels(value), 3) + " dB"; }, nullptr),
             gain(gainParameter.defaultValue) {
 
         gain.reset(44100, 0.05); // TODO use actual sample rate from device manager
-        state.addListener(this);
+        this->state.addListener(this);
     }
 
     ~GainProcessor() {

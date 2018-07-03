@@ -6,7 +6,7 @@
 
 class StatefulAudioProcessor : public DefaultAudioProcessor {
 public:
-    StatefulAudioProcessor(int inputChannelCount, int outputChannelCount, ValueTree &state, UndoManager &undoManager) :
+    StatefulAudioProcessor(int inputChannelCount, int outputChannelCount, const ValueTree &state, UndoManager &undoManager) :
             DefaultAudioProcessor(inputChannelCount, outputChannelCount), state(state), undoManager(undoManager) {
     }
 
@@ -36,6 +36,6 @@ public:
         return v;
     }
 
-    ValueTree &state;
+    ValueTree state;
     UndoManager &undoManager;
 };

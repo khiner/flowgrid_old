@@ -4,7 +4,7 @@
 #include "Identifiers.h"
 
 struct Parameter {
-    Parameter(ValueTree& state, UndoManager &undoManager, String paramID, String paramName, const String labelText, NormalisableRange<double> range,
+    Parameter(const ValueTree& state, UndoManager &undoManager, String paramID, String paramName, const String labelText, NormalisableRange<double> range,
                   float defaultVal, std::function<String (const float)> valueToTextFunction,
                   std::function<float(const String &)> textToValueFunction)
     : state(state), undoManager(undoManager), paramId(std::move(paramID)), paramName(std::move(paramName)), labelText(labelText), range(std::move(range)), defaultValue(defaultVal),
@@ -37,7 +37,7 @@ struct Parameter {
         slider->getValueObject().referTo(getValueObject());
     }
 
-    ValueTree &state;
+    ValueTree state;
     UndoManager &undoManager;
 
     const String paramId;

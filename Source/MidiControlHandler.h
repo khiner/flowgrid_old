@@ -32,7 +32,7 @@ public:
         if (Push2::isEncoderCcNumber(ccNumber)) {
             Parameter *parameter = nullptr;
             if (ccNumber == Push2::masterKnob) {
-                parameter = audioGraphBuilder.getGainProcessor()->getParameterInfo(0);
+                parameter = audioGraphBuilder.getMasterGainProcessor()->getParameterInfo(0);
             } else if (Push2::isAboveScreenEncoderCcNumber(ccNumber)) {
                 if (currentProcessorToControl != nullptr) {
                     int parameterIndex = ccNumber - Push2::ccNumberForTopKnobIndex(0);
@@ -107,7 +107,8 @@ private:
 
     void itemSelected(ValueTree item) override {
         if (item.hasType(IDs::PROCESSOR)) {
-            currentProcessorToControl = audioGraphBuilder.getAudioProcessor(project.getSelectedProcessor());
+            String uuid = item[IDs::uuid];
+            currentProcessorToControl = audioGraphBuilder.getAudioProcessor(uuid);
         }
     }
 

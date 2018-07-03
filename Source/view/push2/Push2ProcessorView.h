@@ -30,8 +30,12 @@ public:
     }
 
     void setProcessor(StatefulAudioProcessor *processor) {
+        for (auto *c : getChildren())
+            c->setVisible(false);
         for (int i = 0; i < processor->getNumParameters(); i++) {
-            processor->getParameterInfo(i)->attachSlider(sliders.getUnchecked(i), labels.getUnchecked(i));
+            Slider *slider = sliders.getUnchecked(i);
+            processor->getParameterInfo(i)->attachSlider(slider, labels.getUnchecked(i));
+            slider->setVisible(true);
         }
     }
     

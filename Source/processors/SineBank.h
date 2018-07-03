@@ -6,7 +6,7 @@
 
 class SineBank : public StatefulAudioProcessor, public Utilities::ValueTreePropertyChangeListener  {
 public:
-    explicit SineBank(ValueTree &state, UndoManager &undoManager) :
+    explicit SineBank(const ValueTree &state, UndoManager &undoManager) :
             StatefulAudioProcessor(0, 2, state, undoManager),
             toneSource1(state, undoManager, "1"),
             toneSource2(state, undoManager, "2"),
@@ -18,7 +18,7 @@ public:
         mixerAudioSource.addInputSource(toneSource3.get(), false);
         mixerAudioSource.addInputSource(toneSource4.get(), false);
 
-        state.addListener(this);
+        this->state.addListener(this);
     }
 
     ~SineBank() {

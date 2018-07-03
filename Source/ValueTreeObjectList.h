@@ -4,9 +4,9 @@
 
 namespace Utilities {
     template<typename ObjectType, typename CriticalSectionType = juce::DummyCriticalSection>
-    class ValueTreeObjectList : public juce::ValueTree::Listener {
+    class ValueTreeObjectList : public ValueTree::Listener {
     public:
-        explicit ValueTreeObjectList(const juce::ValueTree &parentTree)
+        explicit ValueTreeObjectList(const ValueTree &parentTree)
                 : parent(parentTree) {
             parent.addListener(this);
         }

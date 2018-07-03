@@ -91,7 +91,8 @@ private:
             const String &name = item.getProperty(IDs::name);
             titleLabel.setText("Processor Selected: " + name, dontSendNotification);
 
-            StatefulAudioProcessor *processor = audioGraphBuilder.getAudioProcessor(project.getSelectedProcessor());
+            String uuid = item[IDs::uuid];
+            StatefulAudioProcessor *processor = audioGraphBuilder.getAudioProcessor(uuid);
             if (processor != nullptr) {
                 for (int i = 0; i < processor->getNumParameters(); i++) {
                     auto *slider = processorSliders.getUnchecked(i);

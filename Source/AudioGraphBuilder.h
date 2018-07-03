@@ -1,236 +1,202 @@
 #pragma once
 
-#include <Utilities.h>
-#include <ValueTreeObjectList.h>
 #include <Identifiers.h>
 
 #include "JuceHeader.h"
-#include <audio_sources/ToneSourceWithParameters.h>
 #include <processors/SineBank.h>
-#include <processors/DefaultAudioProcessor.h>
 #include <processors/GainProcessor.h>
 
-static std::unique_ptr<StatefulAudioProcessor> createStatefulAudioProcessorFromId(const String &id,
-                                                                                  ValueTree &state, UndoManager &undoManager) {
+static StatefulAudioProcessor *createStatefulAudioProcessorFromId(const String &id, const ValueTree &state, UndoManager &undoManager) {
     if (id == SineBank::name()) {
-        return std::make_unique<SineBank>(state, undoManager);
+        return new SineBank(state, undoManager);
     } else if (id == GainProcessor::name()) {
-        return std::make_unique<GainProcessor>(state, undoManager);
+        return new GainProcessor(state, undoManager);
     } else {
         return nullptr;
     }
 }
 
-struct AudioGraphClasses {
-    struct AudioProcessorWrapper {
-        explicit AudioProcessorWrapper(const ValueTree &state, UndoManager &undoManager)
-                : state(state), source(createStatefulAudioProcessorFromId(state[IDs::name], this->state, undoManager)) {
-            source->updateValueTree();
-        }
-
-        ValueTree state;
-
-        std::unique_ptr<StatefulAudioProcessor> source;
-    };
-
-    class ProcessorList
-            : public Utilities::ValueTreeObjectList<AudioProcessorWrapper> {
-    public:
-        explicit ProcessorList(const ValueTree &state, UndoManager &undoManager) : Utilities::ValueTreeObjectList<AudioProcessorWrapper>(state), undoManager(undoManager) {
-            rebuildObjects();
-        }
-
-        ~ProcessorList() override {
-            freeObjects();
-        }
-
-        bool isSuitableType(const ValueTree &state) const override {
-            return state.hasType(IDs::PROCESSOR);
-        }
-
-        StatefulAudioProcessor *getAudioProcessor(ValueTree &state) {
-            for (auto *processor : objects) {
-                if (processor->state == state) {
-                    return processor->source.get();
-                }
-            }
-            return nullptr;
-        }
-
-        StatefulAudioProcessor *getAudioProcessorWithName(const String &name) {
-            for (auto *processor : objects) {
-                if (processor->state[IDs::name] == name) {
-                    return processor->source.get();
-                }
-            }
-            return nullptr;
-        }
-
-        AudioProcessorWrapper *findFirstProcessor() {
-            return objects.getFirst();
-        }
-
-        AudioProcessorWrapper *createNewObject(const ValueTree &state) override {
-            auto *processor = new AudioProcessorWrapper(state, undoManager);
-            return processor;
-        }
-
-        void deleteObject(AudioProcessorWrapper *processor) override {
-            delete processor;
-        }
-
-        void objectRemoved(AudioProcessorWrapper *) override {
-
-        }
-
-        void objectOrderChanged() override {}
-
-        void newObjectAdded(AudioProcessorWrapper *processor) override {
-            // Kind of crappy - the order of the listeners seems to be nondeterministic,
-            // so send (maybe _another_) select message that will update the UI in case this was already selected.
-            if (processor->state[IDs::selected]) {
-                processor->state.sendPropertyChangeMessage(IDs::selected);
-            } else {
-                processor->state.setProperty(IDs::selected, true, nullptr);
-            }
-        }
-
-    private:
-        UndoManager &undoManager;
-    };
-
-    struct AudioTrack : public DefaultAudioProcessor, public Utilities::ValueTreePropertyChangeListener {
-        explicit AudioTrack(ValueTree state, UndoManager &undoManager) : state(state) {
-            processorList = std::make_unique<AudioGraphClasses::ProcessorList>(state, undoManager);
-        }
-
-        const String getName() const override { return "MainProcessor"; }
-
-        int getNumParameters() override { return 0; }
-
-        void processBlock(AudioSampleBuffer &buffer, MidiBuffer &midiMessages) override {
-            for (auto *processor : processorList->objects) {
-                processor->source->processBlock(buffer, midiMessages);
-            }
-        }
-
-        StatefulAudioProcessor *getAudioProcessor(ValueTree &state) {
-            return processorList->getAudioProcessor(state);
-        }
-
-        StatefulAudioProcessor *getAudioProcessorWithName(const String &name) {
-            return processorList->getAudioProcessorWithName(name);
-        }
-
-        StatefulAudioProcessor *getFirstAudioProcessor() {
-            AudioProcessorWrapper *firstProcessor = processorList->findFirstProcessor(); // TODO this will make more sense with AudioGraphs
-            return firstProcessor != nullptr ? firstProcessor->source.get() : nullptr;
-        }
-
-        ValueTree state;
-
-    private:
-        void valueTreePropertyChanged(juce::ValueTree &v, const juce::Identifier &i) override {
-        }
-
-        std::unique_ptr<AudioGraphClasses::ProcessorList> processorList;
-    };
-
-    class AudioTrackList
-            : public DefaultAudioProcessor, public Utilities::ValueTreeObjectList<AudioTrack> {
-
-    public:
-        explicit AudioTrackList(ValueTree &projectState, UndoManager &undoManager) :
-                DefaultAudioProcessor(2, 2),
-                Utilities::ValueTreeObjectList<AudioTrack>(projectState),
-                undoManager(undoManager) {
-
-            rebuildObjects();
-        }
-
-        ~AudioTrackList() override {
-            freeObjects();
-        }
-
-        StatefulAudioProcessor *getAudioProcessor(ValueTree &state) {
-            for (auto *track : objects) {
-                StatefulAudioProcessor* audioProcessor = track->getAudioProcessor(state);
-                if (audioProcessor != nullptr) {
-                    return audioProcessor;
-                }
-            }
-            return nullptr;
-        }
-
-        void newObjectAdded(AudioTrack *audioTrack) override {
-            //mixerAudioSource.addInputSource(audioTrack->getSelectedAudioProcessor(), false);
-        }
-
-        /*** JUCE override methods ***/
-        const String getName() const override { return "MainProcessor"; }
-
-        int getNumParameters() override { return 0; }
-
-        void processBlock(AudioSampleBuffer &buffer, MidiBuffer &midiMessages) override {
-            for (auto *track : objects) {
-                track->processBlock(buffer, midiMessages);
-            }
-        }
-
-        bool isSuitableType(const juce::ValueTree &v) const override {
-            return v.hasType(IDs::TRACK);
-        }
-
-        AudioTrack *createNewObject(const juce::ValueTree &v) override {
-            auto *at = new AudioTrack(v, undoManager);
-            return at;
-        }
-
-        void deleteObject(AudioTrack *at) override {
-            delete at;
-        }
-
-        void objectRemoved(AudioTrack *) override {}
-
-        void objectOrderChanged() override {}
-
-    private:
-        UndoManager &undoManager;
-    };
-};
-
-
-class AudioGraphBuilder : public DefaultAudioProcessor {
+class AudioGraphBuilder : public AudioProcessorGraph, private ValueTree::Listener {
 public:
-    explicit AudioGraphBuilder(ValueTree projectState, UndoManager &undoManager)
-            : DefaultAudioProcessor(0, 2) {
-        trackList = std::make_unique<AudioGraphClasses::AudioTrackList>(projectState, undoManager);
-        masterTrack = std::make_unique<AudioGraphClasses::AudioTrack>(projectState.getChildWithName(IDs::MASTER_TRACK), undoManager);
+    explicit AudioGraphBuilder(const ValueTree &projectState, UndoManager &undoManager)
+            : projectState(projectState), undoManager(undoManager) {
+        this->projectState.addListener(this);
+        enableAllBuses();
+        audioOutputNode = addNode(new AudioGraphIOProcessor(AudioGraphIOProcessor::audioOutputNode));
+
+        recursivelyInitializeWithState(getMasterTrack());
+        recursivelyInitializeWithState(projectState);
     }
 
-    StatefulAudioProcessor *getGainProcessor() {
-        return masterTrack->getAudioProcessorWithName(GainProcessor::name());
+    StatefulAudioProcessor *getAudioProcessor(String &uuid) {
+        auto nodeID = getNodeID(uuid);
+        return nodeID != -1 ? dynamic_cast<StatefulAudioProcessor *>(getNodeForId(nodeID)->getProcessor()) : nullptr;
     }
 
-    StatefulAudioProcessor *getAudioProcessor(ValueTree state) {
-        if (auto *processor = masterTrack->getAudioProcessor(state)) {
-            return processor;
-        }
-        return trackList->getAudioProcessor(state);
+    const ValueTree getMasterTrack() {
+        return projectState.getChildWithName(IDs::MASTER_TRACK);
     }
 
-    /*** JUCE override methods ***/
-    const String getName() const override { return "MainProcessor"; }
-
-    int getNumParameters() override { return 0; }
-
-    void processBlock(AudioSampleBuffer &buffer, MidiBuffer &midiMessages) override {
-        trackList->processBlock(buffer, midiMessages);
-        masterTrack->processBlock(buffer, midiMessages);
+    StatefulAudioProcessor *getMasterGainProcessor() {
+        const ValueTree masterTrack = getMasterTrack();
+        ValueTree gain = masterTrack.getChildWithProperty(IDs::name, GainProcessor::name());
+        String uuid = gain[IDs::uuid];
+        return getAudioProcessor(uuid);
     }
 
 private:
-    std::unique_ptr<AudioGraphClasses::AudioTrackList> trackList;
-    std::unique_ptr<AudioGraphClasses::AudioTrack> masterTrack;
+    ValueTree projectState;
+    UndoManager &undoManager;
+    Node::Ptr audioOutputNode;
+    std::unordered_map<String, NodeID> nodeIdForUuid;
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AudioGraphBuilder)
+
+    const NodeID getNodeID(String &uuid) {
+        auto pair = nodeIdForUuid.find(uuid);
+        return pair != nodeIdForUuid.end() ? pair->second : -1;
+    }
+
+    void recursivelyInitializeWithState(const ValueTree &state) {
+        if (state.hasType(IDs::PROCESSOR)) {
+            return addProcessor(state);
+        }
+        for (int i = 0; i < state.getNumChildren(); i++) {
+            const ValueTree &child = state.getChild(i);
+            if (!child.hasType(IDs::MASTER_TRACK)) {
+                recursivelyInitializeWithState(child);
+            }
+        }
+    }
+
+    void addProcessor(const ValueTree &processorState) {
+        auto *processor = createStatefulAudioProcessorFromId(processorState[IDs::name], processorState, undoManager);
+        processor->updateValueTree();
+
+        const Node::Ptr &newNode = addNode(processor);
+        nodeIdForUuid.insert(std::pair<String, NodeID>(processor->state[IDs::uuid].toString(), newNode->nodeID));
+        String previousProcessorUuid = processorState.getSibling(-1)[IDs::uuid];
+        NodeID oldNodeID = getNodeID(previousProcessorUuid);
+        if (processorState.getParent().hasType(IDs::MASTER_TRACK)) {
+            for (int channel = 0; channel < 2; ++channel) {
+                if (oldNodeID != -1) {
+                    removeConnection({{oldNodeID,      channel},
+                                      {audioOutputNode->nodeID, channel}});
+                    addConnection({{oldNodeID,                 channel},
+                                   {newNode->nodeID, channel}});
+                }
+                addConnection({{newNode->nodeID,         channel},
+                               {audioOutputNode->nodeID, channel}});
+            }
+        } else {
+            String firstMasterProcessorUuid = projectState.getChildWithName(IDs::MASTER_TRACK).getChildWithName(IDs::PROCESSOR)[IDs::uuid];
+            NodeID firstMasterTrackNodeID = getNodeID(firstMasterProcessorUuid);
+            if (firstMasterTrackNodeID != -1) {
+                for (int channel = 0; channel < 2; ++channel) {
+                    if (oldNodeID != -1) {
+                        removeConnection({{oldNodeID,              channel},
+                                          {firstMasterTrackNodeID, channel}});
+                        addConnection({{oldNodeID,                 channel},
+                                       {newNode->nodeID, channel}});
+                    }
+                    addConnection({{newNode->nodeID,                 channel},
+                                   {firstMasterTrackNodeID, channel}});
+                }
+            }
+        }
+        // Kind of crappy - the order of the listeners seems to be nondeterministic,
+        // so send (maybe _another_) select message that will update the UI in case this was already selected.
+        if (processorState[IDs::selected]) {
+            processor->state.sendPropertyChangeMessage(IDs::selected);
+        }
+    }
+
+    void valueTreePropertyChanged (ValueTree& tree, const Identifier& property) override {}
+
+    void valueTreeChildAdded (ValueTree& parent, ValueTree& child) override {
+        if (child.hasType(IDs::PROCESSOR)) {
+            addProcessor(child);
+        }
+    }
+
+    void valueTreeChildRemoved (ValueTree& parent, ValueTree& child, int indexFromWhichChildWasRemoved) override {
+        if (child.hasType(IDs::PROCESSOR)) {
+            String uuid = child[IDs::uuid].toString();
+            Node *removedNode = getNodeForId(getNodeID(uuid));
+
+            removeNodeConnections(removedNode);
+
+            nodeIdForUuid.erase(uuid);
+            removeNode(removedNode);
+        }
+    }
+
+    void valueTreeChildOrderChanged (ValueTree& parent, int oldIndex, int newIndex) override {
+        ValueTree child = parent.getChild(newIndex);
+        if (child.hasType(IDs::PROCESSOR)) {
+            String uuid = child[IDs::uuid].toString();
+            Node *node = getNodeForId(getNodeID(uuid));
+            removeNodeConnections(node);
+            insertNodeConnections(node, child);
+        }
+    }
+
+    void valueTreeParentChanged (ValueTree& treeWhoseParentHasChanged) override {
+        // TODO
+    }
+
+    void valueTreeRedirected (ValueTree& treeWhichHasBeenChanged) override {}
+
+    void removeNodeConnections(Node *node) {
+        for (auto& o : node->outputs) {
+            int channel = o.thisChannel;
+            jassert(o.otherChannel == channel);
+            removeConnection({{node->nodeID,      channel},
+                              {o.otherNode->nodeID, channel}});
+            for (auto& i : node->inputs) {
+                jassert(i.thisChannel == i.otherChannel);
+                if (i.thisChannel == channel) {
+                    addConnection({{i.otherNode->nodeID, channel},
+                                   {o.otherNode->nodeID, channel}});
+                }
+            }
+        }
+    }
+
+    void insertNodeConnections(Node *node, const ValueTree& child) {
+        const ValueTree &before = child.getSibling(-1);
+        const ValueTree &after = child.getSibling(1);
+
+        if (before.isValid()) {
+            String beforeUuid = before[IDs::uuid].toString();
+            Node *beforeNode = getNodeForId(getNodeID(beforeUuid));
+
+            for (auto& o : beforeNode->outputs) {
+                int channel = o.thisChannel;
+                jassert(o.otherChannel == channel);
+                removeConnection({{beforeNode->nodeID,      channel},
+                                  {o.otherNode->nodeID, channel}});
+                addConnection({{beforeNode->nodeID,      channel},
+                               {node->nodeID, channel}});
+                addConnection({{node->nodeID,      channel},
+                               {o.otherNode->nodeID, channel}});
+            }
+        } else if (after.isValid()) {
+            String afterUuid = after[IDs::uuid].toString();
+            Node *afterNode = getNodeForId(getNodeID(afterUuid));
+
+            for (auto& o : afterNode->inputs) {
+                int channel = o.thisChannel;
+                jassert(o.otherChannel == channel);
+                removeConnection({{o.otherNode->nodeID,      channel},
+                                  {afterNode->nodeID, channel}});
+                addConnection({{o.otherNode->nodeID,      channel},
+                               {node->nodeID, channel}});
+            }
+            for (int channel = 0; channel < afterNode->getProcessor()->getTotalNumInputChannels(); channel++) {
+                addConnection({{node->nodeID,      channel},
+                               {afterNode->nodeID, channel}});
+            }
+        }
+    }
 };

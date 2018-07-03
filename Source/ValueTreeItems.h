@@ -354,9 +354,14 @@ public:
                dragSourceDetails.description == IDs::PROCESSOR.toString();
     }
 
-    void itemDropped(const DragAndDropTarget::SourceDetails &, int insertIndex) override {
-        Helpers::moveItems(*getOwnerView(), Helpers::getSelectedTreeViewItems<Clip>(*getOwnerView()), state,
-                           insertIndex, undoManager);
+    void itemDropped(const DragAndDropTarget::SourceDetails &dragSourceDetails, int insertIndex) override {
+        if (dragSourceDetails.description == IDs::PROCESSOR.toString()) {
+            Helpers::moveItems(*getOwnerView(), Helpers::getSelectedTreeViewItems<Processor>(*getOwnerView()), state,
+                               insertIndex, undoManager);
+        } else if (dragSourceDetails.description == IDs::CLIP.toString()) {
+            Helpers::moveItems(*getOwnerView(), Helpers::getSelectedTreeViewItems<Clip>(*getOwnerView()), state,
+                               insertIndex, undoManager);
+        }
     }
 };
 
@@ -433,20 +438,18 @@ public:
 
         for (int tn = 0; tn < 1; ++tn) {
             ValueTree track = createAndAddTrack(false);
-            const String& trackName = track.getProperty(IDs::name);
-
             ValueTree processor = createAndAddProcessor(track, SineBank::name(), false);
 
-            for (int cn = 0; cn < 3; ++cn) {
-                ValueTree c(IDs::CLIP);
-                Helpers::createUuidProperty(c);
-                c.setProperty(IDs::name, trackName + ", Clip " + String(cn + 1), nullptr);
-                c.setProperty(IDs::start, cn, nullptr);
-                c.setProperty(IDs::length, 1.0, nullptr);
-                c.setProperty(IDs::selected, false, nullptr);
-
-                track.addChild(c, -1, nullptr);
-            }
+//            for (int cn = 0; cn < 3; ++cn) {
+//                ValueTree c(IDs::CLIP);
+//                Helpers::createUuidProperty(c);
+//                c.setProperty(IDs::name, trackName + ", Clip " + String(cn + 1), nullptr);
+//                c.setProperty(IDs::start, cn, nullptr);
+//                c.setProperty(IDs::length, 1.0, nullptr);
+//                c.setProperty(IDs::selected, false, nullptr);
+//
+//                track.addChild(c, -1, nullptr);
+//            }
         }
 
         ValueTree masterTrack(IDs::MASTER_TRACK);

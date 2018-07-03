@@ -69,7 +69,8 @@ private:
 
         if (!item.isValid()) {
         } else if (item.hasType(IDs::PROCESSOR)) {
-            StatefulAudioProcessor *processor = audioGraphBuilder.getAudioProcessor(project.getSelectedProcessor());
+            String uuid = item[IDs::uuid];
+            StatefulAudioProcessor *processor = audioGraphBuilder.getAudioProcessor(uuid);
             if (processor != nullptr) {
                 processorView.setProcessor(processor);
                 processorView.setVisible(true);
