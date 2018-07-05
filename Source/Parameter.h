@@ -31,6 +31,7 @@ struct Parameter {
         if (label != nullptr) {
             label->setText(paramName, dontSendNotification);
         }
+        slider->getValueObject().referTo({});
         slider->setNormalisableRange(range);
         slider->textFromValueFunction = valueToTextFunction;
         slider->valueFromTextFunction = textToValueFunction;
