@@ -32,7 +32,10 @@ public:
         if (Push2::isEncoderCcNumber(ccNumber)) {
             Parameter *parameter = nullptr;
             if (ccNumber == Push2::masterKnob) {
-                parameter = audioGraphBuilder.getMasterGainProcessor()->getParameterInfo(0);
+                StatefulAudioProcessor *gainProcessor = audioGraphBuilder.getMasterGainProcessor();
+                if (gainProcessor != nullptr) {
+                    parameter = gainProcessor->getParameterInfo(1); // TODO get by name since indexes change
+                }
             } else if (Push2::isAboveScreenEncoderCcNumber(ccNumber)) {
                 if (currentProcessorToControl != nullptr) {
                     int parameterIndex = ccNumber - Push2::ccNumberForTopKnobIndex(0);

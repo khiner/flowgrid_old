@@ -13,7 +13,6 @@ public:
                           [](float value) { return String(Decibels::gainToDecibels(value), 3) + " dB"; }, nullptr),
             gain(gainParameter.defaultValue) {
 
-        gain.reset(44100, 0.05); // TODO use actual sample rate from device manager
         this->state.addListener(this);
     }
 
@@ -23,15 +22,16 @@ public:
 
     static const String name() { return "Gain"; }
     const String getName() const override { return GainProcessor::name(); }
+    int getNumParameters() override { return 1; }
 
-    int getNumParameters() override {
-        return 1;
+    void prepareToPlay (double sampleRate, int maximumExpectedSamplesPerBlock) override {
+        gain.reset(getSampleRate(), 0.05);
     }
 
     void valueTreePropertyChanged(ValueTree& tree, const Identifier& p) override {
         if (p == IDs::value) {
             String parameterId = tree.getProperty(IDs::id);
-            if (parameterId == "gain") {
+            if (parameterId == gainParameter.paramId) {
                 gain.setValue(tree[IDs::value]);
             }
         }
@@ -52,8 +52,7 @@ public:
     }
 
     void processBlock(AudioSampleBuffer& buffer, MidiBuffer& midiMessages) override {
-        const AudioSourceChannelInfo &channelInfo = AudioSourceChannelInfo(buffer);
-        gain.applyGain(buffer, channelInfo.numSamples);
+        gain.applyGain(buffer, buffer.getNumSamples());
     }
 
 private:

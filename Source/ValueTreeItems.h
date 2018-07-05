@@ -2,6 +2,7 @@
 
 #include <processors/SineBank.h>
 #include <processors/GainProcessor.h>
+#include <processors/BalanceAndGainProcessor.h>
 #include "view/ColourChangeButton.h"
 #include "Identifiers.h"
 
@@ -406,10 +407,6 @@ public:
         return selectedProcessor;
     }
 
-    StringArray& getProcessorNames() {
-        return processorNames;
-    }
-
     void moveSelectionUp() {
         getOwnerView()->keyPressed(KeyPress(KeyPress::upKey));
     }
@@ -438,7 +435,7 @@ public:
 
         for (int tn = 0; tn < 1; ++tn) {
             ValueTree track = createAndAddTrack(false);
-            ValueTree processor = createAndAddProcessor(track, SineBank::name(), false);
+            createAndAddProcessor(track, SineBank::name(), false);
 
 //            for (int cn = 0; cn < 3; ++cn) {
 //                ValueTree c(IDs::CLIP);
@@ -455,7 +452,7 @@ public:
         ValueTree masterTrack(IDs::MASTER_TRACK);
         Helpers::createUuidProperty(masterTrack);
         masterTrack.setProperty(IDs::name, "Master", nullptr);
-        createAndAddProcessor(masterTrack, GainProcessor::name(), false);
+        createAndAddProcessor(masterTrack, BalanceAndGainProcessor::name(), false);
 
         state.addChild(masterTrack, -1, nullptr);
 
@@ -473,6 +470,8 @@ public:
 
         state.addChild(track, -1, undoable ? &undoManager : nullptr);
 
+        createAndAddProcessor(track, BalanceAndGainProcessor::name(), undoable);
+        
         return track;
     }
 
@@ -489,7 +488,11 @@ public:
         ValueTree processor(IDs::PROCESSOR);
         Helpers::createUuidProperty(processor);
         processor.setProperty(IDs::name, name, nullptr);
-        track.addChild(processor, -1, undoable ? &undoManager : nullptr);
+
+        const ValueTree &gainAndBalanceProcessor = track.getChildWithProperty(IDs::name, BalanceAndGainProcessor::name());
+        // Insert new processors _before_ the first gain and balance processor, or at the end if there isn't one.
+        int insertIndex = gainAndBalanceProcessor.isValid() ? track.indexOf(gainAndBalanceProcessor) : -1;
+        track.addChild(processor, insertIndex, undoable ? &undoManager : nullptr);
 
         return processor;
     }
@@ -537,8 +540,6 @@ public:
 private:
     ValueTree selectedTrack;
     ValueTree selectedProcessor;
-
-    StringArray processorNames { GainProcessor::name(), SineBank::name() };
 };
 
 

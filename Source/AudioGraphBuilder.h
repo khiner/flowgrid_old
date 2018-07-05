@@ -11,6 +11,8 @@ static StatefulAudioProcessor *createStatefulAudioProcessorFromId(const String &
         return new SineBank(state, undoManager);
     } else if (id == GainProcessor::name()) {
         return new GainProcessor(state, undoManager);
+    } else if (id == BalanceAndGainProcessor::name()) {
+        return new BalanceAndGainProcessor(state, undoManager);
     } else {
         return nullptr;
     }
@@ -39,7 +41,7 @@ public:
 
     StatefulAudioProcessor *getMasterGainProcessor() {
         const ValueTree masterTrack = getMasterTrack();
-        ValueTree gain = masterTrack.getChildWithProperty(IDs::name, GainProcessor::name());
+        ValueTree gain = masterTrack.getChildWithProperty(IDs::name, BalanceAndGainProcessor::name());
         String uuid = gain[IDs::uuid];
         return getAudioProcessor(uuid);
     }

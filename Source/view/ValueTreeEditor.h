@@ -3,6 +3,7 @@
 #include <Identifiers.h>
 #include <ValueTreeItems.h>
 #include <view/SelectionPanel.h>
+#include <processors/ProcessorIds.h>
 
 class ValueTreeEditor : public Component,
                         public DragAndDropContainer,
@@ -30,7 +31,7 @@ public:
         redoButton.addListener(this);
         createTrackButton.addListener(this);
         addProcessorComboBox.addListener(this);
-        addProcessorComboBox.addItemList(project.getProcessorNames(), 1);
+        addProcessorComboBox.addItemList(processorIds, 1);
         addProcessorComboBox.setTextWhenNothingSelected("Create processor");
         startTimer(500);
         setSize(800, 600);
@@ -93,7 +94,7 @@ public:
     void comboBoxChanged(ComboBox* cb) override  {
         if (cb == &addProcessorComboBox) {
             if (project.getSelectedTrack().isValid()) {
-                project.createAndAddProcessor(project.getProcessorNames()[cb->getSelectedId() - 1]);
+                project.createAndAddProcessor(processorIds[cb->getSelectedId() - 1]);
             }
         }
         cb->setSelectedItemIndex(-1, dontSendNotification); // don't keep displaying the selected item

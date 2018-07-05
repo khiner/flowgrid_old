@@ -4,7 +4,7 @@
 
 class Push2ProcessorSelector : public Component {
 public:
-    explicit Push2ProcessorSelector(StringArray &processorIds) : processorIds(processorIds) {
+    explicit Push2ProcessorSelector(const StringArray &processorIds) : processorIds(processorIds) {
         for (const String &processorId : processorIds) {
             auto *label = new Label(processorId, processorId);
             addAndMakeVisible(label);
@@ -25,6 +25,6 @@ public:
     }
 
 private:
-    StringArray &processorIds;
+    const StringArray &processorIds;
     OwnedArray<Label> processorIdLabels;
 };

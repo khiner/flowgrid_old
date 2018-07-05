@@ -2,6 +2,7 @@
 
 #include <processors/StatefulAudioProcessor.h>
 #include <ValueTreeItems.h>
+#include <processors/ProcessorIds.h>
 #include "push2/Push2DisplayBridge.h"
 #include "AudioGraphBuilder.h"
 #include "Push2ProcessorView.h"
@@ -13,7 +14,7 @@ class Push2Component :
         private ProjectChangeListener {
 public:
     explicit Push2Component(Project &project, AudioGraphBuilder &audioGraphBuilder)
-            : project(project), audioGraphBuilder(audioGraphBuilder), processorSelector(project.getProcessorNames()) {
+            : project(project), audioGraphBuilder(audioGraphBuilder), processorSelector(processorIds) {
         startTimer(60);
 
         addChildComponent(processorView);
