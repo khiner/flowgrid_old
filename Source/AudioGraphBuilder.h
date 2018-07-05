@@ -80,7 +80,7 @@ private:
 
         const Node::Ptr &newNode = addNode(processor);
         nodeIdForUuid.insert(std::pair<String, NodeID>(processor->state[IDs::uuid].toString(), newNode->nodeID));
-        insertNodeConnections(getNodeForId(newNode->nodeID), processorState);
+        insertNodeConnections(newNode->nodeID, processorState);
         // Kind of crappy - the order of the listeners seems to be nondeterministic,
         // so send (maybe _another_) select message that will update the UI in case this was already selected.
         if (processorState[IDs::selected]) {
@@ -102,21 +102,21 @@ private:
 
     void valueTreeChildRemoved (ValueTree& parent, ValueTree& child, int indexFromWhichChildWasRemoved) override {
         if (child.hasType(IDs::PROCESSOR)) {
-            Node *removedNode = getNodeForId(getNodeIdFromProcessorState(child));
+            NodeID removedNodeId = getNodeIdFromProcessorState(child);
 
-            removeNodeConnections(removedNode, parent, findNeighborNodes(parent, parent.getChild(indexFromWhichChildWasRemoved - 1), parent.getChild(indexFromWhichChildWasRemoved)));
+            removeNodeConnections(removedNodeId, parent, findNeighborNodes(parent, parent.getChild(indexFromWhichChildWasRemoved - 1), parent.getChild(indexFromWhichChildWasRemoved)));
 
             nodeIdForUuid.erase(child[IDs::uuid]);
-            removeNode(removedNode);
+            removeNode(removedNodeId);
         }
     }
 
     void valueTreeChildOrderChanged (ValueTree& parent, int oldIndex, int newIndex) override {
         ValueTree nodeState = parent.getChild(newIndex);
         if (nodeState.hasType(IDs::PROCESSOR)) {
-            Node *node = getNodeForId(getNodeIdFromProcessorState(nodeState));
-            removeNodeConnections(node, parent, findNeighborNodes(parent, parent.getChild(oldIndex), parent.getChild(oldIndex + 1)));
-            insertNodeConnections(node, nodeState);
+            NodeID nodeId = getNodeIdFromProcessorState(nodeState);
+            removeNodeConnections(nodeId, parent, findNeighborNodes(parent, parent.getChild(oldIndex), parent.getChild(oldIndex + 1)));
+            insertNodeConnections(nodeId, nodeState);
         }
     }
 
@@ -126,16 +126,16 @@ private:
 
     void valueTreeRedirected (ValueTree& treeWhichHasBeenChanged) override {}
 
-    void removeNodeConnections(Node *node, const ValueTree& parent, NeighborNodes neighborNodes) {
+    void removeNodeConnections(NodeID nodeId, const ValueTree& parent, NeighborNodes neighborNodes) {
         for (int channel = 0; channel < 2; ++channel) {
-            removeConnection({{node->nodeID, channel},
+            removeConnection({{nodeId, channel},
                               {neighborNodes.after,  channel}});
         }
 
         if (neighborNodes.before != -1) {
             for (int channel = 0; channel < 2; ++channel) {
                 removeConnection({{neighborNodes.before, channel},
-                                  {node->nodeID,  channel}});
+                                  {nodeId,  channel}});
                 addConnection({{neighborNodes.before, channel},
                                {neighborNodes.after,  channel}});
             }
@@ -147,7 +147,7 @@ private:
                     NodeID lastProcessorNodeId = getNodeIdFromProcessorState(lastProcessor);
                     for (int channel = 0; channel < 2; ++channel) {
                         removeConnection({{lastProcessorNodeId, channel},
-                                          {node->nodeID,  channel}});
+                                          {nodeId,  channel}});
                         addConnection({{lastProcessorNodeId, channel},
                                        {neighborNodes.after,  channel}});
                     }
@@ -156,7 +156,7 @@ private:
         }
     }
 
-    void insertNodeConnections(Node *node, const ValueTree& nodeState) {
+    void insertNodeConnections(NodeID nodeId, const ValueTree& nodeState) {
         NeighborNodes neighborNodes = findNeighborNodes(nodeState);
 
         if (neighborNodes.before != -1) {
@@ -164,7 +164,7 @@ private:
                 removeConnection({{neighborNodes.before, channel},
                                   {neighborNodes.after,  channel}});
                 addConnection({{neighborNodes.before, channel},
-                               {node->nodeID,  channel}});
+                               {nodeId,  channel}});
             }
         } else if (nodeState.getParent().hasType(IDs::MASTER_TRACK)) {
             // first processor in master track receives connections from the last processor of every track
@@ -176,13 +176,13 @@ private:
                         removeConnection({{lastProcessorNodeId, channel},
                                           {neighborNodes.after,  channel}});
                         addConnection({{lastProcessorNodeId, channel},
-                                       {node->nodeID,  channel}});
+                                       {nodeId,  channel}});
                     }
                 }
             }
         }
         for (int channel = 0; channel < 2; ++channel) {
-            addConnection({{node->nodeID, channel},
+            addConnection({{nodeId, channel},
                            {neighborNodes.after,  channel}});
         }
     }
