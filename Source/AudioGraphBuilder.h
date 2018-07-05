@@ -57,6 +57,11 @@ private:
         return pair != nodeIdForUuid.end() ? pair->second : -1;
     }
 
+    const NodeID getNodeIdFromProcessorState(const ValueTree &processorState) {
+        String uuid = processorState[IDs::uuid].toString();
+        return getNodeID(uuid);
+    }
+
     void recursivelyInitializeWithState(const ValueTree &state) {
         if (state.hasType(IDs::PROCESSOR)) {
             return addProcessor(state);
@@ -75,35 +80,7 @@ private:
 
         const Node::Ptr &newNode = addNode(processor);
         nodeIdForUuid.insert(std::pair<String, NodeID>(processor->state[IDs::uuid].toString(), newNode->nodeID));
-        String previousProcessorUuid = processorState.getSibling(-1)[IDs::uuid];
-        NodeID oldNodeID = getNodeID(previousProcessorUuid);
-        if (processorState.getParent().hasType(IDs::MASTER_TRACK)) {
-            for (int channel = 0; channel < 2; ++channel) {
-                if (oldNodeID != -1) {
-                    removeConnection({{oldNodeID,      channel},
-                                      {audioOutputNode->nodeID, channel}});
-                    addConnection({{oldNodeID,                 channel},
-                                   {newNode->nodeID, channel}});
-                }
-                addConnection({{newNode->nodeID,         channel},
-                               {audioOutputNode->nodeID, channel}});
-            }
-        } else {
-            String firstMasterProcessorUuid = projectState.getChildWithName(IDs::MASTER_TRACK).getChildWithName(IDs::PROCESSOR)[IDs::uuid];
-            NodeID firstMasterTrackNodeID = getNodeID(firstMasterProcessorUuid);
-            if (firstMasterTrackNodeID != -1) {
-                for (int channel = 0; channel < 2; ++channel) {
-                    if (oldNodeID != -1) {
-                        removeConnection({{oldNodeID,              channel},
-                                          {firstMasterTrackNodeID, channel}});
-                        addConnection({{oldNodeID,                 channel},
-                                       {newNode->nodeID, channel}});
-                    }
-                    addConnection({{newNode->nodeID,                 channel},
-                                   {firstMasterTrackNodeID, channel}});
-                }
-            }
-        }
+        insertNodeConnections(getNodeForId(newNode->nodeID), processorState);
         // Kind of crappy - the order of the listeners seems to be nondeterministic,
         // so send (maybe _another_) select message that will update the UI in case this was already selected.
         if (processorState[IDs::selected]) {
@@ -119,25 +96,27 @@ private:
         }
     }
 
+    struct NeighborNodes {
+        NodeID before = -1, after = -1;
+    };
+
     void valueTreeChildRemoved (ValueTree& parent, ValueTree& child, int indexFromWhichChildWasRemoved) override {
         if (child.hasType(IDs::PROCESSOR)) {
-            String uuid = child[IDs::uuid].toString();
-            Node *removedNode = getNodeForId(getNodeID(uuid));
+            Node *removedNode = getNodeForId(getNodeIdFromProcessorState(child));
 
-            removeNodeConnections(removedNode);
+            removeNodeConnections(removedNode, parent, findNeighborNodes(parent, parent.getChild(indexFromWhichChildWasRemoved - 1), parent.getChild(indexFromWhichChildWasRemoved)));
 
-            nodeIdForUuid.erase(uuid);
+            nodeIdForUuid.erase(child[IDs::uuid]);
             removeNode(removedNode);
         }
     }
 
     void valueTreeChildOrderChanged (ValueTree& parent, int oldIndex, int newIndex) override {
-        ValueTree child = parent.getChild(newIndex);
-        if (child.hasType(IDs::PROCESSOR)) {
-            String uuid = child[IDs::uuid].toString();
-            Node *node = getNodeForId(getNodeID(uuid));
-            removeNodeConnections(node);
-            insertNodeConnections(node, child);
+        ValueTree nodeState = parent.getChild(newIndex);
+        if (nodeState.hasType(IDs::PROCESSOR)) {
+            Node *node = getNodeForId(getNodeIdFromProcessorState(nodeState));
+            removeNodeConnections(node, parent, findNeighborNodes(parent, parent.getChild(oldIndex), parent.getChild(oldIndex + 1)));
+            insertNodeConnections(node, nodeState);
         }
     }
 
@@ -147,56 +126,104 @@ private:
 
     void valueTreeRedirected (ValueTree& treeWhichHasBeenChanged) override {}
 
-    void removeNodeConnections(Node *node) {
-        for (auto& o : node->outputs) {
-            int channel = o.thisChannel;
-            jassert(o.otherChannel == channel);
-            removeConnection({{node->nodeID,      channel},
-                              {o.otherNode->nodeID, channel}});
-            for (auto& i : node->inputs) {
-                jassert(i.thisChannel == i.otherChannel);
-                if (i.thisChannel == channel) {
-                    addConnection({{i.otherNode->nodeID, channel},
-                                   {o.otherNode->nodeID, channel}});
+    void removeNodeConnections(Node *node, const ValueTree& parent, NeighborNodes neighborNodes) {
+        for (int channel = 0; channel < 2; ++channel) {
+            removeConnection({{node->nodeID, channel},
+                              {neighborNodes.after,  channel}});
+        }
+
+        if (neighborNodes.before != -1) {
+            for (int channel = 0; channel < 2; ++channel) {
+                removeConnection({{neighborNodes.before, channel},
+                                  {node->nodeID,  channel}});
+                addConnection({{neighborNodes.before, channel},
+                               {neighborNodes.after,  channel}});
+            }
+        } else if (parent.hasType(IDs::MASTER_TRACK)) {
+            // first processor in master track receives connections from the last processor of every track
+            for (int i = 0; i < projectState.getNumChildren(); i++) {
+                const ValueTree lastProcessor = getLastProcessorInTrack(projectState.getChild(i));
+                if (lastProcessor.isValid()) {
+                    NodeID lastProcessorNodeId = getNodeIdFromProcessorState(lastProcessor);
+                    for (int channel = 0; channel < 2; ++channel) {
+                        removeConnection({{lastProcessorNodeId, channel},
+                                          {node->nodeID,  channel}});
+                        addConnection({{lastProcessorNodeId, channel},
+                                       {neighborNodes.after,  channel}});
+                    }
                 }
             }
         }
     }
 
-    void insertNodeConnections(Node *node, const ValueTree& child) {
-        const ValueTree &before = child.getSibling(-1);
-        const ValueTree &after = child.getSibling(1);
+    void insertNodeConnections(Node *node, const ValueTree& nodeState) {
+        NeighborNodes neighborNodes = findNeighborNodes(nodeState);
 
-        if (before.isValid()) {
-            String beforeUuid = before[IDs::uuid].toString();
-            Node *beforeNode = getNodeForId(getNodeID(beforeUuid));
-
-            for (auto& o : beforeNode->outputs) {
-                int channel = o.thisChannel;
-                jassert(o.otherChannel == channel);
-                removeConnection({{beforeNode->nodeID,      channel},
-                                  {o.otherNode->nodeID, channel}});
-                addConnection({{beforeNode->nodeID,      channel},
-                               {node->nodeID, channel}});
-                addConnection({{node->nodeID,      channel},
-                               {o.otherNode->nodeID, channel}});
+        if (neighborNodes.before != -1) {
+            for (int channel = 0; channel < 2; ++channel) {
+                removeConnection({{neighborNodes.before, channel},
+                                  {neighborNodes.after,  channel}});
+                addConnection({{neighborNodes.before, channel},
+                               {node->nodeID,  channel}});
             }
-        } else if (after.isValid()) {
-            String afterUuid = after[IDs::uuid].toString();
-            Node *afterNode = getNodeForId(getNodeID(afterUuid));
-
-            for (auto& o : afterNode->inputs) {
-                int channel = o.thisChannel;
-                jassert(o.otherChannel == channel);
-                removeConnection({{o.otherNode->nodeID,      channel},
-                                  {afterNode->nodeID, channel}});
-                addConnection({{o.otherNode->nodeID,      channel},
-                               {node->nodeID, channel}});
-            }
-            for (int channel = 0; channel < afterNode->getProcessor()->getTotalNumInputChannels(); channel++) {
-                addConnection({{node->nodeID,      channel},
-                               {afterNode->nodeID, channel}});
+        } else if (nodeState.getParent().hasType(IDs::MASTER_TRACK)) {
+            // first processor in master track receives connections from the last processor of every track
+            for (int i = 0; i < projectState.getNumChildren(); i++) {
+                const ValueTree lastProcessor = getLastProcessorInTrack(projectState.getChild(i));
+                if (lastProcessor.isValid()) {
+                    NodeID lastProcessorNodeId = getNodeIdFromProcessorState(lastProcessor);
+                    for (int channel = 0; channel < 2; ++channel) {
+                        removeConnection({{lastProcessorNodeId, channel},
+                                          {neighborNodes.after,  channel}});
+                        addConnection({{lastProcessorNodeId, channel},
+                                       {node->nodeID,  channel}});
+                    }
+                }
             }
         }
+        for (int channel = 0; channel < 2; ++channel) {
+            addConnection({{node->nodeID, channel},
+                           {neighborNodes.after,  channel}});
+        }
+    }
+
+    NeighborNodes findNeighborNodes(const ValueTree& nodeState) {
+        const ValueTree &before = nodeState.getSibling(-1);
+        const ValueTree &after = nodeState.getSibling(1);
+
+        return findNeighborNodes(nodeState.getParent(), before, after);
+    }
+
+    NeighborNodes findNeighborNodes(const ValueTree& parent, const ValueTree& beforeNodeState, const ValueTree& afterNodeState) {
+        NeighborNodes neighborNodes;
+
+        if (beforeNodeState.isValid()) {
+            neighborNodes.before = getNodeIdFromProcessorState(beforeNodeState);
+        }
+        if (afterNodeState.isValid()) {
+            neighborNodes.after = getNodeIdFromProcessorState(afterNodeState);
+        } else {
+            if (parent.hasType(IDs::MASTER_TRACK)) {
+                neighborNodes.after = audioOutputNode->nodeID;
+            } else {
+                neighborNodes.after = getNodeIdFromProcessorState(projectState.getChildWithName(IDs::MASTER_TRACK).getChildWithName(IDs::PROCESSOR));
+                if (neighborNodes.after == -1) { // master track has no processors. go straight out.
+                    neighborNodes.after = audioOutputNode->nodeID;
+                }
+            }
+        }
+        jassert(neighborNodes.after != -1);
+
+        return neighborNodes;
+    }
+
+    const ValueTree getLastProcessorInTrack(const ValueTree &track) {
+        if (!track.hasType(IDs::TRACK))
+            return ValueTree();
+        for (int j = track.getNumChildren() - 1; j >= 0; j--) {
+            if (track.getChild(j).hasType(IDs::PROCESSOR))
+                return track.getChild(j);
+        }
+        return ValueTree();
     }
 };
