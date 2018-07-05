@@ -1,24 +1,22 @@
 #include <Utilities.h>
-#include <ValueTreeItems.h>
-#include "JuceHeader.h"
 #include "view/push2/Push2Component.h"
-#include "AudioGraphBuilder.h"
 #include "MidiControlHandler.h"
 #include <view/ArrangeView.h>
 #include <view/ValueTreeEditor.h>
-#include <push2/Push2MidiCommunicator.h>
 
 File getSaveFile() {
-    return File::getSpecialLocation (File::userDesktopDirectory).getChildFile ("ValueTreeDemoEdit.xml");
+    return File::getSpecialLocation(File::userDesktopDirectory).getChildFile("ValueTreeDemoEdit.xml");
 }
 
 ValueTree loadOrCreateDefaultEdit() {
     return Utilities::loadValueTree(getSaveFile(), true);
 }
 
-class SoundMachineApplication : public JUCEApplication {
+class SoundMachineApplication : public JUCEApplication, public MenuBarModel {
 public:
-    SoundMachineApplication(): project(loadOrCreateDefaultEdit(), undoManager), audioGraphBuilder(project.getState(), undoManager), midiControlHandler(project, audioGraphBuilder, undoManager) {}
+    SoundMachineApplication() : project(loadOrCreateDefaultEdit(), undoManager),
+                                audioGraphBuilder(project.getState(), undoManager),
+                                midiControlHandler(project, audioGraphBuilder, undoManager) {}
 
     const String getApplicationName() override { return ProjectInfo::projectName; }
 
@@ -38,30 +36,33 @@ public:
         Process::makeForegroundProcess();
         Push2Component *push2Component = new Push2Component(project, audioGraphBuilder);
         push2Window = std::make_unique<MainWindow>("Push 2 Mirror", push2Component);
-        ValueTreeEditor *valueTreeEditor = new ValueTreeEditor(project.getState(), undoManager, project, audioGraphBuilder);
+        ValueTreeEditor *valueTreeEditor = new ValueTreeEditor(project.getState(), undoManager, project,
+                                                               audioGraphBuilder);
         treeWindow = std::make_unique<MainWindow>("Tree Editor", valueTreeEditor);
         arrangeWindow = std::make_unique<MainWindow>("Arrange View", new ArrangeView(project.getState()));
 
-        auto *audioDeviceSelectorComponent = new AudioDeviceSelectorComponent(deviceManager, 0, 256, 0, 256, true, true, true, false);
-        audioDeviceSelectorComponent->setBoundsRelative(0, 0, 100, 100); // needs some nonzero initial size or warnings are thrown
-        audioSetupWindow = std::make_unique<MainWindow>("Audio Setup", audioDeviceSelectorComponent);
+        audioDeviceSelectorComponent = std::make_unique<AudioDeviceSelectorComponent>(deviceManager, 0, 256, 0, 256,
+                                                                                      true, true, true, false);
+        audioDeviceSelectorComponent->setSize(600, 600);
 
-        treeWindow->setBoundsRelative(0.15, 0.25, 0.35, 0.35);
-        arrangeWindow->setBoundsRelative(0.50, 0.25, 0.35, 0.35);
-        audioSetupWindow->setBoundsRelative(0.15, 0.60, 0.35, 0.50);
-        push2Window->setBounds(treeWindow->getPosition().x, treeWindow->getPosition().y - Push2Display::HEIGHT - 30, Push2Display::WIDTH, Push2Display::HEIGHT + 30);
-
+        treeWindow->setBoundsRelative(0.10, 0.2, 0.40, 0.60);
+        arrangeWindow->setBoundsRelative(0.50, 0.2, 0.40, 0.60);
+        push2Window->setBounds(treeWindow->getPosition().x, treeWindow->getPosition().y - Push2Display::HEIGHT - 30,
+                               Push2Display::WIDTH, Push2Display::HEIGHT + 30);
+        push2Window->setResizable(false, false);
         midiControlHandler.setPush2Component(push2Component);
         valueTreeEditor->sendSelectMessageForFirstSelectedItem();
+
+        setMacMainMenu(this);
     }
 
     void shutdown() override {
         push2Window = nullptr;
         treeWindow = nullptr;
-        audioSetupWindow = nullptr;
         arrangeWindow = nullptr;
         deviceManager.removeAudioCallback(&player);
-        Utilities::saveValueTree (project.getState(), getSaveFile(), true);
+        Utilities::saveValueTree(project.getState(), getSaveFile(), true);
+        setMacMainMenu(nullptr);
     }
 
     void systemRequestedQuit() override {
@@ -76,15 +77,43 @@ public:
         // the other instance's command-line arguments were.
     }
 
+    StringArray getMenuBarNames() override {
+        StringArray names;
+        names.add("Options");
+        return names;
+    }
+
+    PopupMenu getMenuForIndex(int topLevelMenuIndex, const String & /*menuName*/) override {
+        PopupMenu menu;
+
+        // TODO use ApplicationCommand stuff like in plugin host example
+        if (topLevelMenuIndex == 0) { // "Options" menu
+            menu.addItem(1, "Change the audio device settings");
+        }
+
+        return menu;
+    }
+
+    void menuItemSelected(int menuItemID, int topLevelMenuIndex) override {
+        if (topLevelMenuIndex == 0) { // "Options" menu
+            if (menuItemID == 1) {
+                showAudioSettings();
+            }
+        }
+    }
+
+    void menuBarActivated(bool isActivated) override {
+    }
+
     /*
         This class implements the desktop window that contains an instance of
         our MainContentComponent class.
     */
     class MainWindow : public DocumentWindow {
     public:
-        explicit MainWindow(const String &name, Component* contentComponent) : DocumentWindow(name,
-                                                 Colours::lightgrey,
-                                                 DocumentWindow::allButtons) {
+        explicit MainWindow(const String &name, Component *contentComponent) : DocumentWindow(name,
+                                                                                              Colours::lightgrey,
+                                                                                              DocumentWindow::allButtons) {
             setContentOwned(contentComponent, true);
             setResizable(true, true);
 
@@ -108,12 +137,14 @@ public:
         */
 
     private:
-        const Colour backgroundColor = dynamic_cast<LookAndFeel_V4&>(LookAndFeel::getDefaultLookAndFeel()).getCurrentColourScheme().getUIColour((LookAndFeel_V4::ColourScheme::UIColour::windowBackground));
+        const Colour backgroundColor = dynamic_cast<LookAndFeel_V4 &>(LookAndFeel::getDefaultLookAndFeel()).getCurrentColourScheme().getUIColour(
+                (LookAndFeel_V4::ColourScheme::UIColour::windowBackground));
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainWindow)
     };
 
 private:
-    std::unique_ptr<MainWindow> treeWindow, arrangeWindow, audioSetupWindow, push2Window;
+    std::unique_ptr<MainWindow> treeWindow, arrangeWindow, push2Window;
+    std::unique_ptr<AudioDeviceSelectorComponent> audioDeviceSelectorComponent;
     UndoManager undoManager;
     AudioDeviceManager deviceManager;
 
@@ -124,6 +155,21 @@ private:
     Project project;
     AudioGraphBuilder audioGraphBuilder;
     MidiControlHandler midiControlHandler;
+
+    void showAudioSettings() {
+        DialogWindow::LaunchOptions o;
+        o.content.setNonOwned(audioDeviceSelectorComponent.get());
+        o.dialogTitle = "Audio Settings";
+        o.componentToCentreAround = treeWindow.get();
+        o.dialogBackgroundColour = treeWindow->getLookAndFeel().findColour(ResizableWindow::backgroundColourId);
+        o.escapeKeyTriggersCloseButton = true;
+        o.useNativeTitleBar = false;
+        o.resizable = true;
+
+        auto *w = o.create();
+        // TODO handle load/save of audio settings state in callback (like plugin host example)
+        w->enterModalState(true, ModalCallbackFunction::create([this](int) {}), true);
+    }
 };
 
 // This macro generates the main() routine that launches the app.
