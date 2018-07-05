@@ -200,9 +200,7 @@ private:
         if (beforeNodeState.isValid()) {
             neighborNodes.before = getNodeIdFromProcessorState(beforeNodeState);
         }
-        if (afterNodeState.isValid()) {
-            neighborNodes.after = getNodeIdFromProcessorState(afterNodeState);
-        } else {
+        if (!afterNodeState.isValid() || (neighborNodes.after = getNodeIdFromProcessorState(afterNodeState)) == -1) {
             if (parent.hasType(IDs::MASTER_TRACK)) {
                 neighborNodes.after = audioOutputNode->nodeID;
             } else {
