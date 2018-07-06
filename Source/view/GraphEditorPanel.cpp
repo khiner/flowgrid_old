@@ -560,6 +560,15 @@ GraphEditorPanel::~GraphEditorPanel() {
 
 void GraphEditorPanel::paint(Graphics &g) {
     g.fillAll(getLookAndFeel().findColour(ResizableWindow::backgroundColourId));
+    g.setColour(Colours::white.darker(0.8));
+    for (int row = 0; row < NUM_ROWS; row++) {
+        for (int column = 0; column < NUM_COLUMNS; column++) {
+            float rowOffset = float(row) / float(NUM_ROWS);
+            float columnOffset = float(column) / float(NUM_ROWS);
+            g.drawHorizontalLine(int(rowOffset * getHeight()), 0, getWidth());
+            g.drawVerticalLine(int(columnOffset * getWidth()), 0, getHeight());
+        }
+    }
 }
 
 void GraphEditorPanel::mouseDown(const MouseEvent &e) {

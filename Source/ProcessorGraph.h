@@ -80,9 +80,11 @@ public:
             column = processor->state.getParent().getParent().indexOf(processor->state.getParent());
         }
 
-        return {column / 8.0 + (1.0/16.0), row / 8.0 + (1.0/16.0)};
+        return {column / float(NUM_VISIBLE_TRACK_SLOTS) + (0.5 / NUM_VISIBLE_TRACK_SLOTS),
+                row / float(NUM_VISIBLE_TRACK_SLOTS) + (0.5 / NUM_VISIBLE_TRACK_SLOTS)};
     }
 
+    const static int NUM_VISIBLE_TRACK_SLOTS = 8;
 private:
     const static NodeID NA_NODE_ID = 0;
 
