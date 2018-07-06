@@ -32,7 +32,7 @@ public:
 
     StatefulAudioProcessor *getAudioProcessor(String &uuid) {
         auto nodeID = getNodeID(uuid);
-        return nodeID != -1 ? dynamic_cast<StatefulAudioProcessor *>(getNodeForId(nodeID)->getProcessor()) : nullptr;
+        return nodeID != NA_NODE_ID ? dynamic_cast<StatefulAudioProcessor *>(getNodeForId(nodeID)->getProcessor()) : nullptr;
     }
 
     const ValueTree getMasterTrack() {
@@ -52,11 +52,13 @@ private:
     Node::Ptr audioOutputNode;
     std::unordered_map<String, NodeID> nodeIdForUuid;
 
+    const static NodeID NA_NODE_ID = 0;
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AudioGraphBuilder)
 
     const NodeID getNodeID(String &uuid) {
         auto pair = nodeIdForUuid.find(uuid);
-        return pair != nodeIdForUuid.end() ? pair->second : -1;
+        return pair != nodeIdForUuid.end() ? pair->second : NA_NODE_ID;
     }
 
     const NodeID getNodeIdFromProcessorState(const ValueTree &processorState) {
@@ -99,7 +101,7 @@ private:
     }
 
     struct NeighborNodes {
-        NodeID before = -1, after = -1;
+        NodeID before = NA_NODE_ID, after = NA_NODE_ID;
     };
 
     void valueTreeChildRemoved (ValueTree& parent, ValueTree& child, int indexFromWhichChildWasRemoved) override {
@@ -134,7 +136,7 @@ private:
                               {neighborNodes.after,  channel}});
         }
 
-        if (neighborNodes.before != -1) {
+        if (neighborNodes.before != NA_NODE_ID) {
             for (int channel = 0; channel < 2; ++channel) {
                 removeConnection({{neighborNodes.before, channel},
                                   {nodeId,  channel}});
@@ -161,7 +163,7 @@ private:
     void insertNodeConnections(NodeID nodeId, const ValueTree& nodeState) {
         NeighborNodes neighborNodes = findNeighborNodes(nodeState);
 
-        if (neighborNodes.before != -1) {
+        if (neighborNodes.before != NA_NODE_ID) {
             for (int channel = 0; channel < 2; ++channel) {
                 removeConnection({{neighborNodes.before, channel},
                                   {neighborNodes.after,  channel}});
@@ -202,17 +204,17 @@ private:
         if (beforeNodeState.isValid()) {
             neighborNodes.before = getNodeIdFromProcessorState(beforeNodeState);
         }
-        if (!afterNodeState.isValid() || (neighborNodes.after = getNodeIdFromProcessorState(afterNodeState)) == -1) {
+        if (!afterNodeState.isValid() || (neighborNodes.after = getNodeIdFromProcessorState(afterNodeState)) == NA_NODE_ID) {
             if (parent.hasType(IDs::MASTER_TRACK)) {
                 neighborNodes.after = audioOutputNode->nodeID;
             } else {
                 neighborNodes.after = getNodeIdFromProcessorState(projectState.getChildWithName(IDs::MASTER_TRACK).getChildWithName(IDs::PROCESSOR));
-                if (neighborNodes.after == -1) { // master track has no processors. go straight out.
+                if (neighborNodes.after == NA_NODE_ID) { // master track has no processors. go straight out.
                     neighborNodes.after = audioOutputNode->nodeID;
                 }
             }
         }
-        jassert(neighborNodes.after != -1);
+        jassert(neighborNodes.after != NA_NODE_ID);
 
         return neighborNodes;
     }
