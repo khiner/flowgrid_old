@@ -47,11 +47,11 @@ public:
                                                                                       true, true, true, false);
         audioDeviceSelectorComponent->setSize(600, 600);
 
-        treeWindow->setBoundsRelative(0.10, 0.2, 0.40, 0.60);
-        arrangeWindow->setBoundsRelative(0.50, 0.2, 0.40, 0.20);
-        graphEditorWindow->setBoundsRelative(0.50, 0.4, 0.40, 0.40);
-        push2Window->setBounds(treeWindow->getPosition().x, treeWindow->getPosition().y - Push2Display::HEIGHT - 30,
-                               Push2Display::WIDTH, Push2Display::HEIGHT + 30);
+        treeWindow->setBoundsRelative(0.05, 0.3, 0.45, 0.35);
+        arrangeWindow->setBoundsRelative(0.05, 0.65, 0.45, 0.35);
+        graphEditorWindow->setBoundsRelative(0.5, 0.3, 0.5, 0.7);
+        push2Window->setBounds(treeWindow->getPosition().x, treeWindow->getPosition().y - Push2Display::HEIGHT - graphEditorWindow->getTitleBarHeight(),
+                               Push2Display::WIDTH, Push2Display::HEIGHT + graphEditorWindow->getTitleBarHeight());
         push2Window->setResizable(false, false);
         midiControlHandler.setPush2Component(push2Component);
         valueTreeEditor->sendSelectMessageForFirstSelectedItem();
