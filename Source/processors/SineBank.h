@@ -71,20 +71,6 @@ public:
         }
     }
 
-    const String &getParameterIdentifier(int parameterIndex) override {
-        switch (parameterIndex) {
-            case 0: return toneSource1.getAmpParameterId();
-            case 1: return toneSource1.getFreqParameterId();
-            case 2: return toneSource2.getAmpParameterId();
-            case 3: return toneSource2.getFreqParameterId();
-            case 4: return toneSource3.getAmpParameterId();
-            case 5: return toneSource3.getFreqParameterId();
-            case 6: return toneSource4.getAmpParameterId();
-            case 7: return toneSource4.getFreqParameterId();
-            default: return IDs::PARAM_NA.toString();
-        }
-    }
-
     void processBlock(AudioSampleBuffer& buffer, MidiBuffer& midiMessages) override {
         const AudioSourceChannelInfo &channelInfo = AudioSourceChannelInfo(buffer);
         mixerAudioSource.getNextAudioBlock(channelInfo);

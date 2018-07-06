@@ -52,14 +52,6 @@ public:
         }
     }
 
-    const String &getParameterIdentifier(int parameterIndex) override {
-        switch (parameterIndex) {
-            case 0: return balanceParameter.paramId;
-            case 1: return gainParameter.paramId;
-            default: return IDs::PARAM_NA.toString();
-        }
-    }
-
     void processBlock(AudioSampleBuffer& buffer, MidiBuffer& midiMessages) override {
         if (buffer.getNumChannels() == 2) {
             // 0db at center, linear stereo balance control

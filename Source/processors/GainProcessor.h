@@ -44,13 +44,6 @@ public:
         }
     }
 
-    const String &getParameterIdentifier(int parameterIndex) override {
-        switch (parameterIndex) {
-            case 0: return gainParameter.paramId;
-            default: return IDs::PARAM_NA.toString();
-        }
-    }
-
     void processBlock(AudioSampleBuffer& buffer, MidiBuffer& midiMessages) override {
         gain.applyGain(buffer, buffer.getNumSamples());
     }

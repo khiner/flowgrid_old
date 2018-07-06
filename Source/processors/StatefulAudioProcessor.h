@@ -10,9 +10,12 @@ public:
             DefaultAudioProcessor(inputChannelCount, outputChannelCount), state(state), undoManager(undoManager) {
     }
 
-    virtual const String &getParameterIdentifier(int index) = 0;
-
     virtual Parameter *getParameterInfo(int parameterIndex) = 0;
+
+    const String &getParameterIdentifier(int parameterIndex) {
+        Parameter *parameter = getParameterInfo(parameterIndex);
+        return parameter != nullptr ? parameter->paramId : IDs::PARAM_NA.toString();
+    }
 
     void updateValueTree() {
         for (int i = 0; i < getNumParameters(); i++) {
