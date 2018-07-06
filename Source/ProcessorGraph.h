@@ -60,6 +60,7 @@ public:
         const Point<int> &gridLocation = getProcessorGridLocation(nodeId);
         currentlyDraggingGridPosition.setXY(gridLocation.x, gridLocation.y);
         currentlyDraggingNodeId = nodeId;
+        initialDraggingGridPosition = currentlyDraggingGridPosition;
     }
 
     void setNodePosition(NodeID nodeId, Point<double> pos) {
@@ -102,15 +103,24 @@ public:
         if (nodeId == currentlyDraggingNodeId) {
             return currentlyDraggingGridPosition;
         } else if (auto *processor = getProcessorForNodeId(nodeId)) {
-            int row = int(processor->state.getProperty(IDs::PROCESSOR_SLOT));
-            int column = processor->state.getParent().getParent().indexOf(processor->state.getParent());
+            auto row = int(processor->state.getProperty(IDs::PROCESSOR_SLOT));
+            auto column = processor->state.getParent().getParent().indexOf(processor->state.getParent());
 
             if (currentlyDraggingNodeId != NA_NODE_ID &&
                 currentlyDraggingGridPosition.x == column &&
-                currentlyDraggingGridPosition.y == row) {
-                row += 1; // TODO all nodes after this point should bump down (not just one)
+                currentlyDraggingGridPosition.y != initialDraggingGridPosition.y) {
+                if (initialDraggingGridPosition.y < row && row <= currentlyDraggingGridPosition.y) {
+                    // move row _up_ towards first available slot
+                    return {column, row - 1};
+                } else if (currentlyDraggingGridPosition.y <= row && row < initialDraggingGridPosition.y) {
+                    // move row _down_ towards first available slot
+                    return {column, row + 1};
+                } else {
+                    return {column, row};
+                }
+            } else {
+                return {column, row};
             }
-            return {column, row};
         } else {
             return {0, 0};
         }
@@ -140,7 +150,7 @@ private:
 
     NodeID currentlyDraggingNodeId = NA_NODE_ID;
     Point<int> currentlyDraggingGridPosition;
-
+    Point<int> initialDraggingGridPosition;
     ValueTree projectState;
     UndoManager &undoManager;
     Node::Ptr audioOutputNode;
