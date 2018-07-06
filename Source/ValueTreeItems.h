@@ -468,7 +468,11 @@ public:
         track.setProperty(IDs::colour, Colour::fromHSV((1.0f / 8.0f) * numTracks, 0.65f, 0.65f, 1.0f).toString(), nullptr);
         track.setProperty(IDs::name, trackName, nullptr);
 
-        state.addChild(track, -1, undoable ? &undoManager : nullptr);
+        const ValueTree &masterTrack = state.getChildWithName(IDs::MASTER_TRACK);
+        // Insert new processors _before_ the master track, or at the end if there isn't one.
+        int insertIndex = masterTrack.isValid() ? state.indexOf(masterTrack) : -1;
+
+        state.addChild(track, insertIndex, undoable ? &undoManager : nullptr);
 
         createAndAddProcessor(track, BalanceAndGainProcessor::name(), undoable);
         
@@ -490,7 +494,7 @@ public:
         processor.setProperty(IDs::name, name, nullptr);
 
         const ValueTree &gainAndBalanceProcessor = track.getChildWithProperty(IDs::name, BalanceAndGainProcessor::name());
-        // Insert new processors _before_ the first gain and balance processor, or at the end if there isn't one.
+        // Insert new processors _before_ the first g&b processor, or at the end if there isn't one.
         int insertIndex = gainAndBalanceProcessor.isValid() ? track.indexOf(gainAndBalanceProcessor) : -1;
         track.addChild(processor, insertIndex, undoable ? &undoManager : nullptr);
 
