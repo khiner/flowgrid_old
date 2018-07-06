@@ -16,7 +16,9 @@ public:
     UsbCommunicator(const uint16_t vendorId, const uint16_t productId):
             vendorId(vendorId), productId(productId), frameHeaderTransfer(nullptr), terminate(false) {
         handle = findDeviceHandle();
-        pollThread = std::thread(&UsbCommunicator::pollUsbForEvents, this);
+        if (handle) {
+            pollThread = std::thread(&UsbCommunicator::pollUsbForEvents, this);
+        }
     }
 
     virtual ~UsbCommunicator() {
@@ -25,6 +27,10 @@ public:
         if (pollThread.joinable()) {
             pollThread.join();
         }
+    }
+
+    inline bool isValid() {
+        return handle != nullptr;
     }
 
     /*!

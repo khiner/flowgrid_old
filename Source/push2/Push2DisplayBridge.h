@@ -20,6 +20,8 @@ public:
     }
 
     inline void writeFrameToDisplay() {
+        if (!usbCommunicator.isValid())
+            return;
         static const Push2Display::pixel_t xOrMasks[2] = {0xf3e7, 0xffe7};
         for (int y = 0; y < Push2Display::HEIGHT; y++) {
             for (int x = 0; x < Push2Display::WIDTH; x++) {

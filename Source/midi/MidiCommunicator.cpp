@@ -5,7 +5,8 @@ using namespace std;
 MidiCommunicator::MidiCommunicator(const string &deviceName): deviceName(deviceName) {
     int deviceIndex = findDeviceIdByDeviceName(deviceName);
     if (deviceIndex == -1) {
-        throw runtime_error("Failed to find input midi device with device name " + deviceName);
+        std::cerr << "Failed to find input midi device with device name " + deviceName << '\n';
+        return;
     }
     midiInput.reset(MidiInput::openDevice(deviceIndex, this));
 

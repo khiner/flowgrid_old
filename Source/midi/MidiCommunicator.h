@@ -17,6 +17,10 @@ public:
 
     explicit MidiCommunicator(const std::string &deviceName);
 
+    inline bool isConnected() {
+        return !midiInput->getDevices().isEmpty();
+    }
+
     static int findDeviceIdByDeviceName(const std::string &deviceName) {
         auto devices = MidiInput::getDevices();
         int index = 0;

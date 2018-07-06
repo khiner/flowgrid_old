@@ -2,6 +2,7 @@
 #include "UsbCommunicator.h"
 
 #include <cassert>
+#include <iostream>
 
 using namespace std;
 
@@ -74,7 +75,7 @@ libusb_device_handle* UsbCommunicator::findDeviceHandle() {
     libusb_free_device_list(devices, 1);
 
     if (!device_handle) {
-        throw runtime_error(errorMsg);
+        std::cerr << errorMsg << '\n';
     }
     return device_handle;
 }

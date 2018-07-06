@@ -18,8 +18,11 @@ public:
     Push2MidiCommunicator(): Push2MidiCommunicator("ableton push 2") {};
 
     explicit Push2MidiCommunicator(const std::string &deviceName) : MidiCommunicator(deviceName) {
-        auto polyphonicAftertouchSysExMessage = MidiMessage::createSysExMessage(SysExCommands::SET_AFTERTOUCH_MODE_POLYPHONIC, SysExCommands::MESSAGE_SIZE);
-        midiOutput->sendMessageNow(polyphonicAftertouchSysExMessage);
+        if (isConnected()) {
+            auto polyphonicAftertouchSysExMessage = MidiMessage::createSysExMessage(
+                    SysExCommands::SET_AFTERTOUCH_MODE_POLYPHONIC, SysExCommands::MESSAGE_SIZE);
+            midiOutput->sendMessageNow(polyphonicAftertouchSysExMessage);
+        }
     }
 
     static const uint8

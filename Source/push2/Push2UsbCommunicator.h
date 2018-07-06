@@ -15,7 +15,7 @@ class libusb_device_handle;
  *  This class manages the communication with the Push 2 display over usb.
  *
  */
-class Push2UsbCommunicator : UsbCommunicator {
+class Push2UsbCommunicator : public UsbCommunicator {
 public:
     Push2UsbCommunicator(const uint16_t vendorId, const uint16_t productId) :
             UsbCommunicator(vendorId, productId), currentLine(0) {}
