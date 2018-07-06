@@ -41,20 +41,21 @@ public:
                                                                audioGraphBuilder);
         treeWindow = std::make_unique<MainWindow>("Tree Editor", valueTreeEditor);
         arrangeWindow = std::make_unique<MainWindow>("Arrange View", new ArrangeView(project.getState()));
+        graphEditorWindow = std::make_unique<MainWindow>("Graph Editor", new GraphEditorPanel(audioGraphBuilder));
 
         audioDeviceSelectorComponent = std::make_unique<AudioDeviceSelectorComponent>(deviceManager, 0, 256, 0, 256,
                                                                                       true, true, true, false);
         audioDeviceSelectorComponent->setSize(600, 600);
 
         treeWindow->setBoundsRelative(0.10, 0.2, 0.40, 0.60);
-        arrangeWindow->setBoundsRelative(0.50, 0.2, 0.40, 0.60);
+        arrangeWindow->setBoundsRelative(0.50, 0.2, 0.40, 0.20);
+        graphEditorWindow->setBoundsRelative(0.50, 0.4, 0.40, 0.40);
         push2Window->setBounds(treeWindow->getPosition().x, treeWindow->getPosition().y - Push2Display::HEIGHT - 30,
                                Push2Display::WIDTH, Push2Display::HEIGHT + 30);
         push2Window->setResizable(false, false);
         midiControlHandler.setPush2Component(push2Component);
         valueTreeEditor->sendSelectMessageForFirstSelectedItem();
 
-        graphEditorWindow = std::make_unique<MainWindow>("Graph Editor", new GraphEditorPanel(audioGraphBuilder));
         setMacMainMenu(this);
     }
 

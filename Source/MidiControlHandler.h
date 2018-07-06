@@ -111,7 +111,7 @@ private:
     void itemSelected(ValueTree item) override {
         if (item.hasType(IDs::PROCESSOR)) {
             String uuid = item[IDs::uuid];
-            currentProcessorToControl = audioGraphBuilder.getAudioProcessor(uuid);
+            currentProcessorToControl = audioGraphBuilder.getProcessorForUuid(uuid);
         }
     }
 

@@ -28,6 +28,7 @@ namespace IDs
     DECLARE_ID (selected)
 
     DECLARE_ID(PROCESSOR)
+    DECLARE_ID(PROCESSOR_SLOT)
 
     DECLARE_ID (CLIP)
     DECLARE_ID (start)

@@ -31,9 +31,12 @@ public:
         recursivelyInitializeWithState(projectState);
     }
 
-    StatefulAudioProcessor *getAudioProcessor(String &uuid) {
-        auto nodeID = getNodeID(uuid);
-        return nodeID != NA_NODE_ID ? dynamic_cast<StatefulAudioProcessor *>(getNodeForId(nodeID)->getProcessor()) : nullptr;
+    StatefulAudioProcessor *getProcessorForNodeId(NodeID nodeId) const {
+        return nodeId != NA_NODE_ID ? dynamic_cast<StatefulAudioProcessor *>(getNodeForId(nodeId)->getProcessor()) : nullptr;
+    }
+
+    StatefulAudioProcessor *getProcessorForUuid(String &uuid) const {
+        return getProcessorForNodeId(getNodeID(uuid));
     }
 
     const ValueTree getMasterTrack() {
@@ -44,10 +47,10 @@ public:
         const ValueTree masterTrack = getMasterTrack();
         ValueTree gain = masterTrack.getChildWithProperty(IDs::name, BalanceAndGainProcessor::name());
         String uuid = gain[IDs::uuid];
-        return getAudioProcessor(uuid);
+        return getProcessorForUuid(uuid);
     }
 
-    const NodeID getNodeID(String &uuid) {
+    const NodeID getNodeID(String &uuid) const {
         auto pair = nodeIdForUuid.find(uuid);
         return pair != nodeIdForUuid.end() ? pair->second : NA_NODE_ID;
     }
@@ -56,19 +59,28 @@ public:
         this->hasChanged = hasChanged;
     }
 
-    void setNodePosition(NodeID nodeID, Point<double> pos) {
-        if (auto *n = getNodeForId(nodeID)) {
-            n->properties.set("x", jlimit(0.0, 1.0, pos.x));
-            n->properties.set("y", jlimit(0.0, 1.0, pos.y));
+    void setNodePosition(NodeID nodeId, Point<double> pos) {
+        if (auto *processor = getProcessorForNodeId(nodeId)) {
+            double x = jlimit(0.0, 0.99, pos.x);
+            double y = jlimit(0.0, 0.99, pos.y);
+            processor->state.setProperty(IDs::PROCESSOR_SLOT, int(y * 8), &undoManager);
         }
     }
 
-    Point<double> getNodePosition(NodeID nodeID) const {
-        if (auto *n = getNodeForId(nodeID))
-            return {static_cast<double> (n->properties["x"]),
-                    static_cast<double> (n->properties["y"])};
+    Point<double> getNodePosition(NodeID nodeId) const {
+        int row = 0, column = 0;
 
-        return {};
+        if (nodeId == audioOutputNode->nodeID) {
+            row = 7; column = 7;
+        } else if (auto *processor = getProcessorForNodeId(nodeId)) {
+            row = processor->state.hasProperty(IDs::PROCESSOR_SLOT) ?
+                  int(processor->state.getProperty(IDs::PROCESSOR_SLOT)) :
+                  processor->state.getParent().indexOf(processor->state);
+
+            column = processor->state.getParent().getParent().indexOf(processor->state.getParent());
+        }
+
+        return {column / 8.0 + (1.0/16.0), row / 8.0 + (1.0/16.0)};
     }
 
 private:
