@@ -41,8 +41,8 @@ public:
     //==============================================================================
     ProcessorGraph &graph;
 
-    static const int NUM_ROWS = ProcessorGraph::NUM_VISIBLE_TRACK_SLOTS;
-    static const int NUM_COLUMNS = ProcessorGraph::NUM_VISIBLE_TRACK_SLOTS;
+    static const int NUM_ROWS = Project::NUM_VISIBLE_TRACK_SLOTS;
+    static const int NUM_COLUMNS = Project::NUM_VISIBLE_TRACK_SLOTS;
 
 private:
     struct FilterComponent;

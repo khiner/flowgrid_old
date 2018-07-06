@@ -3,6 +3,7 @@
 #include <Identifiers.h>
 
 #include "JuceHeader.h"
+#include "ValueTreeItems.h"
 #include <processors/SineBank.h>
 #include <processors/GainProcessor.h>
 #include <processors/BalanceAndGainProcessor.h>
@@ -55,45 +56,95 @@ public:
         return pair != nodeIdForUuid.end() ? pair->second : NA_NODE_ID;
     }
 
-    void setChangedFlag (bool hasChanged) {
-        this->hasChanged = hasChanged;
+    void beginDraggingNode(NodeID nodeId) {
+        const Point<int> &gridLocation = getProcessorGridLocation(nodeId);
+        currentlyDraggingGridPosition.setXY(gridLocation.x, gridLocation.y);
+        currentlyDraggingNodeId = nodeId;
     }
 
     void setNodePosition(NodeID nodeId, Point<double> pos) {
-        if (auto *processor = getProcessorForNodeId(nodeId)) {
-            double x = jlimit(0.0, 0.99, pos.x);
-            double y = jlimit(0.0, 0.99, pos.y);
-            processor->state.setProperty(IDs::PROCESSOR_SLOT, int(y * 8), &undoManager);
-        }
+        currentlyDraggingGridPosition.x = int(Project::NUM_VISIBLE_TRACK_SLOTS * jlimit(0.0, 0.99, pos.x));
+        currentlyDraggingGridPosition.y = int(Project::NUM_VISIBLE_TRACK_SLOTS * jlimit(0.0, 0.99, pos.y));
     }
 
+    void endDraggingNode(NodeID nodeId) {
+        if (currentlyDraggingNodeId) {
+            // finalize positions
+            for (Node *node : getNodes()) {
+                if (node->nodeID == audioOutputNode->nodeID)
+                    continue;
+                // XXX wastefully getting processor from node id twice here.
+                StatefulAudioProcessor *processor = getProcessorForNodeId(node->nodeID);
+                processor->state.setProperty(IDs::PROCESSOR_SLOT, getProcessorGridLocation(node->nodeID).y, &undoManager);
+            }
+            StatefulAudioProcessor *processor = getProcessorForNodeId(nodeId);
+            Helpers::moveSingleItem(processor->state, projectState.getChild(currentlyDraggingGridPosition.x), getParentIndexForProcessor(processor->state), undoManager);
+        }
+        currentlyDraggingNodeId = NA_NODE_ID;
+    }
+    
     Point<double> getNodePosition(NodeID nodeId) const {
         int row = 0, column = 0;
 
         if (nodeId == audioOutputNode->nodeID) {
             row = 7; column = 7;
-        } else if (auto *processor = getProcessorForNodeId(nodeId)) {
-            row = processor->state.hasProperty(IDs::PROCESSOR_SLOT) ?
-                  int(processor->state.getProperty(IDs::PROCESSOR_SLOT)) :
-                  processor->state.getParent().indexOf(processor->state);
-
-            column = processor->state.getParent().getParent().indexOf(processor->state.getParent());
+        } else {
+            const Point<int> gridLocation = getProcessorGridLocation(nodeId);
+            row = gridLocation.y;
+            column = gridLocation.x;
         }
 
-        return {column / float(NUM_VISIBLE_TRACK_SLOTS) + (0.5 / NUM_VISIBLE_TRACK_SLOTS),
-                row / float(NUM_VISIBLE_TRACK_SLOTS) + (0.5 / NUM_VISIBLE_TRACK_SLOTS)};
+        return {column / float(Project::NUM_VISIBLE_TRACK_SLOTS) + (0.5 / Project::NUM_VISIBLE_TRACK_SLOTS),
+                row / float(Project::NUM_VISIBLE_TRACK_SLOTS) + (0.5 / Project::NUM_VISIBLE_TRACK_SLOTS)};
     }
 
-    const static int NUM_VISIBLE_TRACK_SLOTS = 8;
+    Point<int> getProcessorGridLocation(NodeID nodeId) const {
+        if (nodeId == currentlyDraggingNodeId) {
+            return currentlyDraggingGridPosition;
+        } else if (auto *processor = getProcessorForNodeId(nodeId)) {
+            int row = int(processor->state.getProperty(IDs::PROCESSOR_SLOT));
+            int column = processor->state.getParent().getParent().indexOf(processor->state.getParent());
+
+            if (currentlyDraggingNodeId != NA_NODE_ID &&
+                currentlyDraggingGridPosition.x == column &&
+                currentlyDraggingGridPosition.y == row) {
+                row += 1; // TODO all nodes after this point should bump down (not just one)
+            }
+            return {column, row};
+        } else {
+            return {0, 0};
+        }
+    }
+    
+    // TODO consider moving this (and a bunch of other similar logic) to ValueTreeItems::Track
+    // and using a 'Project' here instead of 'ValueTree' project state 
+    int getParentIndexForProcessor(const ValueTree &processorState) {
+        const ValueTree &track = processorState.getParent();
+        if (track.getNumChildren() == 0) {
+            return 0;
+        }
+        for (int i = 0; track.getNumChildren(); i++) {
+            const ValueTree &otherProcessorState = track.getChild(i);
+            if (otherProcessorState.hasType(IDs::PROCESSOR) &&
+                int(otherProcessorState.getProperty(IDs::PROCESSOR_SLOT)) >= int(processorState.getProperty(IDs::PROCESSOR_SLOT))) {
+                return track.indexOf(otherProcessorState);
+            }
+        }
+
+        // TODO in this and other places, we assume processers are the only type of track child.
+        return track.getNumChildren() - 1;
+    }
+    
 private:
     const static NodeID NA_NODE_ID = 0;
+
+    NodeID currentlyDraggingNodeId = NA_NODE_ID;
+    Point<int> currentlyDraggingGridPosition;
 
     ValueTree projectState;
     UndoManager &undoManager;
     Node::Ptr audioOutputNode;
     std::unordered_map<String, NodeID> nodeIdForUuid;
-
-    bool hasChanged = false;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ProcessorGraph)
 

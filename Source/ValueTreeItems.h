@@ -257,6 +257,20 @@ namespace Helpers {
         return items;
     }
 
+    inline void moveSingleItem(ValueTree &item, ValueTree newParent, int insertIndex, UndoManager &undoManager) {
+        if (item.getParent().isValid() && newParent != item && !newParent.isAChildOf(item)) {
+            if (item.getParent() == newParent) {
+                if (newParent.indexOf(item) < insertIndex) {
+                    --insertIndex;
+                }
+                item.getParent().moveChild(item.getParent().indexOf(item), insertIndex, &undoManager);
+            } else {
+                item.getParent().removeChild(item, &undoManager);
+                newParent.addChild(item, insertIndex, &undoManager);
+            }
+        }
+    }
+
     inline void moveItems(TreeView &treeView, const OwnedArray<ValueTree> &items,
                           ValueTree newParent, int insertIndex, UndoManager &undoManager) {
         if (items.isEmpty())
@@ -265,19 +279,7 @@ namespace Helpers {
         std::unique_ptr<XmlElement> oldOpenness(treeView.getOpennessState(false));
 
         for (int i = items.size(); --i >= 0;) {
-            ValueTree &v = *items.getUnchecked(i);
-
-            if (v.getParent().isValid() && newParent != v && !newParent.isAChildOf(v)) {
-                if (v.getParent() == newParent) {
-                    if (newParent.indexOf(v) < insertIndex) {
-                        --insertIndex;
-                    }
-                    v.getParent().moveChild(v.getParent().indexOf(v), insertIndex, &undoManager);
-                } else {
-                    v.getParent().removeChild(v, &undoManager);
-                    newParent.addChild(v, insertIndex, &undoManager);
-                }
-            }
+            moveSingleItem(*items.getUnchecked(i), newParent, insertIndex, undoManager);
         }
 
         if (oldOpenness != nullptr)
@@ -475,7 +477,6 @@ public:
         state.addChild(track, insertIndex, undoable ? &undoManager : nullptr);
 
         createAndAddProcessor(track, BalanceAndGainProcessor::name(), undoable);
-        
         return track;
     }
 
@@ -494,8 +495,16 @@ public:
         processor.setProperty(IDs::name, name, nullptr);
 
         const ValueTree &gainAndBalanceProcessor = track.getChildWithProperty(IDs::name, BalanceAndGainProcessor::name());
-        // Insert new processors _before_ the first g&b processor, or at the end if there isn't one.
+        // Insert new processors _right before_ the first g&b processor, or at the end if there isn't one.
         int insertIndex = gainAndBalanceProcessor.isValid() ? track.indexOf(gainAndBalanceProcessor) : -1;
+        int slot = 0;
+        if (insertIndex == -1 && name == BalanceAndGainProcessor::name()) {
+            slot = NUM_VISIBLE_TRACK_SLOTS - 1;
+        } else if (track.getNumChildren() > 1) {
+            slot = int(track.getChild(track.getNumChildren() - 2).getProperty(IDs::PROCESSOR_SLOT)) + 1;
+        }
+
+        processor.setProperty(IDs::PROCESSOR_SLOT, slot, nullptr);
         track.addChild(processor, insertIndex, undoable ? &undoManager : nullptr);
 
         return processor;
@@ -541,6 +550,7 @@ public:
         ProjectChangeBroadcaster::sendItemSelectedMessage(item);
     }
 
+    const static int NUM_VISIBLE_TRACK_SLOTS = 8;
 private:
     ValueTree selectedTrack;
     ValueTree selectedProcessor;

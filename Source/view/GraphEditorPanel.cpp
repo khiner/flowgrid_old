@@ -129,7 +129,8 @@ struct GraphEditorPanel::FilterComponent : public Component,
         originalPos = localPointToGlobal(Point < int > ());
 
         toFront(true);
-
+        graph.beginDraggingNode(nodeId);
+        
         if (e.mods.isPopupMenu())
             showPopupMenu();
     }
@@ -152,8 +153,9 @@ struct GraphEditorPanel::FilterComponent : public Component,
     }
 
     void mouseUp(const MouseEvent &e) override {
+        graph.endDraggingNode(nodeId);
         if (e.mouseWasDraggedSinceMouseDown()) {
-            graph.setChangedFlag(true);
+
         } else if (e.getNumberOfClicks() == 2) {
             //showPopupMenu(PluginWindow::Type::normal);
         }
