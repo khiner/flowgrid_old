@@ -24,7 +24,7 @@ public:
         state.removeListener(this);
     }
 
-    static const String name() { return "GainAndBalance"; }
+    static const String name() { return "Balance & Gain"; }
     const String getName() const override { return BalanceAndGainProcessor::name(); }
     int getNumParameters() override { return 2; }
 
