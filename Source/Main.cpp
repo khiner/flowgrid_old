@@ -3,6 +3,7 @@
 #include "MidiControlHandler.h"
 #include <view/ArrangeView.h>
 #include <view/ValueTreeEditor.h>
+#include <view/GraphEditorPanel.h>
 
 File getSaveFile() {
     return File::getSpecialLocation(File::userDesktopDirectory).getChildFile("ValueTreeDemoEdit.xml");
@@ -53,6 +54,7 @@ public:
         midiControlHandler.setPush2Component(push2Component);
         valueTreeEditor->sendSelectMessageForFirstSelectedItem();
 
+        graphEditorWindow = std::make_unique<MainWindow>("Graph Editor", new GraphEditorPanel(audioGraphBuilder));
         setMacMainMenu(this);
     }
 
@@ -143,7 +145,7 @@ public:
     };
 
 private:
-    std::unique_ptr<MainWindow> treeWindow, arrangeWindow, push2Window;
+    std::unique_ptr<MainWindow> treeWindow, arrangeWindow, push2Window, graphEditorWindow;
     std::unique_ptr<AudioDeviceSelectorComponent> audioDeviceSelectorComponent;
     UndoManager undoManager;
     AudioDeviceManager deviceManager;

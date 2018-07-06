@@ -5,6 +5,7 @@
 #include "JuceHeader.h"
 #include <processors/SineBank.h>
 #include <processors/GainProcessor.h>
+#include <processors/BalanceAndGainProcessor.h>
 
 static StatefulAudioProcessor *createStatefulAudioProcessorFromId(const String &id, const ValueTree &state, UndoManager &undoManager) {
     if (id == SineBank::name()) {
@@ -51,13 +52,34 @@ public:
         return pair != nodeIdForUuid.end() ? pair->second : NA_NODE_ID;
     }
 
+    void setChangedFlag (bool hasChanged) {
+        this->hasChanged = hasChanged;
+    }
+
+    void setNodePosition(NodeID nodeID, Point<double> pos) {
+        if (auto *n = getNodeForId(nodeID)) {
+            n->properties.set("x", jlimit(0.0, 1.0, pos.x));
+            n->properties.set("y", jlimit(0.0, 1.0, pos.y));
+        }
+    }
+
+    Point<double> getNodePosition(NodeID nodeID) const {
+        if (auto *n = getNodeForId(nodeID))
+            return {static_cast<double> (n->properties["x"]),
+                    static_cast<double> (n->properties["y"])};
+
+        return {};
+    }
+
 private:
+    const static NodeID NA_NODE_ID = 0;
+
     ValueTree projectState;
     UndoManager &undoManager;
     Node::Ptr audioOutputNode;
     std::unordered_map<String, NodeID> nodeIdForUuid;
 
-    const static NodeID NA_NODE_ID = 0;
+    bool hasChanged = false;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AudioGraphBuilder)
 

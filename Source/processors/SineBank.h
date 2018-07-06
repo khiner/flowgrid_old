@@ -1,6 +1,7 @@
 #pragma once
 
 #include <audio_sources/ToneSourceWithParameters.h>
+#include <Utilities.h>
 #include "JuceHeader.h"
 #include "StatefulAudioProcessor.h"
 

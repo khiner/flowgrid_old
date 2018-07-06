@@ -1,11 +1,11 @@
 #pragma once
 
-#include "../ProcessorGraph.h"
+#include <AudioGraphBuilder.h>
 
 class GraphEditorPanel : public Component,
                          public ChangeListener {
 public:
-    GraphEditorPanel(ProcessorGraph &graph);
+    GraphEditorPanel(AudioGraphBuilder &graph);
 
     ~GraphEditorPanel();
 
@@ -39,7 +39,7 @@ public:
     void endDraggingConnector(const MouseEvent &);
 
     //==============================================================================
-    ProcessorGraph &graph;
+    AudioGraphBuilder &graph;
 
 private:
     struct FilterComponent;
@@ -64,14 +64,13 @@ private:
 //==============================================================================
 /**
     A panel that embeds a GraphEditorPanel with a midi keyboard at the bottom.
-
-    It also manages the graph itself, and plays it.
 */
 class GraphDocumentComponent : public Component,
                                public DragAndDropTarget,
                                public DragAndDropContainer {
 public:
-    GraphDocumentComponent(AudioPluginFormatManager &formatManager,
+    GraphDocumentComponent(AudioGraphBuilder &graph,
+                           AudioPluginFormatManager &formatManager,
                            AudioDeviceManager &deviceManager,
                            KnownPluginList &pluginList);
 
@@ -80,16 +79,9 @@ public:
     //==============================================================================
     void createNewPlugin(const PluginDescription &, Point<int> position);
 
-    void setDoublePrecision(bool doublePrecision);
-
     bool closeAnyOpenPluginWindows();
 
-    //==============================================================================
-    std::unique_ptr<ProcessorGraph> graph;
-
     void resized() override;
-
-    void unfocusKeyboardComponent();
 
     void releaseGraph();
 
@@ -98,9 +90,8 @@ public:
 
     void itemDropped(const SourceDetails &) override;
 
-    //==============================================================================
+
     std::unique_ptr<GraphEditorPanel> graphPanel;
-    std::unique_ptr<MidiKeyboardComponent> keyboardComp;
 
     //==============================================================================
     void showSidePanel(bool isSettingsPanel);
@@ -110,12 +101,9 @@ public:
     BurgerMenuComponent burgerMenu;
 
 private:
-    //==============================================================================
+    AudioGraphBuilder &graph;
     AudioDeviceManager &deviceManager;
     KnownPluginList &pluginList;
-
-    AudioProcessorPlayer graphPlayer;
-    MidiKeyboardState keyState;
 
     struct TooltipBar;
     std::unique_ptr<TooltipBar> statusBar;
