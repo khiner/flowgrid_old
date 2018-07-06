@@ -46,6 +46,11 @@ public:
         return getAudioProcessor(uuid);
     }
 
+    const NodeID getNodeID(String &uuid) {
+        auto pair = nodeIdForUuid.find(uuid);
+        return pair != nodeIdForUuid.end() ? pair->second : NA_NODE_ID;
+    }
+
 private:
     ValueTree projectState;
     UndoManager &undoManager;
@@ -55,11 +60,6 @@ private:
     const static NodeID NA_NODE_ID = 0;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AudioGraphBuilder)
-
-    const NodeID getNodeID(String &uuid) {
-        auto pair = nodeIdForUuid.find(uuid);
-        return pair != nodeIdForUuid.end() ? pair->second : NA_NODE_ID;
-    }
 
     const NodeID getNodeIdFromProcessorState(const ValueTree &processorState) {
         String uuid = processorState[IDs::uuid].toString();
@@ -92,43 +92,9 @@ private:
         }
     }
 
-    void valueTreePropertyChanged (ValueTree& tree, const Identifier& property) override {}
-
-    void valueTreeChildAdded (ValueTree& parent, ValueTree& child) override {
-        if (child.hasType(IDs::PROCESSOR)) {
-            addProcessor(child);
-        }
-    }
-
     struct NeighborNodes {
         NodeID before = NA_NODE_ID, after = NA_NODE_ID;
     };
-
-    void valueTreeChildRemoved (ValueTree& parent, ValueTree& child, int indexFromWhichChildWasRemoved) override {
-        if (child.hasType(IDs::PROCESSOR)) {
-            NodeID removedNodeId = getNodeIdFromProcessorState(child);
-
-            removeNodeConnections(removedNodeId, parent, findNeighborNodes(parent, parent.getChild(indexFromWhichChildWasRemoved - 1), parent.getChild(indexFromWhichChildWasRemoved)));
-
-            nodeIdForUuid.erase(child[IDs::uuid]);
-            removeNode(removedNodeId);
-        }
-    }
-
-    void valueTreeChildOrderChanged (ValueTree& parent, int oldIndex, int newIndex) override {
-        ValueTree nodeState = parent.getChild(newIndex);
-        if (nodeState.hasType(IDs::PROCESSOR)) {
-            NodeID nodeId = getNodeIdFromProcessorState(nodeState);
-            removeNodeConnections(nodeId, parent, findNeighborNodes(parent, parent.getChild(oldIndex), parent.getChild(oldIndex + 1)));
-            insertNodeConnections(nodeId, nodeState);
-        }
-    }
-
-    void valueTreeParentChanged (ValueTree& treeWhoseParentHasChanged) override {
-        // TODO
-    }
-
-    void valueTreeRedirected (ValueTree& treeWhichHasBeenChanged) override {}
 
     void removeNodeConnections(NodeID nodeId, const ValueTree& parent, NeighborNodes neighborNodes) {
         for (int channel = 0; channel < 2; ++channel) {
@@ -228,4 +194,36 @@ private:
         }
         return ValueTree();
     }
+
+    void valueTreePropertyChanged (ValueTree& tree, const Identifier& property) override {}
+
+    void valueTreeChildAdded (ValueTree& parent, ValueTree& child) override {
+        if (child.hasType(IDs::PROCESSOR)) {
+            addProcessor(child);
+        }
+    }
+
+    void valueTreeChildRemoved (ValueTree& parent, ValueTree& child, int indexFromWhichChildWasRemoved) override {
+        if (child.hasType(IDs::PROCESSOR)) {
+            NodeID removedNodeId = getNodeIdFromProcessorState(child);
+
+            removeNodeConnections(removedNodeId, parent, findNeighborNodes(parent, parent.getChild(indexFromWhichChildWasRemoved - 1), parent.getChild(indexFromWhichChildWasRemoved)));
+
+            nodeIdForUuid.erase(child[IDs::uuid]);
+            removeNode(removedNodeId);
+        }
+    }
+
+    void valueTreeChildOrderChanged (ValueTree& parent, int oldIndex, int newIndex) override {
+        ValueTree nodeState = parent.getChild(newIndex);
+        if (nodeState.hasType(IDs::PROCESSOR)) {
+            NodeID nodeId = getNodeIdFromProcessorState(nodeState);
+            removeNodeConnections(nodeId, parent, findNeighborNodes(parent, parent.getChild(oldIndex), parent.getChild(oldIndex + 1)));
+            insertNodeConnections(nodeId, nodeState);
+        }
+    }
+
+    void valueTreeParentChanged (ValueTree& treeWhoseParentHasChanged) override {}
+
+    void valueTreeRedirected (ValueTree& treeWhichHasBeenChanged) override {}
 };
