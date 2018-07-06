@@ -3,13 +3,13 @@
 #include <Identifiers.h>
 #include "JuceHeader.h"
 #include "push2/Push2MidiCommunicator.h"
-#include "AudioGraphBuilder.h"
+#include "ProcessorGraph.h"
 
 using Push2 = Push2MidiCommunicator;
 
 class MidiControlHandler : private ProjectChangeListener {
 public:
-    explicit MidiControlHandler(Project &project, AudioGraphBuilder &audioGraphBuilder, UndoManager &undoManager) :
+    explicit MidiControlHandler(Project &project, ProcessorGraph &audioGraphBuilder, UndoManager &undoManager) :
             project(project), audioGraphBuilder(audioGraphBuilder), undoManager(undoManager) {
         project.addChangeListener(this);
     }
@@ -100,7 +100,7 @@ public:
 
 private:
     Project &project;
-    AudioGraphBuilder &audioGraphBuilder;
+    ProcessorGraph &audioGraphBuilder;
     UndoManager &undoManager;
 
     Push2Component *push2Component;

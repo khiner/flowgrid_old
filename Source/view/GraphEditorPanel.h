@@ -1,11 +1,11 @@
 #pragma once
 
-#include <AudioGraphBuilder.h>
+#include <ProcessorGraph.h>
 
 class GraphEditorPanel : public Component,
                          public ChangeListener {
 public:
-    GraphEditorPanel(AudioGraphBuilder &graph);
+    GraphEditorPanel(ProcessorGraph &graph);
 
     ~GraphEditorPanel();
 
@@ -39,7 +39,7 @@ public:
     void endDraggingConnector(const MouseEvent &);
 
     //==============================================================================
-    AudioGraphBuilder &graph;
+    ProcessorGraph &graph;
 
 private:
     struct FilterComponent;
@@ -69,7 +69,7 @@ class GraphDocumentComponent : public Component,
                                public DragAndDropTarget,
                                public DragAndDropContainer {
 public:
-    GraphDocumentComponent(AudioGraphBuilder &graph,
+    GraphDocumentComponent(ProcessorGraph &graph,
                            AudioPluginFormatManager &formatManager,
                            AudioDeviceManager &deviceManager,
                            KnownPluginList &pluginList);
@@ -101,7 +101,7 @@ public:
     BurgerMenuComponent burgerMenu;
 
 private:
-    AudioGraphBuilder &graph;
+    ProcessorGraph &graph;
     AudioDeviceManager &deviceManager;
     KnownPluginList &pluginList;
 

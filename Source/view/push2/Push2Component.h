@@ -4,7 +4,7 @@
 #include <ValueTreeItems.h>
 #include <processors/ProcessorIds.h>
 #include "push2/Push2DisplayBridge.h"
-#include "AudioGraphBuilder.h"
+#include "ProcessorGraph.h"
 #include "Push2ProcessorView.h"
 #include "Push2ProcessorSelector.h"
 
@@ -13,7 +13,7 @@ class Push2Component :
         public Component,
         private ProjectChangeListener {
 public:
-    explicit Push2Component(Project &project, AudioGraphBuilder &audioGraphBuilder)
+    explicit Push2Component(Project &project, ProcessorGraph &audioGraphBuilder)
             : project(project), audioGraphBuilder(audioGraphBuilder), processorSelector(processorIds) {
         startTimer(60);
 
@@ -89,7 +89,7 @@ private:
     Push2DisplayBridge displayBridge;
 
     Project &project;
-    AudioGraphBuilder &audioGraphBuilder;
+    ProcessorGraph &audioGraphBuilder;
 
     Push2ProcessorView processorView;
     Push2ProcessorSelector processorSelector;

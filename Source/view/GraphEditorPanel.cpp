@@ -87,7 +87,7 @@ struct GraphEditorPanel::PinComponent : public Component,
     }
 
     GraphEditorPanel &panel;
-    AudioGraphBuilder &graph;
+    ProcessorGraph &graph;
     AudioProcessorGraph::NodeAndChannel pin;
     const bool isInput;
     int busIdx = 0;
@@ -358,7 +358,7 @@ struct GraphEditorPanel::FilterComponent : public Component,
     void parameterGestureChanged(int, bool) override {}
 
     GraphEditorPanel &panel;
-    AudioGraphBuilder &graph;
+    ProcessorGraph &graph;
     const AudioProcessorGraph::NodeID nodeId;
     OwnedArray<PinComponent> pins;
     int numInputs = 0, numOutputs = 0;
@@ -534,7 +534,7 @@ struct GraphEditorPanel::ConnectorComponent : public Component,
     }
 
     GraphEditorPanel &panel;
-    AudioGraphBuilder &graph;
+    ProcessorGraph &graph;
     AudioProcessorGraph::Connection connection{{0, 0},
                                                {0, 0}};
     Point<float> lastInputPos, lastOutputPos;
@@ -546,7 +546,7 @@ struct GraphEditorPanel::ConnectorComponent : public Component,
 
 
 //==============================================================================
-GraphEditorPanel::GraphEditorPanel(AudioGraphBuilder &g) : graph(g) {
+GraphEditorPanel::GraphEditorPanel(ProcessorGraph &g) : graph(g) {
     graph.addChangeListener(this);
     setOpaque(true);
 }
@@ -943,7 +943,7 @@ struct GraphDocumentComponent::PluginListBoxModel : public ListBoxModel,
 };
 
 //==============================================================================
-GraphDocumentComponent::GraphDocumentComponent(AudioGraphBuilder &graph,
+GraphDocumentComponent::GraphDocumentComponent(ProcessorGraph &graph,
                                                AudioPluginFormatManager &fm,
                                                AudioDeviceManager &dm,
                                                KnownPluginList &kpl)

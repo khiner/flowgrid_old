@@ -12,7 +12,7 @@ class ValueTreeEditor : public Component,
                         private ComboBox::Listener,
                         private Timer {
 public:
-    ValueTreeEditor(const ValueTree &state, UndoManager &undoManager, Project& project, AudioGraphBuilder &audioGraphBuilder) : undoManager(undoManager), project(project) {
+    ValueTreeEditor(const ValueTree &state, UndoManager &undoManager, Project& project, ProcessorGraph &audioGraphBuilder) : undoManager(undoManager), project(project) {
         addAndMakeVisible(treeView);
         treeView.setColour(TreeView::backgroundColourId,
                        getUIColourIfAvailable(LookAndFeel_V4::ColourScheme::UIColour::windowBackground));

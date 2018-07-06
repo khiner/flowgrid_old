@@ -5,7 +5,7 @@
 class SelectionPanel : public Component,
                        private ProjectChangeListener {
 public:
-    SelectionPanel(Project &project, AudioGraphBuilder &audioGraphBuilder)
+    SelectionPanel(Project &project, ProcessorGraph &audioGraphBuilder)
             : project(project), audioGraphBuilder(audioGraphBuilder) {
         Utilities::addAndMakeVisible(*this, {&titleLabel, &nameEditor, &colourButton, &startSlider, &lengthSlider});
 
@@ -69,7 +69,7 @@ private:
     const static int MAX_PROCESSOR_PARAMS_TO_DISPLAY = 8;
 
     Project &project;
-    AudioGraphBuilder &audioGraphBuilder;
+    ProcessorGraph &audioGraphBuilder;
 
     Label titleLabel;
     TextEditor nameEditor{"Name: "};

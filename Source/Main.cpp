@@ -156,7 +156,7 @@ private:
     AudioProcessorPlayer player;
 
     Project project;
-    AudioGraphBuilder audioGraphBuilder;
+    ProcessorGraph audioGraphBuilder;
     MidiControlHandler midiControlHandler;
 
     void showAudioSettings() {
