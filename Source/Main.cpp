@@ -16,8 +16,8 @@ ValueTree loadOrCreateDefaultEdit() {
 class SoundMachineApplication : public JUCEApplication, public MenuBarModel {
 public:
     SoundMachineApplication() : project(loadOrCreateDefaultEdit(), undoManager),
-                                audioGraphBuilder(project.getState(), undoManager),
-                                midiControlHandler(project, audioGraphBuilder, undoManager) {}
+                                processorGraph(project, undoManager),
+                                midiControlHandler(project, processorGraph, undoManager) {}
 
     const String getApplicationName() override { return ProjectInfo::projectName; }
 
@@ -26,7 +26,7 @@ public:
     bool moreThanOneInstanceAllowed() override { return true; }
 
     void initialise(const String &) override {
-        player.setProcessor(&audioGraphBuilder);
+        player.setProcessor(&processorGraph);
         deviceManager.addAudioCallback(&player);
 
         push2MidiCommunicator.setMidiInputCallback([this](const MidiMessage &message) {
@@ -35,13 +35,13 @@ public:
         deviceManager.initialiseWithDefaultDevices(2, 2);
 
         Process::makeForegroundProcess();
-        Push2Component *push2Component = new Push2Component(project, audioGraphBuilder);
+        Push2Component *push2Component = new Push2Component(project, processorGraph);
         push2Window = std::make_unique<MainWindow>("Push 2 Mirror", push2Component);
         ValueTreeEditor *valueTreeEditor = new ValueTreeEditor(project.getState(), undoManager, project,
-                                                               audioGraphBuilder);
+                                                               processorGraph);
         treeWindow = std::make_unique<MainWindow>("Tree Editor", valueTreeEditor);
         arrangeWindow = std::make_unique<MainWindow>("Arrange View", new ArrangeView(project.getState()));
-        graphEditorWindow = std::make_unique<MainWindow>("Graph Editor", new GraphEditorPanel(audioGraphBuilder));
+        graphEditorWindow = std::make_unique<MainWindow>("Graph Editor", new GraphEditorPanel(processorGraph));
 
         audioDeviceSelectorComponent = std::make_unique<AudioDeviceSelectorComponent>(deviceManager, 0, 256, 0, 256,
                                                                                       true, true, true, false);
@@ -156,7 +156,7 @@ private:
     AudioProcessorPlayer player;
 
     Project project;
-    ProcessorGraph audioGraphBuilder;
+    ProcessorGraph processorGraph;
     MidiControlHandler midiControlHandler;
 
     void showAudioSettings() {

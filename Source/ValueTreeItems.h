@@ -510,6 +510,47 @@ public:
         return processor;
     }
 
+    void makeSlotsValid(const ValueTree& parent) {
+        std::vector<int> slots;
+        for (int i = 0; i < parent.getNumChildren(); i++) {
+            const ValueTree& child = parent.getChild(i);
+            if (child.hasType(IDs::PROCESSOR)) {
+                slots.push_back(int(child.getProperty(IDs::PROCESSOR_SLOT)));
+            }
+        }
+        std::sort(slots.begin(), slots.end());
+        for (int i = 1; i < slots.size(); i++) {
+            while (slots[i] <= slots[i - 1]) {
+                slots[i] += 1;
+            }
+        }
+
+        auto iterator = slots.begin();
+        for (int i = 0; i < parent.getNumChildren(); i++) {
+            ValueTree child = parent.getChild(i);
+            if (child.hasType(IDs::PROCESSOR)) {
+                child.setProperty(IDs::PROCESSOR_SLOT, *(iterator++), nullptr);
+            }
+        }
+    }
+
+    // TODO consider moving this (and a bunch of other similar logic) to ValueTreeItems::Track
+    // and using a 'Project' here instead of 'ValueTree' project state
+    int getParentIndexForProcessor(const ValueTree &parent, const ValueTree &processorState) {
+        for (int i = 0; parent.getNumChildren(); i++) {
+            const ValueTree &otherProcessorState = parent.getChild(i);
+            if (processorState == otherProcessorState)
+                continue;
+            if (otherProcessorState.hasType(IDs::PROCESSOR) &&
+                int(otherProcessorState.getProperty(IDs::PROCESSOR_SLOT)) > int(processorState.getProperty(IDs::PROCESSOR_SLOT))) {
+                return parent.indexOf(otherProcessorState);
+            }
+        }
+
+        // TODO in this and other places, we assume processers are the only type of track child.
+        return parent.getNumChildren();
+    }
+
     bool isInterestedInDragSource(const DragAndDropTarget::SourceDetails &dragSourceDetails) override {
         return dragSourceDetails.description == IDs::TRACK.toString();
     }

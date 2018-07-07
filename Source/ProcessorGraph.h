@@ -8,8 +8,8 @@
 
 class ProcessorGraph : public AudioProcessorGraph, private ValueTree::Listener {
 public:
-    explicit ProcessorGraph(const ValueTree &projectState, UndoManager &undoManager)
-            : projectState(projectState), undoManager(undoManager) {
+    explicit ProcessorGraph(Project &project, UndoManager &undoManager)
+            : project(project), projectState(project.getState()), undoManager(undoManager) {
         this->projectState.addListener(this);
         enableAllBuses();
         audioOutputNode = addNode(new AudioGraphIOProcessor(AudioGraphIOProcessor::audioOutputNode));
@@ -66,7 +66,7 @@ public:
             }
             StatefulAudioProcessor *processor = getProcessorForNodeId(nodeId);
             const ValueTree &parent = projectState.getChild(currentlyDraggingGridPosition.x);
-            Helpers::moveSingleItem(processor->state, parent, getParentIndexForProcessor(parent, processor->state), undoManager);
+            Helpers::moveSingleItem(processor->state, parent, project.getParentIndexForProcessor(parent, processor->state), undoManager);
         }
         currentlyDraggingNodeId = NA_NODE_ID;
     }
@@ -86,56 +86,13 @@ public:
                 row / float(Project::NUM_VISIBLE_TRACK_SLOTS) + (0.5 / Project::NUM_VISIBLE_TRACK_SLOTS)};
     }
 
-    Point<int> getProcessorGridLocation(NodeID nodeId) const {
-        if (nodeId == currentlyDraggingNodeId) {
-            return currentlyDraggingGridPosition;
-        } else if (auto *processor = getProcessorForNodeId(nodeId)) {
-            auto row = int(processor->state.getProperty(IDs::PROCESSOR_SLOT));
-            auto column = processor->state.getParent().getParent().indexOf(processor->state.getParent());
-
-            if (currentlyDraggingNodeId != NA_NODE_ID &&
-                currentlyDraggingGridPosition.x == column &&
-                currentlyDraggingGridPosition.y != initialDraggingGridPosition.y) {
-                if (initialDraggingGridPosition.y < row && row <= currentlyDraggingGridPosition.y) {
-                    // move row _up_ towards first available slot
-                    return {column, row - 1};
-                } else if (currentlyDraggingGridPosition.y <= row && row < initialDraggingGridPosition.y) {
-                    // move row _down_ towards first available slot
-                    return {column, row + 1};
-                } else {
-                    return {column, row};
-                }
-            } else {
-                return {column, row};
-            }
-        } else {
-            return {0, 0};
-        }
-    }
-    
-    // TODO consider moving this (and a bunch of other similar logic) to ValueTreeItems::Track
-    // and using a 'Project' here instead of 'ValueTree' project state 
-    int getParentIndexForProcessor(const ValueTree &parent, const ValueTree &processorState) {
-        for (int i = 0; parent.getNumChildren(); i++) {
-            const ValueTree &otherProcessorState = parent.getChild(i);
-            if (processorState == otherProcessorState)
-                continue;
-            if (otherProcessorState.hasType(IDs::PROCESSOR) &&
-                int(otherProcessorState.getProperty(IDs::PROCESSOR_SLOT)) > int(processorState.getProperty(IDs::PROCESSOR_SLOT))) {
-                return parent.indexOf(otherProcessorState);
-            }
-        }
-
-        // TODO in this and other places, we assume processers are the only type of track child.
-        return parent.getNumChildren();
-    }
-    
 private:
     const static NodeID NA_NODE_ID = 0;
 
     NodeID currentlyDraggingNodeId = NA_NODE_ID;
     Point<int> currentlyDraggingGridPosition;
     Point<int> initialDraggingGridPosition;
+    Project &project;
     ValueTree projectState;
     UndoManager &undoManager;
     Node::Ptr audioOutputNode;
@@ -171,6 +128,32 @@ private:
         // so send (maybe _another_) select message that will update the UI in case this was already selected.
         if (processorState[IDs::selected]) {
             processor->state.sendPropertyChangeMessage(IDs::selected);
+        }
+    }
+
+    Point<int> getProcessorGridLocation(NodeID nodeId) const {
+        if (nodeId == currentlyDraggingNodeId) {
+            return currentlyDraggingGridPosition;
+        } else if (auto *processor = getProcessorForNodeId(nodeId)) {
+            auto row = int(processor->state.getProperty(IDs::PROCESSOR_SLOT));
+            auto column = processor->state.getParent().getParent().indexOf(processor->state.getParent());
+
+            if (currentlyDraggingNodeId != NA_NODE_ID &&
+                currentlyDraggingGridPosition.x == column) {
+                if (initialDraggingGridPosition.y < row && row <= currentlyDraggingGridPosition.y) {
+                    // move row _up_ towards first available slot
+                    return {column, row - 1};
+                } else if (currentlyDraggingGridPosition.y <= row && row < initialDraggingGridPosition.y) {
+                    // move row _down_ towards first available slot
+                    return {column, row + 1};
+                } else {
+                    return {column, row};
+                }
+            } else {
+                return {column, row};
+            }
+        } else {
+            return {0, 0};
         }
     }
 
@@ -282,6 +265,7 @@ private:
     void valueTreeChildAdded (ValueTree& parent, ValueTree& child) override {
         if (child.hasType(IDs::PROCESSOR)) {
             addProcessor(child);
+            project.makeSlotsValid(parent);
         }
     }
 
@@ -305,10 +289,12 @@ private:
                                                  findNeighborNodes(parent, parent.getChild(oldIndex), parent.getChild(oldIndex + 1));
             removeNodeConnections(nodeId, parent, neighborNodes);
             insertNodeConnections(nodeId, nodeState);
+            project.makeSlotsValid(parent);
         }
     }
 
-    void valueTreeParentChanged (ValueTree& treeWhoseParentHasChanged) override {}
+    void valueTreeParentChanged (ValueTree& treeWhoseParentHasChanged) override {
+    }
 
     void valueTreeRedirected (ValueTree& treeWhichHasBeenChanged) override {}
 };
