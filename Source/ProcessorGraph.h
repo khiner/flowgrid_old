@@ -130,19 +130,18 @@ public:
     // and using a 'Project' here instead of 'ValueTree' project state 
     int getParentIndexForProcessor(const ValueTree &processorState) {
         const ValueTree &track = processorState.getParent();
-        if (track.getNumChildren() == 0) {
-            return 0;
-        }
         for (int i = 0; track.getNumChildren(); i++) {
             const ValueTree &otherProcessorState = track.getChild(i);
+            if (processorState == otherProcessorState)
+                continue;
             if (otherProcessorState.hasType(IDs::PROCESSOR) &&
-                int(otherProcessorState.getProperty(IDs::PROCESSOR_SLOT)) >= int(processorState.getProperty(IDs::PROCESSOR_SLOT))) {
+                int(otherProcessorState.getProperty(IDs::PROCESSOR_SLOT)) > int(processorState.getProperty(IDs::PROCESSOR_SLOT))) {
                 return track.indexOf(otherProcessorState);
             }
         }
 
         // TODO in this and other places, we assume processers are the only type of track child.
-        return track.getNumChildren() - 1;
+        return track.getNumChildren();
     }
     
 private:
@@ -315,7 +314,10 @@ private:
         ValueTree nodeState = parent.getChild(newIndex);
         if (nodeState.hasType(IDs::PROCESSOR)) {
             NodeID nodeId = getNodeIdFromProcessorState(nodeState);
-            removeNodeConnections(nodeId, parent, findNeighborNodes(parent, parent.getChild(oldIndex), parent.getChild(oldIndex + 1)));
+            const NeighborNodes &neighborNodes = oldIndex < newIndex ?
+                                                 findNeighborNodes(parent, parent.getChild(oldIndex - 1), parent.getChild(oldIndex)) :
+                                                 findNeighborNodes(parent, parent.getChild(oldIndex), parent.getChild(oldIndex + 1));
+            removeNodeConnections(nodeId, parent, neighborNodes);
             insertNodeConnections(nodeId, nodeState);
         }
     }
