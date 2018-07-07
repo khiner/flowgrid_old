@@ -1,12 +1,11 @@
 #pragma once
 
-#include <Utilities.h>
 #include "JuceHeader.h"
 #include "StatefulAudioProcessor.h"
 
-class BalanceAndGainProcessor : public StatefulAudioProcessor, public Utilities::ValueTreePropertyChangeListener  {
+class MixerChannelProcessor : public StatefulAudioProcessor {
 public:
-    explicit BalanceAndGainProcessor(const ValueTree &state, UndoManager &undoManager) :
+    explicit MixerChannelProcessor(const ValueTree &state, UndoManager &undoManager) :
             StatefulAudioProcessor(2, 2, state, undoManager),
             balanceParameter(state, undoManager, "balance", "Balance", "",
                           NormalisableRange<double>(0.0f, 1.0f), 0.5f,
@@ -20,12 +19,12 @@ public:
         this->state.addListener(this);
     }
 
-    ~BalanceAndGainProcessor() {
+    ~MixerChannelProcessor() override {
         state.removeListener(this);
     }
 
-    static const String name() { return "Balance & Gain"; }
-    const String getName() const override { return BalanceAndGainProcessor::name(); }
+    static const String name() { return "Mixer Channel"; }
+    const String getName() const override { return MixerChannelProcessor::name(); }
     int getNumParameters() override { return 2; }
 
     void prepareToPlay (double sampleRate, int maximumExpectedSamplesPerBlock) override {

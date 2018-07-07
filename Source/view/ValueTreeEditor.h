@@ -31,7 +31,7 @@ public:
         redoButton.addListener(this);
         createTrackButton.addListener(this);
         addProcessorComboBox.addListener(this);
-        addProcessorComboBox.addItemList(processorIds, 1);
+        addProcessorComboBox.addItemList(allProcessorIds, 1);
         addProcessorComboBox.setTextWhenNothingSelected("Create processor");
         startTimer(500);
         setSize(800, 600);
@@ -94,7 +94,7 @@ public:
     void comboBoxChanged(ComboBox* cb) override  {
         if (cb == &addProcessorComboBox) {
             if (project.getSelectedTrack().isValid()) {
-                project.createAndAddProcessor(processorIds[cb->getSelectedId() - 1]);
+                project.createAndAddProcessor(allProcessorIds[cb->getSelectedId() - 1]);
             }
         }
         cb->setSelectedItemIndex(-1, dontSendNotification); // don't keep displaying the selected item
@@ -109,7 +109,14 @@ public:
     }
 
     void itemSelected(ValueTree item) override {
-        addProcessorComboBox.setVisible(project.getSelectedTrack().isValid());
+        const ValueTree &selectedTrack = project.getSelectedTrack();
+        addProcessorComboBox.setVisible(selectedTrack.isValid());
+        const StringArray &availableProcessorIdsForTrack = getAvailableProcessorIdsForTrack(selectedTrack);
+        for (int processorIndex = 0; processorIndex < addProcessorComboBox.getNumItems(); processorIndex++) {
+            bool shouldBeEnabled = availableProcessorIdsForTrack.contains(addProcessorComboBox.getItemText(processorIndex));
+            addProcessorComboBox.setItemEnabled(processorIndex + 1, shouldBeEnabled);
+        }
+        
     }
 
     void itemRemoved(ValueTree item) override {

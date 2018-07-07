@@ -4,8 +4,8 @@
 
 class Push2ProcessorSelector : public Component {
 public:
-    explicit Push2ProcessorSelector(const StringArray &processorIds) : processorIds(processorIds) {
-        for (const String &processorId : processorIds) {
+    explicit Push2ProcessorSelector(const StringArray &allProcessorIds) {
+        for (const String &processorId : allProcessorIds) {
             auto *label = new Label(processorId, processorId);
             addAndMakeVisible(label);
             label->setJustificationType(Justification::centred);
@@ -13,8 +13,14 @@ public:
         }
     }
 
-    const String& selectProcessor(int index) {
-        return processorIds[index];
+    void setProcessorIds(const StringArray &processorIds) {
+        for (auto *label : processorIdLabels) {
+            label->setVisible(processorIds.contains(label->getText()));
+        }
+    }
+
+    const String selectProcessor(const ValueTree &track, int index) {
+        return processorIdLabels[index]->getText();
     }
 
     void resized() override {
@@ -25,6 +31,5 @@ public:
     }
 
 private:
-    const StringArray &processorIds;
     OwnedArray<Label> processorIdLabels;
 };

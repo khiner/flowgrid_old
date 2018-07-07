@@ -3,12 +3,15 @@
 #include "DefaultAudioProcessor.h"
 #include <unordered_map>
 #include <Parameter.h>
+#include <Utilities.h>
 
-class StatefulAudioProcessor : public DefaultAudioProcessor {
+class StatefulAudioProcessor : public DefaultAudioProcessor, public Utilities::ValueTreePropertyChangeListener {
 public:
     StatefulAudioProcessor(int inputChannelCount, int outputChannelCount, const ValueTree &state, UndoManager &undoManager) :
             DefaultAudioProcessor(inputChannelCount, outputChannelCount), state(state), undoManager(undoManager) {
     }
+
+    virtual void valueTreePropertyChanged(ValueTree& tree, const Identifier& p) = 0;
 
     virtual Parameter *getParameterInfo(int parameterIndex) = 0;
 

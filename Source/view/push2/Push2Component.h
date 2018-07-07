@@ -14,7 +14,7 @@ class Push2Component :
         private ProjectChangeListener {
 public:
     explicit Push2Component(Project &project, ProcessorGraph &audioGraphBuilder)
-            : project(project), audioGraphBuilder(audioGraphBuilder), processorSelector(processorIds) {
+            : project(project), audioGraphBuilder(audioGraphBuilder), processorSelector(allProcessorIds) {
         startTimer(60);
 
         addChildComponent(processorView);
@@ -38,7 +38,7 @@ public:
 
     void aboveScreenButtonPressed(int buttonIndex) {
         if (processorSelector.isVisible()) {
-            const String &processorId = processorSelector.selectProcessor(buttonIndex);
+            const String &processorId = processorSelector.selectProcessor(project.getSelectedTrack(), buttonIndex);
             if (!processorId.isEmpty()) {
                 project.createAndAddProcessor(processorId);
             }
@@ -76,6 +76,9 @@ private:
                 processorView.setProcessor(processor);
                 processorView.setVisible(true);
             }
+        }
+        if (project.getSelectedTrack().isValid()) {
+            processorSelector.setProcessorIds(getAvailableProcessorIdsForTrack(project.getSelectedTrack()));
         }
     }
 

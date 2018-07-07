@@ -1,11 +1,10 @@
 #pragma once
 
 #include <audio_sources/ToneSourceWithParameters.h>
-#include <Utilities.h>
 #include "JuceHeader.h"
 #include "StatefulAudioProcessor.h"
 
-class SineBank : public StatefulAudioProcessor, public Utilities::ValueTreePropertyChangeListener  {
+class SineBank : public StatefulAudioProcessor {
 public:
     explicit SineBank(const ValueTree &state, UndoManager &undoManager) :
             StatefulAudioProcessor(0, 2, state, undoManager),
@@ -22,7 +21,7 @@ public:
         this->state.addListener(this);
     }
 
-    ~SineBank() {
+    ~SineBank() override {
         state.removeListener(this);
     }
 

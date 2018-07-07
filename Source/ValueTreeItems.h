@@ -2,7 +2,7 @@
 
 #include <processors/SineBank.h>
 #include <processors/GainProcessor.h>
-#include <processors/BalanceAndGainProcessor.h>
+#include <processors/MixerChannelProcessor.h>
 #include "view/ColourChangeButton.h"
 #include "Identifiers.h"
 
@@ -454,7 +454,7 @@ public:
         ValueTree masterTrack(IDs::MASTER_TRACK);
         Helpers::createUuidProperty(masterTrack);
         masterTrack.setProperty(IDs::name, "Master", nullptr);
-        createAndAddProcessor(masterTrack, BalanceAndGainProcessor::name(), false);
+        createAndAddProcessor(masterTrack, MixerChannelProcessor::name(), false);
 
         state.addChild(masterTrack, -1, nullptr);
 
@@ -476,7 +476,7 @@ public:
 
         state.addChild(track, insertIndex, undoable ? &undoManager : nullptr);
 
-        createAndAddProcessor(track, BalanceAndGainProcessor::name(), undoable);
+        createAndAddProcessor(track, MixerChannelProcessor::name(), undoable);
         return track;
     }
 
@@ -494,11 +494,11 @@ public:
         Helpers::createUuidProperty(processor);
         processor.setProperty(IDs::name, name, nullptr);
 
-        const ValueTree &gainAndBalanceProcessor = track.getChildWithProperty(IDs::name, BalanceAndGainProcessor::name());
+        const ValueTree &mixerChannelProcessor = track.getChildWithProperty(IDs::name, MixerChannelProcessor::name());
         // Insert new processors _right before_ the first g&b processor, or at the end if there isn't one.
-        int insertIndex = gainAndBalanceProcessor.isValid() ? track.indexOf(gainAndBalanceProcessor) : -1;
+        int insertIndex = mixerChannelProcessor.isValid() ? track.indexOf(mixerChannelProcessor) : -1;
         int slot = 0;
-        if (insertIndex == -1 && name == BalanceAndGainProcessor::name()) {
+        if (insertIndex == -1 && name == MixerChannelProcessor::name()) {
             slot = NUM_VISIBLE_TRACK_SLOTS - 1;
         } else if (track.getNumChildren() > 1) {
             slot = int(track.getChild(track.getNumChildren() - 2).getProperty(IDs::PROCESSOR_SLOT)) + 1;

@@ -1,10 +1,9 @@
 #pragma once
 
-#include <Utilities.h>
 #include "JuceHeader.h"
 #include "StatefulAudioProcessor.h"
 
-class GainProcessor : public StatefulAudioProcessor, public Utilities::ValueTreePropertyChangeListener  {
+class GainProcessor : public StatefulAudioProcessor {
 public:
     explicit GainProcessor(const ValueTree &state, UndoManager &undoManager) :
             StatefulAudioProcessor(2, 2, state, undoManager),
@@ -16,7 +15,7 @@ public:
         this->state.addListener(this);
     }
 
-    ~GainProcessor() {
+    ~GainProcessor() override {
         state.removeListener(this);
     }
 

@@ -4,21 +4,7 @@
 
 #include "JuceHeader.h"
 #include "ValueTreeItems.h"
-#include <processors/SineBank.h>
-#include <processors/GainProcessor.h>
-#include <processors/BalanceAndGainProcessor.h>
-
-static StatefulAudioProcessor *createStatefulAudioProcessorFromId(const String &id, const ValueTree &state, UndoManager &undoManager) {
-    if (id == SineBank::name()) {
-        return new SineBank(state, undoManager);
-    } else if (id == GainProcessor::name()) {
-        return new GainProcessor(state, undoManager);
-    } else if (id == BalanceAndGainProcessor::name()) {
-        return new BalanceAndGainProcessor(state, undoManager);
-    } else {
-        return nullptr;
-    }
-}
+#include "processors/ProcessorIds.h"
 
 class ProcessorGraph : public AudioProcessorGraph, private ValueTree::Listener {
 public:
@@ -46,7 +32,7 @@ public:
 
     StatefulAudioProcessor *getMasterGainProcessor() {
         const ValueTree masterTrack = getMasterTrack();
-        ValueTree gain = masterTrack.getChildWithProperty(IDs::name, BalanceAndGainProcessor::name());
+        ValueTree gain = masterTrack.getChildWithProperty(IDs::name, MixerChannelProcessor::name());
         String uuid = gain[IDs::uuid];
         return getProcessorForUuid(uuid);
     }
