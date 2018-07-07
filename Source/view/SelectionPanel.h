@@ -29,7 +29,7 @@ public:
 
         project.addChangeListener(this);
 
-        itemSelected(ValueTree());
+        itemSelected({});
     }
 
     ~SelectionPanel() override {
@@ -80,7 +80,7 @@ private:
     OwnedArray<Label> processorLabels;
     OwnedArray<Slider> processorSliders;
 
-    void itemSelected(ValueTree item) override {
+    void itemSelected(const ValueTree &item) override {
         for (auto *c : getChildren())
             c->setVisible(false);
 
@@ -91,8 +91,7 @@ private:
             const String &name = item.getProperty(IDs::name);
             titleLabel.setText("Processor Selected: " + name, dontSendNotification);
 
-            String uuid = item[IDs::uuid];
-            StatefulAudioProcessor *processor = audioGraphBuilder.getProcessorForUuid(uuid);
+            StatefulAudioProcessor *processor = audioGraphBuilder.getProcessorForState(item);
             if (processor != nullptr) {
                 for (int i = 0; i < processor->getNumParameters(); i++) {
                     auto *slider = processorSliders.getUnchecked(i);
@@ -108,26 +107,28 @@ private:
             startSlider.setVisible(true);
             lengthSlider.setVisible(true);
 
-            nameEditor.getTextValue().referTo(item.getPropertyAsValue(IDs::name, project.getUndoManager()));
+            ValueTree editableItem(item);
+            nameEditor.getTextValue().referTo(editableItem.getPropertyAsValue(IDs::name, project.getUndoManager()));
             startSlider.getValueObject().referTo(
-                    item.getPropertyAsValue(IDs::start, project.getUndoManager()));
+                    editableItem.getPropertyAsValue(IDs::start, project.getUndoManager()));
             lengthSlider.getValueObject().referTo(
-                    item.getPropertyAsValue(IDs::length, project.getUndoManager()));
+                    editableItem.getPropertyAsValue(IDs::length, project.getUndoManager()));
         } else if (item.hasType(IDs::TRACK)) {
             const String &name = item.getProperty(IDs::name);
             titleLabel.setText("Track Selected: " + name, dontSendNotification);
             nameEditor.setVisible(true);
             colourButton.setVisible(true);
 
-            nameEditor.getTextValue().referTo(item.getPropertyAsValue(IDs::name, project.getUndoManager()));
-            colourButton.getColourValueObject().referTo(item.getPropertyAsValue(IDs::colour, project.getUndoManager()));
+            ValueTree editableItem(item);
+            nameEditor.getTextValue().referTo(editableItem.getPropertyAsValue(IDs::name, project.getUndoManager()));
+            colourButton.getColourValueObject().referTo(editableItem.getPropertyAsValue(IDs::colour, project.getUndoManager()));
         }
 
         repaint();
         resized();
     }
 
-    void itemRemoved(ValueTree item) override {
+    void itemRemoved(const ValueTree& item) override {
         if (item == project.getSelectedProcessor()) {
             itemSelected(ValueTree());
         }

@@ -18,12 +18,21 @@ public:
         recursivelyInitializeWithState(projectState);
     }
 
-    StatefulAudioProcessor *getProcessorForNodeId(NodeID nodeId) const {
-        return nodeId != NA_NODE_ID ? dynamic_cast<StatefulAudioProcessor *>(getNodeForId(nodeId)->getProcessor()) : nullptr;
+    StatefulAudioProcessor *getProcessorForState(const ValueTree &processorState) const {
+        return getProcessorForNodeId(getNodeIdForProcessorState(processorState));
     }
 
-    StatefulAudioProcessor *getProcessorForUuid(String &uuid) const {
-        return getProcessorForNodeId(getNodeID(uuid));
+    const NodeID getNodeIdForProcessorState(const ValueTree &processorState) const {
+        return NodeID(int(processorState[IDs::NODE_ID]));
+    }
+
+    StatefulAudioProcessor *getProcessorForNodeId(NodeID nodeId) const {
+        if (nodeId == NA_NODE_ID) {
+            return nullptr;
+        } else {
+            Node *node = getNodeForId(nodeId);
+            return node != nullptr ? dynamic_cast<StatefulAudioProcessor *>(node->getProcessor()) : nullptr;
+        }
     }
 
     const ValueTree getMasterTrack() {
@@ -32,14 +41,8 @@ public:
 
     StatefulAudioProcessor *getMasterGainProcessor() {
         const ValueTree masterTrack = getMasterTrack();
-        ValueTree gain = masterTrack.getChildWithProperty(IDs::name, MixerChannelProcessor::name());
-        String uuid = gain[IDs::uuid];
-        return getProcessorForUuid(uuid);
-    }
-
-    const NodeID getNodeID(String &uuid) const {
-        auto pair = nodeIdForUuid.find(uuid);
-        return pair != nodeIdForUuid.end() ? pair->second : NA_NODE_ID;
+        const ValueTree &gain = masterTrack.getChildWithProperty(IDs::name, MixerChannelProcessor::name());
+        return getProcessorForState(gain);
     }
 
     void beginDraggingNode(NodeID nodeId) {
@@ -96,14 +99,8 @@ private:
     ValueTree projectState;
     UndoManager &undoManager;
     Node::Ptr audioOutputNode;
-    std::unordered_map<String, NodeID> nodeIdForUuid;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ProcessorGraph)
-
-    const NodeID getNodeIdFromProcessorState(const ValueTree &processorState) {
-        String uuid = processorState[IDs::uuid].toString();
-        return getNodeID(uuid);
-    }
 
     void recursivelyInitializeWithState(const ValueTree &state) {
         if (state.hasType(IDs::PROCESSOR)) {
@@ -121,21 +118,19 @@ private:
         auto *processor = createStatefulAudioProcessorFromId(processorState[IDs::name], processorState, undoManager);
         processor->updateValueTree();
 
-        const Node::Ptr &newNode = addNode(processor);
-        nodeIdForUuid.insert(std::pair<String, NodeID>(processor->state[IDs::uuid].toString(), newNode->nodeID));
+
+        const Node::Ptr &newNode = processorState.hasProperty(IDs::NODE_ID) ?
+                                   addNode(processor, getNodeIdForProcessorState(processorState)) :
+                                   addNode(processor);
+        processor->state.setProperty(IDs::NODE_ID, int(newNode->nodeID), nullptr);
         insertNodeConnections(newNode->nodeID, processorState);
-        // Kind of crappy - the order of the listeners seems to be nondeterministic,
-        // so send (maybe _another_) select message that will update the UI in case this was already selected.
-        if (processorState[IDs::selected]) {
-            processor->state.sendPropertyChangeMessage(IDs::selected);
-        }
     }
 
     Point<int> getProcessorGridLocation(NodeID nodeId) const {
         if (nodeId == currentlyDraggingNodeId) {
             return currentlyDraggingGridPosition;
         } else if (auto *processor = getProcessorForNodeId(nodeId)) {
-            auto row = int(processor->state.getProperty(IDs::PROCESSOR_SLOT));
+            auto row = int(processor->state[IDs::PROCESSOR_SLOT]);
             auto column = processor->state.getParent().getParent().indexOf(processor->state.getParent());
 
             if (currentlyDraggingNodeId != NA_NODE_ID &&
@@ -179,7 +174,7 @@ private:
             for (int i = 0; i < projectState.getNumChildren(); i++) {
                 const ValueTree lastProcessor = getLastProcessorInTrack(projectState.getChild(i));
                 if (lastProcessor.isValid()) {
-                    NodeID lastProcessorNodeId = getNodeIdFromProcessorState(lastProcessor);
+                    NodeID lastProcessorNodeId = getNodeIdForProcessorState(lastProcessor);
                     for (int channel = 0; channel < 2; ++channel) {
                         removeConnection({{lastProcessorNodeId, channel},
                                           {nodeId,  channel}});
@@ -206,7 +201,7 @@ private:
             for (int i = 0; i < projectState.getNumChildren(); i++) {
                 const ValueTree lastProcessor = getLastProcessorInTrack(projectState.getChild(i));
                 if (lastProcessor.isValid()) {
-                    NodeID lastProcessorNodeId = getNodeIdFromProcessorState(lastProcessor);
+                    NodeID lastProcessorNodeId = getNodeIdForProcessorState(lastProcessor);
                     for (int channel = 0; channel < 2; ++channel) {
                         removeConnection({{lastProcessorNodeId, channel},
                                           {neighborNodes.after,  channel}});
@@ -233,13 +228,14 @@ private:
         NeighborNodes neighborNodes;
 
         if (beforeNodeState.isValid()) {
-            neighborNodes.before = getNodeIdFromProcessorState(beforeNodeState);
+            neighborNodes.before = getNodeIdForProcessorState(beforeNodeState);
         }
-        if (!afterNodeState.isValid() || (neighborNodes.after = getNodeIdFromProcessorState(afterNodeState)) == NA_NODE_ID) {
+        if (!afterNodeState.isValid() || (neighborNodes.after = getNodeIdForProcessorState(afterNodeState)) == NA_NODE_ID) {
             if (parent.hasType(IDs::MASTER_TRACK)) {
                 neighborNodes.after = audioOutputNode->nodeID;
             } else {
-                neighborNodes.after = getNodeIdFromProcessorState(projectState.getChildWithName(IDs::MASTER_TRACK).getChildWithName(IDs::PROCESSOR));
+                neighborNodes.after = getNodeIdForProcessorState(
+                        projectState.getChildWithName(IDs::MASTER_TRACK).getChildWithName(IDs::PROCESSOR));
                 if (neighborNodes.after == NA_NODE_ID) { // master track has no processors. go straight out.
                     neighborNodes.after = audioOutputNode->nodeID;
                 }
@@ -266,16 +262,20 @@ private:
         if (child.hasType(IDs::PROCESSOR)) {
             addProcessor(child);
             project.makeSlotsValid(parent);
+
+            // Kind of crappy - the order of the listeners seems to be nondeterministic,
+            // so send (maybe _another_) select message that will update the UI in case this was already selected.
+            if (child[IDs::selected]) {
+                child.sendPropertyChangeMessage(IDs::selected);
+            }
         }
     }
 
     void valueTreeChildRemoved (ValueTree& parent, ValueTree& child, int indexFromWhichChildWasRemoved) override {
         if (child.hasType(IDs::PROCESSOR)) {
-            NodeID removedNodeId = getNodeIdFromProcessorState(child);
+            NodeID removedNodeId = getNodeIdForProcessorState(child);
 
             removeNodeConnections(removedNodeId, parent, findNeighborNodes(parent, parent.getChild(indexFromWhichChildWasRemoved - 1), parent.getChild(indexFromWhichChildWasRemoved)));
-
-            nodeIdForUuid.erase(child[IDs::uuid]);
             removeNode(removedNodeId);
         }
     }
@@ -283,7 +283,7 @@ private:
     void valueTreeChildOrderChanged (ValueTree& parent, int oldIndex, int newIndex) override {
         ValueTree nodeState = parent.getChild(newIndex);
         if (nodeState.hasType(IDs::PROCESSOR)) {
-            NodeID nodeId = getNodeIdFromProcessorState(nodeState);
+            NodeID nodeId = getNodeIdForProcessorState(nodeState);
             const NeighborNodes &neighborNodes = oldIndex < newIndex ?
                                                  findNeighborNodes(parent, parent.getChild(oldIndex - 1), parent.getChild(oldIndex)) :
                                                  findNeighborNodes(parent, parent.getChild(oldIndex), parent.getChild(oldIndex + 1));

@@ -108,7 +108,7 @@ public:
         }
     }
 
-    void itemSelected(ValueTree item) override {
+    void itemSelected(const ValueTree& item) override {
         const ValueTree &selectedTrack = project.getSelectedTrack();
         addProcessorComboBox.setVisible(selectedTrack.isValid());
         const StringArray &availableProcessorIdsForTrack = getAvailableProcessorIdsForTrack(selectedTrack);
@@ -119,7 +119,7 @@ public:
         
     }
 
-    void itemRemoved(ValueTree item) override {
+    void itemRemoved(const ValueTree& item) override {
         if (item == project.getSelectedTrack()) {
             addProcessorComboBox.setVisible(false);
         }

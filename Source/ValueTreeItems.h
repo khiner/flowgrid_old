@@ -10,8 +10,8 @@ class ValueTreeItem;
 
 class ProjectChangeListener {
 public:
-    virtual void itemSelected(ValueTree) = 0;
-    virtual void itemRemoved(ValueTree) = 0;
+    virtual void itemSelected(const ValueTree&) = 0;
+    virtual void itemRemoved(const ValueTree&) = 0;
     virtual ~ProjectChangeListener() {}
 };
 

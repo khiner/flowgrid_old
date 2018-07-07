@@ -108,14 +108,13 @@ private:
 
     bool isShiftHeld = false;
 
-    void itemSelected(ValueTree item) override {
+    void itemSelected(const ValueTree& item) override {
         if (item.hasType(IDs::PROCESSOR)) {
-            String uuid = item[IDs::uuid];
-            currentProcessorToControl = audioGraphBuilder.getProcessorForUuid(uuid);
+            currentProcessorToControl = audioGraphBuilder.getProcessorForState(item);
         }
     }
 
-    void itemRemoved(ValueTree item) override {
+    void itemRemoved(const ValueTree& item) override {
         if (item == project.getSelectedProcessor()) {
             currentProcessorToControl = nullptr;
         }

@@ -64,14 +64,13 @@ private:
         //std::cout << std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - t1).count() << '\n';
     }
 
-    void itemSelected(ValueTree item) override {
+    void itemSelected(const ValueTree& item) override {
         for (auto *c : getChildren())
             c->setVisible(false);
 
         if (!item.isValid()) {
         } else if (item.hasType(IDs::PROCESSOR)) {
-            String uuid = item[IDs::uuid];
-            StatefulAudioProcessor *processor = audioGraphBuilder.getProcessorForUuid(uuid);
+            StatefulAudioProcessor *processor = audioGraphBuilder.getProcessorForState(item);
             if (processor != nullptr) {
                 processorView.setProcessor(processor);
                 processorView.setVisible(true);
@@ -82,7 +81,7 @@ private:
         }
     }
 
-    void itemRemoved(ValueTree item) override {
+    void itemRemoved(const ValueTree& item) override {
         if (item == project.getSelectedProcessor()) {
             itemSelected(ValueTree());
         }
