@@ -65,7 +65,8 @@ public:
                 processor->state.setProperty(IDs::PROCESSOR_SLOT, getProcessorGridLocation(node->nodeID).y, &undoManager);
             }
             StatefulAudioProcessor *processor = getProcessorForNodeId(nodeId);
-            Helpers::moveSingleItem(processor->state, projectState.getChild(currentlyDraggingGridPosition.x), getParentIndexForProcessor(processor->state), undoManager);
+            const ValueTree &parent = projectState.getChild(currentlyDraggingGridPosition.x);
+            Helpers::moveSingleItem(processor->state, parent, getParentIndexForProcessor(parent, processor->state), undoManager);
         }
         currentlyDraggingNodeId = NA_NODE_ID;
     }
@@ -114,20 +115,19 @@ public:
     
     // TODO consider moving this (and a bunch of other similar logic) to ValueTreeItems::Track
     // and using a 'Project' here instead of 'ValueTree' project state 
-    int getParentIndexForProcessor(const ValueTree &processorState) {
-        const ValueTree &track = processorState.getParent();
-        for (int i = 0; track.getNumChildren(); i++) {
-            const ValueTree &otherProcessorState = track.getChild(i);
+    int getParentIndexForProcessor(const ValueTree &parent, const ValueTree &processorState) {
+        for (int i = 0; parent.getNumChildren(); i++) {
+            const ValueTree &otherProcessorState = parent.getChild(i);
             if (processorState == otherProcessorState)
                 continue;
             if (otherProcessorState.hasType(IDs::PROCESSOR) &&
                 int(otherProcessorState.getProperty(IDs::PROCESSOR_SLOT)) > int(processorState.getProperty(IDs::PROCESSOR_SLOT))) {
-                return track.indexOf(otherProcessorState);
+                return parent.indexOf(otherProcessorState);
             }
         }
 
         // TODO in this and other places, we assume processers are the only type of track child.
-        return track.getNumChildren();
+        return parent.getNumChildren();
     }
     
 private:
