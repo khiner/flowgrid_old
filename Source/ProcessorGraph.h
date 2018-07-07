@@ -9,13 +9,13 @@
 class ProcessorGraph : public AudioProcessorGraph, private ValueTree::Listener {
 public:
     explicit ProcessorGraph(Project &project, UndoManager &undoManager)
-            : project(project), projectState(project.getState()), undoManager(undoManager) {
-        this->projectState.addListener(this);
+            : project(project), undoManager(undoManager) {
+        this->project.getTracks().addListener(this);
         enableAllBuses();
         audioOutputNode = addNode(new AudioGraphIOProcessor(AudioGraphIOProcessor::audioOutputNode));
 
-        recursivelyInitializeWithState(getMasterTrack());
-        recursivelyInitializeWithState(projectState);
+        recursivelyInitializeWithState(project.getMasterTrack());
+        recursivelyInitializeWithState(project.getTracks());
     }
 
     StatefulAudioProcessor *getProcessorForState(const ValueTree &processorState) const {
@@ -35,12 +35,8 @@ public:
         }
     }
 
-    const ValueTree getMasterTrack() {
-        return projectState.getChildWithName(IDs::MASTER_TRACK);
-    }
-
     StatefulAudioProcessor *getMasterGainProcessor() {
-        const ValueTree masterTrack = getMasterTrack();
+        const ValueTree masterTrack = project.getMasterTrack();
         const ValueTree &gain = masterTrack.getChildWithProperty(IDs::name, MixerChannelProcessor::name());
         return getProcessorForState(gain);
     }
@@ -68,8 +64,8 @@ public:
                 processor->state.setProperty(IDs::PROCESSOR_SLOT, getProcessorGridLocation(node->nodeID).y, &undoManager);
             }
             StatefulAudioProcessor *processor = getProcessorForNodeId(nodeId);
-            const ValueTree &parent = projectState.getChild(currentlyDraggingGridPosition.x);
-            Helpers::moveSingleItem(processor->state, parent, project.getParentIndexForProcessor(parent, processor->state), undoManager);
+            const ValueTree &track = project.getTrack(currentlyDraggingGridPosition.x);
+            Helpers::moveSingleItem(processor->state, track, project.getParentIndexForProcessor(track, processor->state), undoManager);
         }
         currentlyDraggingNodeId = NA_NODE_ID;
     }
@@ -95,8 +91,8 @@ private:
     NodeID currentlyDraggingNodeId = NA_NODE_ID;
     Point<int> currentlyDraggingGridPosition;
     Point<int> initialDraggingGridPosition;
+
     Project &project;
-    ValueTree projectState;
     UndoManager &undoManager;
     Node::Ptr audioOutputNode;
 
@@ -171,8 +167,8 @@ private:
             }
         } else if (parent.hasType(IDs::MASTER_TRACK)) {
             // first processor in master track receives connections from the last processor of every track
-            for (int i = 0; i < projectState.getNumChildren(); i++) {
-                const ValueTree lastProcessor = getLastProcessorInTrack(projectState.getChild(i));
+            for (int i = 0; i < project.getNumTracks(); i++) {
+                const ValueTree lastProcessor = getLastProcessorInTrack(project.getTrack(i));
                 if (lastProcessor.isValid()) {
                     NodeID lastProcessorNodeId = getNodeIdForProcessorState(lastProcessor);
                     for (int channel = 0; channel < 2; ++channel) {
@@ -198,8 +194,8 @@ private:
             }
         } else if (nodeState.getParent().hasType(IDs::MASTER_TRACK)) {
             // first processor in master track receives connections from the last processor of every track
-            for (int i = 0; i < projectState.getNumChildren(); i++) {
-                const ValueTree lastProcessor = getLastProcessorInTrack(projectState.getChild(i));
+            for (int i = 0; i < project.getNumTracks(); i++) {
+                const ValueTree lastProcessor = getLastProcessorInTrack(project.getTrack(i));
                 if (lastProcessor.isValid()) {
                     NodeID lastProcessorNodeId = getNodeIdForProcessorState(lastProcessor);
                     for (int channel = 0; channel < 2; ++channel) {
@@ -234,8 +230,7 @@ private:
             if (parent.hasType(IDs::MASTER_TRACK)) {
                 neighborNodes.after = audioOutputNode->nodeID;
             } else {
-                neighborNodes.after = getNodeIdForProcessorState(
-                        projectState.getChildWithName(IDs::MASTER_TRACK).getChildWithName(IDs::PROCESSOR));
+                neighborNodes.after = getNodeIdForProcessorState(project.getMasterTrack().getChildWithName(IDs::PROCESSOR));
                 if (neighborNodes.after == NA_NODE_ID) { // master track has no processors. go straight out.
                     neighborNodes.after = audioOutputNode->nodeID;
                 }

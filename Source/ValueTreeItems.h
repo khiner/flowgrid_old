@@ -344,7 +344,6 @@ public:
     }
 };
 
-
 class Track : public ValueTreeItem {
 public:
     Track(const ValueTree &state, UndoManager &um)
@@ -389,6 +388,26 @@ public:
     }
 };
 
+class Tracks : public ValueTreeItem {
+public:
+    Tracks(const ValueTree &state, UndoManager &um)
+            : ValueTreeItem(state, um) {
+        jassert (state.hasType(IDs::TRACKS));
+    }
+
+    bool isInterestedInDragSource(const DragAndDropTarget::SourceDetails &dragSourceDetails) override {
+        return dragSourceDetails.description == IDs::TRACK.toString();
+    }
+
+    void itemDropped(const DragAndDropTarget::SourceDetails &, int insertIndex) override {
+        Helpers::moveItems(*getOwnerView(), Helpers::getSelectedTreeViewItems<Track>(*getOwnerView()), state,
+                           insertIndex, undoManager);
+    }
+
+    bool canBeSelected() const override {
+        return false;
+    }
+};
 
 class Project : public ValueTreeItem,
                 public ProjectChangeBroadcaster {
@@ -397,15 +416,34 @@ public:
             : ValueTreeItem(v, um) {
         if (!state.isValid()) {
             state = createDefaultProject();
+        } else {
+            tracks = state.getChildWithName(IDs::TRACKS);
+            masterTrack = tracks.getChildWithName(IDs::MASTER_TRACK);
         }
         jassert (state.hasType(IDs::PROJECT));
     }
 
-    ValueTree getSelectedTrack() {
+    ValueTree& getTracks() {
+        return tracks;
+    }
+
+    int getNumTracks() {
+        return tracks.getNumChildren();
+    }
+
+    ValueTree getTrack(int trackIndex) {
+        return tracks.getChild(trackIndex);
+    }
+
+    ValueTree& getMasterTrack() {
+        return masterTrack;
+    }
+
+    ValueTree& getSelectedTrack() {
         return selectedTrack;
     }
 
-    ValueTree getSelectedProcessor() {
+    ValueTree& getSelectedProcessor() {
         return selectedProcessor;
     }
 
@@ -432,8 +470,11 @@ public:
     ValueTree createDefaultProject() {
         state = ValueTree(IDs::PROJECT);
         state.setProperty(IDs::name, "My First Project", nullptr);
-
         Helpers::createUuidProperty(state);
+
+        tracks = ValueTree(IDs::TRACKS);
+        Helpers::createUuidProperty(tracks);
+        tracks.setProperty(IDs::name, "Tracks", nullptr);
 
         for (int tn = 0; tn < 1; ++tn) {
             ValueTree track = createAndAddTrack(false);
@@ -451,12 +492,14 @@ public:
 //            }
         }
 
-        ValueTree masterTrack(IDs::MASTER_TRACK);
+        masterTrack = ValueTree(IDs::MASTER_TRACK);
         Helpers::createUuidProperty(masterTrack);
         masterTrack.setProperty(IDs::name, "Master", nullptr);
         createAndAddProcessor(masterTrack, MixerChannelProcessor::name(), false);
 
-        state.addChild(masterTrack, -1, nullptr);
+        tracks.addChild(masterTrack, -1, nullptr);
+
+        state.addChild(tracks, -1, nullptr);
 
         return state;
     }
@@ -470,18 +513,18 @@ public:
         track.setProperty(IDs::colour, Colour::fromHSV((1.0f / 8.0f) * numTracks, 0.65f, 0.65f, 1.0f).toString(), nullptr);
         track.setProperty(IDs::name, trackName, nullptr);
 
-        const ValueTree &masterTrack = state.getChildWithName(IDs::MASTER_TRACK);
+        const ValueTree &masterTrack = tracks.getChildWithName(IDs::MASTER_TRACK);
         // Insert new processors _before_ the master track, or at the end if there isn't one.
-        int insertIndex = masterTrack.isValid() ? state.indexOf(masterTrack) : -1;
+        int insertIndex = masterTrack.isValid() ? tracks.indexOf(masterTrack) : -1;
 
-        state.addChild(track, insertIndex, undoable ? &undoManager : nullptr);
+        tracks.addChild(track, insertIndex, undoable ? &undoManager : nullptr);
 
         createAndAddProcessor(track, MixerChannelProcessor::name(), undoable);
         return track;
     }
 
     ValueTree createAndAddProcessor(const String& name, bool undoable=true) {
-        ValueTree selectedTrack = getSelectedTrack();
+        ValueTree& selectedTrack = getSelectedTrack();
         if (selectedTrack.isValid()) {
             return createAndAddProcessor(selectedTrack, name, undoable);
         } else {
@@ -552,13 +595,10 @@ public:
     }
 
     bool isInterestedInDragSource(const DragAndDropTarget::SourceDetails &dragSourceDetails) override {
-        return dragSourceDetails.description == IDs::TRACK.toString();
+        return false;
     }
 
-    void itemDropped(const DragAndDropTarget::SourceDetails &, int insertIndex) override {
-        Helpers::moveItems(*getOwnerView(), Helpers::getSelectedTreeViewItems<Track>(*getOwnerView()), state,
-                           insertIndex, undoManager);
-    }
+    void itemDropped(const DragAndDropTarget::SourceDetails &, int insertIndex) override {}
 
     bool canBeSelected() const override {
         return false;
@@ -593,6 +633,8 @@ public:
 
     const static int NUM_VISIBLE_TRACK_SLOTS = 8;
 private:
+    ValueTree tracks;
+    ValueTree masterTrack;
     ValueTree selectedTrack;
     ValueTree selectedProcessor;
 };
@@ -600,6 +642,7 @@ private:
 
 inline ValueTreeItem *createValueTreeItemForType(const ValueTree &v, UndoManager &um) {
     if (v.hasType(IDs::PROJECT)) return new Project(v, um);
+    if (v.hasType(IDs::TRACKS)) return new Tracks(v, um);
     if (v.hasType(IDs::MASTER_TRACK)) return new MasterTrack(v, um);
     if (v.hasType(IDs::TRACK)) return new Track(v, um);
     if (v.hasType(IDs::CLIP)) return new Clip(v, um);
