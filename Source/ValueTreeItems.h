@@ -417,11 +417,15 @@ public:
         if (!state.isValid()) {
             state = createDefaultProject();
         } else {
+            connections = state.getChildWithName(IDs::CONNECTIONS);
             tracks = state.getChildWithName(IDs::TRACKS);
             masterTrack = tracks.getChildWithName(IDs::MASTER_TRACK);
-            connections = state.getChildWithName(IDs::CONNECTIONS);
         }
         jassert (state.hasType(IDs::PROJECT));
+    }
+
+    ValueTree& getConnections() {
+        return connections;
     }
 
     ValueTree& getTracks() {
@@ -452,45 +456,32 @@ public:
         return connections.isValid() && connections.getNumChildren() > 0;
     }
 
-    void setConnections(const std::vector<AudioProcessorGraph::Connection> &connections) {
-        ValueTree connectionsState = state.getChildWithName(IDs::CONNECTIONS);
-        connectionsState.removeAllChildren(nullptr);
-        for (auto connection : connections) {
-            ValueTree connectionState(IDs::CONNECTION);
-            ValueTree source(IDs::SOURCE);
-            source.setProperty(IDs::NODE_ID, int(connection.source.nodeID), nullptr);
-            source.setProperty(IDs::CHANNEL, connection.source.channelIndex, nullptr);
-            connectionState.addChild(source, -1, nullptr);
+    void addConnection(const AudioProcessorGraph::Connection &connection) {
+        ValueTree connectionState(IDs::CONNECTION);
+        ValueTree source(IDs::SOURCE);
+        source.setProperty(IDs::NODE_ID, int(connection.source.nodeID), nullptr);
+        source.setProperty(IDs::CHANNEL, connection.source.channelIndex, nullptr);
+        connectionState.addChild(source, -1, nullptr);
 
-            ValueTree destination(IDs::DESTINATION);
-            destination.setProperty(IDs::NODE_ID, int(connection.destination.nodeID), nullptr);
-            destination.setProperty(IDs::CHANNEL, connection.destination.channelIndex, nullptr);
-            connectionState.addChild(destination, -1, nullptr);
+        ValueTree destination(IDs::DESTINATION);
+        destination.setProperty(IDs::NODE_ID, int(connection.destination.nodeID), nullptr);
+        destination.setProperty(IDs::CHANNEL, connection.destination.channelIndex, nullptr);
+        connectionState.addChild(destination, -1, nullptr);
 
-            connectionsState.addChild(connectionState, -1, nullptr);
-        }
+        connections.addChild(connectionState, -1, nullptr);
     }
 
-    const std::vector<AudioProcessorGraph::Connection> getConnections() {
-        std::vector<AudioProcessorGraph::Connection> graphConnections;
-
+    void removeConnection(const AudioProcessorGraph::Connection &connection) {
         for (auto connectionState : connections) {
-            const ValueTree &sourceState = connectionState.getChildWithName(IDs::SOURCE);
-            const ValueTree &destinationState = connectionState.getChildWithName(IDs::DESTINATION);
-
-            // nodes have already been added. just need to add connections if there are any.
-            AudioProcessorGraph::NodeAndChannel source{};
-            source.nodeID = AudioProcessorGraph::NodeID(int(sourceState[IDs::NODE_ID]));
-            source.channelIndex = sourceState[IDs::CHANNEL];
-
-            AudioProcessorGraph::NodeAndChannel destination{};
-            destination.nodeID = AudioProcessorGraph::NodeID(int(destinationState[IDs::NODE_ID]));
-            destination.channelIndex = destinationState[IDs::CHANNEL];
-
-            graphConnections.push_back(AudioProcessorGraph::Connection(source, destination));
+            auto sourceState = connectionState.getChildWithName(IDs::SOURCE);
+            auto destState = connectionState.getChildWithName(IDs::DESTINATION);
+            if (AudioProcessorGraph::NodeID(int(sourceState[IDs::NODE_ID])) == connection.source.nodeID &&
+                AudioProcessorGraph::NodeID(int(destState[IDs::NODE_ID])) == connection.destination.nodeID &&
+                int(sourceState[IDs::CHANNEL]) == connection.source.channelIndex &&
+                int(destState[IDs::CHANNEL]) == connection.destination.channelIndex) {
+                connections.removeChild(connectionState, nullptr);
+            }
         }
-
-        return graphConnections;
     }
 
     void moveSelectionUp() {

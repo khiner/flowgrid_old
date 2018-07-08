@@ -15,23 +15,46 @@ public:
 
         bool hasConnections = project.hasConnections();
 
+        this->project.getConnections().addListener(this);
         recursivelyInitializeWithState(project.getMasterTrack(), !hasConnections);
         recursivelyInitializeWithState(project.getTracks(), !hasConnections);
 
         if (hasConnections) {
             for (auto connection : project.getConnections()) {
-                addConnection(connection);
+                valueTreeChildAdded(project.getConnections(), connection);
             }
         }
         this->project.getTracks().addListener(this);
     }
 
-    StatefulAudioProcessor *getProcessorForState(const ValueTree &processorState) const {
-        return getProcessorForNodeId(getNodeIdForProcessorState(processorState));
+    std::vector<Connection> getConnections() const override {
+        std::vector<Connection> graphConnections;
+
+        for (auto connectionState : project.getConnections()) {
+            const ValueTree &sourceState = connectionState.getChildWithName(IDs::SOURCE);
+            const ValueTree &destinationState = connectionState.getChildWithName(IDs::DESTINATION);
+
+            // nodes have already been added. just need to add connections if there are any.
+            NodeAndChannel source{};
+            source.nodeID = NodeID(int(sourceState[IDs::NODE_ID]));
+            source.channelIndex = sourceState[IDs::CHANNEL];
+
+            NodeAndChannel destination{};
+            destination.nodeID = NodeID(int(destinationState[IDs::NODE_ID]));
+            destination.channelIndex = destinationState[IDs::CHANNEL];
+
+            graphConnections.emplace_back(source, destination);
+        }
+
+        return graphConnections;
     }
 
-    const NodeID getNodeIdForProcessorState(const ValueTree &processorState) const {
-        return NodeID(int(processorState[IDs::NODE_ID]));
+    StatefulAudioProcessor *getProcessorForState(const ValueTree &processorState) const {
+        return getProcessorForNodeId(getNodeIdForState(processorState));
+    }
+
+    const NodeID getNodeIdForState(const ValueTree &state) const {
+        return NodeID(int(state[IDs::NODE_ID]));
     }
 
     StatefulAudioProcessor *getProcessorForNodeId(NodeID nodeId) const {
@@ -101,10 +124,6 @@ public:
                 row / float(Project::NUM_VISIBLE_TRACK_SLOTS) + (0.5 / Project::NUM_VISIBLE_TRACK_SLOTS)};
     }
 
-    std::vector<Connection> getConnections() const override {
-        return project.getConnections();
-    }
-
     bool addConnection(const Connection& c) override {
         if (auto* source = getNodeForId(c.source.nodeID)) {
             if (auto* dest = getNodeForId(c.destination.nodeID)) {
@@ -112,10 +131,7 @@ public:
                 auto destChan = c.destination.channelIndex;
 
                 if (canConnect(source, sourceChan, dest, destChan)) {
-                    source->outputs.add({ dest, destChan, sourceChan });
-                    dest->inputs.add({ source, sourceChan, destChan });
-                    jassert(isConnected(c));
-                    topologyChanged();
+                    project.addConnection(c);
                     return true;
                 }
             }
@@ -131,9 +147,7 @@ public:
                 auto destChan = c.destination.channelIndex;
 
                 if (isConnected(source, sourceChan, dest, destChan)) {
-                    source->outputs.removeAllInstancesOf({ dest, destChan, sourceChan });
-                    dest->inputs.removeAllInstancesOf({ source, sourceChan, destChan });
-                    topologyChanged();
+                    project.removeConnection(c);
                     return true;
                 }
             }
@@ -160,11 +174,6 @@ private:
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ProcessorGraph)
 
-    void topologyChanged() override {
-        project.setConnections(AudioProcessorGraph::getConnections());
-        AudioProcessorGraph::topologyChanged();
-    }
-
     void recursivelyInitializeWithState(const ValueTree &state, bool addDefaultConnections=true) {
         if (state.hasType(IDs::PROCESSOR)) {
             return addProcessor(state, addDefaultConnections);
@@ -181,7 +190,7 @@ private:
         processor->updateValueTree();
 
         const Node::Ptr &newNode = processorState.hasProperty(IDs::NODE_ID) ?
-                                   addNode(processor, getNodeIdForProcessorState(processorState)) :
+                                   addNode(processor, getNodeIdForState(processorState)) :
                                    addNode(processor);
         processor->state.setProperty(IDs::NODE_ID, int(newNode->nodeID), nullptr);
         if (addDefaultConnections) {
@@ -237,7 +246,7 @@ private:
             for (int i = 0; i < project.getNumTracks(); i++) {
                 const ValueTree lastProcessor = getLastProcessorInTrack(project.getTrack(i));
                 if (lastProcessor.isValid()) {
-                    NodeID lastProcessorNodeId = getNodeIdForProcessorState(lastProcessor);
+                    NodeID lastProcessorNodeId = getNodeIdForState(lastProcessor);
                     for (int channel = 0; channel < 2; ++channel) {
                         removeConnection({{lastProcessorNodeId, channel},
                                           {nodeId,  channel}});
@@ -264,7 +273,7 @@ private:
             for (int i = 0; i < project.getNumTracks(); i++) {
                 const ValueTree lastProcessor = getLastProcessorInTrack(project.getTrack(i));
                 if (lastProcessor.isValid()) {
-                    NodeID lastProcessorNodeId = getNodeIdForProcessorState(lastProcessor);
+                    NodeID lastProcessorNodeId = getNodeIdForState(lastProcessor);
                     for (int channel = 0; channel < 2; ++channel) {
                         removeConnection({{lastProcessorNodeId, channel},
                                           {neighborNodes.after,  channel}});
@@ -291,13 +300,13 @@ private:
         NeighborNodes neighborNodes;
 
         if (beforeNodeState.isValid()) {
-            neighborNodes.before = getNodeIdForProcessorState(beforeNodeState);
+            neighborNodes.before = getNodeIdForState(beforeNodeState);
         }
-        if (!afterNodeState.isValid() || (neighborNodes.after = getNodeIdForProcessorState(afterNodeState)) == NA_NODE_ID) {
+        if (!afterNodeState.isValid() || (neighborNodes.after = getNodeIdForState(afterNodeState)) == NA_NODE_ID) {
             if (parent.hasType(IDs::MASTER_TRACK)) {
                 neighborNodes.after = audioOutputNode->nodeID;
             } else {
-                neighborNodes.after = getNodeIdForProcessorState(project.getMasterTrack().getChildWithName(IDs::PROCESSOR));
+                neighborNodes.after = getNodeIdForState(project.getMasterTrack().getChildWithName(IDs::PROCESSOR));
                 if (neighborNodes.after == NA_NODE_ID) { // master track has no processors. go straight out.
                     neighborNodes.after = audioOutputNode->nodeID;
                 }
@@ -324,7 +333,7 @@ private:
         if (child.hasType(IDs::PROCESSOR)) {
             if (child.hasProperty(IDs::IS_MOVING)) {
                 // processor and node already exist. no need to destroy and create again. just moving between tracks.
-                insertNodeConnections(getNodeIdForProcessorState(child), child);
+                insertNodeConnections(getNodeIdForState(child), child);
             } else {
                 addProcessor(child);
             }
@@ -335,25 +344,48 @@ private:
             if (child[IDs::selected]) {
                 child.sendPropertyChangeMessage(IDs::selected);
             }
+        } else if (child.hasType(IDs::CONNECTION)) {
+            const ValueTree &sourceState = child.getChildWithName(IDs::SOURCE);
+            const ValueTree &destState = child.getChildWithName(IDs::DESTINATION);
+
+            Node *source = getNodeForId(getNodeIdForState(sourceState));
+            Node *dest = getNodeForId(getNodeIdForState(destState));
+            int destChannel = destState[IDs::CHANNEL];
+            int sourceChannel = sourceState[IDs::CHANNEL];
+            source->outputs.add({dest, destChannel, sourceChannel});
+            dest->inputs.add({source, sourceChannel, destChannel});
+            topologyChanged();
         }
     }
 
     void valueTreeChildRemoved(ValueTree& parent, ValueTree& child, int indexFromWhichChildWasRemoved) override {
         if (child.hasType(IDs::PROCESSOR)) {
-            NodeID removedNodeId = getNodeIdForProcessorState(child);
+            NodeID removedNodeId = getNodeIdForState(child);
 
             removeNodeConnections(removedNodeId, parent, findNeighborNodes(parent, parent.getChild(indexFromWhichChildWasRemoved - 1), parent.getChild(indexFromWhichChildWasRemoved)));
             if (!child.hasProperty(IDs::IS_MOVING)) {
                 // no need to destroy and create again. just moving between tracks.
                 removeNode(removedNodeId);
             }
+        } else if (child.hasType(IDs::CONNECTION)) {
+            const ValueTree &sourceState = child.getChildWithName(IDs::SOURCE);
+            const ValueTree &destState = child.getChildWithName(IDs::DESTINATION);
+
+            Node *source = getNodeForId(getNodeIdForState(sourceState));
+            Node *dest = getNodeForId(getNodeIdForState(destState));
+            int destChannel = destState[IDs::CHANNEL];
+            int sourceChannel = sourceState[IDs::CHANNEL];
+
+            source->outputs.removeAllInstancesOf({ dest, destChannel, sourceChannel });
+            dest->inputs.removeAllInstancesOf({ source, sourceChannel, destChannel });
+            topologyChanged();
         }
     }
 
     void valueTreeChildOrderChanged(ValueTree& parent, int oldIndex, int newIndex) override {
         ValueTree processorState = parent.getChild(newIndex);
         if (processorState.hasType(IDs::PROCESSOR)) {
-            NodeID nodeId = getNodeIdForProcessorState(processorState);
+            NodeID nodeId = getNodeIdForState(processorState);
             const NeighborNodes &neighborNodes = oldIndex < newIndex ?
                                                  findNeighborNodes(parent, parent.getChild(oldIndex - 1), parent.getChild(oldIndex)) :
                                                  findNeighborNodes(parent, parent.getChild(oldIndex), parent.getChild(oldIndex + 1));
