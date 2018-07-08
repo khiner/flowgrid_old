@@ -6,16 +6,25 @@
 #include "ValueTreeItems.h"
 #include "processors/ProcessorIds.h"
 
-class ProcessorGraph : public AudioProcessorGraph, private ValueTree::Listener {
+class ProcessorGraph : public AudioProcessorGraph, private ValueTree::Listener, private ChangeListener {
 public:
     explicit ProcessorGraph(Project &project, UndoManager &undoManager)
             : project(project), undoManager(undoManager) {
-        this->project.getTracks().addListener(this);
+        this->addChangeListener(this); // talking to myself (much on AudioProcessorGraph is private, nothing protected)
         enableAllBuses();
         audioOutputNode = addNode(new AudioGraphIOProcessor(AudioGraphIOProcessor::audioOutputNode));
 
-        recursivelyInitializeWithState(project.getMasterTrack());
-        recursivelyInitializeWithState(project.getTracks());
+        bool hasConnections = project.hasConnections();
+
+        recursivelyInitializeWithState(project.getMasterTrack(), !hasConnections);
+        recursivelyInitializeWithState(project.getTracks(), !hasConnections);
+
+        if (hasConnections) {
+            project.addConnections(this);
+        } else {
+            changeListenerCallback(this); // write out any new connections
+        }
+        this->project.getTracks().addListener(this);
     }
 
     StatefulAudioProcessor *getProcessorForState(const ValueTree &processorState) const {
@@ -98,19 +107,25 @@ private:
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ProcessorGraph)
 
-    void recursivelyInitializeWithState(const ValueTree &state) {
+    // called when graph topology changes
+    void changeListenerCallback (ChangeBroadcaster* source) override {
+        jassert(source == this);
+        project.setConnections(getConnections());
+    }
+
+    void recursivelyInitializeWithState(const ValueTree &state, bool addDefaultConnections=true) {
         if (state.hasType(IDs::PROCESSOR)) {
-            return addProcessor(state);
+            return addProcessor(state, addDefaultConnections);
         }
         for (int i = 0; i < state.getNumChildren(); i++) {
             const ValueTree &child = state.getChild(i);
             if (!child.hasType(IDs::MASTER_TRACK)) {
-                recursivelyInitializeWithState(child);
+                recursivelyInitializeWithState(child, addDefaultConnections);
             }
         }
     }
 
-    void addProcessor(const ValueTree &processorState) {
+    void addProcessor(const ValueTree &processorState, bool addDefaultConnections=true) {
         auto *processor = createStatefulAudioProcessorFromId(processorState[IDs::name], processorState, undoManager);
         processor->updateValueTree();
 
@@ -119,7 +134,9 @@ private:
                                    addNode(processor, getNodeIdForProcessorState(processorState)) :
                                    addNode(processor);
         processor->state.setProperty(IDs::NODE_ID, int(newNode->nodeID), nullptr);
-        insertNodeConnections(newNode->nodeID, processorState);
+        if (addDefaultConnections) {
+            insertNodeConnections(newNode->nodeID, processorState);
+        }
     }
 
     Point<int> getProcessorGridLocation(NodeID nodeId) const {

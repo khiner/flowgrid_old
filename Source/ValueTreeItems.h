@@ -419,6 +419,7 @@ public:
         } else {
             tracks = state.getChildWithName(IDs::TRACKS);
             masterTrack = tracks.getChildWithName(IDs::MASTER_TRACK);
+            connections = state.getChildWithName(IDs::CONNECTIONS);
         }
         jassert (state.hasType(IDs::PROJECT));
     }
@@ -445,6 +446,47 @@ public:
 
     ValueTree& getSelectedProcessor() {
         return selectedProcessor;
+    }
+
+    bool hasConnections() {
+        return connections.isValid() && connections.getNumChildren() > 0;
+    }
+
+    void setConnections(const std::vector<AudioProcessorGraph::Connection> &connections) {
+        ValueTree connectionsState = state.getChildWithName(IDs::CONNECTIONS);
+        connectionsState.removeAllChildren(nullptr);
+        for (auto connection : connections) {
+            ValueTree connectionState(IDs::CONNECTION);
+            ValueTree source(IDs::SOURCE);
+            source.setProperty(IDs::NODE_ID, int(connection.source.nodeID), nullptr);
+            source.setProperty(IDs::CHANNEL, connection.source.channelIndex, nullptr);
+            connectionState.addChild(source, -1, nullptr);
+
+            ValueTree destination(IDs::DESTINATION);
+            destination.setProperty(IDs::NODE_ID, int(connection.destination.nodeID), nullptr);
+            destination.setProperty(IDs::CHANNEL, connection.destination.channelIndex, nullptr);
+            connectionState.addChild(destination, -1, nullptr);
+
+            connectionsState.addChild(connectionState, -1, nullptr);
+        }
+    }
+
+    void addConnections(AudioProcessorGraph *audioProcessorGraph) {
+        for (auto connectionState : connections) {
+            const ValueTree &sourceState = connectionState.getChildWithName(IDs::SOURCE);
+            const ValueTree &destinationState = connectionState.getChildWithName(IDs::DESTINATION);
+
+            // nodes have already been added. just need to add connections if there are any.
+            AudioProcessorGraph::NodeAndChannel source;
+            source.nodeID = AudioProcessorGraph::NodeID(int(sourceState[IDs::NODE_ID]));
+            source.channelIndex = sourceState[IDs::CHANNEL];
+
+            AudioProcessorGraph::NodeAndChannel destination;
+            destination.nodeID = AudioProcessorGraph::NodeID(int(destinationState[IDs::NODE_ID]));
+            destination.channelIndex = destinationState[IDs::CHANNEL];
+
+            audioProcessorGraph->addConnection(AudioProcessorGraph::Connection(source, destination));
+        }
     }
 
     void moveSelectionUp() {
@@ -500,6 +542,9 @@ public:
         tracks.addChild(masterTrack, -1, nullptr);
 
         state.addChild(tracks, -1, nullptr);
+
+        connections = ValueTree(IDs::CONNECTIONS);
+        state.addChild(connections, -1, nullptr);
 
         return state;
     }
@@ -637,6 +682,7 @@ private:
     ValueTree masterTrack;
     ValueTree selectedTrack;
     ValueTree selectedProcessor;
+    ValueTree connections;
 };
 
 
