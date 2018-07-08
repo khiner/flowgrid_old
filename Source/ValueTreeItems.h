@@ -604,8 +604,7 @@ public:
 
     void makeSlotsValid(const ValueTree& parent) {
         std::vector<int> slots;
-        for (int i = 0; i < parent.getNumChildren(); i++) {
-            const ValueTree& child = parent.getChild(i);
+        for (const ValueTree& child : parent) {
             if (child.hasType(IDs::PROCESSOR)) {
                 slots.push_back(int(child.getProperty(IDs::PROCESSOR_SLOT)));
             }
@@ -618,8 +617,7 @@ public:
         }
 
         auto iterator = slots.begin();
-        for (int i = 0; i < parent.getNumChildren(); i++) {
-            ValueTree child = parent.getChild(i);
+        for (ValueTree child : parent) {
             if (child.hasType(IDs::PROCESSOR)) {
                 child.setProperty(IDs::PROCESSOR_SLOT, *(iterator++), nullptr);
             }
@@ -629,8 +627,7 @@ public:
     // TODO consider moving this (and a bunch of other similar logic) to ValueTreeItems::Track
     // and using a 'Project' here instead of 'ValueTree' project state
     int getParentIndexForProcessor(const ValueTree &parent, const ValueTree &processorState) {
-        for (int i = 0; parent.getNumChildren(); i++) {
-            const ValueTree &otherProcessorState = parent.getChild(i);
+        for (const ValueTree &otherProcessorState : parent) {
             if (processorState == otherProcessorState)
                 continue;
             if (otherProcessorState.hasType(IDs::PROCESSOR) &&

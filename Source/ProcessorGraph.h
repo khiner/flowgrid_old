@@ -160,8 +160,7 @@ private:
         if (state.hasType(IDs::PROCESSOR)) {
             return addProcessor(state, addDefaultConnections);
         }
-        for (int i = 0; i < state.getNumChildren(); i++) {
-            const ValueTree &child = state.getChild(i);
+        for (const ValueTree& child : state) {
             if (!child.hasType(IDs::MASTER_TRACK)) {
                 recursivelyInitializeWithState(child, addDefaultConnections);
             }
@@ -171,7 +170,7 @@ private:
     void addProcessor(const ValueTree &processorState, bool addDefaultConnections=true) {
         auto *processor = createStatefulAudioProcessorFromId(processorState[IDs::name], processorState, undoManager);
         processor->updateValueTree();
-        
+
         const Node::Ptr &newNode = processorState.hasProperty(IDs::NODE_ID) ?
                                    addNode(processor, getNodeIdForProcessorState(processorState)) :
                                    addNode(processor);
