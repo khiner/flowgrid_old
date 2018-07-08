@@ -471,22 +471,26 @@ public:
         }
     }
 
-    void addConnections(AudioProcessorGraph *audioProcessorGraph) {
+    const std::vector<AudioProcessorGraph::Connection> getConnections() {
+        std::vector<AudioProcessorGraph::Connection> graphConnections;
+
         for (auto connectionState : connections) {
             const ValueTree &sourceState = connectionState.getChildWithName(IDs::SOURCE);
             const ValueTree &destinationState = connectionState.getChildWithName(IDs::DESTINATION);
 
             // nodes have already been added. just need to add connections if there are any.
-            AudioProcessorGraph::NodeAndChannel source;
+            AudioProcessorGraph::NodeAndChannel source{};
             source.nodeID = AudioProcessorGraph::NodeID(int(sourceState[IDs::NODE_ID]));
             source.channelIndex = sourceState[IDs::CHANNEL];
 
-            AudioProcessorGraph::NodeAndChannel destination;
+            AudioProcessorGraph::NodeAndChannel destination{};
             destination.nodeID = AudioProcessorGraph::NodeID(int(destinationState[IDs::NODE_ID]));
             destination.channelIndex = destinationState[IDs::CHANNEL];
 
-            audioProcessorGraph->addConnection(AudioProcessorGraph::Connection(source, destination));
+            graphConnections.push_back(AudioProcessorGraph::Connection(source, destination));
         }
+
+        return graphConnections;
     }
 
     void moveSelectionUp() {

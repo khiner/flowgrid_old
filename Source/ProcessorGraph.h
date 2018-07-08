@@ -6,11 +6,10 @@
 #include "ValueTreeItems.h"
 #include "processors/ProcessorIds.h"
 
-class ProcessorGraph : public AudioProcessorGraph, private ValueTree::Listener, private ChangeListener {
+class ProcessorGraph : public AudioProcessorGraph, private ValueTree::Listener {
 public:
     explicit ProcessorGraph(Project &project, UndoManager &undoManager)
             : project(project), undoManager(undoManager) {
-        this->addChangeListener(this); // talking to myself (much on AudioProcessorGraph is private, nothing protected)
         enableAllBuses();
         audioOutputNode = addNode(new AudioGraphIOProcessor(AudioGraphIOProcessor::audioOutputNode));
 
@@ -20,10 +19,13 @@ public:
         recursivelyInitializeWithState(project.getTracks(), !hasConnections);
 
         if (hasConnections) {
-            project.addConnections(this);
+            for (auto connection : project.getConnections()) {
+                addConnection(connection);
+            }
         } else {
-            changeListenerCallback(this); // write out any new connections
+            topologyChanged(); // write out any new connections
         }
+        initializing = false;
         this->project.getTracks().addListener(this);
     }
 
@@ -94,9 +96,49 @@ public:
                 row / float(Project::NUM_VISIBLE_TRACK_SLOTS) + (0.5 / Project::NUM_VISIBLE_TRACK_SLOTS)};
     }
 
+    std::vector<Connection> getConnections() const {
+        return project.getConnections();
+    }
+
+    Node::Ptr addNode(AudioProcessor* newProcessor, NodeID nodeId = {}) {
+        const Node::Ptr &node = AudioProcessorGraph::addNode(newProcessor, nodeId);
+        topologyChanged();
+        return node;
+    }
+
+    bool removeNode(NodeID nodeId) {
+        if (AudioProcessorGraph::removeNode(nodeId)) {
+            topologyChanged();
+            return true;
+        }
+        return false;
+    }
+    
+    bool addConnection(const Connection& connection) {
+        if (AudioProcessorGraph::addConnection(connection)) {
+            topologyChanged();
+            return true;
+        }
+        return false;
+    }
+    
+    bool removeConnection(const Connection& connection) {
+        if (AudioProcessorGraph::removeConnection(connection)) {
+            topologyChanged();
+            return true;
+        }
+        return false;
+    }
+
+    void clear() {
+        AudioProcessorGraph::clear();
+        topologyChanged();
+    }
+
 private:
     const static NodeID NA_NODE_ID = 0;
-
+    bool initializing { true };
+    
     NodeID currentlyDraggingNodeId = NA_NODE_ID;
     Point<int> currentlyDraggingGridPosition;
     Point<int> initialDraggingGridPosition;
@@ -108,9 +150,10 @@ private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ProcessorGraph)
 
     // called when graph topology changes
-    void changeListenerCallback (ChangeBroadcaster* source) override {
-        jassert(source == this);
-        project.setConnections(getConnections());
+    void topologyChanged() {
+        if (!initializing) {
+            project.setConnections(AudioProcessorGraph::getConnections());
+        }
     }
 
     void recursivelyInitializeWithState(const ValueTree &state, bool addDefaultConnections=true) {
@@ -128,8 +171,7 @@ private:
     void addProcessor(const ValueTree &processorState, bool addDefaultConnections=true) {
         auto *processor = createStatefulAudioProcessorFromId(processorState[IDs::name], processorState, undoManager);
         processor->updateValueTree();
-
-
+        
         const Node::Ptr &newNode = processorState.hasProperty(IDs::NODE_ID) ?
                                    addNode(processor, getNodeIdForProcessorState(processorState)) :
                                    addNode(processor);
