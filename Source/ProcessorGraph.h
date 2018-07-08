@@ -75,12 +75,20 @@ public:
                 processor->state.setProperty(IDs::PROCESSOR_SLOT, getProcessorGridLocation(node->nodeID).y, &undoManager);
             }
             StatefulAudioProcessor *processor = getProcessorForNodeId(nodeId);
-            const ValueTree &track = project.getTrack(currentlyDraggingGridPosition.x);
-            Helpers::moveSingleItem(processor->state, track, project.getParentIndexForProcessor(track, processor->state), undoManager);
+            const ValueTree &toTrack = project.getTrack(currentlyDraggingGridPosition.x);
+            ValueTree processorState = processor->state;
+            moveProcessor(processorState, toTrack, project.getParentIndexForProcessor(toTrack, processorState));
+
         }
         currentlyDraggingNodeId = NA_NODE_ID;
     }
-    
+
+    void moveProcessor(ValueTree processorState, const ValueTree& toTrack, int insertIndex) {
+        processorState.setProperty(IDs::IS_MOVING, true, nullptr);
+        Helpers::moveSingleItem(processorState, toTrack, insertIndex, undoManager);
+        processorState.removeProperty(IDs::IS_MOVING, nullptr);
+    }
+
     Point<double> getNodePosition(NodeID nodeId) const {
         int row = 0, column = 0;
 
@@ -309,11 +317,16 @@ private:
         return ValueTree();
     }
 
-    void valueTreePropertyChanged (ValueTree& tree, const Identifier& property) override {}
+    void valueTreePropertyChanged(ValueTree& tree, const Identifier& property) override {}
 
-    void valueTreeChildAdded (ValueTree& parent, ValueTree& child) override {
+    void valueTreeChildAdded(ValueTree& parent, ValueTree& child) override {
         if (child.hasType(IDs::PROCESSOR)) {
-            addProcessor(child);
+            if (child.hasProperty(IDs::IS_MOVING)) {
+                // processor and node already exist. no need to destroy and create again. just moving between tracks.
+                insertNodeConnections(getNodeIdForProcessorState(child), child);
+            } else {
+                addProcessor(child);
+            }
             project.makeSlotsValid(parent);
 
             // Kind of crappy - the order of the listeners seems to be nondeterministic,
@@ -324,30 +337,33 @@ private:
         }
     }
 
-    void valueTreeChildRemoved (ValueTree& parent, ValueTree& child, int indexFromWhichChildWasRemoved) override {
+    void valueTreeChildRemoved(ValueTree& parent, ValueTree& child, int indexFromWhichChildWasRemoved) override {
         if (child.hasType(IDs::PROCESSOR)) {
             NodeID removedNodeId = getNodeIdForProcessorState(child);
 
             removeNodeConnections(removedNodeId, parent, findNeighborNodes(parent, parent.getChild(indexFromWhichChildWasRemoved - 1), parent.getChild(indexFromWhichChildWasRemoved)));
-            removeNode(removedNodeId);
+            if (!child.hasProperty(IDs::IS_MOVING)) {
+                // no need to destroy and create again. just moving between tracks.
+                removeNode(removedNodeId);
+            }
         }
     }
 
-    void valueTreeChildOrderChanged (ValueTree& parent, int oldIndex, int newIndex) override {
-        ValueTree nodeState = parent.getChild(newIndex);
-        if (nodeState.hasType(IDs::PROCESSOR)) {
-            NodeID nodeId = getNodeIdForProcessorState(nodeState);
+    void valueTreeChildOrderChanged(ValueTree& parent, int oldIndex, int newIndex) override {
+        ValueTree processorState = parent.getChild(newIndex);
+        if (processorState.hasType(IDs::PROCESSOR)) {
+            NodeID nodeId = getNodeIdForProcessorState(processorState);
             const NeighborNodes &neighborNodes = oldIndex < newIndex ?
                                                  findNeighborNodes(parent, parent.getChild(oldIndex - 1), parent.getChild(oldIndex)) :
                                                  findNeighborNodes(parent, parent.getChild(oldIndex), parent.getChild(oldIndex + 1));
             removeNodeConnections(nodeId, parent, neighborNodes);
-            insertNodeConnections(nodeId, nodeState);
+            insertNodeConnections(nodeId, processorState);
             project.makeSlotsValid(parent);
         }
     }
 
-    void valueTreeParentChanged (ValueTree& treeWhoseParentHasChanged) override {
+    void valueTreeParentChanged(ValueTree& treeWhoseParentHasChanged) override {
     }
 
-    void valueTreeRedirected (ValueTree& treeWhichHasBeenChanged) override {}
+    void valueTreeRedirected(ValueTree& treeWhichHasBeenChanged) override {}
 };
