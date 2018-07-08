@@ -22,10 +22,7 @@ public:
             for (auto connection : project.getConnections()) {
                 addConnection(connection);
             }
-        } else {
-            topologyChanged(); // write out any new connections
         }
-        initializing = false;
         this->project.getTracks().addListener(this);
     }
 
@@ -104,37 +101,44 @@ public:
                 row / float(Project::NUM_VISIBLE_TRACK_SLOTS) + (0.5 / Project::NUM_VISIBLE_TRACK_SLOTS)};
     }
 
-    std::vector<Connection> getConnections() const {
+    std::vector<Connection> getConnections() const override {
         return project.getConnections();
     }
 
-    Node::Ptr addNode(AudioProcessor* newProcessor, NodeID nodeId = {}) {
-        const Node::Ptr &node = AudioProcessorGraph::addNode(newProcessor, nodeId);
-        topologyChanged();
-        return node;
+    bool addConnection(const Connection& c) override {
+        if (auto* source = getNodeForId(c.source.nodeID)) {
+            if (auto* dest = getNodeForId(c.destination.nodeID)) {
+                auto sourceChan = c.source.channelIndex;
+                auto destChan = c.destination.channelIndex;
+
+                if (canConnect(source, sourceChan, dest, destChan)) {
+                    source->outputs.add({ dest, destChan, sourceChan });
+                    dest->inputs.add({ source, sourceChan, destChan });
+                    jassert(isConnected(c));
+                    topologyChanged();
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
-    bool removeNode(NodeID nodeId) {
-        if (AudioProcessorGraph::removeNode(nodeId)) {
-            topologyChanged();
-            return true;
+    bool removeConnection(const Connection& c) override {
+        if (auto* source = getNodeForId(c.source.nodeID)) {
+            if (auto* dest = getNodeForId(c.destination.nodeID)) {
+                auto sourceChan = c.source.channelIndex;
+                auto destChan = c.destination.channelIndex;
+
+                if (isConnected(source, sourceChan, dest, destChan)) {
+                    source->outputs.removeAllInstancesOf({ dest, destChan, sourceChan });
+                    dest->inputs.removeAllInstancesOf({ source, sourceChan, destChan });
+                    topologyChanged();
+                    return true;
+                }
+            }
         }
-        return false;
-    }
-    
-    bool addConnection(const Connection& connection) {
-        if (AudioProcessorGraph::addConnection(connection)) {
-            topologyChanged();
-            return true;
-        }
-        return false;
-    }
-    
-    bool removeConnection(const Connection& connection) {
-        if (AudioProcessorGraph::removeConnection(connection)) {
-            topologyChanged();
-            return true;
-        }
+
         return false;
     }
 
@@ -145,8 +149,7 @@ public:
 
 private:
     const static NodeID NA_NODE_ID = 0;
-    bool initializing { true };
-    
+
     NodeID currentlyDraggingNodeId = NA_NODE_ID;
     Point<int> currentlyDraggingGridPosition;
     Point<int> initialDraggingGridPosition;
@@ -157,11 +160,9 @@ private:
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ProcessorGraph)
 
-    // called when graph topology changes
-    void topologyChanged() {
-        if (!initializing) {
-            project.setConnections(AudioProcessorGraph::getConnections());
-        }
+    void topologyChanged() override {
+        project.setConnections(AudioProcessorGraph::getConnections());
+        AudioProcessorGraph::topologyChanged();
     }
 
     void recursivelyInitializeWithState(const ValueTree &state, bool addDefaultConnections=true) {
