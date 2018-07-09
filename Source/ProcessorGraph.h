@@ -105,7 +105,7 @@ public:
         }
     }
 
-    void moveProcessor(ValueTree processorState, int toTrackIndex, int toSlot) {
+    void moveProcessor(ValueTree &processorState, int toTrackIndex, int toSlot) {
         processorState.setProperty(IDs::PROCESSOR_SLOT, toSlot, nullptr);
         const ValueTree &toTrack = project.getTrack(toTrackIndex);
         const int insertIndex = project.getParentIndexForProcessor(toTrack, processorState);
