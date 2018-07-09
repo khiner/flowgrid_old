@@ -471,7 +471,7 @@ public:
 
     }
 
-    void addConnection(const AudioProcessorGraph::Connection &connection) {
+    void addConnection(const AudioProcessorGraph::Connection &connection, UndoManager* undoManager) {
         if (getConnectionMatching(connection).isValid())
             return; // dupe-add attempt
 
@@ -486,13 +486,13 @@ public:
         destination.setProperty(IDs::CHANNEL, connection.destination.channelIndex, nullptr);
         connectionState.addChild(destination, -1, nullptr);
 
-        connections.addChild(connectionState, -1, nullptr);
+        connections.addChild(connectionState, -1, undoManager);
     }
 
-    bool removeConnection(const AudioProcessorGraph::Connection &connection) {
+    bool removeConnection(const AudioProcessorGraph::Connection &connection, UndoManager* undoManager) {
         const ValueTree &connectionState = getConnectionMatching(connection);
         if (connectionState.isValid()) {
-            connections.removeChild(connectionState, nullptr);
+            connections.removeChild(connectionState, undoManager);
             return true;
         }
         return false;
@@ -550,19 +550,6 @@ public:
                 if (child.hasType(IDs::PROCESSOR)) {
                     child.setProperty(IDs::PROCESSOR_SLOT, slotForNodeIdSnapshot.at(int(child[IDs::NODE_ID])), nullptr);
                 }
-            }
-        }
-    }
-
-    void applyConnectionDiffSinceSnapshot(ValueTree::Listener* listener) {
-        for (auto connection : connections) {
-            if (!connectionsContain(connectionsSnapshot, connection)) {
-                listener->valueTreeChildAdded(connections, connection);
-            }
-        }
-        for (auto connection : connectionsSnapshot) {
-            if (!connectionsContain(connections, connection)) {
-                listener->valueTreeChildRemoved(connections, connection, -1);
             }
         }
     }
@@ -676,7 +663,7 @@ public:
         return processor;
     }
 
-    void makeSlotsValid(const ValueTree& parent) {
+    void makeSlotsValid(const ValueTree& parent, UndoManager *undoManager) {
         std::vector<int> slots;
         for (const ValueTree& child : parent) {
             if (child.hasType(IDs::PROCESSOR)) {
@@ -693,12 +680,12 @@ public:
         auto iterator = slots.begin();
         for (ValueTree child : parent) {
             if (child.hasType(IDs::PROCESSOR)) {
-                child.setProperty(IDs::PROCESSOR_SLOT, *(iterator++), nullptr);
+                child.setProperty(IDs::PROCESSOR_SLOT, *(iterator++), undoManager);
             }
         }
     }
 
-    int getParentIndexForProcessor(const ValueTree &parent, const ValueTree &processorState) {
+    int getParentIndexForProcessor(const ValueTree &parent, const ValueTree &processorState, UndoManager* undoManager) {
         auto slot = int(processorState[IDs::PROCESSOR_SLOT]);
         for (ValueTree otherProcessorState : parent) {
             if (processorState == otherProcessorState)
@@ -711,10 +698,10 @@ public:
                         int currentIndex = parent.indexOf(processorState);
                         int currentOtherIndex = parent.indexOf(otherProcessorState);
                         if (currentIndex < currentOtherIndex) {
-                            otherProcessorState.setProperty(IDs::PROCESSOR_SLOT, otherSlot - 1, nullptr);
-                            return currentIndex + 1;
+                            otherProcessorState.setProperty(IDs::PROCESSOR_SLOT, otherSlot - 1, undoManager);
+                            return currentIndex + 2;
                         } else {
-                            otherProcessorState.setProperty(IDs::PROCESSOR_SLOT, otherSlot + 1, nullptr);
+                            otherProcessorState.setProperty(IDs::PROCESSOR_SLOT, otherSlot + 1, undoManager);
                             return currentIndex - 1;
                         }
                     } else {

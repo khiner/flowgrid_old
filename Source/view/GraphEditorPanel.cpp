@@ -121,8 +121,6 @@ struct GraphEditorPanel::FilterComponent : public Component,
             graph.setNodePosition(nodeId,
                                   {pos.x / (double) getParentWidth(),
                                    pos.y / (double) getParentHeight()});
-
-            panel.updateComponents();
         }
     }
 

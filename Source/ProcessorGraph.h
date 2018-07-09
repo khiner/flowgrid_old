@@ -98,19 +98,26 @@ public:
     }
 
     void endDraggingNode(NodeID nodeId) {
-        if (currentlyDraggingNodeId != NA_NODE_ID) {
+        if (currentlyDraggingNodeId != NA_NODE_ID && currentlyDraggingGridPosition != initialDraggingGridPosition) {
             // update the audio graph to match the current preview UI graph.
+            StatefulAudioProcessor *processor = getProcessorForNodeId(nodeId);
+            moveProcessor(processor->state, initialDraggingGridPosition.x, initialDraggingGridPosition.y);
+            project.restoreConnectionsSnapshot();
             currentlyDraggingNodeId = NA_NODE_ID;
-            project.applyConnectionDiffSinceSnapshot(this);
+            moveProcessor(processor->state, currentlyDraggingGridPosition.x, currentlyDraggingGridPosition.y);
         }
+        currentlyDraggingNodeId = NA_NODE_ID;
     }
 
     void moveProcessor(ValueTree &processorState, int toTrackIndex, int toSlot) {
-        processorState.setProperty(IDs::PROCESSOR_SLOT, toSlot, nullptr);
         const ValueTree &toTrack = project.getTrack(toTrackIndex);
-        const int insertIndex = project.getParentIndexForProcessor(toTrack, processorState);
+        if (int(processorState[IDs::PROCESSOR_SLOT]) == toSlot && processorState.getParent() == toTrack)
+            return;
+
+        processorState.setProperty(IDs::PROCESSOR_SLOT, toSlot, getDragDependentUndoManager());
+        const int insertIndex = project.getParentIndexForProcessor(toTrack, processorState, getDragDependentUndoManager());
         processorState.setProperty(IDs::IS_MOVING, true, nullptr);
-        Helpers::moveSingleItem(processorState, toTrack, insertIndex, currentlyDraggingNodeId == NA_NODE_ID ? &undoManager : nullptr);
+        Helpers::moveSingleItem(processorState, toTrack, insertIndex, getDragDependentUndoManager());
         processorState.removeProperty(IDs::IS_MOVING, nullptr);
     }
 
@@ -158,14 +165,14 @@ public:
 
     bool addConnection(const Connection& c) override {
         if (canConnectUi(c)) {
-            project.addConnection(c);
+            project.addConnection(c, nullptr);
             return true;
         }
         return false;
     }
 
     bool removeConnection(const Connection& c) override {
-        return project.removeConnection(c);
+        return project.removeConnection(c, nullptr);
     }
 
 private:
@@ -180,6 +187,10 @@ private:
     Node::Ptr audioOutputNode;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ProcessorGraph)
+
+    inline UndoManager* getDragDependentUndoManager() {
+        return currentlyDraggingNodeId == NA_NODE_ID ? &undoManager : nullptr;
+    }
 
     void recursivelyInitializeWithState(const ValueTree &state, bool addDefaultConnections=true) {
         if (state.hasType(IDs::PROCESSOR)) {
@@ -320,7 +331,11 @@ private:
         return ValueTree();
     }
 
-    void valueTreePropertyChanged(ValueTree& tree, const Identifier& property) override {}
+    void valueTreePropertyChanged(ValueTree& tree, const Identifier& property) override {
+        if (property == IDs::PROCESSOR_SLOT) {
+            sendChangeMessage();
+        }
+    }
 
     void valueTreeChildAdded(ValueTree& parent, ValueTree& child) override {
         if (child.hasType(IDs::PROCESSOR)) {
@@ -330,7 +345,7 @@ private:
             } else {
                 addProcessor(child);
             }
-            project.makeSlotsValid(parent);
+            project.makeSlotsValid(parent, getDragDependentUndoManager());
 
             // Kind of crappy - the order of the listeners seems to be nondeterministic,
             // so send (maybe _another_) select message that will update the UI in case this was already selected.
@@ -349,8 +364,10 @@ private:
 
                 source->outputs.add({dest, destChannel, sourceChannel});
                 dest->inputs.add({source, sourceChannel, destChannel});
+                topologyChanged();
+            } else {
+                sendChangeMessage();
             }
-            topologyChanged();
         }
     }
 
@@ -375,8 +392,10 @@ private:
 
                 source->outputs.removeAllInstancesOf({dest, destChannel, sourceChannel});
                 dest->inputs.removeAllInstancesOf({source, sourceChannel, destChannel});
+                topologyChanged();
+            } else {
+                sendChangeMessage();
             }
-            topologyChanged();
         }
     }
 
@@ -389,7 +408,7 @@ private:
                                                  findNeighborNodes(parent, parent.getChild(oldIndex), parent.getChild(oldIndex + 1));
             removeNodeConnections(nodeId, parent, neighborNodes);
             insertNodeConnections(nodeId, processorState);
-            project.makeSlotsValid(parent);
+            project.makeSlotsValid(parent, getDragDependentUndoManager());
         }
     }
 
