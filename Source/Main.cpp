@@ -1,6 +1,7 @@
 #include <Utilities.h>
 #include "view/push2/Push2Component.h"
 #include "MidiControlHandler.h"
+#include "ApplicationKeyListener.h"
 #include <view/ArrangeView.h>
 #include <view/ValueTreeEditor.h>
 #include <view/GraphEditorPanel.h>
@@ -17,7 +18,8 @@ class SoundMachineApplication : public JUCEApplication, public MenuBarModel {
 public:
     SoundMachineApplication() : project(loadOrCreateDefaultEdit(), undoManager),
                                 processorGraph(project, undoManager),
-                                midiControlHandler(project, processorGraph, undoManager) {}
+                                midiControlHandler(project, processorGraph, undoManager),
+                                applicationKeyListener(treeView, undoManager) {}
 
     const String getApplicationName() override { return ProjectInfo::projectName; }
 
@@ -35,13 +37,12 @@ public:
         deviceManager.initialiseWithDefaultDevices(2, 2);
 
         Process::makeForegroundProcess();
-        Push2Component *push2Component = new Push2Component(project, processorGraph);
-        push2Window = std::make_unique<MainWindow>("Push 2 Mirror", push2Component);
-        ValueTreeEditor *valueTreeEditor = new ValueTreeEditor(project.getState(), undoManager, project,
-                                                               processorGraph);
-        treeWindow = std::make_unique<MainWindow>("Tree Editor", valueTreeEditor);
-        arrangeWindow = std::make_unique<MainWindow>("Arrange View", new ArrangeView(project.getTracks()));
-        graphEditorWindow = std::make_unique<MainWindow>("Graph Editor", new GraphEditorPanel(processorGraph));
+        auto *push2Component = new Push2Component(project, processorGraph);
+        push2Window = std::make_unique<MainWindow>("Push 2 Mirror", push2Component, &applicationKeyListener);
+        ValueTreeEditor *valueTreeEditor = new ValueTreeEditor(treeView, project.getState(), undoManager, project, processorGraph);
+        treeWindow = std::make_unique<MainWindow>("Tree Editor", valueTreeEditor, &applicationKeyListener);
+        arrangeWindow = std::make_unique<MainWindow>("Arrange View", new ArrangeView(project.getTracks()), &applicationKeyListener);
+        graphEditorWindow = std::make_unique<MainWindow>("Graph Editor", new GraphEditorPanel(processorGraph), &applicationKeyListener);
 
         audioDeviceSelectorComponent = std::make_unique<AudioDeviceSelectorComponent>(deviceManager, 0, 256, 0, 256,
                                                                                       true, true, true, false);
@@ -114,7 +115,7 @@ public:
     */
     class MainWindow : public DocumentWindow {
     public:
-        explicit MainWindow(const String &name, Component *contentComponent) : DocumentWindow(name,
+        explicit MainWindow(const String &name, Component *contentComponent, KeyListener *keyListener) : DocumentWindow(name,
                                                                                               Colours::lightgrey,
                                                                                               DocumentWindow::allButtons) {
             contentComponent->setSize(1, 1); // nonzero size to avoid warnings
@@ -124,6 +125,7 @@ public:
             centreWithSize(getWidth(), getHeight());
             setVisible(true);
             setBackgroundColour(backgroundColor);
+            addKeyListener(keyListener);
         }
 
         void closeButtonPressed() override {
@@ -151,6 +153,8 @@ private:
     std::unique_ptr<AudioDeviceSelectorComponent> audioDeviceSelectorComponent;
     UndoManager undoManager;
     AudioDeviceManager deviceManager;
+    TreeView treeView;
+    ApplicationKeyListener applicationKeyListener;
 
     Push2MidiCommunicator push2MidiCommunicator;
 

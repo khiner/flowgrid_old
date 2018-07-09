@@ -12,7 +12,8 @@ class ValueTreeEditor : public Component,
                         private ComboBox::Listener,
                         private Timer {
 public:
-    ValueTreeEditor(const ValueTree &state, UndoManager &undoManager, Project& project, ProcessorGraph &audioGraphBuilder) : undoManager(undoManager), project(project) {
+    ValueTreeEditor(TreeView &treeView, const ValueTree &state, UndoManager &undoManager, Project& project, ProcessorGraph &audioGraphBuilder)
+            : treeView(treeView), undoManager(undoManager), project(project) {
         addAndMakeVisible(treeView);
         treeView.setColour(TreeView::backgroundColourId,
                        getUIColourIfAvailable(LookAndFeel_V4::ColourScheme::UIColour::windowBackground));
@@ -62,25 +63,6 @@ public:
         treeView.setBounds(r);
     }
 
-    bool keyPressed(const KeyPress &key) override {
-        if (key == KeyPress::deleteKey || key == KeyPress::backspaceKey) {
-            Helpers::deleteSelectedItems(treeView, undoManager);
-            return true;
-        }
-
-        if (key == KeyPress('z', ModifierKeys::commandModifier, 0)) {
-            undoManager.undo();
-            return true;
-        }
-
-        if (key == KeyPress('z', ModifierKeys::commandModifier | ModifierKeys::shiftModifier, 0)) {
-            undoManager.redo();
-            return true;
-        }
-
-        return Component::keyPressed(key);
-    }
-
     void buttonClicked(Button *b) override {
         if (b == &undoButton) {
             undoManager.undo();
@@ -126,7 +108,7 @@ public:
     }
 
 private:
-    TreeView treeView;
+    TreeView &treeView;
     TextButton undoButton{"Undo"}, redoButton{"Redo"}, createTrackButton{"Add Track"};
 
     ComboBox addProcessorComboBox{"Add Processor"};
