@@ -615,8 +615,8 @@ public:
         masterTrack = ValueTree(IDs::MASTER_TRACK);
         Helpers::createUuidProperty(masterTrack);
         masterTrack.setProperty(IDs::name, "Master", nullptr);
-        createAndAddProcessor(masterTrack, MixerChannelProcessor::name(), false);
-
+        ValueTree masterMixer = createAndAddProcessor(masterTrack, MixerChannelProcessor::name(), false);
+        masterMixer.setProperty(IDs::selected, true, nullptr);
         tracks.addChild(masterTrack, -1, nullptr);
 
         state.addChild(tracks, -1, nullptr);
