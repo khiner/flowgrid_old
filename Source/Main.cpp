@@ -40,7 +40,7 @@ public:
         ValueTreeEditor *valueTreeEditor = new ValueTreeEditor(project.getState(), undoManager, project,
                                                                processorGraph);
         treeWindow = std::make_unique<MainWindow>("Tree Editor", valueTreeEditor);
-        arrangeWindow = std::make_unique<MainWindow>("Arrange View", new ArrangeView(project.getState()));
+        arrangeWindow = std::make_unique<MainWindow>("Arrange View", new ArrangeView(project.getTracks()));
         graphEditorWindow = std::make_unique<MainWindow>("Graph Editor", new GraphEditorPanel(processorGraph));
 
         audioDeviceSelectorComponent = std::make_unique<AudioDeviceSelectorComponent>(deviceManager, 0, 256, 0, 256,
@@ -117,6 +117,7 @@ public:
         explicit MainWindow(const String &name, Component *contentComponent) : DocumentWindow(name,
                                                                                               Colours::lightgrey,
                                                                                               DocumentWindow::allButtons) {
+            contentComponent->setSize(1, 1); // nonzero size to avoid warnings
             setContentOwned(contentComponent, true);
             setResizable(true, true);
 

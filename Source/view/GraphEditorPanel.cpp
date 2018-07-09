@@ -606,7 +606,7 @@ void GraphEditorPanel::updateComponents() {
             nodes.remove(i);
 
     for (int i = connectors.size(); --i >= 0;)
-        if (!graph.isConnected(connectors.getUnchecked(i)->connection))
+        if (!graph.isConnectedUi(connectors.getUnchecked(i)->connection))
             connectors.remove(i);
 
     for (auto *fc : nodes)
@@ -623,7 +623,7 @@ void GraphEditorPanel::updateComponents() {
         }
     }
 
-    for (auto &c : graph.getConnections()) {
+    for (auto &c : graph.getConnectionsUi()) {
         if (getComponentForConnection(c) == 0) {
             auto *comp = connectors.add(new ConnectorComponent(*this));
             addAndMakeVisible(comp);

@@ -257,22 +257,22 @@ namespace Helpers {
         return items;
     }
 
-    inline void moveSingleItem(ValueTree &item, ValueTree newParent, int insertIndex, UndoManager &undoManager) {
+    inline void moveSingleItem(ValueTree &item, ValueTree newParent, int insertIndex, UndoManager *undoManager) {
         if (item.getParent().isValid() && newParent != item && !newParent.isAChildOf(item)) {
             if (item.getParent() == newParent) {
                 if (newParent.indexOf(item) < insertIndex) {
                     --insertIndex;
                 }
-                item.getParent().moveChild(item.getParent().indexOf(item), insertIndex, &undoManager);
+                item.getParent().moveChild(item.getParent().indexOf(item), insertIndex, undoManager);
             } else {
-                item.getParent().removeChild(item, &undoManager);
-                newParent.addChild(item, insertIndex, &undoManager);
+                item.getParent().removeChild(item, undoManager);
+                newParent.addChild(item, insertIndex, undoManager);
             }
         }
     }
 
     inline void moveItems(TreeView &treeView, const OwnedArray<ValueTree> &items,
-                          ValueTree newParent, int insertIndex, UndoManager &undoManager) {
+                          ValueTree newParent, int insertIndex, UndoManager *undoManager) {
         if (items.isEmpty())
             return;
 
@@ -359,10 +359,10 @@ public:
     void itemDropped(const DragAndDropTarget::SourceDetails &dragSourceDetails, int insertIndex) override {
         if (dragSourceDetails.description == IDs::PROCESSOR.toString()) {
             Helpers::moveItems(*getOwnerView(), Helpers::getSelectedTreeViewItems<Processor>(*getOwnerView()), state,
-                               insertIndex, undoManager);
+                               insertIndex, &undoManager);
         } else if (dragSourceDetails.description == IDs::CLIP.toString()) {
             Helpers::moveItems(*getOwnerView(), Helpers::getSelectedTreeViewItems<Clip>(*getOwnerView()), state,
-                               insertIndex, undoManager);
+                               insertIndex, &undoManager);
         }
     }
 };
@@ -380,7 +380,7 @@ public:
 
     void itemDropped(const DragAndDropTarget::SourceDetails &, int insertIndex) override {
         Helpers::moveItems(*getOwnerView(), Helpers::getSelectedTreeViewItems<Processor>(*getOwnerView()), state,
-                           insertIndex, undoManager);
+                           insertIndex, &undoManager);
     }
 
     bool isItemDeletable() override {
@@ -401,7 +401,7 @@ public:
 
     void itemDropped(const DragAndDropTarget::SourceDetails &, int insertIndex) override {
         Helpers::moveItems(*getOwnerView(), Helpers::getSelectedTreeViewItems<Track>(*getOwnerView()), state,
-                           insertIndex, undoManager);
+                           insertIndex, &undoManager);
     }
 
     bool canBeSelected() const override {
@@ -456,7 +456,25 @@ public:
         return connections.isValid() && connections.getNumChildren() > 0;
     }
 
+    const ValueTree getConnectionMatching(const AudioProcessorGraph::Connection &connection) {
+        for (auto connectionState : connections) {
+            auto sourceState = connectionState.getChildWithName(IDs::SOURCE);
+            auto destState = connectionState.getChildWithName(IDs::DESTINATION);
+            if (AudioProcessorGraph::NodeID(int(sourceState[IDs::NODE_ID])) == connection.source.nodeID &&
+                AudioProcessorGraph::NodeID(int(destState[IDs::NODE_ID])) == connection.destination.nodeID &&
+                int(sourceState[IDs::CHANNEL]) == connection.source.channelIndex &&
+                int(destState[IDs::CHANNEL]) == connection.destination.channelIndex) {
+                return connectionState;
+            }
+        }
+        return {};
+
+    }
+
     void addConnection(const AudioProcessorGraph::Connection &connection) {
+        if (getConnectionMatching(connection).isValid())
+            return; // dupe-add attempt
+
         ValueTree connectionState(IDs::CONNECTION);
         ValueTree source(IDs::SOURCE);
         source.setProperty(IDs::NODE_ID, int(connection.source.nodeID), nullptr);
@@ -471,15 +489,80 @@ public:
         connections.addChild(connectionState, -1, nullptr);
     }
 
-    void removeConnection(const AudioProcessorGraph::Connection &connection) {
-        for (auto connectionState : connections) {
-            auto sourceState = connectionState.getChildWithName(IDs::SOURCE);
-            auto destState = connectionState.getChildWithName(IDs::DESTINATION);
-            if (AudioProcessorGraph::NodeID(int(sourceState[IDs::NODE_ID])) == connection.source.nodeID &&
-                AudioProcessorGraph::NodeID(int(destState[IDs::NODE_ID])) == connection.destination.nodeID &&
-                int(sourceState[IDs::CHANNEL]) == connection.source.channelIndex &&
-                int(destState[IDs::CHANNEL]) == connection.destination.channelIndex) {
-                connections.removeChild(connectionState, nullptr);
+    bool removeConnection(const AudioProcessorGraph::Connection &connection) {
+        const ValueTree &connectionState = getConnectionMatching(connection);
+        if (connectionState.isValid()) {
+            connections.removeChild(connectionState, nullptr);
+            return true;
+        }
+        return false;
+    }
+
+    // make a snapshot of all the information needed to capture AudioGraph connections and UI positions
+    void makeConnectionsSnapshot() {
+        connectionsSnapshot.clear();
+        for (auto connection : connections) {
+            connectionsSnapshot.add(connection.createCopy());
+        }
+        slotForNodeIdSnapshot.clear();
+        for (auto track : tracks) {
+            for (auto child : track) {
+                if (child.hasType(IDs::PROCESSOR)) {
+                    slotForNodeIdSnapshot.insert(std::pair<int, int>(child[IDs::NODE_ID], child[IDs::PROCESSOR_SLOT]));
+                }
+            }
+        }
+    }
+
+    static bool connectionsContain(const ValueTree &connections, const ValueTree& connection) {
+        for (const auto& otherConnection : connections) {
+            if (otherConnection.isEquivalentTo(connection)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    static bool connectionsContain(const Array<ValueTree> &connections, const ValueTree& connection) {
+        for (const auto& otherConnection : connections) {
+            if (otherConnection.isEquivalentTo(connection)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    void restoreConnectionsSnapshot() {
+        for (const auto &connection : connections) {
+            if (!connectionsContain(connectionsSnapshot, connection)) {
+                connections.removeChild(connection, nullptr);
+            }
+        }
+        for (const auto &connection : connectionsSnapshot) {
+            if (!connectionsContain(connections, connection)) {
+                connections.addChild(connection, -1, nullptr);
+            }
+        }
+        for (const auto& track : tracks) {
+            for (auto child : track) {
+                if (child.hasType(IDs::PROCESSOR)) {
+                    child.setProperty(IDs::PROCESSOR_SLOT, slotForNodeIdSnapshot.at(int(child[IDs::NODE_ID])), nullptr);
+                }
+            }
+        }
+    }
+
+    void applyConnectionDiffSinceSnapshot(ValueTree::Listener* listener) {
+        for (auto connection : connections) {
+            if (!connectionsContain(connectionsSnapshot, connection)) {
+                listener->valueTreeChildAdded(connections, connection);
+            }
+        }
+        for (auto connection : connectionsSnapshot) {
+            if (!connectionsContain(connections, connection)) {
+                listener->valueTreeChildRemoved(connections, connection, -1);
             }
         }
     }
@@ -615,19 +698,35 @@ public:
         }
     }
 
-    // TODO consider moving this (and a bunch of other similar logic) to ValueTreeItems::Track
-    // and using a 'Project' here instead of 'ValueTree' project state
     int getParentIndexForProcessor(const ValueTree &parent, const ValueTree &processorState) {
-        for (const ValueTree &otherProcessorState : parent) {
+        auto slot = int(processorState[IDs::PROCESSOR_SLOT]);
+        for (ValueTree otherProcessorState : parent) {
             if (processorState == otherProcessorState)
                 continue;
-            if (otherProcessorState.hasType(IDs::PROCESSOR) &&
-                int(otherProcessorState.getProperty(IDs::PROCESSOR_SLOT)) > int(processorState.getProperty(IDs::PROCESSOR_SLOT))) {
-                return parent.indexOf(otherProcessorState);
+            if (otherProcessorState.hasType(IDs::PROCESSOR)) {
+                auto otherSlot = int(otherProcessorState[IDs::PROCESSOR_SLOT]);
+                if (otherSlot == slot) {
+                    if (otherProcessorState.getParent() == processorState.getParent()) {
+                        // moving within same parent - need to resolve the "tie" in a way that guarantees the child order changes.
+                        int currentIndex = parent.indexOf(processorState);
+                        int currentOtherIndex = parent.indexOf(otherProcessorState);
+                        if (currentIndex < currentOtherIndex) {
+                            otherProcessorState.setProperty(IDs::PROCESSOR_SLOT, otherSlot - 1, nullptr);
+                            return currentIndex + 1;
+                        } else {
+                            otherProcessorState.setProperty(IDs::PROCESSOR_SLOT, otherSlot + 1, nullptr);
+                            return currentIndex - 1;
+                        }
+                    } else {
+                        return parent.indexOf(otherProcessorState);
+                    }
+                } else if (otherSlot > slot) {
+                    return parent.indexOf(otherProcessorState);
+                }
             }
         }
 
-        // TODO in this and other places, we assume processers are the only type of track child.
+        // TODO in this and other places, we assume processors are the only type of track child.
         return parent.getNumChildren();
     }
 
@@ -675,6 +774,9 @@ private:
     ValueTree selectedTrack;
     ValueTree selectedProcessor;
     ValueTree connections;
+
+    Array<ValueTree> connectionsSnapshot;
+    std::unordered_map<int, int> slotForNodeIdSnapshot;
 };
 
 
@@ -683,9 +785,8 @@ inline ValueTreeItem *createValueTreeItemForType(const ValueTree &v, UndoManager
     if (v.hasType(IDs::TRACKS)) return new Tracks(v, um);
     if (v.hasType(IDs::MASTER_TRACK)) return new MasterTrack(v, um);
     if (v.hasType(IDs::TRACK)) return new Track(v, um);
-    if (v.hasType(IDs::CLIP)) return new Clip(v, um);
     if (v.hasType(IDs::PROCESSOR)) return new Processor(v, um);
+    if (v.hasType(IDs::CLIP)) return new Clip(v, um);
 
-    //jassertfalse;
     return nullptr;
 }

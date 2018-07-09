@@ -27,7 +27,7 @@ public:
         this->project.getTracks().addListener(this);
     }
 
-    std::vector<Connection> getConnections() const override {
+    std::vector<Connection> getConnectionsUi() const {
         std::vector<Connection> graphConnections;
 
         for (auto connectionState : project.getConnections()) {
@@ -74,91 +74,98 @@ public:
 
     void beginDraggingNode(NodeID nodeId) {
         const Point<int> &gridLocation = getProcessorGridLocation(nodeId);
-        currentlyDraggingGridPosition.setXY(gridLocation.x, gridLocation.y);
         currentlyDraggingNodeId = nodeId;
+        currentlyDraggingGridPosition.setXY(gridLocation.x, gridLocation.y);
         initialDraggingGridPosition = currentlyDraggingGridPosition;
+        project.makeConnectionsSnapshot();
     }
 
     void setNodePosition(NodeID nodeId, Point<double> pos) {
-        currentlyDraggingGridPosition.x = int(Project::NUM_VISIBLE_TRACK_SLOTS * jlimit(0.0, 0.99, pos.x));
-        currentlyDraggingGridPosition.y = int(Project::NUM_VISIBLE_TRACK_SLOTS * jlimit(0.0, 0.99, pos.y));
+        jassert(currentlyDraggingNodeId != NA_NODE_ID);
+
+        auto newX = int(Project::NUM_VISIBLE_TRACK_SLOTS * jlimit(0.0, 0.99, pos.x));
+        auto newY = int(Project::NUM_VISIBLE_TRACK_SLOTS * jlimit(0.0, 0.99, pos.y));
+        if (newX != currentlyDraggingGridPosition.x || newY != currentlyDraggingGridPosition.y) {
+            currentlyDraggingGridPosition.x = newX;
+            currentlyDraggingGridPosition.y = newY;
+            StatefulAudioProcessor *processor = getProcessorForNodeId(nodeId);
+            moveProcessor(processor->state, initialDraggingGridPosition.x, initialDraggingGridPosition.y);
+            project.restoreConnectionsSnapshot();
+            if (currentlyDraggingGridPosition != initialDraggingGridPosition) {
+                moveProcessor(processor->state, currentlyDraggingGridPosition.x, currentlyDraggingGridPosition.y);
+            }
+        }
     }
 
     void endDraggingNode(NodeID nodeId) {
-        if (currentlyDraggingNodeId) {
-            // finalize positions
-            for (Node *node : getNodes()) {
-                if (node->nodeID == audioOutputNode->nodeID)
-                    continue;
-                // XXX wastefully getting processor from node id twice here.
-                StatefulAudioProcessor *processor = getProcessorForNodeId(node->nodeID);
-                processor->state.setProperty(IDs::PROCESSOR_SLOT, getProcessorGridLocation(node->nodeID).y, &undoManager);
-            }
-            StatefulAudioProcessor *processor = getProcessorForNodeId(nodeId);
-            const ValueTree &toTrack = project.getTrack(currentlyDraggingGridPosition.x);
-            ValueTree processorState = processor->state;
-            moveProcessor(processorState, toTrack, project.getParentIndexForProcessor(toTrack, processorState));
-
+        if (currentlyDraggingNodeId != NA_NODE_ID) {
+            // update the audio graph to match the current preview UI graph.
+            currentlyDraggingNodeId = NA_NODE_ID;
+            project.applyConnectionDiffSinceSnapshot(this);
         }
-        currentlyDraggingNodeId = NA_NODE_ID;
     }
 
-    void moveProcessor(ValueTree processorState, const ValueTree& toTrack, int insertIndex) {
+    void moveProcessor(ValueTree processorState, int toTrackIndex, int toSlot) {
+        processorState.setProperty(IDs::PROCESSOR_SLOT, toSlot, nullptr);
+        const ValueTree &toTrack = project.getTrack(toTrackIndex);
+        const int insertIndex = project.getParentIndexForProcessor(toTrack, processorState);
         processorState.setProperty(IDs::IS_MOVING, true, nullptr);
-        Helpers::moveSingleItem(processorState, toTrack, insertIndex, undoManager);
+        Helpers::moveSingleItem(processorState, toTrack, insertIndex, currentlyDraggingNodeId == NA_NODE_ID ? &undoManager : nullptr);
         processorState.removeProperty(IDs::IS_MOVING, nullptr);
     }
 
     Point<double> getNodePosition(NodeID nodeId) const {
-        int row = 0, column = 0;
+        const Point<int> gridLocation = getProcessorGridLocation(nodeId);
+        return {gridLocation.x / float(Project::NUM_VISIBLE_TRACK_SLOTS) + (0.5 / Project::NUM_VISIBLE_TRACK_SLOTS),
+                gridLocation.y / float(Project::NUM_VISIBLE_TRACK_SLOTS) + (0.5 / Project::NUM_VISIBLE_TRACK_SLOTS)};
+    }
 
-        if (nodeId == audioOutputNode->nodeID) {
-            row = 7; column = 7;
-        } else {
-            const Point<int> gridLocation = getProcessorGridLocation(nodeId);
-            row = gridLocation.y;
-            column = gridLocation.x;
-        }
+    bool canConnectUi(const Connection& c) const {
+        if (auto* source = getNodeForId (c.source.nodeID))
+            if (auto* dest = getNodeForId (c.destination.nodeID))
+                return canConnectUi(source, c.source.channelIndex,
+                                   dest, c.destination.channelIndex);
 
-        return {column / float(Project::NUM_VISIBLE_TRACK_SLOTS) + (0.5 / Project::NUM_VISIBLE_TRACK_SLOTS),
-                row / float(Project::NUM_VISIBLE_TRACK_SLOTS) + (0.5 / Project::NUM_VISIBLE_TRACK_SLOTS)};
+        return false;
+    }
+
+    bool isConnectedUi(const Connection& c) const noexcept {
+        return project.getConnectionMatching(c).isValid();
+    }
+
+    bool canConnectUi(Node* source, int sourceChannel, Node* dest, int destChannel) const noexcept {
+        bool sourceIsMIDI = sourceChannel == midiChannelIndex;
+        bool destIsMIDI   = destChannel == midiChannelIndex;
+
+        if (sourceChannel < 0
+            || destChannel < 0
+            || source == dest
+            || sourceIsMIDI != destIsMIDI)
+            return false;
+
+        if (source == nullptr
+            || (! sourceIsMIDI && sourceChannel >= source->processor->getTotalNumOutputChannels())
+            || (sourceIsMIDI && ! source->processor->producesMidi()))
+            return false;
+
+        if (dest == nullptr
+            || (! destIsMIDI && destChannel >= dest->processor->getTotalNumInputChannels())
+            || (destIsMIDI && ! dest->processor->acceptsMidi()))
+            return false;
+
+        return !isConnectedUi({{source->nodeID, sourceChannel}, {dest->nodeID, destChannel}});
     }
 
     bool addConnection(const Connection& c) override {
-        if (auto* source = getNodeForId(c.source.nodeID)) {
-            if (auto* dest = getNodeForId(c.destination.nodeID)) {
-                auto sourceChan = c.source.channelIndex;
-                auto destChan = c.destination.channelIndex;
-
-                if (canConnect(source, sourceChan, dest, destChan)) {
-                    project.addConnection(c);
-                    return true;
-                }
-            }
+        if (canConnectUi(c)) {
+            project.addConnection(c);
+            return true;
         }
-
         return false;
     }
 
     bool removeConnection(const Connection& c) override {
-        if (auto* source = getNodeForId(c.source.nodeID)) {
-            if (auto* dest = getNodeForId(c.destination.nodeID)) {
-                auto sourceChan = c.source.channelIndex;
-                auto destChan = c.destination.channelIndex;
-
-                if (isConnected(source, sourceChan, dest, destChan)) {
-                    project.removeConnection(c);
-                    return true;
-                }
-            }
-        }
-
-        return false;
-    }
-
-    void clear() {
-        AudioProcessorGraph::clear();
-        topologyChanged();
+        return project.removeConnection(c);
     }
 
 private:
@@ -199,26 +206,12 @@ private:
     }
 
     Point<int> getProcessorGridLocation(NodeID nodeId) const {
-        if (nodeId == currentlyDraggingNodeId) {
-            return currentlyDraggingGridPosition;
+        if (nodeId == audioOutputNode->nodeID) {
+            return {Project::NUM_VISIBLE_TRACK_SLOTS - 1, Project::NUM_VISIBLE_TRACK_SLOTS - 1};
         } else if (auto *processor = getProcessorForNodeId(nodeId)) {
             auto row = int(processor->state[IDs::PROCESSOR_SLOT]);
             auto column = processor->state.getParent().getParent().indexOf(processor->state.getParent());
-
-            if (currentlyDraggingNodeId != NA_NODE_ID &&
-                currentlyDraggingGridPosition.x == column) {
-                if (initialDraggingGridPosition.y < row && row <= currentlyDraggingGridPosition.y) {
-                    // move row _up_ towards first available slot
-                    return {column, row - 1};
-                } else if (currentlyDraggingGridPosition.y <= row && row < initialDraggingGridPosition.y) {
-                    // move row _down_ towards first available slot
-                    return {column, row + 1};
-                } else {
-                    return {column, row};
-                }
-            } else {
-                return {column, row};
-            }
+            return {column, row};
         } else {
             return {0, 0};
         }
@@ -231,15 +224,15 @@ private:
     void removeNodeConnections(NodeID nodeId, const ValueTree& parent, NeighborNodes neighborNodes) {
         for (int channel = 0; channel < 2; ++channel) {
             removeConnection({{nodeId, channel},
-                              {neighborNodes.after,  channel}});
+                              {neighborNodes.after, channel}});
         }
 
         if (neighborNodes.before != NA_NODE_ID) {
             for (int channel = 0; channel < 2; ++channel) {
                 removeConnection({{neighborNodes.before, channel},
-                                  {nodeId,  channel}});
+                                  {nodeId, channel}});
                 addConnection({{neighborNodes.before, channel},
-                               {neighborNodes.after,  channel}});
+                               {neighborNodes.after, channel}});
             }
         } else if (parent.hasType(IDs::MASTER_TRACK)) {
             // first processor in master track receives connections from the last processor of every track
@@ -249,9 +242,9 @@ private:
                     NodeID lastProcessorNodeId = getNodeIdForState(lastProcessor);
                     for (int channel = 0; channel < 2; ++channel) {
                         removeConnection({{lastProcessorNodeId, channel},
-                                          {nodeId,  channel}});
+                                          {nodeId, channel}});
                         addConnection({{lastProcessorNodeId, channel},
-                                       {neighborNodes.after,  channel}});
+                                       {neighborNodes.after, channel}});
                     }
                 }
             }
@@ -345,15 +338,18 @@ private:
                 child.sendPropertyChangeMessage(IDs::selected);
             }
         } else if (child.hasType(IDs::CONNECTION)) {
-            const ValueTree &sourceState = child.getChildWithName(IDs::SOURCE);
-            const ValueTree &destState = child.getChildWithName(IDs::DESTINATION);
+            if (currentlyDraggingNodeId == NA_NODE_ID) {
+                const ValueTree &sourceState = child.getChildWithName(IDs::SOURCE);
+                const ValueTree &destState = child.getChildWithName(IDs::DESTINATION);
 
-            Node *source = getNodeForId(getNodeIdForState(sourceState));
-            Node *dest = getNodeForId(getNodeIdForState(destState));
-            int destChannel = destState[IDs::CHANNEL];
-            int sourceChannel = sourceState[IDs::CHANNEL];
-            source->outputs.add({dest, destChannel, sourceChannel});
-            dest->inputs.add({source, sourceChannel, destChannel});
+                Node *source = getNodeForId(getNodeIdForState(sourceState));
+                Node *dest = getNodeForId(getNodeIdForState(destState));
+                int destChannel = destState[IDs::CHANNEL];
+                int sourceChannel = sourceState[IDs::CHANNEL];
+
+                source->outputs.add({dest, destChannel, sourceChannel});
+                dest->inputs.add({source, sourceChannel, destChannel});
+            }
             topologyChanged();
         }
     }
@@ -368,16 +364,18 @@ private:
                 removeNode(removedNodeId);
             }
         } else if (child.hasType(IDs::CONNECTION)) {
-            const ValueTree &sourceState = child.getChildWithName(IDs::SOURCE);
-            const ValueTree &destState = child.getChildWithName(IDs::DESTINATION);
+            if (currentlyDraggingNodeId == NA_NODE_ID) {
+                const ValueTree &sourceState = child.getChildWithName(IDs::SOURCE);
+                const ValueTree &destState = child.getChildWithName(IDs::DESTINATION);
 
-            Node *source = getNodeForId(getNodeIdForState(sourceState));
-            Node *dest = getNodeForId(getNodeIdForState(destState));
-            int destChannel = destState[IDs::CHANNEL];
-            int sourceChannel = sourceState[IDs::CHANNEL];
+                Node *source = getNodeForId(getNodeIdForState(sourceState));
+                Node *dest = getNodeForId(getNodeIdForState(destState));
+                int destChannel = destState[IDs::CHANNEL];
+                int sourceChannel = sourceState[IDs::CHANNEL];
 
-            source->outputs.removeAllInstancesOf({ dest, destChannel, sourceChannel });
-            dest->inputs.removeAllInstancesOf({ source, sourceChannel, destChannel });
+                source->outputs.removeAllInstancesOf({dest, destChannel, sourceChannel});
+                dest->inputs.removeAllInstancesOf({source, sourceChannel, destChannel});
+            }
             topologyChanged();
         }
     }
