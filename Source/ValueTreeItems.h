@@ -583,7 +583,6 @@ public:
                             removeConnection(c, &undoManager);
                     }
                 }
-                v.setProperty(IDs::IS_EXPLICIT_DELETE, true, nullptr);
                 v.getParent().removeChild(v, &undoManager);
             }
         }

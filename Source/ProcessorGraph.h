@@ -119,7 +119,9 @@ public:
         NodeID nodeId = getNodeIdForState(processorState);
         const NeighborNodes &neighborNodes = findNeighborNodes(processorState);
         removeNodeConnections(nodeId, processorState.getParent(), neighborNodes);
+        processorState.setProperty(IDs::IS_MOVING, true, nullptr);
         Helpers::moveSingleItem(processorState, toTrack, insertIndex, getDragDependentUndoManager());
+        processorState.removeProperty(IDs::IS_MOVING, nullptr);
         insertNodeConnections(nodeId, processorState);
         project.makeSlotsValid(toTrack, getDragDependentUndoManager());
     }
@@ -346,7 +348,6 @@ private:
     }
 
     void valueTreeChildAdded(ValueTree& parent, ValueTree& child) override {
-        child.removeProperty(IDs::IS_EXPLICIT_DELETE, nullptr);
         if (child.hasType(IDs::PROCESSOR)) {
             if (getProcessorForState(child) == nullptr) {
                 addProcessor(child, false);
@@ -381,7 +382,7 @@ private:
         if (child.hasType(IDs::PROCESSOR)) {
             NodeID removedNodeId = getNodeIdForState(child);
 
-            if (child.hasProperty(IDs::IS_EXPLICIT_DELETE)) {
+            if (!child.hasProperty(IDs::IS_MOVING)) {
                 // no need to destroy and create again. just moving between tracks.
                 removeNode(removedNodeId);
             }
