@@ -377,11 +377,7 @@ struct GraphEditorPanel::ConnectorComponent : public Component,
     }
 
     void update() {
-        Point<float> p1, p2;
-        getPoints(p1, p2);
-
-        if (lastInputPos != p1 || lastOutputPos != p2)
-            resizeToFit();
+        resizeToFit();
     }
 
     void resizeToFit() {

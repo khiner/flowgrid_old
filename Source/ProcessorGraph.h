@@ -415,6 +415,9 @@ private:
     }
 
     void valueTreeChildOrderChanged(ValueTree& parent, int oldIndex, int newIndex) override {
+        if (parent.hasType(IDs::TRACKS) || parent.hasType(IDs::TRACK)) {
+            sendChangeMessage();
+        }
     }
 
     void valueTreeParentChanged(ValueTree& treeWhoseParentHasChanged) override {
