@@ -292,17 +292,6 @@ namespace Helpers {
 
         return v;
     }
-
-    inline void deleteSelectedItems(TreeView &treeView, UndoManager &undoManager) {
-        auto selectedItems(Helpers::getSelectedAndDeletableTreeViewItems<ValueTreeItem>(treeView));
-
-        for (int i = selectedItems.size(); --i >= 0;) {
-            ValueTree &v = *selectedItems.getUnchecked(i);
-
-            if (v.getParent().isValid())
-                v.getParent().removeChild(v, &undoManager);
-        }
-    }
 }
 
 class Clip : public ValueTreeItem {
@@ -428,6 +417,17 @@ public:
         return connections;
     }
 
+    Array<ValueTree> getConnectionsForNode(AudioProcessorGraph::NodeID nodeId) {
+        Array<ValueTree> nodeConnections;
+        for (const auto& connection : connections) {
+            if (connection.getChildWithProperty(IDs::NODE_ID, int(nodeId)).isValid()) {
+                nodeConnections.add(connection);
+            }
+        }
+
+        return nodeConnections;
+    }
+
     ValueTree& getTracks() {
         return tracks;
     }
@@ -489,13 +489,17 @@ public:
         connections.addChild(connectionState, -1, undoManager);
     }
 
-    bool removeConnection(const AudioProcessorGraph::Connection &connection, UndoManager* undoManager) {
-        const ValueTree &connectionState = getConnectionMatching(connection);
-        if (connectionState.isValid()) {
-            connections.removeChild(connectionState, undoManager);
+    bool removeConnection(const ValueTree& connection, UndoManager* undoManager) {
+        if (connection.isValid()) {
+            connections.removeChild(connection, undoManager);
             return true;
         }
         return false;
+    }
+
+    bool removeConnection(const AudioProcessorGraph::Connection &connection, UndoManager* undoManager) {
+        const ValueTree &connectionState = getConnectionMatching(connection);
+        return removeConnection(connectionState, undoManager);
     }
 
     // make a snapshot of all the information needed to capture AudioGraph connections and UI positions
@@ -535,15 +539,9 @@ public:
     }
 
     void restoreConnectionsSnapshot() {
-        for (const auto &connection : connections) {
-            if (!connectionsContain(connectionsSnapshot, connection)) {
-                connections.removeChild(connection, nullptr);
-            }
-        }
-        for (const auto &connection : connectionsSnapshot) {
-            if (!connectionsContain(connections, connection)) {
-                connections.addChild(connection, -1, nullptr);
-            }
+        connections.removeAllChildren(nullptr);
+        for (const auto& connection : connectionsSnapshot) {
+            connections.addChild(connection, -1, nullptr);
         }
         for (const auto& track : tracks) {
             for (auto child : track) {
@@ -571,7 +569,24 @@ public:
     }
 
     void deleteSelectedItems() {
-        Helpers::deleteSelectedItems(*getOwnerView(), undoManager);
+        auto selectedItems(Helpers::getSelectedAndDeletableTreeViewItems<ValueTreeItem>(*getOwnerView()));
+
+        for (int i = selectedItems.size(); --i >= 0;) {
+            ValueTree &v = *selectedItems.getUnchecked(i);
+
+            if (v.getParent().isValid()) {
+                if (v.hasType(IDs::PROCESSOR)) {
+                    const Array<ValueTree> nodeConnections = getConnectionsForNode(AudioProcessorGraph::NodeID(int(v[IDs::NODE_ID])));
+
+                    if (!nodeConnections.isEmpty()) {
+                        for (const auto &c : nodeConnections)
+                            removeConnection(c, &undoManager);
+                    }
+                }
+                v.setProperty(IDs::IS_EXPLICIT_DELETE, true, nullptr);
+                v.getParent().removeChild(v, &undoManager);
+            }
+        }
     }
 
     ValueTree createDefaultProject() {
@@ -659,7 +674,6 @@ public:
 
         processor.setProperty(IDs::PROCESSOR_SLOT, slot, nullptr);
         track.addChild(processor, insertIndex, undoable ? &undoManager : nullptr);
-
         return processor;
     }
 

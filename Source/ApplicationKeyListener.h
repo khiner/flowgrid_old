@@ -5,12 +5,12 @@
 
 class ApplicationKeyListener : public KeyListener {
 public:
-    ApplicationKeyListener(TreeView &treeView, UndoManager &undoManager)
-            : treeView(treeView), undoManager(undoManager) {}
+    ApplicationKeyListener(Project &project, UndoManager &undoManager)
+            : project(project), undoManager(undoManager) {}
 
     bool keyPressed(const KeyPress &key, Component* originatingComponent) override {
         if (key == KeyPress::deleteKey || key == KeyPress::backspaceKey) {
-            Helpers::deleteSelectedItems(treeView, undoManager);
+            project.deleteSelectedItems();
             return true;
         }
 
@@ -27,6 +27,6 @@ public:
         return false;
     }
 private:
-    TreeView &treeView;
+    Project &project;
     UndoManager &undoManager;
 };

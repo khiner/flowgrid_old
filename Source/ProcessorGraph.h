@@ -116,9 +116,12 @@ public:
 
         processorState.setProperty(IDs::PROCESSOR_SLOT, toSlot, getDragDependentUndoManager());
         const int insertIndex = project.getParentIndexForProcessor(toTrack, processorState, getDragDependentUndoManager());
-        processorState.setProperty(IDs::IS_MOVING, true, nullptr);
+        NodeID nodeId = getNodeIdForState(processorState);
+        const NeighborNodes &neighborNodes = findNeighborNodes(processorState);
+        removeNodeConnections(nodeId, processorState.getParent(), neighborNodes);
         Helpers::moveSingleItem(processorState, toTrack, insertIndex, getDragDependentUndoManager());
-        processorState.removeProperty(IDs::IS_MOVING, nullptr);
+        insertNodeConnections(nodeId, processorState);
+        project.makeSlotsValid(toTrack, getDragDependentUndoManager());
     }
 
     Point<double> getNodePosition(NodeID nodeId) const {
@@ -151,12 +154,12 @@ public:
             return false;
 
         if (source == nullptr
-            || (! sourceIsMIDI && sourceChannel >= source->processor->getTotalNumOutputChannels())
+            || (!sourceIsMIDI && sourceChannel >= source->processor->getTotalNumOutputChannels())
             || (sourceIsMIDI && ! source->processor->producesMidi()))
             return false;
 
         if (dest == nullptr
-            || (! destIsMIDI && destChannel >= dest->processor->getTotalNumInputChannels())
+            || (!destIsMIDI && destChannel >= dest->processor->getTotalNumInputChannels())
             || (destIsMIDI && ! dest->processor->acceptsMidi()))
             return false;
 
@@ -165,14 +168,19 @@ public:
 
     bool addConnection(const Connection& c) override {
         if (canConnectUi(c)) {
-            project.addConnection(c, nullptr);
+            project.addConnection(c, getDragDependentUndoManager());
             return true;
         }
         return false;
     }
 
     bool removeConnection(const Connection& c) override {
-        return project.removeConnection(c, nullptr);
+        return project.removeConnection(c, getDragDependentUndoManager());
+    }
+
+    // only called when removing a node. we want to make sure we don't use the undo manager for these connection removals.
+    bool disconnectNode(NodeID nodeId) override {
+        return false;
     }
 
 private:
@@ -338,14 +346,11 @@ private:
     }
 
     void valueTreeChildAdded(ValueTree& parent, ValueTree& child) override {
+        child.removeProperty(IDs::IS_EXPLICIT_DELETE, nullptr);
         if (child.hasType(IDs::PROCESSOR)) {
-            if (child.hasProperty(IDs::IS_MOVING)) {
-                // processor and node already exist. no need to destroy and create again. just moving between tracks.
-                insertNodeConnections(getNodeIdForState(child), child);
-            } else {
-                addProcessor(child);
+            if (getProcessorForState(child) == nullptr) {
+                addProcessor(child, false);
             }
-            project.makeSlotsValid(parent, getDragDependentUndoManager());
 
             // Kind of crappy - the order of the listeners seems to be nondeterministic,
             // so send (maybe _another_) select message that will update the UI in case this was already selected.
@@ -362,12 +367,13 @@ private:
                 int destChannel = destState[IDs::CHANNEL];
                 int sourceChannel = sourceState[IDs::CHANNEL];
 
-                source->outputs.add({dest, destChannel, sourceChannel});
-                dest->inputs.add({source, sourceChannel, destChannel});
-                topologyChanged();
-            } else {
-                sendChangeMessage();
+                MessageManager::callAsync([this, source, dest, sourceChannel, destChannel]() {
+                    source->outputs.add({dest, destChannel, sourceChannel});
+                    dest->inputs.add({source, sourceChannel, destChannel});
+                    topologyChanged();
+                });
             }
+            sendChangeMessage();
         }
     }
 
@@ -375,8 +381,7 @@ private:
         if (child.hasType(IDs::PROCESSOR)) {
             NodeID removedNodeId = getNodeIdForState(child);
 
-            removeNodeConnections(removedNodeId, parent, findNeighborNodes(parent, parent.getChild(indexFromWhichChildWasRemoved - 1), parent.getChild(indexFromWhichChildWasRemoved)));
-            if (!child.hasProperty(IDs::IS_MOVING)) {
+            if (child.hasProperty(IDs::IS_EXPLICIT_DELETE)) {
                 // no need to destroy and create again. just moving between tracks.
                 removeNode(removedNodeId);
             }
@@ -390,26 +395,17 @@ private:
                 int destChannel = destState[IDs::CHANNEL];
                 int sourceChannel = sourceState[IDs::CHANNEL];
 
-                source->outputs.removeAllInstancesOf({dest, destChannel, sourceChannel});
-                dest->inputs.removeAllInstancesOf({source, sourceChannel, destChannel});
-                topologyChanged();
-            } else {
-                sendChangeMessage();
+                MessageManager::callAsync([this, source, dest, sourceChannel, destChannel]() {
+                    source->outputs.removeAllInstancesOf({dest, destChannel, sourceChannel});
+                    dest->inputs.removeAllInstancesOf({source, sourceChannel, destChannel});
+                    topologyChanged();
+                });
             }
+            sendChangeMessage();
         }
     }
 
     void valueTreeChildOrderChanged(ValueTree& parent, int oldIndex, int newIndex) override {
-        ValueTree processorState = parent.getChild(newIndex);
-        if (processorState.hasType(IDs::PROCESSOR)) {
-            NodeID nodeId = getNodeIdForState(processorState);
-            const NeighborNodes &neighborNodes = oldIndex < newIndex ?
-                                                 findNeighborNodes(parent, parent.getChild(oldIndex - 1), parent.getChild(oldIndex)) :
-                                                 findNeighborNodes(parent, parent.getChild(oldIndex), parent.getChild(oldIndex + 1));
-            removeNodeConnections(nodeId, parent, neighborNodes);
-            insertNodeConnections(nodeId, processorState);
-            project.makeSlotsValid(parent, getDragDependentUndoManager());
-        }
     }
 
     void valueTreeParentChanged(ValueTree& treeWhoseParentHasChanged) override {

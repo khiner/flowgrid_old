@@ -12,8 +12,8 @@ class ValueTreeEditor : public Component,
                         private ComboBox::Listener,
                         private Timer {
 public:
-    ValueTreeEditor(TreeView &treeView, const ValueTree &state, UndoManager &undoManager, Project& project, ProcessorGraph &audioGraphBuilder)
-            : treeView(treeView), undoManager(undoManager), project(project) {
+    ValueTreeEditor(const ValueTree &state, UndoManager &undoManager, Project& project, ProcessorGraph &audioGraphBuilder)
+            : undoManager(undoManager), project(project) {
         addAndMakeVisible(treeView);
         treeView.setColour(TreeView::backgroundColourId,
                        getUIColourIfAvailable(LookAndFeel_V4::ColourScheme::UIColour::windowBackground));
@@ -108,7 +108,7 @@ public:
     }
 
 private:
-    TreeView &treeView;
+    TreeView treeView;
     TextButton undoButton{"Undo"}, redoButton{"Redo"}, createTrackButton{"Add Track"};
 
     ComboBox addProcessorComboBox{"Add Processor"};

@@ -19,7 +19,7 @@ public:
     SoundMachineApplication() : project(loadOrCreateDefaultEdit(), undoManager),
                                 processorGraph(project, undoManager),
                                 midiControlHandler(project, processorGraph, undoManager),
-                                applicationKeyListener(treeView, undoManager) {}
+                                applicationKeyListener(project, undoManager) {}
 
     const String getApplicationName() override { return ProjectInfo::projectName; }
 
@@ -39,7 +39,7 @@ public:
         Process::makeForegroundProcess();
         auto *push2Component = new Push2Component(project, processorGraph);
         push2Window = std::make_unique<MainWindow>("Push 2 Mirror", push2Component, &applicationKeyListener);
-        ValueTreeEditor *valueTreeEditor = new ValueTreeEditor(treeView, project.getState(), undoManager, project, processorGraph);
+        ValueTreeEditor *valueTreeEditor = new ValueTreeEditor(project.getState(), undoManager, project, processorGraph);
         treeWindow = std::make_unique<MainWindow>("Tree Editor", valueTreeEditor, &applicationKeyListener);
         arrangeWindow = std::make_unique<MainWindow>("Arrange View", new ArrangeView(project.getTracks()), &applicationKeyListener);
         graphEditorWindow = std::make_unique<MainWindow>("Graph Editor", new GraphEditorPanel(processorGraph), &applicationKeyListener);
@@ -153,7 +153,6 @@ private:
     std::unique_ptr<AudioDeviceSelectorComponent> audioDeviceSelectorComponent;
     UndoManager undoManager;
     AudioDeviceManager deviceManager;
-    TreeView treeView;
     ApplicationKeyListener applicationKeyListener;
 
     Push2MidiCommunicator push2MidiCommunicator;
