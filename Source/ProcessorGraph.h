@@ -196,6 +196,7 @@ private:
     Node::Ptr audioOutputNode;
 
     bool initializing { true };
+    bool isMoving { false };
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ProcessorGraph)
 
@@ -390,7 +391,7 @@ private:
         if (child.hasType(IDs::PROCESSOR)) {
             NodeID removedNodeId = getNodeIdForState(child);
 
-            if (currentlyDraggingNodeId == NA_NODE_ID) {
+            if (currentlyDraggingNodeId == NA_NODE_ID && !isMoving) {
                 // no need to destroy and create again. just moving between tracks.
                 removeNode(removedNodeId);
             }
@@ -445,6 +446,7 @@ private:
     };
 
     void processorWillBeMoved(const ValueTree& processor, const ValueTree& newParent, int insertIndex) override {
+        isMoving = true;
         NodeID nodeId = getNodeIdForState(processor);
         removeNodeConnections(nodeId, processor.getParent(), findNeighborNodes(processor));
     };
@@ -453,6 +455,7 @@ private:
         NodeID nodeId = getNodeIdForState(processor);
         insertNodeConnections(nodeId, processor);
         project.makeSlotsValid(newParent, getDragDependentUndoManager());
+        isMoving = false;
     };
 
     void itemSelected(const ValueTree&) override {};
