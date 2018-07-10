@@ -6,25 +6,28 @@
 #include "ValueTreeItems.h"
 #include "processors/ProcessorIds.h"
 
-class ProcessorGraph : public AudioProcessorGraph, private ValueTree::Listener {
+class ProcessorGraph : public AudioProcessorGraph, private ValueTree::Listener, private ProjectChangeListener {
 public:
     explicit ProcessorGraph(Project &project, UndoManager &undoManager)
             : project(project), undoManager(undoManager) {
         enableAllBuses();
         audioOutputNode = addNode(new AudioGraphIOProcessor(AudioGraphIOProcessor::audioOutputNode));
 
-        bool hasConnections = project.hasConnections();
-
         this->project.getConnections().addListener(this);
-        recursivelyInitializeWithState(project.getMasterTrack(), !hasConnections);
-        recursivelyInitializeWithState(project.getTracks(), !hasConnections);
+        recursivelyInitializeWithState(project.getMasterTrack());
+        recursivelyInitializeWithState(project.getTracks());
 
-        if (hasConnections) {
+        if (project.hasConnections()) {
             for (auto connection : project.getConnections()) {
                 valueTreeChildAdded(project.getConnections(), connection);
             }
+        } else {
+            recursivelyInitializeWithState(project.getMasterTrack(), true);
+            recursivelyInitializeWithState(project.getTracks(), true);
         }
         this->project.getTracks().addListener(this);
+        this->project.addChangeListener(this);
+        initializing = false;
     }
 
     std::vector<Connection> getConnectionsUi() const {
@@ -117,8 +120,7 @@ public:
         processorState.setProperty(IDs::PROCESSOR_SLOT, toSlot, getDragDependentUndoManager());
         const int insertIndex = project.getParentIndexForProcessor(toTrack, processorState, getDragDependentUndoManager());
         NodeID nodeId = getNodeIdForState(processorState);
-        const NeighborNodes &neighborNodes = findNeighborNodes(processorState);
-        removeNodeConnections(nodeId, processorState.getParent(), neighborNodes);
+        removeNodeConnections(nodeId, processorState.getParent(), findNeighborNodes(processorState));
         processorState.setProperty(IDs::IS_MOVING, true, nullptr);
         Helpers::moveSingleItem(processorState, toTrack, insertIndex, getDragDependentUndoManager());
         processorState.removeProperty(IDs::IS_MOVING, nullptr);
@@ -196,24 +198,30 @@ private:
     UndoManager &undoManager;
     Node::Ptr audioOutputNode;
 
+    bool initializing { true };
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ProcessorGraph)
 
     inline UndoManager* getDragDependentUndoManager() {
         return currentlyDraggingNodeId == NA_NODE_ID ? &undoManager : nullptr;
     }
 
-    void recursivelyInitializeWithState(const ValueTree &state, bool addDefaultConnections=true) {
+    void recursivelyInitializeWithState(const ValueTree &state, bool connections=false) {
         if (state.hasType(IDs::PROCESSOR)) {
-            return addProcessor(state, addDefaultConnections);
+            if (connections) {
+                return insertNodeConnections(getNodeIdForState(state), state);
+            } else {
+                return addProcessor(state);
+            }
         }
         for (const ValueTree& child : state) {
             if (!child.hasType(IDs::MASTER_TRACK)) {
-                recursivelyInitializeWithState(child, addDefaultConnections);
+                recursivelyInitializeWithState(child, connections);
             }
         }
     }
 
-    void addProcessor(const ValueTree &processorState, bool addDefaultConnections=true) {
+    void addProcessor(const ValueTree &processorState) {
         auto *processor = createStatefulAudioProcessorFromId(processorState[IDs::name], processorState, undoManager);
         processor->updateValueTree();
 
@@ -221,8 +229,12 @@ private:
                                    addNode(processor, getNodeIdForState(processorState)) :
                                    addNode(processor);
         processor->state.setProperty(IDs::NODE_ID, int(newNode->nodeID), nullptr);
-        if (addDefaultConnections) {
-            insertNodeConnections(newNode->nodeID, processorState);
+
+        if (!initializing) {
+            const Array<ValueTree> &nodeConnections = project.getConnectionsForNode(newNode->nodeID);
+            for (auto& connection : nodeConnections) {
+                valueTreeChildAdded(project.getConnections(), connection);
+            }
         }
     }
 
@@ -349,10 +361,11 @@ private:
 
     void valueTreeChildAdded(ValueTree& parent, ValueTree& child) override {
         if (child.hasType(IDs::PROCESSOR)) {
-            if (getProcessorForState(child) == nullptr) {
-                addProcessor(child, false);
+            if (currentlyDraggingNodeId == NA_NODE_ID) {
+                if (getProcessorForState(child) == nullptr) {
+                    addProcessor(child);
+                }
             }
-
             // Kind of crappy - the order of the listeners seems to be nondeterministic,
             // so send (maybe _another_) select message that will update the UI in case this was already selected.
             if (child[IDs::selected]) {
@@ -368,11 +381,9 @@ private:
                 int destChannel = destState[IDs::CHANNEL];
                 int sourceChannel = sourceState[IDs::CHANNEL];
 
-                MessageManager::callAsync([this, source, dest, sourceChannel, destChannel]() {
-                    source->outputs.add({dest, destChannel, sourceChannel});
-                    dest->inputs.add({source, sourceChannel, destChannel});
-                    topologyChanged();
-                });
+                source->outputs.add({dest, destChannel, sourceChannel});
+                dest->inputs.add({source, sourceChannel, destChannel});
+                topologyChanged();
             }
             sendChangeMessage();
         }
@@ -382,7 +393,7 @@ private:
         if (child.hasType(IDs::PROCESSOR)) {
             NodeID removedNodeId = getNodeIdForState(child);
 
-            if (!child.hasProperty(IDs::IS_MOVING)) {
+            if (currentlyDraggingNodeId == NA_NODE_ID) {
                 // no need to destroy and create again. just moving between tracks.
                 removeNode(removedNodeId);
             }
@@ -396,11 +407,10 @@ private:
                 int destChannel = destState[IDs::CHANNEL];
                 int sourceChannel = sourceState[IDs::CHANNEL];
 
-                MessageManager::callAsync([this, source, dest, sourceChannel, destChannel]() {
-                    source->outputs.removeAllInstancesOf({dest, destChannel, sourceChannel});
-                    dest->inputs.removeAllInstancesOf({source, sourceChannel, destChannel});
-                    topologyChanged();
-                });
+                source->outputs.removeAllInstancesOf({dest, destChannel, sourceChannel});
+                dest->inputs.removeAllInstancesOf({source, sourceChannel, destChannel});
+                topologyChanged();
+
             }
             sendChangeMessage();
         }
@@ -413,4 +423,21 @@ private:
     }
 
     void valueTreeRedirected(ValueTree& treeWhichHasBeenChanged) override {}
+
+    void itemSelected(const ValueTree&) override {};
+    void itemRemoved(const ValueTree&) override {};
+
+    void processorCreated(const ValueTree& processor) override {
+        insertNodeConnections(getNodeIdForState(processor), processor);
+    };
+
+    void processorWillBeDestroyed(const ValueTree& processor) override {
+        removeNodeConnections(getNodeIdForState(processor), processor.getParent(), findNeighborNodes(processor));
+
+        const Array<ValueTree> remainingConnections = project.getConnectionsForNode(getNodeIdForState(processor));
+        if (!remainingConnections.isEmpty()) {
+            for (const auto &c : remainingConnections)
+                project.removeConnection(c, &undoManager);
+        }
+    };
 };

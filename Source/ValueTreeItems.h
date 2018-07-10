@@ -12,6 +12,8 @@ class ProjectChangeListener {
 public:
     virtual void itemSelected(const ValueTree&) = 0;
     virtual void itemRemoved(const ValueTree&) = 0;
+    virtual void processorCreated(const ValueTree&) {};
+    virtual void processorWillBeDestroyed(const ValueTree &) {};
     virtual ~ProjectChangeListener() {}
 };
 
@@ -60,6 +62,26 @@ public:
         } else {
             MessageManager::callAsync([this, item] {
                 changeListeners.call(&ProjectChangeListener::itemRemoved, item);
+            });
+        }
+    }
+
+    virtual void sendProcessorCreatedMessage(ValueTree item) {
+        if (MessageManager::getInstance()->isThisTheMessageThread()) {
+            changeListeners.call(&ProjectChangeListener::processorCreated, item);
+        } else {
+            MessageManager::callAsync([this, item] {
+                changeListeners.call(&ProjectChangeListener::processorCreated, item);
+            });
+        }
+    }
+
+    virtual void sendProcessorWillBeDestroyedMessage(ValueTree item) {
+        if (MessageManager::getInstance()->isThisTheMessageThread()) {
+            changeListeners.call(&ProjectChangeListener::processorWillBeDestroyed, item);
+        } else {
+            MessageManager::callAsync([this, item] {
+                changeListeners.call(&ProjectChangeListener::processorWillBeDestroyed, item);
             });
         }
     }
@@ -518,26 +540,6 @@ public:
         }
     }
 
-    static bool connectionsContain(const ValueTree &connections, const ValueTree& connection) {
-        for (const auto& otherConnection : connections) {
-            if (otherConnection.isEquivalentTo(connection)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    static bool connectionsContain(const Array<ValueTree> &connections, const ValueTree& connection) {
-        for (const auto& otherConnection : connections) {
-            if (otherConnection.isEquivalentTo(connection)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
     void restoreConnectionsSnapshot() {
         connections.removeAllChildren(nullptr);
         for (const auto& connection : connectionsSnapshot) {
@@ -576,12 +578,7 @@ public:
 
             if (v.getParent().isValid()) {
                 if (v.hasType(IDs::PROCESSOR)) {
-                    const Array<ValueTree> nodeConnections = getConnectionsForNode(AudioProcessorGraph::NodeID(int(v[IDs::NODE_ID])));
-
-                    if (!nodeConnections.isEmpty()) {
-                        for (const auto &c : nodeConnections)
-                            removeConnection(c, &undoManager);
-                    }
+                    sendProcessorWillBeDestroyedMessage(v);
                 }
                 v.getParent().removeChild(v, &undoManager);
             }
@@ -673,6 +670,8 @@ public:
 
         processor.setProperty(IDs::PROCESSOR_SLOT, slot, nullptr);
         track.addChild(processor, insertIndex, undoable ? &undoManager : nullptr);
+        sendProcessorCreatedMessage(processor);
+
         return processor;
     }
 
