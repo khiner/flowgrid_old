@@ -421,9 +421,15 @@ private:
 
     void valueTreeRedirected(ValueTree& treeWhichHasBeenChanged) override {}
 
-    void itemSelected(const ValueTree&) override {};
-    void itemRemoved(const ValueTree&) override {};
-
+    /*
+     * The following ProjectChanged methods take care of things that could be done
+     * inside of the ValueTreeChanged methods above. They are here because they
+     * create further undoable actions as side-effects and we must avoid recursive
+     * undoable actions.
+     *
+     * This way, the ValueTreeChanged methods in this class only update the AudioGraph
+     * and UI state.
+     */
     void processorCreated(const ValueTree& processor) override {
         insertNodeConnections(getNodeIdForState(processor), processor);
     };
@@ -448,4 +454,7 @@ private:
         insertNodeConnections(nodeId, processor);
         project.makeSlotsValid(newParent, getDragDependentUndoManager());
     };
+
+    void itemSelected(const ValueTree&) override {};
+    void itemRemoved(const ValueTree&) override {};
 };
