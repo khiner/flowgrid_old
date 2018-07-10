@@ -118,14 +118,11 @@ public:
             return;
 
         processorState.setProperty(IDs::PROCESSOR_SLOT, toSlot, getDragDependentUndoManager());
+
         const int insertIndex = project.getParentIndexForProcessor(toTrack, processorState, getDragDependentUndoManager());
-        NodeID nodeId = getNodeIdForState(processorState);
-        removeNodeConnections(nodeId, processorState.getParent(), findNeighborNodes(processorState));
-        processorState.setProperty(IDs::IS_MOVING, true, nullptr);
+        processorWillBeMoved(processorState, toTrack, insertIndex);
         Helpers::moveSingleItem(processorState, toTrack, insertIndex, getDragDependentUndoManager());
-        processorState.removeProperty(IDs::IS_MOVING, nullptr);
-        insertNodeConnections(nodeId, processorState);
-        project.makeSlotsValid(toTrack, getDragDependentUndoManager());
+        processorHasMoved(processorState, toTrack);
     }
 
     Point<double> getNodePosition(NodeID nodeId) const {
@@ -439,5 +436,16 @@ private:
             for (const auto &c : remainingConnections)
                 project.removeConnection(c, &undoManager);
         }
+    };
+
+    void processorWillBeMoved(const ValueTree& processor, const ValueTree& newParent, int insertIndex) override {
+        NodeID nodeId = getNodeIdForState(processor);
+        removeNodeConnections(nodeId, processor.getParent(), findNeighborNodes(processor));
+    };
+
+    void processorHasMoved(const ValueTree& processor, const ValueTree& newParent) override {
+        NodeID nodeId = getNodeIdForState(processor);
+        insertNodeConnections(nodeId, processor);
+        project.makeSlotsValid(newParent, getDragDependentUndoManager());
     };
 };

@@ -14,6 +14,8 @@ public:
     virtual void itemRemoved(const ValueTree&) = 0;
     virtual void processorCreated(const ValueTree&) {};
     virtual void processorWillBeDestroyed(const ValueTree &) {};
+    virtual void processorWillBeMoved(const ValueTree &, const ValueTree&, int) {};
+    virtual void processorHasMoved(const ValueTree &, const ValueTree&) {};
     virtual ~ProjectChangeListener() {}
 };
 
@@ -76,14 +78,21 @@ public:
         }
     }
 
+    // The following three methods _cannot_ be called async!
+    // They assume ordering of "willBeThinged -> thing -> hasThinged".
     virtual void sendProcessorWillBeDestroyedMessage(ValueTree item) {
-        if (MessageManager::getInstance()->isThisTheMessageThread()) {
-            changeListeners.call(&ProjectChangeListener::processorWillBeDestroyed, item);
-        } else {
-            MessageManager::callAsync([this, item] {
-                changeListeners.call(&ProjectChangeListener::processorWillBeDestroyed, item);
-            });
-        }
+        jassert(MessageManager::getInstance()->isThisTheMessageThread());
+        changeListeners.call(&ProjectChangeListener::processorWillBeDestroyed, item);
+    }
+
+    virtual void sendProcessorWillBeMovedMessage(const ValueTree& item, const ValueTree& newParent, int insertIndex) {
+        jassert(MessageManager::getInstance()->isThisTheMessageThread());
+        changeListeners.call(&ProjectChangeListener::processorWillBeMoved, item, newParent, insertIndex);
+    }
+
+    virtual void sendProcessorHasMovedMessage(const ValueTree& item, const ValueTree& newParent) {
+        jassert(MessageManager::getInstance()->isThisTheMessageThread());
+        changeListeners.call(&ProjectChangeListener::processorHasMoved, item, newParent);
     }
 
 private:
@@ -301,7 +310,15 @@ namespace Helpers {
         std::unique_ptr<XmlElement> oldOpenness(treeView.getOpennessState(false));
 
         for (int i = items.size(); --i >= 0;) {
-            moveSingleItem(*items.getUnchecked(i), newParent, insertIndex, undoManager);
+            ValueTree &item = *items.getUnchecked(i);
+            if (item.hasType(IDs::PROCESSOR)) {
+                auto *cb = dynamic_cast<ProjectChangeBroadcaster *> (treeView.getRootItem());
+                cb->sendProcessorWillBeMovedMessage(item, newParent, insertIndex);
+                moveSingleItem(item, newParent, insertIndex, undoManager);
+                cb->sendProcessorHasMovedMessage(item, newParent);
+            } else {
+                moveSingleItem(item, newParent, insertIndex, undoManager);
+            }
         }
 
         if (oldOpenness != nullptr)
