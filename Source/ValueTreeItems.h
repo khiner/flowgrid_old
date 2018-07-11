@@ -616,6 +616,13 @@ public:
         Helpers::createUuidProperty(tracks);
         tracks.setProperty(IDs::name, "Tracks", nullptr);
 
+        masterTrack = ValueTree(IDs::MASTER_TRACK);
+        Helpers::createUuidProperty(masterTrack);
+        masterTrack.setProperty(IDs::name, "Master", nullptr);
+        ValueTree masterMixer = createAndAddProcessor(masterTrack, MixerChannelProcessor::name(), false);
+        masterMixer.setProperty(IDs::selected, true, nullptr);
+        tracks.addChild(masterTrack, -1, nullptr);
+
         for (int tn = 0; tn < 1; ++tn) {
             ValueTree track = createAndAddTrack(false);
             createAndAddProcessor(track, SineBank::name(), false);
@@ -632,13 +639,6 @@ public:
 //            }
         }
 
-        masterTrack = ValueTree(IDs::MASTER_TRACK);
-        Helpers::createUuidProperty(masterTrack);
-        masterTrack.setProperty(IDs::name, "Master", nullptr);
-        ValueTree masterMixer = createAndAddProcessor(masterTrack, MixerChannelProcessor::name(), false);
-        masterMixer.setProperty(IDs::selected, true, nullptr);
-        tracks.addChild(masterTrack, -1, nullptr);
-
         state.addChild(tracks, -1, nullptr);
 
         connections = ValueTree(IDs::CONNECTIONS);
@@ -648,7 +648,7 @@ public:
     }
 
     ValueTree createAndAddTrack(bool undoable=true) {
-        int numTracks = this->getNumSubItems();
+        int numTracks = getNumTracks() - 1; // minus 1 because of master track
 
         ValueTree track(IDs::TRACK);
         const String trackName("Track " + String(numTracks + 1));
