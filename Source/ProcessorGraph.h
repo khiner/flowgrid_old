@@ -97,8 +97,8 @@ public:
     void setNodePosition(NodeID nodeId, Point<double> pos) {
         jassert(currentlyDraggingNodeId != NA_NODE_ID);
 
-        auto newX = int(Project::NUM_VISIBLE_TRACK_SLOTS * jlimit(0.0, 0.99, pos.x));
-        auto newY = int(Project::NUM_VISIBLE_TRACK_SLOTS * jlimit(0.0, 0.99, pos.y));
+        auto newX = jlimit(0, project.getNumTracks() - 1, int(Project::NUM_VISIBLE_TRACKS * jlimit(0.0, 0.99, pos.x)));
+        auto newY = jlimit(0, Project::NUM_AVAILABLE_PROCESSOR_SLOTS - 1, int(Project::NUM_VISIBLE_PROCESSOR_SLOTS * jlimit(0.0, 0.99, pos.y)));
         if (newX != currentlyDraggingGridPosition.x || newY != currentlyDraggingGridPosition.y) {
             currentlyDraggingGridPosition.x = newX;
             currentlyDraggingGridPosition.y = newY;
@@ -138,8 +138,8 @@ public:
 
     Point<double> getNodePosition(NodeID nodeId) const {
         const Point<int> gridLocation = getProcessorGridLocation(nodeId);
-        return {gridLocation.x / float(Project::NUM_VISIBLE_TRACK_SLOTS) + (0.5 / Project::NUM_VISIBLE_TRACK_SLOTS),
-                gridLocation.y / float(Project::NUM_VISIBLE_TRACK_SLOTS) + (0.5 / Project::NUM_VISIBLE_TRACK_SLOTS)};
+        return {gridLocation.x / float(Project::NUM_VISIBLE_TRACKS) + (0.5 / Project::NUM_VISIBLE_TRACKS),
+                gridLocation.y / float(Project::NUM_VISIBLE_PROCESSOR_SLOTS) + (0.5 / Project::NUM_VISIBLE_PROCESSOR_SLOTS)};
     }
 
     bool canConnectUi(const Connection& c) const {
@@ -249,10 +249,10 @@ private:
 
     Point<int> getProcessorGridLocation(NodeID nodeId) const {
         if (nodeId == audioOutputNode->nodeID) {
-            return {Project::NUM_VISIBLE_TRACK_SLOTS - 1, Project::NUM_VISIBLE_TRACK_SLOTS - 1};
+            return {Project::NUM_VISIBLE_TRACKS - 1, Project::NUM_VISIBLE_PROCESSOR_SLOTS - 1};
         } else if (auto *processor = getProcessorForNodeId(nodeId)) {
-            auto row = int(processor->state[IDs::PROCESSOR_SLOT]);
             auto column = processor->state.getParent().getParent().indexOf(processor->state.getParent());
+            auto row = int(processor->state[IDs::PROCESSOR_SLOT]);
             return {column, row};
         } else {
             return {0, 0};

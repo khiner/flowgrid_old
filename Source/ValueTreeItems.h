@@ -685,7 +685,7 @@ public:
         int insertIndex = mixerChannelProcessor.isValid() ? track.indexOf(mixerChannelProcessor) : -1;
         int slot = 0;
         if (insertIndex == -1 && name == MixerChannelProcessor::name()) {
-            slot = NUM_VISIBLE_TRACK_SLOTS - 1;
+            slot = NUM_AVAILABLE_PROCESSOR_SLOTS - 1;
         } else if (track.getNumChildren() > 1) {
             slot = int(track.getChild(track.getNumChildren() - 2).getProperty(IDs::PROCESSOR_SLOT)) + 1;
         }
@@ -788,7 +788,10 @@ public:
         ProjectChangeBroadcaster::sendItemSelectedMessage(item);
     }
 
-    const static int NUM_VISIBLE_TRACK_SLOTS = 8;
+    const static int NUM_VISIBLE_TRACKS = 8;
+    const static int NUM_VISIBLE_PROCESSOR_SLOTS = 9;
+    // last row is reserved for audio output.
+    const static int NUM_AVAILABLE_PROCESSOR_SLOTS = NUM_VISIBLE_PROCESSOR_SLOTS - 1;
 private:
     ValueTree tracks;
     ValueTree masterTrack;
