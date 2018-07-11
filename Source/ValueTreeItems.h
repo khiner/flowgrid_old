@@ -521,10 +521,8 @@ public:
 
     }
 
+    // checks for duplicate add should be done before! (not done here to avoid redundant checks)
     void addConnection(const AudioProcessorGraph::Connection &connection, UndoManager* undoManager) {
-        if (getConnectionMatching(connection).isValid())
-            return; // dupe-add attempt
-
         ValueTree connectionState(IDs::CONNECTION);
         ValueTree source(IDs::SOURCE);
         source.setProperty(IDs::NODE_ID, int(connection.source.nodeID), nullptr);
