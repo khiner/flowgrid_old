@@ -5,7 +5,7 @@
 class GraphEditorPanel : public Component,
                          public ChangeListener {
 public:
-    GraphEditorPanel(ProcessorGraph &graph);
+    GraphEditorPanel(ProcessorGraph &graph, Project& project);
 
     ~GraphEditorPanel();
 
@@ -40,6 +40,7 @@ public:
 
     //==============================================================================
     ProcessorGraph &graph;
+    Project &project;
 
     static const int NUM_ROWS = Project::NUM_VISIBLE_PROCESSOR_SLOTS;
     static const int NUM_COLUMNS = Project::NUM_VISIBLE_TRACKS;
@@ -73,6 +74,7 @@ class GraphDocumentComponent : public Component,
                                public DragAndDropContainer {
 public:
     GraphDocumentComponent(ProcessorGraph &graph,
+                           Project &project,
                            AudioPluginFormatManager &formatManager,
                            AudioDeviceManager &deviceManager,
                            KnownPluginList &pluginList);
@@ -105,6 +107,7 @@ public:
 
 private:
     ProcessorGraph &graph;
+    Project &project;
     AudioDeviceManager &deviceManager;
     KnownPluginList &pluginList;
 

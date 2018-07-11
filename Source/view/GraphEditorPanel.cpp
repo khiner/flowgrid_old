@@ -522,7 +522,8 @@ struct GraphEditorPanel::ConnectorComponent : public Component,
 
 
 //==============================================================================
-GraphEditorPanel::GraphEditorPanel(ProcessorGraph &g) : graph(g) {
+GraphEditorPanel::GraphEditorPanel(ProcessorGraph &g, Project &project)
+        : graph(g), project(project) {
     graph.addChangeListener(this);
     setOpaque(true);
 }
@@ -538,12 +539,14 @@ void GraphEditorPanel::paint(Graphics &g) {
     const Colour &bgColor = findColour(ResizableWindow::backgroundColourId);
     g.fillAll(bgColor);
     g.setColour(bgColor.brighter(0.15));
-    for (int row = 0; row < NUM_ROWS; row++) {
-        for (int column = 0; column < NUM_COLUMNS; column++) {
-            float rowOffset = float(row) / float(NUM_ROWS);
-            float columnOffset = float(column) / float(NUM_COLUMNS);
-            g.drawHorizontalLine(int(rowOffset * getHeight()), 0, getWidth());
-            g.drawVerticalLine(int(columnOffset * getWidth()), 0, getHeight());
+    auto cellWidth = int(float(getWidth()) / float(NUM_COLUMNS));
+    auto cellHeight = int(float(getHeight()) / float(NUM_ROWS));
+    auto horizontalLineLength = cellWidth * project.getNumTracks();
+    auto verticalLineLength = cellHeight * Project::NUM_AVAILABLE_PROCESSOR_SLOTS;
+    for (int row = 0; row < Project::NUM_AVAILABLE_PROCESSOR_SLOTS + 1; row++) {
+        for (int column = 0; column < project.getNumTracks() + 1; column++) {
+            g.drawHorizontalLine(row * cellHeight, 0, horizontalLineLength);
+            g.drawVerticalLine(column * cellWidth, 0, verticalLineLength);
         }
     }
 }
@@ -934,10 +937,12 @@ struct GraphDocumentComponent::PluginListBoxModel : public ListBoxModel,
 
 //==============================================================================
 GraphDocumentComponent::GraphDocumentComponent(ProcessorGraph &graph,
+                                               Project &project,
                                                AudioPluginFormatManager &fm,
                                                AudioDeviceManager &dm,
                                                KnownPluginList &kpl)
         : graph(graph),
+          project(project),
           deviceManager(dm),
           pluginList(kpl) {
     init();
@@ -946,7 +951,7 @@ GraphDocumentComponent::GraphDocumentComponent(ProcessorGraph &graph,
 }
 
 void GraphDocumentComponent::init() {
-    graphPanel.reset(new GraphEditorPanel(graph));
+    graphPanel.reset(new GraphEditorPanel(graph, project));
     addAndMakeVisible(graphPanel.get());
 
     statusBar.reset(new TooltipBar());
