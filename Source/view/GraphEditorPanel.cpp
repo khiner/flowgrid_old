@@ -412,11 +412,9 @@ struct GraphEditorPanel::ConnectorComponent : public Component,
     }
 
     void paint(Graphics &g) override {
-        if (connection.source.isMIDI() || connection.destination.isMIDI())
-            g.setColour(Colours::red);
-        else
-            g.setColour(Colours::green);
-
+        Colour pathColour = connection.source.isMIDI() || connection.destination.isMIDI()
+                ? Colours::red : Colours::green;
+        g.setColour(pathColour.withAlpha(0.75f));
         g.fillPath(linePath);
     }
 
