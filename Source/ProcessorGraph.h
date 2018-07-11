@@ -52,6 +52,14 @@ public:
         return graphConnections;
     }
 
+    bool isSelected(NodeID nodeId) {
+        if (auto* processor = getProcessorForNodeId(nodeId)) {
+            return processor->state[IDs::selected];
+        }
+
+        return false;
+    }
+
     StatefulAudioProcessor *getProcessorForState(const ValueTree &processorState) const {
         return getProcessorForNodeId(getNodeIdForState(processorState));
     }
@@ -81,6 +89,9 @@ public:
         currentlyDraggingGridPosition.setXY(gridLocation.x, gridLocation.y);
         initialDraggingGridPosition = currentlyDraggingGridPosition;
         project.makeConnectionsSnapshot();
+        if (auto* processor = getProcessorForNodeId(nodeId)) {
+            project.setSelectedProcessor(processor->state);
+        }
     }
 
     void setNodePosition(NodeID nodeId, Point<double> pos) {
@@ -461,6 +472,9 @@ private:
         isMoving = false;
     };
 
-    void itemSelected(const ValueTree&) override {};
+    void itemSelected(const ValueTree&) override {
+        sendChangeMessage();
+    };
+
     void itemRemoved(const ValueTree&) override {};
 };

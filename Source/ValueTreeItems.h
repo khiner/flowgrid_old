@@ -491,6 +491,11 @@ public:
         return selectedProcessor;
     }
 
+    void setSelectedProcessor(ValueTree& processor) {
+        getOwnerView()->clearSelectedItems();
+        processor.setProperty(IDs::selected, true, nullptr);
+    }
+
     bool hasConnections() {
         return connections.isValid() && connections.getNumChildren() > 0;
     }

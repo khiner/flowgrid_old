@@ -73,9 +73,6 @@ struct GraphEditorPanel::PinComponent : public Component,
 struct GraphEditorPanel::FilterComponent : public Component,
                                            private AudioProcessorParameter::Listener {
     FilterComponent(GraphEditorPanel &p, uint32 id) : panel(p), graph(p.graph), nodeId(id) {
-        shadow.setShadowProperties(DropShadow(Colours::black.withAlpha(0.5f), 3, {0, 1}));
-        setComponentEffect(&shadow);
-
         if (auto f = graph.getNodeForId(nodeId)) {
             if (auto *processor = f->getProcessor()) {
                 if (auto *bypassParam = processor->getBypassParameter())
@@ -142,16 +139,25 @@ struct GraphEditorPanel::FilterComponent : public Component,
     }
 
     void paint(Graphics &g) override {
-        auto boxArea = getLocalBounds().reduced(4, pinSize);
+        auto boxArea = getLocalBounds().reduced(1, pinSize);
         bool isBypassed = false;
 
         if (auto *f = graph.getNodeForId(nodeId))
             isBypassed = f->isBypassed();
 
+        bool selected = isSelected();
+        if (selected) {
+            auto bgColour = findColour(ResizableWindow::backgroundColourId).brighter(0.15);
+            g.setColour(bgColour);
+            g.fillRect(getLocalBounds());
+        }
+
         auto boxColour = findColour(TextEditor::backgroundColourId);
 
         if (isBypassed)
             boxColour = boxColour.brighter();
+        else if (selected)
+            boxColour = boxColour.brighter(0.02);
 
         g.setColour(boxColour);
         g.fillRect(boxArea.toFloat());
@@ -205,15 +211,12 @@ struct GraphEditorPanel::FilterComponent : public Component,
         if (f->getProcessor()->producesMidi())
             ++numOuts;
 
-        int w = 100;
-        int h = 60;
+        int w = getParentWidth() / NUM_COLUMNS;
+        int h = getParentHeight() / NUM_ROWS;
 
-        w = jmax(w, (jmax(numIns, numOuts) + 1) * 20);
+        //w = jmax(w, (jmax(numIns, numOuts) + 1) * 20);
 
-        const int textWidth = font.getStringWidth(f->getProcessor()->getName());
-        w = jmax(w, 16 + jmin(textWidth, 300));
-        if (textWidth > 300)
-            h = 100;
+        //const int textWidth = font.getStringWidth(f->getProcessor()->getName());
 
         setSize(w, h);
 
@@ -253,6 +256,10 @@ struct GraphEditorPanel::FilterComponent : public Component,
             return node->getProcessor();
 
         return {};
+    }
+
+    bool isSelected() {
+        return graph.isSelected(nodeId);
     }
 
     void showPopupMenu() {
@@ -340,7 +347,6 @@ struct GraphEditorPanel::FilterComponent : public Component,
     Point<int> originalPos;
     Font font{13.0f, Font::bold};
     int numIns = 0, numOuts = 0;
-    DropShadowEffect shadow;
     std::unique_ptr<PopupMenu> menu;
 };
 
@@ -529,8 +535,9 @@ GraphEditorPanel::~GraphEditorPanel() {
 }
 
 void GraphEditorPanel::paint(Graphics &g) {
-    g.fillAll(getLookAndFeel().findColour(ResizableWindow::backgroundColourId));
-    g.setColour(Colours::white.darker(0.8));
+    const Colour &bgColor = findColour(ResizableWindow::backgroundColourId);
+    g.fillAll(bgColor);
+    g.setColour(bgColor.brighter(0.15));
     for (int row = 0; row < NUM_ROWS; row++) {
         for (int column = 0; column < NUM_COLUMNS; column++) {
             float rowOffset = float(row) / float(NUM_ROWS);
@@ -595,6 +602,7 @@ void GraphEditorPanel::changeListenerCallback(ChangeBroadcaster *) {
 }
 
 void GraphEditorPanel::updateComponents() {
+    repaint();
     for (int i = nodes.size(); --i >= 0;)
         if (graph.getNodeForId(nodes.getUnchecked(i)->nodeId) == nullptr)
             nodes.remove(i);
@@ -610,10 +618,13 @@ void GraphEditorPanel::updateComponents() {
         cc->update();
 
     for (auto *f : graph.getNodes()) {
-        if (getComponentForFilter(f->nodeID) == 0) {
+        FilterComponent *component = getComponentForFilter(f->nodeID);
+        if (component == nullptr) {
             auto *comp = nodes.add(new FilterComponent(*this, f->nodeID));
             addAndMakeVisible(comp);
             comp->update();
+        } else {
+            component->repaint();
         }
     }
 
