@@ -201,6 +201,23 @@ public:
 
     // only called when removing a node. we want to make sure we don't use the undo manager for these connection removals.
     bool disconnectNode(NodeID nodeId) override {
+        const auto& processor = getProcessorForNodeId(nodeId)->state;
+        removeNodeConnections(nodeId, processor.getParent(), findNeighborNodes(processor));
+
+        const Array<ValueTree> remainingConnections = project.getConnectionsForNode(getNodeIdForState(processor));
+        if (!remainingConnections.isEmpty()) {
+            for (const auto &c : remainingConnections)
+                project.removeConnection(c, &undoManager);
+        }
+        return false;
+    }
+
+    bool removeNode(NodeID nodeId) override  {
+        if (auto* processor = getProcessorForNodeId(nodeId)) {
+            disconnectNode(nodeId);
+            processor->state.getParent().removeChild(processor->state, &undoManager);
+            return true;
+        }
         return false;
     }
 
@@ -409,11 +426,14 @@ private:
 
     void valueTreeChildRemoved(ValueTree& parent, ValueTree& child, int indexFromWhichChildWasRemoved) override {
         if (child.hasType(IDs::PROCESSOR)) {
-            NodeID removedNodeId = getNodeIdForState(child);
-
             if (currentlyDraggingNodeId == NA_NODE_ID && !isMoving) {
-                // no need to destroy and create again. just moving between tracks.
-                removeNode(removedNodeId);
+                if (auto nodeId = getNodeIdForState(child)) {
+                    if (auto *node = getNodeForId(nodeId)) {
+                        // disconnect should have already been called before delete! (to avoid nested undo actions)
+                        nodes.removeObject(node);
+                        topologyChanged();
+                    }
+                }
             }
         } else if (child.hasType(IDs::CONNECTION)) {
             if (currentlyDraggingNodeId == NA_NODE_ID) {
@@ -459,13 +479,7 @@ private:
     };
 
     void processorWillBeDestroyed(const ValueTree& processor) override {
-        removeNodeConnections(getNodeIdForState(processor), processor.getParent(), findNeighborNodes(processor));
-
-        const Array<ValueTree> remainingConnections = project.getConnectionsForNode(getNodeIdForState(processor));
-        if (!remainingConnections.isEmpty()) {
-            for (const auto &c : remainingConnections)
-                project.removeConnection(c, &undoManager);
-        }
+        disconnectNode(getNodeIdForState(processor));
     };
 
     void processorWillBeMoved(const ValueTree& processor, const ValueTree& newParent, int insertIndex) override {

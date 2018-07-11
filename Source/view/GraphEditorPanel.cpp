@@ -1,5 +1,6 @@
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "GraphEditorPanel.h"
+#include <memory>
 
 struct GraphEditorPanel::PinComponent : public Component,
                                         public SettableTooltipClient {
@@ -126,7 +127,7 @@ struct GraphEditorPanel::FilterComponent : public Component,
         if (e.mouseWasDraggedSinceMouseDown()) {
 
         } else if (e.getNumberOfClicks() == 2) {
-            //showPopupMenu(PluginWindow::Type::normal);
+            showPopupMenu();
         }
     }
 
@@ -263,8 +264,8 @@ struct GraphEditorPanel::FilterComponent : public Component,
     }
 
     void showPopupMenu() {
-        menu.reset(new PopupMenu);
-        menu->addItem(1, "Delete this filter");
+        menu = std::make_unique<PopupMenu>();
+        menu->addItem(1, "Delete this processor");
         menu->addItem(2, "Disconnect all pins");
         menu->addItem(3, "Toggle Bypass");
 
@@ -274,10 +275,6 @@ struct GraphEditorPanel::FilterComponent : public Component,
             menu->addItem(11, "Show all programs");
             menu->addItem(12, "Show all parameters");
         }
-
-        menu->addSeparator();
-        menu->addItem(20, "Configure Audio I/O");
-        menu->addItem(21, "Test state save/load");
 
         menu->showMenuAsync({}, ModalCallbackFunction::create
                 ([this](int r) {
@@ -305,25 +302,10 @@ struct GraphEditorPanel::FilterComponent : public Component,
                         case 12:
                             //showWindow(PluginWindow::Type::generic);
                             break;
-                        case 20:
-                            //showWindow(PluginWindow::Type::audioIO);
-                            break;
-                        case 21:
-                            testStateSaveLoad();
-                            break;
-
                         default:
                             break;
                     }
                 }));
-    }
-
-    void testStateSaveLoad() {
-        if (auto *processor = getProcessor()) {
-            MemoryBlock state;
-            processor->getStateInformation(state);
-            processor->setStateInformation(state.getData(), (int) state.getSize());
-        }
     }
 
 //    void showWindow(PluginWindow::Type type) {
