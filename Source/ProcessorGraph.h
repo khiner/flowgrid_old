@@ -84,29 +84,40 @@ public:
     }
 
     void beginDraggingNode(NodeID nodeId) {
-        const Point<int> &gridLocation = getProcessorGridLocation(nodeId);
-        currentlyDraggingNodeId = nodeId;
-        currentlyDraggingGridPosition.setXY(gridLocation.x, gridLocation.y);
-        initialDraggingGridPosition = currentlyDraggingGridPosition;
-        project.makeConnectionsSnapshot();
         if (auto* processor = getProcessorForNodeId(nodeId)) {
             project.setSelectedProcessor(processor->state);
+
+            if (processor->getName() == MixerChannelProcessor::name())
+                // mixer channel processors are special processors.
+                // they could be dragged and reconnected like any old processor, but please don't :)
+                return;
+            const Point<int> &gridLocation = getProcessorGridLocation(nodeId);
+            currentlyDraggingNodeId = nodeId;
+            currentlyDraggingGridPosition.setXY(gridLocation.x, gridLocation.y);
+            initialDraggingGridPosition = currentlyDraggingGridPosition;
+            project.makeConnectionsSnapshot();
         }
     }
 
     void setNodePosition(NodeID nodeId, Point<double> pos) {
-        jassert(currentlyDraggingNodeId != NA_NODE_ID);
+        if (currentlyDraggingNodeId == NA_NODE_ID)
+            return;
 
-        auto newX = jlimit(0, project.getNumTracks() - 1, int(Project::NUM_VISIBLE_TRACKS * jlimit(0.0, 0.99, pos.x)));
-        auto newY = jlimit(0, Project::NUM_AVAILABLE_PROCESSOR_SLOTS - 1, int(Project::NUM_VISIBLE_PROCESSOR_SLOTS * jlimit(0.0, 0.99, pos.y)));
-        if (newX != currentlyDraggingGridPosition.x || newY != currentlyDraggingGridPosition.y) {
-            currentlyDraggingGridPosition.x = newX;
-            currentlyDraggingGridPosition.y = newY;
-            StatefulAudioProcessor *processor = getProcessorForNodeId(nodeId);
-            moveProcessor(processor->state, initialDraggingGridPosition.x, initialDraggingGridPosition.y);
-            project.restoreConnectionsSnapshot();
-            if (currentlyDraggingGridPosition != initialDraggingGridPosition) {
-                moveProcessor(processor->state, currentlyDraggingGridPosition.x, currentlyDraggingGridPosition.y);
+        if (auto *processor = getProcessorForNodeId(nodeId)) {
+            const ValueTree &mixerChannelProcessor = project.getMixerChannelProcessorForTrack(processor->state.getParent());
+            int maxProcessorSlot = mixerChannelProcessor.isValid() ?
+                    int(mixerChannelProcessor[IDs::PROCESSOR_SLOT]) - 1 : Project::NUM_AVAILABLE_PROCESSOR_SLOTS - 1;
+            auto newX = jlimit(0, project.getNumTracks() - 1, int(Project::NUM_VISIBLE_TRACKS * jlimit(0.0, 0.99, pos.x)));
+            auto newY = jlimit(0, maxProcessorSlot, int(Project::NUM_VISIBLE_PROCESSOR_SLOTS * jlimit(0.0, 0.99, pos.y)));
+            if (newX != currentlyDraggingGridPosition.x || newY != currentlyDraggingGridPosition.y) {
+                currentlyDraggingGridPosition.x = newX;
+                currentlyDraggingGridPosition.y = newY;
+
+                moveProcessor(processor->state, initialDraggingGridPosition.x, initialDraggingGridPosition.y);
+                project.restoreConnectionsSnapshot();
+                if (currentlyDraggingGridPosition != initialDraggingGridPosition) {
+                    moveProcessor(processor->state, currentlyDraggingGridPosition.x, currentlyDraggingGridPosition.y);
+                }
             }
         }
     }

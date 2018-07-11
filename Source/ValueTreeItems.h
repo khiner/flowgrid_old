@@ -680,7 +680,7 @@ public:
         Helpers::createUuidProperty(processor);
         processor.setProperty(IDs::name, name, nullptr);
 
-        const ValueTree &mixerChannelProcessor = track.getChildWithProperty(IDs::name, MixerChannelProcessor::name());
+        const ValueTree &mixerChannelProcessor = getMixerChannelProcessorForTrack(track);
         // Insert new processors _right before_ the first g&b processor, or at the end if there isn't one.
         int insertIndex = mixerChannelProcessor.isValid() ? track.indexOf(mixerChannelProcessor) : -1;
         int slot = 0;
@@ -695,6 +695,10 @@ public:
         sendProcessorCreatedMessage(processor);
 
         return processor;
+    }
+
+    const ValueTree getMixerChannelProcessorForTrack(const ValueTree& track) {
+        return track.getChildWithProperty(IDs::name, MixerChannelProcessor::name());
     }
 
     void makeSlotsValid(const ValueTree& parent, UndoManager *undoManager) {

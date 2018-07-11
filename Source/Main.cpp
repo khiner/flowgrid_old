@@ -17,9 +17,9 @@ ValueTree loadOrCreateDefaultEdit() {
 class SoundMachineApplication : public JUCEApplication, public MenuBarModel {
 public:
     SoundMachineApplication() : project(loadOrCreateDefaultEdit(), undoManager),
+                                applicationKeyListener(project, undoManager),
                                 processorGraph(project, undoManager),
-                                midiControlHandler(project, processorGraph, undoManager),
-                                applicationKeyListener(project, undoManager) {}
+                                midiControlHandler(project, processorGraph, undoManager) {}
 
     const String getApplicationName() override { return ProjectInfo::projectName; }
 
@@ -157,13 +157,13 @@ private:
     std::unique_ptr<AudioDeviceSelectorComponent> audioDeviceSelectorComponent;
     UndoManager undoManager;
     AudioDeviceManager deviceManager;
-    ApplicationKeyListener applicationKeyListener;
 
     Push2MidiCommunicator push2MidiCommunicator;
 
     AudioProcessorPlayer player;
 
     Project project;
+    ApplicationKeyListener applicationKeyListener;
     ProcessorGraph processorGraph;
     MidiControlHandler midiControlHandler;
 
