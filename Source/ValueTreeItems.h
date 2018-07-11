@@ -337,7 +337,7 @@ class Clip : public ValueTreeItem {
 public:
     Clip(const ValueTree &v, UndoManager &um)
             : ValueTreeItem(v, um) {
-        jassert (state.hasType(IDs::CLIP));
+        jassert(state.hasType(IDs::CLIP));
     }
 
     bool mightContainSubItems() override {
@@ -360,7 +360,7 @@ class Processor : public ValueTreeItem {
 public:
     Processor(const ValueTree &v, UndoManager &um)
             : ValueTreeItem(v, um) {
-        jassert (state.hasType(IDs::PROCESSOR));
+        jassert(state.hasType(IDs::PROCESSOR));
     }
 
     bool mightContainSubItems() override {
@@ -370,27 +370,33 @@ public:
     bool isInterestedInDragSource(const DragAndDropTarget::SourceDetails &) override {
         return false;
     }
+
+    var getDragSourceDescription() override {
+        if (state[IDs::name].toString() == MixerChannelProcessor::name())
+            return MixerChannelProcessor::name();
+        else
+            return ValueTreeItem::getDragSourceDescription();
+    }
 };
 
 class Track : public ValueTreeItem {
 public:
     Track(const ValueTree &state, UndoManager &um)
             : ValueTreeItem(state, um) {
-        jassert (state.hasType(IDs::TRACK));
+        jassert(state.hasType(IDs::TRACK));
     }
 
     bool isInterestedInDragSource(const DragAndDropTarget::SourceDetails &dragSourceDetails) override {
-        return dragSourceDetails.description == IDs::CLIP.toString() ||
-               dragSourceDetails.description == IDs::PROCESSOR.toString();
+        return dragSourceDetails.description == IDs::PROCESSOR.toString();
     }
 
     void itemDropped(const DragAndDropTarget::SourceDetails &dragSourceDetails, int insertIndex) override {
         if (dragSourceDetails.description == IDs::PROCESSOR.toString()) {
-            Helpers::moveItems(*getOwnerView(), Helpers::getSelectedTreeViewItems<Processor>(*getOwnerView()), state,
-                               insertIndex, &undoManager);
-        } else if (dragSourceDetails.description == IDs::CLIP.toString()) {
-            Helpers::moveItems(*getOwnerView(), Helpers::getSelectedTreeViewItems<Clip>(*getOwnerView()), state,
-                               insertIndex, &undoManager);
+            if (getNumSubItems() < insertIndex || getSubItem(insertIndex - 1)->getDragSourceDescription() == IDs::PROCESSOR.toString()) {
+                Helpers::moveItems(*getOwnerView(), Helpers::getSelectedTreeViewItems<Processor>(*getOwnerView()),
+                                   state,
+                                   insertIndex, &undoManager);
+            }
         }
     }
 };
@@ -399,7 +405,7 @@ class MasterTrack : public ValueTreeItem {
 public:
     MasterTrack(const ValueTree &state, UndoManager &um)
             : ValueTreeItem(state, um) {
-        jassert (state.hasType(IDs::MASTER_TRACK));
+        jassert(state.hasType(IDs::MASTER_TRACK));
     }
 
     bool isInterestedInDragSource(const DragAndDropTarget::SourceDetails &dragSourceDetails) override {
@@ -420,7 +426,7 @@ class Tracks : public ValueTreeItem {
 public:
     Tracks(const ValueTree &state, UndoManager &um)
             : ValueTreeItem(state, um) {
-        jassert (state.hasType(IDs::TRACKS));
+        jassert(state.hasType(IDs::TRACKS));
     }
 
     bool isInterestedInDragSource(const DragAndDropTarget::SourceDetails &dragSourceDetails) override {
@@ -680,9 +686,8 @@ public:
         Helpers::createUuidProperty(processor);
         processor.setProperty(IDs::name, name, nullptr);
 
-        const ValueTree &mixerChannelProcessor = getMixerChannelProcessorForTrack(track);
         // Insert new processors _right before_ the first g&b processor, or at the end if there isn't one.
-        int insertIndex = mixerChannelProcessor.isValid() ? track.indexOf(mixerChannelProcessor) : -1;
+        int insertIndex = getMaxProcessorInsertIndex(track);
         int slot = 0;
         if (insertIndex == -1 && name == MixerChannelProcessor::name()) {
             slot = NUM_AVAILABLE_PROCESSOR_SLOTS - 1;
@@ -699,6 +704,16 @@ public:
 
     const ValueTree getMixerChannelProcessorForTrack(const ValueTree& track) {
         return track.getChildWithProperty(IDs::name, MixerChannelProcessor::name());
+    }
+
+    int getMaxProcessorInsertIndex(const ValueTree& track) {
+        const ValueTree &mixerChannelProcessor = getMixerChannelProcessorForTrack(track);
+        return mixerChannelProcessor.isValid() ? track.indexOf(mixerChannelProcessor) : track.getNumChildren() - 1;
+    }
+
+    int getMaxAvailableProcessorSlot(const ValueTree& track) {
+        const ValueTree &mixerChannelProcessor = getMixerChannelProcessorForTrack(track);
+        return mixerChannelProcessor.isValid() ? int(mixerChannelProcessor[IDs::PROCESSOR_SLOT]) - 1 : Project::NUM_AVAILABLE_PROCESSOR_SLOTS - 1;
     }
 
     void makeSlotsValid(const ValueTree& parent, UndoManager *undoManager) {

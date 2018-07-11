@@ -104,9 +104,7 @@ public:
             return;
 
         if (auto *processor = getProcessorForNodeId(nodeId)) {
-            const ValueTree &mixerChannelProcessor = project.getMixerChannelProcessorForTrack(processor->state.getParent());
-            int maxProcessorSlot = mixerChannelProcessor.isValid() ?
-                    int(mixerChannelProcessor[IDs::PROCESSOR_SLOT]) - 1 : Project::NUM_AVAILABLE_PROCESSOR_SLOTS - 1;
+            int maxProcessorSlot = project.getMaxAvailableProcessorSlot(processor->state.getParent());
             auto newX = jlimit(0, project.getNumTracks() - 1, int(Project::NUM_VISIBLE_TRACKS * jlimit(0.0, 0.99, pos.x)));
             auto newY = jlimit(0, maxProcessorSlot, int(Project::NUM_VISIBLE_PROCESSOR_SLOTS * jlimit(0.0, 0.99, pos.y)));
             if (newX != currentlyDraggingGridPosition.x || newY != currentlyDraggingGridPosition.y) {
