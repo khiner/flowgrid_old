@@ -98,7 +98,7 @@ struct GraphEditorPanel::FilterComponent : public Component,
     }
 
     void mouseDown(const MouseEvent &e) override {
-        originalPos = localPointToGlobal(Point < int > ());
+        originalPos = localPointToGlobal(juce::Point<int>());
 
         toFront(true);
         graph.beginDraggingNode(nodeId);
@@ -336,7 +336,7 @@ struct GraphEditorPanel::FilterComponent : public Component,
 //==============================================================================
 struct GraphEditorPanel::ConnectorComponent : public Component,
                                               public SettableTooltipClient {
-    ConnectorComponent(GraphEditorPanel &p) : panel(p), graph(p.graph) {
+    explicit ConnectorComponent(GraphEditorPanel &p) : panel(p), graph(p.graph) {
         setAlwaysOnTop(true);
     }
 
@@ -354,12 +354,12 @@ struct GraphEditorPanel::ConnectorComponent : public Component,
         }
     }
 
-    void dragStart(Point<float> pos) {
+    void dragStart(const Point<float> &pos) {
         lastInputPos = pos;
         resizeToFit();
     }
 
-    void dragEnd(Point<float> pos) {
+    void dragEnd(const Point<float> &pos) {
         lastOutputPos = pos;
         resizeToFit();
     }
@@ -401,7 +401,7 @@ struct GraphEditorPanel::ConnectorComponent : public Component,
     }
 
     bool hitTest(int x, int y) override {
-        auto pos = Point < int > (x, y).toFloat();
+        auto pos = juce::Point<int>(x, y).toFloat();
 
         if (hitPath.contains(pos)) {
             double distanceFromStart, distanceFromEnd;
@@ -474,14 +474,14 @@ struct GraphEditorPanel::ConnectorComponent : public Component,
                           arrowL, 0.0f);
 
         arrow.applyTransform(AffineTransform()
-                                     .rotated(MathConstants<float>::halfPi - (float) atan2(p2.x - p1.x, p2.y - p1.y))
+                                     .rotated(MathConstants<float>::halfPi - atan2(p2.x - p1.x, p2.y - p1.y))
                                      .translated((p1 + p2) * 0.5f));
 
         linePath.addPath(arrow);
         linePath.setUsingNonZeroWinding(true);
     }
 
-    void getDistancesFromEnds(Point<float> p, double &distanceFromStart, double &distanceFromEnd) const {
+    void getDistancesFromEnds(const Point<float> &p, double &distanceFromStart, double &distanceFromEnd) const {
         Point<float> p1, p2;
         getPoints(p1, p2);
 
@@ -612,7 +612,7 @@ void GraphEditorPanel::updateComponents() {
     }
 
     for (auto &c : graph.getConnectionsUi()) {
-        if (getComponentForConnection(c) == 0) {
+        if (getComponentForConnection(c) == nullptr) {
             auto *comp = connectors.add(new ConnectorComponent(*this));
             addAndMakeVisible(comp);
 
@@ -623,7 +623,7 @@ void GraphEditorPanel::updateComponents() {
 }
 
 void GraphEditorPanel::showPopupMenu(Point<int> mousePos) {
-    menu.reset(new PopupMenu);
+    menu = std::make_unique<PopupMenu>();
 
 //    if (auto *mainWindow = findParentComponentOfClass<MainHostWindow>()) {
 //        mainWindow->addPluginsToMenu(*menu);
@@ -645,7 +645,7 @@ void GraphEditorPanel::beginConnectorDrag(AudioProcessorGraph::NodeAndChannel so
     draggingConnector.reset(c);
 
     if (draggingConnector == nullptr)
-        draggingConnector.reset(new ConnectorComponent(*this));
+        draggingConnector = std::make_unique<ConnectorComponent>(*this);
 
     draggingConnector->setInput(source);
     draggingConnector->setOutput(dest);
@@ -750,7 +750,7 @@ struct GraphDocumentComponent::TooltipBar : public Component,
 class GraphDocumentComponent::TitleBarComponent : public Component,
                                                   private Button::Listener {
 public:
-    TitleBarComponent(GraphDocumentComponent &graphDocumentComponent)
+    explicit TitleBarComponent(GraphDocumentComponent &graphDocumentComponent)
             : owner(graphDocumentComponent) {
         static const unsigned char burgerMenuPathData[]
                 = {110, 109, 0, 0, 128, 64, 0, 0, 32, 65, 108, 0, 0, 224, 65, 0, 0, 32, 65, 98, 254, 212, 232, 65, 0, 0,
@@ -931,10 +931,10 @@ GraphDocumentComponent::GraphDocumentComponent(ProcessorGraph &graph,
 }
 
 void GraphDocumentComponent::init() {
-    graphPanel.reset(new GraphEditorPanel(graph, project));
+    graphPanel = std::make_unique<GraphEditorPanel>(graph, project);
     addAndMakeVisible(graphPanel.get());
 
-    statusBar.reset(new TooltipBar());
+    statusBar = std::make_unique<TooltipBar>();
     addAndMakeVisible(statusBar.get());
 
     graphPanel->updateComponents();
