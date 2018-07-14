@@ -34,7 +34,7 @@ public:
             c->setVisible(false);
         for (int i = 0; i < processor->getNumParameters(); i++) {
             Slider *slider = sliders.getUnchecked(i);
-            processor->getParameterInfo(i)->attachSlider(slider, labels.getUnchecked(i));
+            processor->getParameterObject(i)->attachSlider(slider, labels.getUnchecked(i));
             slider->setVisible(true);
         }
     }

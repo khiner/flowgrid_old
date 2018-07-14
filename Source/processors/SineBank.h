@@ -13,6 +13,15 @@ public:
             toneSource3(state, undoManager, "3"),
             toneSource4(state, undoManager, "4") {
 
+        addParameter(toneSource1.getAmpParameter());
+        addParameter(toneSource1.getFreqParameter());
+        addParameter(toneSource2.getAmpParameter());
+        addParameter(toneSource2.getFreqParameter());
+        addParameter(toneSource3.getAmpParameter());
+        addParameter(toneSource3.getFreqParameter());
+        addParameter(toneSource4.getAmpParameter());
+        addParameter(toneSource4.getFreqParameter());
+
         mixerAudioSource.addInputSource(toneSource1.get(), false);
         mixerAudioSource.addInputSource(toneSource2.get(), false);
         mixerAudioSource.addInputSource(toneSource3.get(), false);
@@ -57,20 +66,6 @@ public:
         }
     }
 
-    Parameter *getParameterInfo(int parameterIndex) override {
-        switch (parameterIndex) {
-            case 0: return toneSource1.getAmpParameter();
-            case 1: return toneSource1.getFreqParameter();
-            case 2: return toneSource2.getAmpParameter();
-            case 3: return toneSource2.getFreqParameter();
-            case 4: return toneSource3.getAmpParameter();
-            case 5: return toneSource3.getFreqParameter();
-            case 6: return toneSource4.getAmpParameter();
-            case 7: return toneSource4.getFreqParameter();
-            default: return nullptr;
-        }
-    }
-
     void processBlock(AudioSampleBuffer& buffer, MidiBuffer& midiMessages) override {
         const AudioSourceChannelInfo &channelInfo = AudioSourceChannelInfo(buffer);
         mixerAudioSource.getNextAudioBlock(channelInfo);
@@ -85,4 +80,3 @@ private:
 
     MixerAudioSource mixerAudioSource;
 };
-

@@ -6,11 +6,12 @@
 class GainProcessor : public StatefulAudioProcessor {
 public:
     explicit GainProcessor(const ValueTree &state, UndoManager &undoManager) :
-            StatefulAudioProcessor(2, 2, state, undoManager),
-            gainParameter(state, undoManager, "gain", "Gain", "dB",
-                          NormalisableRange<double>(0.0f, 1.0f), 0.5f,
-                          [](float value) { return String(Decibels::gainToDecibels(value), 3) + " dB"; }, nullptr),
-            gain(gainParameter.getDefaultValue()) {
+            StatefulAudioProcessor(2, 2, state, undoManager) {
+        gainParameter = new Parameter(state, undoManager, "gain", "Gain", "dB",
+                                      NormalisableRange<double>(0.0f, 1.0f), 0.5f,
+                                      [](float value) { return String(Decibels::gainToDecibels(value), 3) + " dB"; }, nullptr);
+        addParameter(gainParameter);
+        gain.setValue(gainParameter->getDefaultValue());
 
         this->state.addListener(this);
     }
@@ -30,16 +31,9 @@ public:
     void valueTreePropertyChanged(ValueTree& tree, const Identifier& p) override {
         if (p == IDs::value) {
             String parameterId = tree.getProperty(IDs::id);
-            if (parameterId == gainParameter.paramId) {
+            if (parameterId == gainParameter->paramId) {
                 gain.setValue(tree[IDs::value]);
             }
-        }
-    }
-
-    Parameter *getParameterInfo(int parameterIndex) override {
-        switch (parameterIndex) {
-            case 0: return &gainParameter;
-            default: return nullptr;
         }
     }
 
@@ -48,6 +42,6 @@ public:
     }
 
 private:
-    Parameter gainParameter;
+    Parameter *gainParameter;
     LinearSmoothedValue<float> gain;
 };

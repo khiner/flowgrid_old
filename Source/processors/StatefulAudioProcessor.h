@@ -13,18 +13,16 @@ public:
 
     virtual void valueTreePropertyChanged(ValueTree& tree, const Identifier& p) = 0;
 
-    virtual Parameter *getParameterInfo(int parameterIndex) = 0;
-
-    const String &getParameterIdentifier(int parameterIndex) {
-        Parameter *parameter = getParameterInfo(parameterIndex);
-        return parameter != nullptr ? parameter->paramId : IDs::PARAM_NA.toString();
+    Parameter *getParameterObject(int parameterIndex) {
+        return dynamic_cast<Parameter *>(getParameters()[parameterIndex]);
     }
 
     void updateValueTree() {
-        for (int i = 0; i < getNumParameters(); i++) {
-            ValueTree v = getOrCreateChildValueTree(getParameterIdentifier(i));
+        for (auto parameter : getParameters()) {
+            auto *parameterObject = dynamic_cast<Parameter *>(parameter);
+            ValueTree v = getOrCreateChildValueTree(parameterObject->paramId);
             if (!v.hasProperty(IDs::value)) {
-                v.setProperty(IDs::value, getParameterInfo(i)->getDefaultValue(), nullptr);
+                v.setProperty(IDs::value, parameterObject->getDefaultValue(), nullptr);
             }
             v.sendPropertyChangeMessage(IDs::value);
         }

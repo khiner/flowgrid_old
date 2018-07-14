@@ -97,7 +97,7 @@ private:
                     auto *slider = processorSliders.getUnchecked(i);
                     auto *label = processorLabels.getUnchecked(i);
                     slider->setVisible(true);
-                    processor->getParameterInfo(i)->attachSlider(slider, label);
+                    processor->getParameterObject(i)->attachSlider(slider, label);
                 }
             }
         } else if (item.hasType(IDs::CLIP)) {

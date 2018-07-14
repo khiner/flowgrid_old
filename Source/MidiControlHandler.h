@@ -30,25 +30,23 @@ public:
         const int ccNumber = midiMessage.getControllerNumber();
 
         if (Push2::isEncoderCcNumber(ccNumber)) {
-            Parameter *parameter = nullptr;
+            int parameterIndex = -1;
             if (ccNumber == Push2::masterKnob) {
                 StatefulAudioProcessor *gainProcessor = audioGraphBuilder.getMasterGainProcessor();
                 if (gainProcessor != nullptr) {
-                    parameter = gainProcessor->getParameterInfo(1); // TODO get by name since indexes change
+                    parameterIndex = 1; // TODO get by name since indexes change
                 }
             } else if (Push2::isAboveScreenEncoderCcNumber(ccNumber)) {
                 if (currentProcessorToControl != nullptr) {
-                    int parameterIndex = ccNumber - Push2::ccNumberForTopKnobIndex(0);
-                    parameter = currentProcessorToControl->getParameterInfo(parameterIndex);
+                    parameterIndex = ccNumber - Push2::ccNumberForTopKnobIndex(0);
                 }
             }
 
-            if (parameter != nullptr) {
+            if (parameterIndex != -1) {
                 float value = Push2::encoderCcMessageToRotationChange(midiMessage);
+                Parameter *parameter = currentProcessorToControl->getParameterObject(parameterIndex);
                 float parameterValue = parameter->getValue();
-                auto newValue = parameterValue + value / 5.0f; // todo move manual scaling to param
-
-                parameter->setValue(newValue);
+                parameter->setValue(parameterValue + value / 5.0f); // TODO move manual scaling to param
             }
             return;
         }

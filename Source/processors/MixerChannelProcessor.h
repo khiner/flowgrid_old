@@ -6,15 +6,19 @@
 class MixerChannelProcessor : public StatefulAudioProcessor {
 public:
     explicit MixerChannelProcessor(const ValueTree &state, UndoManager &undoManager) :
-            StatefulAudioProcessor(2, 2, state, undoManager),
-            balanceParameter(state, undoManager, "balance", "Balance", "",
-                          NormalisableRange<double>(0.0f, 1.0f), 0.5f,
-                          [](float value) { return String(value, 3); }, nullptr),
-            gainParameter(state, undoManager, "gain", "Gain", "dB",
-                          NormalisableRange<double>(0.0f, 1.0f), 0.5f,
-                          [](float value) { return String(Decibels::gainToDecibels(value), 3) + " dB"; }, nullptr),
+            StatefulAudioProcessor(2, 2, state, undoManager) {
+        balanceParameter = new Parameter(state, undoManager, "balance", "Balance", "",
+                                         NormalisableRange<double>(0.0f, 1.0f), 0.5f,
+                                         [](float value) { return String(value, 3); }, nullptr);
+        gainParameter = new Parameter(state, undoManager, "gain", "Gain", "dB",
+                                      NormalisableRange<double>(0.0f, 1.0f), 0.5f,
+                                      [](float value) { return String(Decibels::gainToDecibels(value), 3) + " dB"; }, nullptr);
 
-            balance(balanceParameter.getDefaultValue()), gain(gainParameter.getDefaultValue()) {
+        addParameter(balanceParameter);
+        addParameter(gainParameter);
+
+        balance.setValue(balanceParameter->getDefaultValue());
+        gain.setValue(gainParameter->getDefaultValue());
 
         this->state.addListener(this);
     }
@@ -35,19 +39,11 @@ public:
     void valueTreePropertyChanged(ValueTree& tree, const Identifier& p) override {
         if (p == IDs::value) {
             String parameterId = tree.getProperty(IDs::id);
-            if (parameterId == balanceParameter.paramId) {
+            if (parameterId == balanceParameter->paramId) {
                 balance.setValue(tree[IDs::value]);
-            } else if (parameterId == gainParameter.paramId) {
+            } else if (parameterId == gainParameter->paramId) {
                 gain.setValue(tree[IDs::value]);
             }
-        }
-    }
-
-    Parameter *getParameterInfo(int parameterIndex) override {
-        switch (parameterIndex) {
-            case 0: return &balanceParameter;
-            case 1: return &gainParameter;
-            default: return nullptr;
         }
     }
 
@@ -75,8 +71,8 @@ public:
     }
 
 private:
-    Parameter balanceParameter;
-    Parameter gainParameter;
+    Parameter *balanceParameter;
+    Parameter *gainParameter;
 
     LinearSmoothedValue<float> balance;
     LinearSmoothedValue<float> gain;
