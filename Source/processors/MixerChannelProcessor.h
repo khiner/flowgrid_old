@@ -14,7 +14,7 @@ public:
                           NormalisableRange<double>(0.0f, 1.0f), 0.5f,
                           [](float value) { return String(Decibels::gainToDecibels(value), 3) + " dB"; }, nullptr),
 
-            balance(balanceParameter.defaultValue), gain(gainParameter.defaultValue) {
+            balance(balanceParameter.getDefaultValue()), gain(gainParameter.getDefaultValue()) {
 
         this->state.addListener(this);
     }

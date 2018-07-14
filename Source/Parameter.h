@@ -1,30 +1,38 @@
 #pragma once
 
+#include <utility>
 #include "JuceHeader.h"
 #include "Identifiers.h"
 
-struct Parameter {
-    Parameter(const ValueTree& state, UndoManager &undoManager, String paramID, String paramName, const String labelText, NormalisableRange<double> range,
+struct Parameter : public AudioProcessorParameterWithID {
+    Parameter(ValueTree state, UndoManager &undoManager, String parameterID, String paramName, const String &labelText, NormalisableRange<double> range,
                   float defaultVal, std::function<String (const float)> valueToTextFunction,
                   std::function<float(const String &)> textToValueFunction)
-    : state(state), undoManager(undoManager), paramId(std::move(paramID)), paramName(std::move(paramName)), labelText(labelText), range(std::move(range)), defaultValue(defaultVal),
-      valueToTextFunction(std::move(valueToTextFunction)), textToValueFunction(std::move(textToValueFunction)) {}
+            : AudioProcessorParameterWithID(parameterID, paramName, labelText, Category::genericParameter),
+              state(std::move(state)), undoManager(undoManager), paramId(std::move(parameterID)), paramName(std::move(paramName)),
+              labelText(labelText), range(std::move(range)),
+              valueToTextFunction(std::move(valueToTextFunction)),
+              textToValueFunction(std::move(textToValueFunction)), defaultValue(defaultVal) {}
 
-    float getValue() const {
+    ValueTree getState() const {
+        return state.getChildWithProperty(IDs::id, paramId);
+    }
+
+    float getValue() const override {
         return (float) range.convertTo0to1(getRawValue());
     }
 
-    void setValue (float newValue) {
+    void setValue (float newValue) override {
         float clampedNewValue = newValue < 0 ? 0 : (newValue > 1 ? 1 : newValue);
-        state.getChildWithProperty(IDs::id, paramId).setProperty(IDs::value, range.convertFrom0to1(clampedNewValue), &undoManager);
+        getState().setProperty(IDs::value, range.convertFrom0to1(clampedNewValue), &undoManager);
     }
 
     float getRawValue() const {
-        return state.getChildWithProperty(IDs::id, paramId).getProperty(IDs::value);
+        return getState().getProperty(IDs::value);
     }
 
-    Value getValueObject() {
-        return state.getChildWithProperty(IDs::id, paramId).getPropertyAsValue(IDs::value, &undoManager);
+    Value getValueObject() const {
+        return getState().getPropertyAsValue(IDs::value, &undoManager);
     }
 
     void attachSlider(Slider *slider, Label *label=nullptr) {
@@ -38,6 +46,15 @@ struct Parameter {
         slider->getValueObject().referTo(getValueObject());
     }
 
+    float getDefaultValue() const override {
+        //return range.convertTo0to1 (defaultValue);
+        return defaultValue;
+    }
+
+    float getValueForText(const String& text) const override {
+        return (float) range.convertTo0to1(textToValueFunction != nullptr ? textToValueFunction(text) : text.getFloatValue());
+    }
+
     ValueTree state;
     UndoManager &undoManager;
 
@@ -45,7 +62,9 @@ struct Parameter {
     const String paramName;
     const String labelText;
     NormalisableRange<double> range;
-    float defaultValue;
     std::function<String(const float)> valueToTextFunction;
     std::function<float(const String &)> textToValueFunction;
+
+private:
+    float defaultValue;
 };

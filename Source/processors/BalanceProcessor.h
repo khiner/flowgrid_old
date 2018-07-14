@@ -10,7 +10,7 @@ public:
             balanceParameter(state, undoManager, "balance", "Balance", "",
                              NormalisableRange<double>(0.0f, 1.0f), 0.5f,
                              [](float value) { return String(value, 3); }, nullptr),
-            balance(balanceParameter.defaultValue) {
+            balance(balanceParameter.getDefaultValue()) {
 
         this->state.addListener(this);
     }

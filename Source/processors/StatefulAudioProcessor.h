@@ -24,7 +24,7 @@ public:
         for (int i = 0; i < getNumParameters(); i++) {
             ValueTree v = getOrCreateChildValueTree(getParameterIdentifier(i));
             if (!v.hasProperty(IDs::value)) {
-                v.setProperty(IDs::value, getParameterInfo(i)->defaultValue, nullptr);
+                v.setProperty(IDs::value, getParameterInfo(i)->getDefaultValue(), nullptr);
             }
             v.sendPropertyChangeMessage(IDs::value);
         }

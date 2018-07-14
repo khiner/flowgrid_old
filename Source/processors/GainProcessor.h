@@ -10,7 +10,7 @@ public:
             gainParameter(state, undoManager, "gain", "Gain", "dB",
                           NormalisableRange<double>(0.0f, 1.0f), 0.5f,
                           [](float value) { return String(Decibels::gainToDecibels(value), 3) + " dB"; }, nullptr),
-            gain(gainParameter.defaultValue) {
+            gain(gainParameter.getDefaultValue()) {
 
         this->state.addListener(this);
     }
