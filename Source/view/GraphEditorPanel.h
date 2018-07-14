@@ -95,16 +95,7 @@ public:
 
     void itemDropped(const SourceDetails &) override;
 
-
     std::unique_ptr<GraphEditorPanel> graphPanel;
-
-    //==============================================================================
-    void showSidePanel(bool isSettingsPanel);
-
-    void hideLastSidePanel();
-
-    BurgerMenuComponent burgerMenu;
-
 private:
     ProcessorGraph &graph;
     Project &project;
@@ -114,25 +105,7 @@ private:
     struct TooltipBar;
     std::unique_ptr<TooltipBar> statusBar;
 
-    class TitleBarComponent;
-
-    std::unique_ptr<TitleBarComponent> titleBarComponent;
-
-    //==============================================================================
-    struct PluginListBoxModel;
-    std::unique_ptr<PluginListBoxModel> pluginListBoxModel;
-
-    ListBox pluginListBox;
-
-    SidePanel mobileSettingsSidePanel{"Settings", 300, true};
-    SidePanel pluginListSidePanel{"Plugins", 250, false};
-    SidePanel *lastOpenedSidePanel = nullptr;
-
-    //==============================================================================
     void init();
 
-    void checkAvailableWidth();
-
-    //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (GraphDocumentComponent)
 };

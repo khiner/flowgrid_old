@@ -747,175 +747,6 @@ struct GraphDocumentComponent::TooltipBar : public Component,
 };
 
 //==============================================================================
-class GraphDocumentComponent::TitleBarComponent : public Component,
-                                                  private Button::Listener {
-public:
-    explicit TitleBarComponent(GraphDocumentComponent &graphDocumentComponent)
-            : owner(graphDocumentComponent) {
-        static const unsigned char burgerMenuPathData[]
-                = {110, 109, 0, 0, 128, 64, 0, 0, 32, 65, 108, 0, 0, 224, 65, 0, 0, 32, 65, 98, 254, 212, 232, 65, 0, 0,
-                   32, 65, 0, 0, 240, 65, 252,
-                   169, 17, 65, 0, 0, 240, 65, 0, 0, 0, 65, 98, 0, 0, 240, 65, 8, 172, 220, 64, 254, 212, 232, 65, 0, 0,
-                   192, 64, 0, 0, 224, 65, 0, 0,
-                   192, 64, 108, 0, 0, 128, 64, 0, 0, 192, 64, 98, 16, 88, 57, 64, 0, 0, 192, 64, 0, 0, 0, 64, 8, 172,
-                   220, 64, 0, 0, 0, 64, 0, 0, 0, 65,
-                   98, 0, 0, 0, 64, 252, 169, 17, 65, 16, 88, 57, 64, 0, 0, 32, 65, 0, 0, 128, 64, 0, 0, 32, 65, 99,
-                   109, 0, 0, 224, 65, 0, 0, 96, 65, 108,
-                   0, 0, 128, 64, 0, 0, 96, 65, 98, 16, 88, 57, 64, 0, 0, 96, 65, 0, 0, 0, 64, 4, 86, 110, 65, 0, 0, 0,
-                   64, 0, 0, 128, 65, 98, 0, 0, 0, 64,
-                   254, 212, 136, 65, 16, 88, 57, 64, 0, 0, 144, 65, 0, 0, 128, 64, 0, 0, 144, 65, 108, 0, 0, 224, 65,
-                   0, 0, 144, 65, 98, 254, 212, 232,
-                   65, 0, 0, 144, 65, 0, 0, 240, 65, 254, 212, 136, 65, 0, 0, 240, 65, 0, 0, 128, 65, 98, 0, 0, 240, 65,
-                   4, 86, 110, 65, 254, 212, 232,
-                   65, 0, 0, 96, 65, 0, 0, 224, 65, 0, 0, 96, 65, 99, 109, 0, 0, 224, 65, 0, 0, 176, 65, 108, 0, 0, 128,
-                   64, 0, 0, 176, 65, 98, 16, 88, 57,
-                   64, 0, 0, 176, 65, 0, 0, 0, 64, 2, 43, 183, 65, 0, 0, 0, 64, 0, 0, 192, 65, 98, 0, 0, 0, 64, 254,
-                   212, 200, 65, 16, 88, 57, 64, 0, 0, 208,
-                   65, 0, 0, 128, 64, 0, 0, 208, 65, 108, 0, 0, 224, 65, 0, 0, 208, 65, 98, 254, 212, 232, 65, 0, 0,
-                   208, 65, 0, 0, 240, 65, 254, 212,
-                   200, 65, 0, 0, 240, 65, 0, 0, 192, 65, 98, 0, 0, 240, 65, 2, 43, 183, 65, 254, 212, 232, 65, 0, 0,
-                   176, 65, 0, 0, 224, 65, 0, 0, 176,
-                   65, 99, 101, 0, 0};
-
-        static const unsigned char pluginListPathData[]
-                = {110, 109, 193, 202, 222, 64, 80, 50, 21, 64, 108, 0, 0, 48, 65, 0, 0, 0, 0, 108, 160, 154, 112, 65,
-                   80, 50, 21, 64, 108, 0, 0, 48, 65, 80,
-                   50, 149, 64, 108, 193, 202, 222, 64, 80, 50, 21, 64, 99, 109, 0, 0, 192, 64, 251, 220, 127, 64, 108,
-                   160, 154, 32, 65, 165, 135, 202,
-                   64, 108, 160, 154, 32, 65, 250, 220, 47, 65, 108, 0, 0, 192, 64, 102, 144, 10, 65, 108, 0, 0, 192,
-                   64, 251, 220, 127, 64, 99, 109, 0, 0,
-                   128, 65, 251, 220, 127, 64, 108, 0, 0, 128, 65, 103, 144, 10, 65, 108, 96, 101, 63, 65, 251, 220, 47,
-                   65, 108, 96, 101, 63, 65, 166, 135,
-                   202, 64, 108, 0, 0, 128, 65, 251, 220, 127, 64, 99, 109, 96, 101, 79, 65, 148, 76, 69, 65, 108, 0, 0,
-                   136, 65, 0, 0, 32, 65, 108, 80,
-                   77, 168, 65, 148, 76, 69, 65, 108, 0, 0, 136, 65, 40, 153, 106, 65, 108, 96, 101, 79, 65, 148, 76,
-                   69, 65, 99, 109, 0, 0, 64, 65, 63, 247,
-                   95, 65, 108, 80, 77, 128, 65, 233, 161, 130, 65, 108, 80, 77, 128, 65, 125, 238, 167, 65, 108, 0, 0,
-                   64, 65, 51, 72, 149, 65, 108, 0, 0, 64,
-                   65, 63, 247, 95, 65, 99, 109, 0, 0, 176, 65, 63, 247, 95, 65, 108, 0, 0, 176, 65, 51, 72, 149, 65,
-                   108, 176, 178, 143, 65, 125, 238, 167, 65,
-                   108, 176, 178, 143, 65, 233, 161, 130, 65, 108, 0, 0, 176, 65, 63, 247, 95, 65, 99, 109, 12, 86, 118,
-                   63, 148, 76, 69, 65, 108, 0, 0, 160,
-                   64, 0, 0, 32, 65, 108, 159, 154, 16, 65, 148, 76, 69, 65, 108, 0, 0, 160, 64, 40, 153, 106, 65, 108,
-                   12, 86, 118, 63, 148, 76, 69, 65, 99,
-                   109, 0, 0, 0, 0, 63, 247, 95, 65, 108, 62, 53, 129, 64, 233, 161, 130, 65, 108, 62, 53, 129, 64, 125,
-                   238, 167, 65, 108, 0, 0, 0, 0, 51,
-                   72, 149, 65, 108, 0, 0, 0, 0, 63, 247, 95, 65, 99, 109, 0, 0, 32, 65, 63, 247, 95, 65, 108, 0, 0, 32,
-                   65, 51, 72, 149, 65, 108, 193, 202, 190,
-                   64, 125, 238, 167, 65, 108, 193, 202, 190, 64, 233, 161, 130, 65, 108, 0, 0, 32, 65, 63, 247, 95, 65,
-                   99, 101, 0, 0};
-
-        {
-            Path p;
-            p.loadPathFromData(burgerMenuPathData, sizeof(burgerMenuPathData));
-            burgerButton.setShape(p, true, true, false);
-        }
-
-        {
-            Path p;
-            p.loadPathFromData(pluginListPathData, sizeof(pluginListPathData));
-            pluginButton.setShape(p, true, true, false);
-        }
-
-        burgerButton.addListener(this);
-        addAndMakeVisible(burgerButton);
-
-        pluginButton.addListener(this);
-        addAndMakeVisible(pluginButton);
-
-        titleLabel.setJustificationType(Justification::centredLeft);
-        addAndMakeVisible(titleLabel);
-
-        setOpaque(true);
-    }
-
-private:
-    void paint(Graphics &g) override {
-        auto titleBarBackgroundColour = getLookAndFeel().findColour(ResizableWindow::backgroundColourId).darker();
-
-        g.setColour(titleBarBackgroundColour);
-        g.fillRect(getLocalBounds());
-    }
-
-    void resized() override {
-        auto r = getLocalBounds();
-
-        burgerButton.setBounds(r.removeFromLeft(40).withSizeKeepingCentre(20, 20));
-
-        pluginButton.setBounds(r.removeFromRight(40).withSizeKeepingCentre(20, 20));
-
-        titleLabel.setFont(Font(static_cast<float> (getHeight()) * 0.5f, Font::plain));
-        titleLabel.setBounds(r);
-    }
-
-    void buttonClicked(Button *b) override {
-        owner.showSidePanel(b == &burgerButton);
-    }
-
-    GraphDocumentComponent &owner;
-
-    Label titleLabel{"titleLabel", "Plugin Host"};
-    ShapeButton burgerButton{"burgerButton", Colours::lightgrey, Colours::lightgrey, Colours::white};
-    ShapeButton pluginButton{"pluginButton", Colours::lightgrey, Colours::lightgrey, Colours::white};
-
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (TitleBarComponent)
-};
-
-//==============================================================================
-struct GraphDocumentComponent::PluginListBoxModel : public ListBoxModel,
-                                                    public ChangeListener,
-                                                    public MouseListener {
-    PluginListBoxModel(ListBox &lb, KnownPluginList &kpl)
-            : owner(lb),
-              knownPlugins(kpl) {
-        knownPlugins.addChangeListener(this);
-        owner.addMouseListener(this, true);
-    }
-
-    int getNumRows() override {
-        return knownPlugins.getNumTypes();
-    }
-
-    void paintListBoxItem(int rowNumber, Graphics &g,
-                          int width, int height, bool rowIsSelected) override {
-        g.fillAll(rowIsSelected ? Colour(0xff42A2C8)
-                                : Colour(0xff263238));
-
-        g.setColour(rowIsSelected ? Colours::black : Colours::white);
-
-        if (rowNumber < knownPlugins.getNumTypes())
-            g.drawFittedText(knownPlugins.getType(rowNumber)->name,
-                             {0, 0, width, height - 2},
-                             Justification::centred,
-                             1);
-
-        g.setColour(Colours::black.withAlpha(0.4f));
-        g.drawRect(0, height - 1, width, 1);
-    }
-
-    var getDragSourceDescription(const SparseSet<int> &selectedRows) override {
-        if (!isOverSelectedRow)
-            return var();
-
-        return String("PLUGIN: " + String(selectedRows[0]));
-    }
-
-    void changeListenerCallback(ChangeBroadcaster *) override {
-        owner.updateContent();
-    }
-
-    void mouseDown(const MouseEvent &e) override {
-        isOverSelectedRow = owner.getRowPosition(owner.getSelectedRow(), true)
-                .contains(e.getEventRelativeTo(&owner).getMouseDownPosition());
-    }
-
-    ListBox &owner;
-    KnownPluginList &knownPlugins;
-
-    bool isOverSelectedRow = false;
-};
-
-//==============================================================================
 GraphDocumentComponent::GraphDocumentComponent(ProcessorGraph &graph,
                                                Project &project,
                                                AudioPluginFormatManager &fm,
@@ -952,8 +783,6 @@ void GraphDocumentComponent::resized() {
 
     statusBar->setBounds(r.removeFromBottom(statusHeight));
     graphPanel->setBounds(r);
-
-    checkAvailableWidth();
 }
 
 void GraphDocumentComponent::createNewPlugin(const PluginDescription &desc, Point<int> pos) {
@@ -975,10 +804,6 @@ bool GraphDocumentComponent::isInterestedInDragSource(const SourceDetails &detai
 }
 
 void GraphDocumentComponent::itemDropped(const SourceDetails &details) {
-    // don't allow items to be dropped behind the sidebar
-    if (pluginListSidePanel.getBounds().contains(details.localPosition))
-        return;
-
     auto pluginTypeIndex = details.description.toString()
             .fromFirstOccurrenceOf("PLUGIN: ", false, false)
             .getIntValue();
@@ -987,34 +812,6 @@ void GraphDocumentComponent::itemDropped(const SourceDetails &details) {
     jassert (isPositiveAndBelow(pluginTypeIndex, pluginList.getNumTypes()));
 
     createNewPlugin(*pluginList.getType(pluginTypeIndex), details.localPosition);
-}
-
-void GraphDocumentComponent::showSidePanel(bool showSettingsPanel) {
-    if (showSettingsPanel)
-        mobileSettingsSidePanel.showOrHide(true);
-    else
-        pluginListSidePanel.showOrHide(true);
-
-    checkAvailableWidth();
-
-    lastOpenedSidePanel = showSettingsPanel ? &mobileSettingsSidePanel
-                                            : &pluginListSidePanel;
-}
-
-void GraphDocumentComponent::hideLastSidePanel() {
-    if (lastOpenedSidePanel != nullptr)
-        lastOpenedSidePanel->showOrHide(false);
-
-    if (mobileSettingsSidePanel.isPanelShowing()) lastOpenedSidePanel = &mobileSettingsSidePanel;
-    else if (pluginListSidePanel.isPanelShowing()) lastOpenedSidePanel = &pluginListSidePanel;
-    else lastOpenedSidePanel = nullptr;
-}
-
-void GraphDocumentComponent::checkAvailableWidth() {
-    if (mobileSettingsSidePanel.isPanelShowing() && pluginListSidePanel.isPanelShowing()) {
-        if (getWidth() - (mobileSettingsSidePanel.getWidth() + pluginListSidePanel.getWidth()) < 150)
-            hideLastSidePanel();
-    }
 }
 
 bool GraphDocumentComponent::closeAnyOpenPluginWindows() {
