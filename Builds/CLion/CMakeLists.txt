@@ -1272,7 +1272,7 @@ add_executable (APP
     "../../JuceLibraryCode/include_juce_gui_basics.mm"
     "../../JuceLibraryCode/include_juce_gui_extra.mm"
     "../../JuceLibraryCode/JuceHeader.h"
-        ../../Source/processors/MixerChannelProcessor.h ../../Source/processors/SineBank.h ../../Source/processors/GainProcessor.h ../../Source/processors/DefaultAudioProcessor.h ../../Source/ProcessorGraph.h ../../Source/MidiControlHandler.h ../../Source/processors/StatefulAudioProcessor.h ../../Source/Parameter.h ../../Source/view/push2/Push2ProcessorView.h ../../Source/view/push2/Push2ProcessorSelector.h ../../Source/processors/ProcessorIds.h ../../Source/view/GraphEditorPanel.h ../../Source/view/GraphEditorPanel.cpp ../../Source/processors/BalanceProcessor.h ../../Source/ApplicationKeyListener.h)
+        ../../Source/processors/MixerChannelProcessor.h ../../Source/processors/SineBank.h ../../Source/processors/GainProcessor.h ../../Source/processors/DefaultAudioProcessor.h ../../Source/ProcessorGraph.h ../../Source/MidiControlHandler.h ../../Source/processors/StatefulAudioProcessor.h ../../Source/Parameter.h ../../Source/view/push2/Push2ProcessorView.h ../../Source/view/push2/Push2ProcessorSelector.h ../../Source/processors/ProcessorIds.h ../../Source/view/GraphEditorPanel.h ../../Source/view/GraphEditorPanel.cpp ../../Source/processors/BalanceProcessor.h ../../Source/ApplicationKeyListener.h ../../Source/processors/InternalPluginFormat.h)
 
 set_source_files_properties ("../../Resources/PushStartup.png" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/audio_sources/ToneSourceWithParameters.h" PROPERTIES HEADER_FILE_ONLY TRUE)
@@ -2517,6 +2517,7 @@ target_include_directories (APP PRIVATE
     "../../Source"
     "../../Source/usb/libusb"
     "../../modules/libusb/libusb"
+    "$ENV{HOME}/SDKs/VST_SDK/VST3_SDK"
 )
 
 target_compile_definitions (APP PRIVATE
@@ -2565,9 +2566,11 @@ set_target_properties (APP PROPERTIES
 target_link_libraries (APP PRIVATE
     "-framework Accelerate"
     "-framework AudioToolbox"
+    "-framework AudioUnit"
     "-framework Carbon"
     "-framework Cocoa"
     "-framework CoreAudio"
+    "-framework CoreAudioKit"
     "-framework CoreMIDI"
     "-framework DiscRecording"
     "-framework IOKit"
@@ -2594,6 +2597,7 @@ target_include_directories (APP PRIVATE
     "../../Source"
     "../../Source/usb/libusb"
     "../../modules/libusb/libusb"
+    "$ENV{HOME}/SDKs/VST_SDK/VST3_SDK"
 )
 
 target_compile_definitions (APP PRIVATE
@@ -2644,9 +2648,11 @@ set_target_properties (APP PROPERTIES
 target_link_libraries (APP PRIVATE
     "-framework Accelerate"
     "-framework AudioToolbox"
+    "-framework AudioUnit"
     "-framework Carbon"
     "-framework Cocoa"
     "-framework CoreAudio"
+    "-framework CoreAudioKit"
     "-framework CoreMIDI"
     "-framework DiscRecording"
     "-framework IOKit"

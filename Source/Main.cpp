@@ -5,6 +5,8 @@
 #include <view/ArrangeView.h>
 #include <view/ValueTreeEditor.h>
 #include <view/GraphEditorPanel.h>
+#include <memory>
+#include <processors/InternalPluginFormat.h>
 
 File getSaveFile() {
     return File::getSpecialLocation(File::userDesktopDirectory).getChildFile("ValueTreeDemoEdit.xml");
@@ -14,7 +16,7 @@ ValueTree loadOrCreateDefaultEdit() {
     return Utilities::loadValueTree(getSaveFile(), true);
 }
 
-class SoundMachineApplication : public JUCEApplication, public MenuBarModel {
+class SoundMachineApplication : public JUCEApplication, public MenuBarModel, private ChangeListener {
 public:
     SoundMachineApplication() : project(loadOrCreateDefaultEdit(), undoManager),
                                 applicationKeyListener(project, undoManager),
@@ -28,6 +30,27 @@ public:
     bool moreThanOneInstanceAllowed() override { return true; }
 
     void initialise(const String &) override {
+        PropertiesFile::Options options;
+        options.applicationName = ProjectInfo::projectName;
+        options.filenameSuffix = "settings";
+        options.osxLibrarySubFolder = "Preferences";
+        appProperties = std::make_unique<ApplicationProperties>();
+        appProperties->setStorageParameters(options);
+
+        InternalPluginFormat internalFormat;
+        internalFormat.getAllTypes(internalTypes);
+        std::unique_ptr<XmlElement> savedPluginList(appProperties->getUserSettings()->getXmlValue("pluginList"));
+
+        if (savedPluginList != nullptr)
+            knownPluginList.recreateFromXml(*savedPluginList);
+
+        for (auto* pluginType : internalTypes)
+            knownPluginList.addType(*pluginType);
+
+        pluginSortMethod = (KnownPluginList::SortMethod) appProperties->getUserSettings()->getIntValue("pluginSortMethod", KnownPluginList::sortByManufacturer);
+        knownPluginList.addChangeListener(this);
+
+
         player.setProcessor(&processorGraph);
         deviceManager.addAudioCallback(&player);
 
@@ -47,6 +70,11 @@ public:
         audioDeviceSelectorComponent = std::make_unique<AudioDeviceSelectorComponent>(deviceManager, 0, 256, 0, 256,
                                                                                       true, true, true, false);
         audioDeviceSelectorComponent->setSize(600, 600);
+
+        formatManager.addDefaultFormats();
+        formatManager.addFormat(new InternalPluginFormat());
+        auto deadMansPedalFile = appProperties->getUserSettings()->getFile().getSiblingFile("RecentlyCrashedPluginsList");
+        pluginListComponent = std::make_unique<PluginListComponent>(formatManager, knownPluginList, deadMansPedalFile, appProperties->getUserSettings(), true);
 
         treeWindow->setBoundsRelative(0.05, 0.25, 0.45, 0.35);
         arrangeWindow->setBoundsRelative(0.05, 0.6, 0.45, 0.35);
@@ -71,6 +99,7 @@ public:
         deviceManager.removeAudioCallback(&player);
         Utilities::saveValueTree(project.getState(), getSaveFile(), true);
         setMacMainMenu(nullptr);
+        appProperties = nullptr;
     }
 
     void systemRequestedQuit() override {
@@ -97,6 +126,15 @@ public:
         // TODO use ApplicationCommand stuff like in plugin host example
         if (topLevelMenuIndex == 0) { // "Options" menu
             menu.addItem(1, "Change the audio device settings");
+            menu.addItem(2, "Edit the list of available plugins");
+
+            PopupMenu sortTypeMenu;
+            sortTypeMenu.addItem (200, "List plugins in default order",      true, pluginSortMethod == KnownPluginList::defaultOrder);
+            sortTypeMenu.addItem (201, "List plugins in alphabetical order", true, pluginSortMethod == KnownPluginList::sortAlphabetically);
+            sortTypeMenu.addItem (202, "List plugins by category",           true, pluginSortMethod == KnownPluginList::sortByCategory);
+            sortTypeMenu.addItem (203, "List plugins by manufacturer",       true, pluginSortMethod == KnownPluginList::sortByManufacturer);
+            sortTypeMenu.addItem (204, "List plugins based on the directory structure", true, pluginSortMethod == KnownPluginList::sortByFileSystemLocation);
+            menu.addSubMenu ("Plugin menu type", sortTypeMenu);
         }
 
         return menu;
@@ -106,12 +144,22 @@ public:
         if (topLevelMenuIndex == 0) { // "Options" menu
             if (menuItemID == 1) {
                 showAudioSettings();
+            } else if (menuItemID == 2) {
+                showPluginList();
+            } else if (menuItemID >= 200 && menuItemID < 210) {
+                if (menuItemID == 200) pluginSortMethod = KnownPluginList::defaultOrder;
+                else if (menuItemID == 201) pluginSortMethod = KnownPluginList::sortAlphabetically;
+                else if (menuItemID == 202) pluginSortMethod = KnownPluginList::sortByCategory;
+                else if (menuItemID == 203) pluginSortMethod = KnownPluginList::sortByManufacturer;
+                else if (menuItemID == 204) pluginSortMethod = KnownPluginList::sortByFileSystemLocation;
+
+                appProperties->getUserSettings()->setValue("pluginSortMethod", (int) pluginSortMethod);
+                menuItemsChanged();
             }
         }
     }
 
-    void menuBarActivated(bool isActivated) override {
-    }
+    void menuBarActivated(bool isActivated) override {}
 
     /*
         This class implements the desktop window that contains an instance of
@@ -153,10 +201,18 @@ public:
     };
 
 private:
+    std::unique_ptr<ApplicationProperties> appProperties;
+    OwnedArray<PluginDescription> internalTypes;
+    KnownPluginList knownPluginList;
+    KnownPluginList::SortMethod pluginSortMethod;
+
     std::unique_ptr<MainWindow> treeWindow, arrangeWindow, push2Window, graphEditorWindow;
     std::unique_ptr<AudioDeviceSelectorComponent> audioDeviceSelectorComponent;
+    std::unique_ptr<PluginListComponent> pluginListComponent;
+
     UndoManager undoManager;
     AudioDeviceManager deviceManager;
+    AudioPluginFormatManager formatManager;
 
     Push2MidiCommunicator push2MidiCommunicator;
 
@@ -172,7 +228,7 @@ private:
         o.content.setNonOwned(audioDeviceSelectorComponent.get());
         o.dialogTitle = "Audio Settings";
         o.componentToCentreAround = treeWindow.get();
-        o.dialogBackgroundColour = treeWindow->getLookAndFeel().findColour(ResizableWindow::backgroundColourId);
+        o.dialogBackgroundColour = treeWindow->findColour(ResizableWindow::backgroundColourId);
         o.escapeKeyTriggersCloseButton = true;
         o.useNativeTitleBar = false;
         o.resizable = true;
@@ -180,6 +236,35 @@ private:
         auto *w = o.create();
         // TODO handle load/save of audio settings state in callback (like plugin host example)
         w->enterModalState(true, ModalCallbackFunction::create([this](int) {}), true);
+    }
+
+    void showPluginList() {
+        DialogWindow::LaunchOptions o;
+        o.content.setNonOwned(pluginListComponent.get());
+        o.dialogTitle = "Available Plugins";
+        o.componentToCentreAround = graphEditorWindow.get();
+        o.dialogBackgroundColour = graphEditorWindow->findColour(ResizableWindow::backgroundColourId);
+        o.escapeKeyTriggersCloseButton = true;
+        o.useNativeTitleBar = false;
+        o.resizable = true;
+
+        auto *w = o.create();
+        // TODO handle load/save of audio settings state in callback (like plugin host example)
+        w->enterModalState(true, ModalCallbackFunction::create([this](int) {}), true);
+    }
+
+    void changeListenerCallback(ChangeBroadcaster* changed) override {
+        if (changed == &knownPluginList) {
+            menuItemsChanged();
+            // save the plugin list every time it gets changed, so that if we're scanning
+            // and it crashes, we've still saved the previous ones
+            std::unique_ptr<XmlElement> savedPluginList(knownPluginList.createXml());
+
+            if (savedPluginList != nullptr) {
+                appProperties->getUserSettings()->setValue("pluginList", savedPluginList.get());
+                appProperties->saveIfNeeded();
+            }
+        }
     }
 };
 
