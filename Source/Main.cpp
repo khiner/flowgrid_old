@@ -59,10 +59,7 @@ public:
                                                                                       true, true, true, false);
         audioDeviceSelectorComponent->setSize(600, 600);
 
-        formatManager.addDefaultFormats();
-        formatManager.addFormat(new InternalPluginFormat());
-        auto deadMansPedalFile = appProperties->getUserSettings()->getFile().getSiblingFile("RecentlyCrashedPluginsList");
-        pluginListComponent = std::make_unique<PluginListComponent>(formatManager, processorIds.getKnownPluginList(), deadMansPedalFile, appProperties->getUserSettings(), true);
+        pluginListComponent = std::unique_ptr<PluginListComponent>(processorIds.makePluginListComponent());
 
         treeWindow->setBoundsRelative(0.05, 0.25, 0.45, 0.35);
         arrangeWindow->setBoundsRelative(0.05, 0.6, 0.45, 0.35);
@@ -200,7 +197,6 @@ private:
 
     UndoManager undoManager;
     AudioDeviceManager deviceManager;
-    AudioPluginFormatManager formatManager;
 
     Push2MidiCommunicator push2MidiCommunicator;
 

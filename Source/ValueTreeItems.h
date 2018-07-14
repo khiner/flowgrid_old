@@ -814,6 +814,10 @@ public:
         return processorIds.getChosenType(menuId);
     }
 
+    AudioPluginFormatManager& getFormatManager() {
+        return processorIds.getFormatManager();
+    }
+
     const static int NUM_VISIBLE_TRACKS = 8;
     const static int NUM_VISIBLE_PROCESSOR_SLOTS = 9;
     // last row is reserved for audio output.

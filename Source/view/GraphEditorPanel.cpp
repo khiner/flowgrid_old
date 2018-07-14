@@ -542,7 +542,7 @@ void GraphEditorPanel::mouseDrag(const MouseEvent &e) {
 }
 
 void GraphEditorPanel::createNewPlugin(const PluginDescription &desc, Point<int> position) {
-    //graph.addPlugin(desc, position.toDouble() / Point < double > ((double) getWidth(), (double) getHeight()));
+    graph.addPlugin(desc, position.toDouble() / juce::Point<double>((double) getWidth(), (double) getHeight()));
 }
 
 GraphEditorPanel::FilterComponent *GraphEditorPanel::getComponentForFilter(const uint32 filterID) const {

@@ -7,8 +7,8 @@
 
 class StatefulAudioProcessor : public DefaultAudioProcessor, public Utilities::ValueTreePropertyChangeListener {
 public:
-    StatefulAudioProcessor(int inputChannelCount, int outputChannelCount, const ValueTree &state, UndoManager &undoManager) :
-            DefaultAudioProcessor(inputChannelCount, outputChannelCount), state(state), undoManager(undoManager) {
+    StatefulAudioProcessor(int inputChannelCount, int outputChannelCount, ValueTree state, UndoManager &undoManager) :
+            DefaultAudioProcessor(inputChannelCount, outputChannelCount), state(std::move(state)), undoManager(undoManager) {
     }
 
     virtual void valueTreePropertyChanged(ValueTree& tree, const Identifier& p) = 0;

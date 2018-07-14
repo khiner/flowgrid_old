@@ -30,6 +30,29 @@ public:
         initializing = false;
     }
 
+    void addPlugin(const PluginDescription& desc, const Point<double> &p) {
+        struct AsyncCallback : public AudioPluginFormat::InstantiationCompletionCallback {
+            AsyncCallback(ProcessorGraph& g, const Point<double> &pos) : owner(g), position(pos) {}
+
+            void completionCallback(AudioPluginInstance* instance, const String& error) override {
+                owner.addFilterCallback(instance, error, position);
+            }
+
+            ProcessorGraph& owner;
+            Point<double> position;
+        };
+
+        project.getFormatManager().createPluginInstanceAsync(desc, getSampleRate(), getBlockSize(), new AsyncCallback(*this, p));
+    }
+
+    void addFilterCallback(AudioPluginInstance* instance, const String& error, const Point<double> &pos) {
+        if (instance == nullptr) {
+            AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, TRANS("Could not create processor"), error);
+        } else {
+            addNode(instance);
+        }
+    }
+
     std::vector<Connection> getConnectionsUi() const {
         std::vector<Connection> graphConnections;
 
@@ -259,6 +282,7 @@ private:
     void addProcessor(const ValueTree &processorState) {
         auto *processor = createStatefulAudioProcessorFromId(processorState[IDs::name], processorState, undoManager);
         processor->updateValueTree();
+        processor->enableAllBuses();
 
         const Node::Ptr &newNode = processorState.hasProperty(IDs::NODE_ID) ?
                                    addNode(processor, getNodeIdForState(processorState)) :

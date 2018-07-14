@@ -52,6 +52,14 @@ public:
 
         pluginSortMethod = (KnownPluginList::SortMethod) appProperties->getUserSettings()->getIntValue("pluginSortMethod", KnownPluginList::sortByManufacturer);
         knownPluginList.addChangeListener(this);
+
+        formatManager.addDefaultFormats();
+        formatManager.addFormat(new InternalPluginFormat());
+    }
+
+    PluginListComponent* makePluginListComponent() {
+        const File &deadMansPedalFile = appProperties->getUserSettings()->getFile().getSiblingFile("RecentlyCrashedPluginsList");
+        return new PluginListComponent(formatManager, knownPluginList, deadMansPedalFile, appProperties->getUserSettings(), true);
     }
 
     KnownPluginList& getKnownPluginList() {
@@ -60,6 +68,10 @@ public:
 
     const KnownPluginList::SortMethod getPluginSortMethod() const {
         return pluginSortMethod;
+    }
+
+    AudioPluginFormatManager& getFormatManager() {
+        return formatManager;
     }
 
     void setPluginSortMethod(const KnownPluginList::SortMethod pluginSortMethod) {
@@ -87,8 +99,9 @@ private:
     OwnedArray<PluginDescription> internalTypes;
     KnownPluginList knownPluginList;
     KnownPluginList::SortMethod pluginSortMethod;
+    AudioPluginFormatManager formatManager;
     ApplicationProperties* appProperties;
-
+    
     void changeListenerCallback(ChangeBroadcaster* changed) override {
         if (changed == &knownPluginList) {
             // save the plugin list every time it gets changed, so that if we're scanning
