@@ -3,6 +3,7 @@
 #include <processors/SineBank.h>
 #include <processors/GainProcessor.h>
 #include <processors/MixerChannelProcessor.h>
+#include <processors/ProcessorIds.h>
 #include "view/ColourChangeButton.h"
 #include "Identifiers.h"
 
@@ -446,8 +447,8 @@ public:
 class Project : public ValueTreeItem,
                 public ProjectChangeBroadcaster {
 public:
-    Project(const ValueTree &v, UndoManager &um)
-            : ValueTreeItem(v, um) {
+    Project(const ValueTree &v, UndoManager &um, ProcessorIds& processorIds)
+            : ValueTreeItem(v, um), processorIds(processorIds) {
         if (!state.isValid()) {
             state = createDefaultProject();
         } else {
@@ -805,6 +806,14 @@ public:
         ProjectChangeBroadcaster::sendItemSelectedMessage(item);
     }
 
+    void addPluginsToMenu(PopupMenu& m) const {
+        processorIds.addPluginsToMenu(m);
+    }
+
+    const PluginDescription* getChosenType(const int menuId) const {
+        return processorIds.getChosenType(menuId);
+    }
+
     const static int NUM_VISIBLE_TRACKS = 8;
     const static int NUM_VISIBLE_PROCESSOR_SLOTS = 9;
     // last row is reserved for audio output.
@@ -818,11 +827,13 @@ private:
 
     Array<ValueTree> connectionsSnapshot;
     std::unordered_map<int, int> slotForNodeIdSnapshot;
+
+    ProcessorIds &processorIds;
 };
 
 
 inline ValueTreeItem *createValueTreeItemForType(const ValueTree &v, UndoManager &um) {
-    if (v.hasType(IDs::PROJECT)) return new Project(v, um);
+//    if (v.hasType(IDs::PROJECT)) return new Project(v, um);
     if (v.hasType(IDs::TRACKS)) return new Tracks(v, um);
     if (v.hasType(IDs::MASTER_TRACK)) return new MasterTrack(v, um);
     if (v.hasType(IDs::TRACK)) return new Track(v, um);

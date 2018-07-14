@@ -18,7 +18,7 @@ ValueTree loadOrCreateDefaultEdit() {
 
 class SoundMachineApplication : public JUCEApplication, public MenuBarModel, private ChangeListener {
 public:
-    SoundMachineApplication() : project(loadOrCreateDefaultEdit(), undoManager),
+    SoundMachineApplication() : project(loadOrCreateDefaultEdit(), undoManager, processorIds),
                                 applicationKeyListener(project, undoManager),
                                 processorGraph(project, undoManager),
                                 midiControlHandler(project, processorGraph, undoManager) {}
@@ -36,20 +36,8 @@ public:
         options.osxLibrarySubFolder = "Preferences";
         appProperties = std::make_unique<ApplicationProperties>();
         appProperties->setStorageParameters(options);
-
-        InternalPluginFormat internalFormat;
-        internalFormat.getAllTypes(internalTypes);
-        std::unique_ptr<XmlElement> savedPluginList(appProperties->getUserSettings()->getXmlValue("pluginList"));
-
-        if (savedPluginList != nullptr)
-            knownPluginList.recreateFromXml(*savedPluginList);
-
-        for (auto* pluginType : internalTypes)
-            knownPluginList.addType(*pluginType);
-
-        pluginSortMethod = (KnownPluginList::SortMethod) appProperties->getUserSettings()->getIntValue("pluginSortMethod", KnownPluginList::sortByManufacturer);
-        knownPluginList.addChangeListener(this);
-
+        
+        processorIds.load(appProperties.get());
 
         player.setProcessor(&processorGraph);
         deviceManager.addAudioCallback(&player);
@@ -74,7 +62,7 @@ public:
         formatManager.addDefaultFormats();
         formatManager.addFormat(new InternalPluginFormat());
         auto deadMansPedalFile = appProperties->getUserSettings()->getFile().getSiblingFile("RecentlyCrashedPluginsList");
-        pluginListComponent = std::make_unique<PluginListComponent>(formatManager, knownPluginList, deadMansPedalFile, appProperties->getUserSettings(), true);
+        pluginListComponent = std::make_unique<PluginListComponent>(formatManager, processorIds.getKnownPluginList(), deadMansPedalFile, appProperties->getUserSettings(), true);
 
         treeWindow->setBoundsRelative(0.05, 0.25, 0.45, 0.35);
         arrangeWindow->setBoundsRelative(0.05, 0.6, 0.45, 0.35);
@@ -128,6 +116,8 @@ public:
             menu.addItem(1, "Change the audio device settings");
             menu.addItem(2, "Edit the list of available plugins");
 
+            const auto& pluginSortMethod = processorIds.getPluginSortMethod();
+
             PopupMenu sortTypeMenu;
             sortTypeMenu.addItem (200, "List plugins in default order",      true, pluginSortMethod == KnownPluginList::defaultOrder);
             sortTypeMenu.addItem (201, "List plugins in alphabetical order", true, pluginSortMethod == KnownPluginList::sortAlphabetically);
@@ -147,13 +137,13 @@ public:
             } else if (menuItemID == 2) {
                 showPluginList();
             } else if (menuItemID >= 200 && menuItemID < 210) {
-                if (menuItemID == 200) pluginSortMethod = KnownPluginList::defaultOrder;
-                else if (menuItemID == 201) pluginSortMethod = KnownPluginList::sortAlphabetically;
-                else if (menuItemID == 202) pluginSortMethod = KnownPluginList::sortByCategory;
-                else if (menuItemID == 203) pluginSortMethod = KnownPluginList::sortByManufacturer;
-                else if (menuItemID == 204) pluginSortMethod = KnownPluginList::sortByFileSystemLocation;
+                if (menuItemID == 200) processorIds.setPluginSortMethod(KnownPluginList::defaultOrder);
+                else if (menuItemID == 201) processorIds.setPluginSortMethod(KnownPluginList::sortAlphabetically);
+                else if (menuItemID == 202) processorIds.setPluginSortMethod(KnownPluginList::sortByCategory);
+                else if (menuItemID == 203) processorIds.setPluginSortMethod(KnownPluginList::sortByManufacturer);
+                else if (menuItemID == 204) processorIds.setPluginSortMethod(KnownPluginList::sortByFileSystemLocation);
 
-                appProperties->getUserSettings()->setValue("pluginSortMethod", (int) pluginSortMethod);
+                appProperties->getUserSettings()->setValue("pluginSortMethod", (int) processorIds.getPluginSortMethod());
                 menuItemsChanged();
             }
         }
@@ -202,9 +192,7 @@ public:
 
 private:
     std::unique_ptr<ApplicationProperties> appProperties;
-    OwnedArray<PluginDescription> internalTypes;
-    KnownPluginList knownPluginList;
-    KnownPluginList::SortMethod pluginSortMethod;
+    ProcessorIds processorIds;
 
     std::unique_ptr<MainWindow> treeWindow, arrangeWindow, push2Window, graphEditorWindow;
     std::unique_ptr<AudioDeviceSelectorComponent> audioDeviceSelectorComponent;
@@ -254,11 +242,11 @@ private:
     }
 
     void changeListenerCallback(ChangeBroadcaster* changed) override {
-        if (changed == &knownPluginList) {
+        if (changed == &processorIds.getKnownPluginList()) {
             menuItemsChanged();
             // save the plugin list every time it gets changed, so that if we're scanning
             // and it crashes, we've still saved the previous ones
-            std::unique_ptr<XmlElement> savedPluginList(knownPluginList.createXml());
+            std::unique_ptr<XmlElement> savedPluginList(processorIds.getKnownPluginList().createXml());
 
             if (savedPluginList != nullptr) {
                 appProperties->getUserSettings()->setValue("pluginList", savedPluginList.get());

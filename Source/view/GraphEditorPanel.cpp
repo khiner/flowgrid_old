@@ -125,7 +125,6 @@ struct GraphEditorPanel::FilterComponent : public Component,
     void mouseUp(const MouseEvent &e) override {
         graph.endDraggingNode(nodeId);
         if (e.mouseWasDraggedSinceMouseDown()) {
-
         } else if (e.getNumberOfClicks() == 2) {
             showPopupMenu();
         }
@@ -624,17 +623,12 @@ void GraphEditorPanel::updateComponents() {
 
 void GraphEditorPanel::showPopupMenu(Point<int> mousePos) {
     menu = std::make_unique<PopupMenu>();
-
-//    if (auto *mainWindow = findParentComponentOfClass<MainHostWindow>()) {
-//        mainWindow->addPluginsToMenu(*menu);
-//
-//        menu->showMenuAsync({},
-//                            ModalCallbackFunction::create([this, mousePos](int r) {
-//                                if (auto *mainWindow = findParentComponentOfClass<MainHostWindow>())
-//                                    if (auto *desc = mainWindow->getChosenType(r))
-//                                        createNewPlugin(*desc, mousePos);
-//                            }));
-//    }
+    project.addPluginsToMenu(*menu);
+    menu->showMenuAsync({}, ModalCallbackFunction::create([this, mousePos](int r) {
+        if (auto *description = project.getChosenType(r)) {
+            createNewPlugin(*description, mousePos);
+        }
+    }));
 }
 
 void GraphEditorPanel::beginConnectorDrag(AudioProcessorGraph::NodeAndChannel source,
