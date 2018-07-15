@@ -10,8 +10,13 @@ public:
         balanceParameter = new Parameter(state, undoManager, "balance", "Balance", "",
                                          NormalisableRange<double>(0.0f, 1.0f), 0.5f,
                                          [](float value) { return String(value, 3); }, nullptr);
+        balanceParameter->addListener(this);
+
         addParameter(balanceParameter);
-        balance.setValue(balanceParameter->getDefaultValue());
+    }
+
+    ~BalanceProcessor() override {
+        balanceParameter->removeListener(this);
     }
 
     static const String getIdentifier() { return "Balance"; }
@@ -20,7 +25,7 @@ public:
         return DefaultAudioProcessor::getPluginDescription(getIdentifier(), false, false);
     }
 
-    void prepareToPlay (double sampleRate, int maximumExpectedSamplesPerBlock) override {
+    void prepareToPlay(double sampleRate, int maximumExpectedSamplesPerBlock) override {
         balance.reset(getSampleRate(), 0.05);
     }
 

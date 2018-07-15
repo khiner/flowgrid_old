@@ -13,14 +13,17 @@ public:
         gainParameter = new Parameter(state, undoManager, "gain", "Gain", "dB",
                                       NormalisableRange<double>(0.0f, 1.0f), 0.5f,
                                       [](float value) { return String(Decibels::gainToDecibels(value), 3) + " dB"; }, nullptr);
+        balanceParameter->addListener(this);
+        gainParameter->addListener(this);
 
         addParameter(balanceParameter);
         addParameter(gainParameter);
-
-        balance.setValue(balanceParameter->getDefaultValue());
-        gain.setValue(gainParameter->getDefaultValue());
     }
 
+    ~MixerChannelProcessor() {
+        gainParameter->removeListener(this);
+        balanceParameter->removeListener(this);
+    }
     static const String getIdentifier() { return "Mixer Channel"; }
 
     static PluginDescription getPluginDescription() {

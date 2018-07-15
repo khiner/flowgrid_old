@@ -27,7 +27,14 @@ public:
 
         void setValue(float newValue) override {
             float clampedNewValue = newValue < 0 ? 0 : (newValue > 1 ? 1 : newValue);
-            getState().setProperty(IDs::value, range.convertFrom0to1(clampedNewValue), &undoManager);
+            auto convertedValue = (float) range.convertFrom0to1(clampedNewValue);
+            listeners.call ([=] (AudioProcessorValueTreeState::Listener& l) { l.parameterChanged(paramID, convertedValue); });
+
+            getState().setProperty(IDs::value, convertedValue, &undoManager);
+        }
+
+        void setUnnormalisedValue(float newUnnormalisedValue) {
+            setValue((float) range.convertTo0to1(newUnnormalisedValue));
         }
 
         float getRawValue() const {
@@ -49,13 +56,31 @@ public:
             slider->getValueObject().referTo(getValueObject());
         }
 
+        void addListener(AudioProcessorValueTreeState::Listener* listener) {
+            listeners.add(listener);
+        }
+
+        void removeListener(AudioProcessorValueTreeState::Listener* listener) {
+            listeners.remove(listener);
+        }
+
         float getDefaultValue() const override {
-            //return range.convertTo0to1 (defaultValue);
-            return defaultValue;
+            return (float) range.convertTo0to1 (defaultValue);
         }
 
         float getValueForText(const String& text) const override {
             return (float) range.convertTo0to1(textToValueFunction != nullptr ? textToValueFunction(text) : text.getFloatValue());
+        }
+
+        static Parameter* getParameterForID(AudioProcessor& processor, const StringRef &paramID) noexcept {
+            for (auto* ap : processor.getParameters()) {
+                auto* p = dynamic_cast<Parameter*> (ap);
+
+                if (paramID == p->paramID)
+                    return p;
+            }
+
+            return nullptr;
         }
 
         ValueTree state;
@@ -67,9 +92,11 @@ public:
         NormalisableRange<double> range;
         std::function<String(const float)> valueToTextFunction;
         std::function<float(const String &)> textToValueFunction;
+        float defaultValue;
 
     private:
-        float defaultValue;
+
+        ListenerList<AudioProcessorValueTreeState::Listener> listeners;
     };
 
     StatefulAudioProcessor(const PluginDescription& description, ValueTree state, UndoManager &undoManager) :
@@ -84,7 +111,9 @@ public:
     void valueTreePropertyChanged(ValueTree& tree, const Identifier& p) override {
         if (p == IDs::value) {
             String parameterId = tree.getProperty(IDs::id);
-            parameterChanged(parameterId, tree[IDs::value]);
+            if (auto *parameter = Parameter::getParameterForID(*this, parameterId)) {
+                parameter->setUnnormalisedValue(float(tree[IDs::value]));
+            }
         }
     }
 
@@ -97,7 +126,7 @@ public:
             auto *parameterObject = dynamic_cast<Parameter *>(parameter);
             ValueTree v = getOrCreateChildValueTree(parameterObject->paramId);
             if (!v.hasProperty(IDs::value)) {
-                v.setProperty(IDs::value, parameterObject->getDefaultValue(), nullptr);
+                v.setProperty(IDs::value, parameterObject->defaultValue, nullptr);
             }
             v.sendPropertyChangeMessage(IDs::value);
         }

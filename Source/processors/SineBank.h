@@ -22,10 +22,30 @@ public:
         addParameter(toneSource4.getAmpParameter());
         addParameter(toneSource4.getFreqParameter());
 
+        toneSource1.getAmpParameter()->addListener(this);
+        toneSource1.getFreqParameter()->addListener(this);
+        toneSource2.getAmpParameter()->addListener(this);
+        toneSource2.getFreqParameter()->addListener(this);
+        toneSource3.getAmpParameter()->addListener(this);
+        toneSource3.getFreqParameter()->addListener(this);
+        toneSource4.getAmpParameter()->addListener(this);
+        toneSource4.getFreqParameter()->addListener(this);
+
         mixerAudioSource.addInputSource(toneSource1.get(), false);
         mixerAudioSource.addInputSource(toneSource2.get(), false);
         mixerAudioSource.addInputSource(toneSource3.get(), false);
         mixerAudioSource.addInputSource(toneSource4.get(), false);
+    }
+
+    ~SineBank() override {
+        toneSource1.getAmpParameter()->removeListener(this);
+        toneSource1.getFreqParameter()->removeListener(this);
+        toneSource2.getAmpParameter()->removeListener(this);
+        toneSource2.getFreqParameter()->removeListener(this);
+        toneSource3.getAmpParameter()->removeListener(this);
+        toneSource3.getFreqParameter()->removeListener(this);
+        toneSource4.getAmpParameter()->removeListener(this);
+        toneSource4.getFreqParameter()->removeListener(this);
     }
 
     static const String getIdentifier() { return "Sine Bank"; }

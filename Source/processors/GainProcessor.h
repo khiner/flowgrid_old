@@ -10,8 +10,12 @@ public:
         gainParameter = new Parameter(state, undoManager, "gain", "Gain", "dB",
                                       NormalisableRange<double>(0.0f, 1.0f), 0.5f,
                                       [](float value) { return String(Decibels::gainToDecibels(value), 3) + " dB"; }, nullptr);
+        gainParameter->addListener(this);
         addParameter(gainParameter);
-        gain.setValue(gainParameter->getDefaultValue());
+    }
+
+    ~GainProcessor() override {
+        gainParameter->removeListener(this);
     }
 
     static const String getIdentifier() { return "Gain"; }
