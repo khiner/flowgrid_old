@@ -1,13 +1,13 @@
 #pragma once
 
 #include "JuceHeader.h"
-#include "StatefulAudioProcessor.h"
+#include "StatefulAudioProcessorWrapper.h"
 
-class GainProcessor : public StatefulAudioProcessor {
+class GainProcessor : public DefaultAudioProcessor {
 public:
     explicit GainProcessor(const PluginDescription& description, const ValueTree &state, UndoManager &undoManager) :
-            StatefulAudioProcessor(description, state, undoManager) {
-        gainParameter = new Parameter(state, undoManager, "gain", "Gain", "dB",
+            DefaultAudioProcessor(description) {
+        gainParameter = new StatefulAudioProcessorWrapper::Parameter(state, undoManager, "gain", "Gain", "dB",
                                       NormalisableRange<double>(0.0f, 1.0f), 0.5f,
                                       [](float value) { return String(Decibels::gainToDecibels(value), 3) + " dB"; }, nullptr);
         gainParameter->addListener(this);
@@ -39,6 +39,6 @@ public:
     }
 
 private:
-    Parameter *gainParameter;
+    StatefulAudioProcessorWrapper::Parameter *gainParameter;
     LinearSmoothedValue<float> gain;
 };

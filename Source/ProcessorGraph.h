@@ -76,40 +76,49 @@ public:
     }
 
     bool isSelected(NodeID nodeId) {
-        if (auto* processor = getProcessorForNodeId(nodeId)) {
+        if (auto* processor = getProcessorWrapperForNodeId(nodeId)) {
             return processor->state[IDs::selected];
         }
 
         return false;
     }
 
-    StatefulAudioProcessor *getProcessorForState(const ValueTree &processorState) const {
-        return getProcessorForNodeId(getNodeIdForState(processorState));
+    StatefulAudioProcessorWrapper *getProcessorWrapperForState(const ValueTree &processorState) const {
+        return getProcessorWrapperForNodeId(getNodeIdForState(processorState));
     }
 
     const NodeID getNodeIdForState(const ValueTree &state) const {
         return NodeID(int(state[IDs::NODE_ID]));
     }
 
-    StatefulAudioProcessor *getProcessorForNodeId(NodeID nodeId) const {
+    StatefulAudioProcessorWrapper *getProcessorWrapperForNodeId(NodeID nodeId) const {
         if (nodeId == NA_NODE_ID) {
             return nullptr;
         } else {
             Node *node = getNodeForId(nodeId);
-            return node != nullptr ? dynamic_cast<StatefulAudioProcessor *>(node->getProcessor()) : nullptr;
+            if (node != nullptr) {
+                AudioProcessor *processor = node->getProcessor();
+                for (auto *processorWrapper : processerWrappers) {
+                    if (processorWrapper->processor == processor) {
+                        return processorWrapper;
+                    }
+                }
+            }
+
+            return nullptr;
         }
     }
 
-    StatefulAudioProcessor *getMasterGainProcessor() {
+    StatefulAudioProcessorWrapper *getMasterGainProcessor() {
         const ValueTree &gain = project.getMixerChannelProcessorForTrack(project.getMasterTrack());
-        return getProcessorForState(gain);
+        return getProcessorWrapperForState(gain);
     }
 
     void beginDraggingNode(NodeID nodeId) {
-        if (auto* processor = getProcessorForNodeId(nodeId)) {
-            project.setSelectedProcessor(processor->state);
+        if (auto* processorWrapper = getProcessorWrapperForNodeId(nodeId)) {
+            project.setSelectedProcessor(processorWrapper->state);
 
-            if (processor->getName() == MixerChannelProcessor::getIdentifier())
+            if (processorWrapper->processor->getName() == MixerChannelProcessor::getIdentifier())
                 // mixer channel processors are special processors.
                 // they could be dragged and reconnected like any old processor, but please don't :)
                 return;
@@ -125,7 +134,7 @@ public:
         if (currentlyDraggingNodeId == NA_NODE_ID)
             return;
 
-        if (auto *processor = getProcessorForNodeId(nodeId)) {
+        if (auto *processor = getProcessorWrapperForNodeId(nodeId)) {
             int maxProcessorSlot = project.getMaxAvailableProcessorSlot(processor->state.getParent());
             auto newX = jlimit(0, project.getNumTracks() - 1, int(Project::NUM_VISIBLE_TRACKS * jlimit(0.0, 0.99, pos.x)));
             auto newY = jlimit(0, maxProcessorSlot, int(Project::NUM_VISIBLE_PROCESSOR_SLOTS * jlimit(0.0, 0.99, pos.y)));
@@ -145,7 +154,7 @@ public:
     void endDraggingNode(NodeID nodeId) {
         if (currentlyDraggingNodeId != NA_NODE_ID && currentlyDraggingGridPosition != initialDraggingGridPosition) {
             // update the audio graph to match the current preview UI graph.
-            StatefulAudioProcessor *processor = getProcessorForNodeId(nodeId);
+            StatefulAudioProcessorWrapper *processor = getProcessorWrapperForNodeId(nodeId);
             moveProcessor(processor->state, initialDraggingGridPosition.x, initialDraggingGridPosition.y);
             project.restoreConnectionsSnapshot();
             currentlyDraggingNodeId = NA_NODE_ID;
@@ -223,7 +232,7 @@ public:
 
     // only called when removing a node. we want to make sure we don't use the undo manager for these connection removals.
     bool disconnectNode(NodeID nodeId) override {
-        const auto& processor = getProcessorForNodeId(nodeId)->state;
+        const auto& processor = getProcessorWrapperForNodeId(nodeId)->state;
         removeNodeConnections(nodeId, processor.getParent(), findNeighborNodes(processor));
 
         const Array<ValueTree> remainingConnections = project.getConnectionsForNode(getNodeIdForState(processor));
@@ -235,9 +244,9 @@ public:
     }
 
     bool removeNode(NodeID nodeId) override  {
-        if (auto* processor = getProcessorForNodeId(nodeId)) {
+        if (auto* processorWrapper = getProcessorWrapperForNodeId(nodeId)) {
             disconnectNode(nodeId);
-            processor->state.getParent().removeChild(processor->state, &undoManager);
+            processorWrapper->state.getParent().removeChild(processorWrapper->state, &undoManager);
             return true;
         }
         return false;
@@ -253,6 +262,7 @@ private:
     Project &project;
     UndoManager &undoManager;
     Node::Ptr audioOutputNode;
+    OwnedArray<StatefulAudioProcessorWrapper> processerWrappers;
 
     bool initializing { true };
     bool isMoving { false };
@@ -279,14 +289,13 @@ private:
     }
 
     void addProcessor(const ValueTree &processorState) {
-        auto *processor = createStatefulAudioProcessorFromId(processorState[IDs::name], processorState, undoManager);
-        processor->updateValueTree();
-        processor->enableAllBuses();
+        auto *processorWrapper = createStatefulAudioProcessorFromId(processorState[IDs::name], processorState, undoManager);
+        processerWrappers.add(processorWrapper);
 
         const Node::Ptr &newNode = processorState.hasProperty(IDs::NODE_ID) ?
-                                   addNode(processor, getNodeIdForState(processorState)) :
-                                   addNode(processor);
-        processor->state.setProperty(IDs::NODE_ID, int(newNode->nodeID), nullptr);
+                                   addNode(processorWrapper->processor, getNodeIdForState(processorState)) :
+                                   addNode(processorWrapper->processor);
+        processorWrapper->state.setProperty(IDs::NODE_ID, int(newNode->nodeID), nullptr);
 
         if (!initializing) {
             const Array<ValueTree> &nodeConnections = project.getConnectionsForNode(newNode->nodeID);
@@ -299,7 +308,7 @@ private:
     Point<int> getProcessorGridLocation(NodeID nodeId) const {
         if (nodeId == audioOutputNode->nodeID) {
             return {Project::NUM_VISIBLE_TRACKS - 1, Project::NUM_VISIBLE_PROCESSOR_SLOTS - 1};
-        } else if (auto *processor = getProcessorForNodeId(nodeId)) {
+        } else if (auto *processor = getProcessorWrapperForNodeId(nodeId)) {
             auto column = processor->state.getParent().getParent().indexOf(processor->state.getParent());
             auto row = int(processor->state[IDs::PROCESSOR_SLOT]);
             return {column, row};
@@ -420,7 +429,7 @@ private:
     void valueTreeChildAdded(ValueTree& parent, ValueTree& child) override {
         if (child.hasType(IDs::PROCESSOR)) {
             if (currentlyDraggingNodeId == NA_NODE_ID) {
-                if (getProcessorForState(child) == nullptr) {
+                if (getProcessorWrapperForState(child) == nullptr) {
                     addProcessor(child);
                 }
             }
@@ -453,6 +462,9 @@ private:
                 if (auto nodeId = getNodeIdForState(child)) {
                     if (auto *node = getNodeForId(nodeId)) {
                         // disconnect should have already been called before delete! (to avoid nested undo actions)
+                        if (auto* processorWrapper = getProcessorWrapperForNodeId(node->nodeID)) {
+                            processerWrappers.removeObject(processorWrapper);
+                        }
                         nodes.removeObject(node);
                         topologyChanged();
                     }

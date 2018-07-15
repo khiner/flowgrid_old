@@ -2,12 +2,12 @@
 
 #include <audio_sources/ToneSourceWithParameters.h>
 #include "JuceHeader.h"
-#include "StatefulAudioProcessor.h"
+#include "StatefulAudioProcessorWrapper.h"
 
-class SineBank : public StatefulAudioProcessor {
+class SineBank : public DefaultAudioProcessor {
 public:
     explicit SineBank(const PluginDescription& description, const ValueTree &state, UndoManager &undoManager) :
-            StatefulAudioProcessor(description, state, undoManager),
+            DefaultAudioProcessor(description),
             toneSource1(state, undoManager, "1"),
             toneSource2(state, undoManager, "2"),
             toneSource3(state, undoManager, "3"),

@@ -5,7 +5,7 @@
 #include <Utilities.h>
 #include "Identifiers.h"
 
-class StatefulAudioProcessor : public DefaultAudioProcessor, public Utilities::ValueTreePropertyChangeListener {
+class StatefulAudioProcessorWrapper : public Utilities::ValueTreePropertyChangeListener {
 public:
     struct Parameter : public AudioProcessorParameterWithID {
         Parameter(ValueTree state, UndoManager &undoManager, String parameterID, String paramName, const String &labelText, NormalisableRange<double> range,
@@ -99,30 +99,32 @@ public:
         ListenerList<AudioProcessorValueTreeState::Listener> listeners;
     };
 
-    StatefulAudioProcessor(const PluginDescription& description, ValueTree state, UndoManager &undoManager) :
-            DefaultAudioProcessor(description), state(std::move(state)), undoManager(undoManager) {
+    StatefulAudioProcessorWrapper(AudioPluginInstance *processor, ValueTree state, UndoManager &undoManager) :
+            processor(processor), state(std::move(state)), undoManager(undoManager) {
         this->state.addListener(this);
+        processor->enableAllBuses();
+        updateValueTree();
     }
 
-    ~StatefulAudioProcessor() override {
+    ~StatefulAudioProcessorWrapper() override {
         state.removeListener(this);
     }
 
     void valueTreePropertyChanged(ValueTree& tree, const Identifier& p) override {
         if (p == IDs::value) {
             String parameterId = tree.getProperty(IDs::id);
-            if (auto *parameter = Parameter::getParameterForID(*this, parameterId)) {
+            if (auto *parameter = Parameter::getParameterForID(*processor, parameterId)) {
                 parameter->setUnnormalisedValue(float(tree[IDs::value]));
             }
         }
     }
 
     Parameter *getParameterObject(int parameterIndex) {
-        return dynamic_cast<Parameter *>(getParameters()[parameterIndex]);
+        return dynamic_cast<Parameter *>(processor->getParameters()[parameterIndex]);
     }
 
     void updateValueTree() {
-        for (auto parameter : getParameters()) {
+        for (auto parameter : processor->getParameters()) {
             auto *parameterObject = dynamic_cast<Parameter *>(parameter);
             ValueTree v = getOrCreateChildValueTree(parameterObject->paramId);
             if (!v.hasProperty(IDs::value)) {
@@ -144,6 +146,7 @@ public:
         return v;
     }
 
+    AudioPluginInstance *processor;
     ValueTree state;
     UndoManager &undoManager;
 };

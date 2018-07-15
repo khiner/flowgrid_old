@@ -21,16 +21,15 @@ static const StringArray getAvailableProcessorIdsForTrack(const ValueTree& track
     }
 }
 
-// TODO will be replaced with InternalPluginFormat stuff
-static StatefulAudioProcessor *createStatefulAudioProcessorFromId(const String &id, const ValueTree &state, UndoManager &undoManager) {
+static StatefulAudioProcessorWrapper *createStatefulAudioProcessorFromId(const String &id, const ValueTree &state, UndoManager &undoManager) {
     if (id == MixerChannelProcessor::getIdentifier()) {
-        return new MixerChannelProcessor(MixerChannelProcessor::getPluginDescription(), state, undoManager);
+        return new StatefulAudioProcessorWrapper(new MixerChannelProcessor(MixerChannelProcessor::getPluginDescription(), state, undoManager), state, undoManager);
     } else if (id == GainProcessor::getIdentifier()) {
-        return new GainProcessor(GainProcessor::getPluginDescription(), state, undoManager);
+        return new StatefulAudioProcessorWrapper(new GainProcessor(GainProcessor::getPluginDescription(), state, undoManager), state, undoManager);
     } else if (id == BalanceProcessor::getIdentifier()) {
-        return new BalanceProcessor(BalanceProcessor::getPluginDescription(), state, undoManager);
+        return new StatefulAudioProcessorWrapper(new BalanceProcessor(BalanceProcessor::getPluginDescription(), state, undoManager), state, undoManager);
     } else if (id == SineBank::getIdentifier()) {
-        return new SineBank(SineBank::getPluginDescription(), state, undoManager);
+        return new StatefulAudioProcessorWrapper(new SineBank(SineBank::getPluginDescription(), state, undoManager), state, undoManager);
     } else {
         return nullptr;
     }

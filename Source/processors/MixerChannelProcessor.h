@@ -1,16 +1,16 @@
 #pragma once
 
 #include "JuceHeader.h"
-#include "StatefulAudioProcessor.h"
+#include "StatefulAudioProcessorWrapper.h"
 
-class MixerChannelProcessor : public StatefulAudioProcessor {
+class MixerChannelProcessor : public DefaultAudioProcessor {
 public:
     explicit MixerChannelProcessor(const PluginDescription& description, const ValueTree &state, UndoManager &undoManager) :
-            StatefulAudioProcessor(description, state, undoManager) {
-        balanceParameter = new Parameter(state, undoManager, "balance", "Balance", "",
+            DefaultAudioProcessor(description) {
+        balanceParameter = new StatefulAudioProcessorWrapper::Parameter(state, undoManager, "balance", "Balance", "",
                                          NormalisableRange<double>(0.0f, 1.0f), 0.5f,
                                          [](float value) { return String(value, 3); }, nullptr);
-        gainParameter = new Parameter(state, undoManager, "gain", "Gain", "dB",
+        gainParameter = new StatefulAudioProcessorWrapper::Parameter(state, undoManager, "gain", "Gain", "dB",
                                       NormalisableRange<double>(0.0f, 1.0f), 0.5f,
                                       [](float value) { return String(Decibels::gainToDecibels(value), 3) + " dB"; }, nullptr);
         balanceParameter->addListener(this);
@@ -67,8 +67,8 @@ public:
     }
 
 private:
-    Parameter *balanceParameter;
-    Parameter *gainParameter;
+    StatefulAudioProcessorWrapper::Parameter *balanceParameter;
+    StatefulAudioProcessorWrapper::Parameter *gainParameter;
 
     LinearSmoothedValue<float> balance;
     LinearSmoothedValue<float> gain;

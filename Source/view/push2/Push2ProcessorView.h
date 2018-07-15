@@ -1,6 +1,6 @@
 #pragma once
 
-#include <processors/StatefulAudioProcessor.h>
+#include <processors/StatefulAudioProcessorWrapper.h>
 #include "JuceHeader.h"
 
 class Push2ProcessorView : public Component {
@@ -29,10 +29,10 @@ public:
         }
     }
 
-    void setProcessor(StatefulAudioProcessor *processor) {
+    void setProcessor(StatefulAudioProcessorWrapper *processor) {
         for (auto *c : getChildren())
             c->setVisible(false);
-        for (int i = 0; i < processor->getNumParameters(); i++) {
+        for (int i = 0; i < processor->processor->getNumParameters(); i++) {
             Slider *slider = sliders.getUnchecked(i);
             processor->getParameterObject(i)->attachSlider(slider, labels.getUnchecked(i));
             slider->setVisible(true);

@@ -1,13 +1,13 @@
 #pragma once
 
 #include "JuceHeader.h"
-#include "StatefulAudioProcessor.h"
+#include "StatefulAudioProcessorWrapper.h"
 
-class BalanceProcessor : public StatefulAudioProcessor {
+class BalanceProcessor : public DefaultAudioProcessor {
 public:
     explicit BalanceProcessor(const PluginDescription& description, const ValueTree &state, UndoManager &undoManager) :
-            StatefulAudioProcessor(description, state, undoManager) {
-        balanceParameter = new Parameter(state, undoManager, "balance", "Balance", "",
+            DefaultAudioProcessor(description) {
+        balanceParameter = new StatefulAudioProcessorWrapper::Parameter(state, undoManager, "balance", "Balance", "",
                                          NormalisableRange<double>(0.0f, 1.0f), 0.5f,
                                          [](float value) { return String(value, 3); }, nullptr);
         balanceParameter->addListener(this);
@@ -58,6 +58,6 @@ public:
     }
 
 private:
-    Parameter *balanceParameter;
+    StatefulAudioProcessorWrapper::Parameter *balanceParameter;
     LinearSmoothedValue<float> balance;
 };

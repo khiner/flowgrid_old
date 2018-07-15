@@ -91,13 +91,13 @@ private:
             const String &name = item.getProperty(IDs::name);
             titleLabel.setText("Processor Selected: " + name, dontSendNotification);
 
-            StatefulAudioProcessor *processor = audioGraphBuilder.getProcessorForState(item);
-            if (processor != nullptr) {
-                for (int i = 0; i < processor->getNumParameters(); i++) {
+            auto *processorWrapper = audioGraphBuilder.getProcessorWrapperForState(item);
+            if (processorWrapper != nullptr) {
+                for (int i = 0; i < processorWrapper->processor->getNumParameters(); i++) {
                     auto *slider = processorSliders.getUnchecked(i);
                     auto *label = processorLabels.getUnchecked(i);
                     slider->setVisible(true);
-                    processor->getParameterObject(i)->attachSlider(slider, label);
+                    processorWrapper->getParameterObject(i)->attachSlider(slider, label);
                 }
             }
         } else if (item.hasType(IDs::CLIP)) {

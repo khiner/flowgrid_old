@@ -32,7 +32,7 @@ public:
         if (Push2::isEncoderCcNumber(ccNumber)) {
             int parameterIndex = -1;
             if (ccNumber == Push2::masterKnob) {
-                StatefulAudioProcessor *gainProcessor = audioGraphBuilder.getMasterGainProcessor();
+                StatefulAudioProcessorWrapper *gainProcessor = audioGraphBuilder.getMasterGainProcessor();
                 if (gainProcessor != nullptr) {
                     parameterIndex = 1; // TODO get by name since indexes change
                 }
@@ -44,7 +44,7 @@ public:
 
             if (parameterIndex != -1) {
                 float value = Push2::encoderCcMessageToRotationChange(midiMessage);
-                StatefulAudioProcessor::Parameter *parameter = currentProcessorToControl->getParameterObject(parameterIndex);
+                StatefulAudioProcessorWrapper::Parameter *parameter = currentProcessorToControl->getParameterObject(parameterIndex);
                 float parameterValue = parameter->getValue();
                 parameter->setValue(parameterValue + value / 5.0f); // TODO move manual scaling to param
             }
@@ -102,13 +102,13 @@ private:
     UndoManager &undoManager;
 
     Push2Component *push2Component;
-    StatefulAudioProcessor *currentProcessorToControl;
+    StatefulAudioProcessorWrapper *currentProcessorToControl;
 
     bool isShiftHeld = false;
 
     void itemSelected(const ValueTree& item) override {
         if (item.hasType(IDs::PROCESSOR)) {
-            currentProcessorToControl = audioGraphBuilder.getProcessorForState(item);
+            currentProcessorToControl = audioGraphBuilder.getProcessorWrapperForState(item);
         }
     }
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <processors/StatefulAudioProcessor.h>
+#include <processors/StatefulAudioProcessorWrapper.h>
 #include <ValueTreeItems.h>
 #include <processors/ProcessorIds.h>
 #include "push2/Push2DisplayBridge.h"
@@ -70,9 +70,9 @@ private:
 
         if (!item.isValid()) {
         } else if (item.hasType(IDs::PROCESSOR)) {
-            StatefulAudioProcessor *processor = audioGraphBuilder.getProcessorForState(item);
-            if (processor != nullptr) {
-                processorView.setProcessor(processor);
+            auto *processorWrapper = audioGraphBuilder.getProcessorWrapperForState(item);
+            if (processorWrapper != nullptr) {
+                processorView.setProcessor(processorWrapper);
                 processorView.setVisible(true);
             }
         }
