@@ -2,7 +2,7 @@
 
 #include "JuceHeader.h"
 
-class DefaultAudioProcessor : public AudioPluginInstance {
+class DefaultAudioProcessor : public AudioPluginInstance, public AudioProcessorValueTreeState::Listener {
 public:
     explicit DefaultAudioProcessor(const PluginDescription& description,
                                    const AudioChannelSet& channelSetToUse = AudioChannelSet::stereo())

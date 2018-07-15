@@ -24,12 +24,9 @@ public:
         gain.reset(getSampleRate(), 0.05);
     }
 
-    void valueTreePropertyChanged(ValueTree& tree, const Identifier& p) override {
-        if (p == IDs::value) {
-            String parameterId = tree.getProperty(IDs::id);
-            if (parameterId == gainParameter->paramId) {
-                gain.setValue(tree[IDs::value]);
-            }
+    void parameterChanged(const String& parameterId, float newValue) override {
+        if (parameterId == gainParameter->paramId) {
+            gain.setValue(newValue);
         }
     }
 

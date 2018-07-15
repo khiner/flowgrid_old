@@ -25,7 +25,7 @@ public:
             return (float) range.convertTo0to1(getRawValue());
         }
 
-        void setValue (float newValue) override {
+        void setValue(float newValue) override {
             float clampedNewValue = newValue < 0 ? 0 : (newValue > 1 ? 1 : newValue);
             getState().setProperty(IDs::value, range.convertFrom0to1(clampedNewValue), &undoManager);
         }
@@ -77,11 +77,16 @@ public:
         this->state.addListener(this);
     }
 
-    ~StatefulAudioProcessor() {
+    ~StatefulAudioProcessor() override {
         state.removeListener(this);
     }
-    
-    virtual void valueTreePropertyChanged(ValueTree& tree, const Identifier& p) = 0;
+
+    void valueTreePropertyChanged(ValueTree& tree, const Identifier& p) override {
+        if (p == IDs::value) {
+            String parameterId = tree.getProperty(IDs::id);
+            parameterChanged(parameterId, tree[IDs::value]);
+        }
+    }
 
     Parameter *getParameterObject(int parameterIndex) {
         return dynamic_cast<Parameter *>(getParameters()[parameterIndex]);

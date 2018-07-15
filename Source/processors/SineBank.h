@@ -34,27 +34,23 @@ public:
         return DefaultAudioProcessor::getPluginDescription(getIdentifier(), true, false);
     }
 
-    void valueTreePropertyChanged(ValueTree& tree, const Identifier& p) override {
-        if (p == IDs::value) {
-            String parameterId = tree.getProperty(IDs::id);
-            float value = tree.getProperty(IDs::value);
-            if (parameterId == toneSource1.getAmpParameterId()) {
-                toneSource1.get()->setAmplitude(value);
-            } else if (parameterId == toneSource1.getFreqParameterId()) {
-                toneSource1.get()->setFrequency(value);
-            } else if (parameterId == toneSource2.getAmpParameterId()) {
-                toneSource2.get()->setAmplitude(value);
-            } else if (parameterId == toneSource2.getFreqParameterId()) {
-                toneSource2.get()->setFrequency(value);
-            } else if (parameterId == toneSource3.getAmpParameterId()) {
-                toneSource3.get()->setAmplitude(value);
-            } else if (parameterId == toneSource3.getFreqParameterId()) {
-                toneSource3.get()->setFrequency(value);
-            } else if (parameterId == toneSource4.getAmpParameterId()) {
-                toneSource4.get()->setAmplitude(value);
-            } else if (parameterId == toneSource4.getFreqParameterId()) {
-                toneSource4.get()->setFrequency(value);
-            }
+    void parameterChanged(const String& parameterId, float newValue) override {
+        if (parameterId == toneSource1.getAmpParameterId()) {
+            toneSource1.get()->setAmplitude(newValue);
+        } else if (parameterId == toneSource1.getFreqParameterId()) {
+            toneSource1.get()->setFrequency(newValue);
+        } else if (parameterId == toneSource2.getAmpParameterId()) {
+            toneSource2.get()->setAmplitude(newValue);
+        } else if (parameterId == toneSource2.getFreqParameterId()) {
+            toneSource2.get()->setFrequency(newValue);
+        } else if (parameterId == toneSource3.getAmpParameterId()) {
+            toneSource3.get()->setAmplitude(newValue);
+        } else if (parameterId == toneSource3.getFreqParameterId()) {
+            toneSource3.get()->setFrequency(newValue);
+        } else if (parameterId == toneSource4.getAmpParameterId()) {
+            toneSource4.get()->setAmplitude(newValue);
+        } else if (parameterId == toneSource4.getFreqParameterId()) {
+            toneSource4.get()->setFrequency(newValue);
         }
     }
 
