@@ -197,13 +197,13 @@ public:
             return false;
 
         if (source == nullptr
-            || (!sourceIsMIDI && sourceChannel >= source->processor->getTotalNumOutputChannels())
-            || (sourceIsMIDI && ! source->processor->producesMidi()))
+            || (!sourceIsMIDI && sourceChannel >= source->getProcessor()->getTotalNumOutputChannels())
+            || (sourceIsMIDI && ! source->getProcessor()->producesMidi()))
             return false;
 
         if (dest == nullptr
-            || (!destIsMIDI && destChannel >= dest->processor->getTotalNumInputChannels())
-            || (destIsMIDI && ! dest->processor->acceptsMidi()))
+            || (!destIsMIDI && destChannel >= dest->getProcessor()->getTotalNumInputChannels())
+            || (destIsMIDI && ! dest->getProcessor()->acceptsMidi()))
             return false;
 
         return !isConnectedUi({{source->nodeID, sourceChannel}, {dest->nodeID, destChannel}});
