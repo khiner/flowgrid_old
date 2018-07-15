@@ -26,12 +26,6 @@ public:
         mixerAudioSource.addInputSource(toneSource2.get(), false);
         mixerAudioSource.addInputSource(toneSource3.get(), false);
         mixerAudioSource.addInputSource(toneSource4.get(), false);
-
-        this->state.addListener(this);
-    }
-
-    ~SineBank() override {
-        state.removeListener(this);
     }
 
     static const String getIdentifier() { return "Sine Bank"; }

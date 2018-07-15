@@ -12,12 +12,6 @@ public:
                                       [](float value) { return String(Decibels::gainToDecibels(value), 3) + " dB"; }, nullptr);
         addParameter(gainParameter);
         gain.setValue(gainParameter->getDefaultValue());
-
-        this->state.addListener(this);
-    }
-
-    ~GainProcessor() override {
-        state.removeListener(this);
     }
 
     static const String getIdentifier() { return "Gain"; }

@@ -12,11 +12,6 @@ public:
                                          [](float value) { return String(value, 3); }, nullptr);
         addParameter(balanceParameter);
         balance.setValue(balanceParameter->getDefaultValue());
-        this->state.addListener(this);
-    }
-
-    ~BalanceProcessor() override {
-        state.removeListener(this);
     }
 
     static const String getIdentifier() { return "Balance"; }

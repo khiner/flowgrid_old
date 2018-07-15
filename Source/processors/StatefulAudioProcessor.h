@@ -74,8 +74,13 @@ public:
 
     StatefulAudioProcessor(const PluginDescription& description, ValueTree state, UndoManager &undoManager) :
             DefaultAudioProcessor(description), state(std::move(state)), undoManager(undoManager) {
+        this->state.addListener(this);
     }
 
+    ~StatefulAudioProcessor() {
+        state.removeListener(this);
+    }
+    
     virtual void valueTreePropertyChanged(ValueTree& tree, const Identifier& p) = 0;
 
     Parameter *getParameterObject(int parameterIndex) {

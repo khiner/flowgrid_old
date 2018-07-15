@@ -19,12 +19,6 @@ public:
 
         balance.setValue(balanceParameter->getDefaultValue());
         gain.setValue(gainParameter->getDefaultValue());
-
-        this->state.addListener(this);
-    }
-
-    ~MixerChannelProcessor() override {
-        state.removeListener(this);
     }
 
     static const String getIdentifier() { return "Mixer Channel"; }
