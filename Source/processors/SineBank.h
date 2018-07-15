@@ -6,8 +6,8 @@
 
 class SineBank : public StatefulAudioProcessor {
 public:
-    explicit SineBank(const ValueTree &state, UndoManager &undoManager) :
-            StatefulAudioProcessor(0, 2, state, undoManager),
+    explicit SineBank(const PluginDescription& description, const ValueTree &state, UndoManager &undoManager) :
+            StatefulAudioProcessor(description, state, undoManager),
             toneSource1(state, undoManager, "1"),
             toneSource2(state, undoManager, "2"),
             toneSource3(state, undoManager, "3"),
@@ -34,12 +34,10 @@ public:
         state.removeListener(this);
     }
 
-    static const String name() { return "Sine Bank"; }
+    static const String getIdentifier() { return "Sine Bank"; }
 
-    const String getName() const override { return SineBank::name(); }
-
-    int getNumParameters() override {
-        return 8;
+    static PluginDescription getPluginDescription() {
+        return DefaultAudioProcessor::getPluginDescription(getIdentifier(), true, false);
     }
 
     void valueTreePropertyChanged(ValueTree& tree, const Identifier& p) override {

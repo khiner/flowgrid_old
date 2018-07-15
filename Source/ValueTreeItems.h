@@ -373,8 +373,8 @@ public:
     }
 
     var getDragSourceDescription() override {
-        if (state[IDs::name].toString() == MixerChannelProcessor::name())
-            return MixerChannelProcessor::name();
+        if (state[IDs::name].toString() == MixerChannelProcessor::getIdentifier())
+            return MixerChannelProcessor::getIdentifier();
         else
             return ValueTreeItem::getDragSourceDescription();
     }
@@ -624,13 +624,13 @@ public:
         masterTrack = ValueTree(IDs::MASTER_TRACK);
         Helpers::createUuidProperty(masterTrack);
         masterTrack.setProperty(IDs::name, "Master", nullptr);
-        ValueTree masterMixer = createAndAddProcessor(masterTrack, MixerChannelProcessor::name(), false);
+        ValueTree masterMixer = createAndAddProcessor(masterTrack, MixerChannelProcessor::getIdentifier(), false);
         masterMixer.setProperty(IDs::selected, true, nullptr);
         tracks.addChild(masterTrack, -1, nullptr);
 
         for (int tn = 0; tn < 1; ++tn) {
             ValueTree track = createAndAddTrack(false);
-            createAndAddProcessor(track, SineBank::name(), false);
+            createAndAddProcessor(track, SineBank::getIdentifier(), false);
 
 //            for (int cn = 0; cn < 3; ++cn) {
 //                ValueTree c(IDs::CLIP);
@@ -667,7 +667,7 @@ public:
 
         tracks.addChild(track, insertIndex, undoable ? &undoManager : nullptr);
 
-        createAndAddProcessor(track, MixerChannelProcessor::name(), undoable);
+        createAndAddProcessor(track, MixerChannelProcessor::getIdentifier(), undoable);
         return track;
     }
 
@@ -688,7 +688,7 @@ public:
         // Insert new processors _right before_ the first g&b processor, or at the end if there isn't one.
         int insertIndex = getMaxProcessorInsertIndex(track);
         int slot = 0;
-        if (insertIndex == -1 && name == MixerChannelProcessor::name()) {
+        if (insertIndex == -1 && name == MixerChannelProcessor::getIdentifier()) {
             slot = NUM_AVAILABLE_PROCESSOR_SLOTS - 1;
         } else if (track.getNumChildren() > 1) {
             slot = int(track.getChild(track.getNumChildren() - 2).getProperty(IDs::PROCESSOR_SLOT)) + 1;
@@ -702,7 +702,7 @@ public:
     }
 
     const ValueTree getMixerChannelProcessorForTrack(const ValueTree& track) {
-        return track.getChildWithProperty(IDs::name, MixerChannelProcessor::name());
+        return track.getChildWithProperty(IDs::name, MixerChannelProcessor::getIdentifier());
     }
 
     int getMaxProcessorInsertIndex(const ValueTree& track) {

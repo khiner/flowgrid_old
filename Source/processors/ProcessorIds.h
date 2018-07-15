@@ -7,13 +7,13 @@
 #include "BalanceProcessor.h"
 #include "InternalPluginFormat.h"
 
-const static StringArray processorIdsWithoutMixer { GainProcessor::name(), BalanceProcessor::name(), SineBank::name() };
-static StringArray allProcessorIds { MixerChannelProcessor::name(), GainProcessor::name(), BalanceProcessor::name(), SineBank::name() };
+const static StringArray processorIdsWithoutMixer { GainProcessor::getIdentifier(), BalanceProcessor::getIdentifier(), SineBank::getIdentifier() };
+static StringArray allProcessorIds { MixerChannelProcessor::getIdentifier(), GainProcessor::getIdentifier(), BalanceProcessor::getIdentifier(), SineBank::getIdentifier() };
 
 static const StringArray getAvailableProcessorIdsForTrack(const ValueTree& track) {
     if (!track.isValid()) {
         return StringArray();
-    } else if (track.getChildWithProperty(IDs::name, MixerChannelProcessor::name()).isValid()) {
+    } else if (track.getChildWithProperty(IDs::name, MixerChannelProcessor::getIdentifier()).isValid()) {
         // at most one MixerChannel per track
         return processorIdsWithoutMixer;
     } else {
@@ -21,15 +21,16 @@ static const StringArray getAvailableProcessorIdsForTrack(const ValueTree& track
     }
 }
 
+// TODO will be replaced with InternalPluginFormat stuff
 static StatefulAudioProcessor *createStatefulAudioProcessorFromId(const String &id, const ValueTree &state, UndoManager &undoManager) {
-    if (id == MixerChannelProcessor::name()) {
-        return new MixerChannelProcessor(state, undoManager);
-    } else if (id == GainProcessor::name()) {
-        return new GainProcessor(state, undoManager);
-    } else if (id == BalanceProcessor::name()) {
-        return new BalanceProcessor(state, undoManager);
-    } else if (id == SineBank::name()) {
-        return new SineBank(state, undoManager);
+    if (id == MixerChannelProcessor::getIdentifier()) {
+        return new MixerChannelProcessor(MixerChannelProcessor::getPluginDescription(), state, undoManager);
+    } else if (id == GainProcessor::getIdentifier()) {
+        return new GainProcessor(GainProcessor::getPluginDescription(), state, undoManager);
+    } else if (id == BalanceProcessor::getIdentifier()) {
+        return new BalanceProcessor(BalanceProcessor::getPluginDescription(), state, undoManager);
+    } else if (id == SineBank::getIdentifier()) {
+        return new SineBank(SineBank::getPluginDescription(), state, undoManager);
     } else {
         return nullptr;
     }

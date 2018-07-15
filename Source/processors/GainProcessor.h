@@ -5,8 +5,8 @@
 
 class GainProcessor : public StatefulAudioProcessor {
 public:
-    explicit GainProcessor(const ValueTree &state, UndoManager &undoManager) :
-            StatefulAudioProcessor(2, 2, state, undoManager) {
+    explicit GainProcessor(const PluginDescription& description, const ValueTree &state, UndoManager &undoManager) :
+            StatefulAudioProcessor(description, state, undoManager) {
         gainParameter = new Parameter(state, undoManager, "gain", "Gain", "dB",
                                       NormalisableRange<double>(0.0f, 1.0f), 0.5f,
                                       [](float value) { return String(Decibels::gainToDecibels(value), 3) + " dB"; }, nullptr);
@@ -20,9 +20,11 @@ public:
         state.removeListener(this);
     }
 
-    static const String name() { return "Gain"; }
-    const String getName() const override { return GainProcessor::name(); }
-    int getNumParameters() override { return 1; }
+    static const String getIdentifier() { return "Gain"; }
+
+    static PluginDescription getPluginDescription() {
+        return DefaultAudioProcessor::getPluginDescription(getIdentifier(), false, false);
+    }
 
     void prepareToPlay (double sampleRate, int maximumExpectedSamplesPerBlock) override {
         gain.reset(getSampleRate(), 0.05);

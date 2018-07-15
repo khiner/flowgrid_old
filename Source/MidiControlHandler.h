@@ -44,7 +44,7 @@ public:
 
             if (parameterIndex != -1) {
                 float value = Push2::encoderCcMessageToRotationChange(midiMessage);
-                Parameter *parameter = currentProcessorToControl->getParameterObject(parameterIndex);
+                StatefulAudioProcessor::Parameter *parameter = currentProcessorToControl->getParameterObject(parameterIndex);
                 float parameterValue = parameter->getValue();
                 parameter->setValue(parameterValue + value / 5.0f); // TODO move manual scaling to param
             }

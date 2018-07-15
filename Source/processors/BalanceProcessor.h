@@ -5,8 +5,8 @@
 
 class BalanceProcessor : public StatefulAudioProcessor {
 public:
-    explicit BalanceProcessor(const ValueTree &state, UndoManager &undoManager) :
-            StatefulAudioProcessor(2, 2, state, undoManager) {
+    explicit BalanceProcessor(const PluginDescription& description, const ValueTree &state, UndoManager &undoManager) :
+            StatefulAudioProcessor(description, state, undoManager) {
         balanceParameter = new Parameter(state, undoManager, "balance", "Balance", "",
                                          NormalisableRange<double>(0.0f, 1.0f), 0.5f,
                                          [](float value) { return String(value, 3); }, nullptr);
@@ -19,9 +19,11 @@ public:
         state.removeListener(this);
     }
 
-    static const String name() { return "Balance"; }
-    const String getName() const override { return BalanceProcessor::name(); }
-    int getNumParameters() override { return 1; }
+    static const String getIdentifier() { return "Balance"; }
+
+    static PluginDescription getPluginDescription() {
+        return DefaultAudioProcessor::getPluginDescription(getIdentifier(), false, false);
+    }
 
     void prepareToPlay (double sampleRate, int maximumExpectedSamplesPerBlock) override {
         balance.reset(getSampleRate(), 0.05);

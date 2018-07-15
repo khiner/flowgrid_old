@@ -2,99 +2,86 @@
 
 #include "JuceHeader.h"
 
-class DefaultAudioProcessor : public AudioProcessor {
+class DefaultAudioProcessor : public AudioPluginInstance {
 public:
-    explicit DefaultAudioProcessor(int inputChannelCount = 1, int outputChannelCount = 0) {
-        this->setLatencySamples(0);
-
-        // if this was a plug-in, the plug-in wrapper code in JUCE would query us
-        // for our channel configuration and call the setPlayConfigDetails() method
-        // so that things would be set correctly internally as an AudioProcessor
-        // object (which are always initialized as zero in, zero out). The sample rate
-        // and blockSize values will get sent to us again when our prepareToPlay()
-        // method is called before playback begins.
-        this->setPlayConfigDetails(inputChannelCount, outputChannelCount, 0, 0);
+    explicit DefaultAudioProcessor(const PluginDescription& description,
+                                   const AudioChannelSet& channelSetToUse = AudioChannelSet::stereo())
+            : AudioPluginInstance(getBusProperties(description.numInputChannels == 0, channelSetToUse)),
+              name(description.fileOrIdentifier.upToFirstOccurrenceOf(":", false, false)),
+              state(description.fileOrIdentifier.fromFirstOccurrenceOf(":", false, false)),
+              isGenerator(description.numInputChannels == 0),
+              hasMidi(description.isInstrument),
+              channelSet(channelSetToUse) {
+        jassert(channelSetToUse.size() == description.numOutputChannels);
     };
 
-    void processBlock(AudioSampleBuffer& buffer, MidiBuffer& midiMessages) override = 0;
-
-    int getNumParameters() override = 0;
-
-    const String getName() const override {
-        return "DefaultProcessor";
-    }
-
-    const String getParameterName(int parameterIndex) override {
-        return "parameter " + String(parameterIndex);
-    }
-
-    const String getParameterText(int parameterIndex) override {
-        return "0.0";
-    }
-
+    // TODO can remove?
     void prepareToPlay(double sampleRate, int estimatedSamplesPerBlock) override {
         this->setPlayConfigDetails(getTotalNumInputChannels(), getTotalNumOutputChannels(), sampleRate, estimatedSamplesPerBlock);
     }
 
+    const String getName() const override { return name; }
+    int getNumParameters() override { return getParameters().size(); }
+    double getTailLengthSeconds() const override { return 0.0; }
+    bool acceptsMidi() const override { return hasMidi; }
+    bool producesMidi() const override { return hasMidi; }
+    AudioProcessorEditor* createEditor() override { return nullptr; }
+    bool hasEditor() const override { return false; }
+    int getNumPrograms() override { return 0; }
+    int getCurrentProgram() override { return 0; }
+    void setCurrentProgram(int) override {}
+    const String getProgramName(int) override { return {}; }
+    void changeProgramName(int, const String&) override {}
+    void getStateInformation(juce::MemoryBlock&) override {}
+    void setStateInformation(const void*, int) override {}
     void releaseResources() override {}
 
-    const String getInputChannelName(int channelIndex) const override {
-        return "channel " + String(channelIndex);
+    bool isBusesLayoutSupported(const BusesLayout& layout) const override {
+        if (!isGenerator) {
+            if (layout.getMainOutputChannelSet() != channelSet)
+                return false;
+        }
+
+        return !(layout.getMainInputChannelSet() != channelSet);
     }
 
-    const String getOutputChannelName(int channelIndex) const override {
-        return "channel " + String(channelIndex);
+
+    void fillInPluginDescription(PluginDescription& description) const override {
+        description = getPluginDescription(name + ":" + state, isGenerator, hasMidi, channelSet);
     }
 
-    bool isInputChannelStereoPair(int index) const override {
-        return (2 == getTotalNumInputChannels());
+    static PluginDescription getPluginDescription(const String& identifier, bool registerAsGenerator, bool acceptsMidi,
+                                                  const AudioChannelSet& channelSetToUse = AudioChannelSet::stereo()) {
+        PluginDescription descr;
+        auto pluginName  = identifier.upToFirstOccurrenceOf (":", false, false);
+        auto pluginState = identifier.fromFirstOccurrenceOf (":", false, false);
+
+        descr.name              = pluginName;
+        descr.descriptiveName   = pluginName;
+        descr.pluginFormatName  = "Internal";
+        descr.category          = (registerAsGenerator ? (acceptsMidi ? "Synth" : "Generator") : "Effect");
+        descr.manufacturerName  = "Odand Ludo Productions";
+        descr.version           = ProjectInfo::versionString;
+        descr.fileOrIdentifier  = pluginName + ":" + pluginState;
+        descr.uid               = pluginName.hashCode();
+        descr.isInstrument      = (acceptsMidi && registerAsGenerator);
+        descr.numInputChannels  = (registerAsGenerator ? 0 : channelSetToUse.size());
+        descr.numOutputChannels = channelSetToUse.size();
+
+        return descr;
     }
 
-    bool isOutputChannelStereoPair(int index) const override {
-        return (2 == getTotalNumOutputChannels());
+private:
+    static BusesProperties getBusProperties(bool registerAsGenerator,
+                                             const AudioChannelSet& channelSetToUse) {
+        return registerAsGenerator ? BusesProperties().withOutput ("Output", channelSetToUse)
+                                   : BusesProperties().withInput  ("Input",  channelSetToUse)
+                       .withOutput ("Output", channelSetToUse);
     }
 
-    bool silenceInProducesSilenceOut() const override {
-        return true;
-    }
+    String name, state;
+    bool isGenerator, hasMidi;
+    AudioChannelSet channelSet;
 
-    bool acceptsMidi() const override {
-        return false;
-    }
-
-    bool producesMidi() const override {
-        return false;
-    }
-
-    AudioProcessorEditor* createEditor() override {
-        return nullptr;
-    }
-
-    bool hasEditor() const override {
-        return false;
-    }
-
-    int getNumPrograms() override {
-        return 0;
-    }
-
-    int getCurrentProgram() override {
-        return 0;
-    }
-
-    void setCurrentProgram(int index) override {}
-
-    const String getProgramName(int index) override {
-        return "program #" + String(index);
-    }
-
-    void changeProgramName(int index, const String& newName) override {}
-
-    void getStateInformation(juce::MemoryBlock& destData) override {}
-
-    void setStateInformation(const void* data, int sizeInBytes) override {}
-
-    double getTailLengthSeconds() const override {
-        return 0;
-    }
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(DefaultAudioProcessor)
 };

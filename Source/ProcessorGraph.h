@@ -101,8 +101,7 @@ public:
     }
 
     StatefulAudioProcessor *getMasterGainProcessor() {
-        const ValueTree masterTrack = project.getMasterTrack();
-        const ValueTree &gain = masterTrack.getChildWithProperty(IDs::name, MixerChannelProcessor::name());
+        const ValueTree &gain = project.getMixerChannelProcessorForTrack(project.getMasterTrack());
         return getProcessorForState(gain);
     }
 
@@ -110,7 +109,7 @@ public:
         if (auto* processor = getProcessorForNodeId(nodeId)) {
             project.setSelectedProcessor(processor->state);
 
-            if (processor->getName() == MixerChannelProcessor::name())
+            if (processor->getName() == MixerChannelProcessor::getIdentifier())
                 // mixer channel processors are special processors.
                 // they could be dragged and reconnected like any old processor, but please don't :)
                 return;
