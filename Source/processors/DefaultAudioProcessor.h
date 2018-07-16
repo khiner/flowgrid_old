@@ -7,7 +7,7 @@ public:
     explicit DefaultAudioProcessor(const PluginDescription& description,
                                    const AudioChannelSet& channelSetToUse = AudioChannelSet::stereo())
             : AudioPluginInstance(getBusProperties(description.numInputChannels == 0, channelSetToUse)),
-              name(description.fileOrIdentifier.upToFirstOccurrenceOf(":", false, false)),
+              name(description.name),
               state(description.fileOrIdentifier.fromFirstOccurrenceOf(":", false, false)),
               isGenerator(description.numInputChannels == 0),
               hasMidi(description.isInstrument),

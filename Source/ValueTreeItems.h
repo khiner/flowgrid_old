@@ -816,12 +816,16 @@ public:
         processorIds.addPluginsToMenu(m);
     }
 
+    AudioPluginFormatManager& getFormatManager() {
+        return processorIds.getFormatManager();
+    }
+
     const PluginDescription* getChosenType(const int menuId) const {
         return processorIds.getChosenType(menuId);
     }
 
-    AudioPluginFormatManager& getFormatManager() {
-        return processorIds.getFormatManager();
+    PluginDescription *getTypeForIdentifier(const String &identifier) {
+        return processorIds.getTypeForIdentifier(identifier);
     }
 
     const static int NUM_VISIBLE_TRACKS = 8;

@@ -7,8 +7,10 @@
 #include "BalanceProcessor.h"
 #include "InternalPluginFormat.h"
 
-const static StringArray processorIdsWithoutMixer { GainProcessor::getIdentifier(), BalanceProcessor::getIdentifier(), SineBank::getIdentifier() };
-static StringArray allProcessorIds { MixerChannelProcessor::getIdentifier(), GainProcessor::getIdentifier(), BalanceProcessor::getIdentifier(), SineBank::getIdentifier() };
+const static StringArray processorIdsWithoutMixer {GainProcessor::getIdentifier(), BalanceProcessor::getIdentifier(),
+                                                   SineBank::getIdentifier() };
+static StringArray allProcessorIds {MixerChannelProcessor::getIdentifier(), GainProcessor::getIdentifier(),
+                                     BalanceProcessor::getIdentifier(), SineBank::getIdentifier() };
 
 static const StringArray getAvailableProcessorIdsForTrack(const ValueTree& track) {
     if (!track.isValid()) {
@@ -31,12 +33,16 @@ static AudioPluginInstance *createStatefulAudioProcessorFromId(const String &id)
 
 class ProcessorIds : private ChangeListener {
 public:
-    void load(ApplicationProperties* appProperties) {
-        this->appProperties = appProperties;
+    ProcessorIds() {
+        PropertiesFile::Options options;
+        options.applicationName = ProjectInfo::projectName;
+        options.filenameSuffix = "settings";
+        options.osxLibrarySubFolder = "Preferences";
+        appProperties.setStorageParameters(options);
 
         InternalPluginFormat internalFormat;
         internalFormat.getAllTypes(internalTypes);
-        std::unique_ptr<XmlElement> savedPluginList(appProperties->getUserSettings()->getXmlValue("pluginList"));
+        std::unique_ptr<XmlElement> savedPluginList(appProperties.getUserSettings()->getXmlValue("pluginList"));
 
         if (savedPluginList != nullptr)
             knownPluginList.recreateFromXml(*savedPluginList);
@@ -44,16 +50,24 @@ public:
         for (auto* pluginType : internalTypes)
             knownPluginList.addType(*pluginType);
 
-        pluginSortMethod = (KnownPluginList::SortMethod) appProperties->getUserSettings()->getIntValue("pluginSortMethod", KnownPluginList::sortByManufacturer);
+        pluginSortMethod = (KnownPluginList::SortMethod) appProperties.getUserSettings()->getIntValue("pluginSortMethod", KnownPluginList::sortByManufacturer);
         knownPluginList.addChangeListener(this);
 
         formatManager.addDefaultFormats();
         formatManager.addFormat(new InternalPluginFormat());
     }
 
+    ApplicationProperties& getApplicationProperties() {
+        return appProperties;
+    }
+
     PluginListComponent* makePluginListComponent() {
-        const File &deadMansPedalFile = appProperties->getUserSettings()->getFile().getSiblingFile("RecentlyCrashedPluginsList");
-        return new PluginListComponent(formatManager, knownPluginList, deadMansPedalFile, appProperties->getUserSettings(), true);
+        const File &deadMansPedalFile = appProperties.getUserSettings()->getFile().getSiblingFile("RecentlyCrashedPluginsList");
+        return new PluginListComponent(formatManager, knownPluginList, deadMansPedalFile, appProperties.getUserSettings(), true);
+    }
+
+    PluginDescription *getTypeForIdentifier(const String &identifier) {
+        return knownPluginList.getTypeForIdentifierString(identifier);
     }
 
     KnownPluginList& getKnownPluginList() {
@@ -94,17 +108,17 @@ private:
     KnownPluginList knownPluginList;
     KnownPluginList::SortMethod pluginSortMethod;
     AudioPluginFormatManager formatManager;
-    ApplicationProperties* appProperties;
-    
+    ApplicationProperties appProperties;
+
     void changeListenerCallback(ChangeBroadcaster* changed) override {
         if (changed == &knownPluginList) {
             // save the plugin list every time it gets changed, so that if we're scanning
             // and it crashes, we've still saved the previous ones
             std::unique_ptr<XmlElement> savedPluginList(knownPluginList.createXml());
 
-            if (savedPluginList != nullptr && appProperties != nullptr) {
-                appProperties->getUserSettings()->setValue("pluginList", savedPluginList.get());
-                appProperties->saveIfNeeded();
+            if (savedPluginList != nullptr) {
+                appProperties.getUserSettings()->setValue("pluginList", savedPluginList.get());
+                appProperties.saveIfNeeded();
             }
         }
     }

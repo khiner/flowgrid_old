@@ -279,8 +279,8 @@ private:
 
     void addProcessor(const ValueTree &processorState) {
 //        static String errorMessage = String("Could not create processor");
-//        project.getFormatManager().createPluginInstance(desc, getSampleRate(), getBlockSize(), errorMessage);
-
+//        PluginDescription *desc = project.getTypeForIdentifier(processorState[IDs::id]);
+//        auto *processor = project.getFormatManager().createPluginInstance(*desc, getSampleRate(), getBlockSize(), errorMessage);
         auto *processor = createStatefulAudioProcessorFromId(processorState[IDs::name]);
         auto *processorWrapper = new StatefulAudioProcessorWrapper(processor, processorState, undoManager);
         processerWrappers.add(processorWrapper);

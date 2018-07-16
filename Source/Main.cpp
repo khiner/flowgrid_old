@@ -12,13 +12,9 @@ File getSaveFile() {
     return File::getSpecialLocation(File::userDesktopDirectory).getChildFile("ValueTreeDemoEdit.xml");
 }
 
-ValueTree loadOrCreateDefaultEdit() {
-    return Utilities::loadValueTree(getSaveFile(), true);
-}
-
 class SoundMachineApplication : public JUCEApplication, public MenuBarModel, private ChangeListener {
 public:
-    SoundMachineApplication() : project(loadOrCreateDefaultEdit(), undoManager, processorIds),
+    SoundMachineApplication() : project(Utilities::loadValueTree(getSaveFile(), true), undoManager, processorIds),
                                 applicationKeyListener(project, undoManager),
                                 processorGraph(project, undoManager),
                                 midiControlHandler(project, processorGraph, undoManager) {}
@@ -30,15 +26,6 @@ public:
     bool moreThanOneInstanceAllowed() override { return true; }
 
     void initialise(const String &) override {
-        PropertiesFile::Options options;
-        options.applicationName = ProjectInfo::projectName;
-        options.filenameSuffix = "settings";
-        options.osxLibrarySubFolder = "Preferences";
-        appProperties = std::make_unique<ApplicationProperties>();
-        appProperties->setStorageParameters(options);
-        
-        processorIds.load(appProperties.get());
-
         player.setProcessor(&processorGraph);
         deviceManager.addAudioCallback(&player);
 
@@ -84,7 +71,6 @@ public:
         deviceManager.removeAudioCallback(&player);
         Utilities::saveValueTree(project.getState(), getSaveFile(), true);
         setMacMainMenu(nullptr);
-        appProperties = nullptr;
     }
 
     void systemRequestedQuit() override {
@@ -140,7 +126,7 @@ public:
                 else if (menuItemID == 203) processorIds.setPluginSortMethod(KnownPluginList::sortByManufacturer);
                 else if (menuItemID == 204) processorIds.setPluginSortMethod(KnownPluginList::sortByFileSystemLocation);
 
-                appProperties->getUserSettings()->setValue("pluginSortMethod", (int) processorIds.getPluginSortMethod());
+                processorIds.getApplicationProperties().getUserSettings()->setValue("pluginSortMethod", (int) processorIds.getPluginSortMethod());
                 menuItemsChanged();
             }
         }
@@ -188,7 +174,6 @@ public:
     };
 
 private:
-    std::unique_ptr<ApplicationProperties> appProperties;
     ProcessorIds processorIds;
 
     std::unique_ptr<MainWindow> treeWindow, arrangeWindow, push2Window, graphEditorWindow;
@@ -245,8 +230,8 @@ private:
             std::unique_ptr<XmlElement> savedPluginList(processorIds.getKnownPluginList().createXml());
 
             if (savedPluginList != nullptr) {
-                appProperties->getUserSettings()->setValue("pluginList", savedPluginList.get());
-                appProperties->saveIfNeeded();
+                processorIds.getApplicationProperties().getUserSettings()->setValue("pluginList", savedPluginList.get());
+                processorIds.getApplicationProperties().saveIfNeeded();
             }
         }
     }
