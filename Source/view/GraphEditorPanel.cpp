@@ -542,7 +542,9 @@ void GraphEditorPanel::mouseDrag(const MouseEvent &e) {
 }
 
 void GraphEditorPanel::createNewPlugin(const PluginDescription &desc, Point<int> position) {
-    graph.addPlugin(desc, position.toDouble() / juce::Point<double>((double) getWidth(), (double) getHeight()));
+    const auto &gridLocation = graph.positionToGridLocation(position.toDouble() / juce::Point<double>((double) getWidth(), (double) getHeight()));
+    ValueTree track = project.getTrack(gridLocation.x);
+    project.createAndAddProcessor(desc, track, gridLocation.y);
 }
 
 GraphEditorPanel::FilterComponent *GraphEditorPanel::getComponentForFilter(const uint32 filterID) const {

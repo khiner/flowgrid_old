@@ -23,14 +23,6 @@ static const StringArray getAvailableProcessorIdsForTrack(const ValueTree& track
     }
 }
 
-static AudioPluginInstance *createStatefulAudioProcessorFromId(const String &id) {
-    if (id == MixerChannelProcessor::getIdentifier()) return new MixerChannelProcessor(MixerChannelProcessor::getPluginDescription());
-    if (id == GainProcessor::getIdentifier()) return new GainProcessor(GainProcessor::getPluginDescription());
-    if (id == BalanceProcessor::getIdentifier()) return new BalanceProcessor(BalanceProcessor::getPluginDescription());
-    if (id == SineBank::getIdentifier()) return new SineBank(SineBank::getPluginDescription());
-    return nullptr;
-}
-
 class ProcessorIds : private ChangeListener {
 public:
     ProcessorIds() {

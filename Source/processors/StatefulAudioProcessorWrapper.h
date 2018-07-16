@@ -135,8 +135,9 @@ public:
 
     void updateValueTree() {
         for (auto parameter : processor->getParameters()) {
-            auto *parameterObject = dynamic_cast<Parameter *>(parameter);
-            parameterObject->setNewState(getOrCreateChildValueTree(parameterObject->paramId), &undoManager);
+            if (auto *parameterObject = dynamic_cast<Parameter *>(parameter)) {
+                parameterObject->setNewState(getOrCreateChildValueTree(parameterObject->paramId), &undoManager);
+            }
         }
     }
 

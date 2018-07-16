@@ -40,7 +40,8 @@ public:
         if (processorSelector.isVisible()) {
             const String &processorId = processorSelector.selectProcessor(project.getSelectedTrack(), buttonIndex);
             if (!processorId.isEmpty()) {
-                project.createAndAddProcessor(processorId);
+                // TODO get full plugin descriptor by using KnownPluginList
+                //project.createAndAddProcessor(processorId);
             }
         }
     }

@@ -93,11 +93,13 @@ private:
 
             auto *processorWrapper = audioGraphBuilder.getProcessorWrapperForState(item);
             if (processorWrapper != nullptr) {
-                for (int i = 0; i < processorWrapper->processor->getNumParameters(); i++) {
+                for (int i = 0; i < jmin(processorSliders.size(), processorWrapper->processor->getNumParameters()); i++) {
                     auto *slider = processorSliders.getUnchecked(i);
                     auto *label = processorLabels.getUnchecked(i);
                     slider->setVisible(true);
-                    processorWrapper->getParameterObject(i)->attachSlider(slider, label);
+                    if (auto *parameter = processorWrapper->getParameterObject(i)) {
+                        parameter->attachSlider(slider, label);
+                    }
                 }
             }
         } else if (item.hasType(IDs::CLIP)) {

@@ -53,14 +53,14 @@ public:
     static PluginDescription getPluginDescription(const String& identifier, bool registerAsGenerator, bool acceptsMidi,
                                                   const AudioChannelSet& channelSetToUse = AudioChannelSet::stereo()) {
         PluginDescription descr;
-        auto pluginName  = identifier.upToFirstOccurrenceOf (":", false, false);
-        auto pluginState = identifier.fromFirstOccurrenceOf (":", false, false);
+        auto pluginName  = identifier.upToFirstOccurrenceOf(":", false, false);
+        auto pluginState = identifier.fromFirstOccurrenceOf(":", false, false);
 
         descr.name              = pluginName;
         descr.descriptiveName   = pluginName;
         descr.pluginFormatName  = "Internal";
         descr.category          = (registerAsGenerator ? (acceptsMidi ? "Synth" : "Generator") : "Effect");
-        descr.manufacturerName  = "Odand Ludo Productions";
+        descr.manufacturerName  = "Odang Ludo Productions";
         descr.version           = ProjectInfo::versionString;
         descr.fileOrIdentifier  = pluginName + ":" + pluginState;
         descr.uid               = pluginName.hashCode();
@@ -74,9 +74,8 @@ public:
 private:
     static BusesProperties getBusProperties(bool registerAsGenerator,
                                              const AudioChannelSet& channelSetToUse) {
-        return registerAsGenerator ? BusesProperties().withOutput ("Output", channelSetToUse)
-                                   : BusesProperties().withInput  ("Input",  channelSetToUse)
-                       .withOutput ("Output", channelSetToUse);
+        return registerAsGenerator ? BusesProperties().withOutput("Output", channelSetToUse)
+                                   : BusesProperties().withInput("Input",  channelSetToUse).withOutput("Output", channelSetToUse);
     }
 
     String name, state;

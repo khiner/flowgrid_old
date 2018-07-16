@@ -624,13 +624,13 @@ public:
         masterTrack = ValueTree(IDs::MASTER_TRACK);
         Helpers::createUuidProperty(masterTrack);
         masterTrack.setProperty(IDs::name, "Master", nullptr);
-        ValueTree masterMixer = createAndAddProcessor(MixerChannelProcessor::getIdentifier(), masterTrack, -1, false);
+        ValueTree masterMixer = createAndAddProcessor(MixerChannelProcessor::getPluginDescription(), masterTrack, -1, false);
         masterMixer.setProperty(IDs::selected, true, nullptr);
         tracks.addChild(masterTrack, -1, nullptr);
 
         for (int tn = 0; tn < 1; ++tn) {
             ValueTree track = createAndAddTrack(false);
-            createAndAddProcessor(SineBank::getIdentifier(), track, false);
+            createAndAddProcessor(SineBank::getPluginDescription(), track, false);
 
 //            for (int cn = 0; cn < 3; ++cn) {
 //                ValueTree c(IDs::CLIP);
@@ -667,30 +667,31 @@ public:
 
         tracks.addChild(track, insertIndex, undoable ? &undoManager : nullptr);
 
-        createAndAddProcessor(MixerChannelProcessor::getIdentifier(), track, -1, undoable);
+        createAndAddProcessor(MixerChannelProcessor::getPluginDescription(), track, -1, undoable);
         return track;
     }
 
-    ValueTree createAndAddProcessor(const String& name, bool undoable=true) {
+    ValueTree createAndAddProcessor(const PluginDescription& description, bool undoable=true) {
         ValueTree& selectedTrack = getSelectedTrack();
         if (selectedTrack.isValid()) {
-            return createAndAddProcessor(name, selectedTrack, -1, undoable);
+            return createAndAddProcessor(description, selectedTrack, -1, undoable);
         } else {
             return ValueTree();
         }
     }
 
-    ValueTree createAndAddProcessor(const String &name, ValueTree &track, int slot=-1, bool undoable=true) {
+    ValueTree createAndAddProcessor(const PluginDescription &description, ValueTree &track, int slot=-1, bool undoable=true) {
         ValueTree processor(IDs::PROCESSOR);
         Helpers::createUuidProperty(processor);
-        processor.setProperty(IDs::name, name, nullptr);
+        processor.setProperty(IDs::id, description.createIdentifierString(), nullptr);
+        processor.setProperty(IDs::name, description.name, nullptr);
 
         int insertIndex;
         if (slot == -1) {
             // Insert new processors _right before_ the first g&b processor, or at the end if there isn't one.
             insertIndex = getMaxProcessorInsertIndex(track);
             slot = 0;
-            if (insertIndex == -1 && name == MixerChannelProcessor::getIdentifier()) {
+            if (insertIndex == -1 && description.name == MixerChannelProcessor::getIdentifier()) {
                 slot = NUM_AVAILABLE_PROCESSOR_SLOTS - 1;
             } else if (track.getNumChildren() > 1) {
                 slot = int(track.getChild(track.getNumChildren() - 2).getProperty(IDs::PROCESSOR_SLOT)) + 1;

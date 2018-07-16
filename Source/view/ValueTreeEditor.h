@@ -76,7 +76,8 @@ public:
     void comboBoxChanged(ComboBox* cb) override  {
         if (cb == &addProcessorComboBox) {
             if (project.getSelectedTrack().isValid()) {
-                project.createAndAddProcessor(allProcessorIds[cb->getSelectedId() - 1]);
+                // TODO get full plugin descriptor by using KnownPluginList
+                //project.createAndAddProcessor(allProcessorIds[cb->getSelectedId() - 1]);
             }
         }
         cb->setSelectedItemIndex(-1, dontSendNotification); // don't keep displaying the selected item

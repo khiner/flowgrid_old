@@ -30,12 +30,6 @@ public:
         initializing = false;
     }
 
-    void addPlugin(const PluginDescription& desc, const Point<double> &position) {
-        const auto &gridLocation = positionToGridLocation(position);
-        ValueTree track = project.getTrack(gridLocation.x);
-        project.createAndAddProcessor(desc.name, track, gridLocation.y, false);
-    }
-
     std::vector<Connection> getConnectionsUi() const {
         std::vector<Connection> graphConnections;
 
@@ -278,10 +272,9 @@ private:
     }
 
     void addProcessor(const ValueTree &processorState) {
-//        static String errorMessage = String("Could not create processor");
-//        PluginDescription *desc = project.getTypeForIdentifier(processorState[IDs::id]);
-//        auto *processor = project.getFormatManager().createPluginInstance(*desc, getSampleRate(), getBlockSize(), errorMessage);
-        auto *processor = createStatefulAudioProcessorFromId(processorState[IDs::name]);
+        static String errorMessage = "Could not create processor";
+        PluginDescription *desc = project.getTypeForIdentifier(processorState[IDs::id]);
+        auto *processor = project.getFormatManager().createPluginInstance(*desc, getSampleRate(), getBlockSize(), errorMessage);
         auto *processorWrapper = new StatefulAudioProcessorWrapper(processor, processorState, undoManager);
         processerWrappers.add(processorWrapper);
 
