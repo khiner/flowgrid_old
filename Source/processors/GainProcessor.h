@@ -29,7 +29,7 @@ public:
     }
 
     void parameterChanged(const String& parameterId, float newValue) override {
-        if (parameterId == gainParameter->paramId) {
+        if (parameterId == gainParameter->paramID) {
             gain.setValue(newValue);
         }
     }

@@ -36,9 +36,9 @@ public:
     }
 
     void parameterChanged(const String& parameterId, float newValue) override {
-        if (parameterId == balanceParameter->paramId) {
+        if (parameterId == balanceParameter->paramID) {
             balance.setValue(newValue);
-        } else if (parameterId == gainParameter->paramId) {
+        } else if (parameterId == gainParameter->paramID) {
             gain.setValue(newValue);
         }
     }
