@@ -93,7 +93,7 @@ private:
 
             auto *processorWrapper = audioGraphBuilder.getProcessorWrapperForState(item);
             if (processorWrapper != nullptr) {
-                for (int i = 0; i < jmin(processorSliders.size(), processorWrapper->processor->getNumParameters()); i++) {
+                for (int i = 0; i < jmin(processorSliders.size(), processorWrapper->processor->getParameters().size()); i++) {
                     auto *slider = processorSliders.getUnchecked(i);
                     auto *label = processorLabels.getUnchecked(i);
                     slider->setVisible(true);

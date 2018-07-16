@@ -24,7 +24,7 @@ public:
         void setValue(float newValue) override {
             float clampedNewValue = newValue < 0 ? 0 : (newValue > 1 ? 1 : newValue);
             auto convertedValue = (float) range.convertFrom0to1(clampedNewValue);
-            listeners.call ([=] (AudioProcessorValueTreeState::Listener& l) { l.parameterChanged(paramID, convertedValue); });
+            listeners.call([=] (AudioProcessorValueTreeState::Listener& l) { l.parameterChanged(paramID, convertedValue); });
 
             state.setProperty(IDs::value, convertedValue, undoManager);
         }
@@ -76,7 +76,7 @@ public:
         }
 
         float getDefaultValue() const override {
-            return (float) range.convertTo0to1 (defaultValue);
+            return (float) range.convertTo0to1(defaultValue);
         }
 
         float getValueForText(const String& text) const override {
