@@ -103,7 +103,7 @@ public:
         float defaultValue;
 
         ValueTree state;
-        UndoManager *undoManager;
+        UndoManager *undoManager { nullptr };
     private:
 
         ListenerList<AudioProcessorValueTreeState::Listener> listeners;

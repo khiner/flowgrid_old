@@ -30,27 +30,10 @@ public:
         initializing = false;
     }
 
-    void addPlugin(const PluginDescription& desc, const Point<double> &p) {
-        struct AsyncCallback : public AudioPluginFormat::InstantiationCompletionCallback {
-            AsyncCallback(ProcessorGraph& g, const Point<double> &pos) : owner(g), position(pos) {}
-
-            void completionCallback(AudioPluginInstance* instance, const String& error) override {
-                owner.addFilterCallback(instance, error, position);
-            }
-
-            ProcessorGraph& owner;
-            Point<double> position;
-        };
-
-        project.getFormatManager().createPluginInstanceAsync(desc, getSampleRate(), getBlockSize(), new AsyncCallback(*this, p));
-    }
-
-    void addFilterCallback(AudioPluginInstance* instance, const String& error, const Point<double> &pos) {
-        if (instance == nullptr) {
-            AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, TRANS("Could not create processor"), error);
-        } else {
-            addNode(instance);
-        }
+    void addPlugin(const PluginDescription& desc, const Point<double> &position) {
+        const auto &gridLocation = positionToGridLocation(position);
+        ValueTree track = project.getTrack(gridLocation.x);
+        project.createAndAddProcessor(desc.name, track, gridLocation.y, false);
     }
 
     std::vector<Connection> getConnectionsUi() const {
@@ -130,14 +113,15 @@ public:
         }
     }
 
-    void setNodePosition(NodeID nodeId, Point<double> pos) {
+    void setNodePosition(NodeID nodeId, const Point<double> &position) {
         if (currentlyDraggingNodeId == NA_NODE_ID)
             return;
 
+        const auto& gridLocation = positionToGridLocation(position);
         if (auto *processor = getProcessorWrapperForNodeId(nodeId)) {
             int maxProcessorSlot = project.getMaxAvailableProcessorSlot(processor->state.getParent());
-            auto newX = jlimit(0, project.getNumTracks() - 1, int(Project::NUM_VISIBLE_TRACKS * jlimit(0.0, 0.99, pos.x)));
-            auto newY = jlimit(0, maxProcessorSlot, int(Project::NUM_VISIBLE_PROCESSOR_SLOTS * jlimit(0.0, 0.99, pos.y)));
+            auto newX = jlimit(0, project.getNumTracks() - 1, gridLocation.x);
+            auto newY = jlimit(0, maxProcessorSlot, gridLocation.y);
             if (newX != currentlyDraggingGridPosition.x || newY != currentlyDraggingGridPosition.y) {
                 currentlyDraggingGridPosition.x = newX;
                 currentlyDraggingGridPosition.y = newY;
@@ -149,6 +133,11 @@ public:
                 }
             }
         }
+    }
+    
+    Point<int> positionToGridLocation(const Point<double> &position) {
+        return juce::Point<int>(int(Project::NUM_VISIBLE_TRACKS * jlimit(0.0, 0.99, position.x)),
+                                int(Project::NUM_VISIBLE_PROCESSOR_SLOTS * jlimit(0.0, 0.99, position.y)));
     }
 
     void endDraggingNode(NodeID nodeId) {
@@ -289,12 +278,16 @@ private:
     }
 
     void addProcessor(const ValueTree &processorState) {
-        auto *processorWrapper = createStatefulAudioProcessorFromId(processorState[IDs::name], processorState, undoManager);
+//        static String errorMessage = String("Could not create processor");
+//        project.getFormatManager().createPluginInstance(desc, getSampleRate(), getBlockSize(), errorMessage);
+
+        auto *processor = createStatefulAudioProcessorFromId(processorState[IDs::name]);
+        auto *processorWrapper = new StatefulAudioProcessorWrapper(processor, processorState, undoManager);
         processerWrappers.add(processorWrapper);
 
         const Node::Ptr &newNode = processorState.hasProperty(IDs::NODE_ID) ?
-                                   addNode(processorWrapper->processor, getNodeIdForState(processorState)) :
-                                   addNode(processorWrapper->processor);
+                                   addNode(processor, getNodeIdForState(processorState)) :
+                                   addNode(processor);
         processorWrapper->state.setProperty(IDs::NODE_ID, int(newNode->nodeID), nullptr);
 
         if (!initializing) {

@@ -21,18 +21,12 @@ static const StringArray getAvailableProcessorIdsForTrack(const ValueTree& track
     }
 }
 
-static StatefulAudioProcessorWrapper *createStatefulAudioProcessorFromId(const String &id, const ValueTree &state, UndoManager &undoManager) {
-    if (id == MixerChannelProcessor::getIdentifier()) {
-        return new StatefulAudioProcessorWrapper(new MixerChannelProcessor(MixerChannelProcessor::getPluginDescription()), state, undoManager);
-    } else if (id == GainProcessor::getIdentifier()) {
-        return new StatefulAudioProcessorWrapper(new GainProcessor(GainProcessor::getPluginDescription()), state, undoManager);
-    } else if (id == BalanceProcessor::getIdentifier()) {
-        return new StatefulAudioProcessorWrapper(new BalanceProcessor(BalanceProcessor::getPluginDescription()), state, undoManager);
-    } else if (id == SineBank::getIdentifier()) {
-        return new StatefulAudioProcessorWrapper(new SineBank(SineBank::getPluginDescription()), state, undoManager);
-    } else {
-        return nullptr;
-    }
+static AudioPluginInstance *createStatefulAudioProcessorFromId(const String &id) {
+    if (id == MixerChannelProcessor::getIdentifier()) return new MixerChannelProcessor(MixerChannelProcessor::getPluginDescription());
+    if (id == GainProcessor::getIdentifier()) return new GainProcessor(GainProcessor::getPluginDescription());
+    if (id == BalanceProcessor::getIdentifier()) return new BalanceProcessor(BalanceProcessor::getPluginDescription());
+    if (id == SineBank::getIdentifier()) return new SineBank(SineBank::getPluginDescription());
+    return nullptr;
 }
 
 class ProcessorIds : private ChangeListener {
