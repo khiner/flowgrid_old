@@ -5,9 +5,9 @@
 #include <Utilities.h>
 #include "Identifiers.h"
 
-class StatefulAudioProcessorWrapper : public Utilities::ValueTreePropertyChangeListener {
+class StatefulAudioProcessorWrapper {
 public:
-    struct Parameter : public AudioProcessorParameterWithID {
+    struct Parameter : public AudioProcessorParameterWithID, private Utilities::ValueTreePropertyChangeListener {
         Parameter(String parameterID, String paramName, const String &labelText, NormalisableRange<double> range,
                   float defaultVal, std::function<String (const float)> valueToTextFunction,
                   std::function<float(const String &)> textToValueFunction)
@@ -16,6 +16,11 @@ public:
                   labelText(labelText), range(std::move(range)),
                   valueToTextFunction(std::move(valueToTextFunction)),
                   textToValueFunction(std::move(textToValueFunction)), defaultValue(defaultVal) {}
+
+        ~Parameter() override {
+            if (state.isValid())
+                state.removeListener(this);
+        }
 
         float getValue() const override {
             return (float) range.convertTo0to1(getRawValue());
@@ -43,6 +48,7 @@ public:
 
         void setNewState(const ValueTree& v, UndoManager *undoManager) {
             state = v;
+            this->state.addListener(this);
             //updateFromValueTree(); TODO
             if (!state.hasProperty(IDs::value)) {
                 state.setProperty(IDs::value, defaultValue, nullptr);
@@ -105,28 +111,19 @@ public:
         ValueTree state;
         UndoManager *undoManager { nullptr };
     private:
-
         ListenerList<AudioProcessorValueTreeState::Listener> listeners;
+
+        void valueTreePropertyChanged(ValueTree& tree, const Identifier& p) override {
+            if (p == IDs::value) {
+                setUnnormalisedValue(float(tree[IDs::value]));
+            }
+        }
     };
 
     StatefulAudioProcessorWrapper(AudioPluginInstance *processor, ValueTree state, UndoManager &undoManager) :
             processor(processor), state(std::move(state)), undoManager(undoManager) {
-        this->state.addListener(this);
         processor->enableAllBuses();
         updateValueTree();
-    }
-
-    ~StatefulAudioProcessorWrapper() override {
-        state.removeListener(this);
-    }
-
-    void valueTreePropertyChanged(ValueTree& tree, const Identifier& p) override {
-        if (p == IDs::value) {
-            String parameterId = tree.getProperty(IDs::id);
-            if (auto *parameter = Parameter::getParameterForID(*processor, parameterId)) {
-                parameter->setUnnormalisedValue(float(tree[IDs::value]));
-            }
-        }
     }
 
     Parameter *getParameterObject(int parameterIndex) {
