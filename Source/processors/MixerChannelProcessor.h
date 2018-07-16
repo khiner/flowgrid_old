@@ -5,12 +5,12 @@
 
 class MixerChannelProcessor : public DefaultAudioProcessor {
 public:
-    explicit MixerChannelProcessor(const PluginDescription& description, const ValueTree &state, UndoManager &undoManager) :
+    explicit MixerChannelProcessor(const PluginDescription& description) :
             DefaultAudioProcessor(description) {
-        balanceParameter = new StatefulAudioProcessorWrapper::Parameter(state, undoManager, "balance", "Balance", "",
+        balanceParameter = new StatefulAudioProcessorWrapper::Parameter("balance", "Balance", "",
                                          NormalisableRange<double>(0.0f, 1.0f), 0.5f,
                                          [](float value) { return String(value, 3); }, nullptr);
-        gainParameter = new StatefulAudioProcessorWrapper::Parameter(state, undoManager, "gain", "Gain", "dB",
+        gainParameter = new StatefulAudioProcessorWrapper::Parameter("gain", "Gain", "dB",
                                       NormalisableRange<double>(0.0f, 1.0f), 0.5f,
                                       [](float value) { return String(Decibels::gainToDecibels(value), 3) + " dB"; }, nullptr);
         balanceParameter->addListener(this);

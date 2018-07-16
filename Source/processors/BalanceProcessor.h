@@ -5,9 +5,9 @@
 
 class BalanceProcessor : public DefaultAudioProcessor {
 public:
-    explicit BalanceProcessor(const PluginDescription& description, const ValueTree &state, UndoManager &undoManager) :
+    explicit BalanceProcessor(const PluginDescription& description) :
             DefaultAudioProcessor(description) {
-        balanceParameter = new StatefulAudioProcessorWrapper::Parameter(state, undoManager, "balance", "Balance", "",
+        balanceParameter = new StatefulAudioProcessorWrapper::Parameter("balance", "Balance", "",
                                          NormalisableRange<double>(0.0f, 1.0f), 0.5f,
                                          [](float value) { return String(value, 3); }, nullptr);
         balanceParameter->addListener(this);

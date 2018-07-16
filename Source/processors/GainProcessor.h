@@ -5,9 +5,9 @@
 
 class GainProcessor : public DefaultAudioProcessor {
 public:
-    explicit GainProcessor(const PluginDescription& description, const ValueTree &state, UndoManager &undoManager) :
+    explicit GainProcessor(const PluginDescription& description) :
             DefaultAudioProcessor(description) {
-        gainParameter = new StatefulAudioProcessorWrapper::Parameter(state, undoManager, "gain", "Gain", "dB",
+        gainParameter = new StatefulAudioProcessorWrapper::Parameter("gain", "Gain", "dB",
                                       NormalisableRange<double>(0.0f, 1.0f), 0.5f,
                                       [](float value) { return String(Decibels::gainToDecibels(value), 3) + " dB"; }, nullptr);
         gainParameter->addListener(this);

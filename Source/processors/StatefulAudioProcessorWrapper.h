@@ -8,18 +8,14 @@
 class StatefulAudioProcessorWrapper : public Utilities::ValueTreePropertyChangeListener {
 public:
     struct Parameter : public AudioProcessorParameterWithID {
-        Parameter(ValueTree state, UndoManager &undoManager, String parameterID, String paramName, const String &labelText, NormalisableRange<double> range,
+        Parameter(String parameterID, String paramName, const String &labelText, NormalisableRange<double> range,
                   float defaultVal, std::function<String (const float)> valueToTextFunction,
                   std::function<float(const String &)> textToValueFunction)
                 : AudioProcessorParameterWithID(parameterID, paramName, labelText, Category::genericParameter),
-                  state(std::move(state)), undoManager(undoManager), paramId(std::move(parameterID)), paramName(std::move(paramName)),
+                  paramId(std::move(parameterID)), paramName(std::move(paramName)),
                   labelText(labelText), range(std::move(range)),
                   valueToTextFunction(std::move(valueToTextFunction)),
                   textToValueFunction(std::move(textToValueFunction)), defaultValue(defaultVal) {}
-
-        ValueTree getState() const {
-            return state.getChildWithProperty(IDs::id, paramId);
-        }
 
         float getValue() const override {
             return (float) range.convertTo0to1(getRawValue());
@@ -30,7 +26,7 @@ public:
             auto convertedValue = (float) range.convertFrom0to1(clampedNewValue);
             listeners.call ([=] (AudioProcessorValueTreeState::Listener& l) { l.parameterChanged(paramID, convertedValue); });
 
-            getState().setProperty(IDs::value, convertedValue, &undoManager);
+            state.setProperty(IDs::value, convertedValue, undoManager);
         }
 
         void setUnnormalisedValue(float newUnnormalisedValue) {
@@ -38,11 +34,26 @@ public:
         }
 
         float getRawValue() const {
-            return getState().getProperty(IDs::value);
+            return state.getProperty(IDs::value, defaultValue);
         }
 
-        Value getValueObject() const {
-            return getState().getPropertyAsValue(IDs::value, &undoManager);
+        Value getValueObject() {
+            return state.getPropertyAsValue(IDs::value, undoManager);
+        }
+
+        void setNewState(const ValueTree& v, UndoManager *undoManager) {
+            state = v;
+            //updateFromValueTree(); TODO
+            if (!state.hasProperty(IDs::value)) {
+                state.setProperty(IDs::value, defaultValue, nullptr);
+            }
+            state.sendPropertyChangeMessage(IDs::value);
+
+            this->undoManager = undoManager;
+        }
+
+        void updateFromValueTree() {
+            setUnnormalisedValue(getRawValue());
         }
 
         void attachSlider(Slider *slider, Label *label=nullptr) {
@@ -83,9 +94,6 @@ public:
             return nullptr;
         }
 
-        ValueTree state;
-        UndoManager &undoManager;
-
         const String paramId;
         const String paramName;
         const String labelText;
@@ -94,6 +102,8 @@ public:
         std::function<float(const String &)> textToValueFunction;
         float defaultValue;
 
+        ValueTree state;
+        UndoManager *undoManager;
     private:
 
         ListenerList<AudioProcessorValueTreeState::Listener> listeners;
@@ -126,11 +136,7 @@ public:
     void updateValueTree() {
         for (auto parameter : processor->getParameters()) {
             auto *parameterObject = dynamic_cast<Parameter *>(parameter);
-            ValueTree v = getOrCreateChildValueTree(parameterObject->paramId);
-            if (!v.hasProperty(IDs::value)) {
-                v.setProperty(IDs::value, parameterObject->defaultValue, nullptr);
-            }
-            v.sendPropertyChangeMessage(IDs::value);
+            parameterObject->setNewState(getOrCreateChildValueTree(parameterObject->paramId), &undoManager);
         }
     }
 

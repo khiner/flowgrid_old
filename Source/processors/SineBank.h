@@ -6,12 +6,12 @@
 
 class SineBank : public DefaultAudioProcessor {
 public:
-    explicit SineBank(const PluginDescription& description, const ValueTree &state, UndoManager &undoManager) :
+    explicit SineBank(const PluginDescription& description) :
             DefaultAudioProcessor(description),
-            toneSource1(state, undoManager, "1"),
-            toneSource2(state, undoManager, "2"),
-            toneSource3(state, undoManager, "3"),
-            toneSource4(state, undoManager, "4") {
+            toneSource1("1"),
+            toneSource2("2"),
+            toneSource3("3"),
+            toneSource4("4") {
 
         addParameter(toneSource1.getAmpParameter());
         addParameter(toneSource1.getFreqParameter());
