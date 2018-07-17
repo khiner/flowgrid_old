@@ -7,8 +7,9 @@ class GainProcessor : public DefaultAudioProcessor {
 public:
     explicit GainProcessor(const PluginDescription& description) :
             DefaultAudioProcessor(description),
-            gainParameter(new SParameter("gain", "Gain", "dB", NormalisableRange<double>(0.0f, 1.0f), gain.getTargetValue(),
-                                         [](float value) { return String(Decibels::gainToDecibels(value), 3) + " dB"; }, nullptr)) {
+            gainParameter(new AudioParameterFloat("gain", "Gain", NormalisableRange<float>(0.0f, 1.0f), gain.getTargetValue(), "dB",
+                                                  AudioProcessorParameter::genericParameter,
+                                                  [](float value, int radix) { return String(Decibels::gainToDecibels(value), radix); }, nullptr)) {
         gainParameter->addListener(this);
         addParameter(gainParameter);
     }
@@ -23,12 +24,12 @@ public:
         return DefaultAudioProcessor::getPluginDescription(getIdentifier(), false, false);
     }
 
-    void prepareToPlay (double sampleRate, int maximumExpectedSamplesPerBlock) override {
+    void prepareToPlay(double sampleRate, int maximumExpectedSamplesPerBlock) override {
         gain.reset(getSampleRate(), 0.05);
     }
 
-    void parameterChanged(const String& parameterId, float newValue) override {
-        if (parameterId == gainParameter->paramID) {
+    void parameterChanged(AudioProcessorParameter *parameter, float newValue) override {
+        if (parameter == gainParameter) {
             gain.setValue(newValue);
         }
     }
@@ -39,5 +40,5 @@ public:
 
 private:
     LinearSmoothedValue<float> gain { 0.5 };
-    StatefulAudioProcessorWrapper::Parameter *gainParameter;
+    AudioParameterFloat *gainParameter;
 };

@@ -7,8 +7,8 @@ class BalanceProcessor : public DefaultAudioProcessor {
 public:
     explicit BalanceProcessor(const PluginDescription& description) :
             DefaultAudioProcessor(description),
-            balanceParameter(new SParameter("balance", "Balance", "", NormalisableRange<double>(0.0f, 1.0f), balance.getTargetValue(),
-                                            [](float value) { return String(value, 3); }, nullptr)) {
+            balanceParameter(new AudioParameterFloat("balance", "Balance", NormalisableRange<float>(0.0f, 1.0f), balance.getTargetValue(), "",
+                                                     AudioProcessorParameter::genericParameter, [](float value, int radix) { return String(value, radix); }, nullptr)) {
         balanceParameter->addListener(this);
         addParameter(balanceParameter);
     }
@@ -26,9 +26,9 @@ public:
     void prepareToPlay(double sampleRate, int maximumExpectedSamplesPerBlock) override {
         balance.reset(getSampleRate(), 0.05);
     }
-
-    void parameterChanged(const String& parameterId, float newValue) override {
-        if (parameterId == balanceParameter->paramID) {
+    
+    void parameterChanged(AudioProcessorParameter *parameter, float newValue) override {
+        if (parameter == balanceParameter) {
             balance.setValue(newValue);
         }
     }
@@ -57,5 +57,5 @@ public:
 
 private:
     LinearSmoothedValue<float> balance { 0.5f };
-    StatefulAudioProcessorWrapper::Parameter *balanceParameter;
+    AudioParameterFloat *balanceParameter;
 };

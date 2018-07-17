@@ -54,22 +54,22 @@ public:
         return DefaultAudioProcessor::getPluginDescription(getIdentifier(), true, false);
     }
 
-    void parameterChanged(const String& parameterId, float newValue) override {
-        if (parameterId == toneSource1.getAmpParameterId()) {
+    void parameterChanged(AudioProcessorParameter *parameter, float newValue) override {
+        if (parameter == toneSource1.getAmpParameter()) {
             toneSource1.get()->setAmplitude(newValue);
-        } else if (parameterId == toneSource1.getFreqParameterId()) {
+        } else if (parameter == toneSource1.getFreqParameter()) {
             toneSource1.get()->setFrequency(newValue);
-        } else if (parameterId == toneSource2.getAmpParameterId()) {
+        } else if (parameter == toneSource2.getAmpParameter()) {
             toneSource2.get()->setAmplitude(newValue);
-        } else if (parameterId == toneSource2.getFreqParameterId()) {
+        } else if (parameter == toneSource2.getFreqParameter()) {
             toneSource2.get()->setFrequency(newValue);
-        } else if (parameterId == toneSource3.getAmpParameterId()) {
+        } else if (parameter == toneSource3.getAmpParameter()) {
             toneSource3.get()->setAmplitude(newValue);
-        } else if (parameterId == toneSource3.getFreqParameterId()) {
+        } else if (parameter == toneSource3.getFreqParameter()) {
             toneSource3.get()->setFrequency(newValue);
-        } else if (parameterId == toneSource4.getAmpParameterId()) {
+        } else if (parameter == toneSource4.getAmpParameter()) {
             toneSource4.get()->setAmplitude(newValue);
-        } else if (parameterId == toneSource4.getFreqParameterId()) {
+        } else if (parameter == toneSource4.getFreqParameter()) {
             toneSource4.get()->setFrequency(newValue);
         }
     }

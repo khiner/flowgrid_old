@@ -1,31 +1,20 @@
 #pragma once
 
-#include <list>
-#include <processors/DefaultAudioProcessor.h>
 #include "JuceHeader.h"
 
 class ToneSourceWithParameters {
 public:
     explicit ToneSourceWithParameters(const String &idSuffix):
             source(new ToneGeneratorAudioSource),
-            ampParamId("amp_" + idSuffix), freqParamId("freq_" + idSuffix),
-            ampParameter(new SParameter(ampParamId, "Amp" + idSuffix, "dB", NormalisableRange<double>(0.0f, 1.0f), 0.2f, [](float value) { return String(Decibels::gainToDecibels(value), 3) + " dB"; }, nullptr)),
-            freqParameter(new SParameter(freqParamId, "Freq" + idSuffix, "Hz", NormalisableRange<double> (440.0f, 10000.0f, 0.0f, 0.3f, false), 880.0f, [](float value) { return String(value, 1) + " Hz"; }, nullptr)) {}
+            ampParameter(new AudioParameterFloat("amp_" + idSuffix, "Amp" + idSuffix, NormalisableRange<float>(0.0f, 1.0f), 0.2f, "dB", AudioProcessorParameter::genericParameter, [](float value, int radix) { return String(Decibels::gainToDecibels(value), radix); }, nullptr)),
+            freqParameter(new AudioParameterFloat("freq_" + idSuffix, "Freq" + idSuffix, NormalisableRange<float>(440.0f, 10000.0f, 0.0f, 0.3f, false), 880.0f, "Hz", AudioProcessorParameter::genericParameter, [](float value, int radix) { return String(value, radix); }, nullptr)) {}
 
-    StatefulAudioProcessorWrapper::Parameter *getAmpParameter() {
+    AudioParameterFloat *getAmpParameter() {
         return ampParameter;
     }
 
-    StatefulAudioProcessorWrapper::Parameter *getFreqParameter() {
+    AudioParameterFloat *getFreqParameter() {
         return freqParameter;
-    }
-
-    const String &getAmpParameterId() const {
-        return ampParamId;
-    }
-
-    const String &getFreqParameterId() const {
-        return freqParamId;
     }
 
     inline ToneGeneratorAudioSource* get() {
@@ -34,11 +23,7 @@ public:
 
 private:
     std::unique_ptr<ToneGeneratorAudioSource> source;
-
-    String ampParamId;
-    String freqParamId;
-
-    StatefulAudioProcessorWrapper::Parameter *ampParameter, *freqParameter;
+    AudioParameterFloat *ampParameter, *freqParameter;
 };
 
 
