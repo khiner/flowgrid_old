@@ -14,7 +14,7 @@ class Push2Component :
         private ProjectChangeListener {
 public:
     explicit Push2Component(Project &project, ProcessorGraph &audioGraphBuilder)
-            : project(project), audioGraphBuilder(audioGraphBuilder), processorSelector() {
+            : project(project), audioGraphBuilder(audioGraphBuilder), processorSelector(project) {
         startTimer(60);
 
         addChildComponent(processorView);
@@ -38,10 +38,9 @@ public:
 
     void aboveScreenButtonPressed(int buttonIndex) {
         if (processorSelector.isVisible()) {
-            const String &processorId = processorSelector.selectProcessor(project.getSelectedTrack(), buttonIndex);
-            if (!processorId.isEmpty()) {
-                // TODO get full plugin descriptor by using KnownPluginList
-                //project.createAndAddProcessor(processorId);
+            const PluginDescription* selectedProcessor = processorSelector.selectProcessor(project.getSelectedTrack(), buttonIndex);
+            if (selectedProcessor != nullptr) {
+                project.createAndAddProcessor(*selectedProcessor);
             }
         }
     }

@@ -388,6 +388,14 @@ public:
         processorIds.getKnownPluginList().addToMenu(menu, processorIds.getPluginSortMethod());
     }
 
+    KnownPluginList& getKnownPluginList() {
+        return processorIds.getKnownPluginList();
+    }
+
+    KnownPluginList::SortMethod getPluginSortMethod() {
+        return processorIds.getPluginSortMethod();
+    }
+
     AudioPluginFormatManager& getFormatManager() {
         return processorIds.getFormatManager();
     }
