@@ -17,10 +17,10 @@ struct Parameter : public AudioProcessorParameterWithID, private Utilities::Valu
     explicit Parameter(AudioProcessorParameter *parameter)
         : AudioProcessorParameterWithID(parameter->getName(32), parameter->getName(32),
                                         parameter->getLabel(), parameter->getCategory()),
+          sourceParameter(parameter),
           defaultValue(parameter->getDefaultValue()), value(parameter->getDefaultValue()),
           valueToTextFunction([this](float value) { return sourceParameter->getText(value, 4) + " " + sourceParameter->getLabel(); }),
-          textToValueFunction([this](const String& text) { return sourceParameter->getValueForText(text); }),
-          sourceParameter(parameter) {
+          textToValueFunction([this](const String& text) { return sourceParameter->getValueForText(text); }) {
             sourceParameter->addListener(this);
         }
 
@@ -96,6 +96,9 @@ struct Parameter : public AudioProcessorParameterWithID, private Utilities::Valu
             if (label != nullptr) {
                 label->setText(name, dontSendNotification);
             }
+            // referTo({}) can call these value functions to notify listeners, and they may refer to dead params.
+            slider->textFromValueFunction = nullptr;
+            slider->valueFromTextFunction = nullptr;
             slider->getValueObject().referTo({});
             slider->setNormalisableRange(range);
             slider->textFromValueFunction = valueToTextFunction;
@@ -157,6 +160,8 @@ struct Parameter : public AudioProcessorParameterWithID, private Utilities::Valu
                 }
             }
         }
+
+        JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(Parameter)
     };
 
     StatefulAudioProcessorWrapper(AudioPluginInstance *processor, ValueTree state, UndoManager &undoManager) :
