@@ -18,7 +18,7 @@ public:
         this->push2Component = push2Component;
     }
 
-    ~MidiControlHandler() {
+    ~MidiControlHandler() override {
         project.removeChangeListener(this);
     }
 
@@ -31,22 +31,24 @@ public:
 
         if (Push2::isEncoderCcNumber(ccNumber)) {
             int parameterIndex = -1;
+            AudioProcessor *processor = nullptr;
             if (ccNumber == Push2::masterKnob) {
-                StatefulAudioProcessorWrapper *gainProcessor = audioGraphBuilder.getMasterGainProcessor();
-                if (gainProcessor != nullptr) {
-                    parameterIndex = 1; // TODO get by name since indexes change
-                }
+                processor = audioGraphBuilder.getMasterGainProcessor()->processor;
+                parameterIndex = 1;
             } else if (Push2::isAboveScreenEncoderCcNumber(ccNumber)) {
                 if (currentProcessorToControl != nullptr) {
+                    processor = currentProcessorToControl->processor;
                     parameterIndex = ccNumber - Push2::ccNumberForTopKnobIndex(0);
                 }
             }
 
             if (parameterIndex != -1) {
-                float value = Push2::encoderCcMessageToRotationChange(midiMessage);
-                StatefulAudioProcessorWrapper::Parameter *parameter = currentProcessorToControl->getParameterObject(parameterIndex);
-                float parameterValue = parameter->getValue();
-                parameter->setValue(parameterValue + value / 5.0f); // TODO move manual scaling to param
+                if (processor != nullptr) {
+                    if (auto *parameter = processor->getParameters()[parameterIndex]) {
+                        float value = Push2::encoderCcMessageToRotationChange(midiMessage);
+                        parameter->setValueNotifyingHost(jlimit(0.0f, 1.0f, parameter->getValue() + value / 4.0f));
+                    }
+                }
             }
             return;
         }
@@ -107,6 +109,8 @@ private:
     bool isShiftHeld = false;
 
     void itemSelected(const ValueTree& item) override {
+        currentProcessorToControl = nullptr;
+
         if (item.hasType(IDs::PROCESSOR)) {
             currentProcessorToControl = audioGraphBuilder.getProcessorWrapperForState(item);
         }
