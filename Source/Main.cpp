@@ -5,8 +5,6 @@
 #include <view/ArrangeView.h>
 #include <view/ValueTreeEditor.h>
 #include <view/GraphEditorPanel.h>
-#include <memory>
-#include <processors/InternalPluginFormat.h>
 
 File getSaveFile() {
     return File::getSpecialLocation(File::userDesktopDirectory).getChildFile("ValueTreeDemoEdit.xml");

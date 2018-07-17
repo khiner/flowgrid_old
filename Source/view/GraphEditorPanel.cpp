@@ -1,6 +1,6 @@
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "GraphEditorPanel.h"
-#include <memory>
+#include "Project.h"
 
 struct GraphEditorPanel::PinComponent : public Component,
                                         public SettableTooltipClient {

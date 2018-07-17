@@ -1,6 +1,5 @@
-#pragma  once
+#pragma once
 
-#include <unordered_map>
 #include <Utilities.h>
 #include "Identifiers.h"
 

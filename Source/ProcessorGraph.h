@@ -2,10 +2,11 @@
 
 #include <Identifiers.h>
 #include <view/PluginWindow.h>
+#include <processors/StatefulAudioProcessorWrapper.h>
 
 #include "JuceHeader.h"
-#include "ValueTreeItems.h"
 #include "processors/ProcessorIds.h"
+#include "Project.h"
 
 class ProcessorGraph : public AudioProcessorGraph, private ValueTree::Listener, private ProjectChangeListener, private ChangeListener {
 public:
