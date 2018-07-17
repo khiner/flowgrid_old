@@ -42,9 +42,7 @@ struct Parameter : public AudioProcessorParameterWithID, private Utilities::Valu
 
             if (value != newValue || listenersNeedCalling) {
                 value = newValue;
-
                 listenersNeedCalling = false;
-
                 needsUpdate = true;
             }
         }
@@ -68,8 +66,8 @@ struct Parameter : public AudioProcessorParameterWithID, private Utilities::Valu
 
         void setNewState(const ValueTree& v, UndoManager *undoManager) {
             state = v;
-            this->state.addListener(this);
             this->undoManager = undoManager;
+            this->state.addListener(this);
             updateFromValueTree();
         }
 
