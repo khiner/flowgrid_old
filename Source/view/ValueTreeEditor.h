@@ -9,7 +9,6 @@ class ValueTreeEditor : public Component,
                         public DragAndDropContainer,
                         private ProjectChangeListener,
                         private Button::Listener,
-                        private ComboBox::Listener,
                         private Timer {
 public:
     ValueTreeEditor(const ValueTree &state, UndoManager &undoManager, Project& project, ProcessorGraph &audioGraphBuilder)
@@ -25,15 +24,14 @@ public:
         project.addChangeListener(this);
         addAndMakeVisible(*(selectionPanel = std::make_unique<SelectionPanel>(project, audioGraphBuilder)));
 
-        Utilities::visitComponents({&undoButton, &redoButton, &createTrackButton, &addProcessorComboBox},
+        Utilities::visitComponents({&undoButton, &redoButton, &createTrackButton, &addProcessorButton},
                                    [this](Component *c) { addAndMakeVisible(c); });
 
         undoButton.addListener(this);
         redoButton.addListener(this);
         createTrackButton.addListener(this);
-        addProcessorComboBox.addListener(this);
-        addProcessorComboBox.addItemList(allProcessorIds, 1);
-        addProcessorComboBox.setTextWhenNothingSelected("Create processor");
+        addProcessorButton.addListener(this);
+
         startTimer(500);
         setSize(800, 600);
     }
@@ -54,7 +52,7 @@ public:
         createTrackButton.setBounds(buttons.removeFromLeft(100));
 
         buttons.removeFromLeft(6);
-        addProcessorComboBox.setBounds(buttons.removeFromLeft(200));
+        addProcessorButton.setBounds(buttons.removeFromLeft(120));
 
         r.removeFromBottom(4);
         selectionPanel->setBounds(r.removeFromBottom(120));
@@ -70,17 +68,17 @@ public:
             undoManager.redo();
         } else if (b == &createTrackButton) {
             project.createAndAddTrack();
-        }
-    }
-
-    void comboBoxChanged(ComboBox* cb) override  {
-        if (cb == &addProcessorComboBox) {
+        } else if (b == &addProcessorButton) {
             if (project.getSelectedTrack().isValid()) {
-                // TODO get full plugin descriptor by using KnownPluginList
-                //project.createAndAddProcessor(allProcessorIds[cb->getSelectedId() - 1]);
+                addProcessorMenu = std::make_unique<PopupMenu>();
+                project.addPluginsToMenu(*addProcessorMenu);
+                addProcessorMenu->showMenuAsync({}, ModalCallbackFunction::create([this](int r) {
+                    if (auto *description = project.getChosenType(r)) {
+                        project.createAndAddProcessor(*description);
+                    }
+                }));
             }
         }
-        cb->setSelectedItemIndex(-1, dontSendNotification); // don't keep displaying the selected item
     }
 
     void sendSelectMessageForFirstSelectedItem() {
@@ -93,18 +91,12 @@ public:
 
     void itemSelected(const ValueTree& item) override {
         const ValueTree &selectedTrack = project.getSelectedTrack();
-        addProcessorComboBox.setVisible(selectedTrack.isValid());
-        const StringArray &availableProcessorIdsForTrack = getAvailableProcessorIdsForTrack(selectedTrack);
-        for (int processorIndex = 0; processorIndex < addProcessorComboBox.getNumItems(); processorIndex++) {
-            bool shouldBeEnabled = availableProcessorIdsForTrack.contains(addProcessorComboBox.getItemText(processorIndex));
-            addProcessorComboBox.setItemEnabled(processorIndex + 1, shouldBeEnabled);
-        }
-        
+        addProcessorButton.setVisible(selectedTrack.isValid());
     }
 
     void itemRemoved(const ValueTree& item) override {
         if (item == project.getSelectedTrack()) {
-            addProcessorComboBox.setVisible(false);
+            addProcessorButton.setVisible(false);
         }
     }
 
@@ -112,12 +104,13 @@ private:
     TreeView treeView;
     TextButton undoButton{"Undo"}, redoButton{"Redo"}, createTrackButton{"Add Track"};
 
-    ComboBox addProcessorComboBox{"Add Processor"};
+    TextButton addProcessorButton{"Add Processor"};
 
     UndoManager &undoManager;
     Project &project;
 
     std::unique_ptr<SelectionPanel> selectionPanel;
+    std::unique_ptr<PopupMenu> addProcessorMenu;
 
     void timerCallback() override {
         undoManager.beginNewTransaction();

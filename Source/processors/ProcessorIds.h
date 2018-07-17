@@ -78,14 +78,13 @@ public:
         this->pluginSortMethod = pluginSortMethod;
     }
 
-    void addPluginsToMenu(PopupMenu& m) const {
+    void addPluginsToMenu(PopupMenu& menu) const {
         int i = 0;
         for (auto* t : internalTypes)
-            m.addItem (++i, t->name + " (" + t->pluginFormatName + ")", true);
+            menu.addItem(++i, t->name + " (" + t->pluginFormatName + ")", true);
+        menu.addSeparator();
 
-        m.addSeparator();
-
-        knownPluginList.addToMenu(m, pluginSortMethod);
+        knownPluginList.addToMenu(menu, pluginSortMethod);
     }
 
     const PluginDescription* getChosenType(const int menuId) const {

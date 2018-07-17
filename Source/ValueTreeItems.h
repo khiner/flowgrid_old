@@ -813,10 +813,10 @@ public:
         ProjectChangeBroadcaster::sendItemSelectedMessage(item);
     }
 
-    void addPluginsToMenu(PopupMenu& m) const {
-        processorIds.addPluginsToMenu(m);
+    void addPluginsToMenu(PopupMenu& menu) const {
+        processorIds.addPluginsToMenu(menu);
     }
-
+    
     AudioPluginFormatManager& getFormatManager() {
         return processorIds.getFormatManager();
     }
