@@ -7,22 +7,6 @@
 #include "BalanceProcessor.h"
 #include "InternalPluginFormat.h"
 
-const static StringArray processorIdsWithoutMixer {GainProcessor::getIdentifier(), BalanceProcessor::getIdentifier(),
-                                                   SineBank::getIdentifier() };
-static StringArray allProcessorIds {MixerChannelProcessor::getIdentifier(), GainProcessor::getIdentifier(),
-                                     BalanceProcessor::getIdentifier(), SineBank::getIdentifier() };
-
-static const StringArray getAvailableProcessorIdsForTrack(const ValueTree& track) {
-    if (!track.isValid()) {
-        return StringArray();
-    } else if (track.getChildWithProperty(IDs::name, MixerChannelProcessor::getIdentifier()).isValid()) {
-        // at most one MixerChannel per track
-        return processorIdsWithoutMixer;
-    } else {
-        return allProcessorIds;
-    }
-}
-
 class ProcessorIds : private ChangeListener {
 public:
     ProcessorIds() {
@@ -78,20 +62,15 @@ public:
         this->pluginSortMethod = pluginSortMethod;
     }
 
-    void addPluginsToMenu(PopupMenu& menu) const {
-        int i = 0;
-        for (auto* t : internalTypes)
-            menu.addItem(++i, t->name + " (" + t->pluginFormatName + ")", true);
-        menu.addSeparator();
-
-        knownPluginList.addToMenu(menu, pluginSortMethod);
-    }
-
     const PluginDescription* getChosenType(const int menuId) const {
         if (menuId >= 1 && menuId < 1 + internalTypes.size())
             return internalTypes[menuId - 1];
 
         return knownPluginList.getType(knownPluginList.getIndexChosenByMenu(menuId));
+    }
+
+    const OwnedArray<PluginDescription>& getInternalTypes() const {
+        return internalTypes;
     }
 
 private:

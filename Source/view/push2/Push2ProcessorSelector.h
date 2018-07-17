@@ -4,13 +4,13 @@
 
 class Push2ProcessorSelector : public Component {
 public:
-    explicit Push2ProcessorSelector(const StringArray &allProcessorIds) {
-        for (const String &processorId : allProcessorIds) {
-            auto *label = new Label(processorId, processorId);
-            addAndMakeVisible(label);
-            label->setJustificationType(Justification::centred);
-            processorIdLabels.add(label);
-        }
+    explicit Push2ProcessorSelector() {
+//        for (const String &processorId : allProcessorIds) {
+//            auto *label = new Label(processorId, processorId);
+//            addAndMakeVisible(label);
+//            label->setJustificationType(Justification::centred);
+//            processorIdLabels.add(label);
+//        }
     }
 
     void setProcessorIds(const StringArray &processorIds) {

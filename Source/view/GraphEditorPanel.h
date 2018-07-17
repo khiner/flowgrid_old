@@ -9,8 +9,6 @@ public:
 
     ~GraphEditorPanel();
 
-    void createNewPlugin(const PluginDescription &, Point<int> position);
-
     void paint(Graphics &) override;
 
     void resized() override;
@@ -69,9 +67,7 @@ private:
 /**
     A panel that embeds a GraphEditorPanel with a midi keyboard at the bottom.
 */
-class GraphDocumentComponent : public Component,
-                               public DragAndDropTarget,
-                               public DragAndDropContainer {
+class GraphDocumentComponent : public Component {
 public:
     GraphDocumentComponent(ProcessorGraph &graph,
                            Project &project,
@@ -79,21 +75,11 @@ public:
                            AudioDeviceManager &deviceManager,
                            KnownPluginList &pluginList);
 
-    ~GraphDocumentComponent();
-
-    //==============================================================================
-    void createNewPlugin(const PluginDescription &, Point<int> position);
-
-    bool closeAnyOpenPluginWindows();
+    ~GraphDocumentComponent() override;
 
     void resized() override;
 
     void releaseGraph();
-
-    //==============================================================================
-    bool isInterestedInDragSource(const SourceDetails &) override;
-
-    void itemDropped(const SourceDetails &) override;
 
     std::unique_ptr<GraphEditorPanel> graphPanel;
 private:

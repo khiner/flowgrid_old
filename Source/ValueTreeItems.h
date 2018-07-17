@@ -680,20 +680,23 @@ public:
         }
     }
 
-    ValueTree createAndAddProcessor(const PluginDescription &description, ValueTree &track, int slot=-1, bool undoable=true) {
+    ValueTree createAndAddProcessor(const PluginDescription &description, ValueTree track, int slot=-1, bool undoable=true) {
         ValueTree processor(IDs::PROCESSOR);
         Helpers::createUuidProperty(processor);
         processor.setProperty(IDs::id, description.createIdentifierString(), nullptr);
         processor.setProperty(IDs::name, description.name, nullptr);
 
+        // TODO can simplify
         int insertIndex;
-        if (slot == -1) {
+        if (description.name == MixerChannelProcessor::getIdentifier()) {
+            insertIndex = -1;
+            slot = NUM_AVAILABLE_PROCESSOR_SLOTS - 1;
+            processor.setProperty(IDs::PROCESSOR_SLOT, slot, nullptr);
+        } else if (slot == -1) {
             // Insert new processors _right before_ the first g&b processor, or at the end if there isn't one.
             insertIndex = getMaxProcessorInsertIndex(track);
             slot = 0;
-            if (insertIndex == -1 && description.name == MixerChannelProcessor::getIdentifier()) {
-                slot = NUM_AVAILABLE_PROCESSOR_SLOTS - 1;
-            } else if (track.getNumChildren() > 1) {
+            if (track.getNumChildren() > 1) {
                 slot = int(track.getChild(track.getNumChildren() - 2).getProperty(IDs::PROCESSOR_SLOT)) + 1;
             }
             processor.setProperty(IDs::PROCESSOR_SLOT, slot, nullptr);
@@ -708,7 +711,7 @@ public:
         return processor;
     }
 
-    const ValueTree getMixerChannelProcessorForTrack(const ValueTree& track) {
+    const ValueTree getMixerChannelProcessorForTrack(const ValueTree& track) const {
         return track.getChildWithProperty(IDs::name, MixerChannelProcessor::getIdentifier());
     }
 
@@ -813,10 +816,19 @@ public:
         ProjectChangeBroadcaster::sendItemSelectedMessage(item);
     }
 
-    void addPluginsToMenu(PopupMenu& menu) const {
-        processorIds.addPluginsToMenu(menu);
+    void addPluginsToMenu(PopupMenu& menu, const ValueTree& track) const {
+        bool hasMixerChannel = getMixerChannelProcessorForTrack(track).isValid();
+
+        int i = 0;
+        for (auto* t : processorIds.getInternalTypes()) {
+            bool enabled = t->name != MixerChannelProcessor::getIdentifier() || !hasMixerChannel;
+            menu.addItem(++i, t->name + " (" + t->pluginFormatName + ")", enabled);
+        }
+        menu.addSeparator();
+
+        processorIds.getKnownPluginList().addToMenu(menu, processorIds.getPluginSortMethod());
     }
-    
+
     AudioPluginFormatManager& getFormatManager() {
         return processorIds.getFormatManager();
     }

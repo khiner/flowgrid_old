@@ -14,7 +14,7 @@ class Push2Component :
         private ProjectChangeListener {
 public:
     explicit Push2Component(Project &project, ProcessorGraph &audioGraphBuilder)
-            : project(project), audioGraphBuilder(audioGraphBuilder), processorSelector(allProcessorIds) {
+            : project(project), audioGraphBuilder(audioGraphBuilder), processorSelector() {
         startTimer(60);
 
         addChildComponent(processorView);
@@ -77,9 +77,9 @@ private:
                 processorView.setVisible(true);
             }
         }
-        if (project.getSelectedTrack().isValid()) {
-            processorSelector.setProcessorIds(getAvailableProcessorIdsForTrack(project.getSelectedTrack()));
-        }
+//        if (project.getSelectedTrack().isValid()) {
+//            processorSelector.setProcessorIds(getAvailableProcessorIdsForTrack(project.getSelectedTrack()));
+//        }
     }
 
     void itemRemoved(const ValueTree& item) override {

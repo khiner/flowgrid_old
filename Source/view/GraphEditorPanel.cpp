@@ -539,12 +539,6 @@ void GraphEditorPanel::mouseUp(const MouseEvent &) {
 void GraphEditorPanel::mouseDrag(const MouseEvent &e) {
 }
 
-void GraphEditorPanel::createNewPlugin(const PluginDescription &description, Point<int> position) {
-    const auto &gridLocation = graph.positionToGridLocation(position.toDouble() / juce::Point<double>((double) getWidth(), (double) getHeight()));
-    ValueTree track = project.getTrack(gridLocation.x);
-    project.createAndAddProcessor(description, track, gridLocation.y);
-}
-
 GraphEditorPanel::FilterComponent *GraphEditorPanel::getComponentForFilter(const uint32 filterID) const {
     for (auto *fc : nodes)
         if (fc->nodeId == filterID)
@@ -622,11 +616,15 @@ void GraphEditorPanel::updateComponents() {
 }
 
 void GraphEditorPanel::showPopupMenu(Point<int> mousePos) {
+    const auto &gridLocation = graph.positionToGridLocation(mousePos.toDouble() / juce::Point<double>((double) getWidth(), (double) getHeight()));
+    ValueTree track = project.getTrack(gridLocation.x);
+    int slot = gridLocation.y;
+
     menu = std::make_unique<PopupMenu>();
-    project.addPluginsToMenu(*menu);
-    menu->showMenuAsync({}, ModalCallbackFunction::create([this, mousePos](int r) {
+    project.addPluginsToMenu(*menu, track);
+    menu->showMenuAsync({}, ModalCallbackFunction::create([this, track, slot](int r) {
         if (auto *description = project.getChosenType(r)) {
-            createNewPlugin(*description, mousePos);
+            project.createAndAddProcessor(*description, track, slot);
         }
     }));
 }
@@ -779,10 +777,6 @@ void GraphDocumentComponent::resized() {
     graphPanel->setBounds(r);
 }
 
-void GraphDocumentComponent::createNewPlugin(const PluginDescription &desc, Point<int> pos) {
-    graphPanel->createNewPlugin(desc, pos);
-}
-
 void GraphDocumentComponent::releaseGraph() {
     if (graphPanel != nullptr) {
         deviceManager.removeChangeListener(graphPanel.get());
@@ -790,25 +784,4 @@ void GraphDocumentComponent::releaseGraph() {
     }
 
     statusBar = nullptr;
-}
-
-bool GraphDocumentComponent::isInterestedInDragSource(const SourceDetails &details) {
-    return ((dynamic_cast<ListBox *> (details.sourceComponent.get()) != nullptr)
-            && details.description.toString().startsWith("PLUGIN"));
-}
-
-void GraphDocumentComponent::itemDropped(const SourceDetails &details) {
-    auto pluginTypeIndex = details.description.toString()
-            .fromFirstOccurrenceOf("PLUGIN: ", false, false)
-            .getIntValue();
-
-    // must be a valid index!
-    jassert (isPositiveAndBelow(pluginTypeIndex, pluginList.getNumTypes()));
-
-    createNewPlugin(*pluginList.getType(pluginTypeIndex), details.localPosition);
-}
-
-bool GraphDocumentComponent::closeAnyOpenPluginWindows() {
-    //return graphPanel->graph.closeAnyOpenPluginWindows();
-    return true;
 }

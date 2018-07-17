@@ -71,7 +71,7 @@ public:
         } else if (b == &addProcessorButton) {
             if (project.getSelectedTrack().isValid()) {
                 addProcessorMenu = std::make_unique<PopupMenu>();
-                project.addPluginsToMenu(*addProcessorMenu);
+                project.addPluginsToMenu(*addProcessorMenu, project.getSelectedTrack());
                 addProcessorMenu->showMenuAsync({}, ModalCallbackFunction::create([this](int r) {
                     if (auto *description = project.getChosenType(r)) {
                         project.createAndAddProcessor(*description);

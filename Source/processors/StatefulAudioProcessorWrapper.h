@@ -69,6 +69,7 @@ struct Parameter : public AudioProcessorParameterWithID, private Utilities::Valu
             this->undoManager = undoManager;
             this->state.addListener(this);
             updateFromValueTree();
+            copyValueToValueTree();
         }
 
         void copyValueToValueTree() {
