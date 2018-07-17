@@ -381,7 +381,7 @@ public:
         int i = 0;
         for (auto* t : processorIds.getInternalTypes()) {
             bool enabled = t->name != MixerChannelProcessor::getIdentifier() || !hasMixerChannel;
-            menu.addItem(++i, t->name + " (" + t->pluginFormatName + ")", enabled);
+            menu.addItem(++i, t->name, enabled);
         }
         menu.addSeparator();
 
