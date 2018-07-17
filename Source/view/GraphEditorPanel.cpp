@@ -287,19 +287,17 @@ struct GraphEditorPanel::FilterComponent : public Component,
                         case 3: {
                             if (auto *node = graph.getNodeForId(nodeId))
                                 node->setBypassed(!node->isBypassed());
-
                             repaint();
-
                             break;
                         }
                         case 10:
-                            //showWindow(PluginWindow::Type::normal);
+                            showWindow(PluginWindow::Type::normal);
                             break;
                         case 11:
-                            //showWindow(PluginWindow::Type::programs);
+                            showWindow(PluginWindow::Type::programs);
                             break;
                         case 12:
-                            //showWindow(PluginWindow::Type::generic);
+                            showWindow(PluginWindow::Type::generic);
                             break;
                         default:
                             break;
@@ -307,11 +305,11 @@ struct GraphEditorPanel::FilterComponent : public Component,
                 }));
     }
 
-//    void showWindow(PluginWindow::Type type) {
-//        if (auto node = graph.graph.getNodeForId(nodeId))
-//            if (auto *w = graph.getOrCreateWindowFor(node, type))
-//                w->toFront(true);
-//    }
+    void showWindow(PluginWindow::Type type) {
+        if (auto node = graph.getNodeForId(nodeId))
+            if (auto *w = graph.getOrCreateWindowFor(node, type))
+                w->toFront(true);
+    }
 
     void parameterValueChanged(int, float) override {
         repaint();

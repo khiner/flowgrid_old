@@ -1272,7 +1272,7 @@ add_executable (APP
     "../../JuceLibraryCode/include_juce_gui_basics.mm"
     "../../JuceLibraryCode/include_juce_gui_extra.mm"
     "../../JuceLibraryCode/JuceHeader.h"
-        ../../Source/processors/MixerChannelProcessor.h ../../Source/processors/SineBank.h ../../Source/processors/GainProcessor.h ../../Source/processors/DefaultAudioProcessor.h ../../Source/ProcessorGraph.h ../../Source/MidiControlHandler.h ../../Source/processors/StatefulAudioProcessorWrapper.h ../../Source/Parameter.h ../../Source/view/push2/Push2ProcessorView.h ../../Source/view/push2/Push2ProcessorSelector.h ../../Source/processors/ProcessorIds.h ../../Source/view/GraphEditorPanel.h ../../Source/view/GraphEditorPanel.cpp ../../Source/processors/BalanceProcessor.h ../../Source/ApplicationKeyListener.h ../../Source/processors/InternalPluginFormat.h)
+        ../../Source/processors/MixerChannelProcessor.h ../../Source/processors/SineBank.h ../../Source/processors/GainProcessor.h ../../Source/processors/DefaultAudioProcessor.h ../../Source/ProcessorGraph.h ../../Source/MidiControlHandler.h ../../Source/processors/StatefulAudioProcessorWrapper.h ../../Source/Parameter.h ../../Source/view/push2/Push2ProcessorView.h ../../Source/view/push2/Push2ProcessorSelector.h ../../Source/processors/ProcessorIds.h ../../Source/view/GraphEditorPanel.h ../../Source/view/GraphEditorPanel.cpp ../../Source/processors/BalanceProcessor.h ../../Source/ApplicationKeyListener.h ../../Source/processors/InternalPluginFormat.h ../../Source/view/PluginWindow.h)
 
 set_source_files_properties ("../../Resources/PushStartup.png" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/audio_sources/ToneSourceWithParameters.h" PROPERTIES HEADER_FILE_ONLY TRUE)

@@ -1,12 +1,13 @@
 #pragma once
 
 #include <Identifiers.h>
+#include <view/PluginWindow.h>
 
 #include "JuceHeader.h"
 #include "ValueTreeItems.h"
 #include "processors/ProcessorIds.h"
 
-class ProcessorGraph : public AudioProcessorGraph, private ValueTree::Listener, private ProjectChangeListener {
+class ProcessorGraph : public AudioProcessorGraph, private ValueTree::Listener, private ProjectChangeListener, private ChangeListener {
 public:
     explicit ProcessorGraph(Project &project, UndoManager &undoManager)
             : project(project), undoManager(undoManager) {
@@ -27,6 +28,7 @@ public:
         }
         this->project.getTracks().addListener(this);
         this->project.addChangeListener(this);
+        this->addChangeListener(this);
         initializing = false;
     }
 
@@ -89,6 +91,30 @@ public:
     StatefulAudioProcessorWrapper *getMasterGainProcessor() {
         const ValueTree &gain = project.getMixerChannelProcessorForTrack(project.getMasterTrack());
         return getProcessorWrapperForState(gain);
+    }
+
+    PluginWindow* getOrCreateWindowFor(AudioProcessorGraph::Node* node, PluginWindow::Type type) {
+        jassert(node != nullptr);
+
+        for (auto* w : activePluginWindows)
+            if (w->node == node && w->type == type)
+                return w;
+
+        if (auto* processor = node->getProcessor()) {
+            if (auto* plugin = dynamic_cast<AudioPluginInstance*>(processor)) {
+                auto description = plugin->getPluginDescription();
+            }
+
+            return activePluginWindows.add(new PluginWindow(node, type, activePluginWindows));
+        }
+
+        return nullptr;
+    }
+
+    bool closeAnyOpenPluginWindows() {
+        bool wasEmpty = activePluginWindows.isEmpty();
+        activePluginWindows.clear();
+        return !wasEmpty;
     }
 
     void beginDraggingNode(NodeID nodeId) {
@@ -246,6 +272,7 @@ private:
     UndoManager &undoManager;
     Node::Ptr audioOutputNode;
     OwnedArray<StatefulAudioProcessorWrapper> processerWrappers;
+    OwnedArray<PluginWindow> activePluginWindows;
 
     bool initializing { true };
     bool isMoving { false };
@@ -521,4 +548,14 @@ private:
     };
 
     void itemRemoved(const ValueTree&) override {};
+
+    void changeListenerCallback(ChangeBroadcaster* cb) override {
+        if (cb == this) {
+            for (int i = activePluginWindows.size(); --i >= 0;) {
+                if (!getNodes().contains(activePluginWindows.getUnchecked(i)->node)) {
+                    activePluginWindows.remove(i);
+                }
+            }
+        }
+    }
 };
