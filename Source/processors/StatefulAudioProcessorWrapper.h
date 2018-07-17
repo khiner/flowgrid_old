@@ -1,24 +1,23 @@
 #pragma  once
 
-#include "DefaultAudioProcessor.h"
 #include <unordered_map>
 #include <Utilities.h>
 #include "Identifiers.h"
 
-class StatefulAudioProcessorWrapper {
+class StatefulAudioProcessorWrapper : private Timer {
 public:
 struct Parameter : public AudioProcessorParameterWithID, private Utilities::ValueTreePropertyChangeListener, private AudioProcessorParameter::Listener {
         Parameter(const String &parameterID, const String &paramName, const String &labelText, NormalisableRange<double> range,
-                  float defaultVal, std::function<String (const float)> valueToTextFunction,
+                  float defaultValue, std::function<String (const float)> valueToTextFunction,
                   std::function<float(const String &)> textToValueFunction)
                 : AudioProcessorParameterWithID(parameterID, paramName, labelText, Category::genericParameter),
                   range(std::move(range)), valueToTextFunction(std::move(valueToTextFunction)),
-                  textToValueFunction(std::move(textToValueFunction)), defaultValue(defaultVal) {}
+                  textToValueFunction(std::move(textToValueFunction)), defaultValue(defaultValue), value(defaultValue) {}
 
     explicit Parameter(AudioProcessorParameter *parameter)
         : AudioProcessorParameterWithID(parameter->getName(32), parameter->getName(32),
                                         parameter->getLabel(), parameter->getCategory()),
-          defaultValue(parameter->getDefaultValue()),
+          defaultValue(parameter->getDefaultValue()), value(parameter->getDefaultValue()),
           valueToTextFunction([this](float value) { return sourceParameter->getText(value, 4) + " " + sourceParameter->getLabel(); }),
           textToValueFunction([this](const String& text) { return sourceParameter->getValueForText(text); }),
           sourceParameter(parameter) {
@@ -34,7 +33,7 @@ struct Parameter : public AudioProcessorParameterWithID, private Utilities::Valu
         }
 
         void parameterValueChanged(int parameterIndex, float newValue) override {
-            state.setProperty(IDs::value, newValue, undoManager);
+            setValue(newValue);
         }
 
         void parameterGestureChanged(int parameterIndex, bool gestureIsStarting) override {}
@@ -44,15 +43,26 @@ struct Parameter : public AudioProcessorParameterWithID, private Utilities::Valu
         }
 
         void setValue(float newValue) override {
-            float clampedNewValue = newValue < 0 ? 0 : (newValue > 1 ? 1 : newValue);
-            auto convertedValue = (float) range.convertFrom0to1(clampedNewValue);
-            listeners.call([=] (AudioProcessorValueTreeState::Listener& l) { l.parameterChanged(paramID, convertedValue); });
+            newValue = (float) range.snapToLegalValue(range.convertFrom0to1(newValue));
 
-            state.setProperty(IDs::value, convertedValue, undoManager);
+            if (value != newValue || listenersNeedCalling) {
+                value = newValue;
+
+                listeners.call ([=] (AudioProcessorValueTreeState::Listener& l) { l.parameterChanged (paramID, value); });
+                listenersNeedCalling = false;
+
+                needsUpdate = true;
+            }
         }
 
-        void setUnnormalisedValue(float newUnnormalisedValue) {
-            setValue((float) range.convertTo0to1(newUnnormalisedValue));
+        void setUnnormalisedValue (float newUnnormalisedValue) {
+            if (value != newUnnormalisedValue) {
+                setValueNotifyingHost((float) range.convertTo0to1(newUnnormalisedValue));
+            }
+        }
+
+        void updateFromValueTree() {
+            setUnnormalisedValue(state.getProperty(IDs::value, defaultValue));
         }
 
         float getRawValue() const {
@@ -66,17 +76,20 @@ struct Parameter : public AudioProcessorParameterWithID, private Utilities::Valu
         void setNewState(const ValueTree& v, UndoManager *undoManager) {
             state = v;
             this->state.addListener(this);
-            //updateFromValueTree(); TODO
-            if (!state.hasProperty(IDs::value)) {
-                state.setProperty(IDs::value, defaultValue, nullptr);
-            }
-            state.sendPropertyChangeMessage(IDs::value);
-
             this->undoManager = undoManager;
+            updateFromValueTree();
         }
 
-        void updateFromValueTree() {
-            setUnnormalisedValue(getRawValue());
+
+        void copyValueToValueTree() {
+            if (auto* valueProperty = state.getPropertyPointer(IDs::value)) {
+                if ((float) *valueProperty != value) {
+                    ScopedValueSetter<bool> svs(ignoreParameterChangedCallbacks, true);
+                    state.setProperty(IDs::value, value, undoManager);
+                }
+            } else {
+                state.setProperty(IDs::value, value, nullptr);
+            }
         }
 
         void attachSlider(Slider *slider, Label *label=nullptr) {
@@ -120,21 +133,27 @@ struct Parameter : public AudioProcessorParameterWithID, private Utilities::Valu
         NormalisableRange<double> range;
         std::function<String(const float)> valueToTextFunction;
         std::function<float(const String &)> textToValueFunction;
-        float defaultValue;
+        float value, defaultValue;
+        std::atomic<bool> needsUpdate { true };
 
         ValueTree state;
         UndoManager *undoManager { nullptr };
 
-        AudioProcessorParameter *sourceParameter { nullptr };
-
     private:
+        AudioProcessorParameter *sourceParameter { nullptr };
         ListenerList<AudioProcessorValueTreeState::Listener> listeners;
+        bool listenersNeedCalling { true };
+        bool ignoreParameterChangedCallbacks = false;
 
         void valueTreePropertyChanged(ValueTree& tree, const Identifier& p) override {
+            if (ignoreParameterChangedCallbacks)
+                return;
+
             if (p == IDs::value) {
-                setUnnormalisedValue(float(tree[IDs::value]));
+                auto value = float(tree[IDs::value]);
+                setUnnormalisedValue(value);
                 if (sourceParameter != nullptr) {
-                    sourceParameter->setValue(tree[IDs::value]);
+                    sourceParameter->setValue(value);
                 }
             }
         }
@@ -144,6 +163,7 @@ struct Parameter : public AudioProcessorParameterWithID, private Utilities::Valu
             processor(processor), state(std::move(state)), undoManager(undoManager) {
         processor->enableAllBuses();
         updateValueTree();
+        startTimerHz(10);
     }
 
     Parameter *getParameterObject(int parameterIndex) {
@@ -178,8 +198,47 @@ struct Parameter : public AudioProcessorParameterWithID, private Utilities::Valu
         return v;
     }
 
+    bool flushParameterValuesToValueTree() {
+        ScopedLock lock(valueTreeChanging);
+
+        bool anythingUpdated = false;
+
+        if (!parameters.isEmpty()) {
+            for (auto *ap : parameters) {
+                bool needsUpdateTestValue = true;
+
+                if (ap->needsUpdate.compare_exchange_strong(needsUpdateTestValue, false)) {
+                    ap->copyValueToValueTree();
+                    anythingUpdated = true;
+                }
+            }
+        } else {
+            for (auto *ap : processor->getParameters()) {
+                if (auto *p = dynamic_cast<Parameter *>(ap)) {
+                    bool needsUpdateTestValue = true;
+
+                    if (p->needsUpdate.compare_exchange_strong(needsUpdateTestValue, false)) {
+                        p->copyValueToValueTree();
+                        anythingUpdated = true;
+                    }
+                }
+            }
+        }
+
+        return anythingUpdated;
+
+    }
+
+    // TODO only one timer callback for all processors
+    void timerCallback() override {
+        auto anythingUpdated = flushParameterValuesToValueTree();
+        startTimer(anythingUpdated ? 1000 / 50 : jlimit(50, 500, getTimerInterval() + 20));
+    }
+
     AudioPluginInstance *processor;
     ValueTree state;
     UndoManager &undoManager;
     OwnedArray<Parameter> parameters;
+
+    CriticalSection valueTreeChanging;
 };

@@ -2,7 +2,7 @@
 
 #include <audio_sources/ToneSourceWithParameters.h>
 #include "JuceHeader.h"
-#include "StatefulAudioProcessorWrapper.h"
+#include "DefaultAudioProcessor.h"
 
 class SineBank : public DefaultAudioProcessor {
 public:

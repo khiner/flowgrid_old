@@ -1,18 +1,16 @@
 #pragma once
 
 #include "JuceHeader.h"
-#include "StatefulAudioProcessorWrapper.h"
+#include "DefaultAudioProcessor.h"
 
 class MixerChannelProcessor : public DefaultAudioProcessor {
 public:
     explicit MixerChannelProcessor(const PluginDescription& description) :
-            DefaultAudioProcessor(description) {
-        balanceParameter = new StatefulAudioProcessorWrapper::Parameter("balance", "Balance", "",
-                                         NormalisableRange<double>(0.0f, 1.0f), 0.5f,
-                                         [](float value) { return String(value, 3); }, nullptr);
-        gainParameter = new StatefulAudioProcessorWrapper::Parameter("gain", "Gain", "dB",
-                                      NormalisableRange<double>(0.0f, 1.0f), 0.5f,
-                                      [](float value) { return String(Decibels::gainToDecibels(value), 3) + " dB"; }, nullptr);
+            DefaultAudioProcessor(description),
+            balanceParameter(new SParameter("balance", "Balance", "", NormalisableRange<double>(0.0f, 1.0f), balance.getTargetValue(),
+                                            [](float value) { return String(value, 3); }, nullptr)),
+            gainParameter(new SParameter("gain", "Gain", "dB", NormalisableRange<double>(0.0f, 1.0f), gain.getTargetValue(),
+                                         [](float value) { return String(Decibels::gainToDecibels(value), 3) + " dB"; }, nullptr)) {
         balanceParameter->addListener(this);
         gainParameter->addListener(this);
 
@@ -20,7 +18,7 @@ public:
         addParameter(gainParameter);
     }
 
-    ~MixerChannelProcessor() {
+    ~MixerChannelProcessor() override {
         gainParameter->removeListener(this);
         balanceParameter->removeListener(this);
     }
@@ -67,9 +65,9 @@ public:
     }
 
 private:
+    LinearSmoothedValue<float> balance { 0.5 };
+    LinearSmoothedValue<float> gain { 0.5 };
+
     StatefulAudioProcessorWrapper::Parameter *balanceParameter;
     StatefulAudioProcessorWrapper::Parameter *gainParameter;
-
-    LinearSmoothedValue<float> balance;
-    LinearSmoothedValue<float> gain;
 };

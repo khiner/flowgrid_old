@@ -1,6 +1,9 @@
 #pragma once
 
 #include "JuceHeader.h"
+#include "StatefulAudioProcessorWrapper.h"
+
+using SParameter = StatefulAudioProcessorWrapper::Parameter;
 
 class DefaultAudioProcessor : public AudioPluginInstance, public AudioProcessorValueTreeState::Listener {
 public:
