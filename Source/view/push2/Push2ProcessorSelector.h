@@ -16,9 +16,15 @@ public:
     void setVisible(bool visible) override {
         Component::setVisible(visible);
         if (visible) {
-            rootTree = std::unique_ptr<KnownPluginList::PluginTree>(
-                    project.getKnownPluginList().createTree(project.getPluginSortMethod()));
-            setCurrentTree(rootTree.get());
+            rootTree = KnownPluginList::PluginTree();
+            KnownPluginList::PluginTree *internalPluginTree = project.getKnownPluginListInternal().createTree(project.getPluginSortMethod());
+            internalPluginTree->folder = "Internal";
+            KnownPluginList::PluginTree *externalPluginTree = project.getKnownPluginListExternal().createTree(project.getPluginSortMethod());
+            externalPluginTree->folder = "External";
+
+            rootTree.subFolders.add(internalPluginTree);
+            rootTree.subFolders.add(externalPluginTree);
+            setCurrentTree(&rootTree);
         } else {
             setCurrentTree(nullptr);
         }
@@ -51,7 +57,7 @@ public:
 
 private:
     Project& project;
-    std::unique_ptr<KnownPluginList::PluginTree> rootTree;
+    KnownPluginList::PluginTree rootTree;
     KnownPluginList::PluginTree* currentTree{};
     OwnedArray<Label> labels;
 

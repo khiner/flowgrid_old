@@ -378,18 +378,23 @@ public:
     void addPluginsToMenu(PopupMenu& menu, const ValueTree& track) const {
         bool hasMixerChannel = getMixerChannelProcessorForTrack(track).isValid();
 
-        int i = 0;
-        for (auto* t : processorIds.getInternalTypes()) {
-            bool enabled = t->name != MixerChannelProcessor::getIdentifier() || !hasMixerChannel;
-            menu.addItem(++i, t->name, enabled);
-        }
-        menu.addSeparator();
+        PopupMenu internalSubMenu;
+        PopupMenu externalSubMenu;
 
-        processorIds.getKnownPluginList().addToMenu(menu, processorIds.getPluginSortMethod());
+        processorIds.getKnownPluginListInternal().addToMenu(internalSubMenu, processorIds.getPluginSortMethod());
+        processorIds.getKnownPluginListExternal().addToMenu(externalSubMenu, processorIds.getPluginSortMethod(), String(), processorIds.getKnownPluginListInternal().getNumTypes());
+
+        menu.addSubMenu("Internal", internalSubMenu, true);
+        menu.addSeparator();
+        menu.addSubMenu("External", externalSubMenu, true);
     }
 
-    KnownPluginList& getKnownPluginList() {
-        return processorIds.getKnownPluginList();
+    KnownPluginList &getKnownPluginListInternal() {
+        return processorIds.getKnownPluginListInternal();
+    }
+
+    KnownPluginList &getKnownPluginListExternal() {
+        return processorIds.getKnownPluginListExternal();
     }
 
     KnownPluginList::SortMethod getPluginSortMethod() {

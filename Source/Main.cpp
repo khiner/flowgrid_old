@@ -10,7 +10,7 @@ File getSaveFile() {
     return File::getSpecialLocation(File::userDesktopDirectory).getChildFile("ValueTreeDemoEdit.xml");
 }
 
-class SoundMachineApplication : public JUCEApplication, public MenuBarModel, private ChangeListener {
+class SoundMachineApplication : public JUCEApplication, public MenuBarModel {
 public:
     SoundMachineApplication() : project(Utilities::loadValueTree(getSaveFile(), true), undoManager, processorIds),
                                 applicationKeyListener(project, undoManager),
@@ -220,20 +220,6 @@ private:
         auto *w = o.create();
         // TODO handle load/save of audio settings state in callback (like plugin host example)
         w->enterModalState(true, ModalCallbackFunction::create([this](int) {}), true);
-    }
-
-    void changeListenerCallback(ChangeBroadcaster* changed) override {
-        if (changed == &processorIds.getKnownPluginList()) {
-            menuItemsChanged();
-            // save the plugin list every time it gets changed, so that if we're scanning
-            // and it crashes, we've still saved the previous ones
-            std::unique_ptr<XmlElement> savedPluginList(processorIds.getKnownPluginList().createXml());
-
-            if (savedPluginList != nullptr) {
-                processorIds.getApplicationProperties().getUserSettings()->setValue("pluginList", savedPluginList.get());
-                processorIds.getApplicationProperties().saveIfNeeded();
-            }
-        }
     }
 };
 
