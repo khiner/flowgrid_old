@@ -30,7 +30,6 @@ public:
         }
     }
 
-
     const PluginDescription* selectProcessor(const ValueTree &track, int index) {
         if (currentTree == nullptr)
             return nullptr;
@@ -40,7 +39,7 @@ public:
             return nullptr;
         } else {
             index -= currentTree->subFolders.size();
-            if (index < currentTree->plugins.size()) {
+            if (index < currentTree->plugins.size() && labels[index]->isEnabled()) {
                 return currentTree->plugins[index];
             }
         }
@@ -64,6 +63,7 @@ private:
     void setCurrentTree(KnownPluginList::PluginTree* tree) {
         currentTree = tree;
 
+        bool disableMixerChannel = project.getMixerChannelProcessorForTrack(project.getSelectedTrack()).isValid();
         for (auto* label : labels)
             label->setVisible(false);
 
@@ -82,6 +82,7 @@ private:
             if (i < labels.size()) {
                 labels[i]->setText(plugin->name, dontSendNotification);
                 labels[i]->setVisible(true);
+                labels[i]->setEnabled(!disableMixerChannel || plugin->name != MixerChannelProcessor::getIdentifier());
                 i++;
             }
         }

@@ -240,6 +240,10 @@ public:
     }
 
     ValueTree createAndAddProcessor(const PluginDescription &description, ValueTree track, int slot=-1, bool undoable=true) {
+        bool hasMixerChannel = getMixerChannelProcessorForTrack(selectedTrack).isValid();
+        if (hasMixerChannel && description.name == MixerChannelProcessor::getIdentifier())
+            return ValueTree();
+
         ValueTree processor(IDs::PROCESSOR);
         Helpers::createUuidProperty(processor);
         processor.setProperty(IDs::id, description.createIdentifierString(), nullptr);
@@ -376,13 +380,16 @@ public:
     }
 
     void addPluginsToMenu(PopupMenu& menu, const ValueTree& track) const {
-        bool hasMixerChannel = getMixerChannelProcessorForTrack(track).isValid();
+        StringArray disabledPluginIds;
+        if (getMixerChannelProcessorForTrack(track).isValid()) {
+            disabledPluginIds.add(MixerChannelProcessor::getPluginDescription().fileOrIdentifier);
+        }
 
         PopupMenu internalSubMenu;
         PopupMenu externalSubMenu;
 
-        processorIds.getKnownPluginListInternal().addToMenu(internalSubMenu, processorIds.getPluginSortMethod());
-        processorIds.getKnownPluginListExternal().addToMenu(externalSubMenu, processorIds.getPluginSortMethod(), String(), processorIds.getKnownPluginListInternal().getNumTypes());
+        processorIds.getKnownPluginListInternal().addToMenu(internalSubMenu, processorIds.getPluginSortMethod(), disabledPluginIds);
+        processorIds.getKnownPluginListExternal().addToMenu(externalSubMenu, processorIds.getPluginSortMethod(), {}, String(), processorIds.getKnownPluginListInternal().getNumTypes());
 
         menu.addSubMenu("Internal", internalSubMenu, true);
         menu.addSeparator();
