@@ -101,11 +101,10 @@ public:
 
             PopupMenu sortTypeMenu;
             sortTypeMenu.addItem(200, "List plugins in default order",      true, pluginSortMethod == KnownPluginList::defaultOrder);
-            sortTypeMenu.addItem(201, "List plugins by format",             true, pluginSortMethod == KnownPluginList::sortByFormat);
-            sortTypeMenu.addItem(202, "List plugins in alphabetical order", true, pluginSortMethod == KnownPluginList::sortAlphabetically);
-            sortTypeMenu.addItem(203, "List plugins by category",           true, pluginSortMethod == KnownPluginList::sortByCategory);
-            sortTypeMenu.addItem(204, "List plugins by manufacturer",       true, pluginSortMethod == KnownPluginList::sortByManufacturer);
-            sortTypeMenu.addItem(205, "List plugins based on the directory structure", true, pluginSortMethod == KnownPluginList::sortByFileSystemLocation);
+            sortTypeMenu.addItem(201, "List plugins in alphabetical order", true, pluginSortMethod == KnownPluginList::sortAlphabetically);
+            sortTypeMenu.addItem(202, "List plugins by category",           true, pluginSortMethod == KnownPluginList::sortByCategory);
+            sortTypeMenu.addItem(203, "List plugins by manufacturer",       true, pluginSortMethod == KnownPluginList::sortByManufacturer);
+            sortTypeMenu.addItem(204, "List plugins based on the directory structure", true, pluginSortMethod == KnownPluginList::sortByFileSystemLocation);
             menu.addSubMenu ("Plugin menu type", sortTypeMenu);
         }
 
@@ -120,11 +119,10 @@ public:
                 showPluginList();
             } else if (menuItemID >= 200 && menuItemID < 210) {
                 if (menuItemID == 200) processorIds.setPluginSortMethod(KnownPluginList::defaultOrder);
-                else if (menuItemID == 201) processorIds.setPluginSortMethod(KnownPluginList::sortByFormat);
-                else if (menuItemID == 202) processorIds.setPluginSortMethod(KnownPluginList::sortAlphabetically);
-                else if (menuItemID == 203) processorIds.setPluginSortMethod(KnownPluginList::sortByCategory);
-                else if (menuItemID == 204) processorIds.setPluginSortMethod(KnownPluginList::sortByManufacturer);
-                else if (menuItemID == 205) processorIds.setPluginSortMethod(KnownPluginList::sortByFileSystemLocation);
+                else if (menuItemID == 201) processorIds.setPluginSortMethod(KnownPluginList::sortAlphabetically);
+                else if (menuItemID == 202) processorIds.setPluginSortMethod(KnownPluginList::sortByCategory);
+                else if (menuItemID == 203) processorIds.setPluginSortMethod(KnownPluginList::sortByManufacturer);
+                else if (menuItemID == 204) processorIds.setPluginSortMethod(KnownPluginList::sortByFileSystemLocation);
 
                 processorIds.getApplicationProperties().getUserSettings()->setValue("pluginSortMethod", (int) processorIds.getPluginSortMethod());
                 menuItemsChanged();
