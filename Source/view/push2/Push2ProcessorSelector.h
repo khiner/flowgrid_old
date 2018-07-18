@@ -6,7 +6,7 @@ class Push2ProcessorSelector : public Push2ComponentBase {
 public:
     explicit Push2ProcessorSelector(Project &project, Push2MidiCommunicator &push2MidiCommunicator)
             : Push2ComponentBase(project, push2MidiCommunicator) {
-        for (int i = 0; i < 8; i++) {
+        for (int i = 0; i < NUM_ITEMS_PER_ROW; i++) {
             auto *label = new Label();
             addAndMakeVisible(label);
             label->setJustificationType(Justification::centred);
@@ -35,36 +35,56 @@ public:
         if (currentTree == nullptr)
             return nullptr;
 
-        push2MidiCommunicator.setAboveScreenButtonColor(index, 127);
-
-        if (index < currentTree->subFolders.size()) {
-            setCurrentTree(currentTree->subFolders[index]);
+        if (index + currentViewOffsetIndex < currentTree->subFolders.size()) {
+            setCurrentTree(currentTree->subFolders.getUnchecked(index + currentViewOffsetIndex));
             return nullptr;
         } else {
             index -= currentTree->subFolders.size();
-            if (index < currentTree->plugins.size() && labels[index]->isEnabled()) {
-                return currentTree->plugins[index];
+            if (index + currentViewOffsetIndex < currentTree->plugins.size() && labels[index]->isEnabled()) {
+                return currentTree->plugins.getUnchecked(index + currentViewOffsetIndex);
             }
         }
 
         return nullptr;
     }
 
+    void arrowPressed(Direction direction) {
+        if (direction == Direction::left) {
+            currentViewOffsetIndex = jmax(0, currentViewOffsetIndex - NUM_ITEMS_PER_ROW);
+        } else if (direction == Direction::right && currentTree != nullptr) {
+            currentViewOffsetIndex = jmin(currentViewOffsetIndex + NUM_ITEMS_PER_ROW, getTotalNumberOfTreeItems() - getTotalNumberOfTreeItems() % NUM_ITEMS_PER_ROW);
+        }
+        updateEnabledPush2Arrows();
+        updateLabels();
+    }
+
     void resized() override {
-        auto r = getBounds().withHeight(getHeight() / 8);
+        auto r = getBounds().withHeight(getHeight() / NUM_ITEMS_PER_ROW);
         for (auto *label : labels) {
-            label->setBounds(r.removeFromLeft(getWidth() / 8));
+            label->setBounds(r.removeFromLeft(getWidth() / NUM_ITEMS_PER_ROW));
         }
     }
 
 private:
+    const int NUM_ITEMS_PER_ROW = 8;
+    
     KnownPluginList::PluginTree rootTree;
     KnownPluginList::PluginTree* currentTree{};
     OwnedArray<Label> labels;
-
+    
+    int currentViewOffsetIndex { 0 };
+    
     void setCurrentTree(KnownPluginList::PluginTree* tree) {
-        currentTree = tree;
+        if (currentTree == tree)
+            return;
 
+        currentTree = tree;
+        currentViewOffsetIndex = 0;
+        updateEnabledPush2Arrows();
+        updateLabels();
+    }
+
+    void updateLabels() {
         bool disableMixerChannel = project.getMixerChannelProcessorForTrack(project.getSelectedTrack()).isValid();
         for (auto* label : labels)
             label->setVisible(false);
@@ -72,21 +92,37 @@ private:
         if (currentTree == nullptr)
             return;
 
-        int i = 0;
-        for (auto *subFolder : currentTree->subFolders) {
-            if (i < labels.size()) {
-                labels[i]->setText(subFolder->folder, dontSendNotification);
-                labels[i]->setVisible(true);
-                i++;
-            }
-        }
-        for (auto *plugin : currentTree->plugins) {
-            if (i < labels.size()) {
+        for (int i = 0; i < NUM_ITEMS_PER_ROW; i++) {
+            Label *label = labels.getUnchecked(i);
+            if (i + currentViewOffsetIndex < currentTree->subFolders.size()) {
+                KnownPluginList::PluginTree *subFolder = currentTree->subFolders.getUnchecked(i + currentViewOffsetIndex);
+                label->setText(subFolder->folder, dontSendNotification);
+                label->setVisible(true);
+            } else if (i + currentViewOffsetIndex < getTotalNumberOfTreeItems()) {
+                const PluginDescription *plugin = currentTree->plugins.getUnchecked(i + currentViewOffsetIndex - currentTree->subFolders.size());
                 labels[i]->setText(plugin->name, dontSendNotification);
                 labels[i]->setVisible(true);
                 labels[i]->setEnabled(!disableMixerChannel || plugin->name != MixerChannelProcessor::getIdentifier());
-                i++;
             }
         }
+    }
+
+    void updateEnabledPush2Arrows() {
+        push2MidiCommunicator.setAllArrowButtonsEnabled(false);
+        
+        if (currentTree == nullptr)
+            return;
+
+        if (currentViewOffsetIndex > 0)
+            push2MidiCommunicator.setArrowButtonEnabled(Direction::left, true);
+        if (currentViewOffsetIndex + NUM_ITEMS_PER_ROW < getTotalNumberOfTreeItems())
+            push2MidiCommunicator.setArrowButtonEnabled(Direction::right, true);
+    }
+
+    int getTotalNumberOfTreeItems() {
+        if (currentTree == nullptr)
+            return 0;
+
+        return currentTree->subFolders.size() + currentTree->plugins.size();
     }
 };

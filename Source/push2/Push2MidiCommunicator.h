@@ -40,6 +40,7 @@ public:
             left = 44, right = 45, up = 46, down = 47, repeat = 56, accent = 57, scale = 58, layout = 31, note = 50,
             session = 51, octaveUp = 55, octaveDown = 54, pageLeft = 62, pageRight = 63, shift = 49, select = 48;
 
+    enum class Direction { up, down, left, right, NA};
 
     // From https://github.com/Ableton/push-interface/blob/master/doc/AbletonPush2MIDIDisplayInterface.asc#Encoders:
     //
@@ -59,7 +60,7 @@ public:
         }
     }
 
-    static int ccNumberForTopKnobIndex(int topKnobIndex) {
+    static uint8 ccNumberForTopKnobIndex(int topKnobIndex) {
         switch (topKnobIndex) {
             case 0: return topKnob3;
             case 1: return topKnob4;
@@ -69,7 +70,27 @@ public:
             case 5: return topKnob8;
             case 6: return topKnob9;
             case 7: return topKnob10;
-            default: return -1;
+            default: return 0;
+        }
+    }
+
+    static uint8 ccNumberForArrowButton(Direction direction) {
+        switch(direction) {
+            case Direction::up: return up;
+            case Direction::down: return down;
+            case Direction::left: return left;
+            case Direction::right: return right;
+            default: return 0;
+        }
+    }
+
+    static Direction directionForArrowButtonCcNumber(int ccNumber) {
+        switch (ccNumber) {
+            case left: return Direction::left;
+            case right: return Direction::right;
+            case up: return Direction::up;
+            case down: return Direction::down;
+            default: return Direction::NA;
         }
     }
 
@@ -79,6 +100,10 @@ public:
 
     static bool isAboveScreenEncoderCcNumber(int ccNumber) {
         return ccNumber >= topKnob3 && ccNumber <= topKnob10;
+    }
+
+    static bool isArrowButtonCcNumber(int ccNumber) {
+        return ccNumber >= left && ccNumber <= down;
     }
 
     static bool isAboveScreenButtonCcNumber(int ccNumber) {
@@ -94,7 +119,18 @@ public:
     }
 
     void setAboveScreenButtonColor(int buttonIndex, int color) {
-        auto colorControlMessage = MidiMessage::controllerEvent(0, buttonIndex + topDisplayButton1, color);
-        midiOutput->sendMessageNow(colorControlMessage);
+        midiOutput->sendMessageNow(MidiMessage::controllerEvent(1, buttonIndex + topDisplayButton1, color));
+    }
+
+    void setArrowButtonEnabled(Direction direction, bool enabled) {
+        uint8 ccNumber = ccNumberForArrowButton(direction);
+        midiOutput->sendMessageNow(MidiMessage::controllerEvent(1, ccNumber, enabled ? 126 : 0));
+    }
+
+    void setAllArrowButtonsEnabled(bool enabled) {
+        setArrowButtonEnabled(Direction::left, enabled);
+        setArrowButtonEnabled(Direction::right, enabled);
+        setArrowButtonEnabled(Direction::up, enabled);
+        setArrowButtonEnabled(Direction::down, enabled);
     }
 };

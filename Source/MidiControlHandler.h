@@ -55,7 +55,9 @@ public:
 
         if (Push2::isButtonPressControlMessage(midiMessage)) {
             if (Push2::isAboveScreenButtonCcNumber(ccNumber)) {
-                push2Component->aboveScreenButtonPressed(ccNumber - Push2::topDisplayButton1);
+                return push2Component->aboveScreenButtonPressed(ccNumber - Push2::topDisplayButton1);
+            } else if (Push2::isArrowButtonCcNumber(ccNumber)) {
+                return push2Component->arrowPressed(Push2::directionForArrowButtonCcNumber(ccNumber));
             }
             switch(ccNumber) {
                 case Push2::shift:
@@ -77,14 +79,6 @@ public:
                 case Push2::addDevice:
                     push2Component->openProcessorSelector();
                     return;
-                case Push2::up:
-                    return push2Component->upArrowPressed();
-                case Push2::down:
-                    return push2Component->downArrowPressed();
-                case Push2::left:
-                    return push2Component->leftArrowPressed();
-                case Push2::right:
-                    return push2Component->rightArrowPressed();
                 default: return;
             }
         } else if (Push2::isButtonReleaseControlMessage(midiMessage)) {

@@ -49,20 +49,18 @@ public:
         }
     }
 
-    void upArrowPressed() {
-        return project.moveSelectionUp();
-    }
-
-    void downArrowPressed() {
-        return project.moveSelectionDown();
-    }
-
-    void leftArrowPressed() {
-        return project.moveSelectionLeft();
-    }
-
-    void rightArrowPressed() {
-        return project.moveSelectionRight();
+    void arrowPressed(Direction direction) {
+        if (processorSelector.isVisible()) {
+            processorSelector.arrowPressed(direction);
+            return;
+        }
+        switch (direction) {
+            case Direction::up: return project.moveSelectionUp();
+            case Direction::down: return project.moveSelectionDown();
+            case Direction::left: return project.moveSelectionLeft();
+            case Direction::right: return project.moveSelectionRight();
+            default: return;
+        }
     }
 
 private:
