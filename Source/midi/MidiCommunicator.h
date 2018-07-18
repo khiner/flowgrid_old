@@ -17,8 +17,12 @@ public:
 
     explicit MidiCommunicator(const std::string &deviceName);
 
-    inline bool isConnected() {
-        return midiInput->getDevices().contains(deviceName);
+    inline bool isInputConnected() const {
+        return midiInput && midiInput->getDevices().contains(deviceName);
+    }
+
+    inline bool isOutputConnected() const {
+        return midiOutput != nullptr;
     }
 
     static int findDeviceIdByDeviceName(const std::string &deviceName) {

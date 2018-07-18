@@ -3,26 +3,19 @@
 #include <midi/MidiCommunicator.h>
 #include <unordered_map>
 
-namespace SysExCommands {
-    static const int MESSAGE_SIZE = 7;
-    /*
-     https://github.com/Ableton/push-interface/blob/master/doc/AbletonPush2MIDIDisplayInterface.asc#Aftertouch
-     In channel pressure mode (default), the pad with the highest pressure determines the value sent. The pressure range that produces aftertouch is given by the aftertouch threshold pad parameters. The value curve is linear to the pressure and in range 0 to 127. See Pad Parameters.
-     In polyphonic key pressure mode, aftertouch for each pressed key is sent individually. The value is defined by the pad velocity curve and in range 1…​127. See Velocity Curve.
-     */
-    static const unsigned char SET_AFTERTOUCH_MODE_POLYPHONIC[] { 0x00, 0x21, 0x1D, 0x01, 0x01, 0x1E, 0x01 };
-}
-
 class Push2MidiCommunicator : public MidiCommunicator {
 public:
     Push2MidiCommunicator(): Push2MidiCommunicator("ableton push 2") {};
 
     explicit Push2MidiCommunicator(const std::string &deviceName) : MidiCommunicator(deviceName) {
-        if (isConnected()) {
-            auto polyphonicAftertouchSysExMessage = MidiMessage::createSysExMessage(
-                    SysExCommands::SET_AFTERTOUCH_MODE_POLYPHONIC, SysExCommands::MESSAGE_SIZE);
-            midiOutput->sendMessageNow(polyphonicAftertouchSysExMessage);
-        }
+        /*
+         * https://github.com/Ableton/push-interface/blob/master/doc/AbletonPush2MIDIDisplayInterface.asc#Aftertouch
+         * In channel pressure mode (default), the pad with the highest pressure determines the value sent. The pressure range that produces aftertouch is given by the aftertouch threshold pad parameters. The value curve is linear to the pressure and in range 0 to 127. See Pad Parameters.
+         * In polyphonic key pressure mode, aftertouch for each pressed key is sent individually. The value is defined by the pad velocity curve and in range 1…​127. See Velocity Curve.
+         * */
+        static const uint8 setAftertouchModePolyphonic[] { 0x00, 0x21, 0x1D, 0x01, 0x01, 0x1E, 0x01 };
+        auto polyphonicAftertouchSysExMessage = MidiMessage::createSysExMessage(setAftertouchModePolyphonic, 7);
+        sendMessageChecked(polyphonicAftertouchSysExMessage);
     }
 
     static const uint8
@@ -118,19 +111,72 @@ public:
         return message.getControllerValue() == 0;
     }
 
-    void setAboveScreenButtonColor(int buttonIndex, int color) {
-        midiOutput->sendMessageNow(MidiMessage::controllerEvent(1, buttonIndex + topDisplayButton1, color));
+
+    void addColour(const Colour &colour) {
+        jassert(colours.size() < CHAR_MAX); // no sensible way to prioritize which colours to switch out
+
+        auto colourIndex = static_cast<uint8>(colours.size() + 1);
+        uint32 argb = colour.getARGB();
+        // 8 bytes: 2 for each of R, G, B, W. First byte contains the 7 LSBs; Second byte contains the 1 MSB.
+        uint8 bgra[8];
+
+        for (int i = 0; i < 4; i++) {
+            auto c = static_cast<uint8>(argb >> (i * CHAR_BIT));
+            bgra[i * 2] = static_cast<uint8>(c & 0x7F);
+            bgra[i * 2 + 1] = static_cast<uint8>(c & 0x80) >> 7;
+        }
+        
+        const uint8 setLedColourPaletteEntryCommand[] { 0x00, 0x21, 0x1D, 0x01, 0x01, 0x03, colourIndex,
+                                                        bgra[4], bgra[5], bgra[2], bgra[3], bgra[0], bgra[1], bgra[6], bgra[7] };
+        auto setLedColourPaletteEntryMessage = MidiMessage::createSysExMessage(setLedColourPaletteEntryCommand, 15);
+        sendMessageChecked(setLedColourPaletteEntryMessage);
+        static const uint8 reapplyColorPaletteCommand[] { 0x00, 0x21, 0x1D, 0x01, 0x01, 0x05 };
+        sendMessageChecked(MidiMessage::createSysExMessage(reapplyColorPaletteCommand, 6));
+
+        colours.add(colour);
+        indexForColour.insert(std::make_pair(colour.toString(), colourIndex));
     }
 
-    void setArrowButtonEnabled(Direction direction, bool enabled) {
+    void setAboveScreenButtonColour(int buttonIndex, const Colour &colour) {
+        auto entry = indexForColour.find(colour.toString());
+        if (entry == indexForColour.end()) {
+            addColour(colour);
+            entry = indexForColour.find(colour.toString());
+        }
+
+        jassert(entry != indexForColour.end());
+        sendMessageChecked(MidiMessage::controllerEvent(NO_ANIMATION_LED_CHANNEL, buttonIndex + topDisplayButton1, entry->second));
+    }
+
+    void setAboveScreenButtonEnabled(int buttonIndex, bool enabled) {
+        if (enabled) {
+            setAboveScreenButtonColour(buttonIndex, Colours::white);
+        } else {
+            sendMessageChecked(MidiMessage::controllerEvent(NO_ANIMATION_LED_CHANNEL, buttonIndex + topDisplayButton1, 0));
+        }
+    }
+
+    void setArrowButtonEnabled(Direction direction, bool enabled) const {
         uint8 ccNumber = ccNumberForArrowButton(direction);
-        midiOutput->sendMessageNow(MidiMessage::controllerEvent(1, ccNumber, enabled ? 126 : 0));
+        sendMessageChecked(MidiMessage::controllerEvent(NO_ANIMATION_LED_CHANNEL, ccNumber, enabled ? CHAR_MAX : 0));
     }
 
-    void setAllArrowButtonsEnabled(bool enabled) {
+    void setAllArrowButtonsEnabled(bool enabled) const {
         setArrowButtonEnabled(Direction::left, enabled);
         setArrowButtonEnabled(Direction::right, enabled);
         setArrowButtonEnabled(Direction::up, enabled);
         setArrowButtonEnabled(Direction::down, enabled);
+    }
+
+private:
+    static const int NO_ANIMATION_LED_CHANNEL = 1;
+
+    std::unordered_map<String, int> indexForColour;
+    Array<Colour> colours;
+
+    void sendMessageChecked(const MidiMessage& message) const {
+        if (isOutputConnected()) {
+            midiOutput->sendMessageNow(message);
+        }
     }
 };

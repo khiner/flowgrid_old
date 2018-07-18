@@ -86,22 +86,24 @@ private:
 
     void updateLabels() {
         bool disableMixerChannel = project.getMixerChannelProcessorForTrack(project.getSelectedTrack()).isValid();
-        for (auto* label : labels)
-            label->setVisible(false);
+        for (int i = 0; i < labels.size(); i++) {
+            labels.getUnchecked(i)->setVisible(false);
+            push2MidiCommunicator.setAboveScreenButtonEnabled(i, false);
+        }
 
         if (currentTree == nullptr)
             return;
 
-        for (int i = 0; i < NUM_ITEMS_PER_ROW; i++) {
+        for (int i = 0; i < jmin(getTotalNumberOfTreeItems() - currentViewOffsetIndex, NUM_ITEMS_PER_ROW); i++) {
             Label *label = labels.getUnchecked(i);
+            labels[i]->setVisible(true);
+            push2MidiCommunicator.setAboveScreenButtonEnabled(i, true);
             if (i + currentViewOffsetIndex < currentTree->subFolders.size()) {
                 KnownPluginList::PluginTree *subFolder = currentTree->subFolders.getUnchecked(i + currentViewOffsetIndex);
                 label->setText(subFolder->folder, dontSendNotification);
-                label->setVisible(true);
             } else if (i + currentViewOffsetIndex < getTotalNumberOfTreeItems()) {
                 const PluginDescription *plugin = currentTree->plugins.getUnchecked(i + currentViewOffsetIndex - currentTree->subFolders.size());
                 labels[i]->setText(plugin->name, dontSendNotification);
-                labels[i]->setVisible(true);
                 labels[i]->setEnabled(!disableMixerChannel || plugin->name != MixerChannelProcessor::getIdentifier());
             }
         }

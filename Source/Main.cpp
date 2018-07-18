@@ -12,7 +12,7 @@ File getSaveFile() {
 
 class SoundMachineApplication : public JUCEApplication, public MenuBarModel {
 public:
-    SoundMachineApplication() : project(Utilities::loadValueTree(getSaveFile(), true), undoManager, processorIds),
+    SoundMachineApplication() : project(Utilities::loadValueTree(getSaveFile(), true), undoManager, processorIds, push2MidiCommunicator),
                                 applicationKeyListener(project, undoManager),
                                 processorGraph(project, undoManager),
                                 midiControlHandler(project, processorGraph, undoManager) {}

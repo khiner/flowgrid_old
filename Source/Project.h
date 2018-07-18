@@ -1,13 +1,14 @@
 #pragma once
 
 #include <unordered_map>
+#include <push2/Push2MidiCommunicator.h>
 #include "ValueTreeItems.h"
 
 class Project : public ValueTreeItem,
                 public ProjectChangeBroadcaster {
 public:
-    Project(const ValueTree &v, UndoManager &um, ProcessorIds& processorIds)
-            : ValueTreeItem(v, um), processorIds(processorIds) {
+    Project(const ValueTree &v, UndoManager &um, ProcessorIds& processorIds, Push2MidiCommunicator& push2MidiCommunicator)
+            : ValueTreeItem(v, um), processorIds(processorIds), push2MidiCommunicator(push2MidiCommunicator) {
         if (!state.isValid()) {
             state = createDefaultProject();
         } else {
@@ -217,7 +218,9 @@ public:
         ValueTree track(IDs::TRACK);
         const String trackName("Track " + String(numTracks + 1));
         Helpers::createUuidProperty(track);
-        track.setProperty(IDs::colour, Colour::fromHSV((1.0f / 8.0f) * numTracks, 0.65f, 0.65f, 1.0f).toString(), nullptr);
+        const Colour &colour = Colour::fromHSV((1.0f / 8.0f) * numTracks, 0.65f, 0.65f, 1.0f);
+        push2MidiCommunicator.addColour(colour);
+        track.setProperty(IDs::colour, colour.toString(), nullptr);
         track.setProperty(IDs::name, trackName, nullptr);
 
         const ValueTree &masterTrack = tracks.getChildWithName(IDs::MASTER_TRACK);
@@ -435,4 +438,5 @@ private:
     std::unordered_map<int, int> slotForNodeIdSnapshot;
 
     ProcessorIds &processorIds;
+    Push2MidiCommunicator &push2MidiCommunicator;
 };
