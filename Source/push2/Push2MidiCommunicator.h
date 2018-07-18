@@ -40,6 +40,7 @@ public:
             left = 44, right = 45, up = 46, down = 47, repeat = 56, accent = 57, scale = 58, layout = 31, note = 50,
             session = 51, octaveUp = 55, octaveDown = 54, pageLeft = 62, pageRight = 63, shift = 49, select = 48;
 
+
     // From https://github.com/Ableton/push-interface/blob/master/doc/AbletonPush2MIDIDisplayInterface.asc#Encoders:
     //
     // The value 0xxxxxx or 1yyyyyy gives the amount of accumulated movement since the last message. The faster you move, the higher the value.
@@ -90,5 +91,10 @@ public:
 
     static bool isButtonReleaseControlMessage(const MidiMessage &message) {
         return message.getControllerValue() == 0;
+    }
+
+    void setAboveScreenButtonColor(int buttonIndex, int color) {
+        auto colorControlMessage = MidiMessage::controllerEvent(0, buttonIndex + topDisplayButton1, color);
+        midiOutput->sendMessageNow(colorControlMessage);
     }
 };

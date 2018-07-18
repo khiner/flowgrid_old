@@ -33,7 +33,7 @@ public:
         deviceManager.initialiseWithDefaultDevices(2, 2);
 
         Process::makeForegroundProcess();
-        auto *push2Component = new Push2Component(project, processorGraph);
+        auto *push2Component = new Push2Component(project, push2MidiCommunicator, processorGraph);
         push2Window = std::make_unique<MainWindow>("Push 2 Mirror", push2Component, &applicationKeyListener);
         ValueTreeEditor *valueTreeEditor = new ValueTreeEditor(project.getState(), undoManager, project, processorGraph);
         treeWindow = std::make_unique<MainWindow>("Tree Editor", valueTreeEditor, &applicationKeyListener);

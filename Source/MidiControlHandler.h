@@ -36,8 +36,8 @@ public:
                 processor = audioGraphBuilder.getMasterGainProcessor()->processor;
                 parameterIndex = 1;
             } else if (Push2::isAboveScreenEncoderCcNumber(ccNumber)) {
-                if (currentProcessorToControl != nullptr) {
-                    processor = currentProcessorToControl->processor;
+                if (currentProcessorWrapperToControl != nullptr) {
+                    processor = currentProcessorWrapperToControl->processor;
                     parameterIndex = ccNumber - Push2::ccNumberForTopKnobIndex(0);
                 }
             }
@@ -75,17 +75,16 @@ public:
                     project.createAndAddTrack();
                     return;
                 case Push2::addDevice:
-                    if (push2Component != nullptr)
-                        push2Component->openProcessorSelector();
+                    push2Component->openProcessorSelector();
                     return;
                 case Push2::up:
-                    return project.moveSelectionUp();
+                    return push2Component->upArrowPressed();
                 case Push2::down:
-                    return project.moveSelectionDown();
+                    return push2Component->downArrowPressed();
                 case Push2::left:
-                    return project.moveSelectionLeft();
+                    return push2Component->leftArrowPressed();
                 case Push2::right:
-                    return project.moveSelectionRight();
+                    return push2Component->rightArrowPressed();
                 default: return;
             }
         } else if (Push2::isButtonReleaseControlMessage(midiMessage)) {
@@ -103,22 +102,22 @@ private:
     ProcessorGraph &audioGraphBuilder;
     UndoManager &undoManager;
 
-    Push2Component *push2Component;
-    StatefulAudioProcessorWrapper *currentProcessorToControl;
+    Push2Component *push2Component {};
+    StatefulAudioProcessorWrapper *currentProcessorWrapperToControl {};
 
     bool isShiftHeld = false;
 
     void itemSelected(const ValueTree& item) override {
-        currentProcessorToControl = nullptr;
+        currentProcessorWrapperToControl = nullptr;
 
         if (item.hasType(IDs::PROCESSOR)) {
-            currentProcessorToControl = audioGraphBuilder.getProcessorWrapperForState(item);
+            currentProcessorWrapperToControl = audioGraphBuilder.getProcessorWrapperForState(item);
         }
     }
 
     void itemRemoved(const ValueTree& item) override {
         if (item == project.getSelectedProcessor()) {
-            currentProcessorToControl = nullptr;
+            currentProcessorWrapperToControl = nullptr;
         }
     }
 };

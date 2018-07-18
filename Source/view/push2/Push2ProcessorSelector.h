@@ -2,9 +2,10 @@
 
 #include "JuceHeader.h"
 
-class Push2ProcessorSelector : public Component {
+class Push2ProcessorSelector : public Push2ComponentBase {
 public:
-    explicit Push2ProcessorSelector(Project &project) : project(project) {
+    explicit Push2ProcessorSelector(Project &project, Push2MidiCommunicator &push2MidiCommunicator)
+            : Push2ComponentBase(project, push2MidiCommunicator) {
         for (int i = 0; i < 8; i++) {
             auto *label = new Label();
             addAndMakeVisible(label);
@@ -34,6 +35,8 @@ public:
         if (currentTree == nullptr)
             return nullptr;
 
+        push2MidiCommunicator.setAboveScreenButtonColor(index, 127);
+
         if (index < currentTree->subFolders.size()) {
             setCurrentTree(currentTree->subFolders[index]);
             return nullptr;
@@ -55,7 +58,6 @@ public:
     }
 
 private:
-    Project& project;
     KnownPluginList::PluginTree rootTree;
     KnownPluginList::PluginTree* currentTree{};
     OwnedArray<Label> labels;

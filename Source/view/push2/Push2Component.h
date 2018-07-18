@@ -3,18 +3,22 @@
 #include <processors/StatefulAudioProcessorWrapper.h>
 #include <ValueTreeItems.h>
 #include <processors/ProcessorIds.h>
+#include <push2/Push2MidiCommunicator.h>
 #include "push2/Push2DisplayBridge.h"
 #include "ProcessorGraph.h"
 #include "Push2ProcessorView.h"
 #include "Push2ProcessorSelector.h"
+#include "Push2ComponentBase.h"
 
 class Push2Component :
         public Timer,
-        public Component,
+        public Push2ComponentBase,
         private ProjectChangeListener {
 public:
-    explicit Push2Component(Project &project, ProcessorGraph &audioGraphBuilder)
-            : project(project), audioGraphBuilder(audioGraphBuilder), processorSelector(project) {
+    explicit Push2Component(Project &project, Push2MidiCommunicator &push2MidiCommunicator, ProcessorGraph &audioGraphBuilder)
+            : Push2ComponentBase(project, push2MidiCommunicator), audioGraphBuilder(audioGraphBuilder),
+              processorView(project, push2MidiCommunicator), processorSelector(project, push2MidiCommunicator) {
+
         startTimer(60);
 
         addChildComponent(processorView);
@@ -43,6 +47,22 @@ public:
                 project.createAndAddProcessor(*selectedProcessor);
             }
         }
+    }
+
+    void upArrowPressed() {
+        return project.moveSelectionUp();
+    }
+
+    void downArrowPressed() {
+        return project.moveSelectionDown();
+    }
+
+    void leftArrowPressed() {
+        return project.moveSelectionLeft();
+    }
+
+    void rightArrowPressed() {
+        return project.moveSelectionRight();
     }
 
 private:
@@ -90,7 +110,6 @@ private:
 private:
     Push2DisplayBridge displayBridge;
 
-    Project &project;
     ProcessorGraph &audioGraphBuilder;
 
     Push2ProcessorView processorView;

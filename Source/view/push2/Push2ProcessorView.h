@@ -2,14 +2,15 @@
 
 #include <processors/StatefulAudioProcessorWrapper.h>
 #include "JuceHeader.h"
+#include "Push2ComponentBase.h"
 
-class Push2ProcessorView : public Component {
+class Push2ProcessorView : public Push2ComponentBase {
 public:
-    Push2ProcessorView() {
+    Push2ProcessorView(Project& project, Push2MidiCommunicator& push2MidiCommunicator)
+            : Push2ComponentBase(project, push2MidiCommunicator) {
         for (int paramIndex = 0; paramIndex < MAX_PROCESSOR_PARAMS_TO_DISPLAY; paramIndex++) {
             Slider *slider = new Slider("Param " + String(paramIndex) + ": ");
             addAndMakeVisible(slider);
-
 
             Label *label = new Label(String(), slider->getName());
             label->setJustificationType(Justification::centred);
