@@ -11,7 +11,7 @@ public:
         setOpaque(true);
     }
 
-    ~GraphEditorPanel() {
+    ~GraphEditorPanel() override {
         graph.removeChangeListener(this);
         draggingConnector = nullptr;
         nodes.clear();
@@ -91,7 +91,7 @@ public:
         }
     }
 
-    void showPopupMenu(Point<int> mousePos) {
+    void showPopupMenu(const Point<int> &mousePos) {
         const auto &gridLocation = graph.positionToGridLocation(mousePos.toDouble() / juce::Point<double>((double) getWidth(), (double) getHeight()));
         ValueTree track = project.getTrack(gridLocation.x);
         int slot = gridLocation.y;
@@ -698,7 +698,7 @@ private:
         return nullptr;
     }
 
-    PinComponent *findPinAt(Point<float> pos) const {
+    PinComponent *findPinAt(const Point<float> &pos) const {
         for (auto *fc : nodes) {
             // NB: A Visual Studio optimiser error means we have to put this Component* in a local
             // variable before trying to cast it, or it gets mysteriously optimised away..
@@ -727,11 +727,11 @@ public:
         deviceManager.addChangeListener(graphPanel.get());
     }
 
-    ~GraphDocumentComponent() {
+    ~GraphDocumentComponent() override {
         releaseGraph();
     }
 
-    void resized() {
+    void resized() override {
         auto r = getLocalBounds();
         const int titleBarHeight = 40;
         const int keysHeight = 60;
