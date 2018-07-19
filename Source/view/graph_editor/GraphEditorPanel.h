@@ -69,10 +69,10 @@ public:
         for (auto *cc : connectors)
             cc->update();
 
-        for (auto *f : graph.getNodes()) {
-            FilterComponent *component = getComponentForFilter(f->nodeID);
+        for (auto *node : graph.getNodes()) {
+            ProcessorComponent *component = getComponentForNodeId(node->nodeID);
             if (component == nullptr) {
-                auto *comp = nodes.add(new FilterComponent(*this, f->nodeID));
+                auto *comp = nodes.add(new ProcessorComponent(*this, node->nodeID));
                 addAndMakeVisible(comp);
                 comp->update();
             } else {
@@ -254,8 +254,8 @@ private:
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PinComponent)
     };
 
-    struct FilterComponent : public Component, private AudioProcessorParameter::Listener {
-        FilterComponent(GraphEditorPanel &p, uint32 id) : panel(p), graph(p.graph), nodeId(id) {
+    struct ProcessorComponent : public Component, private AudioProcessorParameter::Listener {
+        ProcessorComponent(GraphEditorPanel &p, AudioProcessorGraph::NodeID nodeId) : panel(p), graph(p.graph), nodeId(nodeId) {
             if (auto f = graph.getNodeForId(nodeId)) {
                 if (auto *processor = f->getProcessor()) {
                     if (auto *bypassParam = processor->getBypassParameter())
@@ -266,11 +266,11 @@ private:
             setSize(150, 60);
         }
 
-        FilterComponent(const FilterComponent &) = delete;
+        ProcessorComponent(const ProcessorComponent &) = delete;
 
-        FilterComponent &operator=(const FilterComponent &) = delete;
+        ProcessorComponent &operator=(const ProcessorComponent &) = delete;
 
-        ~FilterComponent() override {
+        ~ProcessorComponent() override {
             if (auto f = graph.getNodeForId(nodeId)) {
                 if (auto *processor = f->getProcessor()) {
                     if (auto *bypassParam = processor->getBypassParameter())
@@ -562,10 +562,10 @@ private:
             p1 = lastInputPos;
             p2 = lastOutputPos;
 
-            if (auto *src = panel.getComponentForFilter(connection.source.nodeID))
+            if (auto *src = panel.getComponentForNodeId(connection.source.nodeID))
                 p1 = src->getPinPos(connection.source.channelIndex, false);
 
-            if (auto *dest = panel.getComponentForFilter(connection.destination.nodeID))
+            if (auto *dest = panel.getComponentForNodeId(connection.destination.nodeID))
                 p2 = dest->getPinPos(connection.destination.channelIndex, true);
         }
 
@@ -676,14 +676,14 @@ private:
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ConnectorComponent)
     };
 
-    OwnedArray<FilterComponent> nodes;
+    OwnedArray<ProcessorComponent> nodes;
     OwnedArray<ConnectorComponent> connectors;
     std::unique_ptr<ConnectorComponent> draggingConnector;
     std::unique_ptr<PopupMenu> menu;
 
-    FilterComponent *getComponentForFilter(const uint32 filterID) const {
+    ProcessorComponent *getComponentForNodeId(const AudioProcessorGraph::NodeID nodeId) const {
         for (auto *fc : nodes)
-            if (fc->nodeId == filterID)
+            if (fc->nodeId == nodeId)
                 return fc;
 
         return nullptr;
