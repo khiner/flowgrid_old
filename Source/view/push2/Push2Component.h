@@ -25,9 +25,9 @@ public:
         addChildComponent(processorSelector);
 
         project.addChangeListener(this);
-        setSize(Push2Display::WIDTH, Push2Display::HEIGHT);
-        processorView.setBounds(getBounds());
-        processorSelector.setBounds(getBounds());
+        setBounds(0, 0, Push2Display::WIDTH, Push2Display::HEIGHT);
+        processorView.setBounds(getLocalBounds());
+        processorSelector.setBounds(getLocalBounds());
     }
 
     ~Push2Component() override {
@@ -42,8 +42,15 @@ public:
 
     void aboveScreenButtonPressed(int buttonIndex) {
         if (processorSelector.isVisible()) {
-            const PluginDescription* selectedProcessor = processorSelector.selectProcessor(project.getSelectedTrack(), buttonIndex);
-            if (selectedProcessor != nullptr) {
+            if (const auto* selectedProcessor = processorSelector.selectTopProcessor(project.getSelectedTrack(), buttonIndex)) {
+                project.createAndAddProcessor(*selectedProcessor);
+            }
+        }
+    }
+
+    void belowScreenButtonPressed(int buttonIndex) {
+        if (processorSelector.isVisible()) {
+            if (const auto* selectedProcessor = processorSelector.selectBottomProcessor(project.getSelectedTrack(), buttonIndex)) {
                 project.createAndAddProcessor(*selectedProcessor);
             }
         }

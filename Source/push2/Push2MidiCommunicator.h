@@ -103,6 +103,10 @@ public:
         return ccNumber >= topDisplayButton1 && ccNumber <= topDisplayButton8;
     }
 
+    static bool isBelowScreenButtonCcNumber(int ccNumber) {
+        return ccNumber >= bottomDisplayButton1 && ccNumber <= bottomDisplayButton8;
+    }
+
     static bool isButtonPressControlMessage(const MidiMessage &message) {
         return message.getControllerValue() == 127;
     }
@@ -111,49 +115,20 @@ public:
         return message.getControllerValue() == 0;
     }
 
-
-    void addColour(const Colour &colour) {
-        jassert(colours.size() < CHAR_MAX); // no sensible way to prioritize which colours to switch out
-
-        auto colourIndex = static_cast<uint8>(colours.size() + 1);
-        uint32 argb = colour.getARGB();
-        // 8 bytes: 2 for each of R, G, B, W. First byte contains the 7 LSBs; Second byte contains the 1 MSB.
-        uint8 bgra[8];
-
-        for (int i = 0; i < 4; i++) {
-            auto c = static_cast<uint8>(argb >> (i * CHAR_BIT));
-            bgra[i * 2] = static_cast<uint8>(c & 0x7F);
-            bgra[i * 2 + 1] = static_cast<uint8>(c & 0x80) >> 7;
-        }
-        
-        const uint8 setLedColourPaletteEntryCommand[] { 0x00, 0x21, 0x1D, 0x01, 0x01, 0x03, colourIndex,
-                                                        bgra[4], bgra[5], bgra[2], bgra[3], bgra[0], bgra[1], bgra[6], bgra[7] };
-        auto setLedColourPaletteEntryMessage = MidiMessage::createSysExMessage(setLedColourPaletteEntryCommand, 15);
-        sendMessageChecked(setLedColourPaletteEntryMessage);
-        static const uint8 reapplyColorPaletteCommand[] { 0x00, 0x21, 0x1D, 0x01, 0x01, 0x05 };
-        sendMessageChecked(MidiMessage::createSysExMessage(reapplyColorPaletteCommand, 6));
-
-        colours.add(colour);
-        indexForColour.insert(std::make_pair(colour.toString(), colourIndex));
+    void setAboveScreenButtonColour(int buttonIndex, const Colour &colour) {
+        setButtonColour(buttonIndex + topDisplayButton1, colour);
     }
 
-    void setAboveScreenButtonColour(int buttonIndex, const Colour &colour) {
-        auto entry = indexForColour.find(colour.toString());
-        if (entry == indexForColour.end()) {
-            addColour(colour);
-            entry = indexForColour.find(colour.toString());
-        }
-
-        jassert(entry != indexForColour.end());
-        sendMessageChecked(MidiMessage::controllerEvent(NO_ANIMATION_LED_CHANNEL, buttonIndex + topDisplayButton1, entry->second));
+    void setBelowScreenButtonColour(int buttonIndex, const Colour &colour) {
+        setButtonColour(buttonIndex + bottomDisplayButton1, colour);
     }
 
     void setAboveScreenButtonEnabled(int buttonIndex, bool enabled) {
-        if (enabled) {
-            setAboveScreenButtonColour(buttonIndex, Colours::white);
-        } else {
-            sendMessageChecked(MidiMessage::controllerEvent(NO_ANIMATION_LED_CHANNEL, buttonIndex + topDisplayButton1, 0));
-        }
+        setColourButtonEnabled(buttonIndex + topDisplayButton1, enabled);
+    }
+
+    void setBelowScreenButtonEnabled(int buttonIndex, bool enabled) {
+        setColourButtonEnabled(buttonIndex + bottomDisplayButton1, enabled);
     }
 
     void setArrowButtonEnabled(Direction direction, bool enabled) const {
@@ -178,5 +153,49 @@ private:
         if (isOutputConnected()) {
             midiOutput->sendMessageNow(message);
         }
+    }
+
+    void setButtonColour(int buttonCcNumber, const Colour &colour) {
+        auto entry = indexForColour.find(colour.toString());
+        if (entry == indexForColour.end()) {
+            addColour(colour);
+            entry = indexForColour.find(colour.toString());
+        }
+
+        jassert(entry != indexForColour.end());
+        sendMessageChecked(MidiMessage::controllerEvent(NO_ANIMATION_LED_CHANNEL, buttonCcNumber, entry->second));
+    }
+
+    void setColourButtonEnabled(int buttonCcNumber, bool enabled) {
+        if (enabled) {
+            setButtonColour(buttonCcNumber, Colours::white);
+        } else {
+            sendMessageChecked(MidiMessage::controllerEvent(NO_ANIMATION_LED_CHANNEL, buttonCcNumber, 0));
+        }
+    }
+
+    void addColour(const Colour &colour) {
+        jassert(colours.size() < CHAR_MAX); // no sensible way to prioritize which colours to switch out
+
+        auto colourIndex = static_cast<uint8>(colours.size() + 1);
+        uint32 argb = colour.getARGB();
+        // 8 bytes: 2 for each of R, G, B, W. First byte contains the 7 LSBs; Second byte contains the 1 MSB.
+        uint8 bgra[8];
+
+        for (int i = 0; i < 4; i++) {
+            auto c = static_cast<uint8>(argb >> (i * CHAR_BIT));
+            bgra[i * 2] = static_cast<uint8>(c & 0x7F);
+            bgra[i * 2 + 1] = static_cast<uint8>(c & 0x80) >> 7;
+        }
+
+        const uint8 setLedColourPaletteEntryCommand[] { 0x00, 0x21, 0x1D, 0x01, 0x01, 0x03, colourIndex,
+                                                        bgra[4], bgra[5], bgra[2], bgra[3], bgra[0], bgra[1], bgra[6], bgra[7] };
+        auto setLedColourPaletteEntryMessage = MidiMessage::createSysExMessage(setLedColourPaletteEntryCommand, 15);
+        sendMessageChecked(setLedColourPaletteEntryMessage);
+        static const uint8 reapplyColorPaletteCommand[] { 0x00, 0x21, 0x1D, 0x01, 0x01, 0x05 };
+        sendMessageChecked(MidiMessage::createSysExMessage(reapplyColorPaletteCommand, 6));
+
+        colours.add(colour);
+        indexForColour.insert(std::make_pair(colour.toString(), colourIndex));
     }
 };

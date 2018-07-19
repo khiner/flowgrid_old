@@ -56,6 +56,8 @@ public:
         if (Push2::isButtonPressControlMessage(midiMessage)) {
             if (Push2::isAboveScreenButtonCcNumber(ccNumber)) {
                 return push2Component->aboveScreenButtonPressed(ccNumber - Push2::topDisplayButton1);
+            } else if (Push2::isBelowScreenButtonCcNumber(ccNumber)) {
+                return push2Component->belowScreenButtonPressed(ccNumber - Push2::bottomDisplayButton1);
             } else if (Push2::isArrowButtonCcNumber(ccNumber)) {
                 return push2Component->arrowPressed(Push2::directionForArrowButtonCcNumber(ccNumber));
             }
