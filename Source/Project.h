@@ -50,7 +50,7 @@ public:
         return masterTrack;
     }
 
-    ValueTree& getSelectedTrack() {
+    const ValueTree& getSelectedTrack() const {
         return selectedTrack;
     }
 
@@ -232,7 +232,7 @@ public:
     }
 
     ValueTree createAndAddProcessor(const PluginDescription& description, bool undoable=true) {
-        ValueTree& selectedTrack = getSelectedTrack();
+        const ValueTree& selectedTrack = getSelectedTrack();
         if (selectedTrack.isValid()) {
             return createAndAddProcessor(description, selectedTrack, -1, undoable);
         } else {
@@ -241,8 +241,7 @@ public:
     }
 
     ValueTree createAndAddProcessor(const PluginDescription &description, ValueTree track, int slot=-1, bool undoable=true) {
-        bool hasMixerChannel = getMixerChannelProcessorForTrack(selectedTrack).isValid();
-        if (hasMixerChannel && description.name == MixerChannelProcessor::getIdentifier())
+        if (selectedTrackHasMixerChannel() && description.name == MixerChannelProcessor::getIdentifier())
             return ValueTree();
 
         ValueTree processor(IDs::PROCESSOR);
@@ -277,6 +276,14 @@ public:
 
     const ValueTree getMixerChannelProcessorForTrack(const ValueTree& track) const {
         return track.getChildWithProperty(IDs::name, MixerChannelProcessor::getIdentifier());
+    }
+
+    const ValueTree getMixerChannelProcessorForSelectedTrack() const {
+        return getMixerChannelProcessorForTrack(getSelectedTrack());
+    }
+
+    const bool selectedTrackHasMixerChannel() const {
+        return getMixerChannelProcessorForSelectedTrack().isValid();
     }
 
     int getMaxProcessorInsertIndex(const ValueTree& track) {

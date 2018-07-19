@@ -42,7 +42,7 @@ public:
 
     void aboveScreenButtonPressed(int buttonIndex) {
         if (processorSelector.isVisible()) {
-            if (const auto* selectedProcessor = processorSelector.selectTopProcessor(project.getSelectedTrack(), buttonIndex)) {
+            if (const auto* selectedProcessor = processorSelector.selectTopProcessor(buttonIndex)) {
                 project.createAndAddProcessor(*selectedProcessor);
             }
         }
@@ -50,7 +50,7 @@ public:
 
     void belowScreenButtonPressed(int buttonIndex) {
         if (processorSelector.isVisible()) {
-            if (const auto* selectedProcessor = processorSelector.selectBottomProcessor(project.getSelectedTrack(), buttonIndex)) {
+            if (const auto* selectedProcessor = processorSelector.selectBottomProcessor(buttonIndex)) {
                 project.createAndAddProcessor(*selectedProcessor);
             }
         }

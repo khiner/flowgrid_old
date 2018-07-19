@@ -6,7 +6,7 @@
 class Push2ProcessorSelector : public Push2ComponentBase {
     class ProcessorSelectorRow : public Component {
     public:
-        explicit ProcessorSelectorRow() {
+        explicit ProcessorSelectorRow(Project &project) : project(project) {
             for (int i = 0; i < NUM_ITEMS_PER_ROW; i++) {
                 auto *label = new Label();
                 addChildComponent(label);
@@ -15,7 +15,7 @@ class Push2ProcessorSelector : public Push2ComponentBase {
             }
         }
 
-        const PluginDescription* selectProcessor(const ValueTree &track, int index) {
+        const PluginDescription* selectProcessor(int index) {
             if (currentTree == nullptr)
                 return nullptr;
 
@@ -32,18 +32,41 @@ class Push2ProcessorSelector : public Push2ComponentBase {
             return nullptr;
         }
 
-        void setCurrentTree(KnownPluginList::PluginTree* tree, bool trackHasMixerAlready=false) {
+        void setCurrentTree(KnownPluginList::PluginTree* tree) {
             if (currentTree == tree)
                 return;
 
+            if (currentTree != nullptr && currentTree->subFolders.contains(tree)) {
+                for (auto* folder : currentTree->subFolders) {
+                    folder->selected = false;
+                }
+            }
             currentTree = tree;
+            if (currentTree != nullptr)
+                currentTree->selected = true;
             currentViewOffsetIndex = 0;
-            updateLabels(trackHasMixerAlready);
+            updateLabels(project.selectedTrackHasMixerChannel());
         }
 
         void setSelected(bool selected) {
             this->selected = selected;
             repaint();
+        }
+
+        Label* findSelectedLabel() const {
+            if (currentTree == nullptr)
+                return nullptr;
+
+            for (int i = 0; i < jmin(getTotalNumberOfTreeItems() - currentViewOffsetIndex, NUM_ITEMS_PER_ROW); i++) {
+                if (i + currentViewOffsetIndex < currentTree->subFolders.size()) {
+                    if (currentTree->subFolders.getUnchecked(i + currentViewOffsetIndex)->selected)
+                        return labels[i];
+                }
+            }
+            if (currentViewOffsetIndex < currentTree->subFolders.size()) {
+                return labels.getUnchecked(0); // default to first subfolder in view
+            }
+            return nullptr;
         }
 
         void arrowPressed(Direction direction) {
@@ -52,21 +75,16 @@ class Push2ProcessorSelector : public Push2ComponentBase {
             } else if (direction == Direction::right && currentTree != nullptr) {
                 currentViewOffsetIndex = jmin(currentViewOffsetIndex + NUM_ITEMS_PER_ROW, getTotalNumberOfTreeItems() - getTotalNumberOfTreeItems() % NUM_ITEMS_PER_ROW);
             }
-            updateLabels();
+            updateLabels(project.selectedTrackHasMixerChannel());
         }
 
-        int getTotalNumberOfTreeItems() {
-            if (currentTree == nullptr)
-                return 0;
-
-            return currentTree->subFolders.size() + currentTree->plugins.size();
+        int getTotalNumberOfTreeItems() const {
+            return currentTree != nullptr ? currentTree->subFolders.size() + currentTree->plugins.size() : 0;
         }
 
-//        void paint(Graphics& g) override {
-//            if (selected) {
-//                g.fillAll(Colours::red);
-//            }
-//        }
+        void paint(Graphics& g) override {
+            g.fillAll(selected ? Colours::white.withAlpha(0.07f) : Colours::transparentBlack);
+        }
 
         void resized() override {
             auto r = getLocalBounds();
@@ -77,13 +95,17 @@ class Push2ProcessorSelector : public Push2ComponentBase {
 
         int currentViewOffsetIndex { 0 };
         KnownPluginList::PluginTree* currentTree{};
+
         OwnedArray<Label> labels;
     private:
         bool selected { false };
+        Project &project;
 
-        void updateLabels(bool trackHasMixerAlready=false) {
+        void updateLabels(bool trackHasMixerAlready) {
             for (int i = 0; i < labels.size(); i++) {
-                labels.getUnchecked(i)->setVisible(false);
+                Label *label = labels.getUnchecked(i);
+                label->setColour(Label::ColourIds::backgroundColourId, Colours::transparentBlack);
+                label->setVisible(false);
             }
 
             if (currentTree == nullptr)
@@ -101,14 +123,17 @@ class Push2ProcessorSelector : public Push2ComponentBase {
                     labels[i]->setEnabled(!trackHasMixerAlready || plugin->name != MixerChannelProcessor::getIdentifier());
                 }
             }
+            if (auto *selectedLabel = findSelectedLabel()) {
+                selectedLabel->setColour(Label::ColourIds::backgroundColourId, Colours::white.withAlpha(0.08f));
+            }
         }
     };
 
 public:
     Push2ProcessorSelector(Project &project, Push2MidiCommunicator &push2MidiCommunicator)
             : Push2ComponentBase(project, push2MidiCommunicator) {
-        topProcessorSelector = std::make_unique<ProcessorSelectorRow>();
-        bottomProcessorSelector = std::make_unique<ProcessorSelectorRow>();
+        topProcessorSelector = std::make_unique<ProcessorSelectorRow>(project);
+        bottomProcessorSelector = std::make_unique<ProcessorSelectorRow>(project);
         addChildComponent(topProcessorSelector.get());
         addChildComponent(bottomProcessorSelector.get());
     }
@@ -120,17 +145,19 @@ public:
         
         if (visible) {
             rootTree = KnownPluginList::PluginTree();
-            currentProcessorSelector = topProcessorSelector.get();
             
             KnownPluginList::PluginTree *internalPluginTree = project.getKnownPluginListInternal().createTree(project.getPluginSortMethod());
             internalPluginTree->folder = "Internal";
             KnownPluginList::PluginTree *externalPluginTree = project.getKnownPluginListExternal().createTree(project.getPluginSortMethod());
             externalPluginTree->folder = "External";
+            internalPluginTree->parent = &rootTree;
+            externalPluginTree->parent = &rootTree;
 
             rootTree.subFolders.add(internalPluginTree);
             rootTree.subFolders.add(externalPluginTree);
 
-            setCurrentTree(currentProcessorSelector, &rootTree);
+            setCurrentTree(topProcessorSelector.get(), &rootTree);
+            selectProcessorRow(topProcessorSelector.get());
             updateEnabledPush2Arrows();
         } else {
             setCurrentTree(topProcessorSelector.get(), nullptr);
@@ -139,62 +166,57 @@ public:
         }
     }
 
-    const PluginDescription* selectTopProcessor(const ValueTree &track, int index) {
+    const PluginDescription* selectTopProcessor(int index) {
         KnownPluginList::PluginTree *previousTree = topProcessorSelector->currentTree;
-        const PluginDescription *description = topProcessorSelector->selectProcessor(track, index);
+        const PluginDescription *description = topProcessorSelector->selectProcessor(index);
         if (description != nullptr)
             return description;
 
         if (topProcessorSelector->currentTree != previousTree) {
             setCurrentTree(bottomProcessorSelector.get(), topProcessorSelector->currentTree);
             setCurrentTree(topProcessorSelector.get(), previousTree);
+            selectProcessorRow(bottomProcessorSelector.get());
+            updateEnabledPush2Arrows();
         }
         return nullptr;
     }
 
-    const PluginDescription* selectBottomProcessor(const ValueTree &track, int index) {
+    const PluginDescription* selectBottomProcessor(int index) {
         KnownPluginList::PluginTree *previousTree = bottomProcessorSelector->currentTree;
-        const PluginDescription *description = bottomProcessorSelector->selectProcessor(track, index);
+        const PluginDescription *description = bottomProcessorSelector->selectProcessor(index);
         if (description != nullptr)
             return description;
 
         if (bottomProcessorSelector->currentTree != previousTree) {
             setCurrentTree(topProcessorSelector.get(), previousTree);
+            updateEnabledPush2Arrows();
         }
         return nullptr;
     }
 
-    void setCurrentTree(ProcessorSelectorRow *processorSelectorRow, KnownPluginList::PluginTree* tree) {
-        for (int i = 0; i < NUM_ITEMS_PER_ROW; i++) {
-            if (topProcessorSelector.get() == processorSelectorRow)
-                push2MidiCommunicator.setAboveScreenButtonEnabled(i, false);
-            else if (bottomProcessorSelector.get() == processorSelectorRow)
-                push2MidiCommunicator.setBelowScreenButtonEnabled(i, false);
-        }
-
-        bool trackHasMixerAlready = project.getMixerChannelProcessorForTrack(project.getSelectedTrack()).isValid();
-        processorSelectorRow->setCurrentTree(tree, trackHasMixerAlready);
-        for (int i = 0; i < processorSelectorRow->labels.size(); i++){
-            if (processorSelectorRow->labels.getUnchecked(i)->isVisible()) {
-                if (topProcessorSelector.get() == processorSelectorRow)
-                    push2MidiCommunicator.setAboveScreenButtonEnabled(i, true);
-                else if (bottomProcessorSelector.get() == processorSelectorRow)
-                    push2MidiCommunicator.setBelowScreenButtonEnabled(i, true);
-            }
-        }
-    }
-
     void arrowPressed(Direction direction) {
-        if ((direction == Direction::left || direction == Direction::right) && currentProcessorSelector != nullptr) {
+        if (currentProcessorSelector != nullptr && (direction == Direction::left || direction == Direction::right)) {
             currentProcessorSelector->arrowPressed(direction);
-        } else { // up/down
-            if (direction == Direction::down && topProcessorSelector.get() == currentProcessorSelector) {
-                selectProcessorRow(bottomProcessorSelector.get());
-            } else if (direction == Direction::up && bottomProcessorSelector.get() == currentProcessorSelector) {
-                selectProcessorRow(topProcessorSelector.get());
+            updateEnabledPush2Arrows();
+        } else if (direction == Direction::down) {
+            if (auto* selectedLabel = currentProcessorSelector->findSelectedLabel()) {
+                int selectedIndex = currentProcessorSelector->labels.indexOf(selectedLabel);
+                if (currentProcessorSelector == topProcessorSelector.get()) {
+                    selectTopProcessor(selectedIndex);
+                } else if (currentProcessorSelector == bottomProcessorSelector.get()) {
+                    selectBottomProcessor(selectedIndex);
+                }
             }
-        } 
-        updateEnabledPush2Arrows();
+        } else if (direction == Direction::up) {
+            if (currentProcessorSelector == bottomProcessorSelector.get()) {
+                selectProcessorRow(topProcessorSelector.get());
+                updateEnabledPush2Arrows();
+            } else if (currentProcessorSelector->currentTree->parent != nullptr) {
+                setCurrentTree(bottomProcessorSelector.get(), topProcessorSelector->currentTree);
+                setCurrentTree(topProcessorSelector.get(), currentProcessorSelector->currentTree->parent);
+                updateEnabledPush2Arrows();
+            }
+        }
     }
 
     void resized() override {
@@ -206,10 +228,33 @@ public:
 private:
     static const int NUM_ITEMS_PER_ROW = 8;
 
+    void setCurrentTree(ProcessorSelectorRow *processorSelectorRow, KnownPluginList::PluginTree* tree) {
+        for (int i = 0; i < NUM_ITEMS_PER_ROW; i++) {
+            if (topProcessorSelector.get() == processorSelectorRow)
+                push2MidiCommunicator.setAboveScreenButtonEnabled(i, false);
+            else if (bottomProcessorSelector.get() == processorSelectorRow)
+                push2MidiCommunicator.setBelowScreenButtonEnabled(i, false);
+        }
+
+        processorSelectorRow->setCurrentTree(tree);
+        for (int i = 0; i < processorSelectorRow->labels.size(); i++){
+            if (processorSelectorRow->labels.getUnchecked(i)->isVisible()) {
+                if (topProcessorSelector.get() == processorSelectorRow)
+                    push2MidiCommunicator.setAboveScreenButtonEnabled(i, true);
+                else if (bottomProcessorSelector.get() == processorSelectorRow)
+                    push2MidiCommunicator.setBelowScreenButtonEnabled(i, true);
+            }
+        }
+    }
+
     void selectProcessorRow(ProcessorSelectorRow* processorSelectorRow) {
-        currentProcessorSelector->setSelected(false);
-        currentProcessorSelector = processorSelectorRow;
-        currentProcessorSelector->setSelected(true);
+        if (currentProcessorSelector != nullptr) {
+            currentProcessorSelector->setSelected(false);
+        }
+        if (processorSelectorRow) {
+            currentProcessorSelector = processorSelectorRow;
+            currentProcessorSelector->setSelected(true);
+        }
     }
 
     void updateEnabledPush2Arrows() {
@@ -222,9 +267,9 @@ private:
             push2MidiCommunicator.setArrowButtonEnabled(Direction::left, true);
         if (currentProcessorSelector->currentViewOffsetIndex + NUM_ITEMS_PER_ROW < currentProcessorSelector->getTotalNumberOfTreeItems())
             push2MidiCommunicator.setArrowButtonEnabled(Direction::right, true);
-        if (topProcessorSelector.get() == currentProcessorSelector)
+        if (currentProcessorSelector->findSelectedLabel() != nullptr)
             push2MidiCommunicator.setArrowButtonEnabled(Direction::down, true);
-        if (bottomProcessorSelector.get() == currentProcessorSelector)
+        if (bottomProcessorSelector.get() == currentProcessorSelector || currentProcessorSelector->currentTree->parent != nullptr)
             push2MidiCommunicator.setArrowButtonEnabled(Direction::up, true);
     }
 
