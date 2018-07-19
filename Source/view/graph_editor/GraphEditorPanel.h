@@ -1,9 +1,9 @@
 #pragma once
 
 #include <ProcessorGraph.h>
+#include "ConnectorDragListener.h"
 
-class GraphEditorPanel : public Component,
-                         public ChangeListener {
+class GraphEditorPanel : public Component, public ChangeListener, public ConnectorDragListener {
 public:
     GraphEditorPanel(ProcessorGraph &g, Project &project)
             : graph(g), project(project) {
@@ -72,7 +72,7 @@ public:
         for (auto *node : graph.getNodes()) {
             ProcessorComponent *component = getComponentForNodeId(node->nodeID);
             if (component == nullptr) {
-                auto *comp = nodes.add(new ProcessorComponent(*this, node->nodeID));
+                auto *comp = nodes.add(new ProcessorComponent(*this, graph, node->nodeID));
                 addAndMakeVisible(comp);
                 comp->update();
             } else {
@@ -82,7 +82,7 @@ public:
 
         for (auto &c : graph.getConnectionsUi()) {
             if (getComponentForConnection(c) == nullptr) {
-                auto *comp = connectors.add(new ConnectorComponent(*this));
+                auto *comp = connectors.add(new ConnectorComponent(*this, graph));
                 addAndMakeVisible(comp);
 
                 comp->setInput(c.source, getComponentForNodeId(c.source.nodeID));
@@ -105,13 +105,13 @@ public:
         }));
     }
 
-    void beginConnectorDrag(AudioProcessorGraph::NodeAndChannel source, AudioProcessorGraph::NodeAndChannel destination, const MouseEvent &e) {
+    void beginConnectorDrag(AudioProcessorGraph::NodeAndChannel source, AudioProcessorGraph::NodeAndChannel destination, const MouseEvent &e) override {
         auto *c = dynamic_cast<ConnectorComponent *> (e.originalComponent);
         connectors.removeObject(c, false);
         draggingConnector.reset(c);
 
         if (draggingConnector == nullptr)
-            draggingConnector = std::make_unique<ConnectorComponent>(*this);
+            draggingConnector = std::make_unique<ConnectorComponent>(*this, graph);
 
         draggingConnector->setInput(source, getComponentForNodeId(source.nodeID));
         draggingConnector->setOutput(destination, getComponentForNodeId(destination.nodeID));
@@ -122,7 +122,7 @@ public:
         dragConnector(e);
     }
 
-    void dragConnector(const MouseEvent &e) {
+    void dragConnector(const MouseEvent &e) override {
         auto e2 = e.getEventRelativeTo(this);
 
         if (draggingConnector != nullptr) {
@@ -152,7 +152,7 @@ public:
         }
     }
 
-    void endDraggingConnector(const MouseEvent &e) {
+    void endDraggingConnector(const MouseEvent &e) override {
         if (draggingConnector == nullptr)
             return;
 
@@ -188,29 +188,24 @@ public:
 
 private:
     struct PinComponent : public Component, public SettableTooltipClient {
-        PinComponent(GraphEditorPanel &p, AudioProcessorGraph::NodeAndChannel pinToUse, bool isIn)
-                : panel(p), graph(p.graph), pin(pinToUse), isInput(isIn) {
-            if (auto node = graph.getNodeForId(pin.nodeID)) {
-                String tip;
+        PinComponent(ConnectorDragListener &connectorDragListener, const AudioProcessorGraph::Node::Ptr node, int channelIndex, bool isIn)
+                : connectorDragListener(connectorDragListener), pin({node->nodeID, channelIndex}), isInput(isIn) {
+            String tip;
 
-                if (pin.isMIDI()) {
-                    tip = isInput ? "MIDI Input"
-                                  : "MIDI Output";
-                } else {
-                    auto &processor = *node->getProcessor();
-                    auto channel = processor.getOffsetInBusBufferForAbsoluteChannelIndex(isInput, pin.channelIndex, busIdx);
+            if (pin.isMIDI()) {
+                tip = isInput ? "MIDI Input" : "MIDI Output";
+            } else {
+                auto &processor = *node->getProcessor();
+                auto channel = processor.getOffsetInBusBufferForAbsoluteChannelIndex(isInput, pin.channelIndex, busIdx);
 
-                    if (auto *bus = processor.getBus(isInput, busIdx))
-                        tip = bus->getName() + ": " + AudioChannelSet::getAbbreviatedChannelTypeName(
-                                bus->getCurrentLayout().getTypeOfChannel(channel));
-                    else
-                        tip = (isInput ? "Main Input: "
-                                       : "Main Output: ") + String(pin.channelIndex + 1);
-
-                }
-
-                setTooltip(tip);
+                if (auto *bus = processor.getBus(isInput, busIdx))
+                    tip = bus->getName() + ": " + AudioChannelSet::getAbbreviatedChannelTypeName(
+                            bus->getCurrentLayout().getTypeOfChannel(channel));
+                else
+                    tip = (isInput ? "Main Input: " : "Main Output: ") + String(pin.channelIndex + 1);
             }
+
+            setTooltip(tip);
 
             setSize(16, 16);
         }
@@ -231,22 +226,18 @@ private:
 
         void mouseDown(const MouseEvent &e) override {
             AudioProcessorGraph::NodeAndChannel dummy{0, 0};
-
-            panel.beginConnectorDrag(isInput ? dummy : pin,
-                                     isInput ? pin : dummy,
-                                     e);
+            connectorDragListener.beginConnectorDrag(isInput ? dummy : pin, isInput ? pin : dummy, e);
         }
 
         void mouseDrag(const MouseEvent &e) override {
-            panel.dragConnector(e);
+            connectorDragListener.dragConnector(e);
         }
 
         void mouseUp(const MouseEvent &e) override {
-            panel.endDraggingConnector(e);
+            connectorDragListener.endDraggingConnector(e);
         }
 
-        GraphEditorPanel &panel;
-        ProcessorGraph &graph;
+        ConnectorDragListener &connectorDragListener;
         AudioProcessorGraph::NodeAndChannel pin;
         const bool isInput;
         int busIdx = 0;
@@ -255,7 +246,8 @@ private:
     };
 
     struct ProcessorComponent : public Component, private AudioProcessorParameter::Listener {
-        ProcessorComponent(GraphEditorPanel &p, AudioProcessorGraph::NodeID nodeId) : panel(p), graph(p.graph), nodeId(nodeId) {
+        ProcessorComponent(ConnectorDragListener &connectorDragListener, ProcessorGraph& graph, AudioProcessorGraph::NodeID nodeId)
+                : connectorDragListener(connectorDragListener), graph(graph), nodeId(nodeId) {
             if (auto f = graph.getNodeForId(nodeId)) {
                 if (auto *processor = f->getProcessor()) {
                     if (auto *bypassParam = processor->getBypassParameter())
@@ -382,15 +374,15 @@ private:
         }
 
         void update() {
-            const AudioProcessorGraph::Node::Ptr f(graph.getNodeForId(nodeId));
-            jassert (f != nullptr);
+            const AudioProcessorGraph::Node::Ptr node(graph.getNodeForId(nodeId));
+            jassert (node != nullptr);
 
-            numIns = f->getProcessor()->getTotalNumInputChannels();
-            if (f->getProcessor()->acceptsMidi())
+            numIns = node->getProcessor()->getTotalNumInputChannels();
+            if (node->getProcessor()->acceptsMidi())
                 ++numIns;
 
-            numOuts = f->getProcessor()->getTotalNumOutputChannels();
-            if (f->getProcessor()->producesMidi())
+            numOuts = node->getProcessor()->getTotalNumOutputChannels();
+            if (node->getProcessor()->producesMidi())
                 ++numOuts;
 
             int w = getParentWidth() / NUM_COLUMNS;
@@ -402,7 +394,7 @@ private:
 
             setSize(w, h);
 
-            setName(f->getProcessor()->getName());
+            setName(node->getProcessor()->getName());
 
             {
                 auto p = graph.getNodePosition(nodeId);
@@ -415,19 +407,17 @@ private:
 
                 pins.clear();
 
-                for (int i = 0; i < f->getProcessor()->getTotalNumInputChannels(); ++i)
-                    addAndMakeVisible(pins.add(new PinComponent(panel, {nodeId, i}, true)));
+                for (int i = 0; i < node->getProcessor()->getTotalNumInputChannels(); ++i)
+                    addAndMakeVisible(pins.add(new PinComponent(connectorDragListener, node, i, true)));
 
-                if (f->getProcessor()->acceptsMidi())
-                    addAndMakeVisible(
-                            pins.add(new PinComponent(panel, {nodeId, AudioProcessorGraph::midiChannelIndex}, true)));
+                if (node->getProcessor()->acceptsMidi())
+                    addAndMakeVisible(pins.add(new PinComponent(connectorDragListener, node, AudioProcessorGraph::midiChannelIndex, true)));
 
-                for (int i = 0; i < f->getProcessor()->getTotalNumOutputChannels(); ++i)
-                    addAndMakeVisible(pins.add(new PinComponent(panel, {nodeId, i}, false)));
+                for (int i = 0; i < node->getProcessor()->getTotalNumOutputChannels(); ++i)
+                    addAndMakeVisible(pins.add(new PinComponent(connectorDragListener, node, i, false)));
 
-                if (f->getProcessor()->producesMidi())
-                    addAndMakeVisible(
-                            pins.add(new PinComponent(panel, {nodeId, AudioProcessorGraph::midiChannelIndex}, false)));
+                if (node->getProcessor()->producesMidi())
+                    addAndMakeVisible(pins.add(new PinComponent(connectorDragListener, node, AudioProcessorGraph::midiChannelIndex, false)));
 
                 resized();
             }
@@ -499,7 +489,7 @@ private:
 
         void parameterGestureChanged(int, bool) override {}
 
-        GraphEditorPanel &panel;
+        ConnectorDragListener &connectorDragListener;
         ProcessorGraph &graph;
         const AudioProcessorGraph::NodeID nodeId;
         OwnedArray<PinComponent> pins;
@@ -512,7 +502,8 @@ private:
     };
 
     struct ConnectorComponent : public Component, public SettableTooltipClient {
-        explicit ConnectorComponent(GraphEditorPanel &p) : panel(p), graph(p.graph) {
+        explicit ConnectorComponent(ConnectorDragListener &connectorDragListener, ProcessorGraph& graph)
+                : connectorDragListener(connectorDragListener), graph(graph) {
             setAlwaysOnTop(true);
         }
 
@@ -598,7 +589,7 @@ private:
 
         void mouseDrag(const MouseEvent &e) override {
             if (dragging) {
-                panel.dragConnector(e);
+                connectorDragListener.dragConnector(e);
             } else if (e.mouseWasDraggedSinceMouseDown()) {
                 dragging = true;
 
@@ -610,7 +601,7 @@ private:
 
                 AudioProcessorGraph::NodeAndChannel dummy{0, 0};
 
-                panel.beginConnectorDrag(isNearerSource ? dummy : connection.source,
+                connectorDragListener.beginConnectorDrag(isNearerSource ? dummy : connection.source,
                                          isNearerSource ? connection.destination : dummy,
                                          e);
             }
@@ -618,7 +609,7 @@ private:
 
         void mouseUp(const MouseEvent &e) override {
             if (dragging)
-                panel.endDraggingConnector(e);
+                connectorDragListener.endDraggingConnector(e);
         }
 
         void resized() override {
@@ -667,7 +658,7 @@ private:
             distanceFromEnd = p2.getDistanceFrom(p);
         }
 
-        GraphEditorPanel &panel;
+        ConnectorDragListener &connectorDragListener;
         ProcessorGraph &graph;
         AudioProcessorGraph::Connection connection{{0, 0}, {0, 0}};
         ProcessorComponent *sourceComponent{}, *destinationComponent{};
