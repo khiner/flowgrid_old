@@ -85,8 +85,8 @@ public:
                 auto *comp = connectors.add(new ConnectorComponent(*this));
                 addAndMakeVisible(comp);
 
-                comp->setInput(c.source);
-                comp->setOutput(c.destination);
+                comp->setInput(c.source, getComponentForNodeId(c.source.nodeID));
+                comp->setOutput(c.destination, getComponentForNodeId(c.destination.nodeID));
             }
         }
     }
@@ -105,7 +105,7 @@ public:
         }));
     }
 
-    void beginConnectorDrag(AudioProcessorGraph::NodeAndChannel source, AudioProcessorGraph::NodeAndChannel dest, const MouseEvent &e) {
+    void beginConnectorDrag(AudioProcessorGraph::NodeAndChannel source, AudioProcessorGraph::NodeAndChannel destination, const MouseEvent &e) {
         auto *c = dynamic_cast<ConnectorComponent *> (e.originalComponent);
         connectors.removeObject(c, false);
         draggingConnector.reset(c);
@@ -113,8 +113,8 @@ public:
         if (draggingConnector == nullptr)
             draggingConnector = std::make_unique<ConnectorComponent>(*this);
 
-        draggingConnector->setInput(source);
-        draggingConnector->setOutput(dest);
+        draggingConnector->setInput(source, getComponentForNodeId(source.nodeID));
+        draggingConnector->setOutput(destination, getComponentForNodeId(destination.nodeID));
 
         addAndMakeVisible(draggingConnector.get());
         draggingConnector->toFront(false);
@@ -516,16 +516,18 @@ private:
             setAlwaysOnTop(true);
         }
 
-        void setInput(AudioProcessorGraph::NodeAndChannel newSource) {
+        void setInput(AudioProcessorGraph::NodeAndChannel newSource, ProcessorComponent *newSourceComponent) {
             if (connection.source != newSource) {
                 connection.source = newSource;
+                sourceComponent = newSourceComponent;
                 update();
             }
         }
 
-        void setOutput(AudioProcessorGraph::NodeAndChannel newDest) {
-            if (connection.destination != newDest) {
-                connection.destination = newDest;
+        void setOutput(AudioProcessorGraph::NodeAndChannel newDestination, ProcessorComponent *newDestinationComponent) {
+            if (connection.destination != newDestination) {
+                connection.destination = newDestination;
+                destinationComponent = newDestinationComponent;
                 update();
             }
         }
@@ -562,11 +564,11 @@ private:
             p1 = lastInputPos;
             p2 = lastOutputPos;
 
-            if (auto *src = panel.getComponentForNodeId(connection.source.nodeID))
-                p1 = src->getPinPos(connection.source.channelIndex, false);
+            if (sourceComponent != nullptr)
+                p1 = sourceComponent->getPinPos(connection.source.channelIndex, false);
 
-            if (auto *dest = panel.getComponentForNodeId(connection.destination.nodeID))
-                p2 = dest->getPinPos(connection.destination.channelIndex, true);
+            if (destinationComponent != nullptr)
+                p2 = destinationComponent->getPinPos(connection.destination.channelIndex, true);
         }
 
         void paint(Graphics &g) override {
@@ -667,8 +669,9 @@ private:
 
         GraphEditorPanel &panel;
         ProcessorGraph &graph;
-        AudioProcessorGraph::Connection connection{{0, 0},
-                                                   {0, 0}};
+        AudioProcessorGraph::Connection connection{{0, 0}, {0, 0}};
+        ProcessorComponent *sourceComponent{}, *destinationComponent{};
+
         Point<float> lastInputPos, lastOutputPos;
         Path linePath, hitPath;
         bool dragging = false;
