@@ -4,7 +4,7 @@
 #include "ApplicationKeyListener.h"
 #include <view/ArrangeView.h>
 #include <view/ValueTreeEditor.h>
-#include <view/GraphEditorPanel.h>
+#include <view/graph_editor/GraphEditor.h>
 
 File getSaveFile() {
     return File::getSpecialLocation(File::userDesktopDirectory).getChildFile("ValueTreeDemoEdit.xml");
@@ -38,7 +38,7 @@ public:
         ValueTreeEditor *valueTreeEditor = new ValueTreeEditor(project.getState(), undoManager, project, processorGraph);
         treeWindow = std::make_unique<MainWindow>("Tree Editor", valueTreeEditor, &applicationKeyListener);
         arrangeWindow = std::make_unique<MainWindow>("Arrange View", new ArrangeView(project.getTracks()), &applicationKeyListener);
-        graphEditorWindow = std::make_unique<MainWindow>("Graph Editor", new GraphEditorPanel(processorGraph, project), &applicationKeyListener);
+        graphEditorWindow = std::make_unique<MainWindow>("Graph Editor", new GraphEditor(processorGraph, project, deviceManager), &applicationKeyListener);
 
         audioDeviceSelectorComponent = std::make_unique<AudioDeviceSelectorComponent>(deviceManager, 0, 256, 0, 256,
                                                                                       true, true, true, false);

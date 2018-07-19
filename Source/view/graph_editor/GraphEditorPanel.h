@@ -254,7 +254,6 @@ private:
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PinComponent)
     };
 
-//==============================================================================
     struct FilterComponent : public Component, private AudioProcessorParameter::Listener {
         FilterComponent(GraphEditorPanel &p, uint32 id) : panel(p), graph(p.graph), nodeId(id) {
             if (auto f = graph.getNodeForId(nodeId)) {
@@ -712,92 +711,4 @@ private:
     }
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (GraphEditorPanel)
-};
-
-
-//==============================================================================
-/**
-    A panel that embeds a GraphEditorPanel with a midi keyboard at the bottom.
-*/
-class GraphDocumentComponent : public Component {
-public:
-    GraphDocumentComponent(ProcessorGraph &graph, Project &project, AudioPluginFormatManager &fm, AudioDeviceManager &dm, KnownPluginList &kpl)
-            : graph(graph), project(project), deviceManager(dm), pluginList(kpl) {
-        init();
-        deviceManager.addChangeListener(graphPanel.get());
-    }
-
-    ~GraphDocumentComponent() override {
-        releaseGraph();
-    }
-
-    void resized() override {
-        auto r = getLocalBounds();
-        const int titleBarHeight = 40;
-        const int keysHeight = 60;
-        const int statusHeight = 20;
-
-        statusBar->setBounds(r.removeFromBottom(statusHeight));
-        graphPanel->setBounds(r);
-    }
-
-    void releaseGraph() {
-        if (graphPanel != nullptr) {
-            deviceManager.removeChangeListener(graphPanel.get());
-            graphPanel = nullptr;
-        }
-
-        statusBar = nullptr;
-    }
-
-    std::unique_ptr<GraphEditorPanel> graphPanel;
-private:
-    ProcessorGraph &graph;
-    Project &project;
-    AudioDeviceManager &deviceManager;
-    KnownPluginList &pluginList;
-
-    struct TooltipBar : public Component, private Timer {
-        TooltipBar() {
-            startTimer(100);
-        }
-
-        void paint(Graphics &g) override {
-            g.setFont(Font(getHeight() * 0.7f, Font::bold));
-            g.setColour(Colours::black);
-            g.drawFittedText(tip, 10, 0, getWidth() - 12, getHeight(), Justification::centredLeft, 1);
-        }
-
-        void timerCallback() override {
-            String newTip;
-
-            if (auto *underMouse = Desktop::getInstance().getMainMouseSource().getComponentUnderMouse())
-                if (auto *ttc = dynamic_cast<TooltipClient *> (underMouse))
-                    if (!(underMouse->isMouseButtonDown() || underMouse->isCurrentlyBlockedByAnotherModalComponent()))
-                        newTip = ttc->getTooltip();
-
-            if (newTip != tip) {
-                tip = newTip;
-                repaint();
-            }
-        }
-
-        String tip;
-
-        JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (TooltipBar)
-    };
-
-    std::unique_ptr<TooltipBar> statusBar;
-
-    void init() {
-        graphPanel = std::make_unique<GraphEditorPanel>(graph, project);
-        addAndMakeVisible(graphPanel.get());
-
-        statusBar = std::make_unique<TooltipBar>();
-        addAndMakeVisible(statusBar.get());
-
-        graphPanel->updateComponents();
-    }
-
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (GraphDocumentComponent)
 };
