@@ -1,8 +1,8 @@
 #pragma once
 
 #include "JuceHeader.h"
-#include "ProcessorComponent.h"
 #include "ProcessorGraph.h"
+#include "GraphEditorProcessor.h"
 
 struct ConnectorComponent : public Component, public SettableTooltipClient {
     explicit ConnectorComponent(ConnectorDragListener &connectorDragListener, ProcessorGraph& graph)
@@ -10,7 +10,7 @@ struct ConnectorComponent : public Component, public SettableTooltipClient {
         setAlwaysOnTop(true);
     }
 
-    void setInput(AudioProcessorGraph::NodeAndChannel newSource, ProcessorComponent *newSourceComponent) {
+    void setInput(AudioProcessorGraph::NodeAndChannel newSource, GraphEditorProcessor *newSourceComponent) {
         if (connection.source != newSource) {
             connection.source = newSource;
             sourceComponent = newSourceComponent;
@@ -18,7 +18,7 @@ struct ConnectorComponent : public Component, public SettableTooltipClient {
         }
     }
 
-    void setOutput(AudioProcessorGraph::NodeAndChannel newDestination, ProcessorComponent *newDestinationComponent) {
+    void setOutput(AudioProcessorGraph::NodeAndChannel newDestination, GraphEditorProcessor *newDestinationComponent) {
         if (connection.destination != newDestination) {
             connection.destination = newDestination;
             destinationComponent = newDestinationComponent;
@@ -164,7 +164,7 @@ struct ConnectorComponent : public Component, public SettableTooltipClient {
     ConnectorDragListener &connectorDragListener;
     ProcessorGraph &graph;
     AudioProcessorGraph::Connection connection{{0, 0}, {0, 0}};
-    ProcessorComponent *sourceComponent{}, *destinationComponent{};
+    GraphEditorProcessor *sourceComponent{}, *destinationComponent{};
 
     Point<float> lastInputPos, lastOutputPos;
     Path linePath, hitPath;

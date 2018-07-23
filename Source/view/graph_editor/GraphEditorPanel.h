@@ -2,7 +2,6 @@
 
 #include <ProcessorGraph.h>
 #include "PinComponent.h"
-#include "ProcessorComponent.h"
 #include "ConnectorComponent.h"
 #include "GraphEditorTracks.h"
 
@@ -13,19 +12,17 @@ public:
         graph.addChangeListener(this);
         setOpaque(true);
 
-        addAndMakeVisible(*(tracks = std::make_unique<GraphEditorTracks>(project.getTracks())));
+        addAndMakeVisible(*(tracks = std::make_unique<GraphEditorTracks>(project.getTracks(), *this, graph)));
     }
 
     ~GraphEditorPanel() override {
         graph.removeChangeListener(this);
         draggingConnector = nullptr;
-        nodes.clear();
         connectors.clear();
     }
 
     void paint(Graphics &g) override {
-        const Colour &bgColor = findColour(ResizableWindow::backgroundColourId);
-        g.fillAll(bgColor);
+        g.fillAll(findColour(ResizableWindow::backgroundColourId));
     }
 
     void mouseDown(const MouseEvent &e) override {
@@ -51,38 +48,23 @@ public:
 
     void updateComponents() {
         repaint();
-        for (int i = nodes.size(); --i >= 0;)
-            if (graph.getNodeForId(nodes.getUnchecked(i)->nodeId) == nullptr)
-                nodes.remove(i);
 
         for (int i = connectors.size(); --i >= 0;)
             if (!graph.isConnectedUi(connectors.getUnchecked(i)->connection))
                 connectors.remove(i);
 
-        for (auto *fc : nodes)
-            fc->update();
+        updateNodes();
 
         for (auto *cc : connectors)
             cc->update();
-
-        for (auto *node : graph.getNodes()) {
-            ProcessorComponent *component = getComponentForNodeId(node->nodeID);
-            if (component == nullptr) {
-                auto *comp = nodes.add(new ProcessorComponent(*this, graph, node->nodeID));
-                addAndMakeVisible(comp);
-                comp->update();
-            } else {
-                component->repaint();
-            }
-        }
 
         for (auto &c : graph.getConnectionsUi()) {
             if (getComponentForConnection(c) == nullptr) {
                 auto *comp = connectors.add(new ConnectorComponent(*this, graph));
                 addAndMakeVisible(comp);
 
-                comp->setInput(c.source, getComponentForNodeId(c.source.nodeID));
-                comp->setOutput(c.destination, getComponentForNodeId(c.destination.nodeID));
+                comp->setInput(c.source, getProcessorForNodeId(c.source.nodeID));
+                comp->setOutput(c.destination, getProcessorForNodeId(c.destination.nodeID));
             }
         }
     }
@@ -109,8 +91,8 @@ public:
         if (draggingConnector == nullptr)
             draggingConnector = std::make_unique<ConnectorComponent>(*this, graph);
 
-        draggingConnector->setInput(source, getComponentForNodeId(source.nodeID));
-        draggingConnector->setOutput(destination, getComponentForNodeId(destination.nodeID));
+        draggingConnector->setInput(source, getProcessorForNodeId(source.nodeID));
+        draggingConnector->setOutput(destination, getProcessorForNodeId(destination.nodeID));
 
         addAndMakeVisible(draggingConnector.get());
         draggingConnector->toFront(false);
@@ -179,22 +161,14 @@ public:
     ProcessorGraph &graph;
     Project &project;
 
-    static const int NUM_ROWS = Project::NUM_VISIBLE_PROCESSOR_SLOTS;
-    static const int NUM_COLUMNS = Project::NUM_VISIBLE_TRACKS;
-
 private:
-    OwnedArray<ProcessorComponent> nodes;
     OwnedArray<ConnectorComponent> connectors;
     std::unique_ptr<ConnectorComponent> draggingConnector;
     std::unique_ptr<PopupMenu> menu;
     std::unique_ptr<GraphEditorTracks> tracks;
 
-    ProcessorComponent *getComponentForNodeId(const AudioProcessorGraph::NodeID nodeId) const {
-        for (auto *fc : nodes)
-            if (fc->nodeId == nodeId)
-                return fc;
-
-        return nullptr;
+    GraphEditorProcessor *getProcessorForNodeId(const AudioProcessorGraph::NodeID nodeId) const {
+        return tracks->getProcessorForNodeId(nodeId);
     }
 
     ConnectorComponent *getComponentForConnection(const AudioProcessorGraph::Connection &conn) const {
@@ -206,16 +180,11 @@ private:
     }
 
     PinComponent *findPinAt(const Point<float> &pos) const {
-        for (auto *fc : nodes) {
-            // NB: A Visual Studio optimiser error means we have to put this Component* in a local
-            // variable before trying to cast it, or it gets mysteriously optimised away..
-            auto *comp = fc->getComponentAt(pos.toInt() - fc->getPosition());
+        return tracks->findPinAt(pos);
+    }
 
-            if (auto *pin = dynamic_cast<PinComponent *> (comp))
-                return pin;
-        }
-
-        return nullptr;
+    void updateNodes() {
+        tracks->updateNodes();
     }
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (GraphEditorPanel)

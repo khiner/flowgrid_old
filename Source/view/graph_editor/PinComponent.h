@@ -4,17 +4,16 @@
 #include "ConnectorDragListener.h"
 
 struct PinComponent : public Component, public SettableTooltipClient {
-    PinComponent(ConnectorDragListener &connectorDragListener, const AudioProcessorGraph::Node::Ptr node, int channelIndex, bool isIn)
-            : connectorDragListener(connectorDragListener), pin({node->nodeID, channelIndex}), isInput(isIn) {
+    PinComponent(ConnectorDragListener &connectorDragListener, AudioProcessor* processor, AudioProcessorGraph::NodeID nodeId, int channelIndex, bool isIn)
+            : connectorDragListener(connectorDragListener), pin({nodeId, channelIndex}), isInput(isIn) {
         String tip;
 
         if (pin.isMIDI()) {
             tip = isInput ? "MIDI Input" : "MIDI Output";
         } else {
-            auto &processor = *node->getProcessor();
-            auto channel = processor.getOffsetInBusBufferForAbsoluteChannelIndex(isInput, pin.channelIndex, busIdx);
+            auto channel = processor->getOffsetInBusBufferForAbsoluteChannelIndex(isInput, pin.channelIndex, busIdx);
 
-            if (auto *bus = processor.getBus(isInput, busIdx))
+            if (auto *bus = processor->getBus(isInput, busIdx))
                 tip = bus->getName() + ": " + AudioChannelSet::getAbbreviatedChannelTypeName(
                         bus->getCurrentLayout().getTypeOfChannel(channel));
             else

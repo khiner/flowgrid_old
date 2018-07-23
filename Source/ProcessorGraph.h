@@ -186,12 +186,6 @@ public:
         processorHasMoved(processorState, toTrack);
     }
 
-    Point<double> getNodePosition(NodeID nodeId) const {
-        const Point<int> gridLocation = getProcessorGridLocation(nodeId);
-        return {gridLocation.x / float(Project::NUM_VISIBLE_TRACKS) + (0.5 / Project::NUM_VISIBLE_TRACKS),
-                gridLocation.y / float(Project::NUM_VISIBLE_PROCESSOR_SLOTS) + (0.5 / Project::NUM_VISIBLE_PROCESSOR_SLOTS)};
-    }
-
     bool canConnectUi(const Connection& c) const {
         if (auto* source = getNodeForId (c.source.nodeID))
             if (auto* dest = getNodeForId (c.destination.nodeID))

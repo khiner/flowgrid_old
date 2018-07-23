@@ -7,8 +7,8 @@
 
 class GraphEditorTracks : public Component, public Utilities::ValueTreeObjectList<GraphEditorTrack> {
 public:
-    explicit GraphEditorTracks(const ValueTree &state)
-            : Utilities::ValueTreeObjectList<GraphEditorTrack>(state) {
+    explicit GraphEditorTracks(const ValueTree &state, ConnectorDragListener &connectorDragListener, ProcessorGraph& graph)
+            : Utilities::ValueTreeObjectList<GraphEditorTrack>(state), connectorDragListener(connectorDragListener), graph(graph) {
         rebuildObjects();
     }
 
@@ -29,7 +29,7 @@ public:
     }
 
     GraphEditorTrack *createNewObject(const juce::ValueTree &v) override {
-        auto *at = new GraphEditorTrack(v);
+        auto *at = new GraphEditorTrack(v, connectorDragListener, graph);
         addAndMakeVisible(at);
         return at;
     }
@@ -43,4 +43,33 @@ public:
     void objectRemoved(GraphEditorTrack *) override { resized(); }
 
     void objectOrderChanged() override { resized(); }
+
+    GraphEditorProcessor *getProcessorForNodeId(const AudioProcessorGraph::NodeID nodeId) const {
+        for (auto *track : objects) {
+            auto *processor = track->getProcessorForNodeId(nodeId);
+            if (processor != nullptr) {
+                return processor;
+            }
+        }
+        return nullptr;
+    }
+
+    PinComponent *findPinAt(const Point<float> &pos) const {
+        for (auto *track : objects) {
+            auto *processor = track->findPinAt(pos);
+            if (processor != nullptr) {
+                return processor;
+            }
+        }
+        return nullptr;
+    }
+
+    void updateNodes() {
+        for (auto *track : objects) {
+            track->updateNodes();
+        }
+    }
+
+    ConnectorDragListener &connectorDragListener;
+    ProcessorGraph &graph;
 };

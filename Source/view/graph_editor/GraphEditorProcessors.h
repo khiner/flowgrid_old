@@ -7,9 +7,9 @@
 class GraphEditorProcessors : public Component,
                               public Utilities::ValueTreeObjectList<GraphEditorProcessor> {
 public:
-    explicit GraphEditorProcessors(GraphEditorTrack &at, ValueTree& state)
+    explicit GraphEditorProcessors(GraphEditorTrack &at, ValueTree& state, ConnectorDragListener &connectorDragListener, ProcessorGraph& graph)
             : Utilities::ValueTreeObjectList<GraphEditorProcessor>(state),
-              track(at) {
+              track(at), connectorDragListener(connectorDragListener), graph(graph) {
         rebuildObjects();
     }
 
@@ -18,6 +18,15 @@ public:
     }
 
     void resized() override {
+        auto r = getLocalBounds();
+        const int h = r.getHeight() / Project::NUM_AVAILABLE_PROCESSOR_SLOTS;
+
+        for (int slot = 0; slot < Project::NUM_AVAILABLE_PROCESSOR_SLOTS; slot++) {
+            auto processorBounds = r.removeFromTop(h);
+            if (auto *processor = findProcessorAtSlot(slot)) {
+                processor->setBounds(processorBounds);
+            }
+        }
     }
 
     void paint(Graphics &g) override {
@@ -34,8 +43,9 @@ public:
     }
 
     GraphEditorProcessor *createNewObject(const ValueTree &v) override {
-        auto *ac = new GraphEditorProcessor(v, track);
+        auto *ac = new GraphEditorProcessor(v, track, connectorDragListener, graph);
         addAndMakeVisible(ac);
+        ac->update();
         return ac;
     }
 
@@ -49,8 +59,34 @@ public:
 
     void objectOrderChanged() override { resized(); }
 
+    GraphEditorProcessor *getProcessorForNodeId(const AudioProcessorGraph::NodeID nodeId) const {
+        for (auto *processor : objects) {
+            if (processor->getNodeId() == nodeId) {
+                return processor;
+            }
+        }
+        return nullptr;
+    }
+
+    PinComponent *findPinAt(const Point<float> &pos) const {
+        for (auto *processor : objects) {
+            auto *comp = processor->getComponentAt(pos.toInt() - processor->getPosition());
+            if (auto *pin = dynamic_cast<PinComponent *> (comp)) {
+                return pin;
+            }
+        }
+        return nullptr;
+    }
+
+    void updateNodes() {
+        for (auto *processor : objects) {
+            processor->update();
+        }
+    }
 private:
     GraphEditorTrack &track;
+    ConnectorDragListener &connectorDragListener;
+    ProcessorGraph &graph;
 
     void valueTreePropertyChanged(ValueTree &v, const Identifier &i) override {
         if (isSuitableType(v))
@@ -58,5 +94,15 @@ private:
                 resized();
 
         Utilities::ValueTreeObjectList<GraphEditorProcessor>::valueTreePropertyChanged(v, i);
+    }
+    
+    GraphEditorProcessor* findProcessorAtSlot(int slot) const {
+        for (auto* processor : objects) {
+            if (processor->getSlot() == slot) {
+                return processor;
+            }
+        }
+        
+        return nullptr;
     }
 };
