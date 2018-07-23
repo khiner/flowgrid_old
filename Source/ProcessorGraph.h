@@ -13,9 +13,9 @@ public:
     explicit ProcessorGraph(Project &project, UndoManager &undoManager)
             : project(project), undoManager(undoManager) {
         enableAllBuses();
-        audioOutputNode = addNode(new AudioGraphIOProcessor(AudioGraphIOProcessor::audioOutputNode));
 
         this->project.getConnections().addListener(this);
+        addProcessor(project.getAudioOutputProcessorState());
         recursivelyInitializeWithState(project.getMasterTrack());
         recursivelyInitializeWithState(project.getTracks());
 
@@ -265,7 +265,6 @@ private:
 
     Project &project;
     UndoManager &undoManager;
-    Node::Ptr audioOutputNode;
     OwnedArray<StatefulAudioProcessorWrapper> processerWrappers;
     OwnedArray<PluginWindow> activePluginWindows;
 
@@ -314,7 +313,7 @@ private:
     }
 
     Point<int> getProcessorGridLocation(NodeID nodeId) const {
-        if (nodeId == audioOutputNode->nodeID) {
+        if (nodeId == project.getAudioOutputNodeId()) {
             return {Project::NUM_VISIBLE_TRACKS - 1, Project::NUM_VISIBLE_PROCESSOR_SLOTS - 1};
         } else if (auto *processor = getProcessorWrapperForNodeId(nodeId)) {
             auto column = processor->state.getParent().getParent().indexOf(processor->state.getParent());
@@ -405,11 +404,11 @@ private:
         }
         if (!afterNodeState.isValid() || (neighborNodes.after = getNodeIdForState(afterNodeState)) == NA_NODE_ID) {
             if (parent.hasType(IDs::MASTER_TRACK)) {
-                neighborNodes.after = audioOutputNode->nodeID;
+                neighborNodes.after = project.getAudioOutputNodeId();
             } else {
                 neighborNodes.after = getNodeIdForState(project.getMasterTrack().getChildWithName(IDs::PROCESSOR));
                 if (neighborNodes.after == NA_NODE_ID) { // master track has no processors. go straight out.
-                    neighborNodes.after = audioOutputNode->nodeID;
+                    neighborNodes.after = project.getAudioOutputNodeId();
                 }
             }
         }

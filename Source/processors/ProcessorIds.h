@@ -44,11 +44,19 @@ public:
         return new PluginListComponent(formatManager, knownPluginListExternal, deadMansPedalFile, appProperties.getUserSettings(), true);
     }
 
-    PluginDescription *getTypeForIdentifier(const String &identifier) {
+    PluginDescription *getDescriptionForIdentifier(const String &identifier) {
         PluginDescription *description = knownPluginListInternal.getTypeForIdentifierString(identifier);
         return description != nullptr ? description : knownPluginListExternal.getTypeForIdentifierString(identifier);
     }
-    
+
+    PluginDescription *getAudioOutputDescription() {
+        for (auto *internalType : internalTypes) {
+            if (internalType->name.equalsIgnoreCase("audio output"))
+                return internalType;
+        }
+        return nullptr;
+    }
+
     KnownPluginList& getKnownPluginListExternal() {
         return knownPluginListExternal;
     }

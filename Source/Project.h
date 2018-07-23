@@ -12,9 +12,10 @@ public:
         if (!state.isValid()) {
             state = createDefaultProject();
         } else {
-            connections = state.getChildWithName(IDs::CONNECTIONS);
+            output = state.getChildWithName(IDs::INPUT);
             tracks = state.getChildWithName(IDs::TRACKS);
             masterTrack = tracks.getChildWithName(IDs::MASTER_TRACK);
+            connections = state.getChildWithName(IDs::CONNECTIONS);
         }
         jassert (state.hasType(IDs::PROJECT));
     }
@@ -177,6 +178,16 @@ public:
         state.setProperty(IDs::name, "My First Project", nullptr);
         Helpers::createUuidProperty(state);
 
+        output = ValueTree(IDs::INPUT);
+
+        PluginDescription *description = processorIds.getAudioOutputDescription();
+        ValueTree inputProcessor(IDs::PROCESSOR);
+        Helpers::createUuidProperty(inputProcessor);
+        inputProcessor.setProperty(IDs::id, description->createIdentifierString(), nullptr);
+        inputProcessor.setProperty(IDs::name, description->name, nullptr);
+        output.addChild(inputProcessor, -1, nullptr);
+        state.addChild(output, -1, nullptr);
+
         tracks = ValueTree(IDs::TRACKS);
         Helpers::createUuidProperty(tracks);
         tracks.setProperty(IDs::name, "Tracks", nullptr);
@@ -280,6 +291,13 @@ public:
 
     const ValueTree getMixerChannelProcessorForSelectedTrack() const {
         return getMixerChannelProcessorForTrack(getSelectedTrack());
+    }
+
+    const ValueTree getAudioOutputProcessorState() const {
+        return output.getChildWithName(IDs::PROCESSOR);
+    }
+    AudioProcessorGraph::NodeID getAudioOutputNodeId() const {
+        return AudioProcessorGraph::NodeID(int(getAudioOutputProcessorState().getProperty(IDs::NODE_ID)));
     }
 
     const bool selectedTrackHasMixerChannel() const {
@@ -425,7 +443,7 @@ public:
     }
 
     PluginDescription *getTypeForIdentifier(const String &identifier) {
-        return processorIds.getTypeForIdentifier(identifier);
+        return processorIds.getDescriptionForIdentifier(identifier);
     }
 
     const static int NUM_VISIBLE_TRACKS = 8;
@@ -433,6 +451,7 @@ public:
     // last row is reserved for audio output.
     const static int NUM_AVAILABLE_PROCESSOR_SLOTS = NUM_VISIBLE_PROCESSOR_SLOTS - 1;
 private:
+    ValueTree output;
     ValueTree tracks;
     ValueTree masterTrack;
     ValueTree selectedTrack;

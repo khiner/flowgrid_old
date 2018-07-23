@@ -43,10 +43,10 @@ public:
     }
 
     GraphEditorProcessor *createNewObject(const ValueTree &v) override {
-        auto *ac = new GraphEditorProcessor(v, track, connectorDragListener, graph);
-        addAndMakeVisible(ac);
-        ac->update();
-        return ac;
+        auto *processor = new GraphEditorProcessor(v, connectorDragListener, graph);
+        addAndMakeVisible(processor);
+        processor->update();
+        return processor;
     }
 
     void deleteObject(GraphEditorProcessor *ac) override {

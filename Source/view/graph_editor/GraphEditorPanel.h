@@ -13,6 +13,7 @@ public:
         setOpaque(true);
 
         addAndMakeVisible(*(tracks = std::make_unique<GraphEditorTracks>(project.getTracks(), *this, graph)));
+        addAndMakeVisible(*(audioOutputProcessor = std::make_unique<GraphEditorProcessor>(project.getAudioOutputProcessorState(), *this, graph)));
     }
 
     ~GraphEditorPanel() override {
@@ -39,6 +40,7 @@ public:
     void resized() override {
         auto r = getLocalBounds();
         tracks->setBounds(r.withHeight(int(getHeight() * 8.0 / 9.0)));
+        audioOutputProcessor->setBounds(r.removeFromBottom(int(getHeight() * 1.0 / 9.0)));
         updateComponents();
     }
 
@@ -49,6 +51,8 @@ public:
     void updateComponents() {
         repaint();
 
+        audioOutputProcessor->update();
+        
         for (int i = connectors.size(); --i >= 0;)
             if (!graph.isConnectedUi(connectors.getUnchecked(i)->connection))
                 connectors.remove(i);
@@ -166,9 +170,11 @@ private:
     std::unique_ptr<ConnectorComponent> draggingConnector;
     std::unique_ptr<PopupMenu> menu;
     std::unique_ptr<GraphEditorTracks> tracks;
+    std::unique_ptr<GraphEditorProcessor> audioOutputProcessor;
 
     GraphEditorProcessor *getProcessorForNodeId(const AudioProcessorGraph::NodeID nodeId) const {
-        return tracks->getProcessorForNodeId(nodeId);
+        return nodeId == project.getAudioOutputNodeId() ?
+               audioOutputProcessor.get() : tracks->getProcessorForNodeId(nodeId);
     }
 
     ConnectorComponent *getComponentForConnection(const AudioProcessorGraph::Connection &conn) const {

@@ -7,8 +7,8 @@ class GraphEditorTrack;
 
 class GraphEditorProcessor : public Component, public Utilities::ValueTreePropertyChangeListener, private AudioProcessorParameter::Listener {
 public:
-    GraphEditorProcessor(ValueTree v, GraphEditorTrack &at, ConnectorDragListener &connectorDragListener, ProcessorGraph& graph)
-            : state(std::move(v)), track(at), connectorDragListener(connectorDragListener), graph(graph) {
+    GraphEditorProcessor(ValueTree v, ConnectorDragListener &connectorDragListener, ProcessorGraph& graph)
+            : state(std::move(v)), connectorDragListener(connectorDragListener), graph(graph) {
 
         if (auto *processor = getProcessor()) {
             if (auto *bypassParam = processor->getBypassParameter())
@@ -250,8 +250,6 @@ public:
     int numIns = 0, numOuts = 0;
     std::unique_ptr<PopupMenu> menu;
 private:
-    GraphEditorTrack &track;
-
     void valueTreePropertyChanged(ValueTree &v, const Identifier &i) override {
         if (v == state)
             if (i == IDs::name || i == IDs::colour)
