@@ -7,14 +7,20 @@
 class GraphEditorProcessors : public Component,
                               public Utilities::ValueTreeObjectList<GraphEditorProcessor> {
 public:
-    explicit GraphEditorProcessors(GraphEditorTrack &at, ValueTree& state, ConnectorDragListener &connectorDragListener, ProcessorGraph& graph)
+    explicit GraphEditorProcessors(Project& project, GraphEditorTrack &at, ValueTree& state, ConnectorDragListener &connectorDragListener, ProcessorGraph& graph)
             : Utilities::ValueTreeObjectList<GraphEditorProcessor>(state),
-              track(at), connectorDragListener(connectorDragListener), graph(graph) {
+              project(project), track(at), connectorDragListener(connectorDragListener), graph(graph) {
         rebuildObjects();
     }
 
     ~GraphEditorProcessors() override {
         freeObjects();
+    }
+
+    void mouseDown(const MouseEvent &e) override {
+        if (e.mods.isPopupMenu()) {
+            showPopupMenu(e.position.toInt());
+        }
     }
 
     void resized() override {
@@ -84,9 +90,11 @@ public:
         }
     }
 private:
+    Project &project;
     GraphEditorTrack &track;
     ConnectorDragListener &connectorDragListener;
     ProcessorGraph &graph;
+    std::unique_ptr<PopupMenu> menu;
 
     void valueTreePropertyChanged(ValueTree &v, const Identifier &i) override {
         if (isSuitableType(v))
@@ -104,5 +112,16 @@ private:
         }
         
         return nullptr;
+    }
+
+    void showPopupMenu(const Point<int> &mousePos) {
+        int slot = int(Project::NUM_VISIBLE_PROCESSOR_SLOTS * jlimit(0.0f, 0.99f, mousePos.y / float(getHeight())));
+        menu = std::make_unique<PopupMenu>();
+        project.addPluginsToMenu(*menu, parent);
+        menu->showMenuAsync({}, ModalCallbackFunction::create([this, slot](int r) {
+            if (auto *description = project.getChosenType(r)) {
+                project.createAndAddProcessor(*description, parent, slot);
+            }
+        }));
     }
 };

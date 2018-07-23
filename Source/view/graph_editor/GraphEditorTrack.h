@@ -8,9 +8,9 @@
 
 class GraphEditorTrack : public Component, public Utilities::ValueTreePropertyChangeListener {
 public:
-    explicit GraphEditorTrack(ValueTree v, ConnectorDragListener &connectorDragListener, ProcessorGraph& graph)
+    explicit GraphEditorTrack(Project& project, ValueTree v, ConnectorDragListener &connectorDragListener, ProcessorGraph& graph)
             : state(std::move(v)), connectorDragListener(connectorDragListener), graph(graph) {
-        addAndMakeVisible(*(processors = std::make_unique<GraphEditorProcessors>(*this, state, connectorDragListener, graph)));
+        addAndMakeVisible(*(processors = std::make_unique<GraphEditorProcessors>(project, *this, state, connectorDragListener, graph)));
         state.addListener(this);
     }
 

@@ -7,8 +7,8 @@
 
 class GraphEditorTracks : public Component, public Utilities::ValueTreeObjectList<GraphEditorTrack> {
 public:
-    explicit GraphEditorTracks(const ValueTree &state, ConnectorDragListener &connectorDragListener, ProcessorGraph& graph)
-            : Utilities::ValueTreeObjectList<GraphEditorTrack>(state), connectorDragListener(connectorDragListener), graph(graph) {
+    explicit GraphEditorTracks(Project& project, const ValueTree &state, ConnectorDragListener &connectorDragListener, ProcessorGraph& graph)
+            : Utilities::ValueTreeObjectList<GraphEditorTrack>(state), project(project), connectorDragListener(connectorDragListener), graph(graph) {
         rebuildObjects();
     }
 
@@ -29,7 +29,7 @@ public:
     }
 
     GraphEditorTrack *createNewObject(const juce::ValueTree &v) override {
-        auto *at = new GraphEditorTrack(v, connectorDragListener, graph);
+        auto *at = new GraphEditorTrack(project, v, connectorDragListener, graph);
         addAndMakeVisible(at);
         return at;
     }
@@ -70,6 +70,7 @@ public:
         }
     }
 
+    Project& project;
     ConnectorDragListener &connectorDragListener;
     ProcessorGraph &graph;
 };

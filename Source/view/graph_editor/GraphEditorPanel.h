@@ -12,7 +12,7 @@ public:
         graph.addChangeListener(this);
         setOpaque(true);
 
-        addAndMakeVisible(*(tracks = std::make_unique<GraphEditorTracks>(project.getTracks(), *this, graph)));
+        addAndMakeVisible(*(tracks = std::make_unique<GraphEditorTracks>(project, project.getTracks(), *this, graph)));
         addAndMakeVisible(*(audioOutputProcessor = std::make_unique<GraphEditorProcessor>(project.getAudioOutputProcessorState(), *this, graph)));
     }
 
@@ -24,17 +24,6 @@ public:
 
     void paint(Graphics &g) override {
         g.fillAll(findColour(ResizableWindow::backgroundColourId));
-    }
-
-    void mouseDown(const MouseEvent &e) override {
-        if (e.mods.isPopupMenu())
-            showPopupMenu(e.position.toInt());
-    }
-
-    void mouseUp(const MouseEvent &) override {
-    }
-
-    void mouseDrag(const MouseEvent &e) override {
     }
 
     void resized() override {
@@ -52,7 +41,7 @@ public:
         repaint();
 
         audioOutputProcessor->update();
-        
+
         for (int i = connectors.size(); --i >= 0;)
             if (!graph.isConnectedUi(connectors.getUnchecked(i)->connection))
                 connectors.remove(i);
@@ -71,20 +60,6 @@ public:
                 comp->setOutput(c.destination, getProcessorForNodeId(c.destination.nodeID));
             }
         }
-    }
-
-    void showPopupMenu(const Point<int> &mousePos) {
-        const auto &gridLocation = graph.positionToGridLocation(mousePos.toDouble() / juce::Point<double>((double) getWidth(), (double) getHeight()));
-        ValueTree track = project.getTrack(gridLocation.x);
-        int slot = gridLocation.y;
-
-        menu = std::make_unique<PopupMenu>();
-        project.addPluginsToMenu(*menu, track);
-        menu->showMenuAsync({}, ModalCallbackFunction::create([this, track, slot](int r) {
-            if (auto *description = project.getChosenType(r)) {
-                project.createAndAddProcessor(*description, track, slot);
-            }
-        }));
     }
 
     void beginConnectorDrag(AudioProcessorGraph::NodeAndChannel source, AudioProcessorGraph::NodeAndChannel destination, const MouseEvent &e) override {
@@ -168,7 +143,6 @@ public:
 private:
     OwnedArray<ConnectorComponent> connectors;
     std::unique_ptr<ConnectorComponent> draggingConnector;
-    std::unique_ptr<PopupMenu> menu;
     std::unique_ptr<GraphEditorTracks> tracks;
     std::unique_ptr<GraphEditorProcessor> audioOutputProcessor;
 
