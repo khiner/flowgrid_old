@@ -8,7 +8,7 @@ class ColourChangeButton : public TextButton,
                            public ChangeListener,
                            private Value::Listener {
 public:
-    ColourChangeButton(const String &name = String())
+    explicit ColourChangeButton(const String &name = String())
             : TextButton(name) {
         colourValue.addListener(this);
         updateColour();
@@ -19,7 +19,7 @@ public:
     }
 
     void clicked() override {
-        ColourSelector *colourSelector = new ColourSelector();
+        auto *colourSelector = new ColourSelector();
         colourSelector->setName("background");
         colourSelector->setCurrentColour(findColour(TextButton::buttonColourId));
         colourSelector->addChangeListener(this);
@@ -30,7 +30,7 @@ public:
     }
 
     void changeListenerCallback(ChangeBroadcaster *source) override {
-        if (ColourSelector *cs = dynamic_cast<ColourSelector *> (source))
+        if (auto *cs = dynamic_cast<ColourSelector *> (source))
             colourValue = cs->getCurrentColour().toString();
     }
 
@@ -47,7 +47,7 @@ private:
 };
 
 inline Colour
-getUIColourIfAvailable(LookAndFeel_V4::ColourScheme::UIColour uiColour, Colour fallback = Colour(0xff4d4d4d)) {
+getUIColourIfAvailable(LookAndFeel_V4::ColourScheme::UIColour uiColour, const Colour &fallback = Colour(0xff4d4d4d)) {
     if (auto *v4 = dynamic_cast<LookAndFeel_V4 *> (&LookAndFeel::getDefaultLookAndFeel()))
         return v4->getCurrentColourScheme().getUIColour(uiColour);
 

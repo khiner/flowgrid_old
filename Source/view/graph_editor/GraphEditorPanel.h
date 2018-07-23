@@ -4,6 +4,7 @@
 #include "PinComponent.h"
 #include "ProcessorComponent.h"
 #include "ConnectorComponent.h"
+#include "GraphEditorTracks.h"
 
 class GraphEditorPanel : public Component, public ChangeListener, public ConnectorDragListener {
 public:
@@ -11,6 +12,8 @@ public:
             : graph(g), project(project) {
         graph.addChangeListener(this);
         setOpaque(true);
+
+        addAndMakeVisible(*(tracks = std::make_unique<GraphEditorTracks>(project.getTracks())));
     }
 
     ~GraphEditorPanel() override {
@@ -23,17 +26,6 @@ public:
     void paint(Graphics &g) override {
         const Colour &bgColor = findColour(ResizableWindow::backgroundColourId);
         g.fillAll(bgColor);
-        g.setColour(bgColor.brighter(0.15));
-        auto cellWidth = int(float(getWidth()) / float(NUM_COLUMNS));
-        auto cellHeight = int(float(getHeight()) / float(NUM_ROWS));
-        auto horizontalLineLength = cellWidth * project.getNumTracks();
-        auto verticalLineLength = cellHeight * Project::NUM_AVAILABLE_PROCESSOR_SLOTS;
-        for (int row = 0; row < Project::NUM_AVAILABLE_PROCESSOR_SLOTS + 1; row++) {
-            for (int column = 0; column < project.getNumTracks() + 1; column++) {
-                g.drawHorizontalLine(row * cellHeight, 0, horizontalLineLength);
-                g.drawVerticalLine(column * cellWidth, 0, verticalLineLength);
-            }
-        }
     }
 
     void mouseDown(const MouseEvent &e) override {
@@ -48,6 +40,8 @@ public:
     }
 
     void resized() override {
+        auto r = getLocalBounds();
+        tracks->setBounds(r.withHeight(int(getHeight() * 8.0 / 9.0)));
         updateComponents();
     }
 
@@ -193,6 +187,7 @@ private:
     OwnedArray<ConnectorComponent> connectors;
     std::unique_ptr<ConnectorComponent> draggingConnector;
     std::unique_ptr<PopupMenu> menu;
+    std::unique_ptr<GraphEditorTracks> tracks;
 
     ProcessorComponent *getComponentForNodeId(const AudioProcessorGraph::NodeID nodeId) const {
         for (auto *fc : nodes)
