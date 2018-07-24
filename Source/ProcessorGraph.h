@@ -139,8 +139,8 @@ public:
         if (currentlyDraggingNodeId == NA_NODE_ID)
             return;
 
-        int newTrack = jlimit(0, project.getNumTracks() - 1, initialDraggingGridPosition.x + int(position.x));
-        int newSlot = jlimit(0, Project::NUM_VISIBLE_PROCESSOR_SLOTS , initialDraggingGridPosition.y + int(position.y));
+        int newTrack = jlimit(0, project.getNumTracks() - 1, initialDraggingGridPosition.x + int(floor(position.x)));
+        int newSlot = jlimit(0, Project::NUM_VISIBLE_PROCESSOR_SLOTS , initialDraggingGridPosition.y + int(floor(position.y)));
         if (auto *processor = getProcessorWrapperForNodeId(nodeId)) {
             auto maxProcessorSlot = project.getMaxAvailableProcessorSlot(processor->state.getParent());
             newSlot = jlimit(0, maxProcessorSlot, newSlot);
