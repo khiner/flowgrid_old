@@ -38,15 +38,12 @@ public:
     }
 
     void updateComponents() {
-        repaint();
-
         audioOutputProcessor->update();
+        updateNodes();
 
         for (int i = connectors.size(); --i >= 0;)
             if (!graph.isConnectedUi(connectors.getUnchecked(i)->connection))
                 connectors.remove(i);
-
-        updateNodes();
 
         for (auto *cc : connectors)
             cc->update();

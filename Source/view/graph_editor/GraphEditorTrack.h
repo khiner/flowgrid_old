@@ -6,11 +6,11 @@
 #include "JuceHeader.h"
 #include "GraphEditorProcessors.h"
 
-class GraphEditorTrack : public Component, public Utilities::ValueTreePropertyChangeListener {
+class GraphEditorTrack : public Component, public Utilities::ValueTreePropertyChangeListener, public GraphEditorProcessorContainer {
 public:
     explicit GraphEditorTrack(Project& project, ValueTree v, ConnectorDragListener &connectorDragListener, ProcessorGraph& graph)
             : state(std::move(v)), connectorDragListener(connectorDragListener), graph(graph) {
-        addAndMakeVisible(*(processors = std::make_unique<GraphEditorProcessors>(project, *this, state, connectorDragListener, graph)));
+        addAndMakeVisible(*(processors = std::make_unique<GraphEditorProcessors>(project, state, connectorDragListener, graph)));
         state.addListener(this);
     }
 
@@ -29,7 +29,7 @@ public:
 //        g.drawText(state[IDs::name].toString(), r.removeFromLeft(clipX).reduced(4, 0), Justification::centredLeft, true);
     }
 
-    GraphEditorProcessor *getProcessorForNodeId(const AudioProcessorGraph::NodeID nodeId) const {
+    GraphEditorProcessor *getProcessorForNodeId(const AudioProcessorGraph::NodeID nodeId) const override {
         return processors->getProcessorForNodeId(nodeId);
     }
 

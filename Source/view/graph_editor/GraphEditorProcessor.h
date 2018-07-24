@@ -3,8 +3,6 @@
 #include <Utilities.h>
 #include "JuceHeader.h"
 
-class GraphEditorTrack;
-
 class GraphEditorProcessor : public Component, public Utilities::ValueTreePropertyChangeListener, private AudioProcessorParameter::Listener {
 public:
     GraphEditorProcessor(ValueTree v, ConnectorDragListener &connectorDragListener, ProcessorGraph& graph)
@@ -26,6 +24,8 @@ public:
     }
 
     AudioProcessorGraph::NodeID getNodeId() const {
+        if (!state.isValid())
+            return ProcessorGraph::NA_NODE_ID;
         return AudioProcessorGraph::NodeID(int(state.getProperty(IDs::NODE_ID)));
     }
 
@@ -64,8 +64,8 @@ public:
 
 
     void mouseDown(const MouseEvent &e) override {
-        originalPos = localPointToGlobal(juce::Point<int>());
-
+        originalPos = e.getPosition();
+        isBeingDragged = true;
         toFront(true);
         graph.beginDraggingNode(getNodeId());
 
@@ -76,20 +76,13 @@ public:
     void mouseDrag(const MouseEvent &e) override {
         if (!e.mods.isPopupMenu()) {
             auto pos = originalPos + e.getOffsetFromDragStart();
-
-            if (getParentComponent() != nullptr)
-                pos = getParentComponent()->getLocalPoint(nullptr, pos);
-
-            pos += getLocalBounds().getCentre();
-
-            graph.setNodePosition(getNodeId(),
-                                  {pos.x / (double) getParentWidth(),
-                                   pos.y / (double) getParentHeight()});
+            graph.setNodePosition(getNodeId(), {pos.x / (double) getWidth(), pos.y / (double) getHeight()});
         }
     }
 
     void mouseUp(const MouseEvent &e) override {
         graph.endDraggingNode(getNodeId());
+        isBeingDragged = false;
         if (e.mouseWasDraggedSinceMouseDown()) {
         } else if (e.getNumberOfClicks() == 2) {
             showPopupMenu();
@@ -249,10 +242,12 @@ public:
     Font font{13.0f, Font::bold};
     int numIns = 0, numOuts = 0;
     std::unique_ptr<PopupMenu> menu;
+    bool isBeingDragged { false };
+
 private:
     void valueTreePropertyChanged(ValueTree &v, const Identifier &i) override {
         if (v == state)
-            if (i == IDs::name || i == IDs::colour)
+            if (i == IDs::PROCESSOR_SLOT)
                 repaint();
     }
 };

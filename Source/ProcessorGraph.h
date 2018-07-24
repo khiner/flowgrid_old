@@ -126,9 +126,10 @@ public:
                 // mixer channel processors are special processors.
                 // they could be dragged and reconnected like any old processor, but please don't :)
                 return;
-            const Point<int> &gridLocation = getProcessorGridLocation(nodeId);
+            auto trackNum = processorWrapper->state.getParent().getParent().indexOf(processorWrapper->state.getParent());
+            auto slot = int(processorWrapper->state[IDs::PROCESSOR_SLOT]);
             currentlyDraggingNodeId = nodeId;
-            currentlyDraggingGridPosition.setXY(gridLocation.x, gridLocation.y);
+            currentlyDraggingGridPosition.setXY(trackNum, slot);
             initialDraggingGridPosition = currentlyDraggingGridPosition;
             project.makeConnectionsSnapshot();
         }
@@ -138,14 +139,14 @@ public:
         if (currentlyDraggingNodeId == NA_NODE_ID)
             return;
 
-        const auto& gridLocation = positionToGridLocation(position);
+        int newTrack = jlimit(0, project.getNumTracks() - 1, initialDraggingGridPosition.x + int(position.x));
+        int newSlot = jlimit(0, Project::NUM_VISIBLE_PROCESSOR_SLOTS , initialDraggingGridPosition.y + int(position.y));
         if (auto *processor = getProcessorWrapperForNodeId(nodeId)) {
-            int maxProcessorSlot = project.getMaxAvailableProcessorSlot(processor->state.getParent());
-            auto newX = jlimit(0, project.getNumTracks() - 1, gridLocation.x);
-            auto newY = jlimit(0, maxProcessorSlot, gridLocation.y);
-            if (newX != currentlyDraggingGridPosition.x || newY != currentlyDraggingGridPosition.y) {
-                currentlyDraggingGridPosition.x = newX;
-                currentlyDraggingGridPosition.y = newY;
+            auto maxProcessorSlot = project.getMaxAvailableProcessorSlot(processor->state.getParent());
+            newSlot = jlimit(0, maxProcessorSlot, newSlot);
+            if (newTrack != currentlyDraggingGridPosition.x || newSlot != currentlyDraggingGridPosition.y) {
+                currentlyDraggingGridPosition.x = newTrack;
+                currentlyDraggingGridPosition.y = newSlot;
 
                 moveProcessor(processor->state, initialDraggingGridPosition.x, initialDraggingGridPosition.y);
                 project.restoreConnectionsSnapshot();
@@ -154,11 +155,6 @@ public:
                 }
             }
         }
-    }
-    
-    Point<int> positionToGridLocation(const Point<double> &position) {
-        return juce::Point<int>(int(Project::NUM_VISIBLE_TRACKS * jlimit(0.0, 0.99, position.x)),
-                                int(Project::NUM_VISIBLE_PROCESSOR_SLOTS * jlimit(0.0, 0.99, position.y)));
     }
 
     void endDraggingNode(NodeID nodeId) {
@@ -256,8 +252,8 @@ public:
         return false;
     }
 
-private:
     const static NodeID NA_NODE_ID = 0;
+private:
 
     NodeID currentlyDraggingNodeId = NA_NODE_ID;
     Point<int> currentlyDraggingGridPosition;
@@ -309,18 +305,6 @@ private:
             for (auto& connection : nodeConnections) {
                 valueTreeChildAdded(project.getConnections(), connection);
             }
-        }
-    }
-
-    Point<int> getProcessorGridLocation(NodeID nodeId) const {
-        if (nodeId == project.getAudioOutputNodeId()) {
-            return {Project::NUM_VISIBLE_TRACKS - 1, Project::NUM_VISIBLE_PROCESSOR_SLOTS - 1};
-        } else if (auto *processor = getProcessorWrapperForNodeId(nodeId)) {
-            auto column = processor->state.getParent().getParent().indexOf(processor->state.getParent());
-            auto row = int(processor->state[IDs::PROCESSOR_SLOT]);
-            return {column, row};
-        } else {
-            return {0, 0};
         }
     }
 
@@ -445,6 +429,7 @@ private:
             if (child[IDs::selected]) {
                 child.sendPropertyChangeMessage(IDs::selected);
             }
+            sendChangeMessage();
         } else if (child.hasType(IDs::CONNECTION)) {
             if (currentlyDraggingNodeId == NA_NODE_ID) {
                 const ValueTree &sourceState = child.getChildWithName(IDs::SOURCE);
@@ -477,6 +462,7 @@ private:
                     }
                 }
             }
+            sendChangeMessage();
         } else if (child.hasType(IDs::CONNECTION)) {
             if (currentlyDraggingNodeId == NA_NODE_ID) {
                 const ValueTree &sourceState = child.getChildWithName(IDs::SOURCE);

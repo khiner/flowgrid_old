@@ -3,13 +3,15 @@
 #include <ValueTreeObjectList.h>
 #include <Project.h>
 #include "GraphEditorProcessor.h"
+#include "GraphEditorProcessorContainer.h"
 
 class GraphEditorProcessors : public Component,
-                              public Utilities::ValueTreeObjectList<GraphEditorProcessor> {
+                              public Utilities::ValueTreeObjectList<GraphEditorProcessor>,
+                              public GraphEditorProcessorContainer {
 public:
-    explicit GraphEditorProcessors(Project& project, GraphEditorTrack &at, ValueTree& state, ConnectorDragListener &connectorDragListener, ProcessorGraph& graph)
+    explicit GraphEditorProcessors(Project& project, ValueTree& state, ConnectorDragListener &connectorDragListener, ProcessorGraph& graph)
             : Utilities::ValueTreeObjectList<GraphEditorProcessor>(state),
-              project(project), track(at), connectorDragListener(connectorDragListener), graph(graph) {
+              project(project), connectorDragListener(connectorDragListener), graph(graph) {
         rebuildObjects();
     }
 
@@ -49,14 +51,25 @@ public:
     }
 
     GraphEditorProcessor *createNewObject(const ValueTree &v) override {
-        auto *processor = new GraphEditorProcessor(v, connectorDragListener, graph);
+        GraphEditorProcessor *processor = nullptr;
+        if (auto *parent = getParentComponent()) {
+            if (auto *grandParent = parent->getParentComponent()) {
+                processor = dynamic_cast<GraphEditorProcessorContainer *>(grandParent)->getProcessorForNodeId(AudioProcessorGraph::NodeID(int(v.getProperty(IDs::NODE_ID))));
+            }
+        }
+        if (processor == nullptr)
+            processor = new GraphEditorProcessor(v, connectorDragListener, graph);
         addAndMakeVisible(processor);
         processor->update();
         return processor;
     }
 
-    void deleteObject(GraphEditorProcessor *ac) override {
-        delete ac;
+    void deleteObject(GraphEditorProcessor *processor) override {
+        if (!processor->isBeingDragged) {
+            delete processor;
+        } else {
+            removeChildComponent(processor);
+        }
     }
 
     void newObjectAdded(GraphEditorProcessor *) override { resized(); }
@@ -65,7 +78,7 @@ public:
 
     void objectOrderChanged() override { resized(); }
 
-    GraphEditorProcessor *getProcessorForNodeId(const AudioProcessorGraph::NodeID nodeId) const {
+    GraphEditorProcessor *getProcessorForNodeId(AudioProcessorGraph::NodeID nodeId) const override {
         for (auto *processor : objects) {
             if (processor->getNodeId() == nodeId) {
                 return processor;
@@ -91,14 +104,13 @@ public:
     }
 private:
     Project &project;
-    GraphEditorTrack &track;
     ConnectorDragListener &connectorDragListener;
     ProcessorGraph &graph;
     std::unique_ptr<PopupMenu> menu;
 
     void valueTreePropertyChanged(ValueTree &v, const Identifier &i) override {
         if (isSuitableType(v))
-            if (i == IDs::start || i == IDs::length)
+            if (i == IDs::PROCESSOR_SLOT)
                 resized();
 
         Utilities::ValueTreeObjectList<GraphEditorProcessor>::valueTreePropertyChanged(v, i);

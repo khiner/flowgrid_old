@@ -58,11 +58,19 @@ struct ConnectorComponent : public Component, public SettableTooltipClient {
         p1 = lastInputPos;
         p2 = lastOutputPos;
 
-        if (sourceComponent != nullptr)
+        if (sourceComponent != nullptr) {
             p1 = sourceComponent->getPinPos(connection.source.channelIndex, false);
+            if (auto* parent = sourceComponent->getParentComponent())
+                if (auto* grandParent = parent->getParentComponent())
+                    p1.x += grandParent->getX();
+        }
 
-        if (destinationComponent != nullptr)
+        if (destinationComponent != nullptr) {
             p2 = destinationComponent->getPinPos(connection.destination.channelIndex, true);
+            if (auto* parent = destinationComponent->getParentComponent())
+                if (auto* grandParent = parent->getParentComponent())
+                    p2.x += grandParent->getX();
+        }
     }
 
     void paint(Graphics &g) override {
