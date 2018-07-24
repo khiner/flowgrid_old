@@ -2,7 +2,6 @@
 #include "view/push2/Push2Component.h"
 #include "MidiControlHandler.h"
 #include "ApplicationKeyListener.h"
-#include <view/ArrangeView.h>
 #include <view/ValueTreeEditor.h>
 #include <view/graph_editor/GraphEditor.h>
 
@@ -37,7 +36,6 @@ public:
         push2Window = std::make_unique<MainWindow>("Push 2 Mirror", push2Component, &applicationKeyListener);
         ValueTreeEditor *valueTreeEditor = new ValueTreeEditor(project.getState(), undoManager, project, processorGraph);
         treeWindow = std::make_unique<MainWindow>("Tree Editor", valueTreeEditor, &applicationKeyListener);
-        arrangeWindow = std::make_unique<MainWindow>("Arrange View", new ArrangeView(project.getTracks()), &applicationKeyListener);
         graphEditorWindow = std::make_unique<MainWindow>("Graph Editor", new GraphEditor(processorGraph, project, deviceManager), &applicationKeyListener);
 
         audioDeviceSelectorComponent = std::make_unique<AudioDeviceSelectorComponent>(deviceManager, 0, 256, 0, 256,
@@ -47,12 +45,11 @@ public:
         pluginListComponent = std::unique_ptr<PluginListComponent>(processorIds.makePluginListComponent());
 
         treeWindow->setBoundsRelative(0.05, 0.25, 0.45, 0.35);
-        arrangeWindow->setBoundsRelative(0.05, 0.6, 0.45, 0.35);
 
         float graphEditorHeightToWidthRatio = 9.0f / 8.0f;
 
         graphEditorWindow->setBoundsRelative(0.5, 0.25, 0.4, 0.5);
-        graphEditorWindow->setSize(graphEditorWindow->getWidth(), int(graphEditorWindow->getWidth() * graphEditorHeightToWidthRatio + arrangeWindow->getTitleBarHeight()));
+        graphEditorWindow->setSize(graphEditorWindow->getWidth(), int(graphEditorWindow->getWidth() * graphEditorHeightToWidthRatio));
         push2Window->setBounds(treeWindow->getPosition().x, treeWindow->getPosition().y - Push2Display::HEIGHT - graphEditorWindow->getTitleBarHeight(),
                                Push2Display::WIDTH, Push2Display::HEIGHT + graphEditorWindow->getTitleBarHeight());
         push2Window->setResizable(false, false);
@@ -65,7 +62,6 @@ public:
     void shutdown() override {
         push2Window = nullptr;
         treeWindow = nullptr;
-        arrangeWindow = nullptr;
         deviceManager.removeAudioCallback(&player);
         Utilities::saveValueTree(project.getState(), getSaveFile(), true);
         setMacMainMenu(nullptr);
@@ -174,7 +170,7 @@ public:
 private:
     ProcessorIds processorIds;
 
-    std::unique_ptr<MainWindow> treeWindow, arrangeWindow, push2Window, graphEditorWindow;
+    std::unique_ptr<MainWindow> treeWindow, push2Window, graphEditorWindow;
     std::unique_ptr<AudioDeviceSelectorComponent> audioDeviceSelectorComponent;
     std::unique_ptr<PluginListComponent> pluginListComponent;
 

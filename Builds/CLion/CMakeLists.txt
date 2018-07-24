@@ -34,9 +34,8 @@ add_executable (APP
     "../../Source/Main.cpp"
         "../../Source/view/push2/Push2Component.h"
         "../../Source/view/ValueTreeEditor.h"
-        "../../Source/view/ArrangeView.h"
 
-    "../../Source/view/ColourChangeButton.h"
+        "../../Source/view/ColourChangeButton.h"
     "../../Source/Utilities.h"
     "../../Source/ValueTreeObjectList.h"
     "../../Source/Identifiers.h"
