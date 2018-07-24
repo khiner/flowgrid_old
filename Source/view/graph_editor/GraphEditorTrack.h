@@ -33,8 +33,8 @@ public:
         return processors->getProcessorForNodeId(nodeId);
     }
 
-    PinComponent *findPinAt(const Point<float> &pos) const {
-        return processors->findPinAt(pos);
+    PinComponent *findPinAt(const MouseEvent &e) const {
+        return processors->findPinAt(e);
     }
 
     void updateNodes() {

@@ -77,14 +77,12 @@ public:
     }
 
     void dragConnector(const MouseEvent &e) override {
-        auto e2 = e.getEventRelativeTo(this);
-
         if (draggingConnector != nullptr) {
             draggingConnector->setTooltip({});
 
-            auto pos = e2.position;
-
-            if (auto *pin = findPinAt(pos)) {
+            auto pos = e.getEventRelativeTo(this).position;
+            
+            if (auto *pin = findPinAt(e)) {
                 auto connection = draggingConnector->connection;
 
                 if (connection.source.nodeID == 0 && !pin->isInput) {
@@ -94,7 +92,7 @@ public:
                 }
 
                 if (graph.canConnect(connection)) {
-                    pos = (pin->getParentComponent()->getPosition() + pin->getBounds().getCentre()).toFloat();
+                    pos = getLocalPoint(pin->getParentComponent(), pin->getBounds().getCentre()).toFloat();
                     draggingConnector->setTooltip(pin->getTooltip());
                 }
             }
@@ -111,13 +109,10 @@ public:
             return;
 
         draggingConnector->setTooltip({});
-
-        auto e2 = e.getEventRelativeTo(this);
         auto connection = draggingConnector->connection;
-
         draggingConnector = nullptr;
 
-        if (auto *pin = findPinAt(e2.position)) {
+        if (auto *pin = findPinAt(e)) {
             if (connection.source.nodeID == 0) {
                 if (pin->isInput)
                     return;
@@ -149,15 +144,19 @@ private:
     }
 
     ConnectorComponent *getComponentForConnection(const AudioProcessorGraph::Connection &conn) const {
-        for (auto *cc : connectors)
-            if (cc->connection == conn)
+        for (auto *cc : connectors) {
+            if (cc->connection == conn) {
                 return cc;
-
+            }
+        }
         return nullptr;
     }
 
-    PinComponent *findPinAt(const Point<float> &pos) const {
-        return tracks->findPinAt(pos);
+    PinComponent *findPinAt(const MouseEvent &e) const {
+        if (auto *pin = audioOutputProcessor->findPinAt(e)) {
+            return pin;
+        }
+        return tracks->findPinAt(e);
     }
 
     void updateNodes() {

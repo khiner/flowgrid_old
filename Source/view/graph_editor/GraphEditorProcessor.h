@@ -127,6 +127,15 @@ public:
         return {};
     }
 
+    PinComponent *findPinAt(const MouseEvent &e) {
+        auto e2 = e.getEventRelativeTo(this);
+        auto *comp = getComponentAt(e2.position.toInt());
+        if (auto *pin = dynamic_cast<PinComponent *> (comp)) {
+            return pin;
+        }
+        return nullptr;
+    }
+
     void update() {
         AudioProcessor *processor = getProcessor();
         if (processor == nullptr)

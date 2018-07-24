@@ -61,9 +61,9 @@ public:
         return nullptr;
     }
 
-    PinComponent *findPinAt(const Point<float> &pos) const {
+    PinComponent *findPinAt(const MouseEvent &e) const {
         for (auto *track : objects) {
-            auto *processor = track->findPinAt(pos);
+            auto *processor = track->findPinAt(e);
             if (processor != nullptr) {
                 return processor;
             }

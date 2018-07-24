@@ -87,10 +87,9 @@ public:
         return nullptr;
     }
 
-    PinComponent *findPinAt(const Point<float> &pos) const {
+    PinComponent *findPinAt(const MouseEvent &e) {
         for (auto *processor : objects) {
-            auto *comp = processor->getComponentAt(pos.toInt() - processor->getPosition());
-            if (auto *pin = dynamic_cast<PinComponent *> (comp)) {
+            if (auto* pin = processor->findPinAt(e)) {
                 return pin;
             }
         }
