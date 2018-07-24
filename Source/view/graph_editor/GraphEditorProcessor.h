@@ -5,18 +5,18 @@
 
 class GraphEditorProcessor : public Component, public Utilities::ValueTreePropertyChangeListener, private AudioProcessorParameter::Listener {
 public:
-    GraphEditorProcessor(ValueTree v, ConnectorDragListener &connectorDragListener, ProcessorGraph& graph)
-            : state(std::move(v)), connectorDragListener(connectorDragListener), graph(graph) {
-
+    GraphEditorProcessor(const ValueTree& state, ConnectorDragListener &connectorDragListener, ProcessorGraph& graph)
+            : state(state), connectorDragListener(connectorDragListener), graph(graph) {
         if (auto *processor = getProcessor()) {
             if (auto *bypassParam = processor->getBypassParameter())
                 bypassParam->addListener(this);
         }
 
-        state.addListener(this);
+        this->state.addListener(this);
     }
 
     ~GraphEditorProcessor() override {
+        state.removeListener(this);
         if (auto *processor = getProcessor()) {
             if (auto *bypassParam = processor->getBypassParameter())
                 bypassParam->removeListener(this);
@@ -116,6 +116,7 @@ public:
                                pin->isInput ? 0 : (getHeight() - pinSize),
                                pinSize, pinSize);
             }
+            repaint();
         }
     }
 

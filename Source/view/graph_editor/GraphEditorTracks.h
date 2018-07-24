@@ -2,8 +2,10 @@
 
 #include <ValueTreeObjectList.h>
 #include <Project.h>
+#include <ProcessorGraph.h>
 #include "JuceHeader.h"
 #include "GraphEditorTrack.h"
+#include "ConnectorDragListener.h"
 
 class GraphEditorTracks : public Component,
                           public Utilities::ValueTreeObjectList<GraphEditorTrack>,
@@ -26,20 +28,20 @@ public:
             at->setBounds(r.removeFromLeft(w));
     }
 
-    bool isSuitableType(const juce::ValueTree &v) const override {
+    bool isSuitableType(const ValueTree &v) const override {
         return v.hasType(IDs::TRACK) || v.hasType(IDs::MASTER_TRACK);
     }
 
-    GraphEditorTrack *createNewObject(const juce::ValueTree &v) override {
-        auto *at = new GraphEditorTrack(project, v, connectorDragListener, graph);
-        at->addMouseListener(this, true);
-        addAndMakeVisible(at);
-        return at;
+    GraphEditorTrack *createNewObject(const ValueTree &v) override {
+        auto *track = new GraphEditorTrack(project, v, connectorDragListener, graph);
+        track->addMouseListener(this, true);
+        addAndMakeVisible(track);
+        return track;
     }
 
-    void deleteObject(GraphEditorTrack *at) override {
-        at->removeMouseListener(this);
-        delete at;
+    void deleteObject(GraphEditorTrack *track) override {
+        track->removeMouseListener(this);
+        delete track;
     }
 
     void newObjectAdded(GraphEditorTrack *) override { resized(); }
@@ -81,30 +83,17 @@ public:
     ConnectorDragListener &connectorDragListener;
     ProcessorGraph &graph;
 
-    void mouseMove (const MouseEvent& event) override {}
-
-    void mouseEnter (const MouseEvent& event) override {}
-
-    void mouseExit (const MouseEvent& event) override {}
-
     void mouseDown (const MouseEvent& event) override {
         if (auto* processor = dynamic_cast<GraphEditorProcessor *>(event.eventComponent)) {
             currentlyDraggingProcessor = processor;
         }
     }
 
-    void mouseDrag (const MouseEvent& event) override {}
-
     void mouseUp (const MouseEvent& event) override {
         if (event.eventComponent == currentlyDraggingProcessor) {
             currentlyDraggingProcessor = nullptr;
         }
     }
-
-    void mouseDoubleClick (const MouseEvent& event) override {}
-
-    void mouseWheelMove (const MouseEvent& event, const MouseWheelDetails& wheel) override {}
-    void mouseMagnify (const MouseEvent& event, float scaleFactor) override {}
 private:
     GraphEditorProcessor *currentlyDraggingProcessor {};
 };

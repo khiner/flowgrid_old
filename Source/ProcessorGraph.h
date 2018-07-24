@@ -67,16 +67,19 @@ public:
         return getProcessorWrapperForNodeId(getNodeIdForState(processorState));
     }
 
-    const NodeID getNodeIdForState(const ValueTree &state) const {
-        return NodeID(int(state[IDs::NODE_ID]));
+    static const NodeID getNodeIdForState(const ValueTree &processorState) {
+        return NodeID(int(processorState[IDs::NODE_ID]));
+    }
+
+    Node* getNodeForState(const ValueTree &processorState) const {
+        return getNodeForId(getNodeIdForState(processorState));
     }
 
     StatefulAudioProcessorWrapper *getProcessorWrapperForNodeId(NodeID nodeId) const {
         if (nodeId == NA_NODE_ID) {
             return nullptr;
         } else {
-            Node *node = getNodeForId(nodeId);
-            if (node != nullptr) {
+            if (auto* node = getNodeForId(nodeId)) {
                 AudioProcessor *processor = node->getProcessor();
                 for (auto *processorWrapper : processerWrappers) {
                     if (processorWrapper->processor == processor) {
@@ -183,8 +186,8 @@ public:
     }
 
     bool canConnectUi(const Connection& c) const {
-        if (auto* source = getNodeForId (c.source.nodeID))
-            if (auto* dest = getNodeForId (c.destination.nodeID))
+        if (auto* source = getNodeForId(c.source.nodeID))
+            if (auto* dest = getNodeForId(c.destination.nodeID))
                 return canConnectUi(source, c.source.channelIndex,
                                    dest, c.destination.channelIndex);
 
@@ -429,20 +432,21 @@ private:
             if (child[IDs::selected]) {
                 child.sendPropertyChangeMessage(IDs::selected);
             }
-            sendChangeMessage();
         } else if (child.hasType(IDs::CONNECTION)) {
             if (currentlyDraggingNodeId == NA_NODE_ID) {
                 const ValueTree &sourceState = child.getChildWithName(IDs::SOURCE);
                 const ValueTree &destState = child.getChildWithName(IDs::DESTINATION);
 
-                Node *source = getNodeForId(getNodeIdForState(sourceState));
-                Node *dest = getNodeForId(getNodeIdForState(destState));
-                int destChannel = destState[IDs::CHANNEL];
-                int sourceChannel = sourceState[IDs::CHANNEL];
+                if (auto *source = getNodeForState(sourceState)) {
+                    if (auto *dest = getNodeForState(destState)) {
+                        int destChannel = destState[IDs::CHANNEL];
+                        int sourceChannel = sourceState[IDs::CHANNEL];
 
-                source->outputs.add({dest, destChannel, sourceChannel});
-                dest->inputs.add({source, sourceChannel, destChannel});
-                topologyChanged();
+                        source->outputs.add({dest, destChannel, sourceChannel});
+                        dest->inputs.add({source, sourceChannel, destChannel});
+                        topologyChanged();
+                    }
+                }
             }
             sendChangeMessage();
         }
@@ -451,32 +455,30 @@ private:
     void valueTreeChildRemoved(ValueTree& parent, ValueTree& child, int indexFromWhichChildWasRemoved) override {
         if (child.hasType(IDs::PROCESSOR)) {
             if (currentlyDraggingNodeId == NA_NODE_ID && !isMoving) {
-                if (auto nodeId = getNodeIdForState(child)) {
-                    if (auto *node = getNodeForId(nodeId)) {
-                        // disconnect should have already been called before delete! (to avoid nested undo actions)
-                        if (auto* processorWrapper = getProcessorWrapperForNodeId(node->nodeID)) {
-                            processerWrappers.removeObject(processorWrapper);
-                        }
-                        nodes.removeObject(node);
-                        topologyChanged();
+                if (auto *node = getNodeForState(child)) {
+                    // disconnect should have already been called before delete! (to avoid nested undo actions)
+                    if (auto* processorWrapper = getProcessorWrapperForNodeId(node->nodeID)) {
+                        processerWrappers.removeObject(processorWrapper);
                     }
+                    nodes.removeObject(node);
+                    topologyChanged();
                 }
             }
-            sendChangeMessage();
         } else if (child.hasType(IDs::CONNECTION)) {
             if (currentlyDraggingNodeId == NA_NODE_ID) {
                 const ValueTree &sourceState = child.getChildWithName(IDs::SOURCE);
                 const ValueTree &destState = child.getChildWithName(IDs::DESTINATION);
 
-                Node *source = getNodeForId(getNodeIdForState(sourceState));
-                Node *dest = getNodeForId(getNodeIdForState(destState));
-                int destChannel = destState[IDs::CHANNEL];
-                int sourceChannel = sourceState[IDs::CHANNEL];
+                if (auto *source = getNodeForState(sourceState)) {
+                    if (auto *dest = getNodeForState(destState)) {
+                        int destChannel = destState[IDs::CHANNEL];
+                        int sourceChannel = sourceState[IDs::CHANNEL];
 
-                source->outputs.removeAllInstancesOf({dest, destChannel, sourceChannel});
-                dest->inputs.removeAllInstancesOf({source, sourceChannel, destChannel});
-                topologyChanged();
-
+                        source->outputs.removeAllInstancesOf({dest, destChannel, sourceChannel});
+                        dest->inputs.removeAllInstancesOf({source, sourceChannel, destChannel});
+                        topologyChanged();
+                    }
+                }
             }
             sendChangeMessage();
         }

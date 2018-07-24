@@ -1,27 +1,42 @@
 #pragma once
 
 #include "JuceHeader.h"
-#include "ProcessorGraph.h"
 #include "GraphEditorProcessor.h"
+#include "ConnectorDragListener.h"
 
-struct ConnectorComponent : public Component, public SettableTooltipClient {
-    explicit ConnectorComponent(ConnectorDragListener &connectorDragListener, ProcessorGraph& graph)
-            : connectorDragListener(connectorDragListener), graph(graph) {
+struct GraphEditorConnector : public Component, public SettableTooltipClient, public Utilities::ValueTreePropertyChangeListener {
+    explicit GraphEditorConnector(const ValueTree& state, ConnectorDragListener &connectorDragListener, GraphEditorProcessorContainer &graphEditorProcessorContainer)
+            : state(state), connectorDragListener(connectorDragListener), graphEditorProcessorContainer(graphEditorProcessorContainer) {
         setAlwaysOnTop(true);
+        if (this->state.isValid()) {
+            this->state.addListener(this);
+            const ValueTree &source = state.getChildWithName(IDs::SOURCE);
+            const ValueTree &destination = state.getChildWithName(IDs::DESTINATION);
+            connection = {{AudioProcessorGraph::NodeID(int(source.getProperty(IDs::NODE_ID))), source.getProperty(IDs::CHANNEL)},
+                          {AudioProcessorGraph::NodeID(int(destination.getProperty(IDs::NODE_ID))), destination.getProperty(IDs::CHANNEL)}};
+        }
     }
 
-    void setInput(AudioProcessorGraph::NodeAndChannel newSource, GraphEditorProcessor *newSourceComponent) {
+    ~GraphEditorConnector() override {
+        if (state.isValid()) {
+            state.removeListener(this);
+        }
+    }
+
+    AudioProcessorGraph::Connection getConnection() {
+        return connection;
+    }
+
+    void setInput(AudioProcessorGraph::NodeAndChannel newSource) {
         if (connection.source != newSource) {
             connection.source = newSource;
-            sourceComponent = newSourceComponent;
             update();
         }
     }
 
-    void setOutput(AudioProcessorGraph::NodeAndChannel newDestination, GraphEditorProcessor *newDestinationComponent) {
+    void setOutput(AudioProcessorGraph::NodeAndChannel newDestination) {
         if (connection.destination != newDestination) {
             connection.destination = newDestination;
-            destinationComponent = newDestinationComponent;
             update();
         }
     }
@@ -58,18 +73,16 @@ struct ConnectorComponent : public Component, public SettableTooltipClient {
         p1 = lastInputPos;
         p2 = lastOutputPos;
 
+        auto *sourceComponent = graphEditorProcessorContainer.getProcessorForNodeId(connection.source.nodeID);
         if (sourceComponent != nullptr) {
             p1 = sourceComponent->getPinPos(connection.source.channelIndex, false);
-            if (auto* parent = sourceComponent->getParentComponent())
-                if (auto* grandParent = parent->getParentComponent())
-                    p1.x += grandParent->getX();
+            p1.x += sourceComponent->getParentComponent()->getParentComponent()->getX();
         }
 
+        auto *destinationComponent = graphEditorProcessorContainer.getProcessorForNodeId(connection.destination.nodeID);
         if (destinationComponent != nullptr) {
             p2 = destinationComponent->getPinPos(connection.destination.channelIndex, true);
-            if (auto* parent = destinationComponent->getParentComponent())
-                if (auto* grandParent = parent->getParentComponent())
-                    p2.x += grandParent->getX();
+            p2.x += destinationComponent->getParentComponent()->getParentComponent()->getX();
         }
     }
 
@@ -103,8 +116,6 @@ struct ConnectorComponent : public Component, public SettableTooltipClient {
             connectorDragListener.dragConnector(e);
         } else if (e.mouseWasDraggedSinceMouseDown()) {
             dragging = true;
-
-            graph.removeConnection(connection);
 
             double distanceFromStart, distanceFromEnd;
             getDistancesFromEnds(getPosition().toFloat() + e.position, distanceFromStart, distanceFromEnd);
@@ -169,14 +180,33 @@ struct ConnectorComponent : public Component, public SettableTooltipClient {
         distanceFromEnd = p2.getDistanceFrom(p);
     }
 
+    ValueTree state;
+
     ConnectorDragListener &connectorDragListener;
-    ProcessorGraph &graph;
-    AudioProcessorGraph::Connection connection{{0, 0}, {0, 0}};
-    GraphEditorProcessor *sourceComponent{}, *destinationComponent{};
+    GraphEditorProcessorContainer &graphEditorProcessorContainer;
 
     Point<float> lastInputPos, lastOutputPos;
     Path linePath, hitPath;
     bool dragging = false;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ConnectorComponent)
+private:
+    AudioProcessorGraph::Connection connection{{0, 0}, {0, 0}};
+
+    void valueTreePropertyChanged(ValueTree &v, const Identifier &i) override {
+        if (v == state.getChildWithName(IDs::SOURCE)) {
+            if (i == IDs::NODE_ID) {
+                connection.source.nodeID = AudioProcessorGraph::NodeID(int(v.getProperty(i)));
+            } else if (i == IDs::CHANNEL) {
+                connection.source.channelIndex = int(v.getProperty(i));
+            }
+        } else if (v == state.getChildWithName(IDs::DESTINATION)) {
+            if (i == IDs::NODE_ID) {
+                connection.destination.nodeID = AudioProcessorGraph::NodeID(int(v.getProperty(i)));
+            } else if (i == IDs::CHANNEL) {
+                connection.destination.channelIndex = int(v.getProperty(i));
+            }
+        }
+    }
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (GraphEditorConnector)
 };

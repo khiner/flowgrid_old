@@ -301,7 +301,7 @@ namespace Helpers {
     }
 
     inline void moveItems(TreeView &treeView, const OwnedArray<ValueTree> &items,
-                          ValueTree newParent, int insertIndex, UndoManager *undoManager) {
+                          const ValueTree &newParent, int insertIndex, UndoManager *undoManager) {
         if (items.isEmpty())
             return;
 
