@@ -26,11 +26,11 @@ public:
     AudioProcessorGraph::NodeID getNodeId() const {
         if (!state.isValid())
             return ProcessorGraph::NA_NODE_ID;
-        return AudioProcessorGraph::NodeID(int(state.getProperty(IDs::NODE_ID)));
+        return ProcessorGraph::getNodeIdForState(state);
     }
 
     int getSlot() const {
-        return state.getProperty(IDs::PROCESSOR_SLOT);
+        return state[IDs::PROCESSOR_SLOT];
     }
 
     void paint(Graphics &g) override {

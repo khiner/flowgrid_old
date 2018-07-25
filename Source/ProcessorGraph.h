@@ -42,11 +42,11 @@ public:
 
             // nodes have already been added. just need to add connections if there are any.
             NodeAndChannel source{};
-            source.nodeID = NodeID(int(sourceState[IDs::NODE_ID]));
+            source.nodeID = getNodeIdForState(sourceState);
             source.channelIndex = sourceState[IDs::CHANNEL];
 
             NodeAndChannel destination{};
-            destination.nodeID = NodeID(int(destinationState[IDs::NODE_ID]));
+            destination.nodeID = getNodeIdForState(destinationState);
             destination.channelIndex = destinationState[IDs::CHANNEL];
 
             graphConnections.emplace_back(source, destination);

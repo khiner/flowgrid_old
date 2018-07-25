@@ -5,15 +5,15 @@
 #include "ConnectorDragListener.h"
 
 struct GraphEditorConnector : public Component, public SettableTooltipClient, public Utilities::ValueTreePropertyChangeListener {
-    explicit GraphEditorConnector(const ValueTree& state, ConnectorDragListener &connectorDragListener, GraphEditorProcessorContainer &graphEditorProcessorContainer)
+    explicit GraphEditorConnector(const ValueTree &state, ConnectorDragListener &connectorDragListener, GraphEditorProcessorContainer &graphEditorProcessorContainer)
             : state(state), connectorDragListener(connectorDragListener), graphEditorProcessorContainer(graphEditorProcessorContainer) {
         setAlwaysOnTop(true);
         if (this->state.isValid()) {
             this->state.addListener(this);
             const ValueTree &source = state.getChildWithName(IDs::SOURCE);
             const ValueTree &destination = state.getChildWithName(IDs::DESTINATION);
-            connection = {{AudioProcessorGraph::NodeID(int(source.getProperty(IDs::NODE_ID))), source.getProperty(IDs::CHANNEL)},
-                          {AudioProcessorGraph::NodeID(int(destination.getProperty(IDs::NODE_ID))), destination.getProperty(IDs::CHANNEL)}};
+            connection = {{ProcessorGraph::getNodeIdForState(source), source[IDs::CHANNEL]},
+                          {ProcessorGraph::getNodeIdForState(destination), destination[IDs::CHANNEL]}};
         }
     }
 
@@ -43,19 +43,15 @@ struct GraphEditorConnector : public Component, public SettableTooltipClient, pu
 
     void dragStart(const Point<float> &pos) {
         lastInputPos = pos;
-        resizeToFit();
+        update();
     }
 
     void dragEnd(const Point<float> &pos) {
         lastOutputPos = pos;
-        resizeToFit();
+        update();
     }
 
     void update() {
-        resizeToFit();
-    }
-
-    void resizeToFit() {
         Point<float> p1, p2;
         getPoints(p1, p2);
 
@@ -195,15 +191,15 @@ private:
     void valueTreePropertyChanged(ValueTree &v, const Identifier &i) override {
         if (v == state.getChildWithName(IDs::SOURCE)) {
             if (i == IDs::NODE_ID) {
-                connection.source.nodeID = AudioProcessorGraph::NodeID(int(v.getProperty(i)));
+                connection.source.nodeID = ProcessorGraph::getNodeIdForState(v);
             } else if (i == IDs::CHANNEL) {
-                connection.source.channelIndex = int(v.getProperty(i));
+                connection.source.channelIndex = int(v[i]);
             }
         } else if (v == state.getChildWithName(IDs::DESTINATION)) {
             if (i == IDs::NODE_ID) {
-                connection.destination.nodeID = AudioProcessorGraph::NodeID(int(v.getProperty(i)));
+                connection.destination.nodeID = ProcessorGraph::getNodeIdForState(v);
             } else if (i == IDs::CHANNEL) {
-                connection.destination.channelIndex = int(v.getProperty(i));
+                connection.destination.channelIndex = int(v[i]);
             }
         }
     }

@@ -88,7 +88,7 @@ private:
             titleLabel.setText("No item selected", dontSendNotification);
             titleLabel.setVisible(true);
         } else if (item.hasType(IDs::PROCESSOR)) {
-            const String &name = item.getProperty(IDs::name);
+            const String &name = item[IDs::name];
             titleLabel.setText("Processor Selected: " + name, dontSendNotification);
 
             auto *processorWrapper = audioGraphBuilder.getProcessorWrapperForState(item);
@@ -103,7 +103,7 @@ private:
                 }
             }
         } else if (item.hasType(IDs::CLIP)) {
-            const String &name = item.getProperty(IDs::name);
+            const String &name = item[IDs::name];
             titleLabel.setText("Clip Selected: " + name, dontSendNotification);
             nameEditor.setVisible(true);
             startSlider.setVisible(true);
@@ -116,7 +116,7 @@ private:
             lengthSlider.getValueObject().referTo(
                     editableItem.getPropertyAsValue(IDs::length, project.getUndoManager()));
         } else if (item.hasType(IDs::TRACK)) {
-            const String &name = item.getProperty(IDs::name);
+            const String &name = item[IDs::name];
             titleLabel.setText("Track Selected: " + name, dontSendNotification);
             nameEditor.setVisible(true);
             colourButton.setVisible(true);

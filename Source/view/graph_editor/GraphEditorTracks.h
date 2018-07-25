@@ -92,7 +92,7 @@ public:
         if (child.hasType(IDs::PROCESSOR)) {
             auto *fromTrack = getTrackForState(oldParent);
             auto *toTrack = getTrackForState(newParent);
-            auto *processor = fromTrack->getProcessorForNodeId(AudioProcessorGraph::NodeID(int(child.getProperty(IDs::NODE_ID))));
+            auto *processor = fromTrack->getProcessorForNodeId(ProcessorGraph::getNodeIdForState(child));
             fromTrack->setCurrentlyMovingProcessor(processor);
             toTrack->setCurrentlyMovingProcessor(processor);
         }

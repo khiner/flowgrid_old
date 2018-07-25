@@ -271,7 +271,7 @@ public:
             insertIndex = getMaxProcessorInsertIndex(track);
             slot = 0;
             if (track.getNumChildren() > 1) {
-                slot = int(track.getChild(track.getNumChildren() - 2).getProperty(IDs::PROCESSOR_SLOT)) + 1;
+                slot = int(track.getChild(track.getNumChildren() - 2)[IDs::PROCESSOR_SLOT]) + 1;
             }
             processor.setProperty(IDs::PROCESSOR_SLOT, slot, nullptr);
         } else {
@@ -297,7 +297,7 @@ public:
         return output.getChildWithName(IDs::PROCESSOR);
     }
     AudioProcessorGraph::NodeID getAudioOutputNodeId() const {
-        return AudioProcessorGraph::NodeID(int(getAudioOutputProcessorState().getProperty(IDs::NODE_ID)));
+        return AudioProcessorGraph::NodeID(int(getAudioOutputProcessorState()[IDs::NODE_ID]));
     }
 
     const bool selectedTrackHasMixerChannel() const {
@@ -318,7 +318,7 @@ public:
         std::__1::vector<int> slots;
         for (const ValueTree& child : parent) {
             if (child.hasType(IDs::PROCESSOR)) {
-                slots.push_back(int(child.getProperty(IDs::PROCESSOR_SLOT)));
+                slots.push_back(int(child[IDs::PROCESSOR_SLOT]));
             }
         }
         sort(slots.begin(), slots.end());
