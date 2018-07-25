@@ -78,7 +78,7 @@ public:
         return nullptr;
     }
 
-    void updateNodes() {
+    void updateProcessors() {
         for (auto *track : objects) {
             track->updateNodes();
         }

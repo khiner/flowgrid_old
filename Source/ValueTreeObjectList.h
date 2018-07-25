@@ -80,10 +80,10 @@ namespace Utilities {
                     {
                         const ScopedLockType sl(arrayLock);
                         o = objects.removeAndReturn(oldIndex);
-                    }
 
-                    objectRemoved(o);
-                    deleteObject(o);
+                        objectRemoved(o);
+                        deleteObject(o);
+                    }
                 }
             }
         }

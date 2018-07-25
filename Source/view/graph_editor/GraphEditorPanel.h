@@ -40,77 +40,94 @@ public:
 
     void updateComponents() {
         audioOutputProcessor->update();
-        updateNodes();
+        tracks->updateProcessors();
         connectors->updateConnectors();
     }
 
     void beginConnectorDrag(AudioProcessorGraph::NodeAndChannel source, AudioProcessorGraph::NodeAndChannel destination, const MouseEvent &e) override {
         auto *c = dynamic_cast<GraphEditorConnector *> (e.originalComponent);
-        draggingConnector.reset(c);
+        draggingConnector = c;
 
         if (draggingConnector == nullptr)
-            draggingConnector = std::make_unique<GraphEditorConnector>(ValueTree(), *this, *this);
-
+            draggingConnector = new GraphEditorConnector(ValueTree(), *this, *this);
+        else
+            initialDraggingConnection = draggingConnector->getConnection();
         draggingConnector->setInput(source);
         draggingConnector->setOutput(destination);
 
-        addAndMakeVisible(draggingConnector.get());
+        addAndMakeVisible(draggingConnector);
         draggingConnector->toFront(false);
 
         dragConnector(e);
     }
 
     void dragConnector(const MouseEvent &e) override {
-        if (draggingConnector != nullptr) {
-            draggingConnector->setTooltip({});
+        if (draggingConnector == nullptr)
+            return;
 
-            auto pos = e.getEventRelativeTo(this).position;
-            auto connection = draggingConnector->getConnection();
+        draggingConnector->setTooltip({});
 
-            if (auto *pin = findPinAt(e)) {
-                if (connection.source.nodeID == 0 && !pin->isInput) {
-                    draggingConnector->setInput(pin->pin);
-                } else if (connection.destination.nodeID == 0 && pin->isInput) {
-                    draggingConnector->setOutput(pin->pin);
-                }
+        auto pos = e.getEventRelativeTo(this).position;
+        auto connection = draggingConnector->getConnection();
 
-                if (graph.canConnect(connection)) {
-                    pos = getLocalPoint(pin->getParentComponent(), pin->getBounds().getCentre()).toFloat();
-                    draggingConnector->setTooltip(pin->getTooltip());
-                }
+        if (auto *pin = findPinAt(e)) {
+            if (connection.source.nodeID == 0 && !pin->isInput)
+                connection.source = pin->pin;
+            else if (connection.destination.nodeID == 0 && pin->isInput)
+                connection.destination = pin->pin;
+
+            if (graph.canConnect(connection) || graph.isConnected(connection)) {
+                pos = getLocalPoint(pin->getParentComponent(), pin->getBounds().getCentre()).toFloat();
+                draggingConnector->setTooltip(pin->getTooltip());
             }
-
-            if (connection.source.nodeID == 0)
-                draggingConnector->dragStart(pos);
-            else
-                draggingConnector->dragEnd(pos);
         }
+
+        if (draggingConnector->getConnection().source.nodeID == 0)
+            draggingConnector->dragStart(pos);
+        else
+            draggingConnector->dragEnd(pos);
     }
 
     void endDraggingConnector(const MouseEvent &e) override {
         if (draggingConnector == nullptr)
             return;
 
-        draggingConnector->setTooltip({});
-        auto connection = draggingConnector->getConnection();
-        draggingConnector = nullptr;
-
+        auto newConnection = EMPTY_CONNECTION;
         if (auto *pin = findPinAt(e)) {
-            if (connection.source.nodeID == 0) {
+            newConnection = draggingConnector->getConnection();
+            if (newConnection.source.nodeID == 0) {
                 if (pin->isInput)
-                    return;
-
-                connection.source = pin->pin;
+                    newConnection = EMPTY_CONNECTION;
+                else
+                    newConnection.source = pin->pin;
             } else {
                 if (!pin->isInput)
-                    return;
-
-                connection.destination = pin->pin;
+                    newConnection = EMPTY_CONNECTION;
+                else
+                    newConnection.destination = pin->pin;
             }
+        }
 
-            graph.addConnection(connection);
-        } else {
-            graph.removeConnection(connection);
+        draggingConnector->setTooltip({});
+        if (initialDraggingConnection == EMPTY_CONNECTION)
+            delete draggingConnector;
+        else {
+            draggingConnector->setInput(initialDraggingConnection.source);
+            draggingConnector->setOutput(initialDraggingConnection.destination);
+            draggingConnector = nullptr;
+        }
+
+        if (newConnection == initialDraggingConnection) {
+            initialDraggingConnection = EMPTY_CONNECTION;
+            return;
+        }
+
+        if (newConnection != EMPTY_CONNECTION)
+            graph.addConnection(newConnection);
+
+        if (initialDraggingConnection != EMPTY_CONNECTION) {
+            graph.removeConnection(initialDraggingConnection);
+            initialDraggingConnection = EMPTY_CONNECTION;
         }
     }
 
@@ -123,20 +140,18 @@ public:
     Project &project;
 
 private:
+    const AudioProcessorGraph::Connection EMPTY_CONNECTION {{0, 0}, {0, 0}};
     std::unique_ptr<GraphEditorConnectors> connectors;
-    std::unique_ptr<GraphEditorConnector> draggingConnector;
+    GraphEditorConnector *draggingConnector;
     std::unique_ptr<GraphEditorTracks> tracks;
     std::unique_ptr<GraphEditorProcessor> audioOutputProcessor;
+    AudioProcessorGraph::Connection initialDraggingConnection { EMPTY_CONNECTION };
 
     PinComponent *findPinAt(const MouseEvent &e) const {
         if (auto *pin = audioOutputProcessor->findPinAt(e)) {
             return pin;
         }
         return tracks->findPinAt(e);
-    }
-
-    void updateNodes() {
-        tracks->updateNodes();
     }
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (GraphEditorPanel)

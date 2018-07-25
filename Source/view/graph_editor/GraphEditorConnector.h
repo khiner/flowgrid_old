@@ -4,25 +4,18 @@
 #include "GraphEditorProcessor.h"
 #include "ConnectorDragListener.h"
 
-struct GraphEditorConnector : public Component, public SettableTooltipClient, public Utilities::ValueTreePropertyChangeListener {
+struct GraphEditorConnector : public Component, public SettableTooltipClient {
     explicit GraphEditorConnector(const ValueTree &state, ConnectorDragListener &connectorDragListener, GraphEditorProcessorContainer &graphEditorProcessorContainer)
             : state(state), connectorDragListener(connectorDragListener), graphEditorProcessorContainer(graphEditorProcessorContainer) {
         setAlwaysOnTop(true);
         if (this->state.isValid()) {
-            this->state.addListener(this);
             const ValueTree &source = state.getChildWithName(IDs::SOURCE);
             const ValueTree &destination = state.getChildWithName(IDs::DESTINATION);
             connection = {{ProcessorGraph::getNodeIdForState(source), source[IDs::CHANNEL]},
                           {ProcessorGraph::getNodeIdForState(destination), destination[IDs::CHANNEL]}};
         }
     }
-
-    ~GraphEditorConnector() override {
-        if (state.isValid()) {
-            state.removeListener(this);
-        }
-    }
-
+    
     AudioProcessorGraph::Connection getConnection() {
         return connection;
     }
@@ -43,16 +36,24 @@ struct GraphEditorConnector : public Component, public SettableTooltipClient, pu
 
     void dragStart(const Point<float> &pos) {
         lastInputPos = pos;
-        update();
+        resizeToFit();
     }
 
     void dragEnd(const Point<float> &pos) {
         lastOutputPos = pos;
-        update();
+        resizeToFit();
     }
 
     void update() {
-        Point<float> p1, p2;
+        juce::Point<float> p1, p2;
+        getPoints(p1, p2);
+
+        if (lastInputPos != p1 || lastOutputPos != p2)
+            resizeToFit();
+    }
+
+    void resizeToFit() {
+        juce::Point<float> p1, p2;
         getPoints(p1, p2);
 
         auto newBounds = Rectangle<float>(p1, p2).expanded(4.0f).getSmallestIntegerContainer();
@@ -187,22 +188,6 @@ struct GraphEditorConnector : public Component, public SettableTooltipClient, pu
 
 private:
     AudioProcessorGraph::Connection connection{{0, 0}, {0, 0}};
-
-    void valueTreePropertyChanged(ValueTree &v, const Identifier &i) override {
-        if (v == state.getChildWithName(IDs::SOURCE)) {
-            if (i == IDs::NODE_ID) {
-                connection.source.nodeID = ProcessorGraph::getNodeIdForState(v);
-            } else if (i == IDs::CHANNEL) {
-                connection.source.channelIndex = int(v[i]);
-            }
-        } else if (v == state.getChildWithName(IDs::DESTINATION)) {
-            if (i == IDs::NODE_ID) {
-                connection.destination.nodeID = ProcessorGraph::getNodeIdForState(v);
-            } else if (i == IDs::CHANNEL) {
-                connection.destination.channelIndex = int(v[i]);
-            }
-        }
-    }
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (GraphEditorConnector)
 };

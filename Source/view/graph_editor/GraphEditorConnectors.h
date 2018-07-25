@@ -20,9 +20,13 @@ public:
     }
 
     bool hitTest(int x, int y) override {
-        for (auto *connector : objects) {
-            if (connector->hitTest(x, y))
-                return true;
+        {
+            const ScopedLockType sl(arrayLock);
+            for (auto *connector : objects) {
+                const Point<int> &localPoint = connector->getLocalPoint(this, juce::Point<int>(x, y));
+                if (connector->hitTest(localPoint.x, localPoint.y))
+                    return true;
+            }
         }
         return false;
     }
@@ -50,8 +54,11 @@ public:
     void objectOrderChanged() override {}
 
     void updateConnectors() {
-        for (auto *connector : objects) {
-            connector->update();
+        {
+            const ScopedLockType sl(arrayLock);
+            for (auto *connector : objects) {
+                connector->update();
+            }
         }
     }
 
