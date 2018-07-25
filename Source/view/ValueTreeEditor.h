@@ -4,6 +4,7 @@
 #include <ValueTreeItems.h>
 #include <view/SelectionPanel.h>
 #include <processors/ProcessorManager.h>
+#include "UiColours.h"
 
 class ValueTreeEditor : public Component,
                         public DragAndDropContainer,
@@ -14,8 +15,7 @@ public:
     ValueTreeEditor(const ValueTree &state, UndoManager &undoManager, Project& project, ProcessorGraph &audioGraphBuilder)
             : undoManager(undoManager), project(project) {
         addAndMakeVisible(treeView);
-        treeView.setColour(TreeView::backgroundColourId,
-                       getUIColourIfAvailable(LookAndFeel_V4::ColourScheme::UIColour::windowBackground));
+        treeView.setColour(TreeView::backgroundColourId, getUIColourIfAvailable(LookAndFeel_V4::ColourScheme::UIColour::windowBackground));
 
         treeView.setDefaultOpenness(true);
         treeView.setMultiSelectEnabled(true);

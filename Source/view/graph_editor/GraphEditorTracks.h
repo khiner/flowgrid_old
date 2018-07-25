@@ -83,7 +83,7 @@ public:
     void updateProcessors() {
         resized();
         for (auto *track : objects) {
-            track->updateProcessors();
+            track->update();
         }
     }
 

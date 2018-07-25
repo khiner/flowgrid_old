@@ -1,23 +1,16 @@
 #pragma once
 
-#include "view/ColourChangeButton.h"
+#include "view/UiColours.h"
+#include "ProcessorGraph.h"
+#include "Project.h"
+#include "Utilities.h"
 
 class SelectionPanel : public Component,
                        private ProjectChangeListener {
 public:
     SelectionPanel(Project &project, ProcessorGraph &audioGraphBuilder)
             : project(project), audioGraphBuilder(audioGraphBuilder) {
-        Utilities::addAndMakeVisible(*this, {&titleLabel, &nameEditor, &colourButton, &startSlider, &lengthSlider});
-
-        colourButton.setButtonText("Set colour");
-
-        startSlider.setRange(0.0, 10.0);
-        lengthSlider.setRange(0.0, 10.0);
-
-        Utilities::visitComponents({&nameEditor, &colourButton, &startSlider, &lengthSlider},
-                              [this](Component *c) {
-                                  labels.add(new Label(String(), c->getName()))->attachToComponent(c, true);
-                              });
+        Utilities::addAndMakeVisible(*this, {&titleLabel});
 
         for (int paramIndex = 0; paramIndex < MAX_PROCESSOR_PARAMS_TO_DISPLAY; paramIndex++) {
             Slider *slider = new Slider("Param " + String(paramIndex) + ": ");
@@ -47,9 +40,6 @@ public:
         titleLabel.setBounds(r.removeFromTop(ITEM_HEIGHT));
         r = r.withTrimmedLeft(70).withWidth(ITEM_WIDTH);
 
-        Utilities::visitComponents({&nameEditor, &colourButton, &startSlider, &lengthSlider},
-                              [&r](Component *c) { if (c->isVisible()) c->setBounds(r.removeFromTop(ITEM_HEIGHT)); });
-
         for (int sliderIndex = 0; sliderIndex < processorSliders.size(); sliderIndex++) {
             auto* slider = processorSliders[sliderIndex];
             if (slider->isVisible()) {
@@ -72,9 +62,6 @@ private:
     ProcessorGraph &audioGraphBuilder;
 
     Label titleLabel;
-    TextEditor nameEditor{"Name: "};
-    ColourChangeButton colourButton{"Colour: "};
-    Slider startSlider{"Start: "}, lengthSlider{"Length: "};
     OwnedArray<Label> labels;
 
     OwnedArray<Label> processorLabels;
@@ -102,28 +89,6 @@ private:
                     }
                 }
             }
-        } else if (item.hasType(IDs::CLIP)) {
-            const String &name = item[IDs::name];
-            titleLabel.setText("Clip Selected: " + name, dontSendNotification);
-            nameEditor.setVisible(true);
-            startSlider.setVisible(true);
-            lengthSlider.setVisible(true);
-
-            ValueTree editableItem(item);
-            nameEditor.getTextValue().referTo(editableItem.getPropertyAsValue(IDs::name, project.getUndoManager()));
-            startSlider.getValueObject().referTo(
-                    editableItem.getPropertyAsValue(IDs::start, project.getUndoManager()));
-            lengthSlider.getValueObject().referTo(
-                    editableItem.getPropertyAsValue(IDs::length, project.getUndoManager()));
-        } else if (item.hasType(IDs::TRACK)) {
-            const String &name = item[IDs::name];
-            titleLabel.setText("Track Selected: " + name, dontSendNotification);
-            nameEditor.setVisible(true);
-            colourButton.setVisible(true);
-
-            ValueTree editableItem(item);
-            nameEditor.getTextValue().referTo(editableItem.getPropertyAsValue(IDs::name, project.getUndoManager()));
-            colourButton.getColourValueObject().referTo(editableItem.getPropertyAsValue(IDs::colour, project.getUndoManager()));
         }
 
         repaint();

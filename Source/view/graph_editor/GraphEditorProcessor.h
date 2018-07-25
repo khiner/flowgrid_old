@@ -32,8 +32,7 @@ public:
 
         bool selected = isSelected();
         if (selected) {
-            auto bgColour = findColour(ResizableWindow::backgroundColourId).brighter(0.15);
-            g.setColour(bgColour);
+            g.setColour(Colours::white.withAlpha(0.15f));
             g.fillRect(getLocalBounds());
         }
 
@@ -175,7 +174,7 @@ public:
     }
 
     bool isSelected() {
-        return graph.isSelected(getNodeId());
+        return state[IDs::selected];
     }
 
     void showPopupMenu() {

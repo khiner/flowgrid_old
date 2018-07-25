@@ -4,6 +4,9 @@
 #include <Project.h>
 #include "GraphEditorProcessor.h"
 #include "GraphEditorProcessorContainer.h"
+#include "ConnectorDragListener.h"
+#include "ProcessorGraph.h"
+#include "PinComponent.h"
 
 class GraphEditorProcessors : public Component,
                               public Utilities::ValueTreeObjectList<GraphEditorProcessor>,
@@ -101,6 +104,15 @@ public:
 
     void setCurrentlyMovingProcessor(GraphEditorProcessor *currentlyMovingProcessor) {
         this->currentlyMovingProcessor = currentlyMovingProcessor;
+    }
+
+    bool anySelected() const {
+        for (auto *processor : objects) {
+            if (processor->isSelected()) {
+                return processor;
+            }
+        }
+        return false;
     }
 
 private:

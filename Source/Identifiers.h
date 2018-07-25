@@ -36,12 +36,6 @@ namespace IDs
     DECLARE_ID(NODE_ID)
     DECLARE_ID(BYPASSED)
 
-    DECLARE_ID (CLIP)
-    DECLARE_ID (start)
-    DECLARE_ID (length)
-    DECLARE_ID (timestretchOptions)
-    DECLARE_ID (NOTE)
-
     DECLARE_ID(PARAM_NA)
 
     DECLARE_ID(CONNECTIONS)

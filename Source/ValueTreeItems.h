@@ -1,7 +1,7 @@
 #pragma once
 
 #include <processors/MixerChannelProcessor.h>
-#include "view/ColourChangeButton.h"
+#include "view/UiColours.h"
 #include "Identifiers.h"
 
 class ValueTreeItem;
@@ -152,8 +152,7 @@ public:
         if (!col.isTransparent())
             g.fillAll(col.withAlpha(0.5f));
 
-        g.setColour(getUIColourIfAvailable(LookAndFeel_V4::ColourScheme::UIColour::defaultText,
-                                           Colours::black));
+        g.setColour(getUIColourIfAvailable(LookAndFeel_V4::ColourScheme::UIColour::defaultText, Colours::black));
         g.setFont(15.0f);
         g.drawText(getDisplayText(), 4, 0, width - 4, height,
                    Justification::centredLeft, true);
@@ -321,29 +320,6 @@ namespace Helpers {
     }
 }
 
-class Clip : public ValueTreeItem {
-public:
-    Clip(const ValueTree &v, UndoManager &um)
-            : ValueTreeItem(v, um) {
-        jassert(state.hasType(IDs::CLIP));
-    }
-
-    bool mightContainSubItems() override {
-        return false;
-    }
-
-    String getDisplayText() override {
-        auto timeRange = Range<double>::withStartAndLength(state[IDs::start], state[IDs::length]);
-        return ValueTreeItem::getDisplayText() + " (" + String(timeRange.getStart(), 2) + " - " +
-               String(timeRange.getEnd(), 2) + ")";
-    }
-
-    bool isInterestedInDragSource(const DragAndDropTarget::SourceDetails &) override {
-        return false;
-    }
-};
-
-
 class Processor : public ValueTreeItem {
 public:
     Processor(const ValueTree &v, UndoManager &um)
@@ -438,7 +414,6 @@ inline ValueTreeItem *createValueTreeItemForType(const ValueTree &v, UndoManager
     if (v.hasType(IDs::MASTER_TRACK)) return new MasterTrack(v, um);
     if (v.hasType(IDs::TRACK)) return new Track(v, um);
     if (v.hasType(IDs::PROCESSOR)) return new Processor(v, um);
-    if (v.hasType(IDs::CLIP)) return new Clip(v, um);
 
     return nullptr;
 }

@@ -2,11 +2,10 @@
 
 #include <Utilities.h>
 #include <Identifiers.h>
-#include <view/ColourChangeButton.h>
 #include "JuceHeader.h"
 #include "GraphEditorProcessors.h"
 
-class GraphEditorTrack : public Component, public Utilities::ValueTreePropertyChangeListener, public GraphEditorProcessorContainer {
+class GraphEditorTrack : public Component, public Utilities::ValueTreePropertyChangeListener, public GraphEditorProcessorContainer, private ChangeListener {
 public:
     explicit GraphEditorTrack(Project& project, ValueTree v, ConnectorDragListener &connectorDragListener, ProcessorGraph& graph)
             : state(std::move(v)), connectorDragListener(connectorDragListener), graph(graph) {
@@ -22,7 +21,18 @@ public:
 
     void mouseDown(const MouseEvent &e) override {
         if (e.eventComponent == &nameLabel) {
-            select();
+            if (e.mods.isRightButtonDown()) {
+                auto *colourSelector = new ColourSelector();
+                colourSelector->setName("background");
+                colourSelector->setCurrentColour(findColour(TextButton::buttonColourId));
+                colourSelector->addChangeListener(this);
+                colourSelector->setColour(ColourSelector::backgroundColourId, Colours::transparentBlack);
+                colourSelector->setSize(300, 400);
+
+                CallOutBox::launchAsynchronously(colourSelector, getScreenBounds(), nullptr);
+            } else {
+                select();
+            }
         }
     }
 
@@ -34,8 +44,12 @@ public:
         return Colour::fromString(state[IDs::colour].toString());
     }
 
+    void setColour(const Colour& colour) {
+        state.setProperty(IDs::colour, colour.toString(), &graph.undoManager);
+    }
+
     bool isSelected() const {
-        return state.getProperty(IDs::selected);
+        return state.getProperty(IDs::selected) || anyProcessorsSelected();
     }
 
     void select() {
@@ -71,7 +85,8 @@ public:
         return processors->findPinAt(e);
     }
 
-    void updateProcessors() {
+    void update() {
+        repaint();
         processors->update();
     }
 
@@ -93,8 +108,19 @@ private:
             nameLabel.setText(v[IDs::name].toString(), dontSendNotification);
         } else if (i == IDs::colour) {
             nameLabel.setColour(Label::backgroundColourId, getColour());
+            repaint();
         } else if (i == IDs::selected) {
             repaint();
         }
+    }
+
+    void changeListenerCallback(ChangeBroadcaster *source) override {
+        if (auto *cs = dynamic_cast<ColourSelector *> (source)) {
+            setColour(cs->getCurrentColour());
+        }
+    }
+
+    bool anyProcessorsSelected() const {
+        return processors->anySelected();
     }
 };

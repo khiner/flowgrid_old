@@ -143,7 +143,7 @@ public:
 
             centreWithSize(getWidth(), getHeight());
             setVisible(true);
-            setBackgroundColour(backgroundColor);
+            setBackgroundColour(getUIColourIfAvailable(LookAndFeel_V4::ColourScheme::UIColour::windowBackground));
             addKeyListener(keyListener);
         }
 
@@ -162,8 +162,6 @@ public:
         */
 
     private:
-        const Colour backgroundColor = dynamic_cast<LookAndFeel_V4 &>(LookAndFeel::getDefaultLookAndFeel()).getCurrentColourScheme().getUIColour(
-                (LookAndFeel_V4::ColourScheme::UIColour::windowBackground));
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainWindow)
     };
 
