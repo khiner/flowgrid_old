@@ -35,10 +35,12 @@ public:
     GraphEditorTrack *createNewObject(const ValueTree &v) override {
         auto *track = new GraphEditorTrack(project, v, connectorDragListener, graph);
         addAndMakeVisible(track);
+        track->addMouseListener(this, true);
         return track;
     }
 
     void deleteObject(GraphEditorTrack *track) override {
+        track->removeMouseListener(this);
         delete track;
     }
 
@@ -84,9 +86,44 @@ public:
         }
     }
 
+    void mouseDown(const MouseEvent &e) override {
+        if (auto* track = dynamic_cast<GraphEditorTrack *>(e.originalComponent->getParentComponent())) {
+            if (e.originalComponent == track->getDragControlComponent() && track->state != project.getMasterTrack()) {
+                currentlyDraggingTrack = track;
+                originalPos = e.getEventRelativeTo(this).getPosition();
+            }
+        }
+    }
+
+    void mouseDrag(const MouseEvent &e) override {
+        if (e.originalComponent->getParentComponent() == currentlyDraggingTrack) {
+            auto pos = originalPos + e.getOffsetFromDragStart();
+            int currentIndex = parent.indexOf(currentlyDraggingTrack->state);
+            for (auto* track : objects) {
+                if (track == currentlyDraggingTrack)
+                    continue;
+                if (pos.x < track->getX() + track->getWidth() / 2) {
+                    int newIndex = jlimit(0, objects.size() - 1, objects.indexOf(track));
+                    if (currentIndex != newIndex) {
+                        if (currentIndex < newIndex) {
+                            --newIndex;
+                        }
+                        return parent.moveChild(currentIndex, newIndex, project.getUndoManager());
+                    }
+                }
+            }
+        }
+    }
+
+    void mouseUp(const MouseEvent &e) override {
+        currentlyDraggingTrack = nullptr;
+    }
+
     Project& project;
     ConnectorDragListener &connectorDragListener;
     ProcessorGraph &graph;
+    Point<int> originalPos;
+    GraphEditorTrack *currentlyDraggingTrack;
 
     void valueTreeChildWillBeMovedToNewParent(ValueTree child, const ValueTree& oldParent, int oldIndex, const ValueTree& newParent, int newIndex) override {
         if (child.hasType(IDs::PROCESSOR)) {

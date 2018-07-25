@@ -12,6 +12,7 @@ public:
             : state(std::move(v)), connectorDragListener(connectorDragListener), graph(graph) {
         nameLabel.setText(getTrackName(), dontSendNotification);
         nameLabel.setColour(Label::backgroundColourId, getColour());
+
         addAndMakeVisible(nameLabel);
         addAndMakeVisible(*(processors = std::make_unique<GraphEditorProcessors>(project, state, connectorDragListener, graph)));
         state.addListener(this);
@@ -23,6 +24,10 @@ public:
 
     Colour getColour() const {
         return Colour::fromString(state[IDs::colour].toString());
+    }
+
+    const Component *getDragControlComponent() const {
+        return &nameLabel;
     }
 
     void resized() override {
