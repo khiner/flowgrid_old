@@ -2,25 +2,19 @@
 
 #include <Utilities.h>
 #include "JuceHeader.h"
+#include "ConnectorDragListener.h"
+#include "ProcessorGraph.h"
+#include "PinComponent.h"
 
-class GraphEditorProcessor : public Component, public Utilities::ValueTreePropertyChangeListener, private AudioProcessorParameter::Listener {
+class GraphEditorProcessor : public Component, public Utilities::ValueTreePropertyChangeListener {
 public:
     GraphEditorProcessor(const ValueTree& state, ConnectorDragListener &connectorDragListener, ProcessorGraph& graph)
             : state(state), connectorDragListener(connectorDragListener), graph(graph) {
-        if (auto *processor = getProcessor()) {
-            if (auto *bypassParam = processor->getBypassParameter())
-                bypassParam->addListener(this);
-        }
-
         this->state.addListener(this);
     }
 
     ~GraphEditorProcessor() override {
         state.removeListener(this);
-        if (auto *processor = getProcessor()) {
-            if (auto *bypassParam = processor->getBypassParameter())
-                bypassParam->removeListener(this);
-        }
     }
 
     AudioProcessorGraph::NodeID getNodeId() const {
@@ -35,10 +29,6 @@ public:
 
     void paint(Graphics &g) override {
         auto boxArea = getLocalBounds().reduced(1, pinSize);
-        bool isBypassed = false;
-
-        if (auto *f = graph.getNodeForId(getNodeId()))
-            isBypassed = f->isBypassed();
 
         bool selected = isSelected();
         if (selected) {
@@ -49,7 +39,7 @@ public:
 
         auto boxColour = findColour(TextEditor::backgroundColourId);
 
-        if (isBypassed)
+        if (state[IDs::BYPASSED])
             boxColour = boxColour.brighter();
         else if (selected)
             boxColour = boxColour.brighter(0.02);
@@ -173,8 +163,12 @@ public:
         repaint();
     }
 
+    AudioProcessorGraph::Node::Ptr getNode() const {
+        return graph.getNodeForId(getNodeId());
+    }
+
     AudioProcessor *getProcessor() const {
-        if (auto node = graph.getNodeForId(getNodeId()))
+        if (auto node = getNode())
             return node->getProcessor();
 
         return {};
@@ -207,9 +201,7 @@ public:
                             graph.disconnectNode(getNodeId());
                             break;
                         case 3: {
-                            if (auto *node = graph.getNodeForId(getNodeId()))
-                                node->setBypassed(!node->isBypassed());
-                            repaint();
+                            state.setProperty(IDs::BYPASSED, !state.getProperty(IDs::BYPASSED), &graph.undoManager);
                             break;
                         }
                         case 10:
@@ -228,16 +220,10 @@ public:
     }
 
     void showWindow(PluginWindow::Type type) {
-        if (auto node = graph.getNodeForId(getNodeId()))
+        if (auto node = getNode())
             if (auto *w = graph.getOrCreateWindowFor(node, type))
                 w->toFront(true);
     }
-
-    void parameterValueChanged(int, float) override {
-        repaint();
-    }
-
-    void parameterGestureChanged(int, bool) override {}
 
     ValueTree state;
 
@@ -253,8 +239,10 @@ public:
 
 private:
     void valueTreePropertyChanged(ValueTree &v, const Identifier &i) override {
-        if (v == state)
-            if (i == IDs::PROCESSOR_SLOT)
-                repaint();
+        if (v != state)
+            return;
+
+        if (i == IDs::PROCESSOR_SLOT || i == IDs::BYPASSED)
+            repaint();
     }
 };

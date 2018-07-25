@@ -14,6 +14,7 @@ public:
             : project(project), undoManager(undoManager) {
         enableAllBuses();
 
+        this->project.getTracks().addListener(this);
         this->project.getConnections().addListener(this);
         addProcessor(project.getAudioOutputProcessorState());
         recursivelyInitializeWithState(project.getMasterTrack());
@@ -27,7 +28,6 @@ public:
             recursivelyInitializeWithState(project.getMasterTrack(), true);
             recursivelyInitializeWithState(project.getTracks(), true);
         }
-        this->project.getTracks().addListener(this);
         this->project.addChangeListener(this);
         this->addChangeListener(this);
         initializing = false;
@@ -256,6 +256,7 @@ public:
     }
 
     const static NodeID NA_NODE_ID = 0;
+    UndoManager &undoManager;
 private:
 
     NodeID currentlyDraggingNodeId = NA_NODE_ID;
@@ -263,7 +264,6 @@ private:
     Point<int> initialDraggingGridPosition;
 
     Project &project;
-    UndoManager &undoManager;
     OwnedArray<StatefulAudioProcessorWrapper> processerWrappers;
     OwnedArray<PluginWindow> activePluginWindows;
 
@@ -302,6 +302,7 @@ private:
                                    addNode(processor, getNodeIdForState(processorState)) :
                                    addNode(processor);
         processorWrapper->state.setProperty(IDs::NODE_ID, int(newNode->nodeID), nullptr);
+        processorWrapper->state.sendPropertyChangeMessage(IDs::BYPASSED);
 
         if (!initializing) {
             const Array<ValueTree> &nodeConnections = project.getConnectionsForNode(newNode->nodeID);
@@ -415,8 +416,14 @@ private:
     }
 
     void valueTreePropertyChanged(ValueTree& tree, const Identifier& property) override {
-        if (property == IDs::PROCESSOR_SLOT) {
-            sendChangeMessage();
+        if (tree.hasType(IDs::PROCESSOR)) {
+            if (property == IDs::PROCESSOR_SLOT) {
+                sendChangeMessage(); // TODO get rid of?
+            } else if (property == IDs::BYPASSED) {
+                if (auto node = getNodeForState(tree)) {
+                    node->setBypassed(tree[IDs::BYPASSED]);
+                }
+            }
         }
     }
 
