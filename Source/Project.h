@@ -9,7 +9,7 @@ class Project : public ValueTreeItem,
                 public ProjectChangeBroadcaster {
 public:
     Project(const ValueTree &v, UndoManager &um, ProcessorManager& processorIds)
-            : ValueTreeItem(v, um), processorIds(processorIds) {
+            : ValueTreeItem(v, um), processorManager(processorIds) {
         if (!state.isValid()) {
             state = createDefaultProject();
         } else {
@@ -181,7 +181,7 @@ public:
 
         output = ValueTree(IDs::INPUT);
 
-        PluginDescription *description = processorIds.getAudioOutputDescription();
+        PluginDescription *description = processorManager.getAudioOutputDescription();
         ValueTree inputProcessor(IDs::PROCESSOR);
         Helpers::createUuidProperty(inputProcessor);
         inputProcessor.setProperty(IDs::id, description->createIdentifierString(), nullptr);
@@ -225,22 +225,30 @@ public:
         return state;
     }
 
-    ValueTree createAndAddTrack(bool undoable=true) {
+    ValueTree createAndAddTrack(bool undoable=true, bool addMixer=true, int insertIndex=-1, String trackName="") {
         int numTracks = getNumTracks() - 1; // minus 1 because of master track
 
         ValueTree track(IDs::TRACK);
-        const String trackName("Track " + String(numTracks + 1));
+        if (trackName.isEmpty()) {
+            trackName = "Track " + String(numTracks + 1);
+        } else {
+            trackName = makeTrackNameUnique(trackName);
+        }
         Helpers::createUuidProperty(track);
         track.setProperty(IDs::colour, Colour::fromHSV((1.0f / 8.0f) * numTracks, 0.65f, 0.65f, 1.0f).toString(), nullptr);
         track.setProperty(IDs::name, trackName, nullptr);
 
         const ValueTree &masterTrack = tracks.getChildWithName(IDs::MASTER_TRACK);
-        // Insert new processors _before_ the master track, or at the end if there isn't one.
-        int insertIndex = masterTrack.isValid() ? tracks.indexOf(masterTrack) : -1;
+        if (insertIndex == -1) {
+            // Insert new tracks _before_ the master track, or at the end if there isn't one.
+            insertIndex = masterTrack.isValid() ? tracks.indexOf(masterTrack) : -1;
+        }
 
         tracks.addChild(track, insertIndex, undoable ? &undoManager : nullptr);
 
-        createAndAddProcessor(MixerChannelProcessor::getPluginDescription(), track, -1, undoable);
+        if (addMixer)
+            createAndAddProcessor(MixerChannelProcessor::getPluginDescription(), track, -1, undoable);
+
         return track;
     }
 
@@ -256,6 +264,11 @@ public:
     ValueTree createAndAddProcessor(const PluginDescription &description, ValueTree track, int slot=-1, bool undoable=true) {
         if (selectedTrackHasMixerChannel() && description.name == MixerChannelProcessor::getIdentifier())
             return ValueTree();
+
+        if (processorManager.isGeneratorOrInstrument(&description) &&
+            processorManager.doesTrackAlreadyHaveGeneratorOrInstrument(track)) {
+            return createAndAddProcessor(description, createAndAddTrack(undoable, false, track.getParent().indexOf(track), track.getProperty(IDs::name)), slot, undoable);
+        }
 
         ValueTree processor(IDs::PROCESSOR);
         Helpers::createUuidProperty(processor);
@@ -416,8 +429,8 @@ public:
         PopupMenu internalSubMenu;
         PopupMenu externalSubMenu;
 
-        processorIds.getKnownPluginListInternal().addToMenu(internalSubMenu, processorIds.getPluginSortMethod(), disabledPluginIds);
-        processorIds.getKnownPluginListExternal().addToMenu(externalSubMenu, processorIds.getPluginSortMethod(), {}, String(), processorIds.getKnownPluginListInternal().getNumTypes());
+        processorManager.getKnownPluginListInternal().addToMenu(internalSubMenu, processorManager.getPluginSortMethod(), disabledPluginIds);
+        processorManager.getKnownPluginListExternal().addToMenu(externalSubMenu, processorManager.getPluginSortMethod(), {}, String(), processorManager.getKnownPluginListInternal().getNumTypes());
 
         menu.addSubMenu("Internal", internalSubMenu, true);
         menu.addSeparator();
@@ -425,27 +438,27 @@ public:
     }
 
     KnownPluginList &getKnownPluginListInternal() {
-        return processorIds.getKnownPluginListInternal();
+        return processorManager.getKnownPluginListInternal();
     }
 
     KnownPluginList &getKnownPluginListExternal() {
-        return processorIds.getKnownPluginListExternal();
+        return processorManager.getKnownPluginListExternal();
     }
 
     KnownPluginList::SortMethod getPluginSortMethod() {
-        return processorIds.getPluginSortMethod();
+        return processorManager.getPluginSortMethod();
     }
 
     AudioPluginFormatManager& getFormatManager() {
-        return processorIds.getFormatManager();
+        return processorManager.getFormatManager();
     }
 
     const PluginDescription* getChosenType(const int menuId) const {
-        return processorIds.getChosenType(menuId);
+        return processorManager.getChosenType(menuId);
     }
 
     PluginDescription *getTypeForIdentifier(const String &identifier) {
-        return processorIds.getDescriptionForIdentifier(identifier);
+        return processorManager.getDescriptionForIdentifier(identifier);
     }
 
     const static int NUM_VISIBLE_TRACKS = 8;
@@ -463,5 +476,24 @@ private:
     Array<ValueTree> connectionsSnapshot;
     std::unordered_map<int, int> slotForNodeIdSnapshot;
 
-    ProcessorManager &processorIds;
+    ProcessorManager &processorManager;
+
+    // NOTE: assumes the track hasn't been added yet!
+    const String makeTrackNameUnique(const String& trackName) {
+        for (auto track : tracks) {
+            String otherTrackName = track[IDs::name];
+            if (otherTrackName == trackName) {
+                if (trackName.contains("-")) {
+                    int i = trackName.getLastCharacters(trackName.length() - trackName.lastIndexOf("-") - 1).getIntValue();
+                    if (i != 0) {
+                        return makeTrackNameUnique(trackName.upToLastOccurrenceOf("-", true, false) + String(i + 1));
+                    }
+                } else {
+                    return makeTrackNameUnique(trackName + "-" + String(1));
+                }
+            }
+        }
+
+        return trackName;
+    }
 };

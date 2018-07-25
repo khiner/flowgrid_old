@@ -6,6 +6,7 @@
 #include "SineBank.h"
 #include "BalanceProcessor.h"
 #include "InternalPluginFormat.h"
+#include "Identifiers.h"
 
 class ProcessorManager : private ChangeListener {
 public:
@@ -81,7 +82,24 @@ public:
         PluginDescription *description = knownPluginListInternal.getType(knownPluginListInternal.getIndexChosenByMenu(menuId));
         return description != nullptr ? description : knownPluginListExternal.getType(knownPluginListExternal.getIndexChosenByMenu(menuId - knownPluginListInternal.getNumTypes()));
     }
-    
+
+    bool isGeneratorOrInstrument(const PluginDescription *description) {
+        return description->isInstrument || description->category.equalsIgnoreCase("generator") || description->category.equalsIgnoreCase("synth");
+    }
+
+    bool doesTrackAlreadyHaveGeneratorOrInstrument(const ValueTree& track) {
+        for (auto child : track) {
+            if (child.hasType(IDs::PROCESSOR)) {
+                if (auto* existingDescription = getDescriptionForIdentifier(child.getProperty(IDs::id))) {
+                    if (isGeneratorOrInstrument(existingDescription)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
 private:
     const String PLUGIN_LIST_FILE_NAME = "pluginList";
 
