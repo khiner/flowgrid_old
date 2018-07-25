@@ -186,7 +186,7 @@ protected:
         if (identifier == IDs::selected && tree[IDs::selected]) {
             if (auto *ov = getOwnerView()) {
                 if (auto *cb = dynamic_cast<ProjectChangeBroadcaster *> (ov->getRootItem())) {
-                    setSelected(true, false, dontSendNotification); // make sure TreeView UI is up-to-date
+                    setSelected(true, true, dontSendNotification); // make sure TreeView UI is up-to-date
                     cb->sendItemSelectedMessage(state);
                 }
             }

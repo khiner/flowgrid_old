@@ -12,10 +12,18 @@ public:
             : state(std::move(v)), connectorDragListener(connectorDragListener), graph(graph) {
         nameLabel.setText(getTrackName(), dontSendNotification);
         nameLabel.setColour(Label::backgroundColourId, getColour());
-
+        nameLabel.setEditable(false, true);
+        nameLabel.onTextChange = [this] { state.setProperty(IDs::name, nameLabel.getText(false), &this->graph.undoManager); };
+        nameLabel.addMouseListener(this, false);
         addAndMakeVisible(nameLabel);
         addAndMakeVisible(*(processors = std::make_unique<GraphEditorProcessors>(project, state, connectorDragListener, graph)));
         state.addListener(this);
+    }
+
+    void mouseDown(const MouseEvent &e) override {
+        if (e.eventComponent == &nameLabel) {
+            select();
+        }
     }
 
     String getTrackName() const {
@@ -24,6 +32,14 @@ public:
 
     Colour getColour() const {
         return Colour::fromString(state[IDs::colour].toString());
+    }
+
+    bool isSelected() const {
+        return state.getProperty(IDs::selected);
+    }
+
+    void select() {
+        state.setProperty(IDs::selected, true, nullptr);
     }
 
     const Component *getDragControlComponent() const {
@@ -37,9 +53,9 @@ public:
     }
 
     void paint(Graphics &g) override {
-//        g.setColour(getUIColourIfAvailable(LookAndFeel_V4::ColourScheme::UIColour::defaultText, Colours::black));
-//        g.setFont(jlimit(8.0f, 15.0f, getHeight() * 0.9f));
-//        g.drawText(state[IDs::name].toString(), r.removeFromLeft(clipX).reduced(4, 0), Justification::centredLeft, true);
+        if (isSelected()) {
+            g.fillAll(getColour().withAlpha(0.10f).withMultipliedBrightness(1.5f));
+        }
     }
 
     GraphEditorProcessor *getProcessorForNodeId(const AudioProcessorGraph::NodeID nodeId) const override {
@@ -77,6 +93,8 @@ private:
             nameLabel.setText(v[IDs::name].toString(), dontSendNotification);
         } else if (i == IDs::colour) {
             nameLabel.setColour(Label::backgroundColourId, getColour());
+        } else if (i == IDs::selected) {
+            repaint();
         }
     }
 };
