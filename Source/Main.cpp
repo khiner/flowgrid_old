@@ -168,7 +168,7 @@ public:
     };
 
 private:
-    ProcessorIds processorIds;
+    ProcessorManager processorIds;
 
     std::unique_ptr<MainWindow> treeWindow, push2Window, graphEditorWindow;
     std::unique_ptr<AudioDeviceSelectorComponent> audioDeviceSelectorComponent;

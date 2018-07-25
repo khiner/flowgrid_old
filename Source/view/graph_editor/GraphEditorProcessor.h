@@ -110,7 +110,7 @@ public:
     Point<float> getPinPos(int index, bool isInput) const {
         for (auto *pin : pins)
             if (pin->pin.channelIndex == index && isInput == pin->isInput)
-                return getPosition().toFloat() + pin->getBounds().getCentre().toFloat();
+                return pin->getBounds().getCentre().toFloat();
 
         return {};
     }

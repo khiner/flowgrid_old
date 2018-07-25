@@ -2,7 +2,7 @@
 
 #include <processors/StatefulAudioProcessorWrapper.h>
 #include <ValueTreeItems.h>
-#include <processors/ProcessorIds.h>
+#include <processors/ProcessorManager.h>
 #include <push2/Push2MidiCommunicator.h>
 #include "push2/Push2DisplayBridge.h"
 #include "ProcessorGraph.h"

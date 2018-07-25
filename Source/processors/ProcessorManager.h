@@ -7,9 +7,9 @@
 #include "BalanceProcessor.h"
 #include "InternalPluginFormat.h"
 
-class ProcessorIds : private ChangeListener {
+class ProcessorManager : private ChangeListener {
 public:
-    ProcessorIds() {
+    ProcessorManager() {
         PropertiesFile::Options options;
         options.applicationName = ProjectInfo::projectName;
         options.filenameSuffix = "settings";

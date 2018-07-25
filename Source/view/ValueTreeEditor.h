@@ -3,7 +3,7 @@
 #include <Identifiers.h>
 #include <ValueTreeItems.h>
 #include <view/SelectionPanel.h>
-#include <processors/ProcessorIds.h>
+#include <processors/ProcessorManager.h>
 
 class ValueTreeEditor : public Component,
                         public DragAndDropContainer,

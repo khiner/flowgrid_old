@@ -5,7 +5,7 @@
 #include <processors/StatefulAudioProcessorWrapper.h>
 
 #include "JuceHeader.h"
-#include "processors/ProcessorIds.h"
+#include "processors/ProcessorManager.h"
 #include "Project.h"
 
 class ProcessorGraph : public AudioProcessorGraph, private ValueTree::Listener, private ProjectChangeListener, private ChangeListener {

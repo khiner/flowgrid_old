@@ -3,11 +3,12 @@
 #include <unordered_map>
 #include <push2/Push2MidiCommunicator.h>
 #include "ValueTreeItems.h"
+#include "processors/ProcessorManager.h"
 
 class Project : public ValueTreeItem,
                 public ProjectChangeBroadcaster {
 public:
-    Project(const ValueTree &v, UndoManager &um, ProcessorIds& processorIds)
+    Project(const ValueTree &v, UndoManager &um, ProcessorManager& processorIds)
             : ValueTreeItem(v, um), processorIds(processorIds) {
         if (!state.isValid()) {
             state = createDefaultProject();
@@ -195,6 +196,7 @@ public:
         masterTrack = ValueTree(IDs::MASTER_TRACK);
         Helpers::createUuidProperty(masterTrack);
         masterTrack.setProperty(IDs::name, "Master", nullptr);
+        masterTrack.setProperty(IDs::colour, Colours::darkslateblue.toString(), nullptr);
         ValueTree masterMixer = createAndAddProcessor(MixerChannelProcessor::getPluginDescription(), masterTrack, -1, false);
         masterMixer.setProperty(IDs::selected, true, nullptr);
         tracks.addChild(masterTrack, -1, nullptr);
@@ -461,5 +463,5 @@ private:
     Array<ValueTree> connectionsSnapshot;
     std::unordered_map<int, int> slotForNodeIdSnapshot;
 
-    ProcessorIds &processorIds;
+    ProcessorManager &processorIds;
 };

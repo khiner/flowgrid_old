@@ -3,6 +3,7 @@
 #include "JuceHeader.h"
 #include "GraphEditorProcessor.h"
 #include "ConnectorDragListener.h"
+#include "GraphEditorProcessorContainer.h"
 
 struct GraphEditorConnector : public Component, public SettableTooltipClient {
     explicit GraphEditorConnector(const ValueTree &state, ConnectorDragListener &connectorDragListener, GraphEditorProcessorContainer &graphEditorProcessorContainer)
@@ -70,16 +71,18 @@ struct GraphEditorConnector : public Component, public SettableTooltipClient {
         p1 = lastInputPos;
         p2 = lastOutputPos;
 
+        const Component &rootComponent = dynamic_cast<Component &>(connectorDragListener);
+        
         auto *sourceComponent = graphEditorProcessorContainer.getProcessorForNodeId(connection.source.nodeID);
         if (sourceComponent != nullptr) {
-            p1 = sourceComponent->getPinPos(connection.source.channelIndex, false);
-            p1.x += sourceComponent->getParentComponent()->getParentComponent()->getX();
+            p1 = rootComponent.getLocalPoint(sourceComponent,
+                    sourceComponent->getPinPos(connection.source.channelIndex, false));
         }
 
         auto *destinationComponent = graphEditorProcessorContainer.getProcessorForNodeId(connection.destination.nodeID);
         if (destinationComponent != nullptr) {
-            p2 = destinationComponent->getPinPos(connection.destination.channelIndex, true);
-            p2.x += destinationComponent->getParentComponent()->getParentComponent()->getX();
+            p2 = rootComponent.getLocalPoint(destinationComponent,
+                    destinationComponent->getPinPos(connection.destination.channelIndex, true));
         }
     }
 

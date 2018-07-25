@@ -10,8 +10,15 @@ class GraphEditorTrack : public Component, public Utilities::ValueTreePropertyCh
 public:
     explicit GraphEditorTrack(Project& project, ValueTree v, ConnectorDragListener &connectorDragListener, ProcessorGraph& graph)
             : state(std::move(v)), connectorDragListener(connectorDragListener), graph(graph) {
+        nameLabel.setText(getTrackName(), dontSendNotification);
+        nameLabel.setColour(Label::backgroundColourId, getColour());
+        addAndMakeVisible(nameLabel);
         addAndMakeVisible(*(processors = std::make_unique<GraphEditorProcessors>(project, state, connectorDragListener, graph)));
         state.addListener(this);
+    }
+
+    String getTrackName() const {
+        return state[IDs::name].toString();
     }
 
     Colour getColour() const {
@@ -20,6 +27,7 @@ public:
 
     void resized() override {
         auto r = getLocalBounds();
+        nameLabel.setBounds(r.removeFromTop(int(getHeight() / 20.0)));
         processors->setBounds(r);
     }
 
@@ -52,13 +60,18 @@ public:
 
     ValueTree state;
 private:
+    Label nameLabel;
     std::unique_ptr<GraphEditorProcessors> processors;
     ConnectorDragListener &connectorDragListener;
     ProcessorGraph &graph;
 
     void valueTreePropertyChanged(juce::ValueTree &v, const juce::Identifier &i) override {
-        if (v == state)
-            if (i == IDs::name || i == IDs::colour)
-                repaint();
+        if (v != state)
+            return;
+        if (i == IDs::name) {
+            nameLabel.setText(v[IDs::name].toString(), dontSendNotification);
+        } else if (i == IDs::colour) {
+            nameLabel.setColour(Label::backgroundColourId, getColour());
+        }
     }
 };
