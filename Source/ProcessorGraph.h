@@ -33,28 +33,6 @@ public:
         initializing = false;
     }
 
-    std::vector<Connection> getConnectionsUi() const {
-        std::vector<Connection> graphConnections;
-
-        for (auto connectionState : project.getConnections()) {
-            const ValueTree &sourceState = connectionState.getChildWithName(IDs::SOURCE);
-            const ValueTree &destinationState = connectionState.getChildWithName(IDs::DESTINATION);
-
-            // nodes have already been added. just need to add connections if there are any.
-            NodeAndChannel source{};
-            source.nodeID = getNodeIdForState(sourceState);
-            source.channelIndex = sourceState[IDs::CHANNEL];
-
-            NodeAndChannel destination{};
-            destination.nodeID = getNodeIdForState(destinationState);
-            destination.channelIndex = destinationState[IDs::CHANNEL];
-
-            graphConnections.emplace_back(source, destination);
-        }
-
-        return graphConnections;
-    }
-
     bool isSelected(NodeID nodeId) {
         if (auto* processor = getProcessorWrapperForNodeId(nodeId)) {
             return processor->state[IDs::selected];
@@ -194,10 +172,6 @@ public:
         return false;
     }
 
-    bool isConnectedUi(const Connection& c) const noexcept {
-        return project.getConnectionMatching(c).isValid();
-    }
-
     bool canConnectUi(Node* source, int sourceChannel, Node* dest, int destChannel) const noexcept {
         bool sourceIsMIDI = sourceChannel == midiChannelIndex;
         bool destIsMIDI   = destChannel == midiChannelIndex;
@@ -218,7 +192,7 @@ public:
             || (destIsMIDI && ! dest->getProcessor()->acceptsMidi()))
             return false;
 
-        return !isConnectedUi({{source->nodeID, sourceChannel}, {dest->nodeID, destChannel}});
+        return !project.getConnectionMatching({{source->nodeID, sourceChannel}, {dest->nodeID, destChannel}}).isValid();
     }
 
     bool addConnection(const Connection& c) override {
