@@ -51,21 +51,14 @@ public:
     }
 
     GraphEditorProcessor *createNewObject(const ValueTree &v) override {
-        GraphEditorProcessor *processor = nullptr;
-        if (auto *parent = getParentComponent()) {
-            if (auto *grandParent = parent->getParentComponent()) {
-                processor = dynamic_cast<GraphEditorProcessorContainer *>(grandParent)->getProcessorForNodeId(AudioProcessorGraph::NodeID(int(v.getProperty(IDs::NODE_ID))));
-            }
-        }
-        if (processor == nullptr)
-            processor = new GraphEditorProcessor(v, connectorDragListener, graph);
+        GraphEditorProcessor *processor = currentlyMovingProcessor != nullptr ? currentlyMovingProcessor : new GraphEditorProcessor(v, connectorDragListener, graph);
         addAndMakeVisible(processor);
         processor->update();
         return processor;
     }
 
     void deleteObject(GraphEditorProcessor *processor) override {
-        if (!processor->isBeingDragged) {
+        if (currentlyMovingProcessor == nullptr) {
             delete processor;
         } else {
             removeChildComponent(processor);
@@ -101,11 +94,21 @@ public:
             processor->update();
         }
     }
+
+    GraphEditorProcessor *getCurrentlyMovingProcessor() const {
+        return currentlyMovingProcessor;
+    }
+
+    void setCurrentlyMovingProcessor(GraphEditorProcessor *currentlyMovingProcessor) {
+        this->currentlyMovingProcessor = currentlyMovingProcessor;
+    }
+
 private:
     Project &project;
     ConnectorDragListener &connectorDragListener;
     ProcessorGraph &graph;
     std::unique_ptr<PopupMenu> menu;
+    GraphEditorProcessor *currentlyMovingProcessor {};
 
     void valueTreePropertyChanged(ValueTree &v, const Identifier &i) override {
         if (isSuitableType(v))

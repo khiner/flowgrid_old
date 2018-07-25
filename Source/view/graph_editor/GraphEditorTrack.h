@@ -30,6 +30,11 @@ public:
     }
 
     GraphEditorProcessor *getProcessorForNodeId(const AudioProcessorGraph::NodeID nodeId) const override {
+        if (auto *currentlyMovingProcessor = processors->getCurrentlyMovingProcessor()) {
+            if (currentlyMovingProcessor->getNodeId() == nodeId) {
+                return currentlyMovingProcessor;
+            }
+        }
         return processors->getProcessorForNodeId(nodeId);
     }
 
@@ -41,8 +46,11 @@ public:
         processors->updateNodes();
     }
 
-    ValueTree state;
+    void setCurrentlyMovingProcessor(GraphEditorProcessor *currentlyMovingProcessor) {
+        processors->setCurrentlyMovingProcessor(currentlyMovingProcessor);
+    }
 
+    ValueTree state;
 private:
     std::unique_ptr<GraphEditorProcessors> processors;
     ConnectorDragListener &connectorDragListener;

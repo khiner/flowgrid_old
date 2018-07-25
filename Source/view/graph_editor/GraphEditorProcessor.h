@@ -65,7 +65,6 @@ public:
 
     void mouseDown(const MouseEvent &e) override {
         originalPos = e.getPosition();
-        isBeingDragged = true;
         toFront(true);
         graph.beginDraggingNode(getNodeId());
 
@@ -82,7 +81,6 @@ public:
 
     void mouseUp(const MouseEvent &e) override {
         graph.endDraggingNode(getNodeId());
-        isBeingDragged = false;
         if (e.mouseWasDraggedSinceMouseDown()) {
         } else if (e.getNumberOfClicks() == 2) {
             showPopupMenu();
@@ -252,7 +250,6 @@ public:
     Font font{13.0f, Font::bold};
     int numIns = 0, numOuts = 0;
     std::unique_ptr<PopupMenu> menu;
-    bool isBeingDragged { false };
 
 private:
     void valueTreePropertyChanged(ValueTree &v, const Identifier &i) override {

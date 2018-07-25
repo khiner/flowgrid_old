@@ -1,6 +1,6 @@
 [submodule "modules/JUCE"]
 	path = modules/JUCE
-	url = https://github.com/WeAreROLI/JUCE.git
+	url = git@github.com:khiner/JUCE.git
 [submodule "modules/libusb"]
 	path = modules/libusb
 	url = https://github.com/libusb/libusb.git

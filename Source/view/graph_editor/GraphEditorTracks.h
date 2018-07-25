@@ -34,13 +34,11 @@ public:
 
     GraphEditorTrack *createNewObject(const ValueTree &v) override {
         auto *track = new GraphEditorTrack(project, v, connectorDragListener, graph);
-        track->addMouseListener(this, true);
         addAndMakeVisible(track);
         return track;
     }
 
     void deleteObject(GraphEditorTrack *track) override {
-        track->removeMouseListener(this);
         delete track;
     }
 
@@ -51,15 +49,22 @@ public:
     void objectOrderChanged() override { resized(); }
 
     GraphEditorProcessor *getProcessorForNodeId(AudioProcessorGraph::NodeID nodeId) const override {
-        if (currentlyDraggingProcessor != nullptr && currentlyDraggingProcessor->getNodeId() == nodeId)
-            return currentlyDraggingProcessor;
-
         for (auto *track : objects) {
             auto *processor = track->getProcessorForNodeId(nodeId);
             if (processor != nullptr) {
                 return processor;
             }
         }
+        return nullptr;
+    }
+
+    GraphEditorTrack *getTrackForState(const ValueTree& state) const {
+        for (auto *track : objects) {
+            if (track->state == state) {
+                return track;
+            }
+        }
+
         return nullptr;
     }
 
@@ -83,17 +88,22 @@ public:
     ConnectorDragListener &connectorDragListener;
     ProcessorGraph &graph;
 
-    void mouseDown (const MouseEvent& event) override {
-        if (auto* processor = dynamic_cast<GraphEditorProcessor *>(event.eventComponent)) {
-            currentlyDraggingProcessor = processor;
+    void valueTreeChildWillBeMovedToNewParent(ValueTree child, const ValueTree& oldParent, int oldIndex, const ValueTree& newParent, int newIndex) override {
+        if (child.hasType(IDs::PROCESSOR)) {
+            auto *fromTrack = getTrackForState(oldParent);
+            auto *toTrack = getTrackForState(newParent);
+            auto *processor = fromTrack->getProcessorForNodeId(AudioProcessorGraph::NodeID(int(child.getProperty(IDs::NODE_ID))));
+            fromTrack->setCurrentlyMovingProcessor(processor);
+            toTrack->setCurrentlyMovingProcessor(processor);
         }
     }
 
-    void mouseUp (const MouseEvent& event) override {
-        if (event.eventComponent == currentlyDraggingProcessor) {
-            currentlyDraggingProcessor = nullptr;
+    void valueTreeChildHasMovedToNewParent(ValueTree child, const ValueTree& oldParent, int oldIndex, const ValueTree& newParent, int newIndex) override {
+        if (child.hasType(IDs::PROCESSOR)) {
+            auto *fromTrack = getTrackForState(oldParent);
+            auto *toTrack = getTrackForState(newParent);
+            fromTrack->setCurrentlyMovingProcessor(nullptr);
+            toTrack->setCurrentlyMovingProcessor(nullptr);
         }
     }
-private:
-    GraphEditorProcessor *currentlyDraggingProcessor {};
 };

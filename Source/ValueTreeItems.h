@@ -287,17 +287,7 @@ namespace Helpers {
     }
 
     inline void moveSingleItem(ValueTree &item, ValueTree newParent, int insertIndex, UndoManager *undoManager) {
-        if (item.getParent().isValid() && newParent != item && !newParent.isAChildOf(item)) {
-            if (item.getParent() == newParent) {
-                if (newParent.indexOf(item) < insertIndex) {
-                    --insertIndex;
-                }
-                item.getParent().moveChild(item.getParent().indexOf(item), insertIndex, undoManager);
-            } else {
-                item.getParent().removeChild(item, undoManager);
-                newParent.addChild(item, insertIndex, undoManager);
-            }
-        }
+        newParent.moveChildFromParent(item.getParent(), item.getParent().indexOf(item), insertIndex, undoManager);
     }
 
     inline void moveItems(TreeView &treeView, const OwnedArray<ValueTree> &items,

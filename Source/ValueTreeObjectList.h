@@ -3,7 +3,7 @@
 #include "JuceHeader.h"
 
 namespace Utilities {
-    template<typename ObjectType, typename CriticalSectionType = juce::DummyCriticalSection>
+    template<typename ObjectType, typename CriticalSectionType = DummyCriticalSection>
     class ValueTreeObjectList : public ValueTree::Listener {
     public:
         explicit ValueTreeObjectList(const ValueTree &parentTree)
@@ -35,9 +35,9 @@ namespace Utilities {
         }
 
 
-        virtual bool isSuitableType(const juce::ValueTree &) const = 0;
+        virtual bool isSuitableType(const ValueTree &) const = 0;
 
-        virtual ObjectType *createNewObject(const juce::ValueTree &) = 0;
+        virtual ObjectType *createNewObject(const ValueTree &) = 0;
 
         virtual void deleteObject(ObjectType *) = 0;
 
@@ -48,7 +48,7 @@ namespace Utilities {
         virtual void objectOrderChanged() = 0;
 
 
-        void valueTreeChildAdded(juce::ValueTree &, juce::ValueTree &tree) override {
+        void valueTreeChildAdded(ValueTree &, ValueTree &tree) override {
             if (isChildTree(tree)) {
                 const int index = parent.indexOf(tree);
                 (void) index;
@@ -70,7 +70,7 @@ namespace Utilities {
             }
         }
 
-        void valueTreeChildRemoved(juce::ValueTree &exParent, juce::ValueTree &tree, int) override {
+        void valueTreeChildRemoved(ValueTree &exParent, ValueTree &tree, int) override {
             if (parent == exParent && isSuitableType(tree)) {
                 const int oldIndex = indexOf(tree);
 
@@ -88,7 +88,7 @@ namespace Utilities {
             }
         }
 
-        void valueTreeChildOrderChanged(juce::ValueTree &tree, int, int) override {
+        void valueTreeChildOrderChanged(ValueTree &tree, int, int) override {
             if (tree == parent) {
                 {
                     const ScopedLockType sl(arrayLock);
@@ -99,19 +99,18 @@ namespace Utilities {
             }
         }
 
-        void valueTreePropertyChanged(juce::ValueTree &, const juce::Identifier &) override {}
+        void valueTreePropertyChanged(ValueTree &, const Identifier &) override {}
 
-        void valueTreeParentChanged(juce::ValueTree &) override {}
+        void valueTreeParentChanged(ValueTree &) override {}
 
-        void
-        valueTreeRedirected(juce::ValueTree &) override { jassertfalse; } // may need to add handling if this is hit
+        void valueTreeRedirected(ValueTree &) override { jassertfalse; } // may need to add handling if this is hit
 
-        juce::Array<ObjectType *> objects;
+        Array<ObjectType *> objects;
         CriticalSectionType arrayLock;
         typedef typename CriticalSectionType::ScopedLockType ScopedLockType;
 
     protected:
-        juce::ValueTree parent;
+        ValueTree parent;
 
         void deleteAllObjects() {
             const ScopedLockType sl(arrayLock);
@@ -120,11 +119,11 @@ namespace Utilities {
                 deleteObject(objects.removeAndReturn(objects.size() - 1));
         }
 
-        bool isChildTree(juce::ValueTree &v) const {
+        bool isChildTree(ValueTree &v) const {
             return isSuitableType(v) && v.getParent() == parent;
         }
 
-        int indexOf(const juce::ValueTree &v) const noexcept {
+        int indexOf(const ValueTree &v) const noexcept {
             for (int i = 0; i < objects.size(); ++i)
                 if (objects.getUnchecked(i)->state == v)
                     return i;
@@ -145,5 +144,4 @@ namespace Utilities {
 
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ValueTreeObjectList)
     };
-
 }

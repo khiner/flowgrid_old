@@ -495,6 +495,16 @@ private:
 
     void valueTreeRedirected(ValueTree& treeWhichHasBeenChanged) override {}
 
+    void valueTreeChildWillBeMovedToNewParent(ValueTree child, const ValueTree& oldParent, int oldIndex, const ValueTree& newParent, int newIndex) override {
+        if (child.hasType(IDs::PROCESSOR))
+            isMoving = true;
+    }
+
+    void valueTreeChildHasMovedToNewParent(ValueTree child, const ValueTree& oldParent, int oldIndex, const ValueTree& newParent, int newIndex) override {
+        if (child.hasType(IDs::PROCESSOR))
+            isMoving = false;
+    }
+
     /*
      * The following ProjectChanged methods take care of things that could be done
      * inside of the ValueTreeChanged methods above. They are here because they
@@ -513,7 +523,6 @@ private:
     };
 
     void processorWillBeMoved(const ValueTree& processor, const ValueTree& newParent, int insertIndex) override {
-        isMoving = true;
         NodeID nodeId = getNodeIdForState(processor);
         removeNodeConnections(nodeId, processor.getParent(), findNeighborNodes(processor));
     };
@@ -522,7 +531,6 @@ private:
         NodeID nodeId = getNodeIdForState(processor);
         insertNodeConnections(nodeId, processor);
         project.makeSlotsValid(newParent, getDragDependentUndoManager());
-        isMoving = false;
     };
 
     void itemSelected(const ValueTree&) override {
