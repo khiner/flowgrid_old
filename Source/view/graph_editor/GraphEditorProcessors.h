@@ -89,7 +89,7 @@ public:
         return nullptr;
     }
 
-    void updateNodes() {
+    void update() {
         for (auto *processor : objects) {
             processor->update();
         }

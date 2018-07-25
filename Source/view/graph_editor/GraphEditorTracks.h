@@ -70,9 +70,9 @@ public:
 
     PinComponent *findPinAt(const MouseEvent &e) const {
         for (auto *track : objects) {
-            auto *processor = track->findPinAt(e);
-            if (processor != nullptr) {
-                return processor;
+            auto *pin = track->findPinAt(e);
+            if (pin != nullptr) {
+                return pin;
             }
         }
         return nullptr;
@@ -80,7 +80,7 @@ public:
 
     void updateProcessors() {
         for (auto *track : objects) {
-            track->updateNodes();
+            track->updateProcessors();
         }
     }
 

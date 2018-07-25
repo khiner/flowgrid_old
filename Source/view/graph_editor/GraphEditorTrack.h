@@ -42,8 +42,8 @@ public:
         return processors->findPinAt(e);
     }
 
-    void updateNodes() {
-        processors->updateNodes();
+    void updateProcessors() {
+        processors->update();
     }
 
     void setCurrentlyMovingProcessor(GraphEditorProcessor *currentlyMovingProcessor) {

@@ -114,7 +114,6 @@ public:
                                pin->isInput ? 0 : (getHeight() - pinSize),
                                pinSize, pinSize);
             }
-            repaint();
         }
     }
 
@@ -171,6 +170,7 @@ public:
 
             resized();
         }
+        repaint();
     }
 
     AudioProcessor *getProcessor() const {
