@@ -44,11 +44,11 @@ public:
         delete track;
     }
 
-    void newObjectAdded(GraphEditorTrack *) override { resized(); }
+    void newObjectAdded(GraphEditorTrack *) override { getParentComponent()->resized(); }
 
-    void objectRemoved(GraphEditorTrack *) override { resized(); }
+    void objectRemoved(GraphEditorTrack *) override { getParentComponent()->resized(); }
 
-    void objectOrderChanged() override { resized(); }
+    void objectOrderChanged() override { getParentComponent()->resized(); }
 
     GraphEditorProcessor *getProcessorForNodeId(AudioProcessorGraph::NodeID nodeId) const override {
         for (auto *track : objects) {
@@ -81,6 +81,7 @@ public:
     }
 
     void updateProcessors() {
+        resized();
         for (auto *track : objects) {
             track->updateProcessors();
         }
@@ -90,14 +91,13 @@ public:
         if (auto* track = dynamic_cast<GraphEditorTrack *>(e.originalComponent->getParentComponent())) {
             if (e.originalComponent == track->getDragControlComponent() && track->state != project.getMasterTrack()) {
                 currentlyDraggingTrack = track;
-                originalPos = e.getEventRelativeTo(this).getPosition();
             }
         }
     }
 
     void mouseDrag(const MouseEvent &e) override {
         if (e.originalComponent->getParentComponent() == currentlyDraggingTrack) {
-            auto pos = originalPos + e.getOffsetFromDragStart();
+            auto pos = e.getEventRelativeTo(this).getPosition();
             int currentIndex = parent.indexOf(currentlyDraggingTrack->state);
             for (auto* track : objects) {
                 if (track == currentlyDraggingTrack)
@@ -122,7 +122,6 @@ public:
     Project& project;
     ConnectorDragListener &connectorDragListener;
     ProcessorGraph &graph;
-    Point<int> originalPos;
     GraphEditorTrack *currentlyDraggingTrack;
 
     void valueTreeChildWillBeMovedToNewParent(ValueTree child, const ValueTree& oldParent, int oldIndex, const ValueTree& newParent, int newIndex) override {
