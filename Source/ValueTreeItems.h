@@ -12,7 +12,7 @@ public:
     virtual void itemRemoved(const ValueTree&) = 0;
     virtual void processorCreated(const ValueTree&) {};
     virtual void processorWillBeDestroyed(const ValueTree &) {};
-    virtual void processorWillBeMoved(const ValueTree &, const ValueTree&, int) {};
+    virtual void processorWillBeMoved(const ValueTree &, const ValueTree&, int, AudioProcessorGraph::NodeID beforeNodeId=0, AudioProcessorGraph::NodeID afterNodeId=0) {};
     virtual void processorHasMoved(const ValueTree &, const ValueTree&) {};
     virtual ~ProjectChangeListener() = default;
 };
@@ -85,7 +85,7 @@ public:
 
     virtual void sendProcessorWillBeMovedMessage(const ValueTree& item, const ValueTree& newParent, int insertIndex) {
         jassert(MessageManager::getInstance()->isThisTheMessageThread());
-        changeListeners.call(&ProjectChangeListener::processorWillBeMoved, item, newParent, insertIndex);
+        changeListeners.call(&ProjectChangeListener::processorWillBeMoved, item, newParent, insertIndex, 0, 0);
     }
 
     virtual void sendProcessorHasMovedMessage(const ValueTree& item, const ValueTree& newParent) {

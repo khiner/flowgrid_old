@@ -35,6 +35,10 @@ public:
         mixerAudioSource.addInputSource(toneSource2.get(), false);
         mixerAudioSource.addInputSource(toneSource3.get(), false);
         mixerAudioSource.addInputSource(toneSource4.get(), false);
+
+        for (auto *parameter : getParameters()) {
+            parameterChanged(parameter, dynamic_cast<AudioParameterFloat *>(parameter)->range.convertFrom0to1(parameter->getDefaultValue()));
+        }
     }
 
     ~SineBank() override {

@@ -46,7 +46,7 @@ public:
     }
 
     static const NodeID getNodeIdForState(const ValueTree &processorState) {
-        return NodeID(int(processorState[IDs::NODE_ID]));
+        return processorState.isValid() ? NodeID(int(processorState[IDs::NODE_ID])) : NA_NODE_ID;
     }
 
     Node* getNodeForState(const ValueTree &processorState) const {
@@ -155,10 +155,13 @@ public:
         if (int(processorState[IDs::PROCESSOR_SLOT]) == toSlot && processorState.getParent() == toTrack)
             return;
 
+        // TODO We currently get the neighbor nodes _before_ setting the processor slot
+        // since its slot position determines in part which connections are removed.
+        // But this makes for a messy and unclear interface for 'willBeMoved'.
+        const ProcessorGraph::NeighborNodes &neighborNodes = findNeighborNodes(processorState);
         processorState.setProperty(IDs::PROCESSOR_SLOT, toSlot, getDragDependentUndoManager());
-
         const int insertIndex = project.getParentIndexForProcessor(toTrack, processorState, getDragDependentUndoManager());
-        processorWillBeMoved(processorState, toTrack, insertIndex);
+        processorWillBeMoved(processorState, toTrack, insertIndex, neighborNodes.before, neighborNodes.after);
         Helpers::moveSingleItem(processorState, toTrack, insertIndex, getDragDependentUndoManager());
         processorHasMoved(processorState, toTrack);
     }
@@ -287,6 +290,8 @@ private:
     }
 
     struct NeighborNodes {
+        NeighborNodes() {}
+        NeighborNodes(NodeID before, NodeID after) : before(before), after(after) {}
         NodeID before = NA_NODE_ID, after = NA_NODE_ID;
     };
 
@@ -351,24 +356,24 @@ private:
         }
     }
 
-    NeighborNodes findNeighborNodes(const ValueTree& nodeState) {
-        const ValueTree &before = nodeState.getSibling(-1);
-        const ValueTree &after = nodeState.getSibling(1);
-
-        return findNeighborNodes(nodeState.getParent(), before, after);
+    NeighborNodes findNeighborNodes(const ValueTree& processor) {
+        return findNeighborNodes(processor.getParent(), processor, processor.getSibling(-1), processor.getSibling(1));
     }
 
-    NeighborNodes findNeighborNodes(const ValueTree& parent, const ValueTree& beforeNodeState, const ValueTree& afterNodeState) {
+    NeighborNodes findNeighborNodes(const ValueTree& parent, const ValueTree& processor, const ValueTree& beforeNodeState, const ValueTree& afterNodeState) {
         NeighborNodes neighborNodes;
 
         if (beforeNodeState.isValid()) {
             neighborNodes.before = getNodeIdForState(beforeNodeState);
         }
+        // TODO may be able to simplify _all_ of the 'after' cases with `getFirstProcessorToRightAndBelow`
         if (!afterNodeState.isValid() || (neighborNodes.after = getNodeIdForState(afterNodeState)) == NA_NODE_ID) {
             if (parent.hasType(IDs::MASTER_TRACK)) {
                 neighborNodes.after = project.getAudioOutputNodeId();
             } else {
-                neighborNodes.after = getNodeIdForState(project.getMasterTrack().getChildWithName(IDs::PROCESSOR));
+                // No processors after this node in its track.
+                // Find the first processor that accepts inputs to the _right_ and _below_ this processor.
+                neighborNodes.after = getNodeIdForState(getFirstProcessorToRightAndBelow(parent, processor));
                 if (neighborNodes.after == NA_NODE_ID) { // master track has no processors. go straight out.
                     neighborNodes.after = project.getAudioOutputNodeId();
                 }
@@ -379,14 +384,33 @@ private:
         return neighborNodes;
     }
 
+    const ValueTree getFirstProcessorToRightAndBelow(const ValueTree& parent, const ValueTree& processor) {
+        int slot = processor[IDs::PROCESSOR_SLOT];
+
+        int siblingDelta = 1;
+        ValueTree siblingParent;
+        while ((siblingParent = parent.getSibling(siblingDelta++)).isValid()) {
+            for (const auto &otherProcessor : siblingParent) {
+                if (!otherProcessor.hasType(IDs::PROCESSOR))
+                    continue;
+                int otherSlot = otherProcessor[IDs::PROCESSOR_SLOT];
+                // TODO get rid of magic number for mixer channels
+                // TODO find the first _with inputs_
+                if (otherSlot > slot || (slot == 7 && otherSlot == 7))
+                    return otherProcessor;
+            }
+        }
+        return {};
+    }
+
     const ValueTree getLastProcessorInTrack(const ValueTree &track) {
         if (!track.hasType(IDs::TRACK))
-            return ValueTree();
+            return {};
         for (int j = track.getNumChildren() - 1; j >= 0; j--) {
             if (track.getChild(j).hasType(IDs::PROCESSOR))
                 return track.getChild(j);
         }
-        return ValueTree();
+        return {};
     }
 
     void valueTreePropertyChanged(ValueTree& tree, const Identifier& property) override {
@@ -503,9 +527,10 @@ private:
         disconnectNode(getNodeIdForState(processor));
     };
 
-    void processorWillBeMoved(const ValueTree& processor, const ValueTree& newParent, int insertIndex) override {
+    void processorWillBeMoved(const ValueTree& processor, const ValueTree& newParent, int insertIndex, NodeID beforeNodeId=NA_NODE_ID, NodeID afterNodeId=NA_NODE_ID) override {
         NodeID nodeId = getNodeIdForState(processor);
-        removeNodeConnections(nodeId, processor.getParent(), findNeighborNodes(processor));
+        const NeighborNodes& neighborNodes = afterNodeId == NA_NODE_ID ? findNeighborNodes(processor) : NeighborNodes(beforeNodeId, afterNodeId);
+        removeNodeConnections(nodeId, processor.getParent(), neighborNodes);
     };
 
     void processorHasMoved(const ValueTree& processor, const ValueTree& newParent) override {
