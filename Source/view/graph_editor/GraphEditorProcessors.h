@@ -22,6 +22,10 @@ public:
         freeObjects();
     }
 
+    bool isMasterTrack() const {
+        return parent.hasType(IDs::MASTER_TRACK);
+    }
+
     void mouseDown(const MouseEvent &e) override {
         if (e.mods.isPopupMenu()) {
             showPopupMenu(e.position.toInt());
@@ -30,10 +34,10 @@ public:
 
     void resized() override {
         auto r = getLocalBounds();
-        const int h = r.getHeight() / Project::NUM_AVAILABLE_PROCESSOR_SLOTS;
+        const int cellSize = getCellSize();
 
         for (int slot = 0; slot < Project::NUM_AVAILABLE_PROCESSOR_SLOTS; slot++) {
-            auto processorBounds = r.removeFromTop(h);
+            auto processorBounds = isMasterTrack() ? r.removeFromLeft(cellSize) : r.removeFromTop(cellSize);
             if (auto *processor = findProcessorAtSlot(slot)) {
                 processor->setBounds(processorBounds);
             }
@@ -42,11 +46,11 @@ public:
 
     void paint(Graphics &g) override {
         auto r = getLocalBounds();
-        const int h = r.getHeight() / Project::NUM_AVAILABLE_PROCESSOR_SLOTS;
+        const int cellSize = getCellSize();
 
         g.setColour(findColour(ResizableWindow::backgroundColourId).brighter(0.15));
         for (int i = 0; i < Project::NUM_AVAILABLE_PROCESSOR_SLOTS; i++)
-            g.drawRect(r.removeFromTop(h));
+            g.drawRect(isMasterTrack() ? r.removeFromLeft(cellSize) : r.removeFromTop(cellSize));
     }
 
     bool isSuitableType(const ValueTree &v) const override {
@@ -92,6 +96,12 @@ public:
         return nullptr;
     }
 
+    int findSlotAt(const MouseEvent &e) {
+        const MouseEvent &relative = e.getEventRelativeTo(this);
+        int slot = isMasterTrack() ? relative.x / getCellSize() : relative.y / getCellSize();
+        return jlimit(0, Project::NUM_AVAILABLE_PROCESSOR_SLOTS - 1, slot);
+    }
+    
     void update() {
         for (auto *processor : objects) {
             processor->update();
@@ -136,12 +146,11 @@ private:
                 return processor;
             }
         }
-        
         return nullptr;
     }
 
     void showPopupMenu(const Point<int> &mousePos) {
-        int slot = int(Project::NUM_VISIBLE_PROCESSOR_SLOTS * jlimit(0.0f, 0.99f, mousePos.y / float(getHeight())));
+        int slot = isMasterTrack() ? mousePos.x / getCellSize() : mousePos.y / getCellSize();
         menu = std::make_unique<PopupMenu>();
         project.addPluginsToMenu(*menu, parent);
         menu->showMenuAsync({}, ModalCallbackFunction::create([this, slot](int r) {
@@ -149,5 +158,9 @@ private:
                 project.createAndAddProcessor(*description, parent, slot);
             }
         }));
+    }
+
+    int getCellSize() const {
+        return (isMasterTrack() ? getWidth() : getHeight()) / Project::NUM_AVAILABLE_PROCESSOR_SLOTS;
     }
 };

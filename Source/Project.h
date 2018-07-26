@@ -466,8 +466,8 @@ public:
 
     const static int NUM_VISIBLE_TRACKS = 8;
     const static int NUM_VISIBLE_PROCESSOR_SLOTS = 9;
-    // last row is reserved for audio output.
-    const static int NUM_AVAILABLE_PROCESSOR_SLOTS = NUM_VISIBLE_PROCESSOR_SLOTS - 1;
+    // last row is reserved for audio output. second-to-last is for horizontal master track.
+    const static int NUM_AVAILABLE_PROCESSOR_SLOTS = NUM_VISIBLE_PROCESSOR_SLOTS - 2;
 private:
     ValueTree output;
     ValueTree tracks;

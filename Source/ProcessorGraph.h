@@ -98,8 +98,8 @@ public:
         activePluginWindows.clear();
         return !wasEmpty;
     }
-
-    void beginDraggingNode(NodeID nodeId) {
+    
+    void beginDraggingNode(NodeID nodeId, const Point<int> &trackAndSlot) {
         if (auto* processorWrapper = getProcessorWrapperForNodeId(nodeId)) {
             project.setSelectedProcessor(processorWrapper->state);
 
@@ -107,45 +107,37 @@ public:
                 // mixer channel processors are special processors.
                 // they could be dragged and reconnected like any old processor, but please don't :)
                 return;
-            auto trackNum = processorWrapper->state.getParent().getParent().indexOf(processorWrapper->state.getParent());
-            auto slot = int(processorWrapper->state[IDs::PROCESSOR_SLOT]);
             currentlyDraggingNodeId = nodeId;
-            currentlyDraggingGridPosition.setXY(trackNum, slot);
-            initialDraggingGridPosition = currentlyDraggingGridPosition;
+            currentlyDraggingTrackAndSlot = trackAndSlot;
+            initialDraggingTrackAndSlot = currentlyDraggingTrackAndSlot;
             project.makeConnectionsSnapshot();
         }
     }
 
-    void setNodePosition(NodeID nodeId, const Point<double> &position) {
+    void setNodePosition(NodeID nodeId, const Point<int> &trackAndSlot) {
         if (currentlyDraggingNodeId == NA_NODE_ID)
             return;
-
-        int newTrack = jlimit(0, project.getNumTracks() - 1, initialDraggingGridPosition.x + int(floor(position.x)));
-        int newSlot = jlimit(0, Project::NUM_VISIBLE_PROCESSOR_SLOTS , initialDraggingGridPosition.y + int(floor(position.y)));
         if (auto *processor = getProcessorWrapperForNodeId(nodeId)) {
-            auto maxProcessorSlot = project.getMaxAvailableProcessorSlot(processor->state.getParent());
-            newSlot = jlimit(0, maxProcessorSlot, newSlot);
-            if (newTrack != currentlyDraggingGridPosition.x || newSlot != currentlyDraggingGridPosition.y) {
-                currentlyDraggingGridPosition.x = newTrack;
-                currentlyDraggingGridPosition.y = newSlot;
+            if (currentlyDraggingTrackAndSlot != trackAndSlot) {
+                currentlyDraggingTrackAndSlot = trackAndSlot;
 
-                moveProcessor(processor->state, initialDraggingGridPosition.x, initialDraggingGridPosition.y);
+                moveProcessor(processor->state, initialDraggingTrackAndSlot.x, initialDraggingTrackAndSlot.y);
                 project.restoreConnectionsSnapshot();
-                if (currentlyDraggingGridPosition != initialDraggingGridPosition) {
-                    moveProcessor(processor->state, currentlyDraggingGridPosition.x, currentlyDraggingGridPosition.y);
+                if (currentlyDraggingTrackAndSlot != initialDraggingTrackAndSlot) {
+                    moveProcessor(processor->state, trackAndSlot.x, trackAndSlot.y);
                 }
             }
         }
     }
 
     void endDraggingNode(NodeID nodeId) {
-        if (currentlyDraggingNodeId != NA_NODE_ID && currentlyDraggingGridPosition != initialDraggingGridPosition) {
+        if (currentlyDraggingNodeId != NA_NODE_ID && currentlyDraggingTrackAndSlot != initialDraggingTrackAndSlot) {
             // update the audio graph to match the current preview UI graph.
             StatefulAudioProcessorWrapper *processor = getProcessorWrapperForNodeId(nodeId);
-            moveProcessor(processor->state, initialDraggingGridPosition.x, initialDraggingGridPosition.y);
+            moveProcessor(processor->state, initialDraggingTrackAndSlot.x, initialDraggingTrackAndSlot.y);
             project.restoreConnectionsSnapshot();
             currentlyDraggingNodeId = NA_NODE_ID;
-            moveProcessor(processor->state, currentlyDraggingGridPosition.x, currentlyDraggingGridPosition.y);
+            moveProcessor(processor->state, currentlyDraggingTrackAndSlot.x, currentlyDraggingTrackAndSlot.y);
         }
         currentlyDraggingNodeId = NA_NODE_ID;
     }
@@ -234,8 +226,8 @@ public:
 private:
 
     NodeID currentlyDraggingNodeId = NA_NODE_ID;
-    Point<int> currentlyDraggingGridPosition;
-    Point<int> initialDraggingGridPosition;
+    Point<int> currentlyDraggingTrackAndSlot;
+    Point<int> initialDraggingTrackAndSlot;
 
     Project &project;
     OwnedArray<StatefulAudioProcessorWrapper> processerWrappers;
@@ -393,9 +385,10 @@ private:
                 if (!otherProcessor.hasType(IDs::PROCESSOR))
                     continue;
                 int otherSlot = otherProcessor[IDs::PROCESSOR_SLOT];
-                // TODO get rid of magic number for mixer channels
                 // TODO find the first _with inputs_
-                if (otherSlot > slot || (slot == 7 && otherSlot == 7))
+                if (otherSlot > slot ||
+                    (slot == Project::NUM_AVAILABLE_PROCESSOR_SLOTS - 1 &&
+                     otherSlot == Project::NUM_AVAILABLE_PROCESSOR_SLOTS - 1))
                     return otherProcessor;
             }
         }

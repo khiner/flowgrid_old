@@ -29,7 +29,7 @@ public:
     void resized() override {
         auto r = getLocalBounds();
         connectors->setBounds(r);
-        tracks->setBounds(r.withHeight(int(getHeight() * 8.0 / 9.0)));
+        tracks->setBounds(r.withHeight(getHeight() * Project::NUM_AVAILABLE_PROCESSOR_SLOTS / (Project::NUM_VISIBLE_PROCESSOR_SLOTS - 1)));
         audioOutputProcessor->setBounds(r.removeFromBottom(int(getHeight() * 1.0 / 9.0)));
         updateComponents();
     }

@@ -9,11 +9,16 @@ class GraphEditorTrack : public Component, public Utilities::ValueTreePropertyCh
 public:
     explicit GraphEditorTrack(Project& project, ValueTree v, ConnectorDragListener &connectorDragListener, ProcessorGraph& graph)
             : state(std::move(v)), connectorDragListener(connectorDragListener), graph(graph) {
-        nameLabel.setText(getTrackName(), dontSendNotification);
+        nameLabel.setText(isMasterTrack() ? "M\nA\nS\nT\nE\nR" : getTrackName(), dontSendNotification);
+        nameLabel.setJustificationType(Justification::centred);
         nameLabel.setColour(Label::backgroundColourId, getColour());
-        nameLabel.setEditable(false, true);
-        nameLabel.onTextChange = [this] { state.setProperty(IDs::name, nameLabel.getText(false), &this->graph.undoManager); };
+        if (!isMasterTrack()) {
+            nameLabel.setEditable(false, true);
+            nameLabel.onTextChange = [this] { state.setProperty(IDs::name, nameLabel.getText(false), &this->graph.undoManager); };
+        }
+
         nameLabel.addMouseListener(this, false);
+
         addAndMakeVisible(nameLabel);
         addAndMakeVisible(*(processors = std::make_unique<GraphEditorProcessors>(project, state, connectorDragListener, graph)));
         state.addListener(this);
@@ -34,6 +39,14 @@ public:
                 select();
             }
         }
+    }
+
+    bool isMasterTrack() const {
+        return state.hasType(IDs::MASTER_TRACK);
+    }
+
+    int getTrackIndex() const {
+        return state.getParent().indexOf(state);
     }
 
     String getTrackName() const {
@@ -62,7 +75,7 @@ public:
 
     void resized() override {
         auto r = getLocalBounds();
-        nameLabel.setBounds(r.removeFromTop(int(getHeight() / 20.0)));
+        nameLabel.setBounds(isMasterTrack() ? r.removeFromLeft(getWidth() / 24) : r.removeFromTop(getHeight() / 24));
         processors->setBounds(r);
     }
 
@@ -83,6 +96,10 @@ public:
 
     PinComponent *findPinAt(const MouseEvent &e) const {
         return processors->findPinAt(e);
+    }
+
+    int findSlotAt(const MouseEvent &e) {
+        return processors->findSlotAt(e);
     }
 
     void update() {

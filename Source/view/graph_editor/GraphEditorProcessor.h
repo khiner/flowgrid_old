@@ -51,25 +51,13 @@ public:
         g.drawFittedText(getName(), boxArea, Justification::centred, 2);
     }
 
-
     void mouseDown(const MouseEvent &e) override {
-        originalPos = e.getPosition();
         toFront(true);
-        graph.beginDraggingNode(getNodeId());
-
         if (e.mods.isPopupMenu())
             showPopupMenu();
     }
 
-    void mouseDrag(const MouseEvent &e) override {
-        if (!e.mods.isPopupMenu()) {
-            auto pos = originalPos + e.getOffsetFromDragStart();
-            graph.setNodePosition(getNodeId(), {pos.x / (double) getWidth(), pos.y / (double) getHeight()});
-        }
-    }
-
     void mouseUp(const MouseEvent &e) override {
-        graph.endDraggingNode(getNodeId());
         if (e.mouseWasDraggedSinceMouseDown()) {
         } else if (e.getNumberOfClicks() == 2) {
             showPopupMenu();

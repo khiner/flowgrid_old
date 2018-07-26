@@ -21,11 +21,16 @@ public:
     }
 
     void resized() override {
-        auto r = getLocalBounds();
+        auto r = getLocalBounds().withHeight(getHeight() * Project::NUM_AVAILABLE_PROCESSOR_SLOTS / (Project::NUM_VISIBLE_PROCESSOR_SLOTS - 1));
         const int w = r.getWidth() / Project::NUM_VISIBLE_TRACKS;
 
-        for (auto *at : objects)
-            at->setBounds(r.removeFromLeft(w));
+        for (auto *track : objects) {
+            if (!track->isMasterTrack()) {
+                track->setBounds(r.removeFromLeft(w));
+            } else {
+                track->setBounds(getLocalBounds().removeFromBottom(w));
+            }
+        }
     }
 
     bool isSuitableType(const ValueTree &v) const override {
@@ -86,11 +91,28 @@ public:
             track->update();
         }
     }
-
+    
+    Point<int> trackAndSlotAt(const MouseEvent &e) {
+        const Point<int> &position = e.getEventRelativeTo(this).getPosition();
+        for (auto* track : objects) {
+            if (track->contains(e.getEventRelativeTo(track).getPosition())) {
+                return { track->getTrackIndex(), track->findSlotAt(e) };
+            }
+        }
+        return { -1, -1 };
+    }
+    
     void mouseDown(const MouseEvent &e) override {
         if (auto* track = dynamic_cast<GraphEditorTrack *>(e.originalComponent->getParentComponent())) {
             if (e.originalComponent == track->getDragControlComponent() && track->state != project.getMasterTrack()) {
                 currentlyDraggingTrack = track;
+            }
+        } else if (auto* processor = dynamic_cast<GraphEditorProcessor *>(e.originalComponent)) {
+            if (!e.mods.isRightButtonDown()) {
+                currentlyDraggingProcessor = processor;
+                auto *processorTrack = dynamic_cast<GraphEditorTrack *>(processor->getParentComponent()->getParentComponent());
+                const Point<int> trackAndSlot{processorTrack->getTrackIndex(), processor->getSlot()};
+                graph.beginDraggingNode(processor->getNodeId(), trackAndSlot);
             }
         }
     }
@@ -112,17 +134,26 @@ public:
                     }
                 }
             }
+        } else if (e.originalComponent == currentlyDraggingProcessor && !e.mods.isRightButtonDown()) {
+            const Point<int> &trackAndSlot = trackAndSlotAt(e);
+            if (trackAndSlot.x != -1 && trackAndSlot.y != -1) {
+                graph.setNodePosition(currentlyDraggingProcessor->getNodeId(), trackAndSlot);
+            }
         }
     }
 
     void mouseUp(const MouseEvent &e) override {
+        if (currentlyDraggingProcessor != nullptr)
+            graph.endDraggingNode(currentlyDraggingProcessor->getNodeId());
         currentlyDraggingTrack = nullptr;
+        currentlyDraggingProcessor = nullptr;
     }
 
     Project& project;
     ConnectorDragListener &connectorDragListener;
     ProcessorGraph &graph;
     GraphEditorTrack *currentlyDraggingTrack;
+    GraphEditorProcessor *currentlyDraggingProcessor;
 
     void valueTreeChildWillBeMovedToNewParent(ValueTree child, const ValueTree& oldParent, int oldIndex, const ValueTree& newParent, int newIndex) override {
         if (child.hasType(IDs::PROCESSOR)) {
