@@ -152,8 +152,8 @@ public:
     Project& project;
     ConnectorDragListener &connectorDragListener;
     ProcessorGraph &graph;
-    GraphEditorTrack *currentlyDraggingTrack;
-    GraphEditorProcessor *currentlyDraggingProcessor;
+    GraphEditorTrack *currentlyDraggingTrack {};
+    GraphEditorProcessor *currentlyDraggingProcessor {};
 
     void valueTreeChildWillBeMovedToNewParent(ValueTree child, const ValueTree& oldParent, int oldIndex, const ValueTree& newParent, int newIndex) override {
         if (child.hasType(IDs::PROCESSOR)) {

@@ -228,19 +228,13 @@ public:
         return state;
     }
 
-    ValueTree createAndAddTrack(bool undoable=true, bool addMixer=true, int insertIndex=-1, String trackName="") {
+    ValueTree createAndAddTrack(bool undoable=true, bool addMixer=true, int insertIndex=-1, const String& trackName="", const String& colour="") {
         int numTracks = getNumTracks() - 1; // minus 1 because of master track
 
         ValueTree track(IDs::TRACK);
-        if (trackName.isEmpty()) {
-            trackName = "Track " + String(numTracks + 1);
-        } else {
-            trackName = makeTrackNameUnique(trackName);
-        }
         Helpers::createUuidProperty(track);
-        track.setProperty(IDs::colour, Colour::fromHSV((1.0f / 8.0f) * numTracks, 0.65f, 0.65f, 1.0f).toString(), nullptr);
-        track.setProperty(IDs::name, trackName, nullptr);
-
+        track.setProperty(IDs::name, trackName.isEmpty() ? "Track " + String(numTracks + 1) : makeTrackNameUnique(trackName), nullptr);
+        track.setProperty(IDs::colour, !colour.isEmpty() ? colour : Colour::fromHSV((1.0f / 8.0f) * numTracks, 0.65f, 0.65f, 1.0f).toString(), nullptr);
         const ValueTree &masterTrack = tracks.getChildWithName(IDs::MASTER_TRACK);
         if (insertIndex == -1) {
             // Insert new tracks _before_ the master track, or at the end if there isn't one.
@@ -270,7 +264,7 @@ public:
 
         if (processorManager.isGeneratorOrInstrument(&description) &&
             processorManager.doesTrackAlreadyHaveGeneratorOrInstrument(track)) {
-            return createAndAddProcessor(description, createAndAddTrack(undoable, false, track.getParent().indexOf(track), track.getProperty(IDs::name)), slot, undoable);
+            return createAndAddProcessor(description, createAndAddTrack(undoable, false, track.getParent().indexOf(track), track.getProperty(IDs::name), track.getProperty(IDs::colour)), slot, undoable);
         }
 
         ValueTree processor(IDs::PROCESSOR);
