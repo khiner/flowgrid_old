@@ -170,6 +170,9 @@ public:
                     sendProcessorWillBeDestroyedMessage(v);
                 }
                 v.getParent().removeChild(v, &undoManager);
+                if (v.hasType(IDs::PROCESSOR)) {
+                    sendProcessorHasBeenDestroyedMessage(v);
+                }
             }
         }
     }

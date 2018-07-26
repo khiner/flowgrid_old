@@ -12,7 +12,8 @@ public:
     virtual void itemRemoved(const ValueTree&) = 0;
     virtual void processorCreated(const ValueTree&) {};
     virtual void processorWillBeDestroyed(const ValueTree &) {};
-    virtual void processorWillBeMoved(const ValueTree &, const ValueTree&, int, AudioProcessorGraph::NodeID beforeNodeId=0, AudioProcessorGraph::NodeID afterNodeId=0) {};
+    virtual void processorHasBeenDestroyed(const ValueTree &) {};
+    virtual void processorWillBeMoved(const ValueTree &, const ValueTree&) {};
     virtual void processorHasMoved(const ValueTree &, const ValueTree&) {};
     virtual ~ProjectChangeListener() = default;
 };
@@ -76,16 +77,21 @@ public:
         }
     }
 
-    // The following three methods _cannot_ be called async!
+    // The following four methods _cannot_ be called async!
     // They assume ordering of "willBeThinged -> thing -> hasThinged".
     virtual void sendProcessorWillBeDestroyedMessage(ValueTree item) {
         jassert(MessageManager::getInstance()->isThisTheMessageThread());
         changeListeners.call(&ProjectChangeListener::processorWillBeDestroyed, item);
     }
 
-    virtual void sendProcessorWillBeMovedMessage(const ValueTree& item, const ValueTree& newParent, int insertIndex) {
+    virtual void sendProcessorHasBeenDestroyedMessage(ValueTree item) {
         jassert(MessageManager::getInstance()->isThisTheMessageThread());
-        changeListeners.call(&ProjectChangeListener::processorWillBeMoved, item, newParent, insertIndex, 0, 0);
+        changeListeners.call(&ProjectChangeListener::processorHasBeenDestroyed, item);
+    }
+
+    virtual void sendProcessorWillBeMovedMessage(const ValueTree& item, const ValueTree& newParent) {
+        jassert(MessageManager::getInstance()->isThisTheMessageThread());
+        changeListeners.call(&ProjectChangeListener::processorWillBeMoved, item, newParent);
     }
 
     virtual void sendProcessorHasMovedMessage(const ValueTree& item, const ValueTree& newParent) {
@@ -300,7 +306,7 @@ namespace Helpers {
             ValueTree &item = *items.getUnchecked(i);
             if (item.hasType(IDs::PROCESSOR)) {
                 auto *cb = dynamic_cast<ProjectChangeBroadcaster *> (treeView.getRootItem());
-                cb->sendProcessorWillBeMovedMessage(item, newParent, insertIndex);
+                cb->sendProcessorWillBeMovedMessage(item, newParent);
                 moveSingleItem(item, newParent, insertIndex, undoManager);
                 cb->sendProcessorHasMovedMessage(item, newParent);
             } else {
