@@ -85,7 +85,7 @@ public:
     }
 
     // checks for duplicate add should be done before! (not done here to avoid redundant checks)
-    void addConnection(const AudioProcessorGraph::Connection &connection, UndoManager* undoManager) {
+    void addConnection(const AudioProcessorGraph::Connection &connection, UndoManager* undoManager, bool isDefault=true) {
         ValueTree connectionState(IDs::CONNECTION);
         ValueTree source(IDs::SOURCE);
         source.setProperty(IDs::NODE_ID, int(connection.source.nodeID), nullptr);
@@ -97,6 +97,9 @@ public:
         destination.setProperty(IDs::CHANNEL, connection.destination.channelIndex, nullptr);
         connectionState.addChild(destination, -1, nullptr);
 
+        if (!isDefault) {
+            connectionState.setProperty(IDs::CUSTOM_CONNECTION, true, nullptr);
+        }
         connections.addChild(connectionState, -1, undoManager);
     }
 
@@ -111,6 +114,13 @@ public:
     bool removeConnection(const AudioProcessorGraph::Connection &connection, UndoManager* undoManager) {
         const ValueTree &connectionState = getConnectionMatching(connection);
         return removeConnection(connectionState, undoManager);
+    }
+
+    bool removeDefaultConnection(const AudioProcessorGraph::Connection &connection, UndoManager* undoManager) {
+        const ValueTree &connectionState = getConnectionMatching(connection);
+        if (connectionState.isValid() && !connectionState.hasProperty(IDs::CUSTOM_CONNECTION))
+            return removeConnection(connectionState, undoManager);
+        return false;
     }
 
     // make a snapshot of all the information needed to capture AudioGraph connections and UI positions

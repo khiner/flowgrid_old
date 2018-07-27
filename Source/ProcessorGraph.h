@@ -189,7 +189,7 @@ public:
 
     bool addConnection(const Connection& c) override {
         if (canConnectUi(c)) {
-            project.addConnection(c, getDragDependentUndoManager());
+            project.addConnection(c, getDragDependentUndoManager(), false);
             return true;
         }
         return false;
@@ -199,10 +199,22 @@ public:
         return project.removeConnection(c, getDragDependentUndoManager());
     }
 
+    bool addDefaultConnection(const Connection& c) {
+        if (canConnectUi(c)) {
+            project.addConnection(c, getDragDependentUndoManager());
+            return true;
+        }
+        return false;
+    }
+
+    bool removeDefaultConnection(const Connection& c) {
+        return project.removeDefaultConnection(c, getDragDependentUndoManager());
+    }
+
     // only called when removing a node. we want to make sure we don't use the undo manager for these connection removals.
     bool disconnectNode(NodeID nodeId) override {
         const auto& processor = getProcessorWrapperForNodeId(nodeId)->state;
-        removeNodeConnections(processor);
+        removeDefaultConnections(processor);
 
         const Array<ValueTree> remainingConnections = project.getConnectionsForNode(getNodeIdForState(processor));
         if (!remainingConnections.isEmpty()) {
@@ -246,7 +258,7 @@ private:
     void recursivelyInitializeWithState(const ValueTree &state, bool connections=false) {
         if (state.hasType(IDs::PROCESSOR)) {
             if (connections) {
-                return insertNodeConnections(state);
+                return addDefaultConnections(state);
             } else {
                 return addProcessor(state);
             }
@@ -284,21 +296,20 @@ private:
         NodeID after = NA_NODE_ID;
     };
 
-    void removeNodeConnections(const ValueTree& processor) {
-        const NeighborNodes &neighborNodes = findNeighborNodes(processor);
-        neighborsOfLastRemovedProcessor.addArray(neighborNodes.before);
-        neighborsOfLastRemovedProcessor.add(neighborNodes.after);
+    void removeDefaultConnections(const ValueTree &processor) {
+        const NeighborNodes &neighbors = findNeighborProcessors(processor);
+        neighborsOfLastRemovedProcessor.addArray(neighbors.before);
+        neighborsOfLastRemovedProcessor.add(neighbors.after);
 
         auto nodeId = getNodeIdForState(processor);
         for (int channel = 0; channel < 2; ++channel) {
-            removeConnection({{nodeId, channel},
-                              {neighborNodes.after, channel}});
+            removeDefaultConnection({{nodeId, channel}, {neighbors.after, channel}});
         }
 
-        if (!neighborNodes.before.isEmpty()) {
-            for (auto before : neighborNodes.before) {
+        if (!neighbors.before.isEmpty()) {
+            for (auto before : neighbors.before) {
                 for (int channel = 0; channel < 2; ++channel) {
-                    removeConnection({{before, channel}, {nodeId, channel}});
+                    removeDefaultConnection({{before, channel}, {nodeId, channel}});
                 }
             }
         } else if (processor.getParent().hasType(IDs::MASTER_TRACK)) {
@@ -308,24 +319,22 @@ private:
                 if (lastProcessor.isValid()) {
                     NodeID lastProcessorNodeId = getNodeIdForState(lastProcessor);
                     for (int channel = 0; channel < 2; ++channel) {
-                        removeConnection({{lastProcessorNodeId, channel},
-                                          {nodeId, channel}});
-                        addConnection({{lastProcessorNodeId, channel},
-                                       {neighborNodes.after, channel}});
+                        removeDefaultConnection({{lastProcessorNodeId, channel}, {nodeId, channel}});
+                        addDefaultConnection({{lastProcessorNodeId, channel}, {neighbors.after, channel}});
                     }
                 }
             }
         }
     }
 
-    void insertNodeConnections(const ValueTree& processor) {
-        const NeighborNodes &neighborNodes = findNeighborNodes(processor);
+    void addDefaultConnections(const ValueTree &processor) {
+        const NeighborNodes &neighbors = findNeighborProcessors(processor);
         auto nodeId = getNodeIdForState(processor);
-        if (!neighborNodes.before.isEmpty()) {
-            for (auto before : neighborNodes.before) {
+        if (!neighbors.before.isEmpty()) {
+            for (auto before : neighbors.before) {
                 for (int channel = 0; channel < 2; ++channel) {
-                    removeConnection({{before, channel}, {neighborNodes.after, channel}});
-                    addConnection({{before, channel}, {nodeId, channel}});
+                    removeDefaultConnection({{before, channel}, {neighbors.after, channel}});
+                    addDefaultConnection({{before, channel}, {nodeId, channel}});
                 }
             }
         } else if (processor.getParent().hasType(IDs::MASTER_TRACK)) {
@@ -335,21 +344,18 @@ private:
                 if (lastProcessor.isValid()) {
                     NodeID lastProcessorNodeId = getNodeIdForState(lastProcessor);
                     for (int channel = 0; channel < 2; ++channel) {
-                        removeConnection({{lastProcessorNodeId, channel},
-                                          {neighborNodes.after,  channel}});
-                        addConnection({{lastProcessorNodeId, channel},
-                                       {nodeId,  channel}});
+                        removeDefaultConnection({{lastProcessorNodeId, channel}, {neighbors.after, channel}});
+                        addDefaultConnection({{lastProcessorNodeId, channel}, {nodeId, channel}});
                     }
                 }
             }
         }
         for (int channel = 0; channel < 2; ++channel) {
-            addConnection({{nodeId, channel},
-                           {neighborNodes.after,  channel}});
+            addDefaultConnection({{nodeId, channel}, {neighbors.after, channel}});
         }
     }
 
-    NeighborNodes findNeighborNodes(const ValueTree& processor) {
+    NeighborNodes findNeighborProcessors(const ValueTree &processor) {
         NeighborNodes neighborNodes {};
         const ValueTree &parent = processor.getParent();
         const ValueTree &beforeNodeState = processor.getSibling(-1);
@@ -500,7 +506,7 @@ private:
      * and UI state.
      */
     void processorCreated(const ValueTree& processor) override {
-        insertNodeConnections(processor);
+        addDefaultConnections(processor);
     };
 
     void processorWillBeDestroyed(const ValueTree& processor) override {
@@ -515,11 +521,11 @@ private:
 
     void processorWillBeMoved(const ValueTree& processor, const ValueTree& newParent) override {
         jassert(neighborsOfLastRemovedProcessor.isEmpty());
-        removeNodeConnections(processor);
+        removeDefaultConnections(processor);
     };
 
     void processorHasMoved(const ValueTree& processor, const ValueTree& newParent) override {
-        insertNodeConnections(processor);
+        addDefaultConnections(processor);
         project.makeSlotsValid(newParent, getDragDependentUndoManager());
         insertConnectionsForNodes(neighborsOfLastRemovedProcessor);
         neighborsOfLastRemovedProcessor.clear();
@@ -528,7 +534,7 @@ private:
     void insertConnectionsForNodes(Array<NodeID> nodeIds) {
         for (auto nodeId : nodeIds) {
             if (nodeId != NA_NODE_ID) {
-                insertNodeConnections(getProcessorWrapperForNodeId(nodeId)->state);
+                addDefaultConnections(getProcessorWrapperForNodeId(nodeId)->state);
             }
         }
     }

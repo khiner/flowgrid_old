@@ -21,6 +21,10 @@ struct GraphEditorConnector : public Component, public SettableTooltipClient {
         return connection;
     }
 
+    bool isCustom() const {
+        return !state.isValid() || state[IDs::CUSTOM_CONNECTION];
+    }
+
     void setInput(AudioProcessorGraph::NodeAndChannel newSource) {
         if (connection.source != newSource) {
             connection.source = newSource;
@@ -88,7 +92,7 @@ struct GraphEditorConnector : public Component, public SettableTooltipClient {
 
     void paint(Graphics &g) override {
         Colour pathColour = connection.source.isMIDI() || connection.destination.isMIDI()
-                            ? Colours::red : Colours::green;
+                            ? Colours::red : (isCustom() ? Colours::greenyellow : Colours::green);
         g.setColour(pathColour.withAlpha(0.75f));
         g.fillPath(linePath);
     }
