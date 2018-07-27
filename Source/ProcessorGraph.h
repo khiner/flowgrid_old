@@ -196,7 +196,7 @@ public:
     }
 
     bool removeConnection(const Connection& c) override {
-        return project.removeConnection(c, getDragDependentUndoManager(), false);
+        return project.removeConnection(c, getDragDependentUndoManager(), true, true);
     }
 
     bool addDefaultConnection(const Connection& c) {
@@ -208,12 +208,23 @@ public:
     }
 
     bool removeDefaultConnection(const Connection& c) {
-        return project.removeConnection(c, getDragDependentUndoManager(), true);
+        return project.removeConnection(c, getDragDependentUndoManager(), true, false);
     }
 
-    // only called when removing a node. we want to make sure we don't use the undo manager for these connection removals.
+    void connectDefaults(NodeID nodeId) {
+        addDefaultConnections(getProcessorWrapperForNodeId(nodeId)->state);
+    }
+
     bool disconnectNode(NodeID nodeId) override {
-        return doDisconnectNode(nodeId, false);
+        return doDisconnectNode(nodeId, true, true);
+    }
+
+    bool disconnectDefaults(NodeID nodeId) {
+        return doDisconnectNode(nodeId, true, false);
+    }
+
+    bool disconnectCustom(NodeID nodeId) {
+        return doDisconnectNode(nodeId, false, true);
     }
 
     bool removeNode(NodeID nodeId) override  {
@@ -247,11 +258,11 @@ private:
         return currentlyDraggingNodeId == NA_NODE_ID ? &undoManager : nullptr;
     }
 
-    bool doDisconnectNode(NodeID nodeId, bool defaultOnly) {
+    bool doDisconnectNode(NodeID nodeId, bool defaults, bool custom) {
         const Array<ValueTree> connections = project.getConnectionsForNode(nodeId);
         bool anyRemoved = false;
         for (const auto &connection : connections)
-            if (project.removeConnection(connection, &undoManager, defaultOnly)) {
+            if (project.removeConnection(connection, &undoManager, defaults, custom)) {
                 anyRemoved = true;
                 NodeID sourceNodeId = getNodeIdForState(connection.getChildWithName(IDs::SOURCE));
                 NodeID destinationNodeId = getNodeIdForState(connection.getChildWithName(IDs::DESTINATION));
@@ -303,7 +314,7 @@ private:
     };
 
     void removeDefaultConnections(const ValueTree &processor) {
-        doDisconnectNode(getNodeIdForState(processor), true);
+        doDisconnectNode(getNodeIdForState(processor), true, false);
     }
 
     void addDefaultConnections(const ValueTree &processor) {

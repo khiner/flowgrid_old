@@ -27,6 +27,14 @@ public:
         return state[IDs::PROCESSOR_SLOT];
     }
 
+    int getNumInputChannels() {
+        return state[IDs::NUM_INPUT_CHANNELS];
+    }
+
+    int getNumOutputChannels() {
+        return state[IDs::NUM_OUTPUT_CHANNELS];
+    }
+
     void paint(Graphics &g) override {
         auto boxArea = getLocalBounds().reduced(1, pinSize);
 
@@ -116,11 +124,11 @@ public:
         if (processor == nullptr)
             return;
 
-        numIns = processor->getTotalNumInputChannels();
+        numIns = getNumInputChannels();
         if (processor->acceptsMidi())
             ++numIns;
 
-        numOuts = processor->getTotalNumOutputChannels();
+        numOuts = getNumOutputChannels();
         if (processor->producesMidi())
             ++numOuts;
 
@@ -133,13 +141,13 @@ public:
             pins.clear();
 
             auto nodeId = getNodeId();
-            for (int i = 0; i < processor->getTotalNumInputChannels(); ++i)
+            for (int i = 0; i < getNumInputChannels(); ++i)
                 addAndMakeVisible(pins.add(new PinComponent(connectorDragListener, processor, nodeId, i, true)));
 
             if (processor->acceptsMidi())
                 addAndMakeVisible(pins.add(new PinComponent(connectorDragListener, processor, nodeId, AudioProcessorGraph::midiChannelIndex, true)));
 
-            for (int i = 0; i < processor->getTotalNumOutputChannels(); ++i)
+            for (int i = 0; i < getNumOutputChannels(); ++i)
                 addAndMakeVisible(pins.add(new PinComponent(connectorDragListener, processor, nodeId, i, false)));
 
             if (processor->producesMidi())
@@ -167,37 +175,48 @@ public:
 
     void showPopupMenu() {
         menu = std::make_unique<PopupMenu>();
-        menu->addItem(1, "Delete this processor");
-        menu->addItem(2, "Disconnect all pins");
-        menu->addItem(3, "Toggle Bypass");
+        menu->addItem(DELETE_MENU_ID, "Delete this processor");
+        menu->addItem(TOGGLE_BYPASS_MENU_ID, "Toggle Bypass");
+        menu->addItem(CONNECT_DEFAULTS_MENU_ID, "Connect all defaults");
+        menu->addItem(DISCONNECT_ALL_MENU_ID, "Disconnect all");
+        menu->addItem(DISCONNECT_DEFAULTS_MENU_ID, "Disconnect all defaults");
+        menu->addItem(DISCONNECT_CUSTOM_MENU_ID, "Disconnect all custom");
 
         if (getProcessor()->hasEditor()) {
             menu->addSeparator();
-            menu->addItem(10, "Show plugin GUI");
-            menu->addItem(11, "Show all programs");
-            menu->addItem(12, "Show all parameters");
+            menu->addItem(SHOW_PLUGIN_GUI_MENU_ID, "Show plugin GUI");
+            menu->addItem(SHOW_ALL_PROGRAMS_MENU_ID, "Show all programs");
+            menu->addItem(SHOW_ALL_PARAMETERS_MENU_ID, "Show all parameters");
         }
 
         menu->showMenuAsync({}, ModalCallbackFunction::create
                 ([this](int r) {
                     switch (r) {
-                        case 1:
+                        case DELETE_MENU_ID:
                             graph.removeNode(getNodeId());
                             break;
-                        case 2:
-                            graph.disconnectNode(getNodeId());
-                            break;
-                        case 3: {
+                        case TOGGLE_BYPASS_MENU_ID:
                             state.setProperty(IDs::BYPASSED, !state.getProperty(IDs::BYPASSED), &graph.undoManager);
                             break;
-                        }
-                        case 10:
+                        case CONNECT_DEFAULTS_MENU_ID:
+                            graph.connectDefaults(getNodeId());
+                            break;
+                        case DISCONNECT_ALL_MENU_ID:
+                            graph.disconnectNode(getNodeId());
+                            break;
+                        case DISCONNECT_DEFAULTS_MENU_ID:
+                            graph.disconnectDefaults(getNodeId());
+                            break;
+                        case DISCONNECT_CUSTOM_MENU_ID:
+                            graph.disconnectCustom(getNodeId());
+                            break;
+                        case SHOW_PLUGIN_GUI_MENU_ID:
                             showWindow(PluginWindow::Type::normal);
                             break;
-                        case 11:
+                        case SHOW_ALL_PROGRAMS_MENU_ID:
                             showWindow(PluginWindow::Type::programs);
                             break;
-                        case 12:
+                        case SHOW_ALL_PARAMETERS_MENU_ID:
                             showWindow(PluginWindow::Type::generic);
                             break;
                         default:
@@ -219,12 +238,16 @@ public:
     OwnedArray<PinComponent> pins;
     int numInputs = 0, numOutputs = 0;
     int pinSize = 16;
-    Point<int> originalPos;
     Font font{13.0f, Font::bold};
     int numIns = 0, numOuts = 0;
     std::unique_ptr<PopupMenu> menu;
 
 private:
+    static constexpr int
+            DELETE_MENU_ID = 1, TOGGLE_BYPASS_MENU_ID = 2, CONNECT_DEFAULTS_MENU_ID = 3, DISCONNECT_ALL_MENU_ID = 4,
+            DISCONNECT_DEFAULTS_MENU_ID = 5, DISCONNECT_CUSTOM_MENU_ID = 6,
+            SHOW_PLUGIN_GUI_MENU_ID = 10, SHOW_ALL_PROGRAMS_MENU_ID = 11, SHOW_ALL_PARAMETERS_MENU_ID = 12;
+
     void valueTreePropertyChanged(ValueTree &v, const Identifier &i) override {
         if (v != state)
             return;

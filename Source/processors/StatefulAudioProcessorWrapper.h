@@ -163,8 +163,8 @@ struct Parameter : public AudioProcessorParameterWithID, private Utilities::Valu
             parameters.add(parameterWrapper);
         }
 
-        state.setProperty(IDs::NUM_INPUT_CHANNELS, processor->getMainBusNumInputChannels(), &undoManager);
-        state.setProperty(IDs::NUM_OUTPUT_CHANNELS, processor->getMainBusNumOutputChannels(), &undoManager);
+        state.setProperty(IDs::NUM_INPUT_CHANNELS, processor->getTotalNumInputChannels(), &undoManager);
+        state.setProperty(IDs::NUM_OUTPUT_CHANNELS, processor->getTotalNumOutputChannels(), &undoManager);
     }
 
     ValueTree getOrCreateChildValueTree(const String& paramID) {

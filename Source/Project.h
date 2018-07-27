@@ -103,17 +103,19 @@ public:
         connections.addChild(connectionState, -1, undoManager);
     }
 
-    bool removeConnection(const ValueTree& connection, UndoManager* undoManager, bool defaultOnly) {
-        if (connection.isValid() && (!defaultOnly || !connection.hasProperty(IDs::CUSTOM_CONNECTION))) {
+    bool removeConnection(const ValueTree& connection, UndoManager* undoManager, bool defaults, bool custom) {
+        if (connection.isValid() &&
+            ((custom && connection.hasProperty(IDs::CUSTOM_CONNECTION)) ||
+             (defaults && !connection.hasProperty(IDs::CUSTOM_CONNECTION)))) {
             connections.removeChild(connection, undoManager);
             return true;
         }
         return false;
     }
 
-    bool removeConnection(const AudioProcessorGraph::Connection &connection, UndoManager* undoManager, bool defaultOnly=true) {
+    bool removeConnection(const AudioProcessorGraph::Connection &connection, UndoManager* undoManager, bool defaults, bool custom) {
         const ValueTree &connectionState = getConnectionMatching(connection);
-        return removeConnection(connectionState, undoManager, defaultOnly);
+        return removeConnection(connectionState, undoManager, defaults, custom);
     }
 
     // make a snapshot of all the information needed to capture AudioGraph connections and UI positions
