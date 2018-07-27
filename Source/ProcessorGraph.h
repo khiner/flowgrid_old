@@ -316,18 +316,6 @@ private:
                     addDefaultConnection({{before, channel}, {nodeId, channel}});
                 }
             }
-        } else if (processor.getParent().hasType(IDs::MASTER_TRACK)) {
-            // first processor in master track receives connections from the last processor of every track
-            for (int i = 0; i < project.getNumTracks(); i++) {
-                const ValueTree lastProcessor = getLastProcessorInTrack(project.getTrack(i));
-                if (lastProcessor.isValid()) {
-                    NodeID lastProcessorNodeId = getNodeIdForState(lastProcessor);
-                    for (int channel = 0; channel < 2; ++channel) {
-                        removeDefaultConnection({{lastProcessorNodeId, channel}, {neighbors.after, channel}});
-                        addDefaultConnection({{lastProcessorNodeId, channel}, {nodeId, channel}});
-                    }
-                }
-            }
         }
         for (int channel = 0; channel < 2; ++channel) {
             addDefaultConnection({{nodeId, channel}, {neighbors.after, channel}});
@@ -376,20 +364,9 @@ private:
                     continue;
                 int otherSlot = otherProcessor[IDs::PROCESSOR_SLOT];
                 if (otherSlot > slot ||
-                    (slot == Project::NUM_AVAILABLE_PROCESSOR_SLOTS - 1 &&
-                     otherSlot == Project::NUM_AVAILABLE_PROCESSOR_SLOTS - 1))
+                    (slot == Project::NUM_AVAILABLE_PROCESSOR_SLOTS - 1 && parent != project.getMasterTrack() && otherProcessor == project.getMasterTrack().getChildWithName(IDs::PROCESSOR)))
                     return otherProcessor;
             }
-        }
-        return {};
-    }
-
-    const ValueTree getLastProcessorInTrack(const ValueTree &track) {
-        if (!track.hasType(IDs::TRACK))
-            return {};
-        for (int j = track.getNumChildren() - 1; j >= 0; j--) {
-            if (track.getChild(j).hasType(IDs::PROCESSOR))
-                return track.getChild(j);
         }
         return {};
     }
