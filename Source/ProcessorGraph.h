@@ -348,41 +348,28 @@ private:
     }
 
     NeighborNodes findNeighborNodes(const ValueTree& processor) {
-        return findNeighborNodes(processor.getParent(), processor, processor.getSibling(-1), processor.getSibling(1));
-    }
-
-    NeighborNodes findNeighborNodes(const ValueTree& parent, const ValueTree& processor, const ValueTree& beforeNodeState, const ValueTree& afterNodeState) {
         NeighborNodes neighborNodes;
-
+        const ValueTree &parent = processor.getParent();
+        const ValueTree &beforeNodeState = processor.getSibling(-1);
         if (beforeNodeState.isValid()) {
             neighborNodes.before = getNodeIdForState(beforeNodeState);
         }
-        // TODO may be able to simplify _all_ of the 'after' cases with `getFirstProcessorToRightAndBelow`
-        if (!afterNodeState.isValid() || (neighborNodes.after = getNodeIdForState(afterNodeState)) == NA_NODE_ID) {
-            if (parent.hasType(IDs::MASTER_TRACK)) {
-                neighborNodes.after = project.getAudioOutputNodeId();
-            } else {
-                // No processors after this node in its track.
-                // Find the first processor that accepts inputs to the _right_ and _below_ this processor.
-                neighborNodes.after = getNodeIdForState(getFirstProcessorToRightAndBelow(parent, processor));
-                if (neighborNodes.after == NA_NODE_ID) { // master track has no processors. go straight out.
-                    neighborNodes.after = project.getAudioOutputNodeId();
-                }
-            }
-        }
+
+        const ValueTree &afterNodeState = getFirstProcessorBelowOrToRightAndBelow(parent, processor);
+        neighborNodes.after = afterNodeState.isValid() ? getNodeIdForState(afterNodeState) : project.getAudioOutputNodeId();
         jassert(neighborNodes.after != NA_NODE_ID);
 
         return neighborNodes;
     }
 
-    const ValueTree getFirstProcessorToRightAndBelow(const ValueTree& parent, const ValueTree& processor) {
+    const ValueTree getFirstProcessorBelowOrToRightAndBelow(const ValueTree &parent, const ValueTree &processor) {
         int slot = processor[IDs::PROCESSOR_SLOT];
 
-        int siblingDelta = 1;
+        int siblingDelta = 0;
         ValueTree siblingParent;
         while ((siblingParent = parent.getSibling(siblingDelta++)).isValid()) {
             for (const auto &otherProcessor : siblingParent) {
-                if (!otherProcessor.hasType(IDs::PROCESSOR))
+                if (!otherProcessor.hasType(IDs::PROCESSOR) || processor == otherProcessor)
                     continue;
                 int otherSlot = otherProcessor[IDs::PROCESSOR_SLOT];
                 // TODO find the first _with inputs_
