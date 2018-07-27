@@ -1,6 +1,7 @@
 #pragma once
 
 #include "JuceHeader.h"
+#include "InternalProcessorIncludes.h"
 
 class InternalPluginFormat : public AudioPluginFormat {
 public:
@@ -28,9 +29,9 @@ public:
         results.add(new PluginDescription(audioInDesc));
         results.add(new PluginDescription(audioOutDesc));
         results.add(new PluginDescription(midiInDesc));
-        results.add(new PluginDescription(MixerChannelProcessor::getPluginDescription()));
-        results.add(new PluginDescription(GainProcessor::getPluginDescription()));
         results.add(new PluginDescription(BalanceProcessor::getPluginDescription()));
+        results.add(new PluginDescription(GainProcessor::getPluginDescription()));
+        results.add(new PluginDescription(MixerChannelProcessor::getPluginDescription()));
         results.add(new PluginDescription(SineBank::getPluginDescription()));
     }
 
@@ -55,9 +56,9 @@ private:
         if (name == audioOutDesc.name) return new AudioProcessorGraph::AudioGraphIOProcessor(AudioProcessorGraph::AudioGraphIOProcessor::audioOutputNode);
         if (name == audioInDesc.name)  return new AudioProcessorGraph::AudioGraphIOProcessor(AudioProcessorGraph::AudioGraphIOProcessor::audioInputNode);
         if (name == midiInDesc.name)   return new AudioProcessorGraph::AudioGraphIOProcessor(AudioProcessorGraph::AudioGraphIOProcessor::midiInputNode);
-        if (name == MixerChannelProcessor::getIdentifier()) return new MixerChannelProcessor(MixerChannelProcessor::getPluginDescription());
-        if (name == GainProcessor::getIdentifier()) return new GainProcessor(GainProcessor::getPluginDescription());
         if (name == BalanceProcessor::getIdentifier()) return new BalanceProcessor(BalanceProcessor::getPluginDescription());
+        if (name == GainProcessor::getIdentifier()) return new GainProcessor(GainProcessor::getPluginDescription());
+        if (name == MixerChannelProcessor::getIdentifier()) return new MixerChannelProcessor(MixerChannelProcessor::getPluginDescription());
         if (name == SineBank::getIdentifier()) return new SineBank(SineBank::getPluginDescription());
 
         return nullptr;

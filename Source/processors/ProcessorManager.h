@@ -1,10 +1,6 @@
 #pragma once
 
 #include "JuceHeader.h"
-#include "GainProcessor.h"
-#include "MixerChannelProcessor.h"
-#include "SineBank.h"
-#include "BalanceProcessor.h"
 #include "InternalPluginFormat.h"
 #include "Identifiers.h"
 
@@ -50,11 +46,21 @@ public:
         return description != nullptr ? description : knownPluginListExternal.getTypeForIdentifierString(identifier);
     }
 
+    PluginDescription *getAudioInputDescription() {
+        for (auto *internalType : internalTypes) {
+            if (internalType->name.equalsIgnoreCase("audio input"))
+                return internalType;
+        }
+        jassert(false);
+        return nullptr;
+    }
+
     PluginDescription *getAudioOutputDescription() {
         for (auto *internalType : internalTypes) {
             if (internalType->name.equalsIgnoreCase("audio output"))
                 return internalType;
         }
+        jassert(false);
         return nullptr;
     }
 

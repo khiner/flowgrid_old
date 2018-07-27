@@ -16,6 +16,7 @@ public:
 
         this->project.getTracks().addListener(this);
         this->project.getConnections().addListener(this);
+        addProcessor(project.getAudioInputProcessorState());
         addProcessor(project.getAudioOutputProcessorState());
         recursivelyInitializeWithState(project.getMasterTrack());
         recursivelyInitializeWithState(project.getTracks());

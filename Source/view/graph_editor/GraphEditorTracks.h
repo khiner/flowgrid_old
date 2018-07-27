@@ -21,14 +21,14 @@ public:
     }
 
     void resized() override {
-        auto r = getLocalBounds().withHeight(getHeight() * Project::NUM_AVAILABLE_PROCESSOR_SLOTS / (Project::NUM_VISIBLE_PROCESSOR_SLOTS - 1));
+        auto r = getLocalBounds().withHeight(getHeight() * Project::NUM_AVAILABLE_PROCESSOR_SLOTS / (Project::NUM_AVAILABLE_PROCESSOR_SLOTS + 1));
         const int w = r.getWidth() / Project::NUM_VISIBLE_TRACKS;
 
         for (auto *track : objects) {
             if (!track->isMasterTrack()) {
                 track->setBounds(r.removeFromLeft(w));
             } else {
-                track->setBounds(getLocalBounds().removeFromBottom(w));
+                track->setBounds(getLocalBounds().removeFromBottom(getHeight() - r.getHeight()));
             }
         }
     }

@@ -12,8 +12,9 @@ public:
         graph.addChangeListener(this);
         setOpaque(true);
 
-        addAndMakeVisible(*(tracks = std::make_unique<GraphEditorTracks>(project, project.getTracks(), *this, graph)));
+        addAndMakeVisible(*(audioInputProcessor = std::make_unique<GraphEditorProcessor>(project.getAudioInputProcessorState(), *this, graph)));
         addAndMakeVisible(*(audioOutputProcessor = std::make_unique<GraphEditorProcessor>(project.getAudioOutputProcessorState(), *this, graph)));
+        addAndMakeVisible(*(tracks = std::make_unique<GraphEditorTracks>(project, project.getTracks(), *this, graph)));
         addAndMakeVisible(*(connectors = std::make_unique<GraphEditorConnectors>(project.getConnections(), *this, *this, graph)));
     }
 
@@ -29,8 +30,9 @@ public:
     void resized() override {
         auto r = getLocalBounds();
         connectors->setBounds(r);
+        audioInputProcessor->setBounds(r.removeFromTop(int(getHeight() * 1.0 / Project::NUM_VISIBLE_PROCESSOR_SLOTS)));
         tracks->setBounds(r.withHeight(getHeight() * Project::NUM_AVAILABLE_PROCESSOR_SLOTS / (Project::NUM_VISIBLE_PROCESSOR_SLOTS - 1)));
-        audioOutputProcessor->setBounds(r.removeFromBottom(int(getHeight() * 1.0 / 9.0)));
+        audioOutputProcessor->setBounds(r.removeFromBottom(int(getHeight() * 1.0 / Project::NUM_VISIBLE_PROCESSOR_SLOTS)));
         updateComponents();
     }
 
@@ -39,6 +41,7 @@ public:
     }
 
     void updateComponents() {
+        audioInputProcessor->update();
         audioOutputProcessor->update();
         tracks->updateProcessors();
         connectors->updateConnectors();
@@ -132,8 +135,13 @@ public:
     }
 
     GraphEditorProcessor *getProcessorForNodeId(const AudioProcessorGraph::NodeID nodeId) const override {
-        return nodeId == project.getAudioOutputNodeId() ?
-               audioOutputProcessor.get() : tracks->getProcessorForNodeId(nodeId);
+        if (nodeId == audioInputProcessor->getNodeId()) {
+            return audioInputProcessor.get();
+        } else if (nodeId == audioOutputProcessor->getNodeId()) {
+            return audioOutputProcessor.get();
+        } else {
+            return tracks->getProcessorForNodeId(nodeId);
+        }
     }
 
     ProcessorGraph &graph;
@@ -142,13 +150,16 @@ public:
 private:
     const AudioProcessorGraph::Connection EMPTY_CONNECTION {{0, 0}, {0, 0}};
     std::unique_ptr<GraphEditorConnectors> connectors;
-    GraphEditorConnector *draggingConnector;
+    GraphEditorConnector *draggingConnector {};
     std::unique_ptr<GraphEditorTracks> tracks;
+    std::unique_ptr<GraphEditorProcessor> audioInputProcessor;
     std::unique_ptr<GraphEditorProcessor> audioOutputProcessor;
     AudioProcessorGraph::Connection initialDraggingConnection { EMPTY_CONNECTION };
 
     PinComponent *findPinAt(const MouseEvent &e) const {
-        if (auto *pin = audioOutputProcessor->findPinAt(e)) {
+        if (auto *pin = audioInputProcessor->findPinAt(e)) {
+            return pin;
+        } else if ((pin = audioOutputProcessor->findPinAt(e))) {
             return pin;
         }
         return tracks->findPinAt(e);

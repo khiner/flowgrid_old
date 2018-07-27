@@ -13,7 +13,8 @@ public:
         if (!state.isValid()) {
             state = createDefaultProject();
         } else {
-            output = state.getChildWithName(IDs::INPUT);
+            input = state.getChildWithName(IDs::INPUT);
+            output = state.getChildWithName(IDs::OUTPUT);
             tracks = state.getChildWithName(IDs::TRACKS);
             masterTrack = tracks.getChildWithName(IDs::MASTER_TRACK);
             connections = state.getChildWithName(IDs::CONNECTIONS);
@@ -187,14 +188,22 @@ public:
         state.setProperty(IDs::name, "My First Project", nullptr);
         Helpers::createUuidProperty(state);
 
-        output = ValueTree(IDs::INPUT);
-
-        PluginDescription *description = processorManager.getAudioOutputDescription();
+        input = ValueTree(IDs::INPUT);
+        PluginDescription *audioInputDescription = processorManager.getAudioInputDescription();
         ValueTree inputProcessor(IDs::PROCESSOR);
         Helpers::createUuidProperty(inputProcessor);
-        inputProcessor.setProperty(IDs::id, description->createIdentifierString(), nullptr);
-        inputProcessor.setProperty(IDs::name, description->name, nullptr);
-        output.addChild(inputProcessor, -1, nullptr);
+        inputProcessor.setProperty(IDs::id, audioInputDescription->createIdentifierString(), nullptr);
+        inputProcessor.setProperty(IDs::name, audioInputDescription->name, nullptr);
+        input.addChild(inputProcessor, -1, nullptr);
+        state.addChild(input, -1, nullptr);
+
+        output = ValueTree(IDs::OUTPUT);
+        PluginDescription *audioOutputDescription = processorManager.getAudioOutputDescription();
+        ValueTree outputProcessor(IDs::PROCESSOR);
+        Helpers::createUuidProperty(outputProcessor);
+        outputProcessor.setProperty(IDs::id, audioOutputDescription->createIdentifierString(), nullptr);
+        outputProcessor.setProperty(IDs::name, audioOutputDescription->name, nullptr);
+        output.addChild(outputProcessor, -1, nullptr);
         state.addChild(output, -1, nullptr);
 
         tracks = ValueTree(IDs::TRACKS);
@@ -310,9 +319,14 @@ public:
         return getMixerChannelProcessorForTrack(getSelectedTrack());
     }
 
+    const ValueTree getAudioInputProcessorState() const {
+        return input.getChildWithName(IDs::PROCESSOR);
+    }
+
     const ValueTree getAudioOutputProcessorState() const {
         return output.getChildWithName(IDs::PROCESSOR);
     }
+
     AudioProcessorGraph::NodeID getAudioOutputNodeId() const {
         return AudioProcessorGraph::NodeID(int(getAudioOutputProcessorState()[IDs::NODE_ID]));
     }
@@ -459,16 +473,11 @@ public:
     }
 
     const static int NUM_VISIBLE_TRACKS = 8;
-    const static int NUM_VISIBLE_PROCESSOR_SLOTS = 9;
-    // last row is reserved for audio output. second-to-last is for horizontal master track.
-    const static int NUM_AVAILABLE_PROCESSOR_SLOTS = NUM_VISIBLE_PROCESSOR_SLOTS - 2;
+    const static int NUM_VISIBLE_PROCESSOR_SLOTS = 10;
+    // first row is reserved for audio input, last row for audio output. second-to-last is horizontal master track.
+    const static int NUM_AVAILABLE_PROCESSOR_SLOTS = NUM_VISIBLE_PROCESSOR_SLOTS - 3;
 private:
-    ValueTree output;
-    ValueTree tracks;
-    ValueTree masterTrack;
-    ValueTree selectedTrack;
-    ValueTree selectedProcessor;
-    ValueTree connections;
+    ValueTree input, output, tracks, masterTrack, selectedTrack, selectedProcessor, connections;
 
     Array<ValueTree> connectionsSnapshot;
     std::unordered_map<int, int> slotForNodeIdSnapshot;
