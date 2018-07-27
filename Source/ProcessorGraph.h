@@ -334,10 +334,8 @@ private:
     }
 
     void getAllNodesFlowingInto(const ValueTree& parent, const ValueTree &processor, Array<NodeID>& nodes) {
-        if (!processor.hasType(IDs::PROCESSOR) || int(processor[IDs::NUM_INPUT_CHANNELS]) <= 0)
+        if (!processor.hasType(IDs::PROCESSOR))
             return;
-
-        int slot = processor[IDs::PROCESSOR_SLOT];
 
         int siblingDelta = 0;
         ValueTree siblingParent;
@@ -351,7 +349,7 @@ private:
     }
 
     const ValueTree getFirstProcessorBelowOrToRightAndBelow(const ValueTree &parent, const ValueTree &processor) {
-        if (!processor.hasType(IDs::PROCESSOR) || int(processor[IDs::NUM_OUTPUT_CHANNELS]) <= 0)
+        if (!processor.hasType(IDs::PROCESSOR) || int(processor[IDs::NUM_OUTPUT_CHANNELS]) <= 0 || processor == project.getMixerChannelProcessorForTrack(project.getMasterTrack()))
             return {};
 
         int slot = processor[IDs::PROCESSOR_SLOT];
@@ -360,12 +358,21 @@ private:
         ValueTree siblingParent;
         while ((siblingParent = parent.getSibling(siblingDelta++)).isValid()) {
             for (const auto &otherProcessor : siblingParent) {
-                if (!otherProcessor.hasType(IDs::PROCESSOR) || processor == otherProcessor || int(otherProcessor[IDs::NUM_INPUT_CHANNELS]) <= 0)
+                if (!otherProcessor.hasType(IDs::PROCESSOR) || processor == otherProcessor || (int(otherProcessor[IDs::NUM_INPUT_CHANNELS]) <= 0 && siblingParent != parent))
                     continue;
                 int otherSlot = otherProcessor[IDs::PROCESSOR_SLOT];
                 if (otherSlot > slot ||
-                    (slot == Project::NUM_AVAILABLE_PROCESSOR_SLOTS - 1 && parent != project.getMasterTrack() && otherProcessor == project.getMasterTrack().getChildWithName(IDs::PROCESSOR)))
+                    (parent.indexOf(processor) == parent.getNumChildren() - 1 && otherProcessor == getFirstMasterTrackProcessorWithInputs()))
                     return otherProcessor;
+            }
+        }
+        return {};
+    }
+
+    const ValueTree getFirstMasterTrackProcessorWithInputs() {
+        for (const auto processor : project.getMasterTrack()) {
+            if (processor.hasType(IDs::PROCESSOR) && int(processor.getProperty(IDs::NUM_INPUT_CHANNELS)) > 0) {
+                return processor;
             }
         }
         return {};

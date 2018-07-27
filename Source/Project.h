@@ -324,11 +324,6 @@ public:
         return mixerChannelProcessor.isValid() ? track.indexOf(mixerChannelProcessor) : track.getNumChildren() - 1;
     }
 
-    int getMaxAvailableProcessorSlot(const ValueTree& track) {
-        const ValueTree &mixerChannelProcessor = getMixerChannelProcessorForTrack(track);
-        return mixerChannelProcessor.isValid() ? int(mixerChannelProcessor[IDs::PROCESSOR_SLOT]) - 1 : Project::NUM_AVAILABLE_PROCESSOR_SLOTS - 1;
-    }
-
     void makeSlotsValid(const ValueTree& parent, UndoManager *undoManager) {
         std::__1::vector<int> slots;
         for (const ValueTree& child : parent) {
