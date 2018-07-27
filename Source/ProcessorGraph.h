@@ -229,7 +229,8 @@ public:
 
     bool removeNode(NodeID nodeId) override  {
         if (auto* processorWrapper = getProcessorWrapperForNodeId(nodeId)) {
-            disconnectNode(nodeId);
+            removeDefaultConnections(processorWrapper->state);
+            disconnectCustom(nodeId);
             processorWrapper->state.getParent().removeChild(processorWrapper->state, &undoManager);
             return true;
         }
@@ -247,7 +248,6 @@ private:
     Project &project;
     OwnedArray<StatefulAudioProcessorWrapper> processerWrappers;
     OwnedArray<PluginWindow> activePluginWindows;
-    Array<NodeID> neighborsOfLastRemovedProcessor;
 
     bool initializing { true };
     bool isMoving { false };
@@ -264,9 +264,6 @@ private:
         for (const auto &connection : connections)
             if (project.removeConnection(connection, &undoManager, defaults, custom)) {
                 anyRemoved = true;
-                NodeID sourceNodeId = getNodeIdForState(connection.getChildWithName(IDs::SOURCE));
-                NodeID destinationNodeId = getNodeIdForState(connection.getChildWithName(IDs::DESTINATION));
-                neighborsOfLastRemovedProcessor.add(sourceNodeId == nodeId ? destinationNodeId : sourceNodeId);
             }
 
         return anyRemoved;
@@ -314,18 +311,26 @@ private:
     };
 
     void removeDefaultConnections(const ValueTree &processor) {
-        doDisconnectNode(getNodeIdForState(processor), true, false);
+        const NeighborNodes &neighbors = findNeighborProcessors(processor);
+        auto nodeId = getNodeIdForState(processor);
+        for (int channel = 0; channel < 2; ++channel) {
+            removeDefaultConnection({{nodeId, channel}, {neighbors.after, channel}});
+        }
+        for (auto before : neighbors.before) {
+            for (int channel = 0; channel < 2; ++channel) {
+                removeDefaultConnection({{before, channel}, {nodeId, channel}});
+                addDefaultConnection({{before, channel}, {neighbors.after, channel}});
+            }
+        }
     }
 
     void addDefaultConnections(const ValueTree &processor) {
         const NeighborNodes &neighbors = findNeighborProcessors(processor);
         auto nodeId = getNodeIdForState(processor);
-        if (!neighbors.before.isEmpty()) {
-            for (auto before : neighbors.before) {
-                for (int channel = 0; channel < 2; ++channel) {
-                    removeDefaultConnection({{before, channel}, {neighbors.after, channel}});
-                    addDefaultConnection({{before, channel}, {nodeId, channel}});
-                }
+        for (auto before : neighbors.before) {
+            for (int channel = 0; channel < 2; ++channel) {
+                removeDefaultConnection({{before, channel}, {neighbors.after, channel}});
+                addDefaultConnection({{before, channel}, {nodeId, channel}});
             }
         }
         for (int channel = 0; channel < 2; ++channel) {
@@ -500,34 +505,20 @@ private:
     };
 
     void processorWillBeDestroyed(const ValueTree& processor) override {
-        jassert(neighborsOfLastRemovedProcessor.isEmpty());
-        disconnectNode(getNodeIdForState(processor));
+        removeDefaultConnections(processor);
     };
 
     void processorHasBeenDestroyed(const ValueTree& processor) override {
-        insertConnectionsForNodes(neighborsOfLastRemovedProcessor);
-        neighborsOfLastRemovedProcessor.clear();
     };
 
     void processorWillBeMoved(const ValueTree& processor, const ValueTree& newParent) override {
-        jassert(neighborsOfLastRemovedProcessor.isEmpty());
         removeDefaultConnections(processor);
     };
 
     void processorHasMoved(const ValueTree& processor, const ValueTree& newParent) override {
         addDefaultConnections(processor);
         project.makeSlotsValid(newParent, getDragDependentUndoManager());
-        insertConnectionsForNodes(neighborsOfLastRemovedProcessor);
-        neighborsOfLastRemovedProcessor.clear();
     };
-
-    void insertConnectionsForNodes(Array<NodeID> nodeIds) {
-        for (auto nodeId : nodeIds) {
-            if (nodeId != NA_NODE_ID) {
-                addDefaultConnections(getProcessorWrapperForNodeId(nodeId)->state);
-            }
-        }
-    }
     
     void itemSelected(const ValueTree&) override {
         sendChangeMessage();
