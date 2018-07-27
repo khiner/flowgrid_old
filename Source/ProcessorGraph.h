@@ -280,12 +280,13 @@ private:
     }
 
     struct NeighborNodes {
-        NodeID before = NA_NODE_ID, after = NA_NODE_ID;
+        Array<NodeID> before {};
+        NodeID after = NA_NODE_ID;
     };
 
     void removeNodeConnections(const ValueTree& processor) {
         const NeighborNodes &neighborNodes = findNeighborNodes(processor);
-        neighborsOfLastRemovedProcessor.add(neighborNodes.before);
+        neighborsOfLastRemovedProcessor.addArray(neighborNodes.before);
         neighborsOfLastRemovedProcessor.add(neighborNodes.after);
 
         auto nodeId = getNodeIdForState(processor);
@@ -294,10 +295,11 @@ private:
                               {neighborNodes.after, channel}});
         }
 
-        if (neighborNodes.before != NA_NODE_ID) {
-            for (int channel = 0; channel < 2; ++channel) {
-                removeConnection({{neighborNodes.before, channel},
-                                  {nodeId, channel}});
+        if (!neighborNodes.before.isEmpty()) {
+            for (auto before : neighborNodes.before) {
+                for (int channel = 0; channel < 2; ++channel) {
+                    removeConnection({{before, channel}, {nodeId, channel}});
+                }
             }
         } else if (processor.getParent().hasType(IDs::MASTER_TRACK)) {
             // first processor in master track receives connections from the last processor of every track
@@ -319,12 +321,12 @@ private:
     void insertNodeConnections(const ValueTree& processor) {
         const NeighborNodes &neighborNodes = findNeighborNodes(processor);
         auto nodeId = getNodeIdForState(processor);
-        if (neighborNodes.before != NA_NODE_ID) {
-            for (int channel = 0; channel < 2; ++channel) {
-                removeConnection({{neighborNodes.before, channel},
-                                  {neighborNodes.after,  channel}});
-                addConnection({{neighborNodes.before, channel},
-                               {nodeId,  channel}});
+        if (!neighborNodes.before.isEmpty()) {
+            for (auto before : neighborNodes.before) {
+                for (int channel = 0; channel < 2; ++channel) {
+                    removeConnection({{before, channel}, {neighborNodes.after, channel}});
+                    addConnection({{before, channel}, {nodeId, channel}});
+                }
             }
         } else if (processor.getParent().hasType(IDs::MASTER_TRACK)) {
             // first processor in master track receives connections from the last processor of every track
@@ -348,11 +350,11 @@ private:
     }
 
     NeighborNodes findNeighborNodes(const ValueTree& processor) {
-        NeighborNodes neighborNodes;
+        NeighborNodes neighborNodes {};
         const ValueTree &parent = processor.getParent();
         const ValueTree &beforeNodeState = processor.getSibling(-1);
         if (beforeNodeState.isValid()) {
-            neighborNodes.before = getNodeIdForState(beforeNodeState);
+            neighborNodes.before.add(getNodeIdForState(beforeNodeState));
         }
 
         const ValueTree &afterNodeState = getFirstProcessorBelowOrToRightAndBelow(parent, processor);
@@ -369,10 +371,9 @@ private:
         ValueTree siblingParent;
         while ((siblingParent = parent.getSibling(siblingDelta++)).isValid()) {
             for (const auto &otherProcessor : siblingParent) {
-                if (!otherProcessor.hasType(IDs::PROCESSOR) || processor == otherProcessor)
+                if (!otherProcessor.hasType(IDs::PROCESSOR) || processor == otherProcessor || int(otherProcessor[IDs::NUM_INPUT_CHANNELS]) <= 0)
                     continue;
                 int otherSlot = otherProcessor[IDs::PROCESSOR_SLOT];
-                // TODO find the first _with inputs_
                 if (otherSlot > slot ||
                     (slot == Project::NUM_AVAILABLE_PROCESSOR_SLOTS - 1 &&
                      otherSlot == Project::NUM_AVAILABLE_PROCESSOR_SLOTS - 1))
