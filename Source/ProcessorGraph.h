@@ -337,11 +337,7 @@ private:
     NeighborNodes findNeighborProcessors(const ValueTree &processor) {
         NeighborNodes neighborNodes {};
         const ValueTree &parent = processor.getParent();
-        const ValueTree &beforeNodeState = processor.getSibling(-1);
-        if (beforeNodeState.isValid()) {
-            neighborNodes.before.add(getNodeIdForState(beforeNodeState));
-        }
-
+        getAllNodesFlowingInto(parent, processor, neighborNodes.before);
         const ValueTree &afterNodeState = getFirstProcessorBelowOrToRightAndBelow(parent, processor);
         neighborNodes.after = afterNodeState.isValid() ? getNodeIdForState(afterNodeState) : project.getAudioOutputNodeId();
         jassert(neighborNodes.after != NA_NODE_ID);
@@ -349,7 +345,27 @@ private:
         return neighborNodes;
     }
 
+    void getAllNodesFlowingInto(const ValueTree& parent, const ValueTree &processor, Array<NodeID>& nodes) {
+        if (!processor.hasType(IDs::PROCESSOR) || int(processor[IDs::NUM_INPUT_CHANNELS]) <= 0)
+            return;
+
+        int slot = processor[IDs::PROCESSOR_SLOT];
+
+        int siblingDelta = 0;
+        ValueTree siblingParent;
+        while ((siblingParent = parent.getSibling(siblingDelta--)).isValid()) {
+            for (const auto &otherProcessor : siblingParent) {
+                if (getFirstProcessorBelowOrToRightAndBelow(siblingParent, otherProcessor) == processor) {
+                    nodes.add(getNodeIdForState(otherProcessor));
+                }
+            }
+        }
+    }
+
     const ValueTree getFirstProcessorBelowOrToRightAndBelow(const ValueTree &parent, const ValueTree &processor) {
+        if (!processor.hasType(IDs::PROCESSOR) || int(processor[IDs::NUM_OUTPUT_CHANNELS]) <= 0)
+            return {};
+
         int slot = processor[IDs::PROCESSOR_SLOT];
 
         int siblingDelta = 0;
