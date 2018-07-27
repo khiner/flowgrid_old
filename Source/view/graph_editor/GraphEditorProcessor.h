@@ -252,7 +252,10 @@ private:
         if (v != state)
             return;
 
-        if (i == IDs::PROCESSOR_SLOT || i == IDs::BYPASSED)
+        if (i == IDs::PROCESSOR_SLOT || i == IDs::BYPASSED) {
             repaint();
+        } else if (i == IDs::NUM_INPUT_CHANNELS || i == IDs::NUM_OUTPUT_CHANNELS) {
+            update();
+        }
     }
 };

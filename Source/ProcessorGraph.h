@@ -8,7 +8,7 @@
 #include "processors/ProcessorManager.h"
 #include "Project.h"
 
-class ProcessorGraph : public AudioProcessorGraph, private ValueTree::Listener, private ProjectChangeListener, private ChangeListener {
+class ProcessorGraph : public AudioProcessorGraph, public ChangeListener, private ValueTree::Listener, private ProjectChangeListener {
 public:
     explicit ProcessorGraph(Project &project, UndoManager &undoManager)
             : project(project), undoManager(undoManager) {
@@ -533,6 +533,15 @@ private:
                 if (!getNodes().contains(activePluginWindows.getUnchecked(i)->node)) {
                     activePluginWindows.remove(i);
                 }
+            }
+        } else if (auto* deviceManager = dynamic_cast<AudioDeviceManager *>(cb)) {
+            if (auto* inputWrapper = getProcessorWrapperForState(project.getAudioInputProcessorState())) {
+                int numOutputs = inputWrapper->processor->getTotalNumOutputChannels();
+                inputWrapper->state.setProperty(IDs::NUM_OUTPUT_CHANNELS, numOutputs, nullptr);
+            }
+            if (auto* outputWrapper = getProcessorWrapperForState(project.getAudioOutputProcessorState())) {
+                int numInputs = outputWrapper->processor->getTotalNumInputChannels();
+                outputWrapper->state.setProperty(IDs::NUM_INPUT_CHANNELS, numInputs, nullptr);
             }
         }
     }

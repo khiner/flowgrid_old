@@ -11,7 +11,7 @@ File getSaveFile() {
 
 class SoundMachineApplication : public JUCEApplication, public MenuBarModel {
 public:
-    SoundMachineApplication() : project(Utilities::loadValueTree(getSaveFile(), true), undoManager, processorIds),
+    SoundMachineApplication() : project(Utilities::loadValueTree(getSaveFile(), true), undoManager, processorManager),
                                 applicationKeyListener(project, undoManager),
                                 processorGraph(project, undoManager),
                                 midiControlHandler(project, processorGraph, undoManager) {}
@@ -23,13 +23,17 @@ public:
     bool moreThanOneInstanceAllowed() override { return true; }
 
     void initialise(const String &) override {
-        player.setProcessor(&processorGraph);
-        deviceManager.addAudioCallback(&player);
-
         push2MidiCommunicator.setMidiInputCallback([this](const MidiMessage &message) {
             MessageManager::callAsync([this, message]() { midiControlHandler.handleControlMidi(message); });
         });
-        deviceManager.initialiseWithDefaultDevices(2, 2);
+
+        std::unique_ptr<XmlElement> savedAudioState(processorManager.getApplicationProperties().getUserSettings()->getXmlValue("audioDeviceState"));
+        deviceManager.initialise(256, 256, savedAudioState.get(), true);
+        player.setProcessor(&processorGraph);
+        deviceManager.addChangeListener(&processorGraph);
+        deviceManager.addAudioCallback(&player);
+        deviceManager.addMidiInputCallback(String(), &player.getMidiMessageCollector());
+        deviceManager.sendChangeMessage();
 
         Process::makeForegroundProcess();
         auto *push2Component = new Push2Component(project, push2MidiCommunicator, processorGraph);
@@ -42,13 +46,13 @@ public:
                                                                                       true, true, true, false);
         audioDeviceSelectorComponent->setSize(600, 600);
 
-        pluginListComponent = std::unique_ptr<PluginListComponent>(processorIds.makePluginListComponent());
+        pluginListComponent = std::unique_ptr<PluginListComponent>(processorManager.makePluginListComponent());
 
         treeWindow->setBoundsRelative(0.05, 0.25, 0.45, 0.35);
 
-        float graphEditorHeightToWidthRatio = 9.0f / 8.0f;
+        float graphEditorHeightToWidthRatio = float(Project::NUM_VISIBLE_PROCESSOR_SLOTS) / Project::NUM_VISIBLE_TRACKS;
 
-        graphEditorWindow->setBoundsRelative(0.5, 0.25, 0.4, 0.5);
+        graphEditorWindow->setBoundsRelative(0.5, 0.1, 0.4, 0.5);
         graphEditorWindow->setSize(graphEditorWindow->getWidth(), int(graphEditorWindow->getWidth() * graphEditorHeightToWidthRatio));
         push2Window->setBounds(treeWindow->getPosition().x, treeWindow->getPosition().y - Push2Display::HEIGHT - graphEditorWindow->getTitleBarHeight(),
                                Push2Display::WIDTH, Push2Display::HEIGHT + graphEditorWindow->getTitleBarHeight());
@@ -63,6 +67,7 @@ public:
         push2Window = nullptr;
         treeWindow = nullptr;
         deviceManager.removeAudioCallback(&player);
+        deviceManager.removeMidiInputCallback(String(), &player.getMidiMessageCollector());
         Utilities::saveValueTree(project.getState(), getSaveFile(), true);
         setMacMainMenu(nullptr);
     }
@@ -93,7 +98,7 @@ public:
             menu.addItem(1, "Change the audio device settings");
             menu.addItem(2, "Edit the list of available plugins");
 
-            const auto& pluginSortMethod = processorIds.getPluginSortMethod();
+            const auto& pluginSortMethod = processorManager.getPluginSortMethod();
 
             PopupMenu sortTypeMenu;
             sortTypeMenu.addItem(200, "List plugins in default order",      true, pluginSortMethod == KnownPluginList::defaultOrder);
@@ -114,13 +119,13 @@ public:
             } else if (menuItemID == 2) {
                 showPluginList();
             } else if (menuItemID >= 200 && menuItemID < 210) {
-                if (menuItemID == 200) processorIds.setPluginSortMethod(KnownPluginList::defaultOrder);
-                else if (menuItemID == 201) processorIds.setPluginSortMethod(KnownPluginList::sortAlphabetically);
-                else if (menuItemID == 202) processorIds.setPluginSortMethod(KnownPluginList::sortByCategory);
-                else if (menuItemID == 203) processorIds.setPluginSortMethod(KnownPluginList::sortByManufacturer);
-                else if (menuItemID == 204) processorIds.setPluginSortMethod(KnownPluginList::sortByFileSystemLocation);
+                if (menuItemID == 200) processorManager.setPluginSortMethod(KnownPluginList::defaultOrder);
+                else if (menuItemID == 201) processorManager.setPluginSortMethod(KnownPluginList::sortAlphabetically);
+                else if (menuItemID == 202) processorManager.setPluginSortMethod(KnownPluginList::sortByCategory);
+                else if (menuItemID == 203) processorManager.setPluginSortMethod(KnownPluginList::sortByManufacturer);
+                else if (menuItemID == 204) processorManager.setPluginSortMethod(KnownPluginList::sortByFileSystemLocation);
 
-                processorIds.getApplicationProperties().getUserSettings()->setValue("pluginSortMethod", (int) processorIds.getPluginSortMethod());
+                processorManager.getApplicationProperties().getUserSettings()->setValue("pluginSortMethod", (int) processorManager.getPluginSortMethod());
                 menuItemsChanged();
             }
         }
@@ -166,7 +171,7 @@ public:
     };
 
 private:
-    ProcessorManager processorIds;
+    ProcessorManager processorManager;
 
     std::unique_ptr<MainWindow> treeWindow, push2Window, graphEditorWindow;
     std::unique_ptr<AudioDeviceSelectorComponent> audioDeviceSelectorComponent;
@@ -195,8 +200,12 @@ private:
         o.resizable = true;
 
         auto *w = o.create();
-        // TODO handle load/save of audio settings state in callback (like plugin host example)
-        w->enterModalState(true, ModalCallbackFunction::create([this](int) {}), true);
+        w->enterModalState(true, ModalCallbackFunction::create([this](int) {
+            std::unique_ptr<XmlElement> audioState(deviceManager.createStateXml());
+            processorManager.getApplicationProperties().getUserSettings()->setValue("audioDeviceState", audioState.get());
+            processorManager.getApplicationProperties().getUserSettings()->saveIfNeeded();
+            processorGraph.removeIllegalConnections();
+        }), true);
     }
 
     void showPluginList() {

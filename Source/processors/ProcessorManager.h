@@ -18,8 +18,7 @@ public:
         if (savedPluginList != nullptr) {
             knownPluginListExternal.recreateFromXml(*savedPluginList);
         }
-        
-        InternalPluginFormat internalFormat;
+
         internalFormat.getAllTypes(internalTypes);
         for (auto* pluginType : internalTypes) {
             knownPluginListInternal.addType(*pluginType);
@@ -46,22 +45,12 @@ public:
         return description != nullptr ? description : knownPluginListExternal.getTypeForIdentifierString(identifier);
     }
 
-    PluginDescription *getAudioInputDescription() {
-        for (auto *internalType : internalTypes) {
-            if (internalType->name.equalsIgnoreCase("audio input"))
-                return internalType;
-        }
-        jassert(false);
-        return nullptr;
+    PluginDescription &getAudioInputDescription() {
+        return internalFormat.audioInDesc;
     }
 
-    PluginDescription *getAudioOutputDescription() {
-        for (auto *internalType : internalTypes) {
-            if (internalType->name.equalsIgnoreCase("audio output"))
-                return internalType;
-        }
-        jassert(false);
-        return nullptr;
+    PluginDescription &getAudioOutputDescription() {
+        return internalFormat.audioOutDesc;
     }
 
     KnownPluginList& getKnownPluginListExternal() {
@@ -109,6 +98,7 @@ public:
 private:
     const String PLUGIN_LIST_FILE_NAME = "pluginList";
 
+    InternalPluginFormat internalFormat;
     KnownPluginList knownPluginListExternal;
     KnownPluginList knownPluginListInternal;
     

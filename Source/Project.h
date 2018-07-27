@@ -189,20 +189,20 @@ public:
         Helpers::createUuidProperty(state);
 
         input = ValueTree(IDs::INPUT);
-        PluginDescription *audioInputDescription = processorManager.getAudioInputDescription();
+        PluginDescription &audioInputDescription = processorManager.getAudioInputDescription();
         ValueTree inputProcessor(IDs::PROCESSOR);
         Helpers::createUuidProperty(inputProcessor);
-        inputProcessor.setProperty(IDs::id, audioInputDescription->createIdentifierString(), nullptr);
-        inputProcessor.setProperty(IDs::name, audioInputDescription->name, nullptr);
+        inputProcessor.setProperty(IDs::id, audioInputDescription.createIdentifierString(), nullptr);
+        inputProcessor.setProperty(IDs::name, audioInputDescription.name, nullptr);
         input.addChild(inputProcessor, -1, nullptr);
         state.addChild(input, -1, nullptr);
 
         output = ValueTree(IDs::OUTPUT);
-        PluginDescription *audioOutputDescription = processorManager.getAudioOutputDescription();
+        PluginDescription &audioOutputDescription = processorManager.getAudioOutputDescription();
         ValueTree outputProcessor(IDs::PROCESSOR);
         Helpers::createUuidProperty(outputProcessor);
-        outputProcessor.setProperty(IDs::id, audioOutputDescription->createIdentifierString(), nullptr);
-        outputProcessor.setProperty(IDs::name, audioOutputDescription->name, nullptr);
+        outputProcessor.setProperty(IDs::id, audioOutputDescription.createIdentifierString(), nullptr);
+        outputProcessor.setProperty(IDs::name, audioOutputDescription.name, nullptr);
         output.addChild(outputProcessor, -1, nullptr);
         state.addChild(output, -1, nullptr);
 
