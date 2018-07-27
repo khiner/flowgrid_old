@@ -196,7 +196,7 @@ public:
     }
 
     bool removeConnection(const Connection& c) override {
-        return project.removeConnection(c, getDragDependentUndoManager());
+        return project.removeConnection(c, getDragDependentUndoManager(), false);
     }
 
     bool addDefaultConnection(const Connection& c) {
@@ -208,20 +208,12 @@ public:
     }
 
     bool removeDefaultConnection(const Connection& c) {
-        return project.removeDefaultConnection(c, getDragDependentUndoManager());
+        return project.removeConnection(c, getDragDependentUndoManager(), true);
     }
 
     // only called when removing a node. we want to make sure we don't use the undo manager for these connection removals.
     bool disconnectNode(NodeID nodeId) override {
-        const auto& processor = getProcessorWrapperForNodeId(nodeId)->state;
-        removeDefaultConnections(processor);
-
-        const Array<ValueTree> remainingConnections = project.getConnectionsForNode(getNodeIdForState(processor));
-        if (!remainingConnections.isEmpty()) {
-            for (const auto &c : remainingConnections)
-                project.removeConnection(c, &undoManager);
-        }
-        return false;
+        return doDisconnectNode(nodeId, false);
     }
 
     bool removeNode(NodeID nodeId) override  {
@@ -253,6 +245,20 @@ private:
 
     inline UndoManager* getDragDependentUndoManager() {
         return currentlyDraggingNodeId == NA_NODE_ID ? &undoManager : nullptr;
+    }
+
+    bool doDisconnectNode(NodeID nodeId, bool defaultOnly) {
+        const Array<ValueTree> connections = project.getConnectionsForNode(nodeId);
+        bool anyRemoved = false;
+        for (const auto &connection : connections)
+            if (project.removeConnection(connection, &undoManager, defaultOnly)) {
+                anyRemoved = true;
+                NodeID sourceNodeId = getNodeIdForState(connection.getChildWithName(IDs::SOURCE));
+                NodeID destinationNodeId = getNodeIdForState(connection.getChildWithName(IDs::DESTINATION));
+                neighborsOfLastRemovedProcessor.add(sourceNodeId == nodeId ? destinationNodeId : sourceNodeId);
+            }
+
+        return anyRemoved;
     }
 
     void recursivelyInitializeWithState(const ValueTree &state, bool connections=false) {
@@ -297,34 +303,7 @@ private:
     };
 
     void removeDefaultConnections(const ValueTree &processor) {
-        const NeighborNodes &neighbors = findNeighborProcessors(processor);
-        neighborsOfLastRemovedProcessor.addArray(neighbors.before);
-        neighborsOfLastRemovedProcessor.add(neighbors.after);
-
-        auto nodeId = getNodeIdForState(processor);
-        for (int channel = 0; channel < 2; ++channel) {
-            removeDefaultConnection({{nodeId, channel}, {neighbors.after, channel}});
-        }
-
-        if (!neighbors.before.isEmpty()) {
-            for (auto before : neighbors.before) {
-                for (int channel = 0; channel < 2; ++channel) {
-                    removeDefaultConnection({{before, channel}, {nodeId, channel}});
-                }
-            }
-        } else if (processor.getParent().hasType(IDs::MASTER_TRACK)) {
-            // first processor in master track receives connections from the last processor of every track
-            for (int i = 0; i < project.getNumTracks(); i++) {
-                const ValueTree lastProcessor = getLastProcessorInTrack(project.getTrack(i));
-                if (lastProcessor.isValid()) {
-                    NodeID lastProcessorNodeId = getNodeIdForState(lastProcessor);
-                    for (int channel = 0; channel < 2; ++channel) {
-                        removeDefaultConnection({{lastProcessorNodeId, channel}, {nodeId, channel}});
-                        addDefaultConnection({{lastProcessorNodeId, channel}, {neighbors.after, channel}});
-                    }
-                }
-            }
-        }
+        doDisconnectNode(getNodeIdForState(processor), true);
     }
 
     void addDefaultConnections(const ValueTree &processor) {

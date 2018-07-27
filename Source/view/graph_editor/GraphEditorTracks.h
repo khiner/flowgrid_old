@@ -93,7 +93,6 @@ public:
     }
     
     Point<int> trackAndSlotAt(const MouseEvent &e) {
-        const Point<int> &position = e.getEventRelativeTo(this).getPosition();
         for (auto* track : objects) {
             if (track->contains(e.getEventRelativeTo(track).getPosition())) {
                 return { track->getTrackIndex(), track->findSlotAt(e) };
