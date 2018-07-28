@@ -12,8 +12,8 @@ struct GraphEditorConnector : public Component, public SettableTooltipClient {
         if (this->state.isValid()) {
             const ValueTree &source = state.getChildWithName(IDs::SOURCE);
             const ValueTree &destination = state.getChildWithName(IDs::DESTINATION);
-            connection = {{ProcessorGraph::getNodeIdForState(source), source[IDs::CHANNEL]},
-                          {ProcessorGraph::getNodeIdForState(destination), destination[IDs::CHANNEL]}};
+            connection = {{ProcessorGraph::getNodeIdForState(source), source[IDs::channel]},
+                          {ProcessorGraph::getNodeIdForState(destination), destination[IDs::channel]}};
         }
     }
     
@@ -22,7 +22,7 @@ struct GraphEditorConnector : public Component, public SettableTooltipClient {
     }
 
     bool isCustom() const {
-        return !state.isValid() || state[IDs::CUSTOM_CONNECTION];
+        return !state.isValid() || state[IDs::isCustomConnection];
     }
 
     void setInput(AudioProcessorGraph::NodeAndChannel newSource) {

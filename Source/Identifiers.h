@@ -6,9 +6,6 @@ namespace IDs
 {
     #define DECLARE_ID(name) const juce::Identifier name (#name);
 
-    DECLARE_ID (TREE)
-    DECLARE_ID (pi)
-
     DECLARE_ID(PARAM)
     DECLARE_ID(value)
     DECLARE_ID(id)
@@ -19,24 +16,22 @@ namespace IDs
 
     DECLARE_ID(MASTER_TRACK)
 
-    DECLARE_ID(freq_1)
+    DECLARE_ID(PROJECT)
+    DECLARE_ID(uuid)
+    DECLARE_ID(mediaId)
 
-    DECLARE_ID (PROJECT)
-    DECLARE_ID (uuid)
-    DECLARE_ID (mediaId)
-
-    DECLARE_ID (TRACK)
-    DECLARE_ID (colour)
-    DECLARE_ID (name)
-    DECLARE_ID (image)
-    DECLARE_ID (selected)
+    DECLARE_ID(TRACK)
+    DECLARE_ID(colour)
+    DECLARE_ID(name)
+    DECLARE_ID(image)
+    DECLARE_ID(selected)
 
     DECLARE_ID(PROCESSOR)
-    DECLARE_ID(PROCESSOR_SLOT)
-    DECLARE_ID(NODE_ID)
-    DECLARE_ID(BYPASSED)
-    DECLARE_ID(NUM_INPUT_CHANNELS)
-    DECLARE_ID(NUM_OUTPUT_CHANNELS)
+    DECLARE_ID(processorSlot)
+    DECLARE_ID(nodeId)
+    DECLARE_ID(bypassed)
+    DECLARE_ID(numInputChannels)
+    DECLARE_ID(numOutputChannels)
 
     DECLARE_ID(PARAM_NA)
 
@@ -44,8 +39,8 @@ namespace IDs
     DECLARE_ID(CONNECTION)
     DECLARE_ID(SOURCE)
     DECLARE_ID(DESTINATION)
-    DECLARE_ID(CHANNEL)
-    DECLARE_ID(CUSTOM_CONNECTION)
+    DECLARE_ID(channel)
+    DECLARE_ID(isCustomConnection)
 
     #undef DECLARE_ID
 }

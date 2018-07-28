@@ -11,7 +11,7 @@
 class ProcessorGraph : public AudioProcessorGraph, private ValueTree::Listener, private ProjectChangeListener {
 public:
     explicit ProcessorGraph(Project &project, UndoManager &undoManager)
-            : project(project), undoManager(undoManager) {
+            : undoManager(undoManager), project(project) {
         enableAllBuses();
 
         project.getState().addListener(this);
@@ -45,7 +45,7 @@ public:
     }
 
     static const NodeID getNodeIdForState(const ValueTree &processorState) {
-        return processorState.isValid() ? NodeID(int(processorState[IDs::NODE_ID])) : NA_NODE_ID;
+        return processorState.isValid() ? NodeID(int(processorState[IDs::nodeId])) : NA_NODE_ID;
     }
 
     Node* getNodeForState(const ValueTree &processorState) const {
@@ -143,12 +143,12 @@ public:
 
     void moveProcessor(ValueTree &processorState, int toTrackIndex, int toSlot) {
         const ValueTree &toTrack = project.getTrack(toTrackIndex);
-        int fromSlot = processorState[IDs::PROCESSOR_SLOT];
+        int fromSlot = processorState[IDs::processorSlot];
         if (fromSlot == toSlot && processorState.getParent() == toTrack)
             return;
 
         processorWillBeMoved(processorState, toTrack);
-        processorState.setProperty(IDs::PROCESSOR_SLOT, toSlot, getDragDependentUndoManager());
+        processorState.setProperty(IDs::processorSlot, toSlot, getDragDependentUndoManager());
         const int insertIndex = project.getParentIndexForProcessor(toTrack, processorState, getDragDependentUndoManager());
         Helpers::moveSingleItem(processorState, toTrack, insertIndex, getDragDependentUndoManager());
         processorHasMoved(processorState, toTrack);
@@ -290,11 +290,11 @@ private:
         auto *processorWrapper = new StatefulAudioProcessorWrapper(processor, processorState, undoManager);
         processerWrappers.add(processorWrapper);
 
-        const Node::Ptr &newNode = processorState.hasProperty(IDs::NODE_ID) ?
+        const Node::Ptr &newNode = processorState.hasProperty(IDs::nodeId) ?
                                    addNode(processor, getNodeIdForState(processorState)) :
                                    addNode(processor);
-        processorWrapper->state.setProperty(IDs::NODE_ID, int(newNode->nodeID), nullptr);
-        processorWrapper->state.sendPropertyChangeMessage(IDs::BYPASSED);
+        processorWrapper->state.setProperty(IDs::nodeId, int(newNode->nodeID), nullptr);
+        processorWrapper->state.sendPropertyChangeMessage(IDs::bypassed);
 
         if (!initializing) {
             const Array<ValueTree> &nodeConnections = project.getConnectionsForNode(newNode->nodeID);
@@ -364,18 +364,18 @@ private:
     }
 
     const ValueTree getFirstProcessorBelowOrToRightAndBelow(const ValueTree &parent, const ValueTree &processor) {
-        if (!processor.hasType(IDs::PROCESSOR) || int(processor[IDs::NUM_OUTPUT_CHANNELS]) <= 0 || processor == project.getMixerChannelProcessorForTrack(project.getMasterTrack()))
+        if (!processor.hasType(IDs::PROCESSOR) || int(processor[IDs::numOutputChannels]) <= 0 || processor == project.getMixerChannelProcessorForTrack(project.getMasterTrack()))
             return {};
 
-        int slot = processor[IDs::PROCESSOR_SLOT];
+        int slot = processor[IDs::processorSlot];
 
         int siblingDelta = 0;
         ValueTree siblingParent;
         while ((siblingParent = parent.getSibling(siblingDelta++)).isValid()) {
             for (const auto &otherProcessor : siblingParent) {
-                if (!otherProcessor.hasType(IDs::PROCESSOR) || processor == otherProcessor || (int(otherProcessor[IDs::NUM_INPUT_CHANNELS]) <= 0 && siblingParent != parent))
+                if (!otherProcessor.hasType(IDs::PROCESSOR) || processor == otherProcessor || (int(otherProcessor[IDs::numInputChannels]) <= 0 && siblingParent != parent))
                     continue;
-                int otherSlot = otherProcessor[IDs::PROCESSOR_SLOT];
+                int otherSlot = otherProcessor[IDs::processorSlot];
                 if (otherSlot > slot ||
                     (parent.indexOf(processor) == parent.getNumChildren() - 1 && otherProcessor == getFirstMasterTrackProcessorWithInputs()))
                     return otherProcessor;
@@ -386,7 +386,7 @@ private:
 
     const ValueTree getFirstMasterTrackProcessorWithInputs() {
         for (const auto processor : project.getMasterTrack()) {
-            if (processor.hasType(IDs::PROCESSOR) && int(processor.getProperty(IDs::NUM_INPUT_CHANNELS)) > 0) {
+            if (processor.hasType(IDs::PROCESSOR) && int(processor.getProperty(IDs::numInputChannels)) > 0) {
                 return processor;
             }
         }
@@ -395,12 +395,12 @@ private:
 
     void valueTreePropertyChanged(ValueTree& tree, const Identifier& property) override {
         if (tree.hasType(IDs::PROCESSOR)) {
-            if (property == IDs::PROCESSOR_SLOT) {
-            } else if (property == IDs::BYPASSED) {
+            if (property == IDs::processorSlot) {
+            } else if (property == IDs::bypassed) {
                 if (auto node = getNodeForState(tree)) {
-                    node->setBypassed(tree[IDs::BYPASSED]);
+                    node->setBypassed(tree[IDs::bypassed]);
                 }
-            } else if (property == IDs::NUM_INPUT_CHANNELS || property == IDs::NUM_OUTPUT_CHANNELS) {
+            } else if (property == IDs::numInputChannels || property == IDs::numOutputChannels) {
                 removeIllegalConnections();
             }
         }
@@ -425,8 +425,8 @@ private:
 
                 if (auto *source = getNodeForState(sourceState)) {
                     if (auto *dest = getNodeForState(destState)) {
-                        int destChannel = destState[IDs::CHANNEL];
-                        int sourceChannel = sourceState[IDs::CHANNEL];
+                        int destChannel = destState[IDs::channel];
+                        int sourceChannel = sourceState[IDs::channel];
 
                         source->outputs.add({dest, destChannel, sourceChannel});
                         dest->inputs.add({source, sourceChannel, destChannel});
@@ -461,8 +461,8 @@ private:
 
                 if (auto *source = getNodeForState(sourceState)) {
                     if (auto *dest = getNodeForState(destState)) {
-                        int destChannel = destState[IDs::CHANNEL];
-                        int sourceChannel = sourceState[IDs::CHANNEL];
+                        int destChannel = destState[IDs::channel];
+                        int sourceChannel = sourceState[IDs::channel];
 
                         source->outputs.removeAllInstancesOf({dest, destChannel, sourceChannel});
                         dest->inputs.removeAllInstancesOf({source, sourceChannel, destChannel});

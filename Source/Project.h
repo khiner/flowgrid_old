@@ -29,7 +29,7 @@ public:
     Array<ValueTree> getConnectionsForNode(AudioProcessorGraph::NodeID nodeId) {
         Array<ValueTree> nodeConnections;
         for (const auto& connection : connections) {
-            if (connection.getChildWithProperty(IDs::NODE_ID, int(nodeId)).isValid()) {
+            if (connection.getChildWithProperty(IDs::nodeId, int(nodeId)).isValid()) {
                 nodeConnections.add(connection);
             }
         }
@@ -74,10 +74,10 @@ public:
         for (auto connectionState : connections) {
             auto sourceState = connectionState.getChildWithName(IDs::SOURCE);
             auto destState = connectionState.getChildWithName(IDs::DESTINATION);
-            if (AudioProcessorGraph::NodeID(int(sourceState[IDs::NODE_ID])) == connection.source.nodeID &&
-                AudioProcessorGraph::NodeID(int(destState[IDs::NODE_ID])) == connection.destination.nodeID &&
-                int(sourceState[IDs::CHANNEL]) == connection.source.channelIndex &&
-                int(destState[IDs::CHANNEL]) == connection.destination.channelIndex) {
+            if (AudioProcessorGraph::NodeID(int(sourceState[IDs::nodeId])) == connection.source.nodeID &&
+                AudioProcessorGraph::NodeID(int(destState[IDs::nodeId])) == connection.destination.nodeID &&
+                int(sourceState[IDs::channel]) == connection.source.channelIndex &&
+                int(destState[IDs::channel]) == connection.destination.channelIndex) {
                 return connectionState;
             }
         }
@@ -89,25 +89,25 @@ public:
     void addConnection(const AudioProcessorGraph::Connection &connection, UndoManager* undoManager, bool isDefault=true) {
         ValueTree connectionState(IDs::CONNECTION);
         ValueTree source(IDs::SOURCE);
-        source.setProperty(IDs::NODE_ID, int(connection.source.nodeID), nullptr);
-        source.setProperty(IDs::CHANNEL, connection.source.channelIndex, nullptr);
+        source.setProperty(IDs::nodeId, int(connection.source.nodeID), nullptr);
+        source.setProperty(IDs::channel, connection.source.channelIndex, nullptr);
         connectionState.addChild(source, -1, nullptr);
 
         ValueTree destination(IDs::DESTINATION);
-        destination.setProperty(IDs::NODE_ID, int(connection.destination.nodeID), nullptr);
-        destination.setProperty(IDs::CHANNEL, connection.destination.channelIndex, nullptr);
+        destination.setProperty(IDs::nodeId, int(connection.destination.nodeID), nullptr);
+        destination.setProperty(IDs::channel, connection.destination.channelIndex, nullptr);
         connectionState.addChild(destination, -1, nullptr);
 
         if (!isDefault) {
-            connectionState.setProperty(IDs::CUSTOM_CONNECTION, true, nullptr);
+            connectionState.setProperty(IDs::isCustomConnection, true, nullptr);
         }
         connections.addChild(connectionState, -1, undoManager);
     }
 
     bool removeConnection(const ValueTree& connection, UndoManager* undoManager, bool defaults, bool custom) {
         if (connection.isValid() &&
-            ((custom && connection.hasProperty(IDs::CUSTOM_CONNECTION)) ||
-             (defaults && !connection.hasProperty(IDs::CUSTOM_CONNECTION)))) {
+            ((custom && connection.hasProperty(IDs::isCustomConnection)) ||
+             (defaults && !connection.hasProperty(IDs::isCustomConnection)))) {
             connections.removeChild(connection, undoManager);
             return true;
         }
@@ -129,7 +129,7 @@ public:
         for (auto track : tracks) {
             for (auto child : track) {
                 if (child.hasType(IDs::PROCESSOR)) {
-                    slotForNodeIdSnapshot.insert(std::__1::pair<int, int>(child[IDs::NODE_ID], child[IDs::PROCESSOR_SLOT]));
+                    slotForNodeIdSnapshot.insert(std::__1::pair<int, int>(child[IDs::nodeId], child[IDs::processorSlot]));
                 }
             }
         }
@@ -143,7 +143,7 @@ public:
         for (const auto& track : tracks) {
             for (auto child : track) {
                 if (child.hasType(IDs::PROCESSOR)) {
-                    child.setProperty(IDs::PROCESSOR_SLOT, slotForNodeIdSnapshot.at(int(child[IDs::NODE_ID])), nullptr);
+                    child.setProperty(IDs::processorSlot, slotForNodeIdSnapshot.at(int(child[IDs::nodeId])), nullptr);
                 }
             }
         }
@@ -291,17 +291,17 @@ public:
         if (description.name == MixerChannelProcessor::getIdentifier()) {
             insertIndex = -1;
             slot = NUM_AVAILABLE_PROCESSOR_SLOTS - 1;
-            processor.setProperty(IDs::PROCESSOR_SLOT, slot, nullptr);
+            processor.setProperty(IDs::processorSlot, slot, nullptr);
         } else if (slot == -1) {
             // Insert new processors _right before_ the first g&b processor, or at the end if there isn't one.
             insertIndex = getMaxProcessorInsertIndex(track);
             slot = 0;
             if (track.getNumChildren() > 1) {
-                slot = int(track.getChild(track.getNumChildren() - 2)[IDs::PROCESSOR_SLOT]) + 1;
+                slot = int(track.getChild(track.getNumChildren() - 2)[IDs::processorSlot]) + 1;
             }
-            processor.setProperty(IDs::PROCESSOR_SLOT, slot, nullptr);
+            processor.setProperty(IDs::processorSlot, slot, nullptr);
         } else {
-            processor.setProperty(IDs::PROCESSOR_SLOT, slot, nullptr);
+            processor.setProperty(IDs::processorSlot, slot, nullptr);
             insertIndex = getParentIndexForProcessor(track, processor, nullptr);
         }
 
@@ -328,7 +328,7 @@ public:
     }
 
     AudioProcessorGraph::NodeID getAudioOutputNodeId() const {
-        return AudioProcessorGraph::NodeID(int(getAudioOutputProcessorState()[IDs::NODE_ID]));
+        return AudioProcessorGraph::NodeID(int(getAudioOutputProcessorState()[IDs::nodeId]));
     }
 
     const bool selectedTrackHasMixerChannel() const {
@@ -344,7 +344,7 @@ public:
         std::__1::vector<int> slots;
         for (const ValueTree& child : parent) {
             if (child.hasType(IDs::PROCESSOR)) {
-                slots.push_back(int(child[IDs::PROCESSOR_SLOT]));
+                slots.push_back(int(child[IDs::processorSlot]));
             }
         }
         sort(slots.begin(), slots.end());
@@ -357,28 +357,28 @@ public:
         auto iterator = slots.begin();
         for (ValueTree child : parent) {
             if (child.hasType(IDs::PROCESSOR)) {
-                child.setProperty(IDs::PROCESSOR_SLOT, *(iterator++), undoManager);
+                child.setProperty(IDs::processorSlot, *(iterator++), undoManager);
             }
         }
     }
 
     int getParentIndexForProcessor(const ValueTree &parent, const ValueTree &processorState, UndoManager* undoManager) {
-        auto slot = int(processorState[IDs::PROCESSOR_SLOT]);
+        auto slot = int(processorState[IDs::processorSlot]);
         for (ValueTree otherProcessorState : parent) {
             if (processorState == otherProcessorState)
                 continue;
             if (otherProcessorState.hasType(IDs::PROCESSOR)) {
-                auto otherSlot = int(otherProcessorState[IDs::PROCESSOR_SLOT]);
+                auto otherSlot = int(otherProcessorState[IDs::processorSlot]);
                 if (otherSlot == slot) {
                     if (otherProcessorState.getParent() == processorState.getParent()) {
                         // moving within same parent - need to resolve the "tie" in a way that guarantees the child order changes.
                         int currentIndex = parent.indexOf(processorState);
                         int currentOtherIndex = parent.indexOf(otherProcessorState);
                         if (currentIndex < currentOtherIndex) {
-                            otherProcessorState.setProperty(IDs::PROCESSOR_SLOT, otherSlot - 1, undoManager);
+                            otherProcessorState.setProperty(IDs::processorSlot, otherSlot - 1, undoManager);
                             return currentIndex + 2;
                         } else {
-                            otherProcessorState.setProperty(IDs::PROCESSOR_SLOT, otherSlot + 1, undoManager);
+                            otherProcessorState.setProperty(IDs::processorSlot, otherSlot + 1, undoManager);
                             return currentIndex - 1;
                         }
                     } else {

@@ -169,8 +169,8 @@ private:
 
     void valueTreePropertyChanged(ValueTree& tree, const Identifier& i) override {
         if (tree.hasType(IDs::PROCESSOR)) {
-            if (i == IDs::PROCESSOR_SLOT || i == IDs::selected ||
-                i == IDs::NUM_INPUT_CHANNELS || i == IDs::NUM_OUTPUT_CHANNELS) {
+            if (i == IDs::processorSlot || i == IDs::selected ||
+                i == IDs::numInputChannels || i == IDs::numOutputChannels) {
                 updateComponents();
             }
         }

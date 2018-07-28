@@ -164,8 +164,8 @@ struct Parameter : public AudioProcessorParameterWithID, private Utilities::Valu
             parameters.add(parameterWrapper);
         }
 
-        state.setProperty(IDs::NUM_INPUT_CHANNELS, processor->getTotalNumInputChannels(), &undoManager);
-        state.setProperty(IDs::NUM_OUTPUT_CHANNELS, processor->getTotalNumOutputChannels(), &undoManager);
+        state.setProperty(IDs::numInputChannels, processor->getTotalNumInputChannels(), &undoManager);
+        state.setProperty(IDs::numOutputChannels, processor->getTotalNumOutputChannels(), &undoManager);
     }
 
     ValueTree getOrCreateChildValueTree(const String& paramID) {
@@ -217,8 +217,8 @@ private:
         MessageManager::callAsync([this, processor] {
             if (processor != nullptr) {
                 // TODO should we use UndoManager and also support _setting_ playConfigDetails on state change?
-                state.setProperty(IDs::NUM_INPUT_CHANNELS, processor->getTotalNumInputChannels(), nullptr);
-                state.setProperty(IDs::NUM_OUTPUT_CHANNELS, processor->getTotalNumOutputChannels(), nullptr);
+                state.setProperty(IDs::numInputChannels, processor->getTotalNumInputChannels(), nullptr);
+                state.setProperty(IDs::numOutputChannels, processor->getTotalNumOutputChannels(), nullptr);
             }
         });
     }

@@ -24,15 +24,15 @@ public:
     }
 
     int getSlot() const {
-        return state[IDs::PROCESSOR_SLOT];
+        return state[IDs::processorSlot];
     }
 
     int getNumInputChannels() {
-        return state[IDs::NUM_INPUT_CHANNELS];
+        return state[IDs::numInputChannels];
     }
 
     int getNumOutputChannels() {
-        return state[IDs::NUM_OUTPUT_CHANNELS];
+        return state[IDs::numOutputChannels];
     }
 
     void paint(Graphics &g) override {
@@ -46,7 +46,7 @@ public:
 
         auto boxColour = findColour(TextEditor::backgroundColourId);
 
-        if (state[IDs::BYPASSED])
+        if (state[IDs::bypassed])
             boxColour = boxColour.brighter();
         else if (selected)
             boxColour = boxColour.brighter(0.02);
@@ -196,7 +196,7 @@ public:
                             graph.removeNode(getNodeId());
                             break;
                         case TOGGLE_BYPASS_MENU_ID:
-                            state.setProperty(IDs::BYPASSED, !state.getProperty(IDs::BYPASSED), &graph.undoManager);
+                            state.setProperty(IDs::bypassed, !state.getProperty(IDs::bypassed), &graph.undoManager);
                             break;
                         case CONNECT_DEFAULTS_MENU_ID:
                             graph.connectDefaults(getNodeId());
@@ -252,7 +252,7 @@ private:
         if (v != state)
             return;
 
-        if (i == IDs::BYPASSED) {
+        if (i == IDs::bypassed) {
             repaint();
         }
     }

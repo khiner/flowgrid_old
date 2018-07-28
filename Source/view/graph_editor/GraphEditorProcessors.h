@@ -134,7 +134,7 @@ private:
 
     void valueTreePropertyChanged(ValueTree &v, const Identifier &i) override {
         if (isSuitableType(v))
-            if (i == IDs::PROCESSOR_SLOT)
+            if (i == IDs::processorSlot)
                 resized();
 
         Utilities::ValueTreeObjectList<GraphEditorProcessor>::valueTreePropertyChanged(v, i);
