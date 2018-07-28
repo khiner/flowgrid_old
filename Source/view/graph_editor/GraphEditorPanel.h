@@ -5,12 +5,15 @@
 #include "GraphEditorTracks.h"
 #include "GraphEditorConnectors.h"
 
-class GraphEditorPanel : public Component, public ChangeListener, public ConnectorDragListener, public GraphEditorProcessorContainer {
+class GraphEditorPanel
+        : public Component, public ConnectorDragListener, public GraphEditorProcessorContainer,
+          private ValueTree::Listener {
 public:
     GraphEditorPanel(ProcessorGraph &g, Project &project)
             : graph(g), project(project) {
-        graph.addChangeListener(this);
         setOpaque(true);
+
+        project.getState().addListener(this);
 
         addAndMakeVisible(*(audioInputProcessor = std::make_unique<GraphEditorProcessor>(project.getAudioInputProcessorState(), *this, graph)));
         addAndMakeVisible(*(audioOutputProcessor = std::make_unique<GraphEditorProcessor>(project.getAudioOutputProcessorState(), *this, graph)));
@@ -19,7 +22,6 @@ public:
     }
 
     ~GraphEditorPanel() override {
-        graph.removeChangeListener(this);
         draggingConnector = nullptr;
     }
 
@@ -33,10 +35,6 @@ public:
         audioInputProcessor->setBounds(r.removeFromTop(int(getHeight() * 1.0 / Project::NUM_VISIBLE_PROCESSOR_SLOTS)));
         tracks->setBounds(r.withHeight(getHeight() * Project::NUM_AVAILABLE_PROCESSOR_SLOTS / (Project::NUM_VISIBLE_PROCESSOR_SLOTS - 1)));
         audioOutputProcessor->setBounds(r.removeFromBottom(int(getHeight() * 1.0 / Project::NUM_VISIBLE_PROCESSOR_SLOTS)));
-        updateComponents();
-    }
-
-    void changeListenerCallback(ChangeBroadcaster *) override {
         updateComponents();
     }
 
@@ -168,6 +166,41 @@ private:
         }
         return tracks->findPinAt(e);
     }
+
+    void valueTreePropertyChanged(ValueTree& tree, const Identifier& i) override {
+        if (tree.hasType(IDs::PROCESSOR)) {
+            if (i == IDs::PROCESSOR_SLOT || i == IDs::selected ||
+                i == IDs::NUM_INPUT_CHANNELS || i == IDs::NUM_OUTPUT_CHANNELS) {
+                updateComponents();
+            }
+        }
+    }
+
+    void valueTreeChildAdded(ValueTree& parent, ValueTree& child) override {
+        if (child.hasType(IDs::PROCESSOR)) {
+            updateComponents();
+        } else if (child.hasType(IDs::CONNECTION)) {
+            connectors->updateConnectors();
+        }
+    }
+
+    void valueTreeChildRemoved(ValueTree& parent, ValueTree& child, int indexFromWhichChildWasRemoved) override {
+        if (child.hasType(IDs::PROCESSOR)) {
+            updateComponents();
+        } else if (child.hasType(IDs::CONNECTION)) {
+            connectors->updateConnectors();
+        }
+    }
+
+    void valueTreeChildOrderChanged(ValueTree& parent, int oldIndex, int newIndex) override {
+        if (parent.hasType(IDs::TRACKS) || parent.hasType(IDs::TRACK)) {
+            updateComponents();
+        }
+    }
+
+    void valueTreeParentChanged(ValueTree& treeWhoseParentHasChanged) override {}
+
+    void valueTreeRedirected(ValueTree& treeWhichHasBeenChanged) override {}
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (GraphEditorPanel)
 };

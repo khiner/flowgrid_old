@@ -31,7 +31,6 @@ public:
         std::unique_ptr<XmlElement> savedAudioState(processorManager.getApplicationProperties().getUserSettings()->getXmlValue("audioDeviceState"));
         deviceManager.initialise(256, 256, savedAudioState.get(), true);
         player.setProcessor(&processorGraph);
-        deviceManager.addChangeListener(&processorGraph);
         deviceManager.addAudioCallback(&player);
         deviceManager.addMidiInputCallback(String(), &player.getMidiMessageCollector());
         deviceManager.sendChangeMessage();

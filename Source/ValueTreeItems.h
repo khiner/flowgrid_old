@@ -120,7 +120,7 @@ public:
         }
     }
 
-    ValueTree getState() const {
+    ValueTree& getState() {
         return state;
     }
 

@@ -8,14 +8,13 @@
 #include "processors/ProcessorManager.h"
 #include "Project.h"
 
-class ProcessorGraph : public AudioProcessorGraph, public ChangeListener, private ValueTree::Listener, private ProjectChangeListener {
+class ProcessorGraph : public AudioProcessorGraph, private ValueTree::Listener, private ProjectChangeListener {
 public:
     explicit ProcessorGraph(Project &project, UndoManager &undoManager)
             : project(project), undoManager(undoManager) {
         enableAllBuses();
 
-        project.getTracks().addListener(this);
-        project.getConnections().addListener(this);
+        project.getState().addListener(this);
         addProcessor(project.getAudioInputProcessorState());
         addProcessor(project.getAudioOutputProcessorState());
         recursivelyInitializeWithState(project.getMasterTrack());
@@ -30,7 +29,6 @@ public:
             recursivelyInitializeWithState(project.getTracks(), true);
         }
         this->project.addChangeListener(this);
-        this->addChangeListener(this);
         initializing = false;
     }
 
@@ -398,7 +396,6 @@ private:
     void valueTreePropertyChanged(ValueTree& tree, const Identifier& property) override {
         if (tree.hasType(IDs::PROCESSOR)) {
             if (property == IDs::PROCESSOR_SLOT) {
-                sendChangeMessage(); // TODO consider making GraphEditorPanel listen to state directly
             } else if (property == IDs::BYPASSED) {
                 if (auto node = getNodeForState(tree)) {
                     node->setBypassed(tree[IDs::BYPASSED]);
@@ -437,7 +434,6 @@ private:
                     }
                 }
             }
-            sendChangeMessage();
         }
     }
 
@@ -451,6 +447,11 @@ private:
                     }
                     nodes.removeObject(node);
                     topologyChanged();
+                }
+            }
+            for (int i = activePluginWindows.size(); --i >= 0;) {
+                if (!nodes.contains(activePluginWindows.getUnchecked(i)->node)) {
+                    activePluginWindows.remove(i);
                 }
             }
         } else if (child.hasType(IDs::CONNECTION)) {
@@ -469,18 +470,12 @@ private:
                     }
                 }
             }
-            sendChangeMessage();
         }
     }
 
-    void valueTreeChildOrderChanged(ValueTree& parent, int oldIndex, int newIndex) override {
-        if (parent.hasType(IDs::TRACKS) || parent.hasType(IDs::TRACK)) {
-            sendChangeMessage();
-        }
-    }
+    void valueTreeChildOrderChanged(ValueTree& parent, int oldIndex, int newIndex) override {}
 
-    void valueTreeParentChanged(ValueTree& treeWhoseParentHasChanged) override {
-    }
+    void valueTreeParentChanged(ValueTree& treeWhoseParentHasChanged) override {}
 
     void valueTreeRedirected(ValueTree& treeWhichHasBeenChanged) override {}
 
@@ -523,19 +518,7 @@ private:
         project.makeSlotsValid(newParent, getDragDependentUndoManager());
     };
     
-    void itemSelected(const ValueTree&) override {
-        sendChangeMessage();
-    };
+    void itemSelected(const ValueTree&) override {};
 
     void itemRemoved(const ValueTree&) override {};
-
-    void changeListenerCallback(ChangeBroadcaster* cb) override {
-        if (cb == this) {
-            for (int i = activePluginWindows.size(); --i >= 0;) {
-                if (!getNodes().contains(activePluginWindows.getUnchecked(i)->node)) {
-                    activePluginWindows.remove(i);
-                }
-            }
-        }
-    }
 };
