@@ -319,11 +319,11 @@ public:
         return getMixerChannelProcessorForTrack(getSelectedTrack());
     }
 
-    const ValueTree getAudioInputProcessorState() const {
+    ValueTree getAudioInputProcessorState() const {
         return input.getChildWithName(IDs::PROCESSOR);
     }
 
-    const ValueTree getAudioOutputProcessorState() const {
+    ValueTree getAudioOutputProcessorState() const {
         return output.getChildWithName(IDs::PROCESSOR);
     }
 

@@ -3,7 +3,7 @@
 #include <Utilities.h>
 #include "Identifiers.h"
 
-class StatefulAudioProcessorWrapper : private Timer {
+class StatefulAudioProcessorWrapper : private AudioProcessorListener, private Timer {
 public:
 struct Parameter : public AudioProcessorParameterWithID, private Utilities::ValueTreePropertyChangeListener, private AudioProcessorParameter::Listener {
     explicit Parameter(AudioProcessorParameter *parameter)
@@ -147,6 +147,7 @@ struct Parameter : public AudioProcessorParameterWithID, private Utilities::Valu
 
     StatefulAudioProcessorWrapper(AudioPluginInstance *processor, ValueTree state, UndoManager &undoManager) :
             processor(processor), state(std::move(state)), undoManager(undoManager) {
+        processor->addListener(this);
         processor->enableAllBuses();
         updateValueTree();
         startTimerHz(10);
@@ -205,8 +206,22 @@ struct Parameter : public AudioProcessorParameterWithID, private Utilities::Valu
 
     AudioPluginInstance *processor;
     ValueTree state;
+private:
     UndoManager &undoManager;
     OwnedArray<Parameter> parameters;
 
     CriticalSection valueTreeChanging;
+
+    void audioProcessorParameterChanged (AudioProcessor* processor, int parameterIndex, float newValue) override {}
+    void audioProcessorChanged (AudioProcessor* processor) override {
+        MessageManager::callAsync([this, processor] {
+            if (processor != nullptr) {
+                // TODO should we use UndoManager and also support _setting_ playConfigDetails on state change?
+                state.setProperty(IDs::NUM_INPUT_CHANNELS, processor->getTotalNumInputChannels(), nullptr);
+                state.setProperty(IDs::NUM_OUTPUT_CHANNELS, processor->getTotalNumOutputChannels(), nullptr);
+            }
+        });
+    }
+    void audioProcessorParameterChangeGestureBegin (AudioProcessor* processor, int parameterIndex) override {}
+    void audioProcessorParameterChangeGestureEnd (AudioProcessor* processor, int parameterIndex) override {}
 };

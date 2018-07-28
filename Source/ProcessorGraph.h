@@ -14,8 +14,8 @@ public:
             : project(project), undoManager(undoManager) {
         enableAllBuses();
 
-        this->project.getTracks().addListener(this);
-        this->project.getConnections().addListener(this);
+        project.getTracks().addListener(this);
+        project.getConnections().addListener(this);
         addProcessor(project.getAudioInputProcessorState());
         addProcessor(project.getAudioOutputProcessorState());
         recursivelyInitializeWithState(project.getMasterTrack());
@@ -398,11 +398,13 @@ private:
     void valueTreePropertyChanged(ValueTree& tree, const Identifier& property) override {
         if (tree.hasType(IDs::PROCESSOR)) {
             if (property == IDs::PROCESSOR_SLOT) {
-                sendChangeMessage(); // TODO get rid of?
+                sendChangeMessage(); // TODO consider making GraphEditorPanel listen to state directly
             } else if (property == IDs::BYPASSED) {
                 if (auto node = getNodeForState(tree)) {
                     node->setBypassed(tree[IDs::BYPASSED]);
                 }
+            } else if (property == IDs::NUM_INPUT_CHANNELS || property == IDs::NUM_OUTPUT_CHANNELS) {
+                removeIllegalConnections();
             }
         }
     }
@@ -533,15 +535,6 @@ private:
                 if (!getNodes().contains(activePluginWindows.getUnchecked(i)->node)) {
                     activePluginWindows.remove(i);
                 }
-            }
-        } else if (auto* deviceManager = dynamic_cast<AudioDeviceManager *>(cb)) {
-            if (auto* inputWrapper = getProcessorWrapperForState(project.getAudioInputProcessorState())) {
-                int numOutputs = inputWrapper->processor->getTotalNumOutputChannels();
-                inputWrapper->state.setProperty(IDs::NUM_OUTPUT_CHANNELS, numOutputs, nullptr);
-            }
-            if (auto* outputWrapper = getProcessorWrapperForState(project.getAudioOutputProcessorState())) {
-                int numInputs = outputWrapper->processor->getTotalNumInputChannels();
-                outputWrapper->state.setProperty(IDs::NUM_INPUT_CHANNELS, numInputs, nullptr);
             }
         }
     }

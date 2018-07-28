@@ -40,6 +40,10 @@ public:
         updateComponents();
     }
 
+    void update() override {
+        updateComponents();
+    }
+
     void updateComponents() {
         audioInputProcessor->update();
         audioOutputProcessor->update();

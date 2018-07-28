@@ -27,6 +27,7 @@ public:
             MessageManager::callAsync([this, message]() { midiControlHandler.handleControlMidi(message); });
         });
 
+        graphEditorWindow = std::make_unique<MainWindow>("Graph Editor", new GraphEditor(processorGraph, project), &applicationKeyListener);
         std::unique_ptr<XmlElement> savedAudioState(processorManager.getApplicationProperties().getUserSettings()->getXmlValue("audioDeviceState"));
         deviceManager.initialise(256, 256, savedAudioState.get(), true);
         player.setProcessor(&processorGraph);
@@ -40,7 +41,7 @@ public:
         push2Window = std::make_unique<MainWindow>("Push 2 Mirror", push2Component, &applicationKeyListener);
         ValueTreeEditor *valueTreeEditor = new ValueTreeEditor(project.getState(), undoManager, project, processorGraph);
         treeWindow = std::make_unique<MainWindow>("Tree Editor", valueTreeEditor, &applicationKeyListener);
-        graphEditorWindow = std::make_unique<MainWindow>("Graph Editor", new GraphEditor(processorGraph, project, deviceManager), &applicationKeyListener);
+
 
         audioDeviceSelectorComponent = std::make_unique<AudioDeviceSelectorComponent>(deviceManager, 0, 256, 0, 256,
                                                                                       true, true, true, false);
@@ -204,7 +205,6 @@ private:
             std::unique_ptr<XmlElement> audioState(deviceManager.createStateXml());
             processorManager.getApplicationProperties().getUserSettings()->setValue("audioDeviceState", audioState.get());
             processorManager.getApplicationProperties().getUserSettings()->saveIfNeeded();
-            processorGraph.removeIllegalConnections();
         }), true);
     }
 

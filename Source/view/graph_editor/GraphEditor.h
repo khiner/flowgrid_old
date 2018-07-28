@@ -7,10 +7,9 @@
 
 class GraphEditor : public Component {
 public:
-    GraphEditor(ProcessorGraph &graph, Project &project, AudioDeviceManager &deviceManager)
-            : graph(graph), project(project), deviceManager(deviceManager) {
+    GraphEditor(ProcessorGraph &graph, Project &project)
+            : graph(graph), project(project) {
         init();
-        deviceManager.addChangeListener(graphPanel.get());
     }
 
     ~GraphEditor() override {
@@ -29,7 +28,6 @@ public:
 
     void releaseGraph() {
         if (graphPanel != nullptr) {
-            deviceManager.removeChangeListener(graphPanel.get());
             graphPanel = nullptr;
         }
 
@@ -40,7 +38,6 @@ public:
 private:
     ProcessorGraph &graph;
     Project &project;
-    AudioDeviceManager &deviceManager;
 
     struct TooltipBar : public Component, private Timer {
         TooltipBar() {
