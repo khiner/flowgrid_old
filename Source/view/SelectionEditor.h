@@ -2,9 +2,9 @@
 #include <Utilities.h>
 #include <Identifiers.h>
 #include <ValueTreeItems.h>
-#include <view/SelectionPanel.h>
 #include <processors/ProcessorManager.h>
 #include "UiColours.h"
+#include "processor_editor/ProcessorEditor.h"
 
 class SelectionEditor : public Component,
                         public DragAndDropContainer,
@@ -13,9 +13,9 @@ class SelectionEditor : public Component,
                         private Timer {
 public:
     SelectionEditor(const ValueTree &state, UndoManager &undoManager, Project& project, ProcessorGraph &audioGraphBuilder)
-            : undoManager(undoManager), project(project) {
+            : undoManager(undoManager), project(project), audioGraphBuilder(audioGraphBuilder) {
         project.addChangeListener(this);
-        addAndMakeVisible(*(selectionPanel = std::make_unique<SelectionPanel>(project, audioGraphBuilder)));
+        addAndMakeVisible(titleLabel);
 
         Utilities::visitComponents({&undoButton, &redoButton, &createTrackButton, &addProcessorButton},
                                    [this](Component *c) { addAndMakeVisible(c); });
@@ -44,7 +44,11 @@ public:
         addProcessorButton.setBounds(buttons.removeFromLeft(120));
 
         r.removeFromBottom(4);
-        selectionPanel->setBounds(r);
+
+        titleLabel.setBounds(r.removeFromTop(22));
+        if (processorEditor != nullptr) {
+            processorEditor->setBounds(r);
+        }
     }
 
     void buttonClicked(Button *b) override {
@@ -70,11 +74,33 @@ public:
     void itemSelected(const ValueTree& item) override {
         const ValueTree &selectedTrack = project.getSelectedTrack();
         addProcessorButton.setVisible(selectedTrack.isValid());
+
+        if (!item.isValid()) {
+            titleLabel.setText("No item selected", dontSendNotification);
+            titleLabel.setVisible(true);
+            removeChildComponent(processorEditor.get());
+            processorEditor = nullptr;
+        } else if (item.hasType(IDs::PROCESSOR)) {
+            const String &name = item[IDs::name];
+            titleLabel.setText("Processor Selected: " + name, dontSendNotification);
+
+            if (auto *processorWrapper = audioGraphBuilder.getProcessorWrapperForState(item)) {
+                if (processorEditor != nullptr) {
+                    removeChildComponent(processorEditor.get());
+                    processorEditor = nullptr;
+                }
+                processorEditor = std::make_unique<ProcessorEditor>(processorWrapper->processor);
+                addAndMakeVisible(processorEditor.get());
+            }
+        }
+
+        resized();
     }
 
     void itemRemoved(const ValueTree& item) override {
         if (item == project.getSelectedTrack()) {
             addProcessorButton.setVisible(false);
+            itemSelected(ValueTree());
         }
     }
 
@@ -83,10 +109,13 @@ private:
 
     TextButton addProcessorButton{"Add Processor"};
 
+    Label titleLabel;
+    std::unique_ptr<ProcessorEditor> processorEditor {};
+
     UndoManager &undoManager;
     Project &project;
+    ProcessorGraph &audioGraphBuilder;
 
-    std::unique_ptr<SelectionPanel> selectionPanel;
     std::unique_ptr<PopupMenu> addProcessorMenu;
 
     void timerCallback() override {

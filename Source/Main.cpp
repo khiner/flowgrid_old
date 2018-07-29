@@ -37,9 +37,8 @@ public:
         Process::makeForegroundProcess();
         auto *push2Component = new Push2Component(project, push2MidiCommunicator, processorGraph);
         push2Window = std::make_unique<MainWindow>("Push 2 Mirror", push2Component, &applicationKeyListener);
-        auto *valueTreeEditor = new SelectionEditor(project.getState(), undoManager, project, processorGraph);
-        treeWindow = std::make_unique<MainWindow>("Selection Editor", valueTreeEditor, &applicationKeyListener);
-
+        auto *selectionEditor = new SelectionEditor(project.getState(), undoManager, project, processorGraph);
+        selectionWindow = std::make_unique<MainWindow>("Selection Editor", selectionEditor, &applicationKeyListener);
 
         audioDeviceSelectorComponent = std::make_unique<AudioDeviceSelectorComponent>(deviceManager, 0, 256, 0, 256,
                                                                                       true, true, true, false);
@@ -47,13 +46,13 @@ public:
 
         pluginListComponent = std::unique_ptr<PluginListComponent>(processorManager.makePluginListComponent());
 
-        treeWindow->setBoundsRelative(0.05, 0.25, 0.45, 0.35);
+        selectionWindow->setBoundsRelative(0.05, 0.25, 0.45, 0.35);
 
         float graphEditorHeightToWidthRatio = float(Project::NUM_VISIBLE_PROCESSOR_SLOTS) / Project::NUM_VISIBLE_TRACKS;
 
         graphEditorWindow->setBoundsRelative(0.5, 0.1, 0.4, 0.5);
         graphEditorWindow->setSize(graphEditorWindow->getWidth(), int(graphEditorWindow->getWidth() * graphEditorHeightToWidthRatio));
-        push2Window->setBounds(treeWindow->getPosition().x, treeWindow->getPosition().y - Push2Display::HEIGHT - graphEditorWindow->getTitleBarHeight(),
+        push2Window->setBounds(selectionWindow->getPosition().x, selectionWindow->getPosition().y - Push2Display::HEIGHT - graphEditorWindow->getTitleBarHeight(),
                                Push2Display::WIDTH, Push2Display::HEIGHT + graphEditorWindow->getTitleBarHeight());
         push2Window->setResizable(false, false);
         midiControlHandler.setPush2Component(push2Component);
@@ -64,7 +63,7 @@ public:
 
     void shutdown() override {
         push2Window = nullptr;
-        treeWindow = nullptr;
+        selectionWindow = nullptr;
         deviceManager.removeAudioCallback(&player);
         Utilities::saveValueTree(project.getState(), getSaveFile(), true);
         setMacMainMenu(nullptr);
@@ -171,7 +170,7 @@ public:
 private:
     ProcessorManager processorManager;
 
-    std::unique_ptr<MainWindow> treeWindow, push2Window, graphEditorWindow;
+    std::unique_ptr<MainWindow> selectionWindow, push2Window, graphEditorWindow;
     std::unique_ptr<AudioDeviceSelectorComponent> audioDeviceSelectorComponent;
     std::unique_ptr<PluginListComponent> pluginListComponent;
 
@@ -180,19 +179,18 @@ private:
 
     Push2MidiCommunicator push2MidiCommunicator;
 
-    AudioProcessorPlayer player;
-
     Project project;
     ApplicationKeyListener applicationKeyListener;
     ProcessorGraph processorGraph;
     MidiControlHandler midiControlHandler;
+    AudioProcessorPlayer player;
 
     void showAudioSettings() {
         DialogWindow::LaunchOptions o;
         o.content.setNonOwned(audioDeviceSelectorComponent.get());
         o.dialogTitle = "Audio Settings";
-        o.componentToCentreAround = treeWindow.get();
-        o.dialogBackgroundColour = treeWindow->findColour(ResizableWindow::backgroundColourId);
+        o.componentToCentreAround = selectionWindow.get();
+        o.dialogBackgroundColour = selectionWindow->findColour(ResizableWindow::backgroundColourId);
         o.escapeKeyTriggersCloseButton = true;
         o.useNativeTitleBar = false;
         o.resizable = true;
