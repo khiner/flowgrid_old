@@ -55,10 +55,7 @@ public:
         addProcessorButton.setBounds(buttons.removeFromLeft(120));
 
         r.removeFromBottom(4);
-        selectionPanel->setBounds(r.removeFromBottom(120));
-
-        r.removeFromBottom(4);
-        treeView.setBounds(r);
+        selectionPanel->setBounds(r);
     }
 
     void buttonClicked(Button *b) override {

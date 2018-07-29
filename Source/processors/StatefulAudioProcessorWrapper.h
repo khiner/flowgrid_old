@@ -5,18 +5,26 @@
 
 class StatefulAudioProcessorWrapper : private AudioProcessorListener, private Timer {
 public:
-struct Parameter : public AudioProcessorParameterWithID, private Utilities::ValueTreePropertyChangeListener, private AudioProcessorParameter::Listener {
-    explicit Parameter(AudioProcessorParameter *parameter)
-        : AudioProcessorParameterWithID(parameter->getName(32), parameter->getName(32),
-                                        parameter->getLabel(), parameter->getCategory()),
-          sourceParameter(parameter),
-          defaultValue(parameter->getDefaultValue()), value(parameter->getDefaultValue()),
-          valueToTextFunction([this](float value) { return sourceParameter->getText(range.convertTo0to1(value), 3) + " " + sourceParameter->getLabel(); }),
-          textToValueFunction([this](const String& text) { return sourceParameter->getValueForText(text); }) {
+    struct Parameter
+            : public AudioProcessorParameterWithID,
+              private Utilities::ValueTreePropertyChangeListener,
+              private AudioProcessorParameter::Listener {
+        explicit Parameter(AudioProcessorParameter *parameter)
+                : AudioProcessorParameterWithID(parameter->getName(32), parameter->getName(32),
+                                                parameter->getLabel(), parameter->getCategory()),
+                  sourceParameter(parameter),
+                  defaultValue(parameter->getDefaultValue()), value(parameter->getDefaultValue()),
+                  valueToTextFunction([this](float value) { return sourceParameter->getCurrentValueAsText(); }),
+                  textToValueFunction([this](const String &text) { return sourceParameter->getValueForText(text); }) {
             if (auto *p = dynamic_cast<AudioParameterFloat *>(sourceParameter)) {
                 range = p->range;
-                value = defaultValue = range.convertFrom0to1(parameter->getDefaultValue());
+            } else {
+                if (sourceParameter->getNumSteps() != AudioProcessor::getDefaultNumParameterSteps())
+                    range = NormalisableRange<float>(0.0, 1.0, 1.0f / (sourceParameter->getNumSteps() - 1.0f));
+                else
+                    range = NormalisableRange<float>(0.0, 1.0);
             }
+            value = defaultValue = range.convertFrom0to1(parameter->getDefaultValue());
             sourceParameter->addListener(this);
         }
 
@@ -46,7 +54,7 @@ struct Parameter : public AudioProcessorParameterWithID, private Utilities::Valu
             }
         }
 
-        void setUnnormalisedValue (float newUnnormalisedValue) {
+        void setUnnormalisedValue(float newUnnormalisedValue) {
             if (value != newUnnormalisedValue) {
                 setValue(range.convertTo0to1(newUnnormalisedValue));
             }
@@ -63,7 +71,7 @@ struct Parameter : public AudioProcessorParameterWithID, private Utilities::Valu
             return state.getPropertyAsValue(IDs::value, undoManager);
         }
 
-        void setNewState(const ValueTree& v, UndoManager *undoManager) {
+        void setNewState(const ValueTree &v, UndoManager *undoManager) {
             state = v;
             this->undoManager = undoManager;
             this->state.addListener(this);
@@ -72,7 +80,7 @@ struct Parameter : public AudioProcessorParameterWithID, private Utilities::Valu
         }
 
         void copyValueToValueTree() {
-            if (auto* valueProperty = state.getPropertyPointer(IDs::value)) {
+            if (auto *valueProperty = state.getPropertyPointer(IDs::value)) {
                 if ((float) *valueProperty != value) {
                     ScopedValueSetter<bool> svs(ignoreParameterChangedCallbacks, true);
                     state.setProperty(IDs::value, value, undoManager);
@@ -82,10 +90,14 @@ struct Parameter : public AudioProcessorParameterWithID, private Utilities::Valu
             }
         }
 
-        void attachSlider(Slider *slider, Label *label=nullptr) {
-            if (label != nullptr) {
-                label->setText(name, dontSendNotification);
+        void attachSlider(Slider *slider, Label *name=nullptr, Label *label=nullptr) {
+            if (name != nullptr) {
+                name->setText(this->name, dontSendNotification);
             }
+            if (label != nullptr) {
+                label->setText(this->label, dontSendNotification);
+            }
+
             // referTo({}) can call these value functions to notify listeners, and they may refer to dead params.
             slider->textFromValueFunction = nullptr;
             slider->valueFromTextFunction = nullptr;
@@ -100,13 +112,14 @@ struct Parameter : public AudioProcessorParameterWithID, private Utilities::Valu
             return range.convertTo0to1(defaultValue);
         }
 
-        float getValueForText(const String& text) const override {
-            return range.convertTo0to1(textToValueFunction != nullptr ? textToValueFunction(text) : text.getFloatValue());
+        float getValueForText(const String &text) const override {
+            return range.convertTo0to1(
+                    textToValueFunction != nullptr ? textToValueFunction(text) : text.getFloatValue());
         }
 
-        static Parameter* getParameterForID(AudioProcessor& processor, const StringRef &paramID) noexcept {
-            for (auto* ap : processor.getParameters()) {
-                auto* p = dynamic_cast<Parameter*> (ap);
+        static Parameter *getParameterForID(AudioProcessor &processor, const StringRef &paramID) noexcept {
+            for (auto *ap : processor.getParameters()) {
+                auto *p = dynamic_cast<Parameter *> (ap);
 
                 if (paramID == p->paramID)
                     return p;
@@ -115,25 +128,26 @@ struct Parameter : public AudioProcessorParameterWithID, private Utilities::Valu
             return nullptr;
         }
 
-        static NormalisableRange<double> doubleRangeFromFloatRange(NormalisableRange<float>& floatRange) {
-            return NormalisableRange<double>(floatRange.start, floatRange.end, floatRange.interval, floatRange.skew, floatRange.symmetricSkew);
+        static NormalisableRange<double> doubleRangeFromFloatRange(NormalisableRange<float> &floatRange) {
+            return NormalisableRange<double>(floatRange.start, floatRange.end, floatRange.interval, floatRange.skew,
+                                             floatRange.symmetricSkew);
         }
 
-        AudioProcessorParameter *sourceParameter { nullptr };
+        AudioProcessorParameter *sourceParameter{nullptr};
         float defaultValue, value;
         std::function<String(const float)> valueToTextFunction;
         std::function<float(const String &)> textToValueFunction;
         NormalisableRange<float> range;
 
-        std::atomic<bool> needsUpdate { true };
+        std::atomic<bool> needsUpdate{true};
         ValueTree state;
-        UndoManager *undoManager { nullptr };
+        UndoManager *undoManager{nullptr};
 
     private:
-        bool listenersNeedCalling { true };
+        bool listenersNeedCalling{true};
         bool ignoreParameterChangedCallbacks = false;
 
-        void valueTreePropertyChanged(ValueTree& tree, const Identifier& p) override {
+        void valueTreePropertyChanged(ValueTree &tree, const Identifier &p) override {
             if (ignoreParameterChangedCallbacks)
                 return;
 
@@ -169,7 +183,7 @@ struct Parameter : public AudioProcessorParameterWithID, private Utilities::Valu
         state.setProperty(IDs::numOutputChannels, processor->getTotalNumOutputChannels(), &undoManager);
     }
 
-    ValueTree getOrCreateChildValueTree(const String& paramID) {
+    ValueTree getOrCreateChildValueTree(const String &paramID) {
         ValueTree v(state.getChildWithProperty(IDs::id, paramID));
 
         if (!v.isValid()) {
@@ -213,8 +227,9 @@ private:
 
     CriticalSection valueTreeChanging;
 
-    void audioProcessorParameterChanged (AudioProcessor* processor, int parameterIndex, float newValue) override {}
-    void audioProcessorChanged (AudioProcessor* processor) override {
+    void audioProcessorParameterChanged(AudioProcessor *processor, int parameterIndex, float newValue) override {}
+
+    void audioProcessorChanged(AudioProcessor *processor) override {
         MessageManager::callAsync([this, processor] {
             if (processor != nullptr) {
                 // TODO should we use UndoManager and also support _setting_ playConfigDetails on state change?
@@ -225,6 +240,8 @@ private:
             }
         });
     }
-    void audioProcessorParameterChangeGestureBegin (AudioProcessor* processor, int parameterIndex) override {}
-    void audioProcessorParameterChangeGestureEnd (AudioProcessor* processor, int parameterIndex) override {}
+
+    void audioProcessorParameterChangeGestureBegin(AudioProcessor *processor, int parameterIndex) override {}
+
+    void audioProcessorParameterChangeGestureEnd(AudioProcessor *processor, int parameterIndex) override {}
 };
