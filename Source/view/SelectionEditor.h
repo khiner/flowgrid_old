@@ -98,6 +98,7 @@ public:
     void itemRemoved(const ValueTree& item) override {
         if (item == project.getSelectedTrack()) {
             addProcessorButton.setVisible(false);
+        } else if (item == project.getSelectedProcessor()) {
             itemSelected(ValueTree());
         }
     }
