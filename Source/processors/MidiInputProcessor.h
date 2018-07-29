@@ -5,7 +5,7 @@
 
 class MidiInputProcessor : public DefaultAudioProcessor {
 public:
-    explicit MidiInputProcessor(const PluginDescription& pluginDescription) :
+    explicit MidiInputProcessor() :
             DefaultAudioProcessor(getPluginDescription(), AudioChannelSet::disabled()) {}
 
     ~MidiInputProcessor() override = default;

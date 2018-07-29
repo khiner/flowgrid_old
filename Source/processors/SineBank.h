@@ -6,8 +6,8 @@
 
 class SineBank : public DefaultAudioProcessor {
 public:
-    explicit SineBank(const PluginDescription& description) :
-            DefaultAudioProcessor(description),
+    explicit SineBank() :
+            DefaultAudioProcessor(getPluginDescription()),
             toneSource1("1"),
             toneSource2("2"),
             toneSource3("3"),

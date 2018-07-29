@@ -5,8 +5,8 @@
 
 class BalanceProcessor : public DefaultAudioProcessor {
 public:
-    explicit BalanceProcessor(const PluginDescription& description) :
-            DefaultAudioProcessor(description),
+    explicit BalanceProcessor() :
+            DefaultAudioProcessor(getPluginDescription()),
             balanceParameter(new AudioParameterFloat("balance", "Balance", NormalisableRange<float>(0.0f, 1.0f), balance.getTargetValue(), "",
                                                      AudioProcessorParameter::genericParameter, [](float value, int radix) { return String(value, radix); }, nullptr)) {
         balanceParameter->addListener(this);

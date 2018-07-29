@@ -5,8 +5,8 @@
 
 class GainProcessor : public DefaultAudioProcessor {
 public:
-    explicit GainProcessor(const PluginDescription& description) :
-            DefaultAudioProcessor(description),
+    explicit GainProcessor() :
+            DefaultAudioProcessor(getPluginDescription()),
             gainParameter(new AudioParameterFloat("gain", "Gain", NormalisableRange<float>(0.0f, 1.0f), gain.getTargetValue(), "dB",
                                                   AudioProcessorParameter::genericParameter,
                                                   [](float value, int radix) { return String(Decibels::gainToDecibels(value), radix); }, nullptr)) {

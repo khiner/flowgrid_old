@@ -5,8 +5,8 @@
 
 class MixerChannelProcessor : public DefaultAudioProcessor {
 public:
-    explicit MixerChannelProcessor(const PluginDescription& description) :
-            DefaultAudioProcessor(description),
+    explicit MixerChannelProcessor() :
+            DefaultAudioProcessor(getPluginDescription()),
             balanceParameter(new AudioParameterFloat("balance", "Balance", NormalisableRange<float>(0.0f, 1.0f), balance.getTargetValue(), "",
                                                      AudioProcessorParameter::genericParameter,
                                                      [](float value, int radix) { return String(value, radix); }, nullptr)),

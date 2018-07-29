@@ -59,12 +59,12 @@ private:
     AudioPluginInstance* createInstance(const String& name) {
         if (name == audioOutDesc.name) return new AudioProcessorGraph::AudioGraphIOProcessor(AudioProcessorGraph::AudioGraphIOProcessor::audioOutputNode);
         if (name == audioInDesc.name) return new AudioProcessorGraph::AudioGraphIOProcessor(AudioProcessorGraph::AudioGraphIOProcessor::audioInputNode);
-        if (name == MidiInputProcessor::getIdentifier()) return new MidiInputProcessor(MidiInputProcessor::getPluginDescription());
+        if (name == MidiInputProcessor::getIdentifier()) return new MidiInputProcessor();
         if (name == midiOutDesc.name) return new AudioProcessorGraph::AudioGraphIOProcessor(AudioProcessorGraph::AudioGraphIOProcessor::midiOutputNode);
-        if (name == BalanceProcessor::getIdentifier()) return new BalanceProcessor(BalanceProcessor::getPluginDescription());
-        if (name == GainProcessor::getIdentifier()) return new GainProcessor(GainProcessor::getPluginDescription());
-        if (name == MixerChannelProcessor::getIdentifier()) return new MixerChannelProcessor(MixerChannelProcessor::getPluginDescription());
-        if (name == SineBank::getIdentifier()) return new SineBank(SineBank::getPluginDescription());
+        if (name == BalanceProcessor::getIdentifier()) return new BalanceProcessor();
+        if (name == GainProcessor::getIdentifier()) return new GainProcessor();
+        if (name == MixerChannelProcessor::getIdentifier()) return new MixerChannelProcessor();
+        if (name == SineBank::getIdentifier()) return new SineBank();
 
         return nullptr;
     }
