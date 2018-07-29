@@ -129,7 +129,7 @@ public:
                         if (currentIndex < newIndex) {
                             --newIndex;
                         }
-                        return parent.moveChild(currentIndex, newIndex, project.getUndoManager());
+                        return parent.moveChild(currentIndex, newIndex, &project.getUndoManager());
                     }
                 }
             }

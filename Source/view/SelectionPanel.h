@@ -29,8 +29,7 @@ public:
     void resized() override {
         auto r = getLocalBounds();
 
-        static const int ITEM_WIDTH = 250, ITEM_HEIGHT = 22;
-        titleLabel.setBounds(r.removeFromTop(ITEM_HEIGHT));
+        titleLabel.setBounds(r.removeFromTop(22));
         if (processorEditor != nullptr) {
             processorEditor->setBounds(r);
         }
@@ -50,13 +49,17 @@ private:
         if (!item.isValid()) {
             titleLabel.setText("No item selected", dontSendNotification);
             titleLabel.setVisible(true);
+            removeChildComponent(processorEditor.get());
+            processorEditor = nullptr;
         } else if (item.hasType(IDs::PROCESSOR)) {
             const String &name = item[IDs::name];
             titleLabel.setText("Processor Selected: " + name, dontSendNotification);
 
             if (auto *processorWrapper = audioGraphBuilder.getProcessorWrapperForState(item)) {
-                if (processorEditor != nullptr)
+                if (processorEditor != nullptr) {
                     removeChildComponent(processorEditor.get());
+                    processorEditor = nullptr;
+                }
                 processorEditor = std::make_unique<GenericAudioProcessorEditor>(processorWrapper->processor);
                 addAndMakeVisible(processorEditor.get());
             }

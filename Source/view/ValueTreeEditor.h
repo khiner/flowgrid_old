@@ -14,13 +14,6 @@ class ValueTreeEditor : public Component,
 public:
     ValueTreeEditor(const ValueTree &state, UndoManager &undoManager, Project& project, ProcessorGraph &audioGraphBuilder)
             : undoManager(undoManager), project(project) {
-        addAndMakeVisible(treeView);
-        treeView.setColour(TreeView::backgroundColourId, getUIColourIfAvailable(LookAndFeel_V4::ColourScheme::UIColour::windowBackground));
-
-        treeView.setDefaultOpenness(true);
-        treeView.setMultiSelectEnabled(true);
-
-        treeView.setRootItem(&project);
         project.addChangeListener(this);
         addAndMakeVisible(*(selectionPanel = std::make_unique<SelectionPanel>(project, audioGraphBuilder)));
 
@@ -34,10 +27,6 @@ public:
 
         startTimer(500);
         setSize(800, 600);
-    }
-
-    ~ValueTreeEditor() override {
-        treeView.setRootItem(nullptr);
     }
 
     void resized() override {
@@ -78,14 +67,6 @@ public:
         }
     }
 
-    void sendSelectMessageForFirstSelectedItem() {
-        if (treeView.getNumSelectedItems() > 0) {
-            TreeViewItem *selectedItem = treeView.getSelectedItem(0);
-            selectedItem->itemSelectionChanged(false);
-            selectedItem->itemSelectionChanged(true);
-        }
-    }
-
     void itemSelected(const ValueTree& item) override {
         const ValueTree &selectedTrack = project.getSelectedTrack();
         addProcessorButton.setVisible(selectedTrack.isValid());
@@ -98,7 +79,6 @@ public:
     }
 
 private:
-    TreeView treeView;
     TextButton undoButton{"Undo"}, redoButton{"Redo"}, createTrackButton{"Add Track"};
 
     TextButton addProcessorButton{"Add Processor"};

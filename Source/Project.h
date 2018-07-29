@@ -5,12 +5,11 @@
 #include "ValueTreeItems.h"
 #include "processors/ProcessorManager.h"
 
-class Project : public ValueTreeItem,
-                public ProjectChangeBroadcaster,
-                private ChangeListener {
+class Project : public ProjectChangeBroadcaster,
+                private ChangeListener, private ValueTree::Listener {
 public:
-    Project(const ValueTree &v, UndoManager &um, ProcessorManager& processorIds, AudioDeviceManager& deviceManager)
-            : ValueTreeItem(v, um), processorManager(processorIds), deviceManager(deviceManager) {
+    Project(const ValueTree &v, UndoManager &undoManager, ProcessorManager& processorManager, AudioDeviceManager& deviceManager)
+            : state(v), undoManager(undoManager), processorManager(processorManager), deviceManager(deviceManager) {
         if (!state.isValid()) {
             state = createDefaultProject();
         } else {
@@ -21,11 +20,21 @@ public:
             connections = state.getChildWithName(IDs::CONNECTIONS);
         }
         deviceManager.addChangeListener(this);
-        jassert (state.hasType(IDs::PROJECT));
+        jassert(state.hasType(IDs::PROJECT));
+        state.addListener(this);
     }
 
     ~Project() override {
+        state.removeListener(this);
         deviceManager.removeChangeListener(this);
+    }
+
+    ValueTree& getState() {
+        return state;
+    }
+
+    UndoManager& getUndoManager() {
+        return undoManager;
     }
 
     ValueTree& getConnections() {
@@ -68,7 +77,6 @@ public:
     }
 
     void setSelectedProcessor(ValueTree& processor) {
-        getOwnerView()->clearSelectedItems();
         processor.setProperty(IDs::selected, true, nullptr);
     }
 
@@ -159,28 +167,16 @@ public:
         }
     }
 
-    void moveSelectionUp() {
-        getOwnerView()->keyPressed(KeyPress(KeyPress::upKey));
-    }
+    void moveSelectionUp() {}
 
-    void moveSelectionDown() {
-        getOwnerView()->keyPressed(KeyPress(KeyPress::downKey));
-    }
+    void moveSelectionDown() {}
 
-    void moveSelectionLeft() {
-        getOwnerView()->keyPressed(KeyPress(KeyPress::leftKey));
-    }
+    void moveSelectionLeft() {}
 
-    void moveSelectionRight() {
-        getOwnerView()->keyPressed(KeyPress(KeyPress::rightKey));
-    }
+    void moveSelectionRight() {}
 
     void deleteSelectedItems() {
-        auto selectedItems(Helpers::getSelectedAndDeletableTreeViewItems<ValueTreeItem>(*getOwnerView()));
-
-        for (int i = selectedItems.size(); --i >= 0;) {
-            deleteItem(*selectedItems.getUnchecked(i));
-        }
+        recursivelyDeleteSelectedItems(state);
     }
 
     void deleteItem(const ValueTree &v, bool undoable=true) {
@@ -422,16 +418,6 @@ public:
         return parent.getNumChildren();
     }
 
-    bool isInterestedInDragSource(const DragAndDropTarget::SourceDetails &dragSourceDetails) override {
-        return false;
-    }
-
-    void itemDropped(const DragAndDropTarget::SourceDetails &, int insertIndex) override {}
-
-    bool canBeSelected() const override {
-        return false;
-    }
-
     void sendItemSelectedMessage(ValueTree item) override {
         if (item.hasType(IDs::TRACK)) {
             selectedTrack = item;
@@ -450,13 +436,13 @@ public:
     }
 
     void sendItemRemovedMessage(ValueTree item) override {
+        ProjectChangeBroadcaster::sendItemRemovedMessage(item);
         if (item == selectedTrack) {
             selectedTrack = ValueTree();
         }
         if (item == selectedProcessor) {
             selectedProcessor = ValueTree();
         }
-        ProjectChangeBroadcaster::sendItemSelectedMessage(item);
     }
 
     void addPluginsToMenu(PopupMenu& menu, const ValueTree& track) const {
@@ -505,6 +491,8 @@ public:
     // first row is reserved for audio input, last row for audio output. second-to-last is horizontal master track.
     const static int NUM_AVAILABLE_PROCESSOR_SLOTS = NUM_VISIBLE_PROCESSOR_SLOTS - 3;
 private:
+    ValueTree state;
+    UndoManager &undoManager;
     ValueTree input, output, tracks, masterTrack, selectedTrack, selectedProcessor, connections;
 
     Array<ValueTree> connectionsSnapshot;
@@ -546,6 +534,53 @@ private:
                 } else if (!deviceManager.isMidiInputEnabled(deviceName) && existingMidiInputProcessor.isValid()) {
                     deleteItem(existingMidiInputProcessor, false);
                 }
+            }
+        }
+    }
+
+    void recursivelyDeleteSelectedItems(const ValueTree& parent) {
+        for (const auto& child : parent) {
+            if (child[IDs::selected] && isItemDeletable(child)) {
+                deleteItem(child);
+            } else {
+                recursivelyDeleteSelectedItems(child);
+            }
+        }
+    }
+
+    static inline bool isItemDeletable(const ValueTree& item) {
+        return !item.hasType(IDs::MASTER_TRACK);
+    }
+
+    void valueTreeChildAdded(ValueTree &, ValueTree &tree) override {
+    }
+
+    void valueTreeChildRemoved(ValueTree &exParent, ValueTree &tree, int) override {
+        sendItemRemovedMessage(tree);
+    }
+
+    void valueTreeChildOrderChanged(ValueTree &tree, int, int) override {
+    }
+
+    void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {
+        if (i == IDs::selected && tree[IDs::selected]) {
+            deselectAllItemsExcept(state, tree);
+            sendItemSelectedMessage(tree);
+        }
+    }
+
+    void valueTreeParentChanged(ValueTree &) override {}
+
+    void valueTreeRedirected(ValueTree &) override {}
+
+    static void deselectAllItemsExcept(const ValueTree& parent, const ValueTree& except) {
+        for (auto child : parent) {
+            if (child == except)
+                continue;
+            if (child[IDs::selected]) {
+                child.setProperty(IDs::selected, false, nullptr);
+            } else {
+                deselectAllItemsExcept(child, except);
             }
         }
     }
