@@ -34,8 +34,6 @@ public:
         messageCollector.reset(sampleRate);
     }
 
-    void parameterChanged(AudioProcessorParameter *parameter, float newValue) override {}
-
     void processBlock(AudioSampleBuffer& buffer, MidiBuffer& midiMessages) override {
         messageCollector.removeNextBlockOfMessages(midiMessages, buffer.getNumSamples());
     }

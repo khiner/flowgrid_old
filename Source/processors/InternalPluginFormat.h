@@ -52,6 +52,7 @@ private:
         if (name == audioInDesc.name) return new AudioProcessorGraph::AudioGraphIOProcessor(AudioProcessorGraph::AudioGraphIOProcessor::audioInputNode);
         if (name == MidiInputProcessor::getIdentifier()) return new MidiInputProcessor();
         if (name == midiOutDesc.name) return new AudioProcessorGraph::AudioGraphIOProcessor(AudioProcessorGraph::AudioGraphIOProcessor::midiOutputNode);
+        if (name == Arpeggiator::getIdentifier()) return new Arpeggiator();
         if (name == BalanceProcessor::getIdentifier()) return new BalanceProcessor();
         if (name == GainProcessor::getIdentifier()) return new GainProcessor();
         if (name == MixerChannelProcessor::getIdentifier()) return new MixerChannelProcessor();
