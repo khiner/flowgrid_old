@@ -11,6 +11,9 @@ public:
     GraphEditorProcessor(const ValueTree& state, ConnectorDragListener &connectorDragListener, ProcessorGraph& graph)
             : state(state), connectorDragListener(connectorDragListener), graph(graph) {
         this->state.addListener(this);
+        valueTreePropertyChanged(this->state, IDs::name);
+        if (this->state.hasProperty(IDs::deviceName))
+            valueTreePropertyChanged(this->state, IDs::deviceName);
     }
 
     ~GraphEditorProcessor() override {
@@ -27,12 +30,20 @@ public:
         return state[IDs::processorSlot];
     }
 
-    int getNumInputChannels() {
+    int getNumInputChannels() const {
         return state[IDs::numInputChannels];
     }
 
-    int getNumOutputChannels() {
+    int getNumOutputChannels() const {
         return state[IDs::numOutputChannels];
+    }
+
+    bool acceptsMidi() const {
+        return state[IDs::acceptsMidi];
+    }
+
+    bool producesMidi() const {
+        return state[IDs::producesMidi];
     }
 
     void paint(Graphics &g) override {
@@ -125,14 +136,12 @@ public:
             return;
 
         numIns = getNumInputChannels();
-        if (processor->acceptsMidi())
+        if (acceptsMidi())
             ++numIns;
 
         numOuts = getNumOutputChannels();
-        if (processor->producesMidi())
+        if (producesMidi())
             ++numOuts;
-
-        setName(processor->getName());
 
         if (numIns != numInputs || numOuts != numOutputs) {
             numInputs = numIns;
@@ -242,6 +251,12 @@ public:
     int numIns = 0, numOuts = 0;
     std::unique_ptr<PopupMenu> menu;
 
+    class ElementComparator {
+    public:
+        static int compareElements(GraphEditorProcessor *first, GraphEditorProcessor *second) {
+            return first->getName().compare(second->getName());
+        }
+    };
 private:
     static constexpr int
             DELETE_MENU_ID = 1, TOGGLE_BYPASS_MENU_ID = 2, CONNECT_DEFAULTS_MENU_ID = 3, DISCONNECT_ALL_MENU_ID = 4,
@@ -254,6 +269,14 @@ private:
 
         if (i == IDs::bypassed) {
             repaint();
+        } else if (i == IDs::name) {
+            setName(v[IDs::name]);
+            repaint();
+        } else if (i == IDs::deviceName) {
+            setName(v[IDs::deviceName]);
+            repaint();
+        } else if (i == IDs::acceptsMidi || i == IDs::producesMidi) {
+            update();
         }
     }
 };

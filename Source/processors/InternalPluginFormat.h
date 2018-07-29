@@ -16,19 +16,19 @@ public:
             AudioProcessorGraph::AudioGraphIOProcessor p(AudioProcessorGraph::AudioGraphIOProcessor::audioInputNode);
             p.fillInPluginDescription(audioInDesc);
         }
-
         {
-            AudioProcessorGraph::AudioGraphIOProcessor p(AudioProcessorGraph::AudioGraphIOProcessor::midiInputNode);
-            p.fillInPluginDescription(midiInDesc);
+            AudioProcessorGraph::AudioGraphIOProcessor p(AudioProcessorGraph::AudioGraphIOProcessor::midiOutputNode);
+            p.fillInPluginDescription(midiOutDesc);
         }
     }
 
-    PluginDescription audioInDesc, audioOutDesc, midiInDesc;
+    PluginDescription audioInDesc, audioOutDesc, midiInDesc, midiOutDesc;
 
     void getAllTypes(OwnedArray<PluginDescription>& results) {
         results.add(new PluginDescription(audioInDesc));
         results.add(new PluginDescription(audioOutDesc));
-        results.add(new PluginDescription(midiInDesc));
+        results.add(new PluginDescription(MidiInputProcessor::getPluginDescription()));
+        results.add(new PluginDescription(midiOutDesc));
         results.add(new PluginDescription(BalanceProcessor::getPluginDescription()));
         results.add(new PluginDescription(GainProcessor::getPluginDescription()));
         results.add(new PluginDescription(MixerChannelProcessor::getPluginDescription()));
@@ -45,6 +45,10 @@ public:
     bool pluginNeedsRescanning(const PluginDescription&) override { return false; }
     StringArray searchPathsForPlugins(const FileSearchPath&, bool, bool) override { return {}; }
 
+    bool isIoProcessorName(const String& name) const {
+        return name == audioInDesc.name || name == audioOutDesc.name || name == midiInDesc.name || name == midiOutDesc.name;
+    }
+
 private:
     void createPluginInstance(const PluginDescription& desc, double initialSampleRate, int initialBufferSize,
                                void* userData, void (*callback) (void*, AudioPluginInstance*, const String&)) override {
@@ -54,8 +58,9 @@ private:
 
     AudioPluginInstance* createInstance(const String& name) {
         if (name == audioOutDesc.name) return new AudioProcessorGraph::AudioGraphIOProcessor(AudioProcessorGraph::AudioGraphIOProcessor::audioOutputNode);
-        if (name == audioInDesc.name)  return new AudioProcessorGraph::AudioGraphIOProcessor(AudioProcessorGraph::AudioGraphIOProcessor::audioInputNode);
-        if (name == midiInDesc.name)   return new AudioProcessorGraph::AudioGraphIOProcessor(AudioProcessorGraph::AudioGraphIOProcessor::midiInputNode);
+        if (name == audioInDesc.name) return new AudioProcessorGraph::AudioGraphIOProcessor(AudioProcessorGraph::AudioGraphIOProcessor::audioInputNode);
+        if (name == MidiInputProcessor::getIdentifier()) return new MidiInputProcessor(MidiInputProcessor::getPluginDescription());
+        if (name == midiOutDesc.name) return new AudioProcessorGraph::AudioGraphIOProcessor(AudioProcessorGraph::AudioGraphIOProcessor::midiOutputNode);
         if (name == BalanceProcessor::getIdentifier()) return new BalanceProcessor(BalanceProcessor::getPluginDescription());
         if (name == GainProcessor::getIdentifier()) return new GainProcessor(GainProcessor::getPluginDescription());
         if (name == MixerChannelProcessor::getIdentifier()) return new MixerChannelProcessor(MixerChannelProcessor::getPluginDescription());

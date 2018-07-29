@@ -13,6 +13,8 @@ namespace IDs
     DECLARE_ID(TRACKS)
     DECLARE_ID(INPUT)
     DECLARE_ID(OUTPUT)
+    DECLARE_ID(MIDI_INPUT)
+    DECLARE_ID(MIDI_OUTPUT)
 
     DECLARE_ID(MASTER_TRACK)
 
@@ -30,8 +32,11 @@ namespace IDs
     DECLARE_ID(processorSlot)
     DECLARE_ID(nodeId)
     DECLARE_ID(bypassed)
+    DECLARE_ID(acceptsMidi)
+    DECLARE_ID(producesMidi)
     DECLARE_ID(numInputChannels)
     DECLARE_ID(numOutputChannels)
+    DECLARE_ID(deviceName)
 
     DECLARE_ID(PARAM_NA)
 

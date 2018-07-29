@@ -10,13 +10,14 @@
 
 class ProcessorGraph : public AudioProcessorGraph, private ValueTree::Listener, private ProjectChangeListener {
 public:
-    explicit ProcessorGraph(Project &project, UndoManager &undoManager)
-            : undoManager(undoManager), project(project) {
+    explicit ProcessorGraph(Project &project, UndoManager &undoManager, AudioDeviceManager& deviceManager)
+            : undoManager(undoManager), project(project), deviceManager(deviceManager) {
         enableAllBuses();
 
         project.getState().addListener(this);
         addProcessor(project.getAudioInputProcessorState());
         addProcessor(project.getAudioOutputProcessorState());
+        addProcessor(project.getMidiOutputProcessorState());
         recursivelyInitializeWithState(project.getMasterTrack());
         recursivelyInitializeWithState(project.getTracks());
 
@@ -30,6 +31,12 @@ public:
         }
         this->project.addChangeListener(this);
         initializing = false;
+    }
+
+    void audioDeviceManagerInitialized() {
+        for (const auto& inputProcessor : project.getInput())
+            if (inputProcessor.getProperty(IDs::name) == MidiInputProcessor::getPluginDescription().name)
+                addProcessor(inputProcessor);
     }
 
     bool isSelected(NodeID nodeId) {
@@ -230,6 +237,10 @@ public:
         if (auto* processorWrapper = getProcessorWrapperForNodeId(nodeId)) {
             removeDefaultConnections(processorWrapper->state);
             disconnectCustom(nodeId);
+            if (auto *midiInputProcessor = dynamic_cast<MidiInputProcessor *>(processorWrapper->processor)) {
+                const String &deviceName = processorWrapper->state.getProperty(IDs::deviceName);
+                deviceManager.removeMidiInputCallback(deviceName, &midiInputProcessor->getMidiMessageCollector());
+            }
             processorWrapper->state.getParent().removeChild(processorWrapper->state, &undoManager);
             return true;
         }
@@ -245,6 +256,8 @@ private:
     Point<int> initialDraggingTrackAndSlot;
 
     Project &project;
+    AudioDeviceManager &deviceManager;
+    
     OwnedArray<StatefulAudioProcessorWrapper> processerWrappers;
     OwnedArray<PluginWindow> activePluginWindows;
 
@@ -273,7 +286,8 @@ private:
             if (connections) {
                 return addDefaultConnections(state);
             } else {
-                return addProcessor(state);
+                addProcessor(state);
+                return;
             }
         }
         for (const ValueTree& child : state) {
@@ -295,6 +309,12 @@ private:
                                    addNode(processor);
         processorWrapper->state.setProperty(IDs::nodeId, int(newNode->nodeID), nullptr);
         processorWrapper->state.sendPropertyChangeMessage(IDs::bypassed);
+
+        if (auto *midiInputProcessor = dynamic_cast<MidiInputProcessor *>(processor)) {
+            const String &deviceName = processorState.getProperty(IDs::deviceName);
+            midiInputProcessor->setDeviceName(deviceName);
+            deviceManager.addMidiInputCallback(deviceName, &midiInputProcessor->getMidiMessageCollector());
+        }
 
         if (!initializing) {
             const Array<ValueTree> &nodeConnections = project.getConnectionsForNode(newNode->nodeID);
@@ -342,7 +362,7 @@ private:
         const ValueTree &parent = processor.getParent();
         getAllNodesFlowingInto(parent, processor, neighborNodes.before);
         const ValueTree &afterNodeState = getFirstProcessorBelowOrToRightAndBelow(parent, processor);
-        neighborNodes.after = afterNodeState.isValid() ? getNodeIdForState(afterNodeState) : project.getAudioOutputNodeId();
+        neighborNodes.after = afterNodeState.isValid() ? getNodeIdForState(afterNodeState) : getNodeIdForState(project.getAudioOutputProcessorState());
         jassert(neighborNodes.after != NA_NODE_ID);
 
         return neighborNodes;
@@ -443,6 +463,12 @@ private:
                 if (auto *node = getNodeForState(child)) {
                     // disconnect should have already been called before delete! (to avoid nested undo actions)
                     if (auto* processorWrapper = getProcessorWrapperForNodeId(node->nodeID)) {
+                        if (child.hasProperty(IDs::deviceName)) {
+                            if (auto *midiInputProcessor = dynamic_cast<MidiInputProcessor *>(processorWrapper->processor)) {
+                                const String &deviceName = child.getProperty(IDs::deviceName);
+                                deviceManager.removeMidiInputCallback(deviceName, &midiInputProcessor->getMidiMessageCollector());
+                            }
+                        }
                         processerWrappers.removeObject(processorWrapper);
                     }
                     nodes.removeObject(node);
@@ -503,7 +529,7 @@ private:
     };
 
     void processorWillBeDestroyed(const ValueTree& processor) override {
-        removeDefaultConnections(processor);
+        disconnectNode(getNodeIdForState(processor));
     };
 
     void processorHasBeenDestroyed(const ValueTree& processor) override {

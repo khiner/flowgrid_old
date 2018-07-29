@@ -149,6 +149,7 @@ struct Parameter : public AudioProcessorParameterWithID, private Utilities::Valu
             processor(processor), state(std::move(state)), undoManager(undoManager) {
         processor->addListener(this);
         processor->enableAllBuses();
+        audioProcessorChanged(processor);
         updateValueTree();
         startTimerHz(10);
     }
@@ -219,6 +220,8 @@ private:
                 // TODO should we use UndoManager and also support _setting_ playConfigDetails on state change?
                 state.setProperty(IDs::numInputChannels, processor->getTotalNumInputChannels(), nullptr);
                 state.setProperty(IDs::numOutputChannels, processor->getTotalNumOutputChannels(), nullptr);
+                state.setProperty(IDs::acceptsMidi, processor->acceptsMidi(), nullptr);
+                state.setProperty(IDs::producesMidi, processor->producesMidi(), nullptr);
             }
         });
     }

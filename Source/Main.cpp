@@ -11,9 +11,9 @@ File getSaveFile() {
 
 class SoundMachineApplication : public JUCEApplication, public MenuBarModel {
 public:
-    SoundMachineApplication() : project(Utilities::loadValueTree(getSaveFile(), true), undoManager, processorManager),
+    SoundMachineApplication() : project(Utilities::loadValueTree(getSaveFile(), true), undoManager, processorManager, deviceManager),
                                 applicationKeyListener(project, undoManager),
-                                processorGraph(project, undoManager),
+                                processorGraph(project, undoManager, deviceManager),
                                 midiControlHandler(project, processorGraph, undoManager) {}
 
     const String getApplicationName() override { return ProjectInfo::projectName; }
@@ -32,13 +32,12 @@ public:
         deviceManager.initialise(256, 256, savedAudioState.get(), true);
         player.setProcessor(&processorGraph);
         deviceManager.addAudioCallback(&player);
-        deviceManager.addMidiInputCallback(String(), &player.getMidiMessageCollector());
-        deviceManager.sendChangeMessage();
+        processorGraph.audioDeviceManagerInitialized();
 
         Process::makeForegroundProcess();
         auto *push2Component = new Push2Component(project, push2MidiCommunicator, processorGraph);
         push2Window = std::make_unique<MainWindow>("Push 2 Mirror", push2Component, &applicationKeyListener);
-        ValueTreeEditor *valueTreeEditor = new ValueTreeEditor(project.getState(), undoManager, project, processorGraph);
+        auto *valueTreeEditor = new ValueTreeEditor(project.getState(), undoManager, project, processorGraph);
         treeWindow = std::make_unique<MainWindow>("Tree Editor", valueTreeEditor, &applicationKeyListener);
 
 
@@ -67,7 +66,6 @@ public:
         push2Window = nullptr;
         treeWindow = nullptr;
         deviceManager.removeAudioCallback(&player);
-        deviceManager.removeMidiInputCallback(String(), &player.getMidiMessageCollector());
         Utilities::saveValueTree(project.getState(), getSaveFile(), true);
         setMacMainMenu(nullptr);
     }

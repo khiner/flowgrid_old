@@ -17,8 +17,17 @@ public:
 
         addAndMakeVisible(*(audioInputProcessor = std::make_unique<GraphEditorProcessor>(project.getAudioInputProcessorState(), *this, graph)));
         addAndMakeVisible(*(audioOutputProcessor = std::make_unique<GraphEditorProcessor>(project.getAudioOutputProcessorState(), *this, graph)));
+        addAndMakeVisible(*(midiOutputProcessor = std::make_unique<GraphEditorProcessor>(project.getMidiOutputProcessorState(), *this, graph)));
         addAndMakeVisible(*(tracks = std::make_unique<GraphEditorTracks>(project, project.getTracks(), *this, graph)));
         addAndMakeVisible(*(connectors = std::make_unique<GraphEditorConnectors>(project.getConnections(), *this, *this, graph)));
+        
+        for (const auto& inputProcessor : project.getInput()) {
+            if (inputProcessor.getProperty(IDs::name) == MidiInputProcessor::getPluginDescription().name) {
+                auto *inputGraphEditorProcessor = new GraphEditorProcessor(inputProcessor, *this, graph);
+                addAndMakeVisible(inputGraphEditorProcessor);
+                addMidiInputProcessor(inputGraphEditorProcessor);
+            }
+        }
     }
 
     ~GraphEditorPanel() override {
@@ -32,9 +41,18 @@ public:
     void resized() override {
         auto r = getLocalBounds();
         connectors->setBounds(r);
-        audioInputProcessor->setBounds(r.removeFromTop(int(getHeight() * 1.0 / Project::NUM_VISIBLE_PROCESSOR_SLOTS)));
+        auto top = r.removeFromTop(int(getHeight() * 1.0 / Project::NUM_VISIBLE_PROCESSOR_SLOTS));
+        int midiInputProcessorWidthInChannels = midiInputProcessors.size() * 2;
+        float audioRatio = float(audioInputProcessor->getNumOutputChannels()) / float(audioInputProcessor->getNumOutputChannels() + midiInputProcessorWidthInChannels);
+        audioInputProcessor->setBounds(top.removeFromLeft(int(getWidth() * audioRatio)));
+        for (auto *midiInputProcessor : midiInputProcessors) {
+            midiInputProcessor->setBounds(top.removeFromLeft(int(getWidth() * (1 - audioRatio) / midiInputProcessors.size())));
+        }
         tracks->setBounds(r.withHeight(getHeight() * Project::NUM_AVAILABLE_PROCESSOR_SLOTS / (Project::NUM_VISIBLE_PROCESSOR_SLOTS - 1)));
-        audioOutputProcessor->setBounds(r.removeFromBottom(int(getHeight() * 1.0 / Project::NUM_VISIBLE_PROCESSOR_SLOTS)));
+        auto bottom = r.removeFromBottom(int(getHeight() * 1.0 / Project::NUM_VISIBLE_PROCESSOR_SLOTS));
+        audioRatio = float(audioOutputProcessor->getNumInputChannels()) / float(audioOutputProcessor->getNumInputChannels() + midiOutputProcessor->getNumInputChannels());
+        audioOutputProcessor->setBounds(bottom.removeFromLeft(int(getWidth() * audioRatio)));
+        midiOutputProcessor->setBounds(bottom);
         updateComponents();
     }
 
@@ -45,6 +63,9 @@ public:
     void updateComponents() {
         audioInputProcessor->update();
         audioOutputProcessor->update();
+        for (auto* midiInputProcessor : midiInputProcessors)
+            midiInputProcessor->update();
+        midiOutputProcessor->update();
         tracks->updateProcessors();
         connectors->updateConnectors();
     }
@@ -137,13 +158,11 @@ public:
     }
 
     GraphEditorProcessor *getProcessorForNodeId(const AudioProcessorGraph::NodeID nodeId) const override {
-        if (nodeId == audioInputProcessor->getNodeId()) {
-            return audioInputProcessor.get();
-        } else if (nodeId == audioOutputProcessor->getNodeId()) {
-            return audioOutputProcessor.get();
-        } else {
-            return tracks->getProcessorForNodeId(nodeId);
-        }
+        if (nodeId == audioInputProcessor->getNodeId()) return audioInputProcessor.get();
+        else if (nodeId == audioOutputProcessor->getNodeId()) return audioOutputProcessor.get();
+        else if (auto *midiInputProcessor = findMidiInputProcessorForNodeId(nodeId)) return midiInputProcessor;
+        else if (nodeId == midiOutputProcessor->getNodeId()) return midiOutputProcessor.get();
+        else return tracks->getProcessorForNodeId(nodeId);
     }
 
     ProcessorGraph &graph;
@@ -156,28 +175,63 @@ private:
     std::unique_ptr<GraphEditorTracks> tracks;
     std::unique_ptr<GraphEditorProcessor> audioInputProcessor;
     std::unique_ptr<GraphEditorProcessor> audioOutputProcessor;
+    OwnedArray<GraphEditorProcessor> midiInputProcessors;
+    std::unique_ptr<GraphEditorProcessor> midiOutputProcessor;
+
     AudioProcessorGraph::Connection initialDraggingConnection { EMPTY_CONNECTION };
+
+    GraphEditorProcessor::ElementComparator processorComparator;
 
     PinComponent *findPinAt(const MouseEvent &e) const {
         if (auto *pin = audioInputProcessor->findPinAt(e)) {
             return pin;
         } else if ((pin = audioOutputProcessor->findPinAt(e))) {
             return pin;
+        } else if ((pin = midiOutputProcessor->findPinAt(e))) {
+            return pin;
+        }
+
+        for (auto *midiInputProcessor : midiInputProcessors) {
+            if (auto* pin = midiInputProcessor->findPinAt(e)) {
+                return pin;
+            }
         }
         return tracks->findPinAt(e);
+    }
+
+    GraphEditorProcessor* findMidiInputProcessorForNodeId(const AudioProcessorGraph::NodeID nodeId) const {
+        for (auto *midiInputProcessor : midiInputProcessors) {
+            if (midiInputProcessor->getNodeId() == nodeId)
+                return midiInputProcessor;
+        }
+        return nullptr;
+    }
+
+    void addMidiInputProcessor(GraphEditorProcessor* midiInputProcessor) {
+        midiInputProcessors.addSorted(processorComparator, midiInputProcessor);
     }
 
     void valueTreePropertyChanged(ValueTree& tree, const Identifier& i) override {
         if (tree.hasType(IDs::PROCESSOR)) {
             if (i == IDs::processorSlot || i == IDs::selected ||
-                i == IDs::numInputChannels || i == IDs::numOutputChannels) {
+                i == IDs::numInputChannels || i == IDs::numOutputChannels ||
+                i == IDs::acceptsMidi || i == IDs::producesMidi) {
                 updateComponents();
+                if (project.isIoProcessor(tree)) {
+                    resized();
+                }
             }
         }
     }
 
     void valueTreeChildAdded(ValueTree& parent, ValueTree& child) override {
         if (child.hasType(IDs::PROCESSOR)) {
+            if (child.hasProperty(IDs::deviceName)) {
+                auto *midiInputProcessor = new GraphEditorProcessor(child, *this, graph);
+                addAndMakeVisible(midiInputProcessor);
+                addMidiInputProcessor(midiInputProcessor);
+                resized();
+            }
             updateComponents();
         } else if (child.hasType(IDs::CONNECTION)) {
             connectors->updateConnectors();
@@ -186,6 +240,10 @@ private:
 
     void valueTreeChildRemoved(ValueTree& parent, ValueTree& child, int indexFromWhichChildWasRemoved) override {
         if (child.hasType(IDs::PROCESSOR)) {
+            if (child.hasProperty(IDs::deviceName)) {
+                midiInputProcessors.removeObject(findMidiInputProcessorForNodeId(ProcessorGraph::getNodeIdForState(child)));
+                resized();
+            }
             updateComponents();
         } else if (child.hasType(IDs::CONNECTION)) {
             connectors->updateConnectors();

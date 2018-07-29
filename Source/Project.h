@@ -6,10 +6,11 @@
 #include "processors/ProcessorManager.h"
 
 class Project : public ValueTreeItem,
-                public ProjectChangeBroadcaster {
+                public ProjectChangeBroadcaster,
+                private ChangeListener {
 public:
-    Project(const ValueTree &v, UndoManager &um, ProcessorManager& processorIds)
-            : ValueTreeItem(v, um), processorManager(processorIds) {
+    Project(const ValueTree &v, UndoManager &um, ProcessorManager& processorIds, AudioDeviceManager& deviceManager)
+            : ValueTreeItem(v, um), processorManager(processorIds), deviceManager(deviceManager) {
         if (!state.isValid()) {
             state = createDefaultProject();
         } else {
@@ -19,7 +20,12 @@ public:
             masterTrack = tracks.getChildWithName(IDs::MASTER_TRACK);
             connections = state.getChildWithName(IDs::CONNECTIONS);
         }
+        deviceManager.addChangeListener(this);
         jassert (state.hasType(IDs::PROJECT));
+    }
+
+    ~Project() override {
+        deviceManager.removeChangeListener(this);
     }
 
     ValueTree& getConnections() {
@@ -68,6 +74,10 @@ public:
 
     bool hasConnections() {
         return connections.isValid() && connections.getNumChildren() > 0;
+    }
+
+    bool isIoProcessor(const ValueTree& processor) {
+        return processor.hasType(IDs::PROCESSOR) && processorManager.isIoProcessorName(processor.getProperty(IDs::name));
     }
 
     const ValueTree getConnectionMatching(const AudioProcessorGraph::Connection &connection) {
@@ -169,16 +179,18 @@ public:
         auto selectedItems(Helpers::getSelectedAndDeletableTreeViewItems<ValueTreeItem>(*getOwnerView()));
 
         for (int i = selectedItems.size(); --i >= 0;) {
-            ValueTree &v = *selectedItems.getUnchecked(i);
+            deleteItem(*selectedItems.getUnchecked(i));
+        }
+    }
 
-            if (v.getParent().isValid()) {
-                if (v.hasType(IDs::PROCESSOR)) {
-                    sendProcessorWillBeDestroyedMessage(v);
-                }
-                v.getParent().removeChild(v, &undoManager);
-                if (v.hasType(IDs::PROCESSOR)) {
-                    sendProcessorHasBeenDestroyedMessage(v);
-                }
+    void deleteItem(const ValueTree &v, bool undoable=true) {
+        if (v.getParent().isValid()) {
+            if (v.hasType(IDs::PROCESSOR)) {
+                sendProcessorWillBeDestroyedMessage(v);
+            }
+            v.getParent().removeChild(v, undoable ? &undoManager : nullptr);
+            if (v.hasType(IDs::PROCESSOR)) {
+                sendProcessorHasBeenDestroyedMessage(v);
             }
         }
     }
@@ -189,21 +201,33 @@ public:
         Helpers::createUuidProperty(state);
 
         input = ValueTree(IDs::INPUT);
-        PluginDescription &audioInputDescription = processorManager.getAudioInputDescription();
-        ValueTree inputProcessor(IDs::PROCESSOR);
-        Helpers::createUuidProperty(inputProcessor);
-        inputProcessor.setProperty(IDs::id, audioInputDescription.createIdentifierString(), nullptr);
-        inputProcessor.setProperty(IDs::name, audioInputDescription.name, nullptr);
-        input.addChild(inputProcessor, -1, nullptr);
+        {
+            PluginDescription &audioInputDescription = processorManager.getAudioInputDescription();
+            ValueTree inputProcessor(IDs::PROCESSOR);
+            Helpers::createUuidProperty(inputProcessor);
+            inputProcessor.setProperty(IDs::id, audioInputDescription.createIdentifierString(), nullptr);
+            inputProcessor.setProperty(IDs::name, audioInputDescription.name, nullptr);
+            input.addChild(inputProcessor, -1, nullptr);
+        }
         state.addChild(input, -1, nullptr);
 
         output = ValueTree(IDs::OUTPUT);
-        PluginDescription &audioOutputDescription = processorManager.getAudioOutputDescription();
-        ValueTree outputProcessor(IDs::PROCESSOR);
-        Helpers::createUuidProperty(outputProcessor);
-        outputProcessor.setProperty(IDs::id, audioOutputDescription.createIdentifierString(), nullptr);
-        outputProcessor.setProperty(IDs::name, audioOutputDescription.name, nullptr);
-        output.addChild(outputProcessor, -1, nullptr);
+        {
+            PluginDescription &audioOutputDescription = processorManager.getAudioOutputDescription();
+            ValueTree outputProcessor(IDs::PROCESSOR);
+            Helpers::createUuidProperty(outputProcessor);
+            outputProcessor.setProperty(IDs::id, audioOutputDescription.createIdentifierString(), nullptr);
+            outputProcessor.setProperty(IDs::name, audioOutputDescription.name, nullptr);
+            output.addChild(outputProcessor, -1, nullptr);
+        }
+        {
+            PluginDescription &midiOutputDescription = processorManager.getMidiOutputDescription();
+            ValueTree midiOutputProcessor(IDs::PROCESSOR);
+            Helpers::createUuidProperty(midiOutputProcessor);
+            midiOutputProcessor.setProperty(IDs::id, midiOutputDescription.createIdentifierString(), nullptr);
+            midiOutputProcessor.setProperty(IDs::name, midiOutputDescription.name, nullptr);
+            output.addChild(midiOutputProcessor, -1, nullptr);
+        }
         state.addChild(output, -1, nullptr);
 
         tracks = ValueTree(IDs::TRACKS);
@@ -293,7 +317,7 @@ public:
             slot = NUM_AVAILABLE_PROCESSOR_SLOTS - 1;
             processor.setProperty(IDs::processorSlot, slot, nullptr);
         } else if (slot == -1) {
-            // Insert new processors _right before_ the first g&b processor, or at the end if there isn't one.
+            // Insert new processors _right before_ the first MixerChannel processor, or at the end if there isn't one.
             insertIndex = getMaxProcessorInsertIndex(track);
             slot = 0;
             if (track.getNumChildren() > 1) {
@@ -319,16 +343,20 @@ public:
         return getMixerChannelProcessorForTrack(getSelectedTrack());
     }
 
+    ValueTree getInput() const {
+        return input;
+    }
+
     ValueTree getAudioInputProcessorState() const {
-        return input.getChildWithName(IDs::PROCESSOR);
+        return input.getChildWithProperty(IDs::name, processorManager.getAudioInputDescription().name);
     }
 
     ValueTree getAudioOutputProcessorState() const {
-        return output.getChildWithName(IDs::PROCESSOR);
+        return output.getChildWithProperty(IDs::name, processorManager.getAudioOutputDescription().name);
     }
 
-    AudioProcessorGraph::NodeID getAudioOutputNodeId() const {
-        return AudioProcessorGraph::NodeID(int(getAudioOutputProcessorState()[IDs::nodeId]));
+    ValueTree getMidiOutputProcessorState() const {
+        return output.getChildWithProperty(IDs::name, processorManager.getMidiOutputDescription().name);
     }
 
     const bool selectedTrackHasMixerChannel() const {
@@ -483,7 +511,8 @@ private:
     std::unordered_map<int, int> slotForNodeIdSnapshot;
 
     ProcessorManager &processorManager;
-
+    AudioDeviceManager& deviceManager;
+    
     // NOTE: assumes the track hasn't been added yet!
     const String makeTrackNameUnique(const String& trackName) {
         for (auto track : tracks) {
@@ -501,5 +530,23 @@ private:
         }
 
         return trackName;
+    }
+
+    void changeListenerCallback(ChangeBroadcaster* source) override {
+        if (source == &deviceManager) {
+            for (const auto& deviceName : MidiInput::getDevices()) {
+                const ValueTree &existingMidiInputProcessor = input.getChildWithProperty(IDs::deviceName, deviceName);
+                if (deviceManager.isMidiInputEnabled(deviceName) && !existingMidiInputProcessor.isValid()) {
+                    ValueTree midiInputProcessor(IDs::PROCESSOR);
+                    Helpers::createUuidProperty(midiInputProcessor);
+                    midiInputProcessor.setProperty(IDs::id, MidiInputProcessor::getPluginDescription().createIdentifierString(), nullptr);
+                    midiInputProcessor.setProperty(IDs::name, MidiInputProcessor::getPluginDescription().name, nullptr);
+                    midiInputProcessor.setProperty(IDs::deviceName, deviceName, nullptr);
+                    input.addChild(midiInputProcessor, -1, nullptr);
+                } else if (!deviceManager.isMidiInputEnabled(deviceName) && existingMidiInputProcessor.isValid()) {
+                    deleteItem(existingMidiInputProcessor, false);
+                }
+            }
+        }
     }
 };

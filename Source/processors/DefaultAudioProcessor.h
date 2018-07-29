@@ -84,6 +84,8 @@ public:
 private:
     static BusesProperties getBusProperties(bool registerAsGenerator,
                                              const AudioChannelSet& channelSetToUse) {
+        if (channelSetToUse == AudioChannelSet::disabled())
+            return BusesProperties();
         return registerAsGenerator ? BusesProperties().withOutput("Output", channelSetToUse)
                                    : BusesProperties().withInput("Input",  channelSetToUse).withOutput("Output", channelSetToUse);
     }
