@@ -12,7 +12,6 @@ public:
         generic,
         programs,
         audioIO,
-        numTypes
     };
 
     PluginWindow(AudioProcessorGraph::Node *n, Type t, OwnedArray<PluginWindow> &windowList)

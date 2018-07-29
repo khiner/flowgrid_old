@@ -1,18 +1,16 @@
-#include <memory>
-
 #pragma once
 
 #include "view/UiColours.h"
 #include "ProcessorGraph.h"
 #include "Project.h"
-#include "Utilities.h"
+#include "processor_editor/ProcessorEditor.h"
 
 class SelectionPanel : public Component,
                        private ProjectChangeListener {
 public:
     SelectionPanel(Project &project, ProcessorGraph &audioGraphBuilder)
             : project(project), audioGraphBuilder(audioGraphBuilder) {
-        Utilities::addAndMakeVisible(*this, {&titleLabel});
+        addAndMakeVisible(titleLabel);
         project.addChangeListener(this);
 
         itemSelected({});
@@ -40,7 +38,7 @@ private:
     ProcessorGraph &audioGraphBuilder;
 
     Label titleLabel;
-    std::unique_ptr<GenericAudioProcessorEditor> processorEditor {};
+    std::unique_ptr<ProcessorEditor> processorEditor {};
 
     void itemSelected(const ValueTree &item) override {
         for (auto *c : getChildren())
@@ -60,7 +58,7 @@ private:
                     removeChildComponent(processorEditor.get());
                     processorEditor = nullptr;
                 }
-                processorEditor = std::make_unique<GenericAudioProcessorEditor>(processorWrapper->processor);
+                processorEditor = std::make_unique<ProcessorEditor>(processorWrapper->processor);
                 addAndMakeVisible(processorEditor.get());
             }
         }
