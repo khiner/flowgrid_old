@@ -18,10 +18,10 @@ public:
         return messageCollector;
     }
 
-    static const String getIdentifier() { return "Midi Input"; }
+    static const String name() { return "Midi Input"; }
 
     static PluginDescription getPluginDescription() {
-        return DefaultAudioProcessor::getPluginDescription(getIdentifier(), true, false, AudioChannelSet::disabled());
+        return DefaultAudioProcessor::getPluginDescription(name(), true, false, AudioChannelSet::disabled());
     }
 
     const String getName() const override { return !deviceName.isEmpty() ? deviceName : DefaultAudioProcessor::getName(); }

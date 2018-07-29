@@ -22,10 +22,10 @@ public:
         gainParameter->removeListener(this);
         balanceParameter->removeListener(this);
     }
-    static const String getIdentifier() { return "Mixer Channel"; }
+    static const String name() { return "Mixer Channel"; }
 
     static PluginDescription getPluginDescription() {
-        return DefaultAudioProcessor::getPluginDescription(getIdentifier(), false, false);
+        return DefaultAudioProcessor::getPluginDescription(name(), false, false);
     }
 
     void prepareToPlay(double sampleRate, int maximumExpectedSamplesPerBlock) override {

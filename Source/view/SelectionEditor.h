@@ -78,7 +78,6 @@ public:
         if (!item.isValid()) {
             titleLabel.setText("No item selected", dontSendNotification);
             titleLabel.setVisible(true);
-            removeChildComponent(processorEditor.get());
             processorEditor = nullptr;
         } else if (item.hasType(IDs::PROCESSOR)) {
             const String &name = item[IDs::name];
@@ -86,7 +85,6 @@ public:
 
             if (auto *processorWrapper = audioGraphBuilder.getProcessorWrapperForState(item)) {
                 if (processorEditor != nullptr) {
-                    removeChildComponent(processorEditor.get());
                     processorEditor = nullptr;
                 }
                 processorEditor = std::make_unique<ProcessorEditor>(processorWrapper->processor);

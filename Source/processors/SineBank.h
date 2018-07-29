@@ -51,10 +51,10 @@ public:
         toneSource4.getFreqParameter()->removeListener(this);
     }
 
-    static const String getIdentifier() { return "Sine Bank"; }
+    static const String name() { return "Sine Bank"; }
 
     static PluginDescription getPluginDescription() {
-        return DefaultAudioProcessor::getPluginDescription(getIdentifier(), true, false);
+        return DefaultAudioProcessor::getPluginDescription(name(), true, false);
     }
 
     void parameterChanged(AudioProcessorParameter *parameter, float newValue) override {

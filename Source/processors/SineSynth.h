@@ -15,10 +15,10 @@ public:
 
     ~SineSynth() override = default;
 
-    static String getIdentifier() { return "Sine Synth"; }
+    static String name() { return "Sine Synth"; }
 
     static PluginDescription getPluginDescription() {
-        return DefaultAudioProcessor::getPluginDescription(getIdentifier(), true, true);
+        return DefaultAudioProcessor::getPluginDescription(name(), true, true);
     }
 
     void prepareToPlay(double newSampleRate, int) override {

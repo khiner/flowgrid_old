@@ -17,10 +17,10 @@ public:
         balanceParameter->removeListener(this);
     }
 
-    static const String getIdentifier() { return "Balance"; }
+    static const String name() { return "Balance"; }
 
     static PluginDescription getPluginDescription() {
-        return DefaultAudioProcessor::getPluginDescription(getIdentifier(), false, false);
+        return DefaultAudioProcessor::getPluginDescription(name(), false, false);
     }
 
     void prepareToPlay(double sampleRate, int maximumExpectedSamplesPerBlock) override {

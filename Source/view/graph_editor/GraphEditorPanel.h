@@ -22,7 +22,7 @@ public:
         addAndMakeVisible(*(connectors = std::make_unique<GraphEditorConnectors>(project.getConnections(), *this, *this, graph)));
         
         for (const auto& inputProcessor : project.getInput()) {
-            if (inputProcessor.getProperty(IDs::name) == MidiInputProcessor::getPluginDescription().name) {
+            if (inputProcessor.getProperty(IDs::name) == MidiInputProcessor::name()) {
                 auto *inputGraphEditorProcessor = new GraphEditorProcessor(inputProcessor, *this, graph);
                 addAndMakeVisible(inputGraphEditorProcessor);
                 addMidiInputProcessor(inputGraphEditorProcessor);

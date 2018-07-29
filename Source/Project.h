@@ -293,7 +293,7 @@ public:
     }
 
     ValueTree createAndAddProcessor(const PluginDescription &description, ValueTree track, int slot=-1, bool undoable=true) {
-        if (selectedTrackHasMixerChannel() && description.name == MixerChannelProcessor::getIdentifier())
+        if (selectedTrackHasMixerChannel() && description.name == MixerChannelProcessor::name())
             return ValueTree();
 
         if (processorManager.isGeneratorOrInstrument(&description) &&
@@ -308,7 +308,7 @@ public:
 
         // TODO can simplify
         int insertIndex;
-        if (description.name == MixerChannelProcessor::getIdentifier()) {
+        if (description.name == MixerChannelProcessor::name()) {
             insertIndex = -1;
             slot = NUM_AVAILABLE_PROCESSOR_SLOTS - 1;
             processor.setProperty(IDs::processorSlot, slot, nullptr);
@@ -332,7 +332,7 @@ public:
     }
 
     const ValueTree getMixerChannelProcessorForTrack(const ValueTree& track) const {
-        return track.getChildWithProperty(IDs::name, MixerChannelProcessor::getIdentifier());
+        return track.getChildWithProperty(IDs::name, MixerChannelProcessor::name());
     }
 
     const ValueTree getMixerChannelProcessorForSelectedTrack() const {
@@ -532,7 +532,7 @@ private:
                     ValueTree midiInputProcessor(IDs::PROCESSOR);
                     Helpers::createUuidProperty(midiInputProcessor);
                     midiInputProcessor.setProperty(IDs::id, MidiInputProcessor::getPluginDescription().createIdentifierString(), nullptr);
-                    midiInputProcessor.setProperty(IDs::name, MidiInputProcessor::getPluginDescription().name, nullptr);
+                    midiInputProcessor.setProperty(IDs::name, MidiInputProcessor::name(), nullptr);
                     midiInputProcessor.setProperty(IDs::deviceName, deviceName, nullptr);
                     input.addChild(midiInputProcessor, -1, nullptr);
                 } else if (!deviceManager.isMidiInputEnabled(deviceName) && existingMidiInputProcessor.isValid()) {

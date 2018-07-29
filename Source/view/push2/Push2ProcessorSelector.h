@@ -120,7 +120,7 @@ class Push2ProcessorSelector : public Push2ComponentBase {
                 } else if (i + currentViewOffsetIndex < getTotalNumberOfTreeItems()) {
                     const PluginDescription *plugin = currentTree->plugins.getUnchecked(i + currentViewOffsetIndex - currentTree->subFolders.size());
                     labels[i]->setText(plugin->name, dontSendNotification);
-                    labels[i]->setEnabled(!trackHasMixerAlready || plugin->name != MixerChannelProcessor::getIdentifier());
+                    labels[i]->setEnabled(!trackHasMixerAlready || plugin->name != MixerChannelProcessor::name());
                 }
             }
             if (auto *selectedLabel = findSelectedLabel()) {

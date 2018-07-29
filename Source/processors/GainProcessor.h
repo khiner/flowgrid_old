@@ -17,10 +17,10 @@ public:
         gainParameter->removeListener(this);
     }
 
-    static const String getIdentifier() { return "Gain"; }
+    static const String name() { return "Gain"; }
 
     static PluginDescription getPluginDescription() {
-        return DefaultAudioProcessor::getPluginDescription(getIdentifier(), false, false);
+        return DefaultAudioProcessor::getPluginDescription(name(), false, false);
     }
 
     void prepareToPlay(double sampleRate, int maximumExpectedSamplesPerBlock) override {

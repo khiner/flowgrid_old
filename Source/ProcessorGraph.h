@@ -35,7 +35,7 @@ public:
 
     void audioDeviceManagerInitialized() {
         for (const auto& inputProcessor : project.getInput())
-            if (inputProcessor.getProperty(IDs::name) == MidiInputProcessor::getPluginDescription().name)
+            if (inputProcessor.getProperty(IDs::name) == MidiInputProcessor::name())
                 addProcessor(inputProcessor);
     }
 
@@ -109,7 +109,7 @@ public:
         if (auto* processorWrapper = getProcessorWrapperForNodeId(nodeId)) {
             project.setSelectedProcessor(processorWrapper->state);
 
-            if (processorWrapper->processor->getName() == MixerChannelProcessor::getIdentifier())
+            if (processorWrapper->processor->getName() == MixerChannelProcessor::name())
                 // mixer channel processors are special processors.
                 // they could be dragged and reconnected like any old processor, but please don't :)
                 return;

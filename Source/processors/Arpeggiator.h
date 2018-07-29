@@ -11,10 +11,10 @@ public:
 
     ~Arpeggiator() override = default;
 
-    static const String getIdentifier() { return "Arpeggiator"; }
+    static const String name() { return "Arpeggiator"; }
 
     static PluginDescription getPluginDescription() {
-        return DefaultAudioProcessor::getPluginDescription(getIdentifier(), false, true, AudioChannelSet::disabled());
+        return DefaultAudioProcessor::getPluginDescription(name(), false, true, AudioChannelSet::disabled());
     }
 
     bool acceptsMidi() const override { return true; }
