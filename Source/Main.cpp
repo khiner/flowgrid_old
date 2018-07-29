@@ -2,7 +2,7 @@
 #include "view/push2/Push2Component.h"
 #include "MidiControlHandler.h"
 #include "ApplicationKeyListener.h"
-#include <view/ValueTreeEditor.h>
+#include <view/SelectionEditor.h>
 #include <view/graph_editor/GraphEditor.h>
 
 File getSaveFile() {
@@ -37,8 +37,8 @@ public:
         Process::makeForegroundProcess();
         auto *push2Component = new Push2Component(project, push2MidiCommunicator, processorGraph);
         push2Window = std::make_unique<MainWindow>("Push 2 Mirror", push2Component, &applicationKeyListener);
-        auto *valueTreeEditor = new ValueTreeEditor(project.getState(), undoManager, project, processorGraph);
-        treeWindow = std::make_unique<MainWindow>("Tree Editor", valueTreeEditor, &applicationKeyListener);
+        auto *valueTreeEditor = new SelectionEditor(project.getState(), undoManager, project, processorGraph);
+        treeWindow = std::make_unique<MainWindow>("Selection Editor", valueTreeEditor, &applicationKeyListener);
 
 
         audioDeviceSelectorComponent = std::make_unique<AudioDeviceSelectorComponent>(deviceManager, 0, 256, 0, 256,

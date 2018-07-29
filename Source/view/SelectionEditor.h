@@ -6,13 +6,13 @@
 #include <processors/ProcessorManager.h>
 #include "UiColours.h"
 
-class ValueTreeEditor : public Component,
+class SelectionEditor : public Component,
                         public DragAndDropContainer,
                         private ProjectChangeListener,
                         private Button::Listener,
                         private Timer {
 public:
-    ValueTreeEditor(const ValueTree &state, UndoManager &undoManager, Project& project, ProcessorGraph &audioGraphBuilder)
+    SelectionEditor(const ValueTree &state, UndoManager &undoManager, Project& project, ProcessorGraph &audioGraphBuilder)
             : undoManager(undoManager), project(project) {
         project.addChangeListener(this);
         addAndMakeVisible(*(selectionPanel = std::make_unique<SelectionPanel>(project, audioGraphBuilder)));
@@ -93,5 +93,5 @@ private:
         undoManager.beginNewTransaction();
     }
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ValueTreeEditor)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SelectionEditor)
 };

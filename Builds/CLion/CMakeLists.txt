@@ -33,7 +33,7 @@ add_executable (APP
     "../../Source/usb/UsbCommunicator.h"
     "../../Source/Main.cpp"
         "../../Source/view/push2/Push2Component.h"
-        "../../Source/view/ValueTreeEditor.h"
+        "../../Source/view/SelectionEditor.h"
 
         "../../Source/view/UiColours.h"
     "../../Source/Utilities.h"
