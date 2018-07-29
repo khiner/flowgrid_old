@@ -8,13 +8,12 @@ public:
     //==============================================================================
     InternalPluginFormat() {
         {
-            AudioProcessorGraph::AudioGraphIOProcessor p(AudioProcessorGraph::AudioGraphIOProcessor::audioOutputNode);
-            p.fillInPluginDescription(audioOutDesc);
-        }
-
-        {
             AudioProcessorGraph::AudioGraphIOProcessor p(AudioProcessorGraph::AudioGraphIOProcessor::audioInputNode);
             p.fillInPluginDescription(audioInDesc);
+        }
+        {
+            AudioProcessorGraph::AudioGraphIOProcessor p(AudioProcessorGraph::AudioGraphIOProcessor::audioOutputNode);
+            p.fillInPluginDescription(audioOutDesc);
         }
         {
             AudioProcessorGraph::AudioGraphIOProcessor p(AudioProcessorGraph::AudioGraphIOProcessor::midiOutputNode);
@@ -22,7 +21,7 @@ public:
         }
     }
 
-    PluginDescription audioInDesc, audioOutDesc, midiInDesc, midiOutDesc;
+    PluginDescription audioInDesc, audioOutDesc, midiOutDesc;
 
     void getAllTypes(OwnedArray<PluginDescription>& results) {
         results.add(new PluginDescription(audioInDesc));
@@ -33,6 +32,7 @@ public:
         results.add(new PluginDescription(GainProcessor::getPluginDescription()));
         results.add(new PluginDescription(MixerChannelProcessor::getPluginDescription()));
         results.add(new PluginDescription(SineBank::getPluginDescription()));
+        results.add(new PluginDescription(SineSynth::getPluginDescription()));
     }
 
     String getName() const override { return "Internal"; }
@@ -46,7 +46,8 @@ public:
     StringArray searchPathsForPlugins(const FileSearchPath&, bool, bool) override { return {}; }
 
     bool isIoProcessorName(const String& name) const {
-        return name == audioInDesc.name || name == audioOutDesc.name || name == midiInDesc.name || name == midiOutDesc.name;
+        return name == audioInDesc.name || name == audioOutDesc.name ||
+               name == MidiInputProcessor::getPluginDescription().name || name == midiOutDesc.name;
     }
 
 private:
@@ -65,7 +66,7 @@ private:
         if (name == GainProcessor::getIdentifier()) return new GainProcessor();
         if (name == MixerChannelProcessor::getIdentifier()) return new MixerChannelProcessor();
         if (name == SineBank::getIdentifier()) return new SineBank();
-
+        if (name == SineSynth::getIdentifier()) return new SineSynth();
         return nullptr;
     }
 

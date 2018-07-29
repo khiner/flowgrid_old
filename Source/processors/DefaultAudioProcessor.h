@@ -15,15 +15,15 @@ public:
         jassert(channelSetToUse.size() == description.numOutputChannels);
     };
 
-    virtual void parameterChanged(AudioProcessorParameter *parameter, float newValue) = 0;
+    virtual void parameterChanged(AudioProcessorParameter *parameter, float newValue) {}
 
-    void parameterValueChanged(int parameterIndex, float newValue) override {
+    virtual void parameterValueChanged(int parameterIndex, float newValue) override {
         AudioProcessorParameter *parameter = getParameters().getUnchecked(parameterIndex);
         if (auto *floatParameter = dynamic_cast<AudioParameterFloat *>(parameter))
             parameterChanged(parameter, floatParameter->range.convertFrom0to1(newValue));
     }
 
-    void parameterGestureChanged(int parameterIndex, bool gestureIsStarting) override {}
+    virtual void parameterGestureChanged(int parameterIndex, bool gestureIsStarting) override {}
     
     // TODO can remove?
     void prepareToPlay(double sampleRate, int estimatedSamplesPerBlock) override {

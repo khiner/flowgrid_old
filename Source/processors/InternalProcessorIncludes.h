@@ -5,3 +5,4 @@
 #include "MidiInputProcessor.h"
 #include "MixerChannelProcessor.h"
 #include "SineBank.h"
+#include "SineSynth.h"

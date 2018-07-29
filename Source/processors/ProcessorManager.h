@@ -53,10 +53,6 @@ public:
         return internalFormat.audioOutDesc;
     }
 
-    PluginDescription &getMidiInputDescription() {
-        return internalFormat.midiInDesc;
-    }
-
     PluginDescription &getMidiOutputDescription() {
         return internalFormat.midiOutDesc;
     }
