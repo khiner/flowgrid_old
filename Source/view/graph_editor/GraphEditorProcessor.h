@@ -195,7 +195,6 @@ public:
             menu->addSeparator();
             menu->addItem(SHOW_PLUGIN_GUI_MENU_ID, "Show plugin GUI");
             menu->addItem(SHOW_ALL_PROGRAMS_MENU_ID, "Show all programs");
-            menu->addItem(SHOW_ALL_PARAMETERS_MENU_ID, "Show all parameters");
         }
 
         menu->showMenuAsync({}, ModalCallbackFunction::create
@@ -224,9 +223,6 @@ public:
                             break;
                         case SHOW_ALL_PROGRAMS_MENU_ID:
                             showWindow(PluginWindow::Type::programs);
-                            break;
-                        case SHOW_ALL_PARAMETERS_MENU_ID:
-                            showWindow(PluginWindow::Type::generic);
                             break;
                         default:
                             break;
@@ -261,7 +257,7 @@ private:
     static constexpr int
             DELETE_MENU_ID = 1, TOGGLE_BYPASS_MENU_ID = 2, CONNECT_DEFAULTS_MENU_ID = 3, DISCONNECT_ALL_MENU_ID = 4,
             DISCONNECT_DEFAULTS_MENU_ID = 5, DISCONNECT_CUSTOM_MENU_ID = 6,
-            SHOW_PLUGIN_GUI_MENU_ID = 10, SHOW_ALL_PROGRAMS_MENU_ID = 11, SHOW_ALL_PARAMETERS_MENU_ID = 12;
+            SHOW_PLUGIN_GUI_MENU_ID = 10, SHOW_ALL_PROGRAMS_MENU_ID = 11;
 
     void valueTreePropertyChanged(ValueTree &v, const Identifier &i) override {
         if (v != state)

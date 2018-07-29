@@ -9,7 +9,6 @@ class PluginWindow : public DocumentWindow {
 public:
     enum class Type {
         normal = 0,
-        generic,
         programs,
         audioIO,
     };
@@ -64,12 +63,7 @@ private:
         if (type == PluginWindow::Type::normal) {
             if (auto *ui = processor.createEditorIfNeeded())
                 return ui;
-
-            type = PluginWindow::Type::generic;
         }
-
-        if (type == PluginWindow::Type::generic)
-            return new GenericAudioProcessorEditor(&processor);
 
         if (type == PluginWindow::Type::programs)
             return new ProgramAudioProcessorEditor(processor);
@@ -85,8 +79,6 @@ private:
         switch (type) {
             case Type::normal:
                 return "Normal";
-            case Type::generic:
-                return "Generic";
             case Type::programs:
                 return "Programs";
             case Type::audioIO:
