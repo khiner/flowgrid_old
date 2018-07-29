@@ -418,6 +418,10 @@ public:
         return parent.getNumChildren();
     }
 
+    ValueTree findFirstSelectedItem() {
+        return findItemWithPropertyRecursive(state, IDs::selected, true);
+    }
+    
     void sendItemSelectedMessage(ValueTree item) override {
         if (item.hasType(IDs::TRACK)) {
             selectedTrack = item;
@@ -584,4 +588,18 @@ private:
             }
         }
     }
+    
+    static ValueTree findItemWithPropertyRecursive(const ValueTree& parent, const Identifier& i, const var& value) {
+        for (const auto& child : parent) {
+            if (child[i] == value)
+                return child;
+        }
+        for (const auto& child : parent) {
+            const ValueTree &match = findItemWithPropertyRecursive(child, i, value);
+            if (match.isValid()) {
+                return match;
+            }
+        }
+        return {};
+    };
 };
