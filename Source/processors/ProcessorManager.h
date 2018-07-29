@@ -19,9 +19,8 @@ public:
             knownPluginListExternal.recreateFromXml(*savedPluginList);
         }
 
-        internalFormat.getAllTypes(internalTypes);
-        for (auto* pluginType : internalTypes) {
-            knownPluginListInternal.addType(*pluginType);
+        for (auto& pluginType : internalPluginDescriptions) {
+            knownPluginListInternal.addType(pluginType);
         }
 
         pluginSortMethod = (KnownPluginList::SortMethod) appProperties.getUserSettings()->getIntValue("pluginSortMethod", KnownPluginList::sortByManufacturer);
@@ -113,7 +112,6 @@ private:
     KnownPluginList::SortMethod pluginSortMethod;
     AudioPluginFormatManager formatManager;
     ApplicationProperties appProperties;
-    OwnedArray<PluginDescription> internalTypes;
 
     void changeListenerCallback(ChangeBroadcaster* changed) override {
         if (changed == &knownPluginListExternal) {

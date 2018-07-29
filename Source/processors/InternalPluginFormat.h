@@ -19,21 +19,11 @@ public:
             AudioProcessorGraph::AudioGraphIOProcessor p(AudioProcessorGraph::AudioGraphIOProcessor::midiOutputNode);
             p.fillInPluginDescription(midiOutDesc);
         }
+
+        internalPluginDescriptions.add(audioInDesc, audioOutDesc, midiOutDesc);
     }
 
     PluginDescription audioInDesc, audioOutDesc, midiOutDesc;
-
-    void getAllTypes(OwnedArray<PluginDescription>& results) {
-        results.add(new PluginDescription(audioInDesc));
-        results.add(new PluginDescription(audioOutDesc));
-        results.add(new PluginDescription(MidiInputProcessor::getPluginDescription()));
-        results.add(new PluginDescription(midiOutDesc));
-        results.add(new PluginDescription(BalanceProcessor::getPluginDescription()));
-        results.add(new PluginDescription(GainProcessor::getPluginDescription()));
-        results.add(new PluginDescription(MixerChannelProcessor::getPluginDescription()));
-        results.add(new PluginDescription(SineBank::getPluginDescription()));
-        results.add(new PluginDescription(SineSynth::getPluginDescription()));
-    }
 
     String getName() const override { return "Internal"; }
     bool fileMightContainThisPluginType(const String&) override { return true; }
