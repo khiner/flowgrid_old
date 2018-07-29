@@ -4,10 +4,10 @@
 
 class ToneSourceWithParameters {
 public:
-    explicit ToneSourceWithParameters(const String &idSuffix):
+    explicit ToneSourceWithParameters(const String &idSuffix, const std::function<String (float, int)>& stringFromValue, const std::function<String (float, int)>& dbStringFromValue):
             source(new ToneGeneratorAudioSource),
-            ampParameter(new AudioParameterFloat("amp_" + idSuffix, "Amp" + idSuffix, NormalisableRange<float>(0.0f, 1.0f), 0.2f, "dB", AudioProcessorParameter::genericParameter, [](float value, int radix) { return String(Decibels::gainToDecibels(value), radix); }, nullptr)),
-            freqParameter(new AudioParameterFloat("freq_" + idSuffix, "Freq" + idSuffix, NormalisableRange<float>(440.0f, 10000.0f, 0.0f, 0.3f, false), 880.0f, "Hz", AudioProcessorParameter::genericParameter, [](float value, int radix) { return String(value, radix); }, nullptr)) {}
+            ampParameter(new AudioParameterFloat("amp_" + idSuffix, "Amp" + idSuffix, NormalisableRange<float>(0.0f, 1.0f), 0.2f, "dB", AudioProcessorParameter::genericParameter, dbStringFromValue, nullptr)),
+            freqParameter(new AudioParameterFloat("freq_" + idSuffix, "Freq" + idSuffix, NormalisableRange<float>(440.0f, 10000.0f, 0.0f, 0.3f, false), 880.0f, "Hz", AudioProcessorParameter::genericParameter, stringFromValue, nullptr)) {}
 
     AudioParameterFloat *getAmpParameter() {
         return ampParameter;
@@ -25,5 +25,3 @@ private:
     std::unique_ptr<ToneGeneratorAudioSource> source;
     AudioParameterFloat *ampParameter, *freqParameter;
 };
-
-

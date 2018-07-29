@@ -210,7 +210,6 @@ public:
         }
 
         return anythingUpdated;
-
     }
 
     // TODO only one timer callback for all processors

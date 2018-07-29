@@ -8,11 +8,9 @@ public:
     explicit MixerChannelProcessor() :
             DefaultAudioProcessor(getPluginDescription()),
             balanceParameter(new AudioParameterFloat("balance", "Balance", NormalisableRange<float>(0.0f, 1.0f), balance.getTargetValue(), "",
-                                                     AudioProcessorParameter::genericParameter,
-                                                     [](float value, int radix) { return String(value, radix); }, nullptr)),
+                                                     AudioProcessorParameter::genericParameter, defaultStringFromValue, nullptr)),
             gainParameter(new AudioParameterFloat("gain", "Gain", NormalisableRange<float>(0.0f, 1.0f), gain.getTargetValue(), "dB",
-                                                  AudioProcessorParameter::genericParameter,
-                                                  [](float value, int radix) { return String(Decibels::gainToDecibels(value), radix); }, nullptr)) {
+                                                  AudioProcessorParameter::genericParameter, defaultStringFromDbValue, nullptr)) {
         balanceParameter->addListener(this);
         gainParameter->addListener(this);
 

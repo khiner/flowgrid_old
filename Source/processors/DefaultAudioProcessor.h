@@ -80,6 +80,8 @@ public:
 
         return descr;
     }
+    const static std::function<String (float, int)> defaultStringFromValue;
+    const static std::function<String (float, int)> defaultStringFromDbValue;
 
 private:
     static BusesProperties getBusProperties(bool registerAsGenerator,

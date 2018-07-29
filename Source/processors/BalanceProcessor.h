@@ -8,7 +8,7 @@ public:
     explicit BalanceProcessor() :
             DefaultAudioProcessor(getPluginDescription()),
             balanceParameter(new AudioParameterFloat("balance", "Balance", NormalisableRange<float>(0.0f, 1.0f), balance.getTargetValue(), "",
-                                                     AudioProcessorParameter::genericParameter, [](float value, int radix) { return String(value, radix); }, nullptr)) {
+                                                     AudioProcessorParameter::genericParameter, defaultStringFromValue, nullptr)) {
         balanceParameter->addListener(this);
         addParameter(balanceParameter);
     }
