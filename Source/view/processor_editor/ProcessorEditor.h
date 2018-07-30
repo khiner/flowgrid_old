@@ -3,6 +3,7 @@
 #pragma once
 
 #include "JuceHeader.h"
+#include "processors/StatefulAudioProcessorWrapper.h"
 
 class ProcessorEditor : public Component {
 public:
@@ -43,11 +44,11 @@ public:
         parametersPanel->setBounds(r);
     }
 
-    void setProcessor(AudioProcessor *const processor) {
-        if (processor != nullptr) {
-            titleLabel.setText(processor->getName(), dontSendNotification);
+    void setProcessor(StatefulAudioProcessorWrapper *const processorWrapper) {
+        if (processorWrapper != nullptr) {
+            titleLabel.setText(processorWrapper->processor->getName(), dontSendNotification);
         }
-        parametersPanel->setProcessor(processor);
+        parametersPanel->setProcessor(processorWrapper);
         updatePageButtonVisibility();
     }
 
@@ -289,79 +290,6 @@ private:
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ChoiceParameterComponent)
     };
 
-    class SliderParameterComponent final : public Component,
-                                           private ParameterListener {
-    public:
-        SliderParameterComponent(AudioProcessorParameter &param, Label& valueLabel)
-                : ParameterListener(param), valueLabel(valueLabel) {
-            if (getParameter().getNumSteps() != AudioProcessor::getDefaultNumParameterSteps())
-                slider.setRange(0.0, 1.0, 1.0 / (getParameter().getNumSteps() - 1.0));
-            else
-                slider.setRange(0.0, 1.0);
-
-            slider.setScrollWheelEnabled(false);
-            addAndMakeVisible(slider);
-
-            // Set the initial value.
-            handleNewParameterValue();
-
-            slider.onValueChange = [this]() { sliderValueChanged(); };
-            slider.onDragStart = [this]() { sliderStartedDragging(); };
-            slider.onDragEnd = [this]() { sliderStoppedDragging(); };
-        }
-
-        void paint(Graphics &) override {}
-
-        void resized() override {
-            auto area = getLocalBounds();
-            slider.setBounds(area.reduced(5));
-        }
-
-    private:
-        Label &valueLabel;
-
-        void updateTextDisplay() {
-            valueLabel.setText(getParameter().getCurrentValueAsText(), dontSendNotification);
-        }
-
-        void handleNewParameterValue() override {
-            if (!isDragging) {
-                slider.setValue(getParameter().getValue(), dontSendNotification);
-                updateTextDisplay();
-            }
-        }
-
-        void sliderValueChanged() {
-            auto newVal = (float) slider.getValue();
-
-            if (getParameter().getValue() != newVal) {
-                if (!isDragging)
-                    getParameter().beginChangeGesture();
-
-                getParameter().setValueNotifyingHost((float) slider.getValue());
-                updateTextDisplay();
-
-                if (!isDragging)
-                    getParameter().endChangeGesture();
-            }
-        }
-
-        void sliderStartedDragging() {
-            isDragging = true;
-            getParameter().beginChangeGesture();
-        }
-
-        void sliderStoppedDragging() {
-            isDragging = false;
-            getParameter().endChangeGesture();
-        }
-
-        Slider slider{Slider::RotaryHorizontalVerticalDrag, Slider::TextEntryBoxPosition::NoTextBox};
-        bool isDragging = false;
-
-        JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SliderParameterComponent)
-    };
-
     class ParameterDisplayComponent : public Component {
     public:
         ParameterDisplayComponent() {
@@ -370,21 +298,30 @@ private:
             addChildComponent(valueLabel);
         }
 
-        void setParameter(AudioProcessorParameter *param) {
+        ~ParameterDisplayComponent() {
+            if (auto *slider = dynamic_cast<Slider *>(parameterComponent.get()))
+                this->parameter->detachSlider(slider, &valueLabel);
+        }
+
+        void setParameter(StatefulAudioProcessorWrapper::Parameter *param) {
             for (auto* child : getChildren()) {
                 child->setVisible(false);
             }
-            
-            if (param == nullptr) {
-                parameterComponent = nullptr;
-                return;
-            }
 
-            parameterName.setText(param->getName(128), dontSendNotification);
+            if (auto *slider = dynamic_cast<Slider *>(parameterComponent.get()))
+                this->parameter->detachSlider(slider, &valueLabel);
+            parameterComponent = nullptr;
+            
+            this->parameter = param;
+
+            if (this->parameter == nullptr)
+                return;
+
+            parameterName.setText(param->sourceParameter->getName(128), dontSendNotification);
             parameterName.setJustificationType(Justification::centred);
             parameterName.setVisible(true);
 
-            parameterLabel.setText(param->getLabel(), dontSendNotification);
+            parameterLabel.setText(param->sourceParameter->getLabel(), dontSendNotification);
             parameterLabel.setVisible(true);
 
             if (param->isBoolean()) {
@@ -392,18 +329,19 @@ private:
                 // marking a parameter as boolean. If you want consistency across
                 // all  formats then it might be best to use a
                 // SwitchParameterComponent instead.
-                parameterComponent = std::make_unique<BooleanParameterComponent>(*param);
+                parameterComponent = std::make_unique<BooleanParameterComponent>(*param->sourceParameter);
             } else if (param->getNumSteps() == 2) {
                 // Most hosts display any parameter with just two steps as a switch.
-                parameterComponent = std::make_unique<SwitchParameterComponent>(*param);
+                parameterComponent = std::make_unique<SwitchParameterComponent>(*param->sourceParameter);
             } else if (!param->getAllValueStrings().isEmpty()) {
                 // If we have a list of strings to represent the different states a
                 // parameter can be in then we should present a dropdown allowing a
                 // user to pick one of them.
-                parameterComponent = std::make_unique<ChoiceParameterComponent>(*param);
+                parameterComponent = std::make_unique<ChoiceParameterComponent>(*param->sourceParameter);
             } else {
                 // Everything else can be represented as a slider.
-                parameterComponent = std::make_unique<SliderParameterComponent>(*param, valueLabel);
+                parameterComponent = std::make_unique<Slider>(Slider::RotaryHorizontalVerticalDrag, Slider::TextEntryBoxPosition::NoTextBox);
+                parameter->attachSlider(dynamic_cast<Slider *>(parameterComponent.get()), &parameterName, &parameterLabel, &valueLabel);
 
                 valueLabel.setColour(Label::outlineColourId, parameterComponent->findColour(Slider::textBoxOutlineColourId));
                 valueLabel.setBorderSize({1, 1, 1, 1});
@@ -429,6 +367,7 @@ private:
     private:
         Label parameterName, parameterLabel, valueLabel;
         std::unique_ptr<Component> parameterComponent;
+        StatefulAudioProcessorWrapper::Parameter *parameter;
 
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ParameterDisplayComponent)
     };
@@ -441,20 +380,20 @@ private:
             }
         }
 
-        void setProcessor(AudioProcessor *processor) {
-            if (this->processor != processor) {
+        void setProcessor(StatefulAudioProcessorWrapper *processor) {
+            if (this->processorWrapper != processor) {
                 currentPage = 0;
             }
-            this->processor = processor;
+            this->processorWrapper = processor;
             updateParameterComponents();
         }
 
         void updateParameterComponents() const {
             int componentIndex = 0;
-            if (processor != nullptr) {
-                for (int paramIndex = currentPage * maxRows * 8; paramIndex < processor->getParameters().size(); paramIndex++) {
-                    auto *parameter = processor->getParameters().getUnchecked(paramIndex);
-                    if (parameter->isAutomatable()) {
+            if (processorWrapper != nullptr) {
+                for (int paramIndex = currentPage * maxRows * 8; paramIndex < processorWrapper->processor->getParameters().size(); paramIndex++) {
+                    auto *parameter = processorWrapper->getParameter(paramIndex);
+                    if (parameter->sourceParameter->isAutomatable()) {
                         auto *component = paramComponents.getUnchecked(componentIndex++);
                         component->setParameter(parameter);
                         component->setVisible(true);
@@ -489,7 +428,7 @@ private:
         }
 
         bool canPageRight() {
-            return processor != nullptr && (currentPage + 1) * maxRows * 8 < processor->getParameters().size();
+            return processorWrapper != nullptr && (currentPage + 1) * maxRows * 8 < processorWrapper->processor->getParameters().size();
         }
 
         void paint(Graphics &g) override {
@@ -518,7 +457,7 @@ private:
         int maxRows;
         int currentPage {0};
         OwnedArray<ParameterDisplayComponent> paramComponents;
-        AudioProcessor *processor;
+        StatefulAudioProcessorWrapper *processorWrapper {};
 
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ParametersPanel)
     };

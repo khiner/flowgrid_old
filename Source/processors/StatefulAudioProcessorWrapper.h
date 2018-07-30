@@ -66,6 +66,9 @@ public:
                 for (auto* slider : attachedSliders) {
                     slider->setValue(newValue, sendNotificationSync);
                 }
+                for (auto* label : attachedLabels) {
+                    label->setText(valueToTextFunction(newValue), dontSendNotification);
+                }
             }
         }
 
@@ -105,7 +108,7 @@ public:
             }
         }
 
-        void attachSlider(Slider *slider, Label *name=nullptr, Label *label=nullptr) {
+        void attachSlider(Slider *slider, Label *name=nullptr, Label *label=nullptr, Label *valueLabel=nullptr) {
             if (name != nullptr) {
                 name->setText(this->name, dontSendNotification);
             }
@@ -118,15 +121,20 @@ public:
             slider->textFromValueFunction = valueToTextFunction;
             slider->valueFromTextFunction = textToValueFunction;
             attachedSliders.add(slider);
-            setAttachedComponentValues(value);
             slider->addListener(this);
+            if (valueLabel != nullptr) {
+                attachedLabels.add(valueLabel);
+            }
+            setAttachedComponentValues(value);
         }
 
-        void detachSlider(Slider *slider) {
+        void detachSlider(Slider *slider, Label *valueLabel=nullptr) {
             slider->removeListener(this);
             slider->textFromValueFunction = nullptr;
             slider->valueFromTextFunction = nullptr;
             attachedSliders.removeObject(slider, false);
+            if (valueLabel != nullptr)
+                attachedLabels.removeObject(valueLabel, false);
         }
 
         float getDefaultValue() const override {
@@ -161,6 +169,7 @@ public:
         CriticalSection selfCallbackMutex;
 
         OwnedArray<Slider> attachedSliders {};
+        OwnedArray<Label> attachedLabels {};
 
         void valueTreePropertyChanged(ValueTree &tree, const Identifier &p) override {
             if (ignoreParameterChangedCallbacks)

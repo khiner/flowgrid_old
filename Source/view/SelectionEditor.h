@@ -73,7 +73,7 @@ public:
 
         if (item.hasType(IDs::PROCESSOR)) {
             if (auto *processorWrapper = audioGraphBuilder.getProcessorWrapperForState(item)) {
-                processorEditor->setProcessor(processorWrapper->processor);
+                processorEditor->setProcessor(processorWrapper);
                 processorEditor->setVisible(true);
             }
         } else {
