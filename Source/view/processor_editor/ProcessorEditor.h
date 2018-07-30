@@ -9,13 +9,7 @@ public:
     explicit ProcessorEditor(AudioProcessor *const p) : AudioProcessorEditor(p) {
         jassert(p != nullptr);
         setOpaque(true);
-
-        view.setViewedComponent(new ParametersPanel(*p, p->getParameters()));
-        addAndMakeVisible(view);
-
-        view.setScrollBarsShown(true, false);
-        setSize(view.getViewedComponent()->getWidth() + view.getVerticalScrollBar().getWidth(),
-                jmin(view.getViewedComponent()->getHeight(), 400));
+        addAndMakeVisible((parametersPanel = std::make_unique<ParametersPanel>(*p, p->getParameters())).get());
     }
 
     ~ProcessorEditor() override = default;
@@ -25,12 +19,11 @@ public:
     }
 
     void resized() override {
-        view.setBounds(getLocalBounds());
+        auto r = getLocalBounds();
+        parametersPanel->setBounds(r);
     }
 
 private:
-    Viewport view;
-
     class ParameterListener : private AudioProcessorParameter::Listener,
                               private AudioProcessorListener,
                               private Timer {
@@ -280,8 +273,8 @@ private:
     class SliderParameterComponent final : public Component,
                                            private ParameterListener {
     public:
-        SliderParameterComponent(AudioProcessor &processor, AudioProcessorParameter &param)
-                : ParameterListener(processor, param) {
+        SliderParameterComponent(AudioProcessor &processor, AudioProcessorParameter &param, Label& valueLabel)
+                : ParameterListener(processor, param), valueLabel(valueLabel) {
             if (getParameter().getNumSteps() != AudioProcessor::getDefaultNumParameterSteps())
                 slider.setRange(0.0, 1.0, 1.0 / (getParameter().getNumSteps() - 1.0));
             else
@@ -289,11 +282,6 @@ private:
 
             slider.setScrollWheelEnabled(false);
             addAndMakeVisible(slider);
-
-            valueLabel.setColour(Label::outlineColourId, slider.findColour(Slider::textBoxOutlineColourId));
-            valueLabel.setBorderSize({1, 1, 1, 1});
-            valueLabel.setJustificationType(Justification::centred);
-            addAndMakeVisible(valueLabel);
 
             // Set the initial value.
             handleNewParameterValue();
@@ -306,15 +294,13 @@ private:
         void paint(Graphics &) override {}
 
         void resized() override {
-            auto area = getLocalBounds().reduced(0, 10);
-
-            valueLabel.setBounds(area.removeFromRight(80));
-
-            area.removeFromLeft(6);
-            slider.setBounds(area);
+            auto area = getLocalBounds();
+            slider.setBounds(area.reduced(5));
         }
 
     private:
+        Label &valueLabel;
+
         void updateTextDisplay() {
             valueLabel.setText(getParameter().getCurrentValueAsText(), dontSendNotification);
         }
@@ -351,8 +337,7 @@ private:
             getParameter().endChangeGesture();
         }
 
-        Slider slider{Slider::LinearHorizontal, Slider::TextEntryBoxPosition::NoTextBox};
-        Label valueLabel;
+        Slider slider{Slider::RotaryHorizontalVerticalDrag, Slider::TextEntryBoxPosition::NoTextBox};
         bool isDragging = false;
 
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SliderParameterComponent)
@@ -363,7 +348,7 @@ private:
         ParameterDisplayComponent(AudioProcessor &processor, AudioProcessorParameter &param)
                 : parameter(param) {
             parameterName.setText(parameter.getName(128), dontSendNotification);
-            parameterName.setJustificationType(Justification::centredRight);
+            parameterName.setJustificationType(Justification::centred);
             addAndMakeVisible(parameterName);
 
             parameterLabel.setText(parameter.getLabel(), dontSendNotification);
@@ -385,27 +370,32 @@ private:
                 parameterComp = std::make_unique<ChoiceParameterComponent>(processor, param);
             } else {
                 // Everything else can be represented as a slider.
-                parameterComp = std::make_unique<SliderParameterComponent>(processor, param);
+                parameterComp = std::make_unique<SliderParameterComponent>(processor, param, valueLabel);
+
+                valueLabel.setColour(Label::outlineColourId, parameterComp->findColour(Slider::textBoxOutlineColourId));
+                valueLabel.setBorderSize({1, 1, 1, 1});
+                valueLabel.setJustificationType(Justification::centred);
+                valueLabel.setEditable(true, true);
+                addAndMakeVisible(valueLabel);
             }
 
             addAndMakeVisible(parameterComp.get());
 
-            setSize(400, 40);
+            setSize(100, 100);
         }
 
-        void paint(Graphics &) override {}
-
         void resized() override {
-            auto area = getLocalBounds();
-
-            parameterName.setBounds(area.removeFromLeft(100));
-            parameterLabel.setBounds(area.removeFromRight(50));
+            auto area = getLocalBounds().reduced(5);
+            parameterName.setBounds(area.removeFromTop(area.getHeight() / 5));
+            auto bottom = area.removeFromBottom(area.getHeight() / 5);
+            parameterLabel.setBounds(bottom.removeFromRight(area.getWidth() / 4));
+            valueLabel.setBounds(bottom);
             parameterComp->setBounds(area);
         }
 
     private:
         AudioProcessorParameter &parameter;
-        Label parameterName, parameterLabel;
+        Label parameterName, parameterLabel, valueLabel;
         std::unique_ptr<Component> parameterComp;
 
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ParameterDisplayComponent)
@@ -417,11 +407,6 @@ private:
             for (auto *param : parameters)
                 if (param->isAutomatable())
                     addAndMakeVisible(paramComponents.add(new ParameterDisplayComponent(processor, *param)));
-
-            if (auto *comp = paramComponents[0])
-                setSize(comp->getWidth(), comp->getHeight() * paramComponents.size());
-            else
-                setSize(400, 100);
         }
 
         void paint(Graphics &g) override {
@@ -429,10 +414,19 @@ private:
         }
 
         void resized() override {
-            auto area = getLocalBounds();
+            auto r = getLocalBounds();
+            auto componentWidth = r.getWidth() / 8;
+            auto componentHeight = componentWidth * 7 / 5;
+            Rectangle<int> currentRow = r.removeFromTop(componentHeight);
 
-            for (auto *comp : paramComponents)
-                comp->setBounds(area.removeFromTop(comp->getHeight()));
+            int componentCount = 1;
+            for (auto *comp : paramComponents) {
+                if (componentCount++ % 9 == 0) {
+                    componentCount = 1;
+                    currentRow = r.removeFromTop(componentHeight);
+                }
+                comp->setBounds(currentRow.removeFromLeft(componentWidth));
+            }
         }
 
     private:
@@ -441,5 +435,7 @@ private:
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ParametersPanel)
     };
 
+    std::unique_ptr<ParametersPanel> parametersPanel;
+    
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ProcessorEditor)
 };

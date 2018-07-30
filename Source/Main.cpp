@@ -46,7 +46,8 @@ public:
 
         pluginListComponent = std::unique_ptr<PluginListComponent>(processorManager.makePluginListComponent());
 
-        selectionWindow->setBoundsRelative(0.05, 0.25, 0.45, 0.35);
+        selectionWindow->setBoundsRelative(0.05, 0.25, 0.40, 0.40);
+        selectionWindow->setBounds(selectionWindow->getBounds().withHeight(selectionWindow->getWidth()));
 
         float graphEditorHeightToWidthRatio = float(Project::NUM_VISIBLE_PROCESSOR_SLOTS) / Project::NUM_VISIBLE_TRACKS;
 
