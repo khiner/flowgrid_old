@@ -9,7 +9,7 @@ public:
             : public AudioProcessorParameterWithID,
               private Utilities::ValueTreePropertyChangeListener,
               public AudioProcessorParameter::Listener,
-              public Slider::Listener {
+              public Slider::Listener, public ComboBox::Listener {
         explicit Parameter(AudioProcessorParameter *parameter)
                 : AudioProcessorParameterWithID(parameter->getName(32), parameter->getName(32),
                                                 parameter->getLabel(), parameter->getCategory()),
@@ -69,6 +69,9 @@ public:
                 for (auto* label : attachedLabels) {
                     label->setText(valueToTextFunction(newValue), dontSendNotification);
                 }
+                for (auto* comboBox : attachedComboBoxes) {
+                    comboBox->setSelectedItemIndex(roundToInt(newValue), sendNotificationSync);
+                }
             }
         }
 
@@ -109,32 +112,47 @@ public:
         }
 
         void attachSlider(Slider *slider, Label *name=nullptr, Label *label=nullptr, Label *valueLabel=nullptr) {
-            if (name != nullptr) {
+            if (name != nullptr)
                 name->setText(this->name, dontSendNotification);
-            }
-            if (label != nullptr) {
+            if (label != nullptr)
                 label->setText(this->label, dontSendNotification);
-            }
 
             // referTo({}) can call these value functions to notify listeners, and they may refer to dead params.
             slider->setNormalisableRange(doubleRangeFromFloatRange(range));
             slider->textFromValueFunction = valueToTextFunction;
             slider->valueFromTextFunction = textToValueFunction;
             attachedSliders.add(slider);
-            slider->addListener(this);
             if (valueLabel != nullptr) {
                 attachedLabels.add(valueLabel);
             }
             setAttachedComponentValues(value);
+            slider->addListener(this);
         }
 
         void detachSlider(Slider *slider, Label *valueLabel=nullptr) {
-            slider->removeListener(this);
-            slider->textFromValueFunction = nullptr;
-            slider->valueFromTextFunction = nullptr;
-            attachedSliders.removeObject(slider, false);
+            if (slider != nullptr) {
+                slider->removeListener(this);
+                slider->textFromValueFunction = nullptr;
+                slider->valueFromTextFunction = nullptr;
+                attachedSliders.removeObject(slider, false);
+            }
+
             if (valueLabel != nullptr)
                 attachedLabels.removeObject(valueLabel, false);
+        }
+
+        void attachComboBox(ComboBox *comboBox) {
+            if (comboBox == nullptr)
+                return;
+            attachedComboBoxes.add(comboBox);
+            comboBox->addListener(this);
+        }
+
+        void detachComboBox(ComboBox *comboBox) {
+            if (comboBox == nullptr)
+                return;
+            comboBox->removeListener(this);
+            attachedComboBoxes.removeObject(comboBox, false);
         }
 
         float getDefaultValue() const override {
@@ -170,6 +188,7 @@ public:
 
         OwnedArray<Slider> attachedSliders {};
         OwnedArray<Label> attachedLabels {};
+        OwnedArray<ComboBox> attachedComboBoxes {};
 
         void valueTreePropertyChanged(ValueTree &tree, const Identifier &p) override {
             if (ignoreParameterChangedCallbacks)
@@ -181,10 +200,20 @@ public:
         }
 
         void sliderValueChanged(Slider* s) override {
-            const ScopedLock selfCallbackLock (selfCallbackMutex);
+            const ScopedLock selfCallbackLock(selfCallbackMutex);
 
             if (!ignoreCallbacks)
                 postUnnormalisedValue((float) s->getValue());
+        }
+
+        void comboBoxChanged (ComboBox* comboBox) override {
+            const ScopedLock selfCallbackLock(selfCallbackMutex);
+
+            if (!ignoreCallbacks) {
+                beginParameterChange();
+                postUnnormalisedValue((float) comboBox->getSelectedId() - 1.0f);
+                endParameterChange();
+            }
         }
 
         void beginParameterChange() {
@@ -193,8 +222,7 @@ public:
             sourceParameter->beginChangeGesture();
         }
 
-        void endParameterChange()
-        {
+        void endParameterChange() {
             sourceParameter->endChangeGesture();
         }
 

@@ -250,12 +250,9 @@ private:
             addAndMakeVisible(box);
         }
 
-        void paint(Graphics &) override {}
-
         void resized() override {
             auto area = getLocalBounds();
-            area.removeFromLeft(8);
-            box.setBounds(area.reduced(0, 10));
+            box.setBounds(area.reduced(5));
         }
 
     private:
@@ -311,7 +308,7 @@ private:
             if (auto *slider = dynamic_cast<Slider *>(parameterComponent.get()))
                 this->parameter->detachSlider(slider, &valueLabel);
             parameterComponent = nullptr;
-            
+
             this->parameter = param;
 
             if (this->parameter == nullptr)
