@@ -15,7 +15,6 @@ public:
     SelectionEditor(const ValueTree &state, UndoManager &undoManager, Project& project, ProcessorGraph &audioGraphBuilder)
             : undoManager(undoManager), project(project), audioGraphBuilder(audioGraphBuilder) {
         project.addChangeListener(this);
-        addAndMakeVisible(titleLabel);
         addChildComponent((processorEditor = std::make_unique<ProcessorEditor>()).get());
         Utilities::visitComponents({&undoButton, &redoButton, &createTrackButton, &addProcessorButton},
                                    [this](Component *c) { addAndMakeVisible(c); });
@@ -43,9 +42,6 @@ public:
         buttons.removeFromLeft(6);
         addProcessorButton.setBounds(buttons.removeFromLeft(120));
 
-        r.removeFromBottom(4);
-
-        titleLabel.setBounds(r.removeFromTop(22));
         if (processorEditor != nullptr) {
             processorEditor->setBounds(r);
         }
@@ -75,19 +71,14 @@ public:
         const ValueTree &selectedTrack = project.getSelectedTrack();
         addProcessorButton.setVisible(selectedTrack.isValid());
 
-        if (!item.isValid()) {
-            titleLabel.setText("No item selected", dontSendNotification);
-            titleLabel.setVisible(true);
-            processorEditor->setVisible(false);
-            processorEditor->setProcessor(nullptr);
-        } else if (item.hasType(IDs::PROCESSOR)) {
-            const String &name = item[IDs::name];
-            titleLabel.setText("Processor Selected: " + name, dontSendNotification);
-
+        if (item.hasType(IDs::PROCESSOR)) {
             if (auto *processorWrapper = audioGraphBuilder.getProcessorWrapperForState(item)) {
                 processorEditor->setProcessor(processorWrapper->processor);
                 processorEditor->setVisible(true);
             }
+        } else {
+            processorEditor->setVisible(false);
+            processorEditor->setProcessor(nullptr);
         }
 
         resized();
@@ -106,7 +97,6 @@ private:
 
     TextButton addProcessorButton{"Add Processor"};
 
-    Label titleLabel;
     std::unique_ptr<ProcessorEditor> processorEditor {};
 
     UndoManager &undoManager;

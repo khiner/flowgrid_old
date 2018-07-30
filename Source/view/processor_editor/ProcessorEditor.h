@@ -6,9 +6,25 @@
 
 class ProcessorEditor : public Component {
 public:
-    explicit ProcessorEditor(int maxRows=2) {
+    explicit ProcessorEditor(int maxRows=2) :
+            pageLeftButton("Page left", 0.5, findColour(ResizableWindow::backgroundColourId).brighter(0.75)),
+            pageRightButton("Page right", 0.0, findColour(ResizableWindow::backgroundColourId).brighter(0.75)) {
         setOpaque(true);
+        addAndMakeVisible(titleLabel);
+        addAndMakeVisible(pageLeftButton);
+        addAndMakeVisible(pageRightButton);
+
         addAndMakeVisible((parametersPanel = std::make_unique<ParametersPanel>(maxRows)).get());
+
+        pageLeftButton.onClick = [this]() {
+            parametersPanel->pageLeft();
+            updatePageButtonVisibility();
+        };
+
+        pageRightButton.onClick = [this]() {
+            parametersPanel->pageRight();
+            updatePageButtonVisibility();
+        };
     }
 
     ~ProcessorEditor() override = default;
@@ -19,11 +35,25 @@ public:
 
     void resized() override {
         auto r = getLocalBounds();
+        auto top = r.removeFromTop(30);
+        pageRightButton.setBounds(top.removeFromRight(30).reduced(5));
+        pageLeftButton.setBounds(top.removeFromRight(30).reduced(5));
+        titleLabel.setBounds(top);
+
         parametersPanel->setBounds(r);
     }
 
-    void setProcessor(AudioProcessor *const p) {
-        parametersPanel->setProcessor(p);
+    void setProcessor(AudioProcessor *const processor) {
+        if (processor != nullptr) {
+            titleLabel.setText(processor->getName(), dontSendNotification);
+        }
+        parametersPanel->setProcessor(processor);
+        updatePageButtonVisibility();
+    }
+
+    void updatePageButtonVisibility() {
+        pageLeftButton.setVisible(parametersPanel->canPageLeft());
+        pageRightButton.setVisible(parametersPanel->canPageRight());
     }
 
 private:
@@ -411,12 +441,19 @@ private:
             }
         }
 
-        void setProcessor(AudioProcessor *p) {
+        void setProcessor(AudioProcessor *processor) {
+            if (this->processor != processor) {
+                currentPage = 0;
+            }
+            this->processor = processor;
+            updateParameterComponents();
+        }
+
+        void updateParameterComponents() const {
             int componentIndex = 0;
-            
-            if (p != nullptr) {
-                for (int paramIndex = 0; paramIndex < p->getParameters().size(); paramIndex++) {
-                    auto *parameter = p->getParameters().getUnchecked(paramIndex);
+            if (processor != nullptr) {
+                for (int paramIndex = currentPage * maxRows * 8; paramIndex < processor->getParameters().size(); paramIndex++) {
+                    auto *parameter = processor->getParameters().getUnchecked(paramIndex);
                     if (parameter->isAutomatable()) {
                         auto *component = paramComponents.getUnchecked(componentIndex++);
                         component->setParameter(parameter);
@@ -431,6 +468,28 @@ private:
                 component->setVisible(false);
                 component->setParameter(nullptr);
             }
+        }
+
+        void pageLeft() {
+            if (canPageLeft()) {
+                currentPage--;
+                updateParameterComponents();
+            }
+        }
+
+        void pageRight() {
+            if (canPageRight()) {
+                currentPage++;
+                updateParameterComponents();
+            }
+        }
+
+        bool canPageLeft() {
+            return currentPage > 0;
+        }
+
+        bool canPageRight() {
+            return processor != nullptr && (currentPage + 1) * maxRows * 8 < processor->getParameters().size();
         }
 
         void paint(Graphics &g) override {
@@ -457,12 +516,16 @@ private:
 
     private:
         int maxRows;
+        int currentPage {0};
         OwnedArray<ParameterDisplayComponent> paramComponents;
+        AudioProcessor *processor;
 
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ParametersPanel)
     };
 
     std::unique_ptr<ParametersPanel> parametersPanel;
-    
+    Label titleLabel;
+    ArrowButton pageLeftButton, pageRightButton;
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ProcessorEditor)
 };
