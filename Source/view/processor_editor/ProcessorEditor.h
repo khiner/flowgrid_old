@@ -1,12 +1,21 @@
+#include <memory>
+
 #pragma once
 
 #include "JuceHeader.h"
 
 class ProcessorEditor : public AudioProcessorEditor {
 public:
-    explicit ProcessorEditor(AudioProcessor *const p) : AudioProcessorEditor(p), pimpl(new Pimpl(*this)) {
-        setSize(pimpl->view.getViewedComponent()->getWidth() + pimpl->view.getVerticalScrollBar().getWidth(),
-                jmin(pimpl->view.getViewedComponent()->getHeight(), 400));
+    explicit ProcessorEditor(AudioProcessor *const p) : AudioProcessorEditor(p) {
+        jassert(p != nullptr);
+        setOpaque(true);
+
+        view.setViewedComponent(new ParametersPanel(*p, p->getParameters()));
+        addAndMakeVisible(view);
+
+        view.setScrollBarsShown(true, false);
+        setSize(view.getViewedComponent()->getWidth() + view.getVerticalScrollBar().getWidth(),
+                jmin(view.getViewedComponent()->getHeight(), 400));
     }
 
     ~ProcessorEditor() override = default;
@@ -16,12 +25,11 @@ public:
     }
 
     void resized() override {
-        pimpl->view.setBounds(getLocalBounds());
+        view.setBounds(getLocalBounds());
     }
 
 private:
-    struct Pimpl;
-    std::unique_ptr<Pimpl> pimpl;
+    Viewport view;
 
     class ParameterListener : private AudioProcessorParameter::Listener,
                               private AudioProcessorListener,
@@ -366,18 +374,18 @@ private:
                 // marking a parameter as boolean. If you want consistency across
                 // all  formats then it might be best to use a
                 // SwitchParameterComponent instead.
-                parameterComp.reset(new BooleanParameterComponent(processor, param));
+                parameterComp = std::make_unique<BooleanParameterComponent>(processor, param);
             } else if (param.getNumSteps() == 2) {
                 // Most hosts display any parameter with just two steps as a switch.
-                parameterComp.reset(new SwitchParameterComponent(processor, param));
+                parameterComp = std::make_unique<SwitchParameterComponent>(processor, param);
             } else if (!param.getAllValueStrings().isEmpty()) {
                 // If we have a list of strings to represent the different states a
                 // parameter can be in then we should present a dropdown allowing a
                 // user to pick one of them.
-                parameterComp.reset(new ChoiceParameterComponent(processor, param));
+                parameterComp = std::make_unique<ChoiceParameterComponent>(processor, param);
             } else {
                 // Everything else can be represented as a slider.
-                parameterComp.reset(new SliderParameterComponent(processor, param));
+                parameterComp = std::make_unique<SliderParameterComponent>(processor, param);
             }
 
             addAndMakeVisible(parameterComp.get());
@@ -431,24 +439,6 @@ private:
         OwnedArray<ParameterDisplayComponent> paramComponents;
 
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ParametersPanel)
-    };
-
-    struct Pimpl {
-        Pimpl(ProcessorEditor &parent) : owner(parent) {
-            auto *p = parent.getAudioProcessor();
-            jassert(p != nullptr);
-            owner.setOpaque(true);
-
-            view.setViewedComponent(new ParametersPanel(*p, p->getParameters()));
-            owner.addAndMakeVisible(view);
-
-            view.setScrollBarsShown(true, false);
-        }
-
-        ProcessorEditor &owner;
-        Viewport view;
-
-        JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Pimpl)
     };
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ProcessorEditor)
