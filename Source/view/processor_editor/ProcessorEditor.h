@@ -4,12 +4,11 @@
 
 #include "JuceHeader.h"
 
-class ProcessorEditor : public AudioProcessorEditor {
+class ProcessorEditor : public Component {
 public:
-    explicit ProcessorEditor(AudioProcessor *const p) : AudioProcessorEditor(p) {
-        jassert(p != nullptr);
+    explicit ProcessorEditor(int maxRows=2) {
         setOpaque(true);
-        addAndMakeVisible((parametersPanel = std::make_unique<ParametersPanel>(*p, p->getParameters())).get());
+        addAndMakeVisible((parametersPanel = std::make_unique<ParametersPanel>(maxRows)).get());
     }
 
     ~ProcessorEditor() override = default;
@@ -23,13 +22,16 @@ public:
         parametersPanel->setBounds(r);
     }
 
+    void setProcessor(AudioProcessor *const p) {
+        parametersPanel->setProcessor(p);
+    }
+
 private:
     class ParameterListener : private AudioProcessorParameter::Listener,
-                              private AudioProcessorListener,
                               private Timer {
     public:
-        ParameterListener(AudioProcessor &p, AudioProcessorParameter &param)
-                : processor(p), parameter(param) {
+        explicit ParameterListener(AudioProcessorParameter &param)
+                : parameter(param) {
             parameter.addListener(this);
             startTimer(100);
         }
@@ -45,22 +47,12 @@ private:
         virtual void handleNewParameterValue() = 0;
 
     private:
-        //==============================================================================
         void parameterValueChanged(int, float) override {
             parameterValueHasChanged = 1;
         }
 
         void parameterGestureChanged(int, bool) override {}
 
-        //==============================================================================
-        void audioProcessorParameterChanged(AudioProcessor *, int index, float) override {
-            if (index == parameter.getParameterIndex())
-                parameterValueHasChanged = 1;
-        }
-
-        void audioProcessorChanged(AudioProcessor *) override {}
-
-        //==============================================================================
         void timerCallback() override {
             if (parameterValueHasChanged.compareAndSetBool(0, 1)) {
                 handleNewParameterValue();
@@ -70,7 +62,6 @@ private:
             }
         }
 
-        AudioProcessor &processor;
         AudioProcessorParameter &parameter;
         Atomic<int> parameterValueHasChanged{0};
 
@@ -80,8 +71,7 @@ private:
     class BooleanParameterComponent final : public Component,
                                             private ParameterListener {
     public:
-        BooleanParameterComponent(AudioProcessor &processor, AudioProcessorParameter &param)
-                : ParameterListener(processor, param) {
+        BooleanParameterComponent(AudioProcessorParameter &param) : ParameterListener(param) {
             // Set the initial value.
             handleNewParameterValue();
 
@@ -126,8 +116,7 @@ private:
     class SwitchParameterComponent final : public Component,
                                            private ParameterListener {
     public:
-        SwitchParameterComponent(AudioProcessor &processor, AudioProcessorParameter &param)
-                : ParameterListener(processor, param) {
+        SwitchParameterComponent(AudioProcessorParameter &param) : ParameterListener(param) {
             auto *leftButton = buttons.add(new TextButton());
             auto *rightButton = buttons.add(new TextButton());
 
@@ -218,8 +207,8 @@ private:
     class ChoiceParameterComponent final : public Component,
                                            private ParameterListener {
     public:
-        ChoiceParameterComponent(AudioProcessor &processor, AudioProcessorParameter &param)
-                : ParameterListener(processor, param),
+        explicit ChoiceParameterComponent(AudioProcessorParameter &param)
+                : ParameterListener(param),
                   parameterValues(getParameter().getAllValueStrings()) {
             box.addItemList(parameterValues, 1);
 
@@ -273,8 +262,8 @@ private:
     class SliderParameterComponent final : public Component,
                                            private ParameterListener {
     public:
-        SliderParameterComponent(AudioProcessor &processor, AudioProcessorParameter &param, Label& valueLabel)
-                : ParameterListener(processor, param), valueLabel(valueLabel) {
+        SliderParameterComponent(AudioProcessorParameter &param, Label& valueLabel)
+                : ParameterListener(param), valueLabel(valueLabel) {
             if (getParameter().getNumSteps() != AudioProcessor::getDefaultNumParameterSteps())
                 slider.setRange(0.0, 1.0, 1.0 / (getParameter().getNumSteps() - 1.0));
             else
@@ -345,43 +334,56 @@ private:
 
     class ParameterDisplayComponent : public Component {
     public:
-        ParameterDisplayComponent(AudioProcessor &processor, AudioProcessorParameter &param)
-                : parameter(param) {
-            parameterName.setText(parameter.getName(128), dontSendNotification);
+        ParameterDisplayComponent() {
+            addChildComponent(parameterName);
+            addChildComponent(parameterLabel);
+            addChildComponent(valueLabel);
+        }
+
+        void setParameter(AudioProcessorParameter *param) {
+            for (auto* child : getChildren()) {
+                child->setVisible(false);
+            }
+            
+            if (param == nullptr) {
+                parameterComponent = nullptr;
+                return;
+            }
+
+            parameterName.setText(param->getName(128), dontSendNotification);
             parameterName.setJustificationType(Justification::centred);
-            addAndMakeVisible(parameterName);
+            parameterName.setVisible(true);
 
-            parameterLabel.setText(parameter.getLabel(), dontSendNotification);
-            addAndMakeVisible(parameterLabel);
+            parameterLabel.setText(param->getLabel(), dontSendNotification);
+            parameterLabel.setVisible(true);
 
-            if (param.isBoolean()) {
+            if (param->isBoolean()) {
                 // The AU, AUv3 and VST (only via a .vstxml file) SDKs support
                 // marking a parameter as boolean. If you want consistency across
                 // all  formats then it might be best to use a
                 // SwitchParameterComponent instead.
-                parameterComp = std::make_unique<BooleanParameterComponent>(processor, param);
-            } else if (param.getNumSteps() == 2) {
+                parameterComponent = std::make_unique<BooleanParameterComponent>(*param);
+            } else if (param->getNumSteps() == 2) {
                 // Most hosts display any parameter with just two steps as a switch.
-                parameterComp = std::make_unique<SwitchParameterComponent>(processor, param);
-            } else if (!param.getAllValueStrings().isEmpty()) {
+                parameterComponent = std::make_unique<SwitchParameterComponent>(*param);
+            } else if (!param->getAllValueStrings().isEmpty()) {
                 // If we have a list of strings to represent the different states a
                 // parameter can be in then we should present a dropdown allowing a
                 // user to pick one of them.
-                parameterComp = std::make_unique<ChoiceParameterComponent>(processor, param);
+                parameterComponent = std::make_unique<ChoiceParameterComponent>(*param);
             } else {
                 // Everything else can be represented as a slider.
-                parameterComp = std::make_unique<SliderParameterComponent>(processor, param, valueLabel);
+                parameterComponent = std::make_unique<SliderParameterComponent>(*param, valueLabel);
 
-                valueLabel.setColour(Label::outlineColourId, parameterComp->findColour(Slider::textBoxOutlineColourId));
+                valueLabel.setColour(Label::outlineColourId, parameterComponent->findColour(Slider::textBoxOutlineColourId));
                 valueLabel.setBorderSize({1, 1, 1, 1});
                 valueLabel.setJustificationType(Justification::centred);
                 valueLabel.setEditable(true, true);
-                addAndMakeVisible(valueLabel);
+                valueLabel.setVisible(true);
             }
 
-            addAndMakeVisible(parameterComp.get());
-
-            setSize(100, 100);
+            addAndMakeVisible(parameterComponent.get());
+            resized();
         }
 
         void resized() override {
@@ -390,23 +392,45 @@ private:
             auto bottom = area.removeFromBottom(area.getHeight() / 5);
             parameterLabel.setBounds(bottom.removeFromRight(area.getWidth() / 4));
             valueLabel.setBounds(bottom);
-            parameterComp->setBounds(area);
+            if (parameterComponent != nullptr)
+                parameterComponent->setBounds(area);
         }
 
     private:
-        AudioProcessorParameter &parameter;
         Label parameterName, parameterLabel, valueLabel;
-        std::unique_ptr<Component> parameterComp;
+        std::unique_ptr<Component> parameterComponent;
 
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ParameterDisplayComponent)
     };
 
     class ParametersPanel : public Component {
     public:
-        ParametersPanel(AudioProcessor &processor, const OwnedArray<AudioProcessorParameter> &parameters) {
-            for (auto *param : parameters)
-                if (param->isAutomatable())
-                    addAndMakeVisible(paramComponents.add(new ParameterDisplayComponent(processor, *param)));
+        explicit ParametersPanel(int maxRows) : maxRows(maxRows) {
+            for (int paramIndex = 0; paramIndex < 8 * maxRows; paramIndex++) {
+                addChildComponent(paramComponents.add(new ParameterDisplayComponent()));
+            }
+        }
+
+        void setProcessor(AudioProcessor *p) {
+            int componentIndex = 0;
+            
+            if (p != nullptr) {
+                for (int paramIndex = 0; paramIndex < p->getParameters().size(); paramIndex++) {
+                    auto *parameter = p->getParameters().getUnchecked(paramIndex);
+                    if (parameter->isAutomatable()) {
+                        auto *component = paramComponents.getUnchecked(componentIndex++);
+                        component->setParameter(parameter);
+                        component->setVisible(true);
+                        if (componentIndex >= paramComponents.size())
+                            break;
+                    }
+                }
+            }
+            for (; componentIndex < paramComponents.size(); componentIndex++) {
+                auto *component = paramComponents.getUnchecked(componentIndex);
+                component->setVisible(false);
+                component->setParameter(nullptr);
+            }
         }
 
         void paint(Graphics &g) override {
@@ -417,19 +441,22 @@ private:
             auto r = getLocalBounds();
             auto componentWidth = r.getWidth() / 8;
             auto componentHeight = componentWidth * 7 / 5;
-            Rectangle<int> currentRow = r.removeFromTop(componentHeight);
+            Rectangle<int> currentRowArea = r.removeFromTop(componentHeight);
 
-            int componentCount = 1;
+            int column = 1, row = 1;
             for (auto *comp : paramComponents) {
-                if (componentCount++ % 9 == 0) {
-                    componentCount = 1;
-                    currentRow = r.removeFromTop(componentHeight);
+                if (column++ % 9 == 0) {
+                    column = 1;
+                    if (row++ >= 2)
+                        break;
+                    currentRowArea = r.removeFromTop(componentHeight);
                 }
-                comp->setBounds(currentRow.removeFromLeft(componentWidth));
+                comp->setBounds(currentRowArea.removeFromLeft(componentWidth));
             }
         }
 
     private:
+        int maxRows;
         OwnedArray<ParameterDisplayComponent> paramComponents;
 
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ParametersPanel)

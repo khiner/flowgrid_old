@@ -16,7 +16,7 @@ public:
             : undoManager(undoManager), project(project), audioGraphBuilder(audioGraphBuilder) {
         project.addChangeListener(this);
         addAndMakeVisible(titleLabel);
-
+        addChildComponent((processorEditor = std::make_unique<ProcessorEditor>()).get());
         Utilities::visitComponents({&undoButton, &redoButton, &createTrackButton, &addProcessorButton},
                                    [this](Component *c) { addAndMakeVisible(c); });
 
@@ -78,17 +78,15 @@ public:
         if (!item.isValid()) {
             titleLabel.setText("No item selected", dontSendNotification);
             titleLabel.setVisible(true);
-            processorEditor = nullptr;
+            processorEditor->setVisible(false);
+            processorEditor->setProcessor(nullptr);
         } else if (item.hasType(IDs::PROCESSOR)) {
             const String &name = item[IDs::name];
             titleLabel.setText("Processor Selected: " + name, dontSendNotification);
 
             if (auto *processorWrapper = audioGraphBuilder.getProcessorWrapperForState(item)) {
-                if (processorEditor != nullptr) {
-                    processorEditor = nullptr;
-                }
-                processorEditor = std::make_unique<ProcessorEditor>(processorWrapper->processor);
-                addAndMakeVisible(processorEditor.get());
+                processorEditor->setProcessor(processorWrapper->processor);
+                processorEditor->setVisible(true);
             }
         }
 
