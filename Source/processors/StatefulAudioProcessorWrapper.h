@@ -8,7 +8,8 @@ public:
     struct Parameter
             : public AudioProcessorParameterWithID,
               private Utilities::ValueTreePropertyChangeListener,
-              private AudioProcessorParameter::Listener {
+              public AudioProcessorParameter::Listener,
+              public Slider::Listener {
         explicit Parameter(AudioProcessorParameter *parameter)
                 : AudioProcessorParameterWithID(parameter->getName(32), parameter->getName(32),
                                                 parameter->getLabel(), parameter->getCategory()),
@@ -32,6 +33,9 @@ public:
             if (state.isValid())
                 state.removeListener(this);
             sourceParameter->removeListener(this);
+            for (auto* slider : attachedSliders) {
+                detachSlider(slider);
+            }
         }
 
         void parameterValueChanged(int parameterIndex, float newValue) override {
@@ -49,8 +53,19 @@ public:
 
             if (value != newValue || listenersNeedCalling) {
                 value = newValue;
+                setAttachedComponentValues(value);
                 listenersNeedCalling = false;
                 needsUpdate = true;
+            }
+        }
+
+        void setAttachedComponentValues(float newValue) {
+            const ScopedLock selfCallbackLock(selfCallbackMutex);
+            {
+                ScopedValueSetter<bool> svs (ignoreCallbacks, true);
+                for (auto* slider : attachedSliders) {
+                    slider->setValue(newValue, sendNotificationSync);
+                }
             }
         }
 
@@ -60,15 +75,15 @@ public:
             }
         }
 
-        void updateFromValueTree() {
-            const float unnormalisedValue = float(state.getProperty(IDs::value, defaultValue));
+        void postUnnormalisedValue(float unnormalisedValue) {
             setUnnormalisedValue(unnormalisedValue);
             if (range.convertFrom0to1(sourceParameter->getValue()) != unnormalisedValue)
                 sourceParameter->setValueNotifyingHost(range.convertTo0to1(unnormalisedValue));
         }
 
-        Value getValueObject() {
-            return state.getPropertyAsValue(IDs::value, undoManager);
+        void updateFromValueTree() {
+            const float unnormalisedValue = float(state.getProperty(IDs::value, defaultValue));
+            postUnnormalisedValue(unnormalisedValue);
         }
 
         void setNewState(const ValueTree &v, UndoManager *undoManager) {
@@ -99,13 +114,19 @@ public:
             }
 
             // referTo({}) can call these value functions to notify listeners, and they may refer to dead params.
-            slider->textFromValueFunction = nullptr;
-            slider->valueFromTextFunction = nullptr;
-            slider->getValueObject().referTo({});
             slider->setNormalisableRange(doubleRangeFromFloatRange(range));
             slider->textFromValueFunction = valueToTextFunction;
             slider->valueFromTextFunction = textToValueFunction;
-            slider->getValueObject().referTo(getValueObject());
+            attachedSliders.add(slider);
+            setAttachedComponentValues(value);
+            slider->addListener(this);
+        }
+
+        void detachSlider(Slider *slider) {
+            slider->removeListener(this);
+            slider->textFromValueFunction = nullptr;
+            slider->valueFromTextFunction = nullptr;
+            attachedSliders.removeObject(slider, false);
         }
 
         float getDefaultValue() const override {
@@ -115,17 +136,6 @@ public:
         float getValueForText(const String &text) const override {
             return range.convertTo0to1(
                     textToValueFunction != nullptr ? textToValueFunction(text) : text.getFloatValue());
-        }
-
-        static Parameter *getParameterForID(AudioProcessor &processor, const StringRef &paramID) noexcept {
-            for (auto *ap : processor.getParameters()) {
-                auto *p = dynamic_cast<Parameter *> (ap);
-
-                if (paramID == p->paramID)
-                    return p;
-            }
-
-            return nullptr;
         }
 
         static NormalisableRange<double> doubleRangeFromFloatRange(NormalisableRange<float> &floatRange) {
@@ -147,6 +157,11 @@ public:
         bool listenersNeedCalling{true};
         bool ignoreParameterChangedCallbacks = false;
 
+        bool ignoreCallbacks { false };
+        CriticalSection selfCallbackMutex;
+
+        OwnedArray<Slider> attachedSliders {};
+
         void valueTreePropertyChanged(ValueTree &tree, const Identifier &p) override {
             if (ignoreParameterChangedCallbacks)
                 return;
@@ -155,6 +170,27 @@ public:
                 updateFromValueTree();
             }
         }
+
+        void sliderValueChanged(Slider* s) override {
+            const ScopedLock selfCallbackLock (selfCallbackMutex);
+
+            if (!ignoreCallbacks)
+                postUnnormalisedValue((float) s->getValue());
+        }
+
+        void beginParameterChange() {
+            if (undoManager != nullptr)
+                undoManager->beginNewTransaction();
+            sourceParameter->beginChangeGesture();
+        }
+
+        void endParameterChange()
+        {
+            sourceParameter->endChangeGesture();
+        }
+
+        void sliderDragStarted (Slider* slider) override { beginParameterChange(); }
+        void sliderDragEnded   (Slider* slider) override { endParameterChange();   }
 
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(Parameter)
     };
@@ -168,7 +204,7 @@ public:
         startTimerHz(10);
     }
 
-    Parameter *getParameterObject(int parameterIndex) {
+    Parameter *getParameter(int parameterIndex) {
         return parameters[parameterIndex];
     }
 

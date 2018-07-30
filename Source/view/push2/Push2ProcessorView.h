@@ -21,7 +21,11 @@ public:
             sliders.add(slider);
         }
     }
-    
+
+    ~Push2ProcessorView() override {
+        detachAllParameters();
+    }
+
     void resized() override {
         for (int i = 0; i < sliders.size(); i++) {
             Slider *slider = sliders.getUnchecked(i);
@@ -31,20 +35,38 @@ public:
     }
 
     void setProcessor(StatefulAudioProcessorWrapper *processor) {
+        if (this->processor != processor) {
+            detachAllParameters();
+        }
+        this->processor = processor;
         for (auto *c : getChildren())
             c->setVisible(false);
-        for (int i = 0; i < jmin(sliders.size(), processor->processor->getParameters().size()); i++) {
-            Slider *slider = sliders.getUnchecked(i);
-            if (auto* parameter = processor->getParameterObject(i)) {
-                parameter->attachSlider(slider, labels.getUnchecked(i));
+        if (processor != nullptr) {
+            for (int i = 0; i < jmin(sliders.size(), processor->processor->getParameters().size()); i++) {
+                Slider *slider = sliders.getUnchecked(i);
+                if (auto *parameter = processor->getParameter(i)) {
+                    parameter->attachSlider(slider, labels.getUnchecked(i));
+                }
+                slider->setVisible(true);
             }
-            slider->setVisible(true);
         }
     }
     
 private:
     const static int MAX_PROCESSOR_PARAMS_TO_DISPLAY = 8;
 
+    StatefulAudioProcessorWrapper *processor {};
     OwnedArray<Slider> sliders;
     OwnedArray<Label> labels;
+
+    void detachAllParameters() {
+        if (processor != nullptr) {
+            for (int i = 0; i < jmin(sliders.size(), processor->processor->getParameters().size()); i++) {
+                Slider *slider = sliders.getUnchecked(i);
+                if (auto *parameter = processor->getParameter(i)) {
+                    parameter->detachSlider(slider);
+                }
+            }
+        }
+    }
 };

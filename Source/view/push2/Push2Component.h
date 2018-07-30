@@ -93,17 +93,15 @@ private:
         for (auto *c : getChildren())
             c->setVisible(false);
 
-        if (!item.isValid()) {
-        } else if (item.hasType(IDs::PROCESSOR)) {
+        if (item.hasType(IDs::PROCESSOR)) {
             auto *processorWrapper = audioGraphBuilder.getProcessorWrapperForState(item);
             if (processorWrapper != nullptr) {
                 processorView.setProcessor(processorWrapper);
                 processorView.setVisible(true);
             }
+        } else {
+            processorView.setProcessor(nullptr);
         }
-//        if (project.getSelectedTrack().isValid()) {
-//            processorSelector.setProcessorIds(getAvailableProcessorIdsForTrack(project.getSelectedTrack()));
-//        }
     }
 
     void itemRemoved(const ValueTree& item) override {
