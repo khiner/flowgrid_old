@@ -5,7 +5,6 @@
 #include "JuceHeader.h"
 #include "processors/StatefulAudioProcessorWrapper.h"
 #include "SwitchParameterComponent.h"
-#include "SolidToggleButton.h"
 
 class ProcessorEditor : public Component {
 public:
@@ -102,7 +101,8 @@ private:
                 // marking a parameter as boolean. If you want consistency across
                 // all  formats then it might be best to use a
                 // SwitchParameterComponent instead.
-                auto* button = new SolidToggleButton();
+                auto* button = new TextButton();
+                button->setClickingTogglesState(true);
                 parameterWrapper->attachButton(button);
                 parameterComponent.reset(button);
             } else if (parameter->getNumSteps() == 2) {
@@ -152,8 +152,10 @@ private:
                 parameterLabel.setBounds(isSlider ? bottom.removeFromRight(bottom.getWidth() / 4) : bottom);
             if (isSlider) {
                 valueLabel.setBounds(bottom);
-            } else if (isCombobox || isSwitch) {
-                area.reduce(0, area.getHeight() / 3);
+            } else if (isCombobox) {
+                area.setHeight(area.getHeight() / 3);
+            } else if (isSwitch) {
+                area = area.withSizeKeepingCentre(area.getWidth(), area.getHeight() / 2); // TODO compute height by num items
             } else if (isButton) {
                 auto smallerSquare = area.withWidth(area.getWidth() / 3).withHeight(area.getWidth() / 3);
                 smallerSquare.setCentre(area.getCentre());

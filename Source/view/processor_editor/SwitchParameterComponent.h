@@ -10,23 +10,23 @@ public:
         virtual void switchChanged(SwitchParameterComponent* switchThatHasChanged) = 0;
     };
 
-    explicit SwitchParameterComponent(const String& leftButtonText, const String& rightButtonText) {
-        auto *leftButton = buttons.add(new TextButton());
-        auto *rightButton = buttons.add(new TextButton());
+    explicit SwitchParameterComponent(const String& firstButtonText, const String& secondButtonText) {
+        auto *firstButton = buttons.add(new TextButton());
+        auto *secondButton = buttons.add(new TextButton());
 
         for (auto *button : buttons) {
             button->setRadioGroupId(293847);
             button->setClickingTogglesState(true);
         }
 
-        leftButton->setButtonText(leftButtonText);
-        rightButton->setButtonText(rightButtonText);
+        firstButton->setButtonText(firstButtonText);
+        secondButton->setButtonText(secondButtonText);
 
-        leftButton->setConnectedEdges(Button::ConnectedOnRight);
-        rightButton->setConnectedEdges(Button::ConnectedOnLeft);
-        leftButton->setToggleState(true, dontSendNotification);
+        firstButton->setConnectedEdges(Button::ConnectedOnBottom);
+        secondButton->setConnectedEdges(Button::ConnectedOnTop);
+        firstButton->setToggleState(true, dontSendNotification);
 
-        rightButton->onStateChange = [this]() { rightButtonChanged(); };
+        secondButton->onStateChange = [this]() { secondButtonChanged(); };
 
         for (auto *button : buttons)
             addAndMakeVisible(button);
@@ -52,13 +52,13 @@ public:
 
     void resized() override {
         auto area = getLocalBounds();
-        auto buttonWidth = getWidth() / buttons.size();
+        auto buttonHeight = getHeight() / buttons.size();
         for (auto *button : buttons)
-            button->setBounds(area.removeFromLeft(buttonWidth));
+            button->setBounds(area.removeFromTop(buttonHeight));
     }
 
 private:
-    void rightButtonChanged() {
+    void secondButtonChanged() {
         listeners.call([this] (Listener& l) { l.switchChanged(this); });
     }
 
