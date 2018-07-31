@@ -23,10 +23,12 @@ public:
             } else {
                 if (sourceParameter->getNumSteps() != AudioProcessor::getDefaultNumParameterSteps())
                     range = NormalisableRange<float>(0.0, 1.0, 1.0f / (sourceParameter->getNumSteps() - 1.0f));
+                else if (!sourceParameter->getAllValueStrings().isEmpty())
+                    range = NormalisableRange<float>(0.0, 1.0, 1.0f / (sourceParameter->getAllValueStrings().size() - 1.0f));
                 else
                     range = NormalisableRange<float>(0.0, 1.0);
             }
-            value = defaultValue = range.convertFrom0to1(parameter->getDefaultValue());
+            value = defaultValue = convertNormalizedToUnnormalized(parameter->getDefaultValue());
             sourceParameter->addListener(this);
         }
 
@@ -59,12 +61,16 @@ public:
 
         void parameterGestureChanged(int parameterIndex, bool gestureIsStarting) override {}
 
+        float convertNormalizedToUnnormalized(float value) {
+            return range.snapToLegalValue(range.convertFrom0to1(value));
+        }
+
         float getValue() const override {
             return range.convertTo0to1(value);
         }
 
         void setValue(float newValue) override {
-            newValue = range.snapToLegalValue(range.convertFrom0to1(newValue));
+            newValue = convertNormalizedToUnnormalized(newValue);
 
             if (value != newValue || listenersNeedCalling) {
                 value = newValue;
@@ -88,17 +94,12 @@ public:
                     button->setToggleState(newValue >= 0.5f, sendNotificationSync);
                 }
                 for (auto* comboBox : attachedComboBoxes) {
-                    auto index = roundToInt(newValue * (sourceParameter->getAllValueStrings().size() - 1));
+                    auto index = roundToInt(newValue * (comboBox->getNumItems() - 1));
                     comboBox->setSelectedItemIndex(index, sendNotificationSync);
                 }
                 for (auto* parameterSwitch : attachedSwitches) {
-                    bool newState;
-                    if (sourceParameter->getAllValueStrings().isEmpty()) {
-                        newState = sourceParameter->getValue() > 0.5f;
-                    } else {
-                        newState = (roundToInt(sourceParameter->getValue()) == 1);
-                    }
-                    parameterSwitch->setToggleState(newState, sendNotificationSync);
+                    auto index = roundToInt(newValue * (parameterSwitch->getNumItems() - 1));
+                    parameterSwitch->setSelectedItemIndex(index, sendNotificationSync);
                 }
             }
         }
@@ -111,7 +112,7 @@ public:
 
         void postUnnormalisedValue(float unnormalisedValue) {
             setUnnormalisedValue(unnormalisedValue);
-            if (range.convertFrom0to1(sourceParameter->getValue()) != unnormalisedValue)
+            if (convertNormalizedToUnnormalized(sourceParameter->getValue()) != unnormalisedValue)
                 sourceParameter->setValueNotifyingHost(range.convertTo0to1(unnormalisedValue));
         }
 
@@ -298,9 +299,7 @@ public:
 
             if (!ignoreCallbacks) {
                 beginParameterChange();
-                float newValue = sourceParameter->getAllValueStrings().isEmpty() ?
-                        parameterSwitch->getToggleState() ? 1.0f : 0.0f :
-                        sourceParameter->getValueForText(parameterSwitch->getText());
+                float newValue = float(parameterSwitch->getSelectedItemIndex()) / float((parameterSwitch->getNumItems() - 1));
                 sourceParameter->setValueNotifyingHost(newValue);
                 endParameterChange();
             }

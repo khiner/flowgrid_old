@@ -105,19 +105,28 @@ private:
                 button->setClickingTogglesState(true);
                 parameterWrapper->attachButton(button);
                 parameterComponent.reset(button);
-            } else if (parameter->getNumSteps() == 2) {
-                // Most hosts display any parameter with just two steps as a switch.
-                auto* parameterSwitch = new SwitchParameterComponent(parameter->getText(0.0f, 16), parameter->getText(1.0f, 16));
+            } else if (!parameter->getAllValueStrings().isEmpty()) {
+                if (parameter->getAllValueStrings().size() <= 3) {
+                    // show all options in a 1/2/3 toggle switch
+                    auto* parameterSwitch = new SwitchParameterComponent(parameter->getAllValueStrings());
+                    parameterWrapper->attachSwitch(parameterSwitch);
+                    parameterComponent.reset(parameterSwitch);
+                } else {
+                    // too many for a reasonable switch. show dropdown instead
+                    auto *comboBox = new ComboBox();
+                    comboBox->addItemList(parameter->getAllValueStrings(), 1);
+                    parameterWrapper->attachComboBox(comboBox);
+                    parameterComponent.reset(comboBox);
+                }
+            } else if (parameter->getNumSteps() == 2 || parameter->getNumSteps() == 3) {
+                auto labels = StringArray();
+                for (int i = 0; i < parameter->getNumSteps(); i++) {
+                    float value = float(i) / float((parameter->getNumSteps() - 1));
+                    labels.add(parameter->getText(value, 16));
+                }
+                auto *parameterSwitch = new SwitchParameterComponent(labels);
                 parameterWrapper->attachSwitch(parameterSwitch);
                 parameterComponent.reset(parameterSwitch);
-            } else if (!parameter->getAllValueStrings().isEmpty()) {
-                // If we have a list of strings to represent the different states a
-                // parameter can be in then we should present a dropdown allowing a
-                // user to pick one of them.
-                auto* comboBox = new ComboBox();
-                comboBox->addItemList(parameter->getAllValueStrings(), 1);
-                parameterWrapper->attachComboBox(comboBox);
-                parameterComponent.reset(comboBox);
             } else {
                 // Everything else can be represented as a slider.
                 auto* slider = new Slider(Slider::RotaryHorizontalVerticalDrag, Slider::TextEntryBoxPosition::NoTextBox);

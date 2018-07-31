@@ -10,41 +10,60 @@ public:
         virtual void switchChanged(SwitchParameterComponent* switchThatHasChanged) = 0;
     };
 
-    explicit SwitchParameterComponent(const String& firstButtonText, const String& secondButtonText) {
-        auto *firstButton = buttons.add(new TextButton());
-        auto *secondButton = buttons.add(new TextButton());
-
-        for (auto *button : buttons) {
+    explicit SwitchParameterComponent(const StringArray& labels) {
+        for (auto& label : labels) {
+            auto *button = new TextButton();
             button->setRadioGroupId(293847);
             button->setClickingTogglesState(true);
+            button->setButtonText(label);
+            button->onStateChange = [this, button]() { buttonChanged(button); };
+            buttons.add(button);
         }
-
-        firstButton->setButtonText(firstButtonText);
-        secondButton->setButtonText(secondButtonText);
-
-        firstButton->setConnectedEdges(Button::ConnectedOnBottom);
-        secondButton->setConnectedEdges(Button::ConnectedOnTop);
-        firstButton->setToggleState(true, dontSendNotification);
-
-        secondButton->onStateChange = [this]() { secondButtonChanged(); };
+        for (auto* button : buttons) {
+            if (button == buttons.getFirst())
+                button->setConnectedEdges(Button::ConnectedOnBottom);
+            else if (button == buttons.getLast())
+                button->setConnectedEdges(Button::ConnectedOnTop);
+            else
+                button->setConnectedEdges(Button::ConnectedOnTop | Button::ConnectedOnBottom);
+        }
+        if (!buttons.isEmpty()) {
+            buttons.getFirst()->setToggleState(true, dontSendNotification);
+        }
 
         for (auto *button : buttons)
             addAndMakeVisible(button);
     }
 
-    bool getToggleState() const {
-        return buttons[1]->getToggleState();
+    int getSelectedItemIndex() const {
+        for (int i = 0; i < buttons.size(); i++) {
+            if (buttons.getUnchecked(i)->getToggleState())
+                return i;
+        }
+        return 0;
     }
 
-    void setToggleState(bool newState, NotificationType notificationType) {
-        if (buttons[1]->getToggleState() != newState) {
-            buttons[1]->setToggleState(newState, notificationType);
-            buttons[0]->setToggleState(!newState, notificationType);
+    int getNumItems() const {
+        return buttons.size();
+    }
+
+    void setSelectedItemIndex(const int index, const NotificationType notificationType) {
+        if (auto* selectedButton = buttons[index]) {
+            for (auto* otherButton : buttons) {
+                if (otherButton != selectedButton) {
+                    otherButton->setToggleState(false, notificationType);
+                }
+            }
+            selectedButton->setToggleState(true, notificationType);
         }
     }
 
     String getText() const {
-        return getToggleState() ? buttons[1]->getButtonText() : buttons[0]->getButtonText();
+        for (auto* button : buttons) {
+            if (button->getToggleState())
+                return button->getButtonText();
+        }
+        return "";
     }
 
     void addListener(Listener* l) { listeners.add (l); }
@@ -58,8 +77,9 @@ public:
     }
 
 private:
-    void secondButtonChanged() {
-        listeners.call([this] (Listener& l) { l.switchChanged(this); });
+    void buttonChanged(TextButton* button) {
+        if (button->getToggleState())
+            listeners.call([this] (Listener& l) { l.switchChanged(this); });
     }
 
     OwnedArray<TextButton> buttons;
