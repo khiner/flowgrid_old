@@ -234,59 +234,7 @@ private:
 
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SwitchParameterComponent)
     };
-
-    class ChoiceParameterComponent final : public Component,
-                                           private ParameterListener {
-    public:
-        explicit ChoiceParameterComponent(AudioProcessorParameter &param)
-                : ParameterListener(param),
-                  parameterValues(getParameter().getAllValueStrings()) {
-            box.addItemList(parameterValues, 1);
-
-            // Set the initial value.
-            handleNewParameterValue();
-
-            box.onChange = [this]() { boxChanged(); };
-            addAndMakeVisible(box);
-        }
-
-        void resized() override {
-            auto area = getLocalBounds();
-            box.setBounds(area.reduced(5));
-        }
-
-    private:
-        void handleNewParameterValue() override {
-            auto index = parameterValues.indexOf(getParameter().getCurrentValueAsText());
-
-            if (index < 0) {
-                // The parameter is producing some unexpected text, so we'll do
-                // some linear interpolation.
-                index = roundToInt(getParameter().getValue() * (parameterValues.size() - 1));
-            }
-
-            box.setSelectedItemIndex(index);
-        }
-
-        void boxChanged() {
-            if (getParameter().getCurrentValueAsText() != box.getText()) {
-                getParameter().beginChangeGesture();
-
-                // When a parameter provides a list of strings we must set its
-                // value using those strings, rather than a float, because VSTs can
-                // have uneven spacing between the different allowed values.
-                getParameter().setValueNotifyingHost(getParameter().getValueForText(box.getText()));
-
-                getParameter().endChangeGesture();
-            }
-        }
-
-        ComboBox box;
-        const StringArray parameterValues;
-
-        JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ChoiceParameterComponent)
-    };
-
+    
     class ParameterDisplayComponent : public Component {
     public:
         ParameterDisplayComponent() {
@@ -295,9 +243,8 @@ private:
             addChildComponent(valueLabel);
         }
 
-        ~ParameterDisplayComponent() {
-            if (auto *slider = dynamic_cast<Slider *>(parameterComponent.get()))
-                this->parameterWrapper->detachSlider(slider, &valueLabel);
+        ~ParameterDisplayComponent() override {
+            detachParameterComponent();
         }
 
         void setParameter(StatefulAudioProcessorWrapper::Parameter *parameterWrapper) {
@@ -305,8 +252,8 @@ private:
                 child->setVisible(false);
             }
 
-            if (auto *slider = dynamic_cast<Slider *>(parameterComponent.get()))
-                this->parameterWrapper->detachSlider(slider, &valueLabel);
+            detachParameterComponent();
+
             parameterComponent = nullptr;
 
             this->parameterWrapper = parameterWrapper;
@@ -328,19 +275,23 @@ private:
                 // marking a parameter as boolean. If you want consistency across
                 // all  formats then it might be best to use a
                 // SwitchParameterComponent instead.
-                parameterComponent = std::make_unique<BooleanParameterComponent>(*parameterWrapper->sourceParameter);
+                parameterComponent = std::make_unique<BooleanParameterComponent>(*parameter);
             } else if (parameter->getNumSteps() == 2) {
                 // Most hosts display any parameter with just two steps as a switch.
-                parameterComponent = std::make_unique<SwitchParameterComponent>(*parameterWrapper->sourceParameter);
+                parameterComponent = std::make_unique<SwitchParameterComponent>(*parameter);
             } else if (!parameter->getAllValueStrings().isEmpty()) {
                 // If we have a list of strings to represent the different states a
                 // parameter can be in then we should present a dropdown allowing a
                 // user to pick one of them.
-                parameterComponent = std::make_unique<ChoiceParameterComponent>(*parameterWrapper->sourceParameter);
+                auto* comboBox = new ComboBox();
+                comboBox->addItemList(parameter->getAllValueStrings(), 1);
+                parameterWrapper->attachComboBox(comboBox, &valueLabel);
+                parameterComponent.reset(comboBox);
             } else {
                 // Everything else can be represented as a slider.
-                parameterComponent = std::make_unique<Slider>(Slider::RotaryHorizontalVerticalDrag, Slider::TextEntryBoxPosition::NoTextBox);
-                parameterWrapper->attachSlider(dynamic_cast<Slider *>(parameterComponent.get()), &parameterName, &parameterLabel, &valueLabel);
+                auto* slider = new Slider(Slider::RotaryHorizontalVerticalDrag, Slider::TextEntryBoxPosition::NoTextBox);
+                parameterWrapper->attachSlider(slider, &valueLabel);
+                parameterComponent.reset(slider);
 
                 valueLabel.setColour(Label::outlineColourId, parameterComponent->findColour(Slider::textBoxOutlineColourId));
                 valueLabel.setBorderSize({1, 1, 1, 1});
@@ -366,7 +317,14 @@ private:
     private:
         Label parameterName, parameterLabel, valueLabel;
         std::unique_ptr<Component> parameterComponent;
-        StatefulAudioProcessorWrapper::Parameter *parameterWrapper;
+        StatefulAudioProcessorWrapper::Parameter *parameterWrapper {};
+
+        void detachParameterComponent() {
+            if (auto *slider = dynamic_cast<Slider *>(parameterComponent.get()))
+                parameterWrapper->detachSlider(slider, &valueLabel);
+            else if (auto *comboBox = dynamic_cast<ComboBox *>(parameterComponent.get()))
+                parameterWrapper->detachComboBox(comboBox, &valueLabel);
+        }
 
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ParameterDisplayComponent)
     };

@@ -45,7 +45,8 @@ public:
             for (int i = 0; i < jmin(sliders.size(), processor->processor->getParameters().size()); i++) {
                 Slider *slider = sliders.getUnchecked(i);
                 if (auto *parameter = processor->getParameter(i)) {
-                    parameter->attachSlider(slider, labels.getUnchecked(i));
+                    parameter->attachSlider(slider);
+                    labels.getUnchecked(i)->setText(parameter->name, dontSendNotification);
                 }
                 slider->setVisible(true);
             }

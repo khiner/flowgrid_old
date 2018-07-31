@@ -70,7 +70,8 @@ public:
                     label->setText(valueToTextFunction(newValue), dontSendNotification);
                 }
                 for (auto* comboBox : attachedComboBoxes) {
-                    comboBox->setSelectedItemIndex(roundToInt(newValue), sendNotificationSync);
+                    auto index = roundToInt(newValue * (sourceParameter->getAllValueStrings().size() - 1));
+                    comboBox->setSelectedItemIndex(index, sendNotificationSync);
                 }
             }
         }
@@ -111,22 +112,18 @@ public:
             }
         }
 
-        void attachSlider(Slider *slider, Label *name=nullptr, Label *label=nullptr, Label *valueLabel=nullptr) {
-            if (name != nullptr)
-                name->setText(this->name, dontSendNotification);
-            if (label != nullptr)
-                label->setText(this->label, dontSendNotification);
-
-            // referTo({}) can call these value functions to notify listeners, and they may refer to dead params.
-            slider->setNormalisableRange(doubleRangeFromFloatRange(range));
-            slider->textFromValueFunction = valueToTextFunction;
-            slider->valueFromTextFunction = textToValueFunction;
-            attachedSliders.add(slider);
+        void attachSlider(Slider *slider, Label *valueLabel=nullptr) {
+            if (slider != nullptr) {
+                slider->setNormalisableRange(doubleRangeFromFloatRange(range));
+                slider->textFromValueFunction = valueToTextFunction;
+                slider->valueFromTextFunction = textToValueFunction;
+                attachedSliders.add(slider);
+                slider->addListener(this);
+            }
             if (valueLabel != nullptr) {
                 attachedLabels.add(valueLabel);
             }
             setAttachedComponentValues(value);
-            slider->addListener(this);
         }
 
         void detachSlider(Slider *slider, Label *valueLabel=nullptr) {
@@ -141,18 +138,25 @@ public:
                 attachedLabels.removeObject(valueLabel, false);
         }
 
-        void attachComboBox(ComboBox *comboBox) {
-            if (comboBox == nullptr)
-                return;
-            attachedComboBoxes.add(comboBox);
-            comboBox->addListener(this);
+        void attachComboBox(ComboBox *comboBox, Label *valueLabel=nullptr) {
+            if (comboBox != nullptr) {
+                attachedComboBoxes.add(comboBox);
+                comboBox->addListener(this);
+            }
+            if (valueLabel != nullptr) {
+                attachedLabels.add(valueLabel);
+            }
+            setAttachedComponentValues(value);
         }
 
-        void detachComboBox(ComboBox *comboBox) {
-            if (comboBox == nullptr)
-                return;
-            comboBox->removeListener(this);
-            attachedComboBoxes.removeObject(comboBox, false);
+        void detachComboBox(ComboBox *comboBox, Label *valueLabel=nullptr) {
+            if (comboBox != nullptr) {
+                comboBox->removeListener(this);
+                attachedComboBoxes.removeObject(comboBox, false);
+            }
+
+            if (valueLabel != nullptr)
+                attachedLabels.removeObject(valueLabel, false);
         }
 
         float getDefaultValue() const override {
@@ -206,13 +210,19 @@ public:
                 postUnnormalisedValue((float) s->getValue());
         }
 
-        void comboBoxChanged (ComboBox* comboBox) override {
+        void comboBoxChanged(ComboBox* comboBox) override {
             const ScopedLock selfCallbackLock(selfCallbackMutex);
 
             if (!ignoreCallbacks) {
-                beginParameterChange();
-                postUnnormalisedValue((float) comboBox->getSelectedId() - 1.0f);
-                endParameterChange();
+                if (sourceParameter->getCurrentValueAsText() != comboBox->getText()) {
+                    beginParameterChange();
+                    // When a parameter provides a list of strings we must set its
+                    // value using those strings, rather than a float, because VSTs can
+                    // have uneven spacing between the different allowed values.
+                    sourceParameter->setValueNotifyingHost(sourceParameter->getValueForText(comboBox->getText()));
+
+                    endParameterChange();
+                }
             }
         }
 
