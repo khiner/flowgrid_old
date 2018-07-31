@@ -9,7 +9,7 @@ public:
             : public AudioProcessorParameterWithID,
               private Utilities::ValueTreePropertyChangeListener,
               public AudioProcessorParameter::Listener,
-              public Slider::Listener, public ComboBox::Listener {
+              public Slider::Listener, public Button::Listener, public ComboBox::Listener {
         explicit Parameter(AudioProcessorParameter *parameter)
                 : AudioProcessorParameterWithID(parameter->getName(32), parameter->getName(32),
                                                 parameter->getLabel(), parameter->getCategory()),
@@ -63,11 +63,14 @@ public:
             const ScopedLock selfCallbackLock(selfCallbackMutex);
             {
                 ScopedValueSetter<bool> svs (ignoreCallbacks, true);
+                for (auto* label : attachedLabels) {
+                    label->setText(valueToTextFunction(newValue), dontSendNotification);
+                }
                 for (auto* slider : attachedSliders) {
                     slider->setValue(newValue, sendNotificationSync);
                 }
-                for (auto* label : attachedLabels) {
-                    label->setText(valueToTextFunction(newValue), dontSendNotification);
+                for (auto* button : attachedButtons) {
+                    button->setToggleState(newValue >= 0.5f, sendNotificationSync);
                 }
                 for (auto* comboBox : attachedComboBoxes) {
                     auto index = roundToInt(newValue * (sourceParameter->getAllValueStrings().size() - 1));
@@ -138,6 +141,27 @@ public:
                 attachedLabels.removeObject(valueLabel, false);
         }
 
+        void attachButton(Button *button, Label *valueLabel=nullptr) {
+            if (button != nullptr) {
+                attachedButtons.add(button);
+                button->addListener(this);
+            }
+            if (valueLabel != nullptr) {
+                attachedLabels.add(valueLabel);
+            }
+            setAttachedComponentValues(value);
+        }
+
+        void detachButton(Button *button, Label *valueLabel=nullptr) {
+            if (button != nullptr) {
+                button->removeListener(this);
+                attachedButtons.removeObject(button, false);
+            }
+
+            if (valueLabel != nullptr)
+                attachedLabels.removeObject(valueLabel, false);
+        }
+
         void attachComboBox(ComboBox *comboBox, Label *valueLabel=nullptr) {
             if (comboBox != nullptr) {
                 attachedComboBoxes.add(comboBox);
@@ -190,8 +214,9 @@ public:
         bool ignoreCallbacks { false };
         CriticalSection selfCallbackMutex;
 
-        OwnedArray<Slider> attachedSliders {};
         OwnedArray<Label> attachedLabels {};
+        OwnedArray<Slider> attachedSliders {};
+        OwnedArray<Button> attachedButtons {};
         OwnedArray<ComboBox> attachedComboBoxes {};
 
         void valueTreePropertyChanged(ValueTree &tree, const Identifier &p) override {
@@ -203,11 +228,21 @@ public:
             }
         }
 
-        void sliderValueChanged(Slider* s) override {
+        void sliderValueChanged(Slider* slider) override {
             const ScopedLock selfCallbackLock(selfCallbackMutex);
 
             if (!ignoreCallbacks)
-                postUnnormalisedValue((float) s->getValue());
+                postUnnormalisedValue((float) slider->getValue());
+        }
+
+        void buttonClicked(Button* button) override {
+            const ScopedLock selfCallbackLock (selfCallbackMutex);
+
+            if (!ignoreCallbacks) {
+                beginParameterChange();
+                postUnnormalisedValue(button->getToggleState() ? 1.0f : 0.0f);
+                endParameterChange();
+            }
         }
 
         void comboBoxChanged(ComboBox* comboBox) override {

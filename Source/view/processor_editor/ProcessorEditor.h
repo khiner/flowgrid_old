@@ -99,51 +99,6 @@ private:
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ParameterListener)
     };
 
-    class BooleanParameterComponent final : public Component,
-                                            private ParameterListener {
-    public:
-        BooleanParameterComponent(AudioProcessorParameter &param) : ParameterListener(param) {
-            // Set the initial value.
-            handleNewParameterValue();
-
-            button.onClick = [this]() { buttonClicked(); };
-
-            addAndMakeVisible(button);
-        }
-
-        void paint(Graphics &) override {}
-
-        void resized() override {
-            auto area = getLocalBounds();
-            area.removeFromLeft(8);
-            button.setBounds(area.reduced(0, 10));
-        }
-
-    private:
-        void handleNewParameterValue() override {
-            auto parameterState = getParameterState(getParameter().getValue());
-
-            if (button.getToggleState() != parameterState)
-                button.setToggleState(parameterState, dontSendNotification);
-        }
-
-        void buttonClicked() {
-            if (getParameterState(getParameter().getValue()) != button.getToggleState()) {
-                getParameter().beginChangeGesture();
-                getParameter().setValueNotifyingHost(button.getToggleState() ? 1.0f : 0.0f);
-                getParameter().endChangeGesture();
-            }
-        }
-
-        bool getParameterState(float value) const noexcept {
-            return value >= 0.5f;
-        }
-
-        ToggleButton button;
-
-        JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (BooleanParameterComponent)
-    };
-
     class SwitchParameterComponent final : public Component,
                                            private ParameterListener {
     public:
@@ -275,7 +230,9 @@ private:
                 // marking a parameter as boolean. If you want consistency across
                 // all  formats then it might be best to use a
                 // SwitchParameterComponent instead.
-                parameterComponent = std::make_unique<BooleanParameterComponent>(*parameter);
+                auto* button = new ToggleButton();
+                parameterWrapper->attachButton(button, &valueLabel);
+                parameterComponent.reset(button);
             } else if (parameter->getNumSteps() == 2) {
                 // Most hosts display any parameter with just two steps as a switch.
                 parameterComponent = std::make_unique<SwitchParameterComponent>(*parameter);
@@ -322,6 +279,8 @@ private:
         void detachParameterComponent() {
             if (auto *slider = dynamic_cast<Slider *>(parameterComponent.get()))
                 parameterWrapper->detachSlider(slider, &valueLabel);
+            else if (auto *button = dynamic_cast<Button *>(parameterComponent.get()))
+                parameterWrapper->detachButton(button, &valueLabel);
             else if (auto *comboBox = dynamic_cast<ComboBox *>(parameterComponent.get()))
                 parameterWrapper->detachComboBox(comboBox, &valueLabel);
         }
