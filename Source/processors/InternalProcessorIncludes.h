@@ -5,6 +5,7 @@
 #include "GainProcessor.h"
 #include "MidiInputProcessor.h"
 #include "MixerChannelProcessor.h"
+#include "ParameterTypesTestProcessor.h"
 #include "SineBank.h"
 #include "SineSynth.h"
 
@@ -14,6 +15,7 @@ Array<PluginDescription> internalPluginDescriptions {
         GainProcessor::getPluginDescription(),
         MidiInputProcessor::getPluginDescription(),
         MixerChannelProcessor::getPluginDescription(),
+        ParameterTypesTestProcessor::getPluginDescription(),
         SineBank::getPluginDescription(),
         SineSynth::getPluginDescription(),
 };

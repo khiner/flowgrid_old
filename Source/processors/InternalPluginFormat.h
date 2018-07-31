@@ -56,6 +56,7 @@ private:
         if (name == BalanceProcessor::name()) return new BalanceProcessor();
         if (name == GainProcessor::name()) return new GainProcessor();
         if (name == MixerChannelProcessor::name()) return new MixerChannelProcessor();
+        if (name == ParameterTypesTestProcessor::name()) return new ParameterTypesTestProcessor();
         if (name == SineBank::name()) return new SineBank();
         if (name == SineSynth::name()) return new SineSynth();
         return nullptr;

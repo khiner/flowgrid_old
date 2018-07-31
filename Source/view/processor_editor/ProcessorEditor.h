@@ -297,48 +297,50 @@ private:
 
         ~ParameterDisplayComponent() {
             if (auto *slider = dynamic_cast<Slider *>(parameterComponent.get()))
-                this->parameter->detachSlider(slider, &valueLabel);
+                this->parameterWrapper->detachSlider(slider, &valueLabel);
         }
 
-        void setParameter(StatefulAudioProcessorWrapper::Parameter *param) {
+        void setParameter(StatefulAudioProcessorWrapper::Parameter *parameterWrapper) {
             for (auto* child : getChildren()) {
                 child->setVisible(false);
             }
 
             if (auto *slider = dynamic_cast<Slider *>(parameterComponent.get()))
-                this->parameter->detachSlider(slider, &valueLabel);
+                this->parameterWrapper->detachSlider(slider, &valueLabel);
             parameterComponent = nullptr;
 
-            this->parameter = param;
+            this->parameterWrapper = parameterWrapper;
 
-            if (this->parameter == nullptr)
+            if (this->parameterWrapper == nullptr)
                 return;
 
-            parameterName.setText(param->sourceParameter->getName(128), dontSendNotification);
+            auto* parameter = parameterWrapper->sourceParameter;
+
+            parameterName.setText(parameter->getName(128), dontSendNotification);
             parameterName.setJustificationType(Justification::centred);
             parameterName.setVisible(true);
 
-            parameterLabel.setText(param->sourceParameter->getLabel(), dontSendNotification);
+            parameterLabel.setText(parameter->getLabel(), dontSendNotification);
             parameterLabel.setVisible(true);
 
-            if (param->isBoolean()) {
+            if (parameter->isBoolean()) {
                 // The AU, AUv3 and VST (only via a .vstxml file) SDKs support
                 // marking a parameter as boolean. If you want consistency across
                 // all  formats then it might be best to use a
                 // SwitchParameterComponent instead.
-                parameterComponent = std::make_unique<BooleanParameterComponent>(*param->sourceParameter);
-            } else if (param->getNumSteps() == 2) {
+                parameterComponent = std::make_unique<BooleanParameterComponent>(*parameterWrapper->sourceParameter);
+            } else if (parameter->getNumSteps() == 2) {
                 // Most hosts display any parameter with just two steps as a switch.
-                parameterComponent = std::make_unique<SwitchParameterComponent>(*param->sourceParameter);
-            } else if (!param->getAllValueStrings().isEmpty()) {
+                parameterComponent = std::make_unique<SwitchParameterComponent>(*parameterWrapper->sourceParameter);
+            } else if (!parameter->getAllValueStrings().isEmpty()) {
                 // If we have a list of strings to represent the different states a
                 // parameter can be in then we should present a dropdown allowing a
                 // user to pick one of them.
-                parameterComponent = std::make_unique<ChoiceParameterComponent>(*param->sourceParameter);
+                parameterComponent = std::make_unique<ChoiceParameterComponent>(*parameterWrapper->sourceParameter);
             } else {
                 // Everything else can be represented as a slider.
                 parameterComponent = std::make_unique<Slider>(Slider::RotaryHorizontalVerticalDrag, Slider::TextEntryBoxPosition::NoTextBox);
-                parameter->attachSlider(dynamic_cast<Slider *>(parameterComponent.get()), &parameterName, &parameterLabel, &valueLabel);
+                parameterWrapper->attachSlider(dynamic_cast<Slider *>(parameterComponent.get()), &parameterName, &parameterLabel, &valueLabel);
 
                 valueLabel.setColour(Label::outlineColourId, parameterComponent->findColour(Slider::textBoxOutlineColourId));
                 valueLabel.setBorderSize({1, 1, 1, 1});
@@ -364,7 +366,7 @@ private:
     private:
         Label parameterName, parameterLabel, valueLabel;
         std::unique_ptr<Component> parameterComponent;
-        StatefulAudioProcessorWrapper::Parameter *parameter;
+        StatefulAudioProcessorWrapper::Parameter *parameterWrapper;
 
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ParameterDisplayComponent)
     };
