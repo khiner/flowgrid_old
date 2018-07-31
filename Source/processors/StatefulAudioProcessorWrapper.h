@@ -2,14 +2,15 @@
 
 #include <Utilities.h>
 #include "Identifiers.h"
+#include "view/processor_editor/SwitchParameterComponent.h"
 
 class StatefulAudioProcessorWrapper : private AudioProcessorListener, private Timer {
 public:
     struct Parameter
             : public AudioProcessorParameterWithID,
               private Utilities::ValueTreePropertyChangeListener,
-              public AudioProcessorParameter::Listener,
-              public Slider::Listener, public Button::Listener, public ComboBox::Listener {
+              public AudioProcessorParameter::Listener, public Slider::Listener, public Button::Listener,
+              public ComboBox::Listener, public SwitchParameterComponent::Listener {
         explicit Parameter(AudioProcessorParameter *parameter)
                 : AudioProcessorParameterWithID(parameter->getName(32), parameter->getName(32),
                                                 parameter->getLabel(), parameter->getCategory()),
@@ -33,9 +34,23 @@ public:
             if (state.isValid())
                 state.removeListener(this);
             sourceParameter->removeListener(this);
+            attachedLabels.clear(false);
             for (auto* slider : attachedSliders) {
-                detachSlider(slider);
+                slider->removeListener(this);
             }
+            attachedSliders.clear(false);
+            for (auto* button : attachedButtons) {
+                button->removeListener(this);
+            }
+            attachedButtons.clear(false);
+            for (auto* comboBox : attachedComboBoxes) {
+                comboBox->removeListener(this);
+            }
+            attachedComboBoxes.clear(false);
+            for (auto* parameterSwitch : attachedSwitches) {
+                parameterSwitch->removeListener(this);
+            }
+            attachedSwitches.clear(false);
         }
 
         void parameterValueChanged(int parameterIndex, float newValue) override {
@@ -76,6 +91,15 @@ public:
                     auto index = roundToInt(newValue * (sourceParameter->getAllValueStrings().size() - 1));
                     comboBox->setSelectedItemIndex(index, sendNotificationSync);
                 }
+                for (auto* parameterSwitch : attachedSwitches) {
+                    bool newState;
+                    if (sourceParameter->getAllValueStrings().isEmpty()) {
+                        newState = sourceParameter->getValue() > 0.5f;
+                    } else {
+                        newState = (roundToInt(sourceParameter->getValue()) == 1);
+                    }
+                    parameterSwitch->setToggleState(newState, sendNotificationSync);
+                }
             }
         }
 
@@ -115,8 +139,22 @@ public:
             }
         }
 
+        void attachLabel(Label *valueLabel) {
+            if (valueLabel != nullptr) {
+                attachedLabels.add(valueLabel);
+            }
+            setAttachedComponentValues(value);
+        }
+
+        void detachLabel(Label *valueLabel) {
+            if (valueLabel != nullptr)
+                attachedLabels.removeObject(valueLabel, false);
+        }
+
         void attachSlider(Slider *slider, Label *valueLabel=nullptr) {
             if (slider != nullptr) {
+                slider->textFromValueFunction = nullptr;
+                slider->valueFromTextFunction = nullptr;
                 slider->setNormalisableRange(doubleRangeFromFloatRange(range));
                 slider->textFromValueFunction = valueToTextFunction;
                 slider->valueFromTextFunction = textToValueFunction;
@@ -183,6 +221,27 @@ public:
                 attachedLabels.removeObject(valueLabel, false);
         }
 
+        void attachSwitch(SwitchParameterComponent *parameterSwitch, Label *valueLabel=nullptr) {
+            if (parameterSwitch != nullptr) {
+                attachedSwitches.add(parameterSwitch);
+                parameterSwitch->addListener(this);
+            }
+            if (valueLabel != nullptr) {
+                attachedLabels.add(valueLabel);
+            }
+            setAttachedComponentValues(value);
+        }
+
+        void detachSwitch(SwitchParameterComponent *parameterSwitch, Label *valueLabel=nullptr) {
+            if (parameterSwitch != nullptr) {
+                parameterSwitch->removeListener(this);
+                attachedSwitches.removeObject(parameterSwitch, false);
+            }
+
+            if (valueLabel != nullptr)
+                attachedLabels.removeObject(valueLabel, false);
+        }
+
         float getDefaultValue() const override {
             return range.convertTo0to1(defaultValue);
         }
@@ -218,6 +277,7 @@ public:
         OwnedArray<Slider> attachedSliders {};
         OwnedArray<Button> attachedButtons {};
         OwnedArray<ComboBox> attachedComboBoxes {};
+        OwnedArray<SwitchParameterComponent> attachedSwitches {};
 
         void valueTreePropertyChanged(ValueTree &tree, const Identifier &p) override {
             if (ignoreParameterChangedCallbacks)
@@ -251,13 +311,22 @@ public:
             if (!ignoreCallbacks) {
                 if (sourceParameter->getCurrentValueAsText() != comboBox->getText()) {
                     beginParameterChange();
-                    // When a parameter provides a list of strings we must set its
-                    // value using those strings, rather than a float, because VSTs can
-                    // have uneven spacing between the different allowed values.
                     sourceParameter->setValueNotifyingHost(sourceParameter->getValueForText(comboBox->getText()));
-
                     endParameterChange();
                 }
+            }
+        }
+
+        void switchChanged(SwitchParameterComponent* parameterSwitch) override {
+            const ScopedLock selfCallbackLock(selfCallbackMutex);
+
+            if (!ignoreCallbacks) {
+                beginParameterChange();
+                float newValue = sourceParameter->getAllValueStrings().isEmpty() ?
+                        parameterSwitch->getToggleState() ? 1.0f : 0.0f :
+                        sourceParameter->getValueForText(parameterSwitch->getText());
+                sourceParameter->setValueNotifyingHost(newValue);
+                endParameterChange();
             }
         }
 

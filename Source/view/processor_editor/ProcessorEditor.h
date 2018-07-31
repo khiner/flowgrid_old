@@ -4,6 +4,7 @@
 
 #include "JuceHeader.h"
 #include "processors/StatefulAudioProcessorWrapper.h"
+#include "SwitchParameterComponent.h"
 
 class ProcessorEditor : public Component {
 public:
@@ -58,138 +59,6 @@ public:
     }
 
 private:
-    class ParameterListener : private AudioProcessorParameter::Listener,
-                              private Timer {
-    public:
-        explicit ParameterListener(AudioProcessorParameter &param)
-                : parameter(param) {
-            parameter.addListener(this);
-            startTimer(100);
-        }
-
-        ~ParameterListener() override {
-            parameter.removeListener(this);
-        }
-
-        AudioProcessorParameter &getParameter() noexcept {
-            return parameter;
-        }
-
-        virtual void handleNewParameterValue() = 0;
-
-    private:
-        void parameterValueChanged(int, float) override {
-            parameterValueHasChanged = 1;
-        }
-
-        void parameterGestureChanged(int, bool) override {}
-
-        void timerCallback() override {
-            if (parameterValueHasChanged.compareAndSetBool(0, 1)) {
-                handleNewParameterValue();
-                startTimerHz(50);
-            } else {
-                startTimer(jmin(250, getTimerInterval() + 10));
-            }
-        }
-
-        AudioProcessorParameter &parameter;
-        Atomic<int> parameterValueHasChanged{0};
-
-        JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ParameterListener)
-    };
-
-    class SwitchParameterComponent final : public Component,
-                                           private ParameterListener {
-    public:
-        SwitchParameterComponent(AudioProcessorParameter &param) : ParameterListener(param) {
-            auto *leftButton = buttons.add(new TextButton());
-            auto *rightButton = buttons.add(new TextButton());
-
-            for (auto *button : buttons) {
-                button->setRadioGroupId(293847);
-                button->setClickingTogglesState(true);
-            }
-
-            leftButton->setButtonText(getParameter().getText(0.0f, 16));
-            rightButton->setButtonText(getParameter().getText(1.0f, 16));
-
-            leftButton->setConnectedEdges(Button::ConnectedOnRight);
-            rightButton->setConnectedEdges(Button::ConnectedOnLeft);
-
-            // Set the initial value.
-            leftButton->setToggleState(true, dontSendNotification);
-            handleNewParameterValue();
-
-            rightButton->onStateChange = [this]() { rightButtonChanged(); };
-
-            for (auto *button : buttons)
-                addAndMakeVisible(button);
-        }
-
-        void paint(Graphics &) override {}
-
-        void resized() override {
-            auto area = getLocalBounds().reduced(0, 8);
-            area.removeFromLeft(8);
-
-            for (auto *button : buttons)
-                button->setBounds(area.removeFromLeft(80));
-        }
-
-    private:
-        void handleNewParameterValue() override {
-            bool newState = getParameterState();
-
-            if (buttons[1]->getToggleState() != newState) {
-                buttons[1]->setToggleState(newState, dontSendNotification);
-                buttons[0]->setToggleState(!newState, dontSendNotification);
-            }
-        }
-
-        void rightButtonChanged() {
-            auto buttonState = buttons[1]->getToggleState();
-
-            if (getParameterState() != buttonState) {
-                getParameter().beginChangeGesture();
-
-                if (getParameter().getAllValueStrings().isEmpty()) {
-                    getParameter().setValueNotifyingHost(buttonState ? 1.0f : 0.0f);
-                } else {
-                    // When a parameter provides a list of strings we must set its
-                    // value using those strings, rather than a float, because VSTs can
-                    // have uneven spacing between the different allowed values and we
-                    // want the snapping behaviour to be consistent with what we do with
-                    // a combo box.
-                    String selectedText = buttonState ? buttons[1]->getButtonText() : buttons[0]->getButtonText();
-                    getParameter().setValueNotifyingHost(getParameter().getValueForText(selectedText));
-                }
-
-                getParameter().endChangeGesture();
-            }
-        }
-
-        bool getParameterState() {
-            if (getParameter().getAllValueStrings().isEmpty())
-                return getParameter().getValue() > 0.5f;
-
-            auto index = getParameter().getAllValueStrings()
-                    .indexOf(getParameter().getCurrentValueAsText());
-
-            if (index < 0) {
-                // The parameter is producing some unexpected text, so we'll do
-                // some linear interpolation.
-                index = roundToInt(getParameter().getValue());
-            }
-
-            return index == 1;
-        }
-
-        OwnedArray<TextButton> buttons;
-
-        JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SwitchParameterComponent)
-    };
-    
     class ParameterDisplayComponent : public Component {
     public:
         ParameterDisplayComponent() {
@@ -203,12 +72,13 @@ private:
         }
 
         void setParameter(StatefulAudioProcessorWrapper::Parameter *parameterWrapper) {
+            if (this->parameterWrapper == parameterWrapper)
+                return;
             for (auto* child : getChildren()) {
                 child->setVisible(false);
             }
 
             detachParameterComponent();
-
             parameterComponent = nullptr;
 
             this->parameterWrapper = parameterWrapper;
@@ -235,7 +105,9 @@ private:
                 parameterComponent.reset(button);
             } else if (parameter->getNumSteps() == 2) {
                 // Most hosts display any parameter with just two steps as a switch.
-                parameterComponent = std::make_unique<SwitchParameterComponent>(*parameter);
+                auto* parameterSwitch = new SwitchParameterComponent(parameter->getText(0.0f, 16), parameter->getText(1.0f, 16));
+                parameterWrapper->attachSwitch(parameterSwitch, &valueLabel);
+                parameterComponent.reset(parameterSwitch);
             } else if (!parameter->getAllValueStrings().isEmpty()) {
                 // If we have a list of strings to represent the different states a
                 // parameter can be in then we should present a dropdown allowing a
@@ -273,16 +145,20 @@ private:
 
     private:
         Label parameterName, parameterLabel, valueLabel;
-        std::unique_ptr<Component> parameterComponent;
+        std::unique_ptr<Component> parameterComponent {};
         StatefulAudioProcessorWrapper::Parameter *parameterWrapper {};
 
         void detachParameterComponent() {
+            if (parameterComponent == nullptr || parameterWrapper == nullptr)
+                return;
             if (auto *slider = dynamic_cast<Slider *>(parameterComponent.get()))
                 parameterWrapper->detachSlider(slider, &valueLabel);
             else if (auto *button = dynamic_cast<Button *>(parameterComponent.get()))
                 parameterWrapper->detachButton(button, &valueLabel);
             else if (auto *comboBox = dynamic_cast<ComboBox *>(parameterComponent.get()))
                 parameterWrapper->detachComboBox(comboBox, &valueLabel);
+            else if (auto *parameterSwitch = dynamic_cast<SwitchParameterComponent *>(parameterComponent.get()))
+                parameterWrapper->detachSwitch(parameterSwitch, &valueLabel);
         }
 
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ParameterDisplayComponent)

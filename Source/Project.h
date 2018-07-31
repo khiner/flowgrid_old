@@ -176,10 +176,12 @@ public:
     void moveSelectionRight() {}
 
     void deleteSelectedItems() {
-        recursivelyDeleteSelectedItems(state);
+        deleteAllSelectedItems(state);
     }
 
     void deleteItem(const ValueTree &v, bool undoable=true) {
+        if (!isItemDeletable(v))
+            return;
         if (v.getParent().isValid()) {
             if (v.hasType(IDs::PROCESSOR)) {
                 sendProcessorWillBeDestroyedMessage(v);
@@ -419,7 +421,7 @@ public:
     }
 
     ValueTree findFirstSelectedItem() {
-        return findItemWithPropertyRecursive(state, IDs::selected, true);
+        return findFirstItemWithPropertyRecursive(state, IDs::selected, true);
     }
     
     void sendItemSelectedMessage(ValueTree item) override {
@@ -542,13 +544,10 @@ private:
         }
     }
 
-    void recursivelyDeleteSelectedItems(const ValueTree& parent) {
-        for (const auto& child : parent) {
-            if (child[IDs::selected] && isItemDeletable(child)) {
-                deleteItem(child);
-            } else {
-                recursivelyDeleteSelectedItems(child);
-            }
+    void deleteAllSelectedItems(const ValueTree &parent) {
+        Array<ValueTree> allSelectedItems = findAllItemsWithPropertyRecursive(parent, IDs::selected, true);
+        for (const auto &selectedItem : allSelectedItems) {
+            deleteItem(selectedItem, true);
         }
     }
 
@@ -579,9 +578,7 @@ private:
 
     static void deselectAllItemsExcept(const ValueTree& parent, const ValueTree& except) {
         for (auto child : parent) {
-            if (child == except)
-                continue;
-            if (child[IDs::selected]) {
+            if (child[IDs::selected] && child != except) {
                 child.setProperty(IDs::selected, false, nullptr);
             } else {
                 deselectAllItemsExcept(child, except);
@@ -589,17 +586,28 @@ private:
         }
     }
     
-    static ValueTree findItemWithPropertyRecursive(const ValueTree& parent, const Identifier& i, const var& value) {
+    static ValueTree findFirstItemWithPropertyRecursive(const ValueTree &parent, const Identifier &i, const var &value) {
         for (const auto& child : parent) {
             if (child[i] == value)
                 return child;
         }
         for (const auto& child : parent) {
-            const ValueTree &match = findItemWithPropertyRecursive(child, i, value);
+            const ValueTree &match = findFirstItemWithPropertyRecursive(child, i, value);
             if (match.isValid()) {
                 return match;
             }
         }
         return {};
+    };
+
+    static Array<ValueTree> findAllItemsWithPropertyRecursive(const ValueTree &parent, const Identifier &i, const var &value) {
+        Array<ValueTree> items;
+        for (const auto& child : parent) {
+            if (child[i] == value)
+                items.add(child);
+            else
+                items.addArray(findAllItemsWithPropertyRecursive(child, i, value));
+        }
+        return items;
     };
 };
