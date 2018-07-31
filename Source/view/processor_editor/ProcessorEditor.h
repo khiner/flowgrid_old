@@ -5,6 +5,7 @@
 #include "JuceHeader.h"
 #include "processors/StatefulAudioProcessorWrapper.h"
 #include "SwitchParameterComponent.h"
+#include "SolidToggleButton.h"
 
 class ProcessorEditor : public Component {
 public:
@@ -93,14 +94,15 @@ private:
             parameterName.setVisible(true);
 
             parameterLabel.setText(parameter->getLabel(), dontSendNotification);
-            parameterLabel.setVisible(true);
+            parameterLabel.setVisible(!parameter->getLabel().isEmpty());
+            parameterLabel.setJustificationType(Justification::centred);
 
             if (parameter->isBoolean()) {
                 // The AU, AUv3 and VST (only via a .vstxml file) SDKs support
                 // marking a parameter as boolean. If you want consistency across
                 // all  formats then it might be best to use a
                 // SwitchParameterComponent instead.
-                auto* button = new ToggleButton();
+                auto* button = new SolidToggleButton();
                 parameterWrapper->attachButton(button, &valueLabel);
                 parameterComponent.reset(button);
             } else if (parameter->getNumSteps() == 2) {
@@ -134,13 +136,29 @@ private:
         }
 
         void resized() override {
+            if (parameterComponent == nullptr)
+                return;
             auto area = getLocalBounds().reduced(5);
             parameterName.setBounds(area.removeFromTop(area.getHeight() / 5));
             auto bottom = area.removeFromBottom(area.getHeight() / 5);
-            parameterLabel.setBounds(bottom.removeFromRight(area.getWidth() / 4));
-            valueLabel.setBounds(bottom);
-            if (parameterComponent != nullptr)
-                parameterComponent->setBounds(area);
+
+            bool isSlider = dynamic_cast<Slider *>(parameterComponent.get());
+            bool isButton = dynamic_cast<Button *>(parameterComponent.get());
+            bool isCombobox = dynamic_cast<ComboBox *>(parameterComponent.get());
+            bool isSwitch = dynamic_cast<SwitchParameterComponent *>(parameterComponent.get());
+
+            if (parameterLabel.isVisible())
+                parameterLabel.setBounds(isSlider ? bottom.removeFromRight(bottom.getWidth() / 4) : bottom);
+            if (isSlider) {
+                valueLabel.setBounds(bottom);
+            } else if (isCombobox || isSwitch) {
+                area.reduce(0, area.getHeight() / 3);
+            } else if (isButton) {
+                auto smallerSquare = area.withWidth(area.getWidth() / 3).withHeight(area.getWidth() / 3);
+                smallerSquare.setCentre(area.getCentre());
+                area = smallerSquare;
+            }
+            parameterComponent->setBounds(area);
         }
 
     private:

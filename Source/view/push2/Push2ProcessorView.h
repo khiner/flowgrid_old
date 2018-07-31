@@ -19,7 +19,7 @@ public:
     void setProcessor(StatefulAudioProcessorWrapper *processor) {
         processorEditor.setProcessor(processor);
     }
-    
+
 private:
     ProcessorEditor processorEditor;
 };
