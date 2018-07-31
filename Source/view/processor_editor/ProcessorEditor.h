@@ -103,12 +103,12 @@ private:
                 // all  formats then it might be best to use a
                 // SwitchParameterComponent instead.
                 auto* button = new SolidToggleButton();
-                parameterWrapper->attachButton(button, &valueLabel);
+                parameterWrapper->attachButton(button);
                 parameterComponent.reset(button);
             } else if (parameter->getNumSteps() == 2) {
                 // Most hosts display any parameter with just two steps as a switch.
                 auto* parameterSwitch = new SwitchParameterComponent(parameter->getText(0.0f, 16), parameter->getText(1.0f, 16));
-                parameterWrapper->attachSwitch(parameterSwitch, &valueLabel);
+                parameterWrapper->attachSwitch(parameterSwitch);
                 parameterComponent.reset(parameterSwitch);
             } else if (!parameter->getAllValueStrings().isEmpty()) {
                 // If we have a list of strings to represent the different states a
@@ -116,12 +116,13 @@ private:
                 // user to pick one of them.
                 auto* comboBox = new ComboBox();
                 comboBox->addItemList(parameter->getAllValueStrings(), 1);
-                parameterWrapper->attachComboBox(comboBox, &valueLabel);
+                parameterWrapper->attachComboBox(comboBox);
                 parameterComponent.reset(comboBox);
             } else {
                 // Everything else can be represented as a slider.
                 auto* slider = new Slider(Slider::RotaryHorizontalVerticalDrag, Slider::TextEntryBoxPosition::NoTextBox);
-                parameterWrapper->attachSlider(slider, &valueLabel);
+                parameterWrapper->attachSlider(slider);
+                parameterWrapper->attachLabel(&valueLabel);
                 parameterComponent.reset(slider);
 
                 valueLabel.setColour(Label::outlineColourId, parameterComponent->findColour(Slider::textBoxOutlineColourId));
@@ -169,14 +170,15 @@ private:
         void detachParameterComponent() {
             if (parameterComponent == nullptr || parameterWrapper == nullptr)
                 return;
-            if (auto *slider = dynamic_cast<Slider *>(parameterComponent.get()))
-                parameterWrapper->detachSlider(slider, &valueLabel);
-            else if (auto *button = dynamic_cast<Button *>(parameterComponent.get()))
-                parameterWrapper->detachButton(button, &valueLabel);
+            if (auto *slider = dynamic_cast<Slider *>(parameterComponent.get())) {
+                parameterWrapper->detachSlider(slider);
+                parameterWrapper->detachLabel(&valueLabel);
+            } else if (auto *button = dynamic_cast<Button *>(parameterComponent.get()))
+                parameterWrapper->detachButton(button);
             else if (auto *comboBox = dynamic_cast<ComboBox *>(parameterComponent.get()))
-                parameterWrapper->detachComboBox(comboBox, &valueLabel);
+                parameterWrapper->detachComboBox(comboBox);
             else if (auto *parameterSwitch = dynamic_cast<SwitchParameterComponent *>(parameterComponent.get()))
-                parameterWrapper->detachSwitch(parameterSwitch, &valueLabel);
+                parameterWrapper->detachSwitch(parameterSwitch);
         }
 
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ParameterDisplayComponent)

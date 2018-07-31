@@ -151,7 +151,7 @@ public:
                 attachedLabels.removeObject(valueLabel, false);
         }
 
-        void attachSlider(Slider *slider, Label *valueLabel=nullptr) {
+        void attachSlider(Slider *slider) {
             if (slider != nullptr) {
                 slider->textFromValueFunction = nullptr;
                 slider->valueFromTextFunction = nullptr;
@@ -161,85 +161,61 @@ public:
                 attachedSliders.add(slider);
                 slider->addListener(this);
             }
-            if (valueLabel != nullptr) {
-                attachedLabels.add(valueLabel);
-            }
             setAttachedComponentValues(value);
         }
 
-        void detachSlider(Slider *slider, Label *valueLabel=nullptr) {
+        void detachSlider(Slider *slider) {
             if (slider != nullptr) {
                 slider->removeListener(this);
                 slider->textFromValueFunction = nullptr;
                 slider->valueFromTextFunction = nullptr;
                 attachedSliders.removeObject(slider, false);
             }
-
-            if (valueLabel != nullptr)
-                attachedLabels.removeObject(valueLabel, false);
         }
 
-        void attachButton(Button *button, Label *valueLabel=nullptr) {
+        void attachButton(Button *button) {
             if (button != nullptr) {
                 attachedButtons.add(button);
                 button->addListener(this);
             }
-            if (valueLabel != nullptr) {
-                attachedLabels.add(valueLabel);
-            }
             setAttachedComponentValues(value);
         }
 
-        void detachButton(Button *button, Label *valueLabel=nullptr) {
+        void detachButton(Button *button) {
             if (button != nullptr) {
                 button->removeListener(this);
                 attachedButtons.removeObject(button, false);
             }
-
-            if (valueLabel != nullptr)
-                attachedLabels.removeObject(valueLabel, false);
         }
 
-        void attachComboBox(ComboBox *comboBox, Label *valueLabel=nullptr) {
+        void attachComboBox(ComboBox *comboBox) {
             if (comboBox != nullptr) {
                 attachedComboBoxes.add(comboBox);
                 comboBox->addListener(this);
             }
-            if (valueLabel != nullptr) {
-                attachedLabels.add(valueLabel);
-            }
             setAttachedComponentValues(value);
         }
 
-        void detachComboBox(ComboBox *comboBox, Label *valueLabel=nullptr) {
+        void detachComboBox(ComboBox *comboBox) {
             if (comboBox != nullptr) {
                 comboBox->removeListener(this);
                 attachedComboBoxes.removeObject(comboBox, false);
             }
-
-            if (valueLabel != nullptr)
-                attachedLabels.removeObject(valueLabel, false);
         }
 
-        void attachSwitch(SwitchParameterComponent *parameterSwitch, Label *valueLabel=nullptr) {
+        void attachSwitch(SwitchParameterComponent *parameterSwitch) {
             if (parameterSwitch != nullptr) {
                 attachedSwitches.add(parameterSwitch);
                 parameterSwitch->addListener(this);
             }
-            if (valueLabel != nullptr) {
-                attachedLabels.add(valueLabel);
-            }
             setAttachedComponentValues(value);
         }
 
-        void detachSwitch(SwitchParameterComponent *parameterSwitch, Label *valueLabel=nullptr) {
+        void detachSwitch(SwitchParameterComponent *parameterSwitch) {
             if (parameterSwitch != nullptr) {
                 parameterSwitch->removeListener(this);
                 attachedSwitches.removeObject(parameterSwitch, false);
             }
-
-            if (valueLabel != nullptr)
-                attachedLabels.removeObject(valueLabel, false);
         }
 
         float getDefaultValue() const override {
