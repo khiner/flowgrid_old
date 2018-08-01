@@ -39,14 +39,6 @@ public:
                 addProcessor(inputProcessor);
     }
 
-    bool isSelected(NodeID nodeId) {
-        if (auto* processor = getProcessorWrapperForNodeId(nodeId)) {
-            return processor->state[IDs::selected];
-        }
-
-        return false;
-    }
-
     StatefulAudioProcessorWrapper *getProcessorWrapperForState(const ValueTree &processorState) const {
         return getProcessorWrapperForNodeId(getNodeIdForState(processorState));
     }
@@ -529,6 +521,7 @@ private:
     };
 
     void processorWillBeDestroyed(const ValueTree& processor) override {
+        removeDefaultConnections(processor);
         disconnectNode(getNodeIdForState(processor));
     };
 
