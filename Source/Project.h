@@ -84,10 +84,6 @@ public:
         return connections.isValid() && connections.getNumChildren() > 0;
     }
 
-    bool isIoProcessor(const ValueTree& processor) {
-        return processor.hasType(IDs::PROCESSOR) && processorManager.isIoProcessorName(processor.getProperty(IDs::name));
-    }
-
     const ValueTree getConnectionMatching(const AudioProcessorGraph::Connection &connection) {
         for (auto connectionState : connections) {
             auto sourceState = connectionState.getChildWithName(IDs::SOURCE);

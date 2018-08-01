@@ -153,13 +153,13 @@ public:
             for (int i = 0; i < getNumInputChannels(); ++i)
                 addAndMakeVisible(pins.add(new PinComponent(connectorDragListener, processor, nodeId, i, true)));
 
-            if (processor->acceptsMidi())
+            if (acceptsMidi())
                 addAndMakeVisible(pins.add(new PinComponent(connectorDragListener, processor, nodeId, AudioProcessorGraph::midiChannelIndex, true)));
 
             for (int i = 0; i < getNumOutputChannels(); ++i)
                 addAndMakeVisible(pins.add(new PinComponent(connectorDragListener, processor, nodeId, i, false)));
 
-            if (processor->producesMidi())
+            if (producesMidi())
                 addAndMakeVisible(pins.add(new PinComponent(connectorDragListener, processor, nodeId, AudioProcessorGraph::midiChannelIndex, false)));
 
             resized();
@@ -271,8 +271,6 @@ private:
         } else if (i == IDs::deviceName) {
             setName(v[IDs::deviceName]);
             repaint();
-        } else if (i == IDs::acceptsMidi || i == IDs::producesMidi) {
-            update();
         }
     }
 };

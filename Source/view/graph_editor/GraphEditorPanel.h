@@ -217,7 +217,7 @@ private:
                 i == IDs::numInputChannels || i == IDs::numOutputChannels ||
                 i == IDs::acceptsMidi || i == IDs::producesMidi) {
                 updateComponents();
-                if (project.isIoProcessor(tree)) {
+                if (tree.hasProperty(IDs::deviceName)) {
                     resized();
                 }
             }
