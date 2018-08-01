@@ -293,12 +293,13 @@ private:
         static String errorMessage = "Could not create processor";
         PluginDescription *desc = project.getTypeForIdentifier(processorState[IDs::id]);
         auto *processor = project.getFormatManager().createPluginInstance(*desc, getSampleRate(), getBlockSize(), errorMessage);
-        auto *processorWrapper = new StatefulAudioProcessorWrapper(processor, processorState, undoManager);
-        processerWrappers.add(processorWrapper);
 
         const Node::Ptr &newNode = processorState.hasProperty(IDs::nodeId) ?
                                    addNode(processor, getNodeIdForState(processorState)) :
                                    addNode(processor);
+        auto *processorWrapper = new StatefulAudioProcessorWrapper(processor, processorState, undoManager);
+        processerWrappers.add(processorWrapper);
+
         processorWrapper->state.setProperty(IDs::nodeId, int(newNode->nodeID), nullptr);
         processorWrapper->state.sendPropertyChangeMessage(IDs::bypassed);
 
