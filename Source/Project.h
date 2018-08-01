@@ -528,18 +528,32 @@ private:
 
     void changeListenerCallback(ChangeBroadcaster* source) override {
         if (source == &deviceManager) {
-            for (const auto& deviceName : MidiInput::getDevices()) {
-                const ValueTree &existingMidiInputProcessor = input.getChildWithProperty(IDs::deviceName, deviceName);
-                if (deviceManager.isMidiInputEnabled(deviceName) && !existingMidiInputProcessor.isValid()) {
-                    ValueTree midiInputProcessor(IDs::PROCESSOR);
-                    Helpers::createUuidProperty(midiInputProcessor);
-                    midiInputProcessor.setProperty(IDs::id, MidiInputProcessor::getPluginDescription().createIdentifierString(), nullptr);
-                    midiInputProcessor.setProperty(IDs::name, MidiInputProcessor::name(), nullptr);
-                    midiInputProcessor.setProperty(IDs::deviceName, deviceName, nullptr);
-                    input.addChild(midiInputProcessor, -1, nullptr);
-                } else if (!deviceManager.isMidiInputEnabled(deviceName) && existingMidiInputProcessor.isValid()) {
-                    deleteItem(existingMidiInputProcessor, false);
+            syncInputDevicesWithDeviceManager();
+        }
+    }
+
+    void syncInputDevicesWithDeviceManager() {
+        Array<ValueTree> inputChildrenToDelete;
+        for (auto inputChild : input) {
+            if (inputChild.hasProperty(IDs::deviceName)) {
+                const String &deviceName = inputChild[IDs::deviceName];
+                if (!MidiInput::getDevices().contains(deviceName) || !deviceManager.isMidiInputEnabled(deviceName)) {
+                    inputChildrenToDelete.add(inputChild);
                 }
+            }
+        }
+        for (const auto& inputChild : inputChildrenToDelete) {
+            deleteItem(inputChild, false);
+        }
+        for (const auto& deviceName : MidiInput::getDevices()) {
+            if (deviceManager.isMidiInputEnabled(deviceName) &&
+                !input.getChildWithProperty(IDs::deviceName, deviceName).isValid()) {
+                ValueTree midiInputProcessor(IDs::PROCESSOR);
+                Helpers::createUuidProperty(midiInputProcessor);
+                midiInputProcessor.setProperty(IDs::id, MidiInputProcessor::getPluginDescription().createIdentifierString(), nullptr);
+                midiInputProcessor.setProperty(IDs::name, MidiInputProcessor::name(), nullptr);
+                midiInputProcessor.setProperty(IDs::deviceName, deviceName, nullptr);
+                input.addChild(midiInputProcessor, -1, nullptr);
             }
         }
     }
