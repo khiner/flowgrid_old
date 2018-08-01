@@ -11,6 +11,7 @@ public:
             : project(project), push2MidiCommunicator(push2MidiCommunicator) {}
 
     // Let inheritors implement only what they need.
+    void addDeviceButtonPressed() override {}
     void aboveScreenButtonPressed(int buttonIndex) override {}
     void belowScreenButtonPressed(int buttonIndex) override {}
     void arrowPressed(Direction direction) override {}

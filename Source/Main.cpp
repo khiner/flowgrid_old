@@ -56,7 +56,7 @@ public:
         push2Window->setBounds(selectionWindow->getPosition().x, selectionWindow->getPosition().y - Push2Display::HEIGHT - graphEditorWindow->getTitleBarHeight(),
                                Push2Display::WIDTH, Push2Display::HEIGHT + graphEditorWindow->getTitleBarHeight());
         push2Window->setResizable(false, false);
-        midiControlHandler.setPush2Component(push2Component);
+        midiControlHandler.setPush2Listener(push2Component);
         project.sendItemSelectedMessage(project.findFirstSelectedItem());
 
         setMacMainMenu(this);

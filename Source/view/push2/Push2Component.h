@@ -33,7 +33,7 @@ public:
         project.removeChangeListener(this);
     }
 
-    void openProcessorSelector() {
+    void addDeviceButtonPressed() override {
         selectChild(&processorSelector);
     }
 

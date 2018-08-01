@@ -4,6 +4,7 @@
 #include "JuceHeader.h"
 #include "push2/Push2MidiCommunicator.h"
 #include "ProcessorGraph.h"
+#include "view/push2/Push2Listener.h"
 
 using Push2 = Push2MidiCommunicator;
 
@@ -14,8 +15,8 @@ public:
         project.addChangeListener(this);
     }
 
-    void setPush2Component(Push2Component *push2Component) {
-        this->push2Component = push2Component;
+    void setPush2Listener(Push2Listener *push2Listener) {
+        this->push2Listener = push2Listener;
     }
 
     ~MidiControlHandler() override {
@@ -55,11 +56,11 @@ public:
 
         if (Push2::isButtonPressControlMessage(midiMessage)) {
             if (Push2::isAboveScreenButtonCcNumber(ccNumber)) {
-                return push2Component->aboveScreenButtonPressed(ccNumber - Push2::topDisplayButton1);
+                return push2Listener->aboveScreenButtonPressed(ccNumber - Push2::topDisplayButton1);
             } else if (Push2::isBelowScreenButtonCcNumber(ccNumber)) {
-                return push2Component->belowScreenButtonPressed(ccNumber - Push2::bottomDisplayButton1);
+                return push2Listener->belowScreenButtonPressed(ccNumber - Push2::bottomDisplayButton1);
             } else if (Push2::isArrowButtonCcNumber(ccNumber)) {
-                return push2Component->arrowPressed(Push2::directionForArrowButtonCcNumber(ccNumber));
+                return push2Listener->arrowPressed(Push2::directionForArrowButtonCcNumber(ccNumber));
             }
             switch(ccNumber) {
                 case Push2::shift:
@@ -79,7 +80,7 @@ public:
                     project.createAndAddTrack();
                     return;
                 case Push2::addDevice:
-                    push2Component->openProcessorSelector();
+                    push2Listener->addDeviceButtonPressed();
                     return;
                 default: return;
             }
@@ -98,7 +99,7 @@ private:
     ProcessorGraph &audioGraphBuilder;
     UndoManager &undoManager;
 
-    Push2Component *push2Component {};
+    Push2Listener *push2Listener {};
     StatefulAudioProcessorWrapper *currentProcessorWrapperToControl {};
 
     bool isShiftHeld = false;
