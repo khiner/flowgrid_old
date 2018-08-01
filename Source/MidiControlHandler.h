@@ -25,9 +25,9 @@ public:
         if (Push2::isEncoderCcNumber(ccNumber)) {
             float changeAmount = Push2::encoderCcMessageToRotationChange(midiMessage);
             if (ccNumber == Push2::masterKnob) {
-                return push2Listener->masterEncoderRotated(changeAmount);
+                return push2Listener->masterEncoderRotated(changeAmount / 2.0f);
             } else if (Push2::isAboveScreenEncoderCcNumber(ccNumber)) {
-                return push2Listener->encoderRotated(ccNumber - Push2::ccNumberForTopKnobIndex(0), changeAmount);
+                return push2Listener->encoderRotated(ccNumber - Push2::ccNumberForTopKnobIndex(0), changeAmount / 2.0f);
             }
             return;
         }

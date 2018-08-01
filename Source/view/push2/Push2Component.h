@@ -36,7 +36,7 @@ public:
     void masterEncoderRotated(float changeAmount) override {
         auto *masterGainParameter = audioGraphBuilder.getMasterGainProcessor()->getParameter(1);
         if (masterGainParameter != nullptr)
-            masterGainParameter->setValue(masterGainParameter->getValue() + changeAmount / 4.0f);
+            masterGainParameter->setValue(masterGainParameter->getValue() + changeAmount);
     }
     
     void encoderRotated(int encoderIndex, float changeAmount) override {
