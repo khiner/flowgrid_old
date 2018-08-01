@@ -47,12 +47,19 @@ public:
     }
 
     void aboveScreenButtonPressed(int buttonIndex) override {
-        if (buttonIndex == 6) {
+        if (buttonIndex == 6)
             pageLeft();
-        } else if (buttonIndex == 7) {
+        else if (buttonIndex == 7)
             pageRight();
+    }
+
+    void encoderRotated(int encoderIndex, float changeAmount) override {
+        jassert(encoderIndex >= 0 && encoderIndex <= 7);
+        if (auto *parameter = parametersPanel->getParameterForIndex(encoderIndex)) {
+            parameter->setValue(jlimit(0.0f, 1.0f, parameter->getValue() + changeAmount / 4.0f));
         }
     }
+
 private:
     std::unique_ptr<ParametersPanel> parametersPanel;
     Label titleLabel;
@@ -69,8 +76,6 @@ private:
     }
 
     void updateEnabledPush2Buttons() {
-        push2MidiCommunicator.setAllBelowScreenButtonEnabled(false);
-
         push2MidiCommunicator.setAboveScreenButtonEnabled(6, parametersPanel->canPageLeft());
         push2MidiCommunicator.setAboveScreenButtonEnabled(7, parametersPanel->canPageRight());
     }

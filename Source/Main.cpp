@@ -13,8 +13,7 @@ class SoundMachineApplication : public JUCEApplication, public MenuBarModel {
 public:
     SoundMachineApplication() : project(Utilities::loadValueTree(getSaveFile(), true), undoManager, processorManager, deviceManager),
                                 applicationKeyListener(project, undoManager),
-                                processorGraph(project, undoManager, deviceManager),
-                                midiControlHandler(project, processorGraph, undoManager) {}
+                                processorGraph(project, undoManager, deviceManager) {}
 
     const String getApplicationName() override { return ProjectInfo::projectName; }
 

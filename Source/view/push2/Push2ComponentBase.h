@@ -11,6 +11,11 @@ public:
             : project(project), push2MidiCommunicator(push2MidiCommunicator) {}
 
     // Let inheritors implement only what they need.
+    void masterEncoderRotated(float changeAmount) override {}
+    void encoderRotated(int encoderIndex, float changeAmount) override {}
+    void undoButtonPressed(bool shiftHeld) override {}
+    void addTrackButtonPressed() override {}
+    void deleteButtonPressed() override {}
     void addDeviceButtonPressed() override {}
     void aboveScreenButtonPressed(int buttonIndex) override {}
     void belowScreenButtonPressed(int buttonIndex) override {}

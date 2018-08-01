@@ -33,6 +33,33 @@ public:
         project.removeChangeListener(this);
     }
 
+    void masterEncoderRotated(float changeAmount) override {
+        auto *masterGainParameter = audioGraphBuilder.getMasterGainProcessor()->getParameter(1);
+        if (masterGainParameter != nullptr)
+            masterGainParameter->setValue(masterGainParameter->getValue() + changeAmount / 4.0f);
+    }
+    
+    void encoderRotated(int encoderIndex, float changeAmount) override {
+        if (currentlyViewingChild != nullptr) {
+            currentlyViewingChild->encoderRotated(encoderIndex, changeAmount);
+        }
+    }
+    
+    void undoButtonPressed(bool shiftHeld) override {
+        if (shiftHeld)
+            project.getUndoManager().redo();
+        else
+            project.getUndoManager().undo();
+    }
+    
+    void addTrackButtonPressed() override {
+        project.createAndAddTrack();
+    }
+    
+    void deleteButtonPressed() override {
+        project.deleteSelectedItems();
+    }
+    
     void addDeviceButtonPressed() override {
         selectChild(&processorSelector);
     }

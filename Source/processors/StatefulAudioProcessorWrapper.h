@@ -353,8 +353,16 @@ public:
         startTimerHz(10);
     }
 
+    ~StatefulAudioProcessorWrapper() override {
+        automatableParameters.clear(false);
+    }
+
     Parameter *getParameter(int parameterIndex) {
         return parameters[parameterIndex];
+    }
+
+    Parameter *getAutomatableParameter(int parameterIndex) {
+        return automatableParameters[parameterIndex];
     }
 
     void updateValueTree() {
@@ -362,6 +370,8 @@ public:
             auto *parameterWrapper = new Parameter(parameter);
             parameterWrapper->setNewState(getOrCreateChildValueTree(parameterWrapper->paramID), &undoManager);
             parameters.add(parameterWrapper);
+            if (parameter->isAutomatable())
+                automatableParameters.add(parameterWrapper);
         }
 
         state.setProperty(IDs::numInputChannels, processor->getTotalNumInputChannels(), &undoManager);
@@ -408,6 +418,7 @@ public:
 private:
     UndoManager &undoManager;
     OwnedArray<Parameter> parameters;
+    OwnedArray<Parameter> automatableParameters;
 
     CriticalSection valueTreeChanging;
 

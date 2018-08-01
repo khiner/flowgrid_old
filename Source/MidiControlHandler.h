@@ -3,53 +3,31 @@
 #include <Identifiers.h>
 #include "JuceHeader.h"
 #include "push2/Push2MidiCommunicator.h"
-#include "ProcessorGraph.h"
 #include "view/push2/Push2Listener.h"
 
 using Push2 = Push2MidiCommunicator;
 
-class MidiControlHandler : private ProjectChangeListener {
+class MidiControlHandler {
 public:
-    explicit MidiControlHandler(Project &project, ProcessorGraph &audioGraphBuilder, UndoManager &undoManager) :
-            project(project), audioGraphBuilder(audioGraphBuilder), undoManager(undoManager) {
-        project.addChangeListener(this);
-    }
+    explicit MidiControlHandler() {}
 
     void setPush2Listener(Push2Listener *push2Listener) {
         this->push2Listener = push2Listener;
     }
 
-    ~MidiControlHandler() override {
-        project.removeChangeListener(this);
-    }
-
     // listened to and called on a non-audio thread
     void handleControlMidi(const MidiMessage &midiMessage) {
-        if (!midiMessage.isController())
+        if (!midiMessage.isController() || push2Listener == nullptr)
             return;
 
         const int ccNumber = midiMessage.getControllerNumber();
 
         if (Push2::isEncoderCcNumber(ccNumber)) {
-            int parameterIndex = -1;
-            AudioProcessor *processor = nullptr;
+            float changeAmount = Push2::encoderCcMessageToRotationChange(midiMessage);
             if (ccNumber == Push2::masterKnob) {
-                processor = audioGraphBuilder.getMasterGainProcessor()->processor;
-                parameterIndex = 1;
+                return push2Listener->masterEncoderRotated(changeAmount);
             } else if (Push2::isAboveScreenEncoderCcNumber(ccNumber)) {
-                if (currentProcessorWrapperToControl != nullptr) {
-                    processor = currentProcessorWrapperToControl->processor;
-                    parameterIndex = ccNumber - Push2::ccNumberForTopKnobIndex(0);
-                }
-            }
-
-            if (parameterIndex != -1) {
-                if (processor != nullptr) {
-                    if (auto *parameter = processor->getParameters()[parameterIndex]) {
-                        float value = Push2::encoderCcMessageToRotationChange(midiMessage);
-                        parameter->setValueNotifyingHost(jlimit(0.0f, 1.0f, parameter->getValue() + value / 4.0f));
-                    }
-                }
+                return push2Listener->encoderRotated(ccNumber - Push2::ccNumberForTopKnobIndex(0), changeAmount);
             }
             return;
         }
@@ -66,22 +44,10 @@ public:
                 case Push2::shift:
                     isShiftHeld = true;
                     return;
-                case Push2::undo:
-                    if (isShiftHeld) {
-                        undoManager.redo();
-                        return;
-                    } else {
-                        undoManager.undo();
-                        return;
-                    }
-                case Push2::delete_:
-                    return project.deleteSelectedItems();
-                case Push2::addTrack:
-                    project.createAndAddTrack();
-                    return;
-                case Push2::addDevice:
-                    push2Listener->addDeviceButtonPressed();
-                    return;
+                case Push2::undo: return push2Listener->undoButtonPressed(isShiftHeld);
+                case Push2::delete_: return push2Listener->deleteButtonPressed();
+                case Push2::addTrack: return push2Listener->addTrackButtonPressed();
+                case Push2::addDevice: return push2Listener->addDeviceButtonPressed();
                 default: return;
             }
         } else if (Push2::isButtonReleaseControlMessage(midiMessage)) {
@@ -95,26 +61,6 @@ public:
     }
 
 private:
-    Project &project;
-    ProcessorGraph &audioGraphBuilder;
-    UndoManager &undoManager;
-
     Push2Listener *push2Listener {};
-    StatefulAudioProcessorWrapper *currentProcessorWrapperToControl {};
-
     bool isShiftHeld = false;
-
-    void itemSelected(const ValueTree& item) override {
-        currentProcessorWrapperToControl = nullptr;
-
-        if (item.hasType(IDs::PROCESSOR)) {
-            currentProcessorWrapperToControl = audioGraphBuilder.getProcessorWrapperForState(item);
-        }
-    }
-
-    void itemRemoved(const ValueTree& item) override {
-        if (item == project.getSelectedProcessor()) {
-            currentProcessorWrapperToControl = nullptr;
-        }
-    }
 };
