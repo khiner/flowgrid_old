@@ -354,6 +354,7 @@ public:
     }
 
     ~StatefulAudioProcessorWrapper() override {
+        processor->removeListener(this);
         automatableParameters.clear(false);
     }
 
