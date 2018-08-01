@@ -27,6 +27,7 @@ public:
                     range = NormalisableRange<float>(0.0, 1.0, 1.0f / (sourceParameter->getAllValueStrings().size() - 1.0f));
                 else
                     range = NormalisableRange<float>(0.0, 1.0);
+
             }
             value = defaultValue = convertNormalizedToUnnormalized(parameter->getDefaultValue());
             sourceParameter->addListener(this);
@@ -55,13 +56,19 @@ public:
             attachedSwitches.clear(false);
         }
 
+        String getText(float v, int length) const override {
+            return valueToTextFunction != nullptr ?
+                   valueToTextFunction(convertNormalizedToUnnormalized(v)) :
+                   AudioProcessorParameter::getText(v, length);
+        }
+
         void parameterValueChanged(int parameterIndex, float newValue) override {
             setValue(newValue);
         }
 
         void parameterGestureChanged(int parameterIndex, bool gestureIsStarting) override {}
 
-        float convertNormalizedToUnnormalized(float value) {
+        float convertNormalizedToUnnormalized(float value) const {
             return range.snapToLegalValue(range.convertFrom0to1(value));
         }
 
@@ -104,16 +111,10 @@ public:
             }
         }
 
-        void setUnnormalisedValue(float newUnnormalisedValue) {
-            if (value != newUnnormalisedValue) {
-                setValue(range.convertTo0to1(newUnnormalisedValue));
-            }
-        }
-
         void postUnnormalisedValue(float unnormalisedValue) {
-            setUnnormalisedValue(unnormalisedValue);
-            if (convertNormalizedToUnnormalized(sourceParameter->getValue()) != unnormalisedValue)
+            if (convertNormalizedToUnnormalized(sourceParameter->getValue()) != unnormalisedValue) {
                 sourceParameter->setValueNotifyingHost(range.convertTo0to1(unnormalisedValue));
+            }
         }
 
         void updateFromValueTree() {
