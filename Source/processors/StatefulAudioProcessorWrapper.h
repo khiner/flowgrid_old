@@ -37,6 +37,9 @@ public:
             if (state.isValid())
                 state.removeListener(this);
             sourceParameter->removeListener(this);
+            for (auto* label : attachedLabels) {
+                label->onTextChange = nullptr;
+            }
             attachedLabels.clear(false);
             for (auto* slider : attachedSliders) {
                 slider->removeListener(this);
@@ -144,6 +147,7 @@ public:
         void attachLabel(Label *valueLabel) {
             if (valueLabel != nullptr) {
                 attachedLabels.add(valueLabel);
+                valueLabel->onTextChange = [this, valueLabel] { textChanged(valueLabel); };
             }
             setAttachedComponentValues(value);
         }
@@ -266,6 +270,17 @@ public:
             }
         }
 
+        void textChanged(Label *valueLabel) {
+            const ScopedLock selfCallbackLock(selfCallbackMutex);
+
+            auto newValue = convertNormalizedToUnnormalized(textToValueFunction(valueLabel->getText()));
+            if (!ignoreCallbacks) {
+                beginParameterChange();
+                postUnnormalisedValue(newValue);
+                endParameterChange();
+            }
+        }
+
         void sliderValueChanged(Slider* slider) override {
             const ScopedLock selfCallbackLock(selfCallbackMutex);
 
@@ -289,7 +304,7 @@ public:
             if (!ignoreCallbacks) {
                 if (sourceParameter->getCurrentValueAsText() != comboBox->getText()) {
                     beginParameterChange();
-                    sourceParameter->setValueNotifyingHost(sourceParameter->getValueForText(comboBox->getText()));
+                    postUnnormalisedValue(sourceParameter->getValueForText(comboBox->getText()));
                     endParameterChange();
                 }
             }
@@ -301,7 +316,7 @@ public:
             if (!ignoreCallbacks) {
                 beginParameterChange();
                 float newValue = float(parameterSwitch->getSelectedItemIndex()) / float((parameterSwitch->getNumItems() - 1));
-                sourceParameter->setValueNotifyingHost(newValue);
+                postUnnormalisedValue(newValue);
                 endParameterChange();
             }
         }

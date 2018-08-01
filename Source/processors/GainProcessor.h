@@ -8,7 +8,7 @@ public:
     explicit GainProcessor() :
             DefaultAudioProcessor(getPluginDescription()),
             gainParameter(new AudioParameterFloat("gain", "Gain", NormalisableRange<float>(0.0f, 1.0f), gain.getTargetValue(), "dB",
-                                                  AudioProcessorParameter::genericParameter, defaultStringFromDbValue, nullptr)) {
+                                                  AudioProcessorParameter::genericParameter, defaultStringFromDbValue, defaultValueFromDbString)) {
         gainParameter->addListener(this);
         addParameter(gainParameter);
     }

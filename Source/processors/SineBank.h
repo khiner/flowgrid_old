@@ -7,10 +7,10 @@
 class SineBank : public DefaultAudioProcessor {
 public:
     explicit SineBank() : DefaultAudioProcessor(getPluginDescription()),
-            toneSource1("1", defaultStringFromValue, defaultStringFromDbValue),
-            toneSource2("2", defaultStringFromValue, defaultStringFromDbValue),
-            toneSource3("3", defaultStringFromValue, defaultStringFromDbValue),
-            toneSource4("4", defaultStringFromValue, defaultStringFromDbValue) {
+            toneSource1("1", defaultStringFromValue, defaultStringFromDbValue, defaultValueFromString, defaultValueFromDbString),
+            toneSource2("2", defaultStringFromValue, defaultStringFromDbValue, defaultValueFromString, defaultValueFromDbString),
+            toneSource3("3", defaultStringFromValue, defaultStringFromDbValue, defaultValueFromString, defaultValueFromDbString),
+            toneSource4("4", defaultStringFromValue, defaultStringFromDbValue, defaultValueFromString, defaultValueFromDbString) {
 
         addParameter(toneSource1.getAmpParameter());
         addParameter(toneSource1.getFreqParameter());
