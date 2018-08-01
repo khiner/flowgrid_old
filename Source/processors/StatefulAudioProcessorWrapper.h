@@ -66,7 +66,7 @@ public:
         }
 
         void parameterValueChanged(int parameterIndex, float newValue) override {
-            setValue(newValue);
+            if (!ignoreCallbacks) { setValue(newValue); }
         }
 
         void parameterGestureChanged(int parameterIndex, bool gestureIsStarting) override {}
@@ -80,14 +80,20 @@ public:
         }
 
         void setValue(float newValue) override {
-            newValue = convertNormalizedToUnnormalized(newValue);
+            ScopedValueSetter<bool> svs(ignoreCallbacks, true);
+            newValue = range.convertFrom0to1(newValue);
 
             if (value != newValue || listenersNeedCalling) {
                 value = newValue;
+                postUnnormalisedValue(value);
                 setAttachedComponentValues(value);
                 listenersNeedCalling = false;
                 needsUpdate = true;
             }
+        }
+
+        void setUnnormalizedValue(float unnormalisedValue) {
+            setValue(range.convertTo0to1(unnormalisedValue));
         }
 
         void setAttachedComponentValues(float newValue) {
@@ -115,6 +121,7 @@ public:
         }
 
         void postUnnormalisedValue(float unnormalisedValue) {
+            ScopedValueSetter<bool> svs(ignoreCallbacks, true);
             if (convertNormalizedToUnnormalized(sourceParameter->getValue()) != unnormalisedValue) {
                 sourceParameter->setValueNotifyingHost(range.convertTo0to1(unnormalisedValue));
             }
@@ -122,7 +129,7 @@ public:
 
         void updateFromValueTree() {
             const float unnormalisedValue = float(state.getProperty(IDs::value, defaultValue));
-            postUnnormalisedValue(unnormalisedValue);
+            setUnnormalizedValue(unnormalisedValue);
         }
 
         void setNewState(const ValueTree &v, UndoManager *undoManager) {
@@ -276,7 +283,7 @@ public:
             auto newValue = convertNormalizedToUnnormalized(textToValueFunction(valueLabel->getText()));
             if (!ignoreCallbacks) {
                 beginParameterChange();
-                postUnnormalisedValue(newValue);
+                setUnnormalizedValue(newValue);
                 endParameterChange();
             }
         }
@@ -285,7 +292,7 @@ public:
             const ScopedLock selfCallbackLock(selfCallbackMutex);
 
             if (!ignoreCallbacks)
-                postUnnormalisedValue((float) slider->getValue());
+                setUnnormalizedValue((float) slider->getValue());
         }
 
         void buttonClicked(Button* button) override {
@@ -293,7 +300,7 @@ public:
 
             if (!ignoreCallbacks) {
                 beginParameterChange();
-                postUnnormalisedValue(button->getToggleState() ? 1.0f : 0.0f);
+                setUnnormalizedValue(button->getToggleState() ? 1.0f : 0.0f);
                 endParameterChange();
             }
         }
@@ -304,7 +311,7 @@ public:
             if (!ignoreCallbacks) {
                 if (sourceParameter->getCurrentValueAsText() != comboBox->getText()) {
                     beginParameterChange();
-                    postUnnormalisedValue(sourceParameter->getValueForText(comboBox->getText()));
+                    setUnnormalizedValue(sourceParameter->getValueForText(comboBox->getText()));
                     endParameterChange();
                 }
             }
@@ -316,7 +323,7 @@ public:
             if (!ignoreCallbacks) {
                 beginParameterChange();
                 float newValue = float(parameterSwitch->getSelectedItemIndex()) / float((parameterSwitch->getNumItems() - 1));
-                postUnnormalisedValue(newValue);
+                setUnnormalizedValue(newValue);
                 endParameterChange();
             }
         }
