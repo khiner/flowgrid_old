@@ -42,17 +42,17 @@ public:
 
     void aboveScreenButtonPressed(int buttonIndex) {
         if (processorSelector.isVisible()) {
-            if (const auto* selectedProcessor = processorSelector.selectTopProcessor(buttonIndex)) {
-                project.createAndAddProcessor(*selectedProcessor);
-            }
+            processorSelector.aboveScreenButtonPressed(buttonIndex);
+        } else if (processorView.isVisible()) {
+            processorView.aboveScreenButtonPressed(buttonIndex);
         }
     }
 
     void belowScreenButtonPressed(int buttonIndex) {
         if (processorSelector.isVisible()) {
-            if (const auto* selectedProcessor = processorSelector.selectBottomProcessor(buttonIndex)) {
-                project.createAndAddProcessor(*selectedProcessor);
-            }
+            processorSelector.belowScreenButtonPressed(buttonIndex);
+        } else if (processorView.isVisible()) {
+            processorView.belowScreenButtonPressed(buttonIndex);
         }
     }
 

@@ -12,7 +12,6 @@ public:
     explicit ProcessorEditor(int maxRows=2) :
             pageLeftButton("Page left", 0.5, findColour(ResizableWindow::backgroundColourId).brighter(0.75)),
             pageRightButton("Page right", 0.0, findColour(ResizableWindow::backgroundColourId).brighter(0.75)) {
-        setOpaque(true);
         addAndMakeVisible(titleLabel);
         addAndMakeVisible(pageLeftButton);
         addAndMakeVisible(pageRightButton);
@@ -29,8 +28,6 @@ public:
             updatePageButtonVisibility();
         };
     }
-
-    ~ProcessorEditor() override = default;
 
     void paint(Graphics &g) override {
         g.fillAll(getLookAndFeel().findColour(ResizableWindow::backgroundColourId));

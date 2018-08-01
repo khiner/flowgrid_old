@@ -65,10 +65,6 @@ public:
                (currentPage + 1) * maxRows * 8 < processorWrapper->processor->getParameters().size();
     }
 
-    void paint(Graphics &g) override {
-        g.fillAll(getLookAndFeel().findColour(ResizableWindow::backgroundColourId));
-    }
-
     void resized() override {
         auto r = getLocalBounds();
         auto componentWidth = r.getWidth() / 8;

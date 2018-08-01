@@ -116,19 +116,29 @@ public:
     }
 
     void setAboveScreenButtonColour(int buttonIndex, const Colour &colour) {
-        setButtonColour(buttonIndex + topDisplayButton1, colour);
+        setButtonColour(topDisplayButton1 + buttonIndex, colour);
     }
 
     void setBelowScreenButtonColour(int buttonIndex, const Colour &colour) {
-        setButtonColour(buttonIndex + bottomDisplayButton1, colour);
+        setButtonColour(bottomDisplayButton1 + buttonIndex, colour);
     }
 
     void setAboveScreenButtonEnabled(int buttonIndex, bool enabled) {
-        setColourButtonEnabled(buttonIndex + topDisplayButton1, enabled);
+        setColourButtonEnabled(topDisplayButton1 + buttonIndex, enabled);
     }
 
     void setBelowScreenButtonEnabled(int buttonIndex, bool enabled) {
-        setColourButtonEnabled(buttonIndex + bottomDisplayButton1, enabled);
+        setColourButtonEnabled(bottomDisplayButton1 + buttonIndex, enabled);
+    }
+
+    void setAllAboveScreenButtonEnabled(bool enabled) {
+        for (int buttonIndex = 0; buttonIndex < 8; buttonIndex++)
+            setAboveScreenButtonEnabled(buttonIndex, enabled);
+    }
+
+    void setAllBelowScreenButtonEnabled(bool enabled) {
+        for (int buttonIndex = 0; buttonIndex < 8; buttonIndex++)
+            setBelowScreenButtonEnabled(buttonIndex, enabled);
     }
 
     void setArrowButtonEnabled(Direction direction, bool enabled) const {

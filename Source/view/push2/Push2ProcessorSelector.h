@@ -195,6 +195,18 @@ public:
         return nullptr;
     }
 
+    void aboveScreenButtonPressed(int buttonIndex) {
+        if (const auto* selectedProcessor = selectTopProcessor(buttonIndex)) {
+            project.createAndAddProcessor(*selectedProcessor);
+        }
+    }
+
+    void belowScreenButtonPressed(int buttonIndex) {
+        if (const auto* selectedProcessor = selectBottomProcessor(buttonIndex)) {
+            project.createAndAddProcessor(*selectedProcessor);
+        }
+    }
+
     void arrowPressed(Direction direction) {
         if (currentProcessorSelector != nullptr && (direction == Direction::left || direction == Direction::right)) {
             currentProcessorSelector->arrowPressed(direction);
