@@ -423,18 +423,23 @@ private:
 
     CriticalSection valueTreeChanging;
 
+    void updateStateForProcessor(AudioProcessor *processor) {
+        // TODO should we use UndoManager and also support _setting_ playConfigDetails on state change?
+        state.setProperty(IDs::numInputChannels, processor->getTotalNumInputChannels(), nullptr);
+        state.setProperty(IDs::numOutputChannels, processor->getTotalNumOutputChannels(), nullptr);
+        state.setProperty(IDs::acceptsMidi, processor->acceptsMidi(), nullptr);
+        state.setProperty(IDs::producesMidi, processor->producesMidi(), nullptr);
+    }
+
     void audioProcessorParameterChanged(AudioProcessor *processor, int parameterIndex, float newValue) override {}
 
     void audioProcessorChanged(AudioProcessor *processor) override {
-        MessageManager::callAsync([this, processor] {
-            if (processor != nullptr) {
-                // TODO should we use UndoManager and also support _setting_ playConfigDetails on state change?
-                state.setProperty(IDs::numInputChannels, processor->getTotalNumInputChannels(), nullptr);
-                state.setProperty(IDs::numOutputChannels, processor->getTotalNumOutputChannels(), nullptr);
-                state.setProperty(IDs::acceptsMidi, processor->acceptsMidi(), nullptr);
-                state.setProperty(IDs::producesMidi, processor->producesMidi(), nullptr);
-            }
-        });
+        if (processor == nullptr)
+            return;
+        if (MessageManager::getInstance()->isThisTheMessageThread())
+            updateStateForProcessor(processor);
+        else
+            MessageManager::callAsync([this, processor] { updateStateForProcessor(processor); });
     }
 
     void audioProcessorParameterChangeGestureBegin(AudioProcessor *processor, int parameterIndex) override {}
