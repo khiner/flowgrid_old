@@ -12,31 +12,32 @@ public:
         }
     }
 
-    void setProcessor(StatefulAudioProcessorWrapper *processor) {
-        if (this->processorWrapper != processor) {
+    void setProcessor(StatefulAudioProcessorWrapper *processorWrapper) {
+        if (this->processorWrapper != processorWrapper) {
             currentPage = 0;
         }
-        this->processorWrapper = processor;
+        this->processorWrapper = processorWrapper;
         updateParameterComponents();
     }
 
     void updateParameterComponents() {
-        if (processorWrapper != nullptr) {
-            for (int paramIndex = 0; paramIndex < paramComponents.size(); paramIndex++) {
-                auto *parameter = getParameterForIndex(paramIndex);
-                auto *component = paramComponents.getUnchecked(paramIndex);
-                if (parameter != nullptr) {
-                    component->setParameter(parameter);
-                    component->setVisible(true);
-                } else {
-                    component->setVisible(false);
-                    component->setParameter(nullptr);
-                }
+        for (int paramIndex = 0; paramIndex < paramComponents.size(); paramIndex++) {
+            auto *parameter = getParameterForIndex(paramIndex);
+            auto *component = paramComponents.getUnchecked(paramIndex);
+            if (parameter != nullptr) {
+                component->setParameter(parameter);
+                component->setVisible(true);
+            } else {
+                component->setVisible(false);
+                component->setParameter(nullptr);
             }
         }
     }
 
     StatefulAudioProcessorWrapper::Parameter* getParameterForIndex(int parameterIndex) const {
+        if (processorWrapper == nullptr) {
+            return nullptr;
+        }
         int pageCorrectedParameterIndex = currentPage * maxRows * 8 + parameterIndex;
         return processorWrapper->getAutomatableParameter(pageCorrectedParameterIndex);
     }
