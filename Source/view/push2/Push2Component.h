@@ -18,7 +18,6 @@ public:
     explicit Push2Component(Project &project, Push2MidiCommunicator &push2MidiCommunicator, ProcessorGraph &audioGraphBuilder)
             : Push2ComponentBase(project, push2MidiCommunicator), audioGraphBuilder(audioGraphBuilder),
               processorView(project, push2MidiCommunicator), processorSelector(project, push2MidiCommunicator) {
-
         startTimer(60);
 
         addChildComponent(processorView);
@@ -35,30 +34,24 @@ public:
     }
 
     void openProcessorSelector() {
-        for (auto *c : getChildren())
-            c->setVisible(false);
-        processorSelector.setVisible(true);
+        selectChild(&processorSelector);
     }
 
-    void aboveScreenButtonPressed(int buttonIndex) {
-        if (processorSelector.isVisible()) {
-            processorSelector.aboveScreenButtonPressed(buttonIndex);
-        } else if (processorView.isVisible()) {
-            processorView.aboveScreenButtonPressed(buttonIndex);
+    void aboveScreenButtonPressed(int buttonIndex) override {
+        if (currentlyViewingChild != nullptr) {
+            currentlyViewingChild->aboveScreenButtonPressed(buttonIndex);
         }
     }
 
-    void belowScreenButtonPressed(int buttonIndex) {
-        if (processorSelector.isVisible()) {
-            processorSelector.belowScreenButtonPressed(buttonIndex);
-        } else if (processorView.isVisible()) {
-            processorView.belowScreenButtonPressed(buttonIndex);
+    void belowScreenButtonPressed(int buttonIndex) override {
+        if (currentlyViewingChild != nullptr) {
+            currentlyViewingChild->belowScreenButtonPressed(buttonIndex);
         }
     }
 
-    void arrowPressed(Direction direction) {
-        if (processorSelector.isVisible()) {
-            processorSelector.arrowPressed(direction);
+    void arrowPressed(Direction direction) override {
+        if (currentlyViewingChild != nullptr) {
+            currentlyViewingChild->arrowPressed(direction);
             return;
         }
         switch (direction) {
@@ -71,9 +64,27 @@ public:
     }
 
 private:
-    /*!
-     *  Render a frame and send it to the Push 2 display
-     */
+    Push2DisplayBridge displayBridge;
+    ProcessorGraph &audioGraphBuilder;
+
+    Push2ProcessorView processorView;
+    Push2ProcessorSelector processorSelector;
+
+    Push2ComponentBase *currentlyViewingChild {};
+
+    void selectChild(Push2ComponentBase* child) {
+        if (currentlyViewingChild == child)
+            return;
+
+        if (currentlyViewingChild != nullptr)
+            currentlyViewingChild->setVisible(false);
+
+        currentlyViewingChild = child;
+        if (currentlyViewingChild != nullptr)
+            currentlyViewingChild->setVisible(true);
+    }
+
+    // Render a frame and send it to the Push 2 display
     void inline drawFrame() {
         static const juce::Colour CLEAR_COLOR = juce::Colour(0xff000000);
 
@@ -83,23 +94,16 @@ private:
         displayBridge.writeFrameToDisplay();
     }
 
-    void timerCallback() override {
-        //auto t1 = std::chrono::high_resolution_clock::now();
-        drawFrame();
-        //std::cout << std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - t1).count() << '\n';
-    }
+    void timerCallback() override { drawFrame(); }
 
     void itemSelected(const ValueTree& item) override {
-        for (auto *c : getChildren())
-            c->setVisible(false);
-
         if (item.hasType(IDs::PROCESSOR)) {
-            auto *processorWrapper = audioGraphBuilder.getProcessorWrapperForState(item);
-            if (processorWrapper != nullptr) {
+            if (auto *processorWrapper = audioGraphBuilder.getProcessorWrapperForState(item)) {
                 processorView.setProcessor(processorWrapper);
-                processorView.setVisible(true);
+                selectChild(&processorView);
             }
         } else {
+            selectChild(nullptr);
             processorView.setProcessor(nullptr);
         }
     }
@@ -109,12 +113,4 @@ private:
             itemSelected(ValueTree());
         }
     }
-
-private:
-    Push2DisplayBridge displayBridge;
-
-    ProcessorGraph &audioGraphBuilder;
-
-    Push2ProcessorView processorView;
-    Push2ProcessorSelector processorSelector;
 };

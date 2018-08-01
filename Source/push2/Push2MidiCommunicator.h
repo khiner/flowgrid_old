@@ -33,7 +33,8 @@ public:
             left = 44, right = 45, up = 46, down = 47, repeat = 56, accent = 57, scale = 58, layout = 31, note = 50,
             session = 51, octaveUp = 55, octaveDown = 54, pageLeft = 62, pageRight = 63, shift = 49, select = 48;
 
-    enum class Direction { up, down, left, right, NA};
+    enum class Direction { up, down, left, right };
+    static const Direction directions[4];
 
     // From https://github.com/Ableton/push-interface/blob/master/doc/AbletonPush2MIDIDisplayInterface.asc#Encoders:
     //
@@ -78,12 +79,13 @@ public:
     }
 
     static Direction directionForArrowButtonCcNumber(int ccNumber) {
+        jassert(isArrowButtonCcNumber(ccNumber));
+
         switch (ccNumber) {
             case left: return Direction::left;
             case right: return Direction::right;
             case up: return Direction::up;
-            case down: return Direction::down;
-            default: return Direction::NA;
+            default: return Direction::down;
         }
     }
 
@@ -147,10 +149,9 @@ public:
     }
 
     void setAllArrowButtonsEnabled(bool enabled) const {
-        setArrowButtonEnabled(Direction::left, enabled);
-        setArrowButtonEnabled(Direction::right, enabled);
-        setArrowButtonEnabled(Direction::up, enabled);
-        setArrowButtonEnabled(Direction::down, enabled);
+        for (Direction direction : Push2MidiCommunicator::directions) {
+            setArrowButtonEnabled(direction, enabled);
+        }
     }
 
 private:

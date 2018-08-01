@@ -195,19 +195,21 @@ public:
         return nullptr;
     }
 
-    void aboveScreenButtonPressed(int buttonIndex) {
+    void aboveScreenButtonPressed(int buttonIndex) override {
         if (const auto* selectedProcessor = selectTopProcessor(buttonIndex)) {
             project.createAndAddProcessor(*selectedProcessor);
         }
     }
 
-    void belowScreenButtonPressed(int buttonIndex) {
+    void belowScreenButtonPressed(int buttonIndex) override {
         if (const auto* selectedProcessor = selectBottomProcessor(buttonIndex)) {
             project.createAndAddProcessor(*selectedProcessor);
         }
     }
 
-    void arrowPressed(Direction direction) {
+    void arrowPressed(Direction direction) override {
+        if (!canNavigateInDirection(direction))
+            return;
         if (currentProcessorSelector != nullptr && (direction == Direction::left || direction == Direction::right)) {
             currentProcessorSelector->arrowPressed(direction);
             updateEnabledPush2Arrows();
@@ -271,20 +273,28 @@ private:
     }
 
     void updateEnabledPush2Arrows() {
-        push2MidiCommunicator.setAllArrowButtonsEnabled(false);
-
-        if (currentProcessorSelector == nullptr)
-            return;
-
-        if (currentProcessorSelector->currentViewOffsetIndex > 0)
-            push2MidiCommunicator.setArrowButtonEnabled(Direction::left, true);
-        if (currentProcessorSelector->currentViewOffsetIndex + NUM_ITEMS_PER_ROW < currentProcessorSelector->getTotalNumberOfTreeItems())
-            push2MidiCommunicator.setArrowButtonEnabled(Direction::right, true);
-        if (currentProcessorSelector->findSelectedLabel() != nullptr)
-            push2MidiCommunicator.setArrowButtonEnabled(Direction::down, true);
-        if (bottomProcessorSelector.get() == currentProcessorSelector || currentProcessorSelector->currentTree->parent != nullptr)
-            push2MidiCommunicator.setArrowButtonEnabled(Direction::up, true);
+        if (currentProcessorSelector == nullptr) {
+            push2MidiCommunicator.setAllArrowButtonsEnabled(false);
+        } else {
+            for (Direction direction : Push2MidiCommunicator::directions) {
+                push2MidiCommunicator.setArrowButtonEnabled(direction, canNavigateInDirection(direction));
+            }
+        }
     }
+
+    bool canNavigateInDirection(Direction direction) {
+        switch (direction) {
+            case Direction::right: return canNavigateRight();
+            case Direction::down: return canNavigateDown();
+            case Direction::left: return canNavigateLeft();
+            case Direction::up: return canNavigateUp();
+        }
+    }
+
+    bool canNavigateRight() const { return currentProcessorSelector->currentViewOffsetIndex + NUM_ITEMS_PER_ROW < currentProcessorSelector->getTotalNumberOfTreeItems(); }
+    bool canNavigateDown() const { return currentProcessorSelector->findSelectedLabel() != nullptr; }
+    bool canNavigateLeft() const { return currentProcessorSelector->currentViewOffsetIndex > 0; }
+    bool canNavigateUp() const { return bottomProcessorSelector.get() == currentProcessorSelector || currentProcessorSelector->currentTree->parent != nullptr; }
 
     KnownPluginList::PluginTree rootTree;
     std::unique_ptr<ProcessorSelectorRow> topProcessorSelector;

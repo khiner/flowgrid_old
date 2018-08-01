@@ -46,15 +46,13 @@ public:
         updateEnabledPush2Buttons();
     }
 
-    void aboveScreenButtonPressed(int buttonIndex) {
+    void aboveScreenButtonPressed(int buttonIndex) override {
         if (buttonIndex == 6) {
             pageLeft();
         } else if (buttonIndex == 7) {
             pageRight();
         }
     }
-
-    void belowScreenButtonPressed(int buttonIndex) {}
 private:
     std::unique_ptr<ParametersPanel> parametersPanel;
     Label titleLabel;
