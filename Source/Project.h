@@ -49,10 +49,13 @@ public:
         return output;
     }
 
-    Array<ValueTree> getConnectionsForNode(AudioProcessorGraph::NodeID nodeId) {
+    Array<ValueTree> getConnectionsForNode(AudioProcessorGraph::NodeID nodeId, bool incoming=true, bool outgoing=true) {
         Array<ValueTree> nodeConnections;
         for (const auto& connection : connections) {
-            if (connection.getChildWithProperty(IDs::nodeId, int(nodeId)).isValid()) {
+            const auto &connectionType = connection.getChildWithProperty(IDs::nodeId, int(nodeId));
+
+            if (connectionType.isValid() &&
+                ((incoming && connectionType.hasType(IDs::DESTINATION)) || (outgoing && connectionType.hasType(IDs::SOURCE)))) {
                 nodeConnections.add(connection);
             }
         }
@@ -127,9 +130,11 @@ public:
     }
 
     bool removeConnection(const ValueTree& connection, UndoManager* undoManager, bool defaults, bool custom) {
-        if (connection.isValid() &&
-            ((custom && connection.hasProperty(IDs::isCustomConnection)) ||
-             (defaults && !connection.hasProperty(IDs::isCustomConnection)))) {
+        if (!connection.isValid())
+            return false;
+
+        if ((custom && connection.hasProperty(IDs::isCustomConnection)) ||
+            (defaults && !connection.hasProperty(IDs::isCustomConnection))) {
             connections.removeChild(connection, undoManager);
             return true;
         }
