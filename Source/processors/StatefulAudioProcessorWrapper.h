@@ -344,11 +344,11 @@ public:
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(Parameter)
     };
 
-    StatefulAudioProcessorWrapper(AudioPluginInstance *processor, ValueTree state, UndoManager &undoManager) :
+    StatefulAudioProcessorWrapper(AudioPluginInstance *processor, AudioProcessorGraph::NodeID nodeId, ValueTree state, UndoManager &undoManager) :
             processor(processor), state(std::move(state)), undoManager(undoManager) {
+        this->state.setProperty(IDs::nodeId, int(nodeId), &undoManager);
         processor->addListener(this);
         processor->enableAllBuses();
-        audioProcessorChanged(processor);
         updateValueTree();
         startTimerHz(10);
     }
@@ -374,9 +374,15 @@ public:
             if (parameter->isAutomatable())
                 automatableParameters.add(parameterWrapper);
         }
-
-        state.setProperty(IDs::numInputChannels, processor->getTotalNumInputChannels(), &undoManager);
-        state.setProperty(IDs::numOutputChannels, processor->getTotalNumOutputChannels(), &undoManager);
+        audioProcessorChanged(processor);
+        // TODO this bit is hacky.
+        // If we are loading from state, there could have been no propertyChanged messages for this property after
+        // the childAdded message. Since the UI can be created from state before the processor node is created,
+        // we may need to send a message that the UI will receive that will make it update components to find the new node.
+        state.sendPropertyChangeMessage(IDs::numInputChannels);
+        // Also a little hacky, but maybe the best we can do.
+        // If we're loading from state, bypass state needs to make its way to the processor graph to actually mute.
+        state.sendPropertyChangeMessage(IDs::bypassed);
     }
 
     ValueTree getOrCreateChildValueTree(const String &paramID) {
@@ -424,11 +430,10 @@ private:
     CriticalSection valueTreeChanging;
 
     void updateStateForProcessor(AudioProcessor *processor) {
-        // TODO should we use UndoManager and also support _setting_ playConfigDetails on state change?
-        state.setProperty(IDs::numInputChannels, processor->getTotalNumInputChannels(), nullptr);
-        state.setProperty(IDs::numOutputChannels, processor->getTotalNumOutputChannels(), nullptr);
-        state.setProperty(IDs::acceptsMidi, processor->acceptsMidi(), nullptr);
-        state.setProperty(IDs::producesMidi, processor->producesMidi(), nullptr);
+        state.setProperty(IDs::numInputChannels, processor->getTotalNumInputChannels(), &undoManager);
+        state.setProperty(IDs::numOutputChannels, processor->getTotalNumOutputChannels(), &undoManager);
+        state.setProperty(IDs::acceptsMidi, processor->acceptsMidi(), &undoManager);
+        state.setProperty(IDs::producesMidi, processor->producesMidi(), &undoManager);
     }
 
     void audioProcessorParameterChanged(AudioProcessor *processor, int parameterIndex, float newValue) override {}

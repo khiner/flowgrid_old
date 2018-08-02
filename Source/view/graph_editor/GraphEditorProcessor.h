@@ -263,14 +263,11 @@ private:
         if (v != state)
             return;
 
-        if (i == IDs::bypassed) {
-            repaint();
-        } else if (i == IDs::name) {
-            setName(v[IDs::name]);
-            repaint();
-        } else if (i == IDs::deviceName) {
+        if (i == IDs::deviceName)
             setName(v[IDs::deviceName]);
-            repaint();
-        }
+        else if (i == IDs::name)
+            setName(v[IDs::name]);
+
+        repaint();
     }
 };

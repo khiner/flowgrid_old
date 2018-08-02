@@ -299,11 +299,8 @@ private:
         const Node::Ptr &newNode = processorState.hasProperty(IDs::nodeId) ?
                                    addNode(processor, getNodeIdForState(processorState)) :
                                    addNode(processor);
-        auto *processorWrapper = new StatefulAudioProcessorWrapper(processor, processorState, undoManager);
+        auto *processorWrapper = new StatefulAudioProcessorWrapper(processor, newNode->nodeID, processorState, undoManager);
         processerWrappers.add(processorWrapper);
-
-        processorWrapper->state.setProperty(IDs::nodeId, int(newNode->nodeID), nullptr);
-        processorWrapper->state.sendPropertyChangeMessage(IDs::bypassed);
 
         if (auto *midiInputProcessor = dynamic_cast<MidiInputProcessor *>(processor)) {
             const String &deviceName = processorState.getProperty(IDs::deviceName);
