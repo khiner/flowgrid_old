@@ -17,16 +17,14 @@ public:
 
         addAndMakeVisible(*(audioInputProcessor = std::make_unique<GraphEditorProcessor>(project.getAudioInputProcessorState(), *this, graph)));
         addAndMakeVisible(*(audioOutputProcessor = std::make_unique<GraphEditorProcessor>(project.getAudioOutputProcessorState(), *this, graph)));
-        addAndMakeVisible(*(midiOutputProcessor = std::make_unique<GraphEditorProcessor>(project.getMidiOutputProcessorState(), *this, graph)));
         addAndMakeVisible(*(tracks = std::make_unique<GraphEditorTracks>(project, project.getTracks(), *this, graph)));
         addAndMakeVisible(*(connectors = std::make_unique<GraphEditorConnectors>(project.getConnections(), *this, *this, graph)));
         
-        for (const auto& inputProcessor : project.getInput()) {
-            if (inputProcessor.getProperty(IDs::name) == MidiInputProcessor::name()) {
-                auto *inputGraphEditorProcessor = new GraphEditorProcessor(inputProcessor, *this, graph);
-                addAndMakeVisible(inputGraphEditorProcessor);
-                addMidiInputProcessor(inputGraphEditorProcessor);
-            }
+        for (auto inputProcessor : project.getInput()) {
+            valueTreeChildAdded(project.getInput(), inputProcessor);
+        }
+        for (auto outputProcessor : project.getOutput()) {
+            valueTreeChildAdded(project.getOutput(), outputProcessor);
         }
     }
 
@@ -43,16 +41,19 @@ public:
         connectors->setBounds(r);
         auto top = r.removeFromTop(int(getHeight() * 1.0 / Project::NUM_VISIBLE_PROCESSOR_SLOTS));
         int midiInputProcessorWidthInChannels = midiInputProcessors.size() * 2;
-        float audioRatio = float(audioInputProcessor->getNumOutputChannels()) / float(audioInputProcessor->getNumOutputChannels() + midiInputProcessorWidthInChannels);
-        audioInputProcessor->setBounds(top.removeFromLeft(int(getWidth() * audioRatio)));
+        float audioInputWidthRatio = float(audioInputProcessor->getNumOutputChannels()) / float(audioInputProcessor->getNumOutputChannels() + midiInputProcessorWidthInChannels);
+        audioInputProcessor->setBounds(top.removeFromLeft(int(getWidth() * audioInputWidthRatio)));
         for (auto *midiInputProcessor : midiInputProcessors) {
-            midiInputProcessor->setBounds(top.removeFromLeft(int(getWidth() * (1 - audioRatio) / midiInputProcessors.size())));
+            midiInputProcessor->setBounds(top.removeFromLeft(int(getWidth() * (1 - audioInputWidthRatio) / midiInputProcessors.size())));
         }
         tracks->setBounds(r.withHeight(getHeight() * Project::NUM_AVAILABLE_PROCESSOR_SLOTS / (Project::NUM_VISIBLE_PROCESSOR_SLOTS - 1)));
         auto bottom = r.removeFromBottom(int(getHeight() * 1.0 / Project::NUM_VISIBLE_PROCESSOR_SLOTS));
-        audioRatio = float(audioOutputProcessor->getNumInputChannels()) / float(audioOutputProcessor->getNumInputChannels() + midiOutputProcessor->getNumInputChannels());
-        audioOutputProcessor->setBounds(bottom.removeFromLeft(int(getWidth() * audioRatio)));
-        midiOutputProcessor->setBounds(bottom);
+        int midiOutputProcessorWidthInChannels = midiOutputProcessors.size() * 2;
+        float audioOutputWidthRatio = float(audioOutputProcessor->getNumInputChannels()) / float(audioOutputProcessor->getNumInputChannels() + midiOutputProcessorWidthInChannels);
+        audioOutputProcessor->setBounds(bottom.removeFromLeft(int(getWidth() * audioOutputWidthRatio)));
+        for (auto *midiOutputProcessor : midiOutputProcessors) {
+            midiOutputProcessor->setBounds(bottom.removeFromLeft(int(getWidth() * (1 - audioOutputWidthRatio) / midiOutputProcessors.size())));
+        }
         updateComponents();
     }
 
@@ -63,9 +64,8 @@ public:
     void updateComponents() {
         audioInputProcessor->update();
         audioOutputProcessor->update();
-        for (auto* midiInputProcessor : midiInputProcessors)
-            midiInputProcessor->update();
-        midiOutputProcessor->update();
+        for (auto* midiInputProcessor : midiInputProcessors) midiInputProcessor->update();
+        for (auto* midiOutputProcessor : midiOutputProcessors) midiOutputProcessor->update();
         tracks->updateProcessors();
         connectors->updateConnectors();
     }
@@ -78,6 +78,7 @@ public:
             draggingConnector = new GraphEditorConnector(ValueTree(), *this, *this);
         else
             initialDraggingConnection = draggingConnector->getConnection();
+
         draggingConnector->setInput(source);
         draggingConnector->setOutput(destination);
 
@@ -161,7 +162,7 @@ public:
         if (nodeId == audioInputProcessor->getNodeId()) return audioInputProcessor.get();
         else if (nodeId == audioOutputProcessor->getNodeId()) return audioOutputProcessor.get();
         else if (auto *midiInputProcessor = findMidiInputProcessorForNodeId(nodeId)) return midiInputProcessor;
-        else if (nodeId == midiOutputProcessor->getNodeId()) return midiOutputProcessor.get();
+        else if (auto *midiOutputProcessor = findMidiOutputProcessorForNodeId(nodeId)) return midiOutputProcessor;
         else return tracks->getProcessorForNodeId(nodeId);
     }
 
@@ -176,7 +177,7 @@ private:
     std::unique_ptr<GraphEditorProcessor> audioInputProcessor;
     std::unique_ptr<GraphEditorProcessor> audioOutputProcessor;
     OwnedArray<GraphEditorProcessor> midiInputProcessors;
-    std::unique_ptr<GraphEditorProcessor> midiOutputProcessor;
+    OwnedArray<GraphEditorProcessor> midiOutputProcessors;
 
     AudioProcessorGraph::Connection initialDraggingConnection { EMPTY_CONNECTION };
 
@@ -187,12 +188,15 @@ private:
             return pin;
         } else if ((pin = audioOutputProcessor->findPinAt(e))) {
             return pin;
-        } else if ((pin = midiOutputProcessor->findPinAt(e))) {
-            return pin;
         }
 
         for (auto *midiInputProcessor : midiInputProcessors) {
             if (auto* pin = midiInputProcessor->findPinAt(e)) {
+                return pin;
+            }
+        }
+        for (auto *midiOutputProcessor : midiOutputProcessors) {
+            if (auto* pin = midiOutputProcessor->findPinAt(e)) {
                 return pin;
             }
         }
@@ -207,8 +211,12 @@ private:
         return nullptr;
     }
 
-    void addMidiInputProcessor(GraphEditorProcessor* midiInputProcessor) {
-        midiInputProcessors.addSorted(processorComparator, midiInputProcessor);
+    GraphEditorProcessor* findMidiOutputProcessorForNodeId(const AudioProcessorGraph::NodeID nodeId) const {
+        for (auto *midiOutputProcessor : midiOutputProcessors) {
+            if (midiOutputProcessor->getNodeId() == nodeId)
+                return midiOutputProcessor;
+        }
+        return nullptr;
     }
 
     void valueTreePropertyChanged(ValueTree& tree, const Identifier& i) override {
@@ -226,10 +234,15 @@ private:
 
     void valueTreeChildAdded(ValueTree& parent, ValueTree& child) override {
         if (child.hasType(IDs::PROCESSOR)) {
-            if (child.hasProperty(IDs::deviceName)) {
+            if (child[IDs::name] == MidiInputProcessor::name()) {
                 auto *midiInputProcessor = new GraphEditorProcessor(child, *this, graph);
                 addAndMakeVisible(midiInputProcessor);
-                addMidiInputProcessor(midiInputProcessor);
+                midiInputProcessors.addSorted(processorComparator, midiInputProcessor);
+                resized();
+            } else if (child[IDs::name] == MidiOutputProcessor::name()) {
+                auto *midiOutputProcessor = new GraphEditorProcessor(child, *this, graph);
+                addAndMakeVisible(midiOutputProcessor);
+                midiOutputProcessors.addSorted(processorComparator, midiOutputProcessor);
                 resized();
             }
             updateComponents();
@@ -240,8 +253,11 @@ private:
 
     void valueTreeChildRemoved(ValueTree& parent, ValueTree& child, int indexFromWhichChildWasRemoved) override {
         if (child.hasType(IDs::PROCESSOR)) {
-            if (child.hasProperty(IDs::deviceName)) {
+            if (child[IDs::name] == MidiInputProcessor::name()) {
                 midiInputProcessors.removeObject(findMidiInputProcessorForNodeId(ProcessorGraph::getNodeIdForState(child)));
+                resized();
+            } else if (child[IDs::name] == MidiOutputProcessor::name()) {
+                midiOutputProcessors.removeObject(findMidiOutputProcessorForNodeId(ProcessorGraph::getNodeIdForState(child)));
                 resized();
             }
             updateComponents();

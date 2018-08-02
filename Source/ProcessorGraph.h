@@ -17,7 +17,6 @@ public:
         project.getState().addListener(this);
         addProcessor(project.getAudioInputProcessorState());
         addProcessor(project.getAudioOutputProcessorState());
-        addProcessor(project.getMidiOutputProcessorState());
         recursivelyInitializeWithState(project.getMasterTrack());
         recursivelyInitializeWithState(project.getTracks());
 
@@ -37,6 +36,9 @@ public:
         for (const auto& inputProcessor : project.getInput())
             if (inputProcessor.getProperty(IDs::name) == MidiInputProcessor::name())
                 addProcessor(inputProcessor);
+        for (const auto& outputProcessor : project.getOutput())
+            if (outputProcessor.getProperty(IDs::name) == MidiOutputProcessor::name())
+                addProcessor(outputProcessor);
     }
 
     StatefulAudioProcessorWrapper *getProcessorWrapperForState(const ValueTree &processorState) const {
@@ -307,6 +309,10 @@ private:
             const String &deviceName = processorState.getProperty(IDs::deviceName);
             midiInputProcessor->setDeviceName(deviceName);
             deviceManager.addMidiInputCallback(deviceName, &midiInputProcessor->getMidiMessageCollector());
+        } else if (auto *midiOutputProcessor = dynamic_cast<MidiOutputProcessor *>(processor)) {
+            const String &deviceName = processorState.getProperty(IDs::deviceName);
+            if (auto* enabledMidiOutput = deviceManager.getEnabledMidiOutput(deviceName))
+                midiOutputProcessor->setMidiOutput(enabledMidiOutput);
         }
 
         if (!initializing) {
@@ -456,7 +462,7 @@ private:
                 if (auto *node = getNodeForState(child)) {
                     // disconnect should have already been called before delete! (to avoid nested undo actions)
                     if (auto* processorWrapper = getProcessorWrapperForNodeId(node->nodeID)) {
-                        if (child.hasProperty(IDs::deviceName)) {
+                        if (child[IDs::name] == MidiInputProcessor::name()) {
                             if (auto *midiInputProcessor = dynamic_cast<MidiInputProcessor *>(processorWrapper->processor)) {
                                 const String &deviceName = child.getProperty(IDs::deviceName);
                                 deviceManager.removeMidiInputCallback(deviceName, &midiInputProcessor->getMidiMessageCollector());

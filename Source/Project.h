@@ -41,6 +41,14 @@ public:
         return connections;
     }
 
+    ValueTree& getInput() {
+        return input;
+    }
+
+    ValueTree& getOutput() {
+        return output;
+    }
+
     Array<ValueTree> getConnectionsForNode(AudioProcessorGraph::NodeID nodeId) {
         Array<ValueTree> nodeConnections;
         for (const auto& connection : connections) {
@@ -214,14 +222,6 @@ public:
             outputProcessor.setProperty(IDs::name, audioOutputDescription.name, nullptr);
             output.addChild(outputProcessor, -1, nullptr);
         }
-        {
-            PluginDescription &midiOutputDescription = processorManager.getMidiOutputDescription();
-            ValueTree midiOutputProcessor(IDs::PROCESSOR);
-            Helpers::createUuidProperty(midiOutputProcessor);
-            midiOutputProcessor.setProperty(IDs::id, midiOutputDescription.createIdentifierString(), nullptr);
-            midiOutputProcessor.setProperty(IDs::name, midiOutputDescription.name, nullptr);
-            output.addChild(midiOutputProcessor, -1, nullptr);
-        }
         state.addChild(output, -1, nullptr);
 
         tracks = ValueTree(IDs::TRACKS);
@@ -337,20 +337,12 @@ public:
         return getMixerChannelProcessorForTrack(getSelectedTrack());
     }
 
-    ValueTree getInput() const {
-        return input;
-    }
-
     ValueTree getAudioInputProcessorState() const {
         return input.getChildWithProperty(IDs::name, processorManager.getAudioInputDescription().name);
     }
 
     ValueTree getAudioOutputProcessorState() const {
         return output.getChildWithProperty(IDs::name, processorManager.getAudioOutputDescription().name);
-    }
-
-    ValueTree getMidiOutputProcessorState() const {
-        return output.getChildWithProperty(IDs::name, processorManager.getMidiOutputDescription().name);
     }
 
     const bool selectedTrackHasMixerChannel() const {
@@ -525,6 +517,7 @@ private:
     void changeListenerCallback(ChangeBroadcaster* source) override {
         if (source == &deviceManager) {
             syncInputDevicesWithDeviceManager();
+            syncOutputDevicesWithDeviceManager();
         }
     }
 
@@ -550,6 +543,32 @@ private:
                 midiInputProcessor.setProperty(IDs::name, MidiInputProcessor::name(), nullptr);
                 midiInputProcessor.setProperty(IDs::deviceName, deviceName, nullptr);
                 input.addChild(midiInputProcessor, -1, nullptr);
+            }
+        }
+    }
+
+    void syncOutputDevicesWithDeviceManager() {
+        Array<ValueTree> outputChildrenToDelete;
+        for (auto outputChild : output) {
+            if (outputChild.hasProperty(IDs::deviceName)) {
+                const String &deviceName = outputChild[IDs::deviceName];
+                if (!MidiOutput::getDevices().contains(deviceName) || !deviceManager.isMidiOutputEnabled(deviceName)) {
+                    outputChildrenToDelete.add(outputChild);
+                }
+            }
+        }
+        for (const auto& outputChild : outputChildrenToDelete) {
+            deleteItem(outputChild, false);
+        }
+        for (const auto& deviceName : MidiOutput::getDevices()) {
+            if (deviceManager.isMidiOutputEnabled(deviceName) &&
+                !output.getChildWithProperty(IDs::deviceName, deviceName).isValid()) {
+                ValueTree midiOutputProcessor(IDs::PROCESSOR);
+                Helpers::createUuidProperty(midiOutputProcessor);
+                midiOutputProcessor.setProperty(IDs::id, MidiOutputProcessor::getPluginDescription().createIdentifierString(), nullptr);
+                midiOutputProcessor.setProperty(IDs::name, MidiOutputProcessor::name(), nullptr);
+                midiOutputProcessor.setProperty(IDs::deviceName, deviceName, nullptr);
+                output.addChild(midiOutputProcessor, -1, nullptr);
             }
         }
     }

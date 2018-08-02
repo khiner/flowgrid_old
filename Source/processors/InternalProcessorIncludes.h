@@ -4,6 +4,7 @@
 #include "BalanceProcessor.h"
 #include "GainProcessor.h"
 #include "MidiInputProcessor.h"
+#include "MidiOutputProcessor.h"
 #include "MixerChannelProcessor.h"
 #include "ParameterTypesTestProcessor.h"
 #include "SineBank.h"
@@ -14,6 +15,7 @@ Array<PluginDescription> internalPluginDescriptions {
         BalanceProcessor::getPluginDescription(),
         GainProcessor::getPluginDescription(),
         MidiInputProcessor::getPluginDescription(),
+        MidiOutputProcessor::getPluginDescription(),
         MixerChannelProcessor::getPluginDescription(),
         ParameterTypesTestProcessor::getPluginDescription(),
         SineBank::getPluginDescription(),

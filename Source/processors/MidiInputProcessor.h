@@ -8,8 +8,6 @@ public:
     explicit MidiInputProcessor() :
             DefaultAudioProcessor(getPluginDescription(), AudioChannelSet::disabled()) {}
 
-    ~MidiInputProcessor() override = default;
-
     void setDeviceName(const String &deviceName) {
         this->deviceName = deviceName;
     }
@@ -28,7 +26,7 @@ public:
 
     bool acceptsMidi() const override { return false; }
     bool producesMidi() const override { return true; }
-    bool isMidiEffect() const override { return true; }
+    bool isMidiEffect() const override { return false; }
 
     void prepareToPlay(double sampleRate, int maximumExpectedSamplesPerBlock) override {
         messageCollector.reset(sampleRate);

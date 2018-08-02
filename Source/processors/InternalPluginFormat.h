@@ -15,15 +15,11 @@ public:
             AudioProcessorGraph::AudioGraphIOProcessor p(AudioProcessorGraph::AudioGraphIOProcessor::audioOutputNode);
             p.fillInPluginDescription(audioOutDesc);
         }
-        {
-            AudioProcessorGraph::AudioGraphIOProcessor p(AudioProcessorGraph::AudioGraphIOProcessor::midiOutputNode);
-            p.fillInPluginDescription(midiOutDesc);
-        }
 
-        internalPluginDescriptions.add(audioInDesc, audioOutDesc, midiOutDesc);
+        internalPluginDescriptions.add(audioInDesc, audioOutDesc);
     }
 
-    PluginDescription audioInDesc, audioOutDesc, midiOutDesc;
+    PluginDescription audioInDesc, audioOutDesc;
 
     String getName() const override { return "Internal"; }
     bool fileMightContainThisPluginType(const String&) override { return true; }
@@ -34,11 +30,6 @@ public:
     String getNameOfPluginFromIdentifier(const String& fileOrIdentifier) override { return fileOrIdentifier; }
     bool pluginNeedsRescanning(const PluginDescription&) override { return false; }
     StringArray searchPathsForPlugins(const FileSearchPath&, bool, bool) override { return {}; }
-
-    bool isIoProcessorName(const String& name) const {
-        return name == audioInDesc.name || name == audioOutDesc.name ||
-               name == MidiInputProcessor::name() || name == midiOutDesc.name;
-    }
 
 private:
     void createPluginInstance(const PluginDescription& desc, double initialSampleRate, int initialBufferSize,
@@ -51,7 +42,7 @@ private:
         if (name == audioOutDesc.name) return new AudioProcessorGraph::AudioGraphIOProcessor(AudioProcessorGraph::AudioGraphIOProcessor::audioOutputNode);
         if (name == audioInDesc.name) return new AudioProcessorGraph::AudioGraphIOProcessor(AudioProcessorGraph::AudioGraphIOProcessor::audioInputNode);
         if (name == MidiInputProcessor::name()) return new MidiInputProcessor();
-        if (name == midiOutDesc.name) return new AudioProcessorGraph::AudioGraphIOProcessor(AudioProcessorGraph::AudioGraphIOProcessor::midiOutputNode);
+        if (name == MidiOutputProcessor::name()) return new MidiOutputProcessor();
         if (name == Arpeggiator::name()) return new Arpeggiator();
         if (name == BalanceProcessor::name()) return new BalanceProcessor();
         if (name == GainProcessor::name()) return new GainProcessor();

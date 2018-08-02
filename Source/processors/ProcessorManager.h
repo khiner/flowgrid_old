@@ -52,14 +52,6 @@ public:
         return internalFormat.audioOutDesc;
     }
 
-    PluginDescription &getMidiOutputDescription() {
-        return internalFormat.midiOutDesc;
-    }
-
-    bool isIoProcessorName(const String& name) const {
-        return internalFormat.isIoProcessorName(name);
-    }
-
     KnownPluginList& getKnownPluginListExternal() {
         return knownPluginListExternal;
     }
