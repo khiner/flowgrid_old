@@ -46,6 +46,10 @@ public:
         return state[IDs::producesMidi];
     }
 
+    bool isIoProcessor() const {
+        return InternalPluginFormat::isIoProcessorName(state[IDs::name]);
+    }
+
     void paint(Graphics &g) override {
         auto boxArea = getLocalBounds().reduced(1, pinSize);
 
@@ -184,8 +188,14 @@ public:
 
     void showPopupMenu() {
         menu = std::make_unique<PopupMenu>();
-        menu->addItem(DELETE_MENU_ID, "Delete this processor");
-        menu->addItem(TOGGLE_BYPASS_MENU_ID, "Toggle Bypass");
+
+        if (isIoProcessor()) {
+            menu->addItem(CONFIGURE_AUDIO_MIDI_MENU_ID, "Configure audio/MIDI IO");
+        } else {
+            menu->addItem(DELETE_MENU_ID, "Delete this processor");
+            menu->addItem(TOGGLE_BYPASS_MENU_ID, "Toggle Bypass");
+        }
+        menu->addSeparator();
         menu->addItem(CONNECT_DEFAULTS_MENU_ID, "Connect all defaults");
         menu->addItem(DISCONNECT_ALL_MENU_ID, "Disconnect all");
         menu->addItem(DISCONNECT_DEFAULTS_MENU_ID, "Disconnect all defaults");
@@ -224,6 +234,9 @@ public:
                         case SHOW_ALL_PROGRAMS_MENU_ID:
                             showWindow(PluginWindow::Type::programs);
                             break;
+                        case CONFIGURE_AUDIO_MIDI_MENU_ID:
+                            getCommandManager().invokeDirectly(CommandIDs::showAudioMidiSettings, false);
+                            break;
                         default:
                             break;
                     }
@@ -257,7 +270,7 @@ private:
     static constexpr int
             DELETE_MENU_ID = 1, TOGGLE_BYPASS_MENU_ID = 2, CONNECT_DEFAULTS_MENU_ID = 3, DISCONNECT_ALL_MENU_ID = 4,
             DISCONNECT_DEFAULTS_MENU_ID = 5, DISCONNECT_CUSTOM_MENU_ID = 6,
-            SHOW_PLUGIN_GUI_MENU_ID = 10, SHOW_ALL_PROGRAMS_MENU_ID = 11;
+            SHOW_PLUGIN_GUI_MENU_ID = 10, SHOW_ALL_PROGRAMS_MENU_ID = 11, CONFIGURE_AUDIO_MIDI_MENU_ID = 12;
 
     void valueTreePropertyChanged(ValueTree &v, const Identifier &i) override {
         if (v != state)

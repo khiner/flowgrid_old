@@ -3,17 +3,12 @@
 #include "JuceHeader.h"
 #include "InternalPluginFormat.h"
 #include "Identifiers.h"
+#include "ApplicationPropertiesAndCommandManager.h"
 
 class ProcessorManager : private ChangeListener {
 public:
     ProcessorManager() {
-        PropertiesFile::Options options;
-        options.applicationName = ProjectInfo::projectName;
-        options.filenameSuffix = "settings";
-        options.osxLibrarySubFolder = "Preferences";
-        appProperties.setStorageParameters(options);
-        
-        std::unique_ptr<XmlElement> savedPluginList(appProperties.getUserSettings()->getXmlValue(PLUGIN_LIST_FILE_NAME));
+        std::unique_ptr<XmlElement> savedPluginList(getApplicationProperties().getUserSettings()->getXmlValue(PLUGIN_LIST_FILE_NAME));
 
         if (savedPluginList != nullptr) {
             knownPluginListExternal.recreateFromXml(*savedPluginList);
@@ -23,20 +18,16 @@ public:
             knownPluginListInternal.addType(pluginType);
         }
 
-        pluginSortMethod = (KnownPluginList::SortMethod) appProperties.getUserSettings()->getIntValue("pluginSortMethod", KnownPluginList::sortByManufacturer);
+        pluginSortMethod = (KnownPluginList::SortMethod) getApplicationProperties().getUserSettings()->getIntValue("pluginSortMethod", KnownPluginList::sortByManufacturer);
         knownPluginListExternal.addChangeListener(this);
 
         formatManager.addDefaultFormats();
         formatManager.addFormat(new InternalPluginFormat());
     }
 
-    ApplicationProperties& getApplicationProperties() {
-        return appProperties;
-    }
-
     PluginListComponent* makePluginListComponent() {
-        const File &deadMansPedalFile = appProperties.getUserSettings()->getFile().getSiblingFile("RecentlyCrashedPluginsList");
-        return new PluginListComponent(formatManager, knownPluginListExternal, deadMansPedalFile, appProperties.getUserSettings(), true);
+        const File &deadMansPedalFile = getApplicationProperties().getUserSettings()->getFile().getSiblingFile("RecentlyCrashedPluginsList");
+        return new PluginListComponent(formatManager, knownPluginListExternal, deadMansPedalFile, getApplicationProperties().getUserSettings(), true);
     }
 
     PluginDescription *getDescriptionForIdentifier(const String &identifier) {
@@ -103,7 +94,6 @@ private:
     
     KnownPluginList::SortMethod pluginSortMethod;
     AudioPluginFormatManager formatManager;
-    ApplicationProperties appProperties;
 
     void changeListenerCallback(ChangeBroadcaster* changed) override {
         if (changed == &knownPluginListExternal) {
@@ -112,8 +102,8 @@ private:
             std::unique_ptr<XmlElement> savedPluginList(knownPluginListExternal.createXml());
 
             if (savedPluginList != nullptr) {
-                appProperties.getUserSettings()->setValue(PLUGIN_LIST_FILE_NAME, savedPluginList.get());
-                appProperties.saveIfNeeded();
+                getApplicationProperties().getUserSettings()->setValue(PLUGIN_LIST_FILE_NAME, savedPluginList.get());
+                getApplicationProperties().saveIfNeeded();
             }
         }
     }

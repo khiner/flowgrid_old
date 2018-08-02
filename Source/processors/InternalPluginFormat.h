@@ -31,6 +31,9 @@ public:
     bool pluginNeedsRescanning(const PluginDescription&) override { return false; }
     StringArray searchPathsForPlugins(const FileSearchPath&, bool, bool) override { return {}; }
 
+    const static bool isIoProcessorName(const String& name) {
+        return name == "Audio Output" || name == "Audio Input" || name == MidiInputProcessor::name() || name == MidiOutputProcessor::name();
+    }
 private:
     void createPluginInstance(const PluginDescription& desc, double initialSampleRate, int initialBufferSize,
                                void* userData, void (*callback) (void*, AudioPluginInstance*, const String&)) override {
