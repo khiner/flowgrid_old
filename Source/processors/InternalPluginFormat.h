@@ -45,6 +45,7 @@ private:
         if (name == audioOutDesc.name) return new AudioProcessorGraph::AudioGraphIOProcessor(AudioProcessorGraph::AudioGraphIOProcessor::audioOutputNode);
         if (name == audioInDesc.name) return new AudioProcessorGraph::AudioGraphIOProcessor(AudioProcessorGraph::AudioGraphIOProcessor::audioInputNode);
         if (name == MidiInputProcessor::name()) return new MidiInputProcessor();
+        if (name == MidiKeyboardProcessor::name()) return new MidiKeyboardProcessor();
         if (name == MidiOutputProcessor::name()) return new MidiOutputProcessor();
         if (name == Arpeggiator::name()) return new Arpeggiator();
         if (name == BalanceProcessor::name()) return new BalanceProcessor();

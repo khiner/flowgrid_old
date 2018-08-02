@@ -12,7 +12,7 @@ public:
         this->midiOutput = midiOutput;
     }
 
-    static const String name() { return "Midi Output"; }
+    static const String name() { return "MIDI Output"; }
 
     static PluginDescription getPluginDescription() {
         return DefaultAudioProcessor::getPluginDescription(name(), true, true, AudioChannelSet::disabled());

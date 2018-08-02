@@ -18,11 +18,7 @@ public:
 
     void resized() override {
         auto r = getLocalBounds();
-        const int titleBarHeight = 40;
-        const int keysHeight = 60;
-        const int statusHeight = 20;
-
-        statusBar->setBounds(r.removeFromBottom(statusHeight));
+        statusBar->setBounds(r.removeFromBottom(20));
         graphPanel->setBounds(r);
     }
 

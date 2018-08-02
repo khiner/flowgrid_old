@@ -4,6 +4,7 @@
 #include "BalanceProcessor.h"
 #include "GainProcessor.h"
 #include "MidiInputProcessor.h"
+#include "MidiKeyboardProcessor.h"
 #include "MidiOutputProcessor.h"
 #include "MixerChannelProcessor.h"
 #include "ParameterTypesTestProcessor.h"
@@ -15,6 +16,7 @@ Array<PluginDescription> internalPluginDescriptions {
         BalanceProcessor::getPluginDescription(),
         GainProcessor::getPluginDescription(),
         MidiInputProcessor::getPluginDescription(),
+        MidiKeyboardProcessor::getPluginDescription(),
         MidiOutputProcessor::getPluginDescription(),
         MixerChannelProcessor::getPluginDescription(),
         ParameterTypesTestProcessor::getPluginDescription(),

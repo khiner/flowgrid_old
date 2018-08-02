@@ -16,7 +16,7 @@ public:
 
         for (auto& pluginType : internalPluginDescriptions) {
             knownPluginListInternal.addType(pluginType);
-            if (!internalFormat.isIoProcessorName(pluginType.name))
+            if (!InternalPluginFormat::isIoProcessorName(pluginType.name))
                 userCreatablePluginListInternal.addType(pluginType);
         }
 
@@ -66,8 +66,8 @@ public:
     }
 
     const PluginDescription* getChosenType(const int menuId) const {
-        PluginDescription *description = knownPluginListInternal.getType(knownPluginListInternal.getIndexChosenByMenu(menuId));
-        return description != nullptr ? description : knownPluginListExternal.getType(knownPluginListExternal.getIndexChosenByMenu(menuId - knownPluginListInternal.getNumTypes()));
+        PluginDescription *description = userCreatablePluginListInternal.getType(userCreatablePluginListInternal.getIndexChosenByMenu(menuId));
+        return description != nullptr ? description : knownPluginListExternal.getType(knownPluginListExternal.getIndexChosenByMenu(menuId - userCreatablePluginListInternal.getNumTypes()));
     }
 
     bool isGeneratorOrInstrument(const PluginDescription *description) {

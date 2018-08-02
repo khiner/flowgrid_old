@@ -1,28 +1,26 @@
+#include <memory>
+
 #pragma once
 
 #include "JuceHeader.h"
 #include "DefaultAudioProcessor.h"
 
-class MidiInputProcessor : public DefaultAudioProcessor {
+class MidiKeyboardProcessor : public DefaultAudioProcessor {
 public:
-    explicit MidiInputProcessor() :
-            DefaultAudioProcessor(getPluginDescription(), AudioChannelSet::disabled()) {}
-
-    void setDeviceName(const String &deviceName) {
-        this->deviceName = deviceName;
+    explicit MidiKeyboardProcessor() :
+            DefaultAudioProcessor(getPluginDescription(), AudioChannelSet::disabled()) {
+        midiKeyboardState.addListener(&messageCollector);
     }
 
-    MidiMessageCollector& getMidiMessageCollector() {
-        return messageCollector;
+    MidiKeyboardComponent* createKeyboard() {
+        return new MidiKeyboardComponent(midiKeyboardState, MidiKeyboardComponent::horizontalKeyboard);
     }
 
-    static const String name() { return "MIDI Input"; }
+    static const String name() { return "MIDI Keyboard"; }
 
     static PluginDescription getPluginDescription() {
         return DefaultAudioProcessor::getPluginDescription(name(), true, false, AudioChannelSet::disabled());
     }
-
-    const String getName() const override { return !deviceName.isEmpty() ? deviceName : DefaultAudioProcessor::getName(); }
 
     bool acceptsMidi() const override { return false; }
     bool producesMidi() const override { return true; }
@@ -36,7 +34,6 @@ public:
         messageCollector.removeNextBlockOfMessages(midiMessages, buffer.getNumSamples());
     }
 private:
-    String deviceName {};
-
     MidiMessageCollector messageCollector;
+    MidiKeyboardState midiKeyboardState;
 };
