@@ -147,9 +147,9 @@ public:
         if (visible) {
             rootTree = KnownPluginList::PluginTree();
             
-            KnownPluginList::PluginTree *internalPluginTree = project.getKnownPluginListInternal().createTree(project.getPluginSortMethod());
+            KnownPluginList::PluginTree *internalPluginTree = project.getUserCreatablePluginListInternal().createTree(project.getPluginSortMethod());
             internalPluginTree->folder = "Internal";
-            KnownPluginList::PluginTree *externalPluginTree = project.getKnownPluginListExternal().createTree(project.getPluginSortMethod());
+            KnownPluginList::PluginTree *externalPluginTree = project.getPluginListExternal().createTree(project.getPluginSortMethod());
             externalPluginTree->folder = "External";
             internalPluginTree->parent = &rootTree;
             externalPluginTree->parent = &rootTree;

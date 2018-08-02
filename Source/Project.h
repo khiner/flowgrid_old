@@ -448,27 +448,27 @@ public:
         PopupMenu internalSubMenu;
         PopupMenu externalSubMenu;
 
-        processorManager.getKnownPluginListInternal().addToMenu(internalSubMenu, processorManager.getPluginSortMethod(), disabledPluginIds);
-        processorManager.getKnownPluginListExternal().addToMenu(externalSubMenu, processorManager.getPluginSortMethod(), {}, String(), processorManager.getKnownPluginListInternal().getNumTypes());
+        getUserCreatablePluginListInternal().addToMenu(internalSubMenu, processorManager.getPluginSortMethod(), disabledPluginIds);
+        getPluginListExternal().addToMenu(externalSubMenu, processorManager.getPluginSortMethod(), {}, String(), getUserCreatablePluginListInternal().getNumTypes());
 
         menu.addSubMenu("Internal", internalSubMenu, true);
         menu.addSeparator();
         menu.addSubMenu("External", externalSubMenu, true);
     }
 
-    KnownPluginList &getKnownPluginListInternal() {
-        return processorManager.getKnownPluginListInternal();
+    KnownPluginList &getUserCreatablePluginListInternal() const {
+        return processorManager.getUserCreatablePluginListInternal();
     }
 
-    KnownPluginList &getKnownPluginListExternal() {
+    KnownPluginList &getPluginListExternal() const {
         return processorManager.getKnownPluginListExternal();
     }
 
-    KnownPluginList::SortMethod getPluginSortMethod() {
+    KnownPluginList::SortMethod getPluginSortMethod() const {
         return processorManager.getPluginSortMethod();
     }
 
-    AudioPluginFormatManager& getFormatManager() {
+    AudioPluginFormatManager& getFormatManager() const {
         return processorManager.getFormatManager();
     }
 
@@ -476,7 +476,7 @@ public:
         return processorManager.getChosenType(menuId);
     }
 
-    PluginDescription *getTypeForIdentifier(const String &identifier) {
+    PluginDescription *getTypeForIdentifier(const String &identifier) const {
         return processorManager.getDescriptionForIdentifier(identifier);
     }
 

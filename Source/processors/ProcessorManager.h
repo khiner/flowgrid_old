@@ -16,6 +16,8 @@ public:
 
         for (auto& pluginType : internalPluginDescriptions) {
             knownPluginListInternal.addType(pluginType);
+            if (!internalFormat.isIoProcessorName(pluginType.name))
+                userCreatablePluginListInternal.addType(pluginType);
         }
 
         pluginSortMethod = (KnownPluginList::SortMethod) getApplicationProperties().getUserSettings()->getIntValue("pluginSortMethod", KnownPluginList::sortByManufacturer);
@@ -47,8 +49,8 @@ public:
         return knownPluginListExternal;
     }
 
-    KnownPluginList& getKnownPluginListInternal() {
-        return knownPluginListInternal;
+    KnownPluginList& getUserCreatablePluginListInternal() {
+        return userCreatablePluginListInternal;
     }
 
     const KnownPluginList::SortMethod getPluginSortMethod() const {
@@ -91,6 +93,7 @@ private:
     InternalPluginFormat internalFormat;
     KnownPluginList knownPluginListExternal;
     KnownPluginList knownPluginListInternal;
+    KnownPluginList userCreatablePluginListInternal;
     
     KnownPluginList::SortMethod pluginSortMethod;
     AudioPluginFormatManager formatManager;
