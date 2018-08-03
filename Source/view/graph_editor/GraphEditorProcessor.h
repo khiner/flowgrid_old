@@ -14,6 +14,10 @@ public:
         valueTreePropertyChanged(this->state, IDs::name);
         if (this->state.hasProperty(IDs::deviceName))
             valueTreePropertyChanged(this->state, IDs::deviceName);
+        drawableText.setColour(findColour(TextEditor::textColourId));
+        drawableText.setFont(font, true);
+        drawableText.setJustification(Justification::centred);
+        addAndMakeVisible(drawableText);
     }
 
     ~GraphEditorProcessor() override {
@@ -51,8 +55,6 @@ public:
     }
 
     void paint(Graphics &g) override {
-        auto boxArea = getLocalBounds().reduced(1, pinSize);
-
         bool selected = isSelected();
         if (selected) {
             g.setColour(Colours::white.withAlpha(0.15f));
@@ -67,11 +69,7 @@ public:
             boxColour = boxColour.brighter(0.02);
 
         g.setColour(boxColour);
-        g.fillRect(boxArea.toFloat());
-
-        g.setColour(findColour(TextEditor::textColourId));
-        g.setFont(font);
-        g.drawFittedText(getName(), boxArea, Justification::centred, 2);
+        g.fillRect(getLocalBounds().reduced(1, pinSize).toFloat());
     }
 
     void mouseDown(const MouseEvent &e) override {
@@ -114,6 +112,12 @@ public:
                                pin->isInput ? 0 : (getHeight() - pinSize),
                                pinSize, pinSize);
             }
+
+            auto boxArea = getLocalBounds().reduced(1, pinSize).toFloat();
+            const auto &textArea = boxArea.getWidth() > boxArea.getHeight() ?
+                    boxArea.toFloat() : // Rotate text to draw vertically if the box is taller than it is wide.
+                    Parallelogram<float>(boxArea.getBottomLeft(), boxArea.getTopLeft(), boxArea.getBottomRight());
+            drawableText.setBoundingBox(textArea);
         }
     }
 
@@ -285,6 +289,8 @@ public:
         }
     };
 private:
+    DrawableText drawableText;
+
     static constexpr int
             DELETE_MENU_ID = 1, TOGGLE_BYPASS_MENU_ID = 2, CONNECT_DEFAULTS_MENU_ID = 3, DISCONNECT_ALL_MENU_ID = 4,
             DISCONNECT_DEFAULTS_MENU_ID = 5, DISCONNECT_CUSTOM_MENU_ID = 6,
@@ -295,10 +301,13 @@ private:
         if (v != state)
             return;
 
-        if (i == IDs::deviceName)
+        if (i == IDs::deviceName) {
             setName(v[IDs::deviceName]);
-        else if (i == IDs::name)
+            drawableText.setText(getName());
+        } else if (i == IDs::name) {
             setName(v[IDs::name]);
+            drawableText.setText(getName());
+        }
 
         repaint();
     }
