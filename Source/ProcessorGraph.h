@@ -338,24 +338,32 @@ private:
         NodeID after = NA_NODE_ID;
     };
 
-    void resetDefaultAudioInputConnections() {
+    void resetDefaultExternalInputConnections() {
         auto audioInputNodeId = getNodeIdForState(project.getAudioInputProcessorState());
+        resetDefaultExternalInputConnections(audioInputNodeId, audio);
+        for (const auto& midiInputProcessor : project.getInput())
+            if (midiInputProcessor.getProperty(IDs::name) == MidiInputProcessor::name())
+                resetDefaultExternalInputConnections(getNodeIdForState(midiInputProcessor), midi);
+    }
+    
+    void resetDefaultExternalInputConnections(NodeID externalSourceNodeId, ConnectionType connectionType) {
         for (const auto& track : project.getTracks()) {
             if (track.hasType(IDs::MASTER_TRACK))
                 continue;
+            const auto &defaultConnectionChannels = getDefaultConnectionChannels(connectionType);
             for (const auto& child : track) {
                 if (child.hasType(IDs::PROCESSOR)) {
                     auto nodeId = getNodeIdForState(child);
-                    for (auto channel : getDefaultConnectionChannels(audio)) {
-                        removeDefaultConnection({{audioInputNodeId, channel}, {nodeId, channel}});
+                    for (auto channel : defaultConnectionChannels) {
+                        removeDefaultConnection({{externalSourceNodeId, channel}, {nodeId, channel}});
                     }
                 }
             }
             const auto& firstChild = track.getChildWithName(IDs::PROCESSOR);
-            if (firstChild.isValid() && isProcessorAnEffect(firstChild, audio)) {
+            if (firstChild.isValid() && isProcessorAnEffect(firstChild, connectionType)) {
                 auto nodeId = getNodeIdForState(firstChild);
-                for (auto channel : getDefaultConnectionChannels(audio)) {
-                    addDefaultConnection({{audioInputNodeId, channel}, {nodeId, channel}});
+                for (auto channel : defaultConnectionChannels) {
+                    addDefaultConnection({{externalSourceNodeId, channel}, {nodeId, channel}});
                 }
             }
         }
@@ -625,7 +633,7 @@ private:
      */
     void processorCreated(const ValueTree& processor) override {
         addDefaultConnections(processor);
-        resetDefaultAudioInputConnections();
+        resetDefaultExternalInputConnections();
     };
 
     void processorWillBeDestroyed(const ValueTree& processor) override {
@@ -634,7 +642,7 @@ private:
     };
 
     void processorHasBeenDestroyed(const ValueTree& processor) override {
-        resetDefaultAudioInputConnections();
+        resetDefaultExternalInputConnections();
     };
 
     void processorWillBeMoved(const ValueTree& processor, const ValueTree& newParent) override {
@@ -644,7 +652,7 @@ private:
     void processorHasMoved(const ValueTree& processor, const ValueTree& newParent) override {
         addDefaultConnections(processor);
         project.makeSlotsValid(newParent, getDragDependentUndoManager());
-        resetDefaultAudioInputConnections();
+        resetDefaultExternalInputConnections();
     };
     
     void itemSelected(const ValueTree&) override {};
