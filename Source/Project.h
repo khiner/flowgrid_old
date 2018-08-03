@@ -49,13 +49,17 @@ public:
         return output;
     }
 
-    Array<ValueTree> getConnectionsForNode(AudioProcessorGraph::NodeID nodeId, bool incoming=true, bool outgoing=true) {
+    Array<ValueTree> getConnectionsForNode(AudioProcessorGraph::NodeID nodeId, bool audio=true, bool midi=true, bool incoming=true, bool outgoing=true) {
         Array<ValueTree> nodeConnections;
         for (const auto& connection : connections) {
             const auto &connectionType = connection.getChildWithProperty(IDs::nodeId, int(nodeId));
 
-            if (connectionType.isValid() &&
-                ((incoming && connectionType.hasType(IDs::DESTINATION)) || (outgoing && connectionType.hasType(IDs::SOURCE)))) {
+            if (!connectionType.isValid())
+                continue;
+            bool directionIsAcceptable = (incoming && connectionType.hasType(IDs::DESTINATION)) || (outgoing && connectionType.hasType(IDs::SOURCE));
+            bool typeIsAcceptable = (audio && int(connectionType[IDs::channel]) != AudioProcessorGraph::midiChannelIndex) ||
+                                    (midi && int(connectionType[IDs::channel]) == AudioProcessorGraph::midiChannelIndex);
+            if (directionIsAcceptable && typeIsAcceptable) {
                 nodeConnections.add(connection);
             }
         }
@@ -133,8 +137,9 @@ public:
         if (!connection.isValid())
             return false;
 
-        if ((custom && connection.hasProperty(IDs::isCustomConnection)) ||
-            (defaults && !connection.hasProperty(IDs::isCustomConnection))) {
+        bool customIsAcceptable = (custom && connection.hasProperty(IDs::isCustomConnection)) ||
+                                  (defaults && !connection.hasProperty(IDs::isCustomConnection));
+        if (customIsAcceptable) {
             connections.removeChild(connection, undoManager);
             return true;
         }
