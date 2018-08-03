@@ -281,7 +281,7 @@ private:
         const Array<ValueTree> connections = project.getConnectionsForNode(nodeId, connectionType == audio || connectionType == all, connectionType == midi || connectionType == all, incoming, outgoing);
         bool anyRemoved = false;
         for (const auto &connection : connections)
-            if (project.removeConnection(connection, &undoManager, defaults, custom)) {
+            if (project.removeConnection(connection, getDragDependentUndoManager(), defaults, custom)) {
                 anyRemoved = true;
             }
 
