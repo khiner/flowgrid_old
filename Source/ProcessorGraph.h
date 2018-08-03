@@ -338,9 +338,54 @@ private:
         NodeID after = NA_NODE_ID;
     };
 
+    void resetDefaultAudioInputConnections() {
+        auto audioInputNodeId = getNodeIdForState(project.getAudioInputProcessorState());
+        for (const auto& track : project.getTracks()) {
+            if (track.hasType(IDs::MASTER_TRACK))
+                continue;
+            for (const auto& child : track) {
+                if (child.hasType(IDs::PROCESSOR)) {
+                    auto nodeId = getNodeIdForState(child);
+                    for (auto channel : getDefaultConnectionChannels(audio)) {
+                        removeDefaultConnection({{audioInputNodeId, channel}, {nodeId, channel}});
+                    }
+                }
+            }
+            const auto& firstChild = track.getChildWithName(IDs::PROCESSOR);
+            if (firstChild.isValid() && isProcessorAnEffect(firstChild, audio)) {
+                auto nodeId = getNodeIdForState(firstChild);
+                for (auto channel : getDefaultConnectionChannels(audio)) {
+                    addDefaultConnection({{audioInputNodeId, channel}, {nodeId, channel}});
+                }
+            }
+        }
+    }
+
+    void addDefaultConnections(const ValueTree &processor) {
+        addDefaultConnections(processor, audio);
+        addDefaultConnections(processor, midi);
+    }
+
     void removeDefaultConnections(const ValueTree &processor) {
         removeDefaultConnections(processor, audio);
         removeDefaultConnections(processor, midi);
+    }
+
+    void addDefaultConnections(const ValueTree &processor, ConnectionType connectionType) {
+        const auto& defaultConnectionChannels = getDefaultConnectionChannels(connectionType);
+        const NeighborNodes &neighbors = findNeighborProcessors(processor, connectionType);
+        auto nodeId = getNodeIdForState(processor);
+        for (auto before : neighbors.before) {
+            disconnectDefaultOutgoing(before, connectionType);
+            for (auto channel : defaultConnectionChannels) {
+                addDefaultConnection({{before, channel}, {nodeId, channel}});
+            }
+        }
+        if (neighbors.after != NA_NODE_ID) {
+            for (auto channel : defaultConnectionChannels) {
+                addDefaultConnection({{nodeId, channel}, {neighbors.after, channel}});
+            }
+        }
     }
 
     void removeDefaultConnections(const ValueTree &processor, ConnectionType connectionType) {
@@ -361,28 +406,6 @@ private:
                 for (auto channel : defaultConnectionChannels) {
                     addDefaultConnection({{before, channel}, {neighborsForBeforeNode.after, channel}});
                 }
-            }
-        }
-    }
-
-    void addDefaultConnections(const ValueTree &processor) {
-        addDefaultConnections(processor, audio);
-        addDefaultConnections(processor, midi);
-    }
-
-    void addDefaultConnections(const ValueTree &processor, ConnectionType connectionType) {
-        const auto& defaultConnectionChannels = getDefaultConnectionChannels(connectionType);
-        const NeighborNodes &neighbors = findNeighborProcessors(processor, connectionType);
-        auto nodeId = getNodeIdForState(processor);
-        for (auto before : neighbors.before) {
-            disconnectDefaultOutgoing(before, connectionType);
-            for (auto channel : defaultConnectionChannels) {
-                addDefaultConnection({{before, channel}, {nodeId, channel}});
-            }
-        }
-        if (neighbors.after != NA_NODE_ID) {
-            for (auto channel : defaultConnectionChannels) {
-                addDefaultConnection({{nodeId, channel}, {neighbors.after, channel}});
             }
         }
     }
@@ -411,18 +434,15 @@ private:
             return;
 
         int siblingDelta = 0;
-        ValueTree siblingParent;
-        while ((siblingParent = parent.getSibling(siblingDelta--)).isValid()) {
-            for (const auto &otherProcessor : siblingParent) {
+        ValueTree otherParent;
+        while ((otherParent = parent.getSibling(siblingDelta--)).isValid()) {
+            for (const auto &otherProcessor : otherParent) {
                 if (otherProcessor != excluding &&
-                    findProcessorToFlowInto(siblingParent, otherProcessor, connectionType) == processor) {
+                    findProcessorToFlowInto(otherParent, otherProcessor, connectionType) == processor) {
                     nodes.add(getNodeIdForState(otherProcessor));
                 }
             }
         }
-//        if (nodes.isEmpty() && isProcessorAnEffect(processor, connectionType)) {
-//            nodes.add(getNodeIdForState(project.getAudioInputProcessorState()));
-//        }
     }
 
     const ValueTree findProcessorToFlowInto(const ValueTree &parent, const ValueTree &processor,
@@ -605,6 +625,7 @@ private:
      */
     void processorCreated(const ValueTree& processor) override {
         addDefaultConnections(processor);
+        resetDefaultAudioInputConnections();
     };
 
     void processorWillBeDestroyed(const ValueTree& processor) override {
@@ -613,6 +634,7 @@ private:
     };
 
     void processorHasBeenDestroyed(const ValueTree& processor) override {
+        resetDefaultAudioInputConnections();
     };
 
     void processorWillBeMoved(const ValueTree& processor, const ValueTree& newParent) override {
@@ -622,6 +644,7 @@ private:
     void processorHasMoved(const ValueTree& processor, const ValueTree& newParent) override {
         addDefaultConnections(processor);
         project.makeSlotsValid(newParent, getDragDependentUndoManager());
+        resetDefaultAudioInputConnections();
     };
     
     void itemSelected(const ValueTree&) override {};
