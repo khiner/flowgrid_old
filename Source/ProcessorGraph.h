@@ -475,8 +475,8 @@ private:
         if (fallbackBlockingProcessor.isValid())
             return fallbackBlockingProcessor;
 
-        const auto firstMasterTrackProcessorWithInputs = getFirstMasterTrackProcessorWithInputs(connectionType);
-        if (firstMasterTrackProcessorWithInputs.isValid() && processor != firstMasterTrackProcessorWithInputs)
+        const auto firstMasterTrackProcessorWithInputs = getFirstMasterTrackProcessorWithInputs(connectionType, excluding);
+        if (firstMasterTrackProcessorWithInputs.isValid() && processor.getParent() != project.getMasterTrack())
             return firstMasterTrackProcessorWithInputs;
 
         return project.getAudioOutputProcessorState();
@@ -503,9 +503,9 @@ private:
         return (connectionType == audio && canConnectAudio) || (connectionType == midi && canConnectMidi);
     }
 
-    const ValueTree getFirstMasterTrackProcessorWithInputs(ConnectionType connectionType) const {
+    const ValueTree getFirstMasterTrackProcessorWithInputs(ConnectionType connectionType, const ValueTree& excluding={}) const {
         for (const auto& processor : project.getMasterTrack()) {
-            if (processor.hasType(IDs::PROCESSOR) && isProcessorAnEffect(processor, connectionType)) {
+            if (processor.hasType(IDs::PROCESSOR) && processor != excluding && isProcessorAnEffect(processor, connectionType)) {
                 return processor;
             }
         }
