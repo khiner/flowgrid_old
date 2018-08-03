@@ -347,16 +347,20 @@ private:
         const auto& defaultConnectionChannels = getDefaultConnectionChannels(connectionType);
         const NeighborNodes &neighbors = findNeighborProcessors(processor, connectionType);
         auto nodeId = getNodeIdForState(processor);
-        for (auto channel : defaultConnectionChannels) {
-            removeDefaultConnection({{nodeId, channel}, {neighbors.after, channel}});
+        if (neighbors.after != NA_NODE_ID) {
+            for (auto channel : defaultConnectionChannels) {
+                removeDefaultConnection({{nodeId, channel}, {neighbors.after, channel}});
+            }
         }
         for (auto before : neighbors.before) {
             for (auto channel : defaultConnectionChannels) {
                 removeDefaultConnection({{before, channel}, {nodeId, channel}});
             }
             const NeighborNodes &neighborsForBeforeNode = findNeighborProcessors(getProcessorWrapperForNodeId(before)->state, connectionType, processor, false, true);
-            for (auto channel : defaultConnectionChannels) {
-                addDefaultConnection({{before, channel}, {neighborsForBeforeNode.after, channel}});
+            if (neighborsForBeforeNode.after != NA_NODE_ID) {
+                for (auto channel : defaultConnectionChannels) {
+                    addDefaultConnection({{before, channel}, {neighborsForBeforeNode.after, channel}});
+                }
             }
         }
     }
@@ -376,8 +380,10 @@ private:
                 addDefaultConnection({{before, channel}, {nodeId, channel}});
             }
         }
-        for (auto channel : defaultConnectionChannels) {
-            addDefaultConnection({{nodeId, channel}, {neighbors.after, channel}});
+        if (neighbors.after != NA_NODE_ID) {
+            for (auto channel : defaultConnectionChannels) {
+                addDefaultConnection({{nodeId, channel}, {neighbors.after, channel}});
+            }
         }
     }
 
@@ -393,9 +399,7 @@ private:
         }
         if (after) {
             const ValueTree &afterNodeState = findProcessorToFlowInto(parent, processor, connectionType, excluding);
-            neighborNodes.after = afterNodeState.isValid() ?
-                    getNodeIdForState(afterNodeState) : getNodeIdForState(project.getAudioOutputProcessorState());
-            jassert(neighborNodes.after != NA_NODE_ID);
+            neighborNodes.after = getNodeIdForState(afterNodeState);
         }
 
         return neighborNodes;
@@ -416,31 +420,59 @@ private:
                 }
             }
         }
+//        if (nodes.isEmpty() && isProcessorAnEffect(processor, connectionType)) {
+//            nodes.add(getNodeIdForState(project.getAudioInputProcessorState()));
+//        }
     }
 
     const ValueTree findProcessorToFlowInto(const ValueTree &parent, const ValueTree &processor,
                                             ConnectionType connectionType, const ValueTree &excluding = {}) {
-        if (!processor.hasType(IDs::PROCESSOR) || !isProcessorAProducer(processor, connectionType) || processor == project.getMixerChannelProcessorForTrack(project.getMasterTrack()))
+        if (!processor.hasType(IDs::PROCESSOR) || !isProcessorAProducer(processor, connectionType))
             return {};
 
+        // If a non-effect (another producer) is under this processor in the same track, and no effect processors
+        // to the right have a lower slot, choose to block this producer's output by the other producer,
+        // effectively replacing it.
+        ValueTree fallbackBlockingProcessor;
+
         int siblingDelta = 0;
-        ValueTree siblingParent;
-        while ((siblingParent = parent.getSibling(siblingDelta++)).isValid()) {
-            for (const auto &otherProcessor : siblingParent) {
-                if (otherProcessor != excluding &&
-                    shouldProcessorDefaultConnectTo(parent, processor, siblingParent, otherProcessor, connectionType))
+        ValueTree otherParent;
+        while ((otherParent = parent.getSibling(siblingDelta++)).isValid()) {
+            for (const auto &otherProcessor : otherParent) {
+                if (otherProcessor == processor || otherProcessor == excluding) continue;
+                bool isBelow = int(otherProcessor[IDs::processorSlot]) > int(processor[IDs::processorSlot]);
+                if (!isBelow) continue;
+                if (canProcessorDefaultConnectTo(parent, processor, otherParent, otherProcessor, connectionType) &&
+                    (!fallbackBlockingProcessor.isValid() || int(otherProcessor[IDs::processorSlot]) <= int(fallbackBlockingProcessor[IDs::processorSlot]))) {
                     return otherProcessor;
+                } else if (parent == otherParent) {
+                    fallbackBlockingProcessor = otherProcessor;
+                    break;
+                }
             }
         }
-        return {};
+
+        if (fallbackBlockingProcessor.isValid())
+            return fallbackBlockingProcessor;
+
+        const auto firstMasterTrackProcessorWithInputs = getFirstMasterTrackProcessorWithInputs(connectionType);
+        if (firstMasterTrackProcessorWithInputs.isValid() && processor != firstMasterTrackProcessorWithInputs)
+            return firstMasterTrackProcessorWithInputs;
+
+        return project.getAudioOutputProcessorState();
     }
 
-    inline bool isProcessorAProducer(const ValueTree &processor, ConnectionType connectionType) {
+    inline bool isProcessorAProducer(const ValueTree &processor, ConnectionType connectionType) const {
         return (connectionType == audio && int(processor[IDs::numOutputChannels]) > 0) ||
                (connectionType == midi && processor[IDs::producesMidi]);
     }
 
-    inline bool shouldProcessorDefaultConnectTo(const ValueTree &parent, const ValueTree &processor,
+    inline bool isProcessorAnEffect(const ValueTree &processor, ConnectionType connectionType) const {
+        return (connectionType == audio && int(processor[IDs::numInputChannels]) > 0) ||
+               (connectionType == midi && processor[IDs::acceptsMidi]);
+    }
+
+    inline bool canProcessorDefaultConnectTo(const ValueTree &parent, const ValueTree &processor,
                                                 ValueTree &otherParent, const ValueTree &otherProcessor,
                                                 ConnectionType connectionType) const {
         if (!otherProcessor.hasType(IDs::PROCESSOR) || processor == otherProcessor)
@@ -448,16 +480,12 @@ private:
 
         bool canConnectAudio = int(processor[IDs::numOutputChannels]) > 0 && int(otherProcessor[IDs::numInputChannels]) > 0;
         bool canConnectMidi = processor[IDs::producesMidi] && otherProcessor[IDs::acceptsMidi];
-        bool isBelow = int(otherProcessor[IDs::processorSlot]) > int(processor[IDs::processorSlot]);
-        bool shouldConnectToMasterTrack = parent.indexOf(processor) == parent.getNumChildren() - 1 && otherProcessor == getFirstMasterTrackProcessorWithInputs(connectionType);
-        return ((connectionType == audio && canConnectAudio) || (connectionType == midi && canConnectMidi)) && (isBelow || shouldConnectToMasterTrack);
+        return (connectionType == audio && canConnectAudio) || (connectionType == midi && canConnectMidi);
     }
 
     const ValueTree getFirstMasterTrackProcessorWithInputs(ConnectionType connectionType) const {
-        for (const auto processor : project.getMasterTrack()) {
-            if (processor.hasType(IDs::PROCESSOR) &&
-                    ((connectionType == audio && int(processor[IDs::numInputChannels]) > 0) ||
-                     (connectionType == midi && processor[IDs::acceptsMidi]))) {
+        for (const auto& processor : project.getMasterTrack()) {
+            if (processor.hasType(IDs::PROCESSOR) && isProcessorAnEffect(processor, connectionType)) {
                 return processor;
             }
         }
