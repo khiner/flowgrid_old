@@ -307,7 +307,7 @@ private:
     AudioProcessorPlayer player;
 
     void showAudioMidiSettings() {
-        auto* audioSettingsComponent = new AudioDeviceSelectorComponent(deviceManager, 0, 256, 0, 256, true, true, true, false);
+        auto* audioSettingsComponent = new AudioDeviceSelectorComponent(deviceManager, 2, 256, 2, 256, true, true, true, false);
         audioSettingsComponent->setSize(500, 450);
 
         DialogWindow::LaunchOptions o;
