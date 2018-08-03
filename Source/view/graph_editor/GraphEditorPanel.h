@@ -225,7 +225,7 @@ private:
                 i == IDs::numInputChannels || i == IDs::numOutputChannels ||
                 i == IDs::acceptsMidi || i == IDs::producesMidi) {
                 updateComponents();
-                if (tree.hasProperty(IDs::deviceName)) {
+                if (tree.getParent() == project.getInput() || tree.getParent() == project.getOutput()) {
                     resized();
                 }
             }
