@@ -8,17 +8,19 @@
 
 class GraphEditorProcessor : public Component, public ValueTree::Listener {
 public:
-    GraphEditorProcessor(const ValueTree& state, ConnectorDragListener &connectorDragListener, ProcessorGraph& graph)
-            : state(state), connectorDragListener(connectorDragListener), graph(graph) {
+    GraphEditorProcessor(const ValueTree& state, ConnectorDragListener &connectorDragListener, ProcessorGraph& graph, bool showChannelLabels=false)
+            : state(state), connectorDragListener(connectorDragListener), graph(graph), showChannelLabels(showChannelLabels) {
         this->state.addListener(this);
         valueTreePropertyChanged(this->state, IDs::name);
         if (this->state.hasProperty(IDs::deviceName))
             valueTreePropertyChanged(this->state, IDs::deviceName);
-        drawableText.setColour(findColour(TextEditor::textColourId));
-        drawableText.setFont(font, true);
-        drawableText.setJustification(Justification::centred);
-        addAndMakeVisible(drawableText);
-
+        if (!showChannelLabels) {
+            nameLabel.setColour(findColour(TextEditor::textColourId));
+            nameLabel.setFont(boldFont, true);
+            nameLabel.setJustification(Justification::centred);
+            addAndMakeVisible(nameLabel);
+        }
+        
         for (auto child : state) {
             if (child.hasType(IDs::INPUT_CHANNELS) || child.hasType(IDs::OUTPUT_CHANNELS)) {
                 for (auto channel : child) {
@@ -77,7 +79,7 @@ public:
             boxColour = boxColour.brighter(0.02);
 
         g.setColour(boxColour);
-        g.fillRect(getLocalBounds().reduced(1, pinSize).toFloat());
+        g.fillRect(getBoxBounds());
     }
 
     void mouseDown(const MouseEvent &e) override {
@@ -102,6 +104,7 @@ public:
     }
 
     void resized() override {
+        auto boxBoundsFloat = getBoxBounds().toFloat();
         if (auto *processor = getProcessor()) {
             for (auto *pin : pins) {
                 const bool isInput = pin->isInput();
@@ -121,16 +124,18 @@ public:
                                    (static_cast<float> (jmax(0, processor->getBusCount(isInput) - 1)) * 0.5f);
                 auto indexPos = static_cast<float> (index) + (static_cast<float> (busIdx) * 0.5f);
 
-                pin->setBounds(proportionOfWidth((1.0f + indexPos) / (totalSpaces + 1.0f)) - pinSize / 2,
-                               pin->isInput() ? 0 : (getHeight() - pinSize),
-                               pinSize, pinSize);
+                int centerX = proportionOfWidth((1.0f + indexPos) / (totalSpaces + 1.0f));
+                pin->setBounds(centerX - pinSize / 2, pin->isInput() ? 0 : (getHeight() - pinSize), pinSize, pinSize);
+                if (showChannelLabels) {
+                    auto& channelLabel = pin->channelLabel;
+                    auto textArea = boxBoundsFloat.withWidth(proportionOfWidth(1.0f / totalSpaces)).withCentre({float(centerX), boxBoundsFloat.getCentreY()});
+                    channelLabel.setBoundingBox(rotateRectIfNarrow(textArea));
+                }
             }
 
-            auto boxArea = getLocalBounds().reduced(1, pinSize).toFloat();
-            const auto &textArea = boxArea.getWidth() > boxArea.getHeight() ?
-                    boxArea.toFloat() : // Rotate text to draw vertically if the box is taller than it is wide.
-                    Parallelogram<float>(boxArea.getBottomLeft(), boxArea.getTopLeft(), boxArea.getBottomRight());
-            drawableText.setBoundingBox(textArea);
+            if (!showChannelLabels) {
+                nameLabel.setBoundingBox(rotateRectIfNarrow(boxBoundsFloat));
+            }
         }
     }
 
@@ -259,7 +264,8 @@ public:
     ProcessorGraph &graph;
     OwnedArray<GraphEditorPin> pins;
     int pinSize = 16;
-    Font font{13.0f, Font::bold};
+    Font boldFont{13.0f, Font::bold};
+    Font regularFont{13.0f};
     std::unique_ptr<PopupMenu> menu;
 
     class ElementComparator {
@@ -269,13 +275,31 @@ public:
         }
     };
 private:
-    DrawableText drawableText;
-
+    DrawableText nameLabel;
+    const bool showChannelLabels;
+    
     static constexpr int
             DELETE_MENU_ID = 1, TOGGLE_BYPASS_MENU_ID = 2, CONNECT_DEFAULTS_MENU_ID = 3, DISCONNECT_ALL_MENU_ID = 4,
             DISCONNECT_DEFAULTS_MENU_ID = 5, DISCONNECT_CUSTOM_MENU_ID = 6,
             SHOW_PLUGIN_GUI_MENU_ID = 10, SHOW_ALL_PROGRAMS_MENU_ID = 11, CONFIGURE_AUDIO_MIDI_MENU_ID = 12,
             SHOW_MIDI_KEYBOARD_MENU_ID = 13;
+
+    Rectangle<int> getBoxBounds() {
+        auto r = getLocalBounds().reduced(1);
+        if (getNumInputChannels() > 0 || acceptsMidi())
+            r.setTop(pinSize);
+        if (getNumOutputChannels() > 0 || producesMidi())
+            r.setBottom(getHeight() - pinSize);
+        return r;
+    }
+
+    // Rotate text to draw vertically if the box is taller than it is wide.
+    static Parallelogram<float> rotateRectIfNarrow(Rectangle<float>& rectangle) {
+        if (rectangle.getWidth() > rectangle.getHeight())
+            return rectangle;
+        else
+            return Parallelogram<float>(rectangle.getBottomLeft(), rectangle.getTopLeft(), rectangle.getBottomRight());
+    }
 
     GraphEditorPin* findPinWithState(const ValueTree& state) {
         for (auto* pin : pins) {
@@ -291,10 +315,10 @@ private:
 
         if (i == IDs::deviceName) {
             setName(v[IDs::deviceName]);
-            drawableText.setText(getName());
+            nameLabel.setText(getName());
         } else if (i == IDs::name) {
             setName(v[IDs::name]);
-            drawableText.setText(getName());
+            nameLabel.setText(getName());
         }
 
         repaint();
@@ -305,12 +329,24 @@ private:
             auto *pin = new GraphEditorPin(child, connectorDragListener);
             addAndMakeVisible(pin);
             pins.add(pin);
+            if (showChannelLabels) {
+                auto& channelLabel = pin->channelLabel;
+                channelLabel.setColour(findColour(TextEditor::textColourId));
+                channelLabel.setFont(regularFont, true);
+                channelLabel.setJustification(Justification::centred);
+                addAndMakeVisible(channelLabel);
+            }
+            resized();
         }
     }
 
     void valueTreeChildRemoved(ValueTree &parent, ValueTree &child, int) override {
         if (child.hasType(IDs::CHANNEL)) {
-            pins.removeObject(findPinWithState(child));
+            auto *pinToRemove = findPinWithState(child);
+            if (showChannelLabels)
+                removeChildComponent(&pinToRemove->channelLabel);
+            pins.removeObject(pinToRemove);
+            resized();
         }
     }
 

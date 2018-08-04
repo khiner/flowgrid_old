@@ -490,6 +490,21 @@ public:
         return processorManager.getDescriptionForIdentifier(identifier);
     }
 
+    String getAudioChannelName(int channelIndex, bool input) {
+        if (auto *audioDevice = deviceManager.getCurrentAudioDevice()) {
+            auto channelNames = input ? audioDevice->getInputChannelNames() : audioDevice->getOutputChannelNames();
+            auto activeChannels = input ? audioDevice->getActiveInputChannels()
+                                        : audioDevice->getActiveOutputChannels();
+            int activeIndex = 0;
+            for (int i = 0; i < channelNames.size(); i++) {
+                if (activeChannels[i] && activeIndex++ == channelIndex) {
+                    return channelNames[i];
+                }
+            }
+        }
+        return "";
+    }
+
     const static int NUM_VISIBLE_TRACKS = 8;
     const static int NUM_VISIBLE_PROCESSOR_SLOTS = 10;
     // first row is reserved for audio input, last row for audio output. second-to-last is horizontal master track.

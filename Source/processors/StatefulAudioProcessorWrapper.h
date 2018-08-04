@@ -3,6 +3,7 @@
 #include <Utilities.h>
 #include "Identifiers.h"
 #include "view/processor_editor/SwitchParameterComponent.h"
+#include "Project.h"
 
 class StatefulAudioProcessorWrapper : private AudioProcessorListener, private Timer {
 public:
@@ -344,8 +345,8 @@ public:
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(Parameter)
     };
 
-    StatefulAudioProcessorWrapper(AudioPluginInstance *processor, AudioProcessorGraph::NodeID nodeId, ValueTree state, UndoManager &undoManager) :
-            processor(processor), state(std::move(state)), undoManager(undoManager) {
+    StatefulAudioProcessorWrapper(AudioPluginInstance *processor, AudioProcessorGraph::NodeID nodeId, ValueTree state, Project& project, UndoManager &undoManager) :
+            processor(processor), state(std::move(state)), project(project), undoManager(undoManager) {
         this->state.setProperty(IDs::nodeId, int(nodeId), &undoManager);
         processor->addListener(this);
         processor->enableAllBuses();
@@ -423,6 +424,7 @@ public:
     AudioPluginInstance *processor;
     ValueTree state;
 private:
+    Project &project;
     UndoManager &undoManager;
     OwnedArray<Parameter> parameters;
     OwnedArray<Parameter> automatableParameters;
@@ -430,6 +432,8 @@ private:
     CriticalSection valueTreeChanging;
 
     void updateStateForProcessor(AudioProcessor *processor) {
+        int previousNumInputChannels = state[IDs::numInputChannels];
+        int previousNumOutputChannels = state[IDs::numOutputChannels];
         state.setProperty(IDs::numInputChannels, processor->getTotalNumInputChannels(), nullptr);
         state.setProperty(IDs::numOutputChannels, processor->getTotalNumOutputChannels(), nullptr);
         state.setProperty(IDs::acceptsMidi, processor->acceptsMidi(), nullptr);
@@ -444,11 +448,11 @@ private:
             state.addChild(outputChannels, -1, nullptr);
         }
 
-        for (int i = 0; i < processor->getTotalNumInputChannels(); ++i)
+        for (int i = 0; i < jmax(previousNumInputChannels, processor->getTotalNumInputChannels()); ++i)
             updateChannelProperties(i, true);
         if (processor->acceptsMidi())
             updateChannelProperties(AudioProcessorGraph::midiChannelIndex, true);
-        for (int i = 0; i < processor->getTotalNumOutputChannels(); ++i)
+        for (int i = 0; i < jmax(previousNumOutputChannels, processor->getTotalNumOutputChannels()); ++i)
             updateChannelProperties(i, false);
         if (processor->producesMidi())
             updateChannelProperties(AudioProcessorGraph::midiChannelIndex, false);
@@ -456,28 +460,37 @@ private:
 
     void updateChannelProperties(int channelIndex, bool isInput) {
         auto channels = state.getChildWithName(isInput ? IDs::INPUT_CHANNELS : IDs::OUTPUT_CHANNELS);
+        bool isMidi = channelIndex == AudioProcessorGraph::midiChannelIndex;
+        int numChannels = isInput ? state[IDs::numInputChannels] : state[IDs::numOutputChannels];
 
         ValueTree channelState = channels.getChildWithProperty(IDs::channel, channelIndex);
-        if (!channelState.isValid()) {
+        if (!channelState.isValid() && (channelIndex < numChannels || isMidi)) {
             channelState = ValueTree(IDs::CHANNEL);
-            channels.addChild(channelState, -1, nullptr);
+        } else if (channelState.isValid() && channelIndex >= numChannels && !isMidi) {
+            channels.removeChild(channelState, nullptr);
+            return;
         }
 
         String channelName;
-        int busIndex = 0;
-        if (channelIndex == AudioProcessorGraph::midiChannelIndex) {
-            channelName = isInput ? "MIDI Input" : "MIDI Output";
+        if (processor->getName() == "Audio Input" || processor->getName() == "Audio Output") {
+            channelName = project.getAudioChannelName(channelIndex, processor->getName() == "Audio Input");
         } else {
-            auto channel = processor->getOffsetInBusBufferForAbsoluteChannelIndex(isInput, channelIndex, busIndex);
-            if (auto *bus = processor->getBus(isInput, busIndex))
-                channelName = bus->getName() + ": " + AudioChannelSet::getAbbreviatedChannelTypeName(
-                        bus->getCurrentLayout().getTypeOfChannel(channel));
-            else
-                channelName = (isInput ? "Main Input: " : "Main Output: ") + String(channelIndex + 1);
+            int busIndex = 0;
+            if (isMidi) {
+                channelName = isInput ? "MIDI Input" : "MIDI Output";
+            } else {
+                auto channel = processor->getOffsetInBusBufferForAbsoluteChannelIndex(isInput, channelIndex, busIndex);
+                if (auto *bus = processor->getBus(isInput, busIndex))
+                    channelName = bus->getName() + ": " + AudioChannelSet::getAbbreviatedChannelTypeName(
+                            bus->getCurrentLayout().getTypeOfChannel(channel));
+                else
+                    channelName = (isInput ? "Main Input: " : "Main Output: ") + String(channelIndex + 1);
+            }
         }
 
         channelState.setProperty(IDs::name, channelName, nullptr);
         channelState.setProperty(IDs::channel, channelIndex, nullptr);
+        channels.addChild(channelState, -1, nullptr);
     }
 
     void audioProcessorParameterChanged(AudioProcessor *processor, int parameterIndex, float newValue) override {}

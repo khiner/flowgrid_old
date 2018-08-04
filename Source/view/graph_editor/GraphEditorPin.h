@@ -10,6 +10,12 @@ struct GraphEditorPin : public Component, public SettableTooltipClient, private 
     GraphEditorPin(const ValueTree& state, ConnectorDragListener &connectorDragListener)
             : state(state), connectorDragListener(connectorDragListener) {
         setSize(16, 16);
+        valueTreePropertyChanged(this->state, IDs::name);
+        this->state.addListener(this);
+    }
+
+    ~GraphEditorPin() override {
+        state.removeListener(this);
     }
 
     bool isInput() {
@@ -57,6 +63,9 @@ struct GraphEditorPin : public Component, public SettableTooltipClient, private 
     }
 
     ValueTree state;
+
+    DrawableText channelLabel;
+    
 private:
     int busIdx = 0;
     ConnectorDragListener &connectorDragListener;
@@ -65,9 +74,13 @@ private:
         if (v != state)
             return;
 
-        if (i == IDs::name)
-            setTooltip(v[IDs::name]);
+        if (i == IDs::name) {
+            const String &name = v[IDs::name];
+            channelLabel.setText(name);
+            setName(name);
+            setTooltip(name);
+        }
     }
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (GraphEditorPin)GraphEditorPin
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (GraphEditorPin)
 };

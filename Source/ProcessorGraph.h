@@ -40,7 +40,7 @@ public:
             if (outputProcessor.getProperty(IDs::name) == MidiOutputProcessor::name())
                 addProcessor(outputProcessor);
     }
-
+    
     StatefulAudioProcessorWrapper *getProcessorWrapperForState(const ValueTree &processorState) const {
         return getProcessorWrapperForNodeId(getNodeIdForState(processorState));
     }
@@ -312,7 +312,7 @@ private:
         const Node::Ptr &newNode = processorState.hasProperty(IDs::nodeId) ?
                                    addNode(processor, getNodeIdForState(processorState)) :
                                    addNode(processor);
-        auto *processorWrapper = new StatefulAudioProcessorWrapper(processor, newNode->nodeID, processorState, undoManager);
+        auto *processorWrapper = new StatefulAudioProcessorWrapper(processor, newNode->nodeID, processorState, project, undoManager);
         processerWrappers.add(processorWrapper);
 
         if (auto *midiInputProcessor = dynamic_cast<MidiInputProcessor *>(processor)) {

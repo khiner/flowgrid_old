@@ -15,8 +15,8 @@ public:
 
         project.getState().addListener(this);
 
-        addAndMakeVisible(*(audioInputProcessor = std::make_unique<GraphEditorProcessor>(project.getAudioInputProcessorState(), *this, graph)));
-        addAndMakeVisible(*(audioOutputProcessor = std::make_unique<GraphEditorProcessor>(project.getAudioOutputProcessorState(), *this, graph)));
+        addAndMakeVisible(*(audioInputProcessor = std::make_unique<GraphEditorProcessor>(project.getAudioInputProcessorState(), *this, graph, true)));
+        addAndMakeVisible(*(audioOutputProcessor = std::make_unique<GraphEditorProcessor>(project.getAudioOutputProcessorState(), *this, graph, true)));
         addAndMakeVisible(*(tracks = std::make_unique<GraphEditorTracks>(project, project.getTracks(), *this, graph)));
         addAndMakeVisible(*(connectors = std::make_unique<GraphEditorConnectors>(project.getConnections(), *this, *this, graph)));
         
