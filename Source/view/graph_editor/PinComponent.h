@@ -2,27 +2,30 @@
 
 #include "JuceHeader.h"
 #include "ConnectorDragListener.h"
+#include "Utilities.h"
+#include "Identifiers.h"
+#include "ProcessorGraph.h"
 
-struct PinComponent : public Component, public SettableTooltipClient {
-    PinComponent(ConnectorDragListener &connectorDragListener, AudioProcessor* processor, AudioProcessorGraph::NodeID nodeId, int channelIndex, bool isIn)
-            : connectorDragListener(connectorDragListener), pin({nodeId, channelIndex}), isInput(isIn) {
-        String tip;
-
-        if (pin.isMIDI()) {
-            tip = isInput ? "MIDI Input" : "MIDI Output";
-        } else {
-            auto channel = processor->getOffsetInBusBufferForAbsoluteChannelIndex(isInput, pin.channelIndex, busIdx);
-
-            if (auto *bus = processor->getBus(isInput, busIdx))
-                tip = bus->getName() + ": " + AudioChannelSet::getAbbreviatedChannelTypeName(
-                        bus->getCurrentLayout().getTypeOfChannel(channel));
-            else
-                tip = (isInput ? "Main Input: " : "Main Output: ") + String(pin.channelIndex + 1);
-        }
-
-        setTooltip(tip);
-
+struct PinComponent : public Component, public SettableTooltipClient, private Utilities::ValueTreePropertyChangeListener {
+    PinComponent(const ValueTree& state, ConnectorDragListener &connectorDragListener)
+            : state(state), connectorDragListener(connectorDragListener) {
         setSize(16, 16);
+    }
+
+    bool isInput() {
+        return state.getParent().hasType(IDs::INPUT_CHANNELS);
+    }
+
+    int getChannel() {
+        return state[IDs::channel];
+    }
+
+    bool isMidi() {
+        return getChannel() == AudioProcessorGraph::midiChannelIndex;
+    }
+
+    AudioProcessorGraph::NodeAndChannel getPin() {
+        return {ProcessorGraph::getNodeIdForState(state.getParent().getParent()), getChannel()};
     }
 
     void paint(Graphics &g) override {
@@ -31,9 +34,9 @@ struct PinComponent : public Component, public SettableTooltipClient {
 
         Path p;
         p.addEllipse(w * 0.25f, h * 0.25f, w * 0.5f, h * 0.5f);
-        p.addRectangle(w * 0.4f, isInput ? (0.5f * h) : 0.0f, w * 0.2f, h * 0.5f);
+        p.addRectangle(w * 0.4f, isInput() ? (0.5f * h) : 0.0f, w * 0.2f, h * 0.5f);
 
-        auto colour = (pin.isMIDI() ? Colours::red : Colours::green);
+        auto colour = (isMidi() ? Colours::red : Colours::green);
 
         g.setColour(colour.withRotatedHue(busIdx / 5.0f));
         g.fillPath(p);
@@ -41,7 +44,8 @@ struct PinComponent : public Component, public SettableTooltipClient {
 
     void mouseDown(const MouseEvent &e) override {
         AudioProcessorGraph::NodeAndChannel dummy{0, 0};
-        connectorDragListener.beginConnectorDrag(isInput ? dummy : pin, isInput ? pin : dummy, e);
+        AudioProcessorGraph::NodeAndChannel pin = getPin();
+        connectorDragListener.beginConnectorDrag(isInput() ? dummy : pin, isInput() ? pin : dummy, e);
     }
 
     void mouseDrag(const MouseEvent &e) override {
@@ -52,10 +56,18 @@ struct PinComponent : public Component, public SettableTooltipClient {
         connectorDragListener.endDraggingConnector(e);
     }
 
-    ConnectorDragListener &connectorDragListener;
-    AudioProcessorGraph::NodeAndChannel pin;
-    const bool isInput;
+    ValueTree state;
+private:
     int busIdx = 0;
+    ConnectorDragListener &connectorDragListener;
+
+    void valueTreePropertyChanged(ValueTree &v, const Identifier &i) override {
+        if (v != state)
+            return;
+
+        if (i == IDs::name)
+            setTooltip(v[IDs::name]);
+    }
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PinComponent)
 };

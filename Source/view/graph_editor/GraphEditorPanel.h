@@ -98,10 +98,10 @@ public:
         auto connection = draggingConnector->getConnection();
 
         if (auto *pin = findPinAt(e)) {
-            if (connection.source.nodeID == 0 && !pin->isInput)
-                connection.source = pin->pin;
-            else if (connection.destination.nodeID == 0 && pin->isInput)
-                connection.destination = pin->pin;
+            if (connection.source.nodeID == 0 && !pin->isInput())
+                connection.source = pin->getPin();
+            else if (connection.destination.nodeID == 0 && pin->isInput())
+                connection.destination = pin->getPin();
 
             if (graph.canConnect(connection) || graph.isConnected(connection)) {
                 pos = getLocalPoint(pin->getParentComponent(), pin->getBounds().getCentre()).toFloat();
@@ -123,15 +123,15 @@ public:
         if (auto *pin = findPinAt(e)) {
             newConnection = draggingConnector->getConnection();
             if (newConnection.source.nodeID == 0) {
-                if (pin->isInput)
+                if (pin->isInput())
                     newConnection = EMPTY_CONNECTION;
                 else
-                    newConnection.source = pin->pin;
+                    newConnection.source = pin->getPin();
             } else {
-                if (!pin->isInput)
+                if (!pin->isInput())
                     newConnection = EMPTY_CONNECTION;
                 else
-                    newConnection.destination = pin->pin;
+                    newConnection.destination = pin->getPin();
             }
         }
 

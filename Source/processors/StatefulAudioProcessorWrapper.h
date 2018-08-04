@@ -430,10 +430,54 @@ private:
     CriticalSection valueTreeChanging;
 
     void updateStateForProcessor(AudioProcessor *processor) {
-        state.setProperty(IDs::numInputChannels, processor->getTotalNumInputChannels(), &undoManager);
-        state.setProperty(IDs::numOutputChannels, processor->getTotalNumOutputChannels(), &undoManager);
-        state.setProperty(IDs::acceptsMidi, processor->acceptsMidi(), &undoManager);
-        state.setProperty(IDs::producesMidi, processor->producesMidi(), &undoManager);
+        state.setProperty(IDs::numInputChannels, processor->getTotalNumInputChannels(), nullptr);
+        state.setProperty(IDs::numOutputChannels, processor->getTotalNumOutputChannels(), nullptr);
+        state.setProperty(IDs::acceptsMidi, processor->acceptsMidi(), nullptr);
+        state.setProperty(IDs::producesMidi, processor->producesMidi(), nullptr);
+
+        if (!state.getChildWithName(IDs::INPUT_CHANNELS).isValid()) {
+            ValueTree inputChannels(IDs::INPUT_CHANNELS);
+            state.addChild(inputChannels, -1, nullptr);
+        }
+        if (!state.getChildWithName(IDs::OUTPUT_CHANNELS).isValid()) {
+            ValueTree outputChannels(IDs::OUTPUT_CHANNELS);
+            state.addChild(outputChannels, -1, nullptr);
+        }
+
+        for (int i = 0; i < processor->getTotalNumInputChannels(); ++i)
+            updateChannelProperties(i, true);
+        if (processor->acceptsMidi())
+            updateChannelProperties(AudioProcessorGraph::midiChannelIndex, true);
+        for (int i = 0; i < processor->getTotalNumOutputChannels(); ++i)
+            updateChannelProperties(i, false);
+        if (processor->producesMidi())
+            updateChannelProperties(AudioProcessorGraph::midiChannelIndex, false);
+    }
+
+    void updateChannelProperties(int channelIndex, bool isInput) {
+        auto channels = state.getChildWithName(isInput ? IDs::INPUT_CHANNELS : IDs::OUTPUT_CHANNELS);
+
+        ValueTree channelState = channels.getChildWithProperty(IDs::channel, channelIndex);
+        if (!channelState.isValid()) {
+            channelState = ValueTree(IDs::CHANNEL);
+            channels.addChild(channelState, -1, nullptr);
+        }
+
+        String channelName;
+        int busIndex = 0;
+        if (channelIndex == AudioProcessorGraph::midiChannelIndex) {
+            channelName = isInput ? "MIDI Input" : "MIDI Output";
+        } else {
+            auto channel = processor->getOffsetInBusBufferForAbsoluteChannelIndex(isInput, channelIndex, busIndex);
+            if (auto *bus = processor->getBus(isInput, busIndex))
+                channelName = bus->getName() + ": " + AudioChannelSet::getAbbreviatedChannelTypeName(
+                        bus->getCurrentLayout().getTypeOfChannel(channel));
+            else
+                channelName = (isInput ? "Main Input: " : "Main Output: ") + String(channelIndex + 1);
+        }
+
+        channelState.setProperty(IDs::name, channelName, nullptr);
+        channelState.setProperty(IDs::channel, channelIndex, nullptr);
     }
 
     void audioProcessorParameterChanged(AudioProcessor *processor, int parameterIndex, float newValue) override {}

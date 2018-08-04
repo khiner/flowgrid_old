@@ -6,7 +6,7 @@
 #include "ProcessorGraph.h"
 #include "PinComponent.h"
 
-class GraphEditorProcessor : public Component, public Utilities::ValueTreePropertyChangeListener {
+class GraphEditorProcessor : public Component, public ValueTree::Listener {
 public:
     GraphEditorProcessor(const ValueTree& state, ConnectorDragListener &connectorDragListener, ProcessorGraph& graph)
             : state(state), connectorDragListener(connectorDragListener), graph(graph) {
@@ -18,6 +18,14 @@ public:
         drawableText.setFont(font, true);
         drawableText.setJustification(Justification::centred);
         addAndMakeVisible(drawableText);
+
+        for (auto child : state) {
+            if (child.hasType(IDs::INPUT_CHANNELS) || child.hasType(IDs::OUTPUT_CHANNELS)) {
+                for (auto channel : child) {
+                    valueTreeChildAdded(child, channel);
+                }
+            }
+        }
     }
 
     ~GraphEditorProcessor() override {
@@ -96,20 +104,25 @@ public:
     void resized() override {
         if (auto *processor = getProcessor()) {
             for (auto *pin : pins) {
-                const bool isInput = pin->isInput;
-                auto channelIndex = pin->pin.channelIndex;
+                const bool isInput = pin->isInput();
+                auto channelIndex = pin->getChannel();
                 int busIdx = 0;
                 processor->getOffsetInBusBufferForAbsoluteChannelIndex(isInput, channelIndex, busIdx);
 
-                const int total = isInput ? numIns : numOuts;
-                const int index = pin->pin.isMIDI() ? (total - 1) : channelIndex;
+                int total = isInput ? getNumInputChannels() : getNumOutputChannels();
+                if (isInput && acceptsMidi())
+                    total += 1;
+                else if (!isInput && producesMidi())
+                    total += 1;
+
+                const int index = pin->isMidi() ? (total - 1) : channelIndex;
 
                 auto totalSpaces = static_cast<float> (total) +
                                    (static_cast<float> (jmax(0, processor->getBusCount(isInput) - 1)) * 0.5f);
                 auto indexPos = static_cast<float> (index) + (static_cast<float> (busIdx) * 0.5f);
 
                 pin->setBounds(proportionOfWidth((1.0f + indexPos) / (totalSpaces + 1.0f)) - pinSize / 2,
-                               pin->isInput ? 0 : (getHeight() - pinSize),
+                               pin->isInput() ? 0 : (getHeight() - pinSize),
                                pinSize, pinSize);
             }
 
@@ -123,7 +136,7 @@ public:
 
     Point<float> getPinPos(int index, bool isInput) const {
         for (auto *pin : pins)
-            if (pin->pin.channelIndex == index && isInput == pin->isInput)
+            if (pin->getChannel() == index && isInput == pin->isInput())
                 return pin->getBounds().getCentre().toFloat();
 
         return {};
@@ -139,39 +152,7 @@ public:
     }
 
     void update() {
-        AudioProcessor *processor = getProcessor();
-        if (processor == nullptr)
-            return;
-
-        numIns = getNumInputChannels();
-        if (acceptsMidi())
-            ++numIns;
-
-        numOuts = getNumOutputChannels();
-        if (producesMidi())
-            ++numOuts;
-
-        if (numIns != numInputs || numOuts != numOutputs) {
-            numInputs = numIns;
-            numOutputs = numOuts;
-
-            pins.clear();
-
-            auto nodeId = getNodeId();
-            for (int i = 0; i < getNumInputChannels(); ++i)
-                addAndMakeVisible(pins.add(new PinComponent(connectorDragListener, processor, nodeId, i, true)));
-
-            if (acceptsMidi())
-                addAndMakeVisible(pins.add(new PinComponent(connectorDragListener, processor, nodeId, AudioProcessorGraph::midiChannelIndex, true)));
-
-            for (int i = 0; i < getNumOutputChannels(); ++i)
-                addAndMakeVisible(pins.add(new PinComponent(connectorDragListener, processor, nodeId, i, false)));
-
-            if (producesMidi())
-                addAndMakeVisible(pins.add(new PinComponent(connectorDragListener, processor, nodeId, AudioProcessorGraph::midiChannelIndex, false)));
-
-            resized();
-        }
+        resized();
         repaint();
     }
 
@@ -276,10 +257,8 @@ public:
     ConnectorDragListener &connectorDragListener;
     ProcessorGraph &graph;
     OwnedArray<PinComponent> pins;
-    int numInputs = 0, numOutputs = 0;
     int pinSize = 16;
     Font font{13.0f, Font::bold};
-    int numIns = 0, numOuts = 0;
     std::unique_ptr<PopupMenu> menu;
 
     class ElementComparator {
@@ -297,6 +276,14 @@ private:
             SHOW_PLUGIN_GUI_MENU_ID = 10, SHOW_ALL_PROGRAMS_MENU_ID = 11, CONFIGURE_AUDIO_MIDI_MENU_ID = 12,
             SHOW_MIDI_KEYBOARD_MENU_ID = 13;
 
+    PinComponent* findPinWithState(const ValueTree& state) {
+        for (auto* pin : pins) {
+            if (pin->state == state)
+                return pin;
+        }
+        return nullptr;
+    }
+
     void valueTreePropertyChanged(ValueTree &v, const Identifier &i) override {
         if (v != state)
             return;
@@ -311,4 +298,24 @@ private:
 
         repaint();
     }
+
+    void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override {
+        if (child.hasType(IDs::CHANNEL)) {
+            auto *pin = new PinComponent(child, connectorDragListener);
+            addAndMakeVisible(pin);
+            pins.add(pin);
+        }
+    }
+
+    void valueTreeChildRemoved(ValueTree &parent, ValueTree &child, int) override {
+        if (child.hasType(IDs::CHANNEL)) {
+            pins.removeObject(findPinWithState(child));
+        }
+    }
+
+    void valueTreeChildOrderChanged(ValueTree &, int, int) override {}
+
+    void valueTreeParentChanged(ValueTree &) override {}
+
+    void valueTreeRedirected(ValueTree &) override {}
 };
