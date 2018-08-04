@@ -13,16 +13,37 @@ endif (NOT CMAKE_BUILD_TYPE)
 
 if (APPLE)
 
+if (CMAKE_BUILD_TYPE STREQUAL Release)
+    set (CMAKE_OSX_SYSROOT macosx10.7)
+endif()
+
 project ("sound-machine" C CXX)
 
 add_executable (APP
     "../../Resources/PushStartup.png"
-        "../../Source/audio_sources/ToneSourceWithParameters.h"
+    "../../Source/audio_sources/ToneSourceWithParameters.h"
     "../../Source/midi/MidiCommunicator.cpp"
     "../../Source/midi/MidiCommunicator.h"
+    "../../Source/processors/Arpeggiator.h"
+    "../../Source/processors/BalanceProcessor.h"
+    "../../Source/processors/DefaultAudioProcessor.cpp"
+    "../../Source/processors/DefaultAudioProcessor.h"
+    "../../Source/processors/GainProcessor.h"
+    "../../Source/processors/InternalPluginFormat.h"
+    "../../Source/processors/InternalProcessorIncludes.h"
+    "../../Source/processors/MidiInputProcessor.h"
+    "../../Source/processors/MidiKeyboardProcessor.h"
+    "../../Source/processors/MidiOutputProcessor.h"
+    "../../Source/processors/MixerChannelProcessor.h"
+    "../../Source/processors/ParameterTypesTestProcessor.h"
+    "../../Source/processors/ProcessorManager.h"
+    "../../Source/processors/SineBank.h"
+    "../../Source/processors/SineSynth.h"
+    "../../Source/processors/StatefulAudioProcessorWrapper.h"
     "../../Source/push2/Push2Display.h"
     "../../Source/push2/Push2DisplayBridge.h"
-        "../../Source/push2/Push2MidiCommunicator.h"
+    "../../Source/push2/Push2MidiCommunicator.cpp"
+    "../../Source/push2/Push2MidiCommunicator.h"
     "../../Source/push2/Push2UsbCommunicator.cpp"
     "../../Source/push2/Push2UsbCommunicator.h"
     "../../Source/usb/libusb/config.h"
@@ -31,15 +52,40 @@ add_executable (APP
     "../../Source/usb/libusb/libusb_platform_wrapper.c"
     "../../Source/usb/UsbCommunicator.cpp"
     "../../Source/usb/UsbCommunicator.h"
-    "../../Source/Main.cpp"
-        "../../Source/view/push2/Push2Component.h"
-        "../../Source/view/SelectionEditor.h"
-
-        "../../Source/view/UiColours.h"
-    "../../Source/Utilities.h"
-    "../../Source/ValueTreeObjectList.h"
+    "../../Source/view/graph_editor/ConnectorDragListener.h"
+    "../../Source/view/graph_editor/GraphEditor.h"
+    "../../Source/view/graph_editor/GraphEditorConnector.h"
+    "../../Source/view/graph_editor/GraphEditorConnectors.h"
+    "../../Source/view/graph_editor/GraphEditorInput.h"
+    "../../Source/view/graph_editor/GraphEditorPanel.h"
+    "../../Source/view/graph_editor/GraphEditorPin.h"
+    "../../Source/view/graph_editor/GraphEditorProcessor.h"
+    "../../Source/view/graph_editor/GraphEditorProcessorContainer.h"
+    "../../Source/view/graph_editor/GraphEditorProcessors.h"
+    "../../Source/view/graph_editor/GraphEditorTrack.h"
+    "../../Source/view/graph_editor/GraphEditorTracks.h"
+    "../../Source/view/processor_editor/ParameterDisplayComponent.h"
+    "../../Source/view/processor_editor/ParametersPanel.h"
+    "../../Source/view/processor_editor/ProcessorEditor.h"
+    "../../Source/view/processor_editor/SwitchParameterComponent.h"
+    "../../Source/view/push2/Push2Component.h"
+    "../../Source/view/push2/Push2ComponentBase.h"
+    "../../Source/view/push2/Push2Listener.h"
+    "../../Source/view/push2/Push2ProcessorSelector.h"
+    "../../Source/view/push2/Push2ProcessorView.h"
+    "../../Source/view/PluginWindow.h"
+    "../../Source/view/SelectionEditor.h"
+    "../../Source/view/UiColours.h"
+    "../../Source/ApplicationKeyListener.h"
+    "../../Source/ApplicationPropertiesAndCommandManager.h"
     "../../Source/Identifiers.h"
-        "../../Source/ValueTreeItems.h"
+    "../../Source/Main.cpp"
+    "../../Source/MidiControlHandler.h"
+    "../../Source/ProcessorGraph.h"
+    "../../Source/Project.h"
+    "../../Source/Utilities.h"
+    "../../Source/ValueTreeItems.h"
+    "../../Source/ValueTreeObjectList.h"
     "../../modules/JUCE/modules/juce_audio_basics/audio_play_head/juce_AudioPlayHead.h"
     "../../modules/JUCE/modules/juce_audio_basics/buffers/juce_AudioChannelSet.cpp"
     "../../modules/JUCE/modules/juce_audio_basics/buffers/juce_AudioChannelSet.h"
@@ -130,6 +176,7 @@ add_executable (APP
     "../../modules/JUCE/modules/juce_audio_devices/native/juce_ios_Audio.cpp"
     "../../modules/JUCE/modules/juce_audio_devices/native/juce_ios_Audio.h"
     "../../modules/JUCE/modules/juce_audio_devices/native/juce_linux_ALSA.cpp"
+    "../../modules/JUCE/modules/juce_audio_devices/native/juce_linux_Bela.cpp"
     "../../modules/JUCE/modules/juce_audio_devices/native/juce_linux_JackAudio.cpp"
     "../../modules/JUCE/modules/juce_audio_devices/native/juce_linux_Midi.cpp"
     "../../modules/JUCE/modules/juce_audio_devices/native/juce_mac_CoreAudio.cpp"
@@ -311,6 +358,7 @@ add_executable (APP
     "../../modules/JUCE/modules/juce_audio_processors/format_types/juce_AudioUnitPluginFormat.mm"
     "../../modules/JUCE/modules/juce_audio_processors/format_types/juce_LADSPAPluginFormat.cpp"
     "../../modules/JUCE/modules/juce_audio_processors/format_types/juce_LADSPAPluginFormat.h"
+    "../../modules/JUCE/modules/juce_audio_processors/format_types/juce_LegacyAudioParameter.cpp"
     "../../modules/JUCE/modules/juce_audio_processors/format_types/juce_VST3Common.h"
     "../../modules/JUCE/modules/juce_audio_processors/format_types/juce_VST3Headers.h"
     "../../modules/JUCE/modules/juce_audio_processors/format_types/juce_VST3PluginFormat.cpp"
@@ -404,6 +452,7 @@ add_executable (APP
     "../../modules/JUCE/modules/juce_core/containers/juce_ReferenceCountedArray.h"
     "../../modules/JUCE/modules/juce_core/containers/juce_ScopedValueSetter.h"
     "../../modules/JUCE/modules/juce_core/containers/juce_SortedSet.h"
+    "../../modules/JUCE/modules/juce_core/containers/juce_SparseSet.cpp"
     "../../modules/JUCE/modules/juce_core/containers/juce_SparseSet.h"
     "../../modules/JUCE/modules/juce_core/containers/juce_Variant.cpp"
     "../../modules/JUCE/modules/juce_core/containers/juce_Variant.h"
@@ -654,6 +703,7 @@ add_executable (APP
     "../../modules/JUCE/modules/juce_data_structures/juce_data_structures.h"
     "../../modules/JUCE/modules/juce_dsp/containers/juce_AudioBlock.h"
     "../../modules/JUCE/modules/juce_dsp/containers/juce_SIMDRegister.h"
+    "../../modules/JUCE/modules/juce_dsp/containers/juce_SIMDRegister_Impl.h"
     "../../modules/JUCE/modules/juce_dsp/containers/juce_SIMDRegister_test.cpp"
     "../../modules/JUCE/modules/juce_dsp/filter_design/juce_FilterDesign.cpp"
     "../../modules/JUCE/modules/juce_dsp/filter_design/juce_FilterDesign.h"
@@ -1135,6 +1185,8 @@ add_executable (APP
     "../../modules/JUCE/modules/juce_gui_basics/properties/juce_ButtonPropertyComponent.h"
     "../../modules/JUCE/modules/juce_gui_basics/properties/juce_ChoicePropertyComponent.cpp"
     "../../modules/JUCE/modules/juce_gui_basics/properties/juce_ChoicePropertyComponent.h"
+    "../../modules/JUCE/modules/juce_gui_basics/properties/juce_MultiChoicePropertyComponent.cpp"
+    "../../modules/JUCE/modules/juce_gui_basics/properties/juce_MultiChoicePropertyComponent.h"
     "../../modules/JUCE/modules/juce_gui_basics/properties/juce_PropertyComponent.cpp"
     "../../modules/JUCE/modules/juce_gui_basics/properties/juce_PropertyComponent.h"
     "../../modules/JUCE/modules/juce_gui_basics/properties/juce_PropertyPanel.cpp"
@@ -1270,11 +1322,26 @@ add_executable (APP
     "../../JuceLibraryCode/include_juce_gui_basics.mm"
     "../../JuceLibraryCode/include_juce_gui_extra.mm"
     "../../JuceLibraryCode/JuceHeader.h"
-        ../../Source/Project.h ../../Source/processors/MixerChannelProcessor.h ../../Source/processors/SineBank.h ../../Source/processors/GainProcessor.h ../../Source/processors/DefaultAudioProcessor.h ../../Source/ProcessorGraph.h ../../Source/MidiControlHandler.h ../../Source/processors/StatefulAudioProcessorWrapper.h ../../Source/view/push2/Push2ProcessorView.h ../../Source/view/push2/Push2ProcessorSelector.h ../../Source/processors/ProcessorManager.h ../../Source/view/graph_editor/GraphEditorPanel.h ../../Source/processors/BalanceProcessor.h ../../Source/ApplicationKeyListener.h ../../Source/processors/InternalPluginFormat.h ../../Source/view/PluginWindow.h ../../Source/view/push2/Push2ComponentBase.h ../../Source/view/graph_editor/GraphEditor.h ../../Source/view/graph_editor/ConnectorDragListener.h ../../Source/view/graph_editor/GraphEditorPin.h ../../Source/view/graph_editor/GraphEditorTracks.h ../../Source/view/graph_editor/GraphEditorTrack.h ../../Source/view/graph_editor/GraphEditorProcessors.h ../../Source/view/graph_editor/GraphEditorProcessor.h ../../Source/view/graph_editor/GraphEditorInput.h ../../Source/view/graph_editor/GraphEditorProcessorContainer.h ../../Source/view/graph_editor/GraphEditorConnectors.h ../../Source/view/graph_editor/GraphEditorConnector.h ../../Source/processors/InternalProcessorIncludes.h ../../Source/processors/MidiInputProcessor.h ../../Source/processors/MidiOutputProcessor.h ../../Source/processors/SineSynth.h ../../Source/processors/Arpeggiator.h ../../Source/processors/DefaultAudioProcessor.cpp ../../Source/view/processor_editor/ProcessorEditor.h ../../Source/processors/ParameterTypesTestProcessor.h ../../Source/view/processor_editor/SwitchParameterComponent.h ../../Source/view/processor_editor/ParameterDisplayComponent.h ../../Source/view/processor_editor/ParametersPanel.h ../../Source/view/push2/Push2Listener.h ../../Source/push2/Push2MidiCommunicator.cpp ../../Source/ApplicationPropertiesAndCommandManager.h ../../Source/processors/MidiKeyboardProcessor.h)
+)
 
 set_source_files_properties ("../../Resources/PushStartup.png" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/audio_sources/ToneSourceWithParameters.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/midi/MidiCommunicator.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/processors/Arpeggiator.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/processors/BalanceProcessor.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/processors/DefaultAudioProcessor.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/processors/GainProcessor.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/processors/InternalPluginFormat.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/processors/InternalProcessorIncludes.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/processors/MidiInputProcessor.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/processors/MidiKeyboardProcessor.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/processors/MidiOutputProcessor.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/processors/MixerChannelProcessor.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/processors/ParameterTypesTestProcessor.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/processors/ProcessorManager.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/processors/SineBank.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/processors/SineSynth.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/processors/StatefulAudioProcessorWrapper.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/push2/Push2Display.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/push2/Push2DisplayBridge.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/push2/Push2MidiCommunicator.h" PROPERTIES HEADER_FILE_ONLY TRUE)
@@ -1283,7 +1350,39 @@ set_source_files_properties ("../../Source/usb/libusb/config.h" PROPERTIES HEADE
 set_source_files_properties ("../../Source/usb/libusb/config_msvc.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/usb/libusb/config_xcode.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/usb/UsbCommunicator.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/view/graph_editor/ConnectorDragListener.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/view/graph_editor/GraphEditor.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/view/graph_editor/GraphEditorConnector.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/view/graph_editor/GraphEditorConnectors.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/view/graph_editor/GraphEditorInput.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/view/graph_editor/GraphEditorPanel.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/view/graph_editor/GraphEditorPin.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/view/graph_editor/GraphEditorProcessor.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/view/graph_editor/GraphEditorProcessorContainer.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/view/graph_editor/GraphEditorProcessors.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/view/graph_editor/GraphEditorTrack.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/view/graph_editor/GraphEditorTracks.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/view/processor_editor/ParameterDisplayComponent.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/view/processor_editor/ParametersPanel.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/view/processor_editor/ProcessorEditor.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/view/processor_editor/SwitchParameterComponent.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/view/push2/Push2Component.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/view/push2/Push2ComponentBase.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/view/push2/Push2Listener.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/view/push2/Push2ProcessorSelector.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/view/push2/Push2ProcessorView.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/view/PluginWindow.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/view/SelectionEditor.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/view/UiColours.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/ApplicationKeyListener.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/ApplicationPropertiesAndCommandManager.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/Identifiers.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/MidiControlHandler.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/ProcessorGraph.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/Project.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/Utilities.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/ValueTreeItems.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/ValueTreeObjectList.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../modules/JUCE/modules/juce_audio_basics/audio_play_head/juce_AudioPlayHead.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../modules/JUCE/modules/juce_audio_basics/buffers/juce_AudioChannelSet.cpp" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../modules/JUCE/modules/juce_audio_basics/buffers/juce_AudioChannelSet.h" PROPERTIES HEADER_FILE_ONLY TRUE)
@@ -1374,6 +1473,7 @@ set_source_files_properties ("../../modules/JUCE/modules/juce_audio_devices/nati
 set_source_files_properties ("../../modules/JUCE/modules/juce_audio_devices/native/juce_ios_Audio.cpp" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../modules/JUCE/modules/juce_audio_devices/native/juce_ios_Audio.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../modules/JUCE/modules/juce_audio_devices/native/juce_linux_ALSA.cpp" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../modules/JUCE/modules/juce_audio_devices/native/juce_linux_Bela.cpp" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../modules/JUCE/modules/juce_audio_devices/native/juce_linux_JackAudio.cpp" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../modules/JUCE/modules/juce_audio_devices/native/juce_linux_Midi.cpp" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../modules/JUCE/modules/juce_audio_devices/native/juce_mac_CoreAudio.cpp" PROPERTIES HEADER_FILE_ONLY TRUE)
@@ -1555,6 +1655,7 @@ set_source_files_properties ("../../modules/JUCE/modules/juce_audio_processors/f
 set_source_files_properties ("../../modules/JUCE/modules/juce_audio_processors/format_types/juce_AudioUnitPluginFormat.mm" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../modules/JUCE/modules/juce_audio_processors/format_types/juce_LADSPAPluginFormat.cpp" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../modules/JUCE/modules/juce_audio_processors/format_types/juce_LADSPAPluginFormat.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../modules/JUCE/modules/juce_audio_processors/format_types/juce_LegacyAudioParameter.cpp" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../modules/JUCE/modules/juce_audio_processors/format_types/juce_VST3Common.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../modules/JUCE/modules/juce_audio_processors/format_types/juce_VST3Headers.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../modules/JUCE/modules/juce_audio_processors/format_types/juce_VST3PluginFormat.cpp" PROPERTIES HEADER_FILE_ONLY TRUE)
@@ -1648,6 +1749,7 @@ set_source_files_properties ("../../modules/JUCE/modules/juce_core/containers/ju
 set_source_files_properties ("../../modules/JUCE/modules/juce_core/containers/juce_ReferenceCountedArray.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../modules/JUCE/modules/juce_core/containers/juce_ScopedValueSetter.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../modules/JUCE/modules/juce_core/containers/juce_SortedSet.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../modules/JUCE/modules/juce_core/containers/juce_SparseSet.cpp" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../modules/JUCE/modules/juce_core/containers/juce_SparseSet.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../modules/JUCE/modules/juce_core/containers/juce_Variant.cpp" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../modules/JUCE/modules/juce_core/containers/juce_Variant.h" PROPERTIES HEADER_FILE_ONLY TRUE)
@@ -1898,6 +2000,7 @@ set_source_files_properties ("../../modules/JUCE/modules/juce_data_structures/ju
 set_source_files_properties ("../../modules/JUCE/modules/juce_data_structures/juce_data_structures.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../modules/JUCE/modules/juce_dsp/containers/juce_AudioBlock.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../modules/JUCE/modules/juce_dsp/containers/juce_SIMDRegister.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../modules/JUCE/modules/juce_dsp/containers/juce_SIMDRegister_Impl.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../modules/JUCE/modules/juce_dsp/containers/juce_SIMDRegister_test.cpp" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../modules/JUCE/modules/juce_dsp/filter_design/juce_FilterDesign.cpp" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../modules/JUCE/modules/juce_dsp/filter_design/juce_FilterDesign.h" PROPERTIES HEADER_FILE_ONLY TRUE)
@@ -2379,6 +2482,8 @@ set_source_files_properties ("../../modules/JUCE/modules/juce_gui_basics/propert
 set_source_files_properties ("../../modules/JUCE/modules/juce_gui_basics/properties/juce_ButtonPropertyComponent.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../modules/JUCE/modules/juce_gui_basics/properties/juce_ChoicePropertyComponent.cpp" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../modules/JUCE/modules/juce_gui_basics/properties/juce_ChoicePropertyComponent.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../modules/JUCE/modules/juce_gui_basics/properties/juce_MultiChoicePropertyComponent.cpp" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../modules/JUCE/modules/juce_gui_basics/properties/juce_MultiChoicePropertyComponent.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../modules/JUCE/modules/juce_gui_basics/properties/juce_PropertyComponent.cpp" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../modules/JUCE/modules/juce_gui_basics/properties/juce_PropertyComponent.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../modules/JUCE/modules/juce_gui_basics/properties/juce_PropertyPanel.cpp" PROPERTIES HEADER_FILE_ONLY TRUE)
@@ -2510,12 +2615,12 @@ if (CMAKE_BUILD_TYPE STREQUAL Debug)
 execute_process (COMMAND uname -m OUTPUT_VARIABLE JUCE_ARCH_LABEL OUTPUT_STRIP_TRAILING_WHITESPACE)
 
 target_include_directories (APP PRIVATE
+    "/Users/khiner/SDKs/VST_SDK/VST3_SDK"
     "../../JuceLibraryCode"
     "../../modules/JUCE/modules"
     "../../Source"
     "../../Source/usb/libusb"
     "../../modules/libusb/libusb"
-    "$ENV{HOME}/SDKs/VST_SDK/VST3_SDK"
 )
 
 target_compile_definitions (APP PRIVATE
@@ -2590,12 +2695,12 @@ if (CMAKE_BUILD_TYPE STREQUAL Release)
 execute_process (COMMAND uname -m OUTPUT_VARIABLE JUCE_ARCH_LABEL OUTPUT_STRIP_TRAILING_WHITESPACE)
 
 target_include_directories (APP PRIVATE
+    "/Users/khiner/SDKs/VST_SDK/VST3_SDK"
     "../../JuceLibraryCode"
     "../../modules/JUCE/modules"
     "../../Source"
     "../../Source/usb/libusb"
     "../../modules/libusb/libusb"
-    "$ENV{HOME}/SDKs/VST_SDK/VST3_SDK"
 )
 
 target_compile_definitions (APP PRIVATE
@@ -2636,6 +2741,7 @@ set_target_properties (APP PROPERTIES
     XCODE_ATTRIBUTE_INSTALL_PATH "$(HOME)/Applications"
     XCODE_ATTRIBUTE_MACOSX_DEPLOYMENT_TARGET_ppc 10.4
     XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER com.odangludo.soundmachine
+    XCODE_ATTRIBUTE_SDKROOT macosx10.7
     XCODE_ATTRIBUTE_SDKROOT_ppc macosx10.5
     XCODE_ATTRIBUTE_USE_HEADERMAP NO
     MACOSX_BUNDLE_INFO_PLIST "/Users/khiner/Development/sound-machine/Builds/CLion/Release-Info-App.plist"

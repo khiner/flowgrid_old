@@ -2,7 +2,7 @@
 
 <JUCERPROJECT id="khUpu8" name="sound-machine" projectType="guiapp" version="1.0.0"
               bundleIdentifier="com.odangludo.soundmachine" includeBinaryInAppConfig="1"
-              jucerVersion="5.3.0" companyWebsite="www.karlhiner.com" companyName="odangludo"
+              jucerVersion="5.3.2" companyWebsite="www.karlhiner.com" companyName="odangludo"
               displaySplashScreen="1" reportAppUsage="1" splashScreenColour="Dark"
               cppLanguageStandard="14" companyCopyright="odangludo" companyEmail="karl.hiner@gmail.com">
   <MAINGROUP id="zuLs1h" name="sound-machine">
@@ -10,64 +10,144 @@
       <FILE id="bGXkWv" name="PushStartup.png" compile="0" resource="1" file="Resources/PushStartup.png"/>
     </GROUP>
     <GROUP id="{70A85A13-6570-7111-6CCB-8EB5F2BD67E2}" name="Source">
-      <GROUP id="{DD3F91B8-FB1F-3D47-3EA8-4B9108E5B939}" name="audio_processors">
-        <FILE id="PBBTVK" name="MainProcessor.cpp" compile="1" resource="0"
-              file="Source/audio_processors/MainProcessor.cpp"/>
-        <FILE id="QiyJk0" name="MainProcessor.h" compile="0" resource="0" file="Source/audio_processors/MainProcessor.h"/>
-      </GROUP>
-      <GROUP id="{75E3868C-D0DD-0C51-94A0-FE5E4A1949AE}" name="audio_sources">
-        <FILE id="OBLHMI" name="ToneSourceWithParameters.cpp" compile="1" resource="0"
-              file="Source/audio_sources/ToneSourceWithParameters.cpp"/>
-        <FILE id="oLBPvL" name="ToneSourceWithParameters.h" compile="0" resource="0"
+      <GROUP id="{BC78B16D-95A0-7396-7EF9-C65BA4D52343}" name="audio_sources">
+        <FILE id="mg2toY" name="ToneSourceWithParameters.h" compile="0" resource="0"
               file="Source/audio_sources/ToneSourceWithParameters.h"/>
       </GROUP>
-      <GROUP id="{78AC4A80-7601-41D4-CB1D-895AE5CC59A8}" name="midi">
-        <FILE id="DKai7E" name="MidiCommunicator.cpp" compile="1" resource="0"
+      <GROUP id="{62DC334B-D2E9-268D-DF6C-9AA1803D8BC9}" name="midi">
+        <FILE id="Uxj7uF" name="MidiCommunicator.cpp" compile="1" resource="0"
               file="Source/midi/MidiCommunicator.cpp"/>
-        <FILE id="FkhyIO" name="MidiCommunicator.h" compile="0" resource="0"
+        <FILE id="wq2JRM" name="MidiCommunicator.h" compile="0" resource="0"
               file="Source/midi/MidiCommunicator.h"/>
       </GROUP>
-      <GROUP id="{AEA173C1-20E1-8A5B-4072-01A90B05339A}" name="push2">
-        <FILE id="Bo5jGA" name="Push2Display.h" compile="0" resource="0" file="Source/push2/Push2Display.h"/>
-        <FILE id="QLVcNl" name="Push2DisplayBridge.h" compile="0" resource="0"
+      <GROUP id="{8FCDD6E8-2E0D-2F72-AA34-4E5C46CA6ECF}" name="processors">
+        <FILE id="bWwrcf" name="Arpeggiator.h" compile="0" resource="0" file="Source/processors/Arpeggiator.h"/>
+        <FILE id="lSUr8S" name="BalanceProcessor.h" compile="0" resource="0"
+              file="Source/processors/BalanceProcessor.h"/>
+        <FILE id="YjwJQ2" name="DefaultAudioProcessor.cpp" compile="1" resource="0"
+              file="Source/processors/DefaultAudioProcessor.cpp"/>
+        <FILE id="cNH3Dh" name="DefaultAudioProcessor.h" compile="0" resource="0"
+              file="Source/processors/DefaultAudioProcessor.h"/>
+        <FILE id="Ft6eMP" name="GainProcessor.h" compile="0" resource="0" file="Source/processors/GainProcessor.h"/>
+        <FILE id="w39HJ7" name="InternalPluginFormat.h" compile="0" resource="0"
+              file="Source/processors/InternalPluginFormat.h"/>
+        <FILE id="mVZUeW" name="InternalProcessorIncludes.h" compile="0" resource="0"
+              file="Source/processors/InternalProcessorIncludes.h"/>
+        <FILE id="NuaAo9" name="MidiInputProcessor.h" compile="0" resource="0"
+              file="Source/processors/MidiInputProcessor.h"/>
+        <FILE id="KullKn" name="MidiKeyboardProcessor.h" compile="0" resource="0"
+              file="Source/processors/MidiKeyboardProcessor.h"/>
+        <FILE id="pkeQrb" name="MidiOutputProcessor.h" compile="0" resource="0"
+              file="Source/processors/MidiOutputProcessor.h"/>
+        <FILE id="CT3YvO" name="MixerChannelProcessor.h" compile="0" resource="0"
+              file="Source/processors/MixerChannelProcessor.h"/>
+        <FILE id="PjkS3z" name="ParameterTypesTestProcessor.h" compile="0"
+              resource="0" file="Source/processors/ParameterTypesTestProcessor.h"/>
+        <FILE id="uPvbjA" name="ProcessorManager.h" compile="0" resource="0"
+              file="Source/processors/ProcessorManager.h"/>
+        <FILE id="uoD2B1" name="SineBank.h" compile="0" resource="0" file="Source/processors/SineBank.h"/>
+        <FILE id="DS7myt" name="SineSynth.h" compile="0" resource="0" file="Source/processors/SineSynth.h"/>
+        <FILE id="w4qVpi" name="StatefulAudioProcessorWrapper.h" compile="0"
+              resource="0" file="Source/processors/StatefulAudioProcessorWrapper.h"/>
+      </GROUP>
+      <GROUP id="{13164F73-1FFF-0BD3-A9BD-1AEBD840A9A3}" name="push2">
+        <FILE id="GXkveh" name="Push2Display.h" compile="0" resource="0" file="Source/push2/Push2Display.h"/>
+        <FILE id="jCiX61" name="Push2DisplayBridge.h" compile="0" resource="0"
               file="Source/push2/Push2DisplayBridge.h"/>
-        <FILE id="iELG5w" name="Push2MidiCommunicator.cpp" compile="1" resource="0"
+        <FILE id="ezS6Y0" name="Push2MidiCommunicator.cpp" compile="1" resource="0"
               file="Source/push2/Push2MidiCommunicator.cpp"/>
-        <FILE id="A1C043" name="Push2MidiCommunicator.h" compile="0" resource="0"
+        <FILE id="asas1o" name="Push2MidiCommunicator.h" compile="0" resource="0"
               file="Source/push2/Push2MidiCommunicator.h"/>
-        <FILE id="NBnwEw" name="Push2UsbCommunicator.cpp" compile="1" resource="0"
+        <FILE id="UhhADz" name="Push2UsbCommunicator.cpp" compile="1" resource="0"
               file="Source/push2/Push2UsbCommunicator.cpp"/>
-        <FILE id="O0B7xB" name="Push2UsbCommunicator.h" compile="0" resource="0"
+        <FILE id="riIo3H" name="Push2UsbCommunicator.h" compile="0" resource="0"
               file="Source/push2/Push2UsbCommunicator.h"/>
       </GROUP>
-      <GROUP id="{143DBD6B-4E76-2AE3-8127-8C708C95A0AA}" name="usb">
-        <GROUP id="{F643688B-6608-92DF-F2B3-1482D0246257}" name="libusb">
-          <FILE id="oNUTqh" name="config.h" compile="0" resource="0" file="Source/usb/libusb/config.h"/>
-          <FILE id="WyPziP" name="config_msvc.h" compile="0" resource="0" file="Source/usb/libusb/config_msvc.h"/>
-          <FILE id="Xr2TCG" name="config_xcode.h" compile="0" resource="0" file="Source/usb/libusb/config_xcode.h"/>
-          <FILE id="gOJuJU" name="libusb_platform_wrapper.c" compile="1" resource="0"
+      <GROUP id="{10289917-0B9F-E4A3-DB2D-4C1B29A7DF3C}" name="usb">
+        <GROUP id="{CC2D38BC-D093-49D5-6818-621388955D33}" name="libusb">
+          <FILE id="o6mvs2" name="config.h" compile="0" resource="0" file="Source/usb/libusb/config.h"/>
+          <FILE id="dNrbhf" name="config_msvc.h" compile="0" resource="0" file="Source/usb/libusb/config_msvc.h"/>
+          <FILE id="RmCF5g" name="config_xcode.h" compile="0" resource="0" file="Source/usb/libusb/config_xcode.h"/>
+          <FILE id="D14Tvt" name="libusb_platform_wrapper.c" compile="1" resource="0"
                 file="Source/usb/libusb/libusb_platform_wrapper.c"/>
         </GROUP>
-        <FILE id="Ymz8mb" name="UsbCommunicator.cpp" compile="1" resource="0"
+        <FILE id="Icy9e5" name="UsbCommunicator.cpp" compile="1" resource="0"
               file="Source/usb/UsbCommunicator.cpp"/>
-        <FILE id="u4q60w" name="UsbCommunicator.h" compile="0" resource="0"
+        <FILE id="rMFFiR" name="UsbCommunicator.h" compile="0" resource="0"
               file="Source/usb/UsbCommunicator.h"/>
       </GROUP>
-      <FILE id="yL3YVc" name="AppState.cpp" compile="1" resource="0" file="Source/AppState.cpp"/>
-      <FILE id="x0ahtu" name="AppState.h" compile="0" resource="0" file="Source/AppState.h"/>
-      <FILE id="UQHG71" name="AudioSettings.cpp" compile="1" resource="0"
-            file="Source/AudioSettings.cpp"/>
-      <FILE id="vWDauK" name="AudioSettings.h" compile="0" resource="0" file="Source/AudioSettings.h"/>
-      <FILE id="PnpFX0" name="Main.cpp" compile="1" resource="0" file="Source/Main.cpp"/>
-      <FILE id="DhRq3f" name="MainContentComponent.cpp" compile="1" resource="0"
-            file="Source/MainContentComponent.cpp"/>
-      <FILE id="WEaJD1" name="Push2Animator.cpp" compile="1" resource="0"
-            file="Source/Push2Animator.cpp"/>
-      <FILE id="lvGoj8" name="Push2Animator.h" compile="0" resource="0" file="Source/Push2Animator.h"/>
+      <GROUP id="{301403E1-4B79-4C60-46CE-85209B39F7A6}" name="view">
+        <GROUP id="{7A7C1A65-77B5-E9A6-C974-9285768E9B69}" name="graph_editor">
+          <FILE id="ZF7VE8" name="ConnectorDragListener.h" compile="0" resource="0"
+                file="Source/view/graph_editor/ConnectorDragListener.h"/>
+          <FILE id="jDwqSG" name="GraphEditor.h" compile="0" resource="0" file="Source/view/graph_editor/GraphEditor.h"/>
+          <FILE id="gJjKjJ" name="GraphEditorConnector.h" compile="0" resource="0"
+                file="Source/view/graph_editor/GraphEditorConnector.h"/>
+          <FILE id="aE2gCn" name="GraphEditorConnectors.h" compile="0" resource="0"
+                file="Source/view/graph_editor/GraphEditorConnectors.h"/>
+          <FILE id="fNaZuS" name="GraphEditorInput.h" compile="0" resource="0"
+                file="Source/view/graph_editor/GraphEditorInput.h"/>
+          <FILE id="KslHri" name="GraphEditorPanel.h" compile="0" resource="0"
+                file="Source/view/graph_editor/GraphEditorPanel.h"/>
+          <FILE id="VgGs68" name="GraphEditorPin.h" compile="0" resource="0"
+                file="Source/view/graph_editor/GraphEditorPin.h"/>
+          <FILE id="JMLoB0" name="GraphEditorProcessor.h" compile="0" resource="0"
+                file="Source/view/graph_editor/GraphEditorProcessor.h"/>
+          <FILE id="pTCMm3" name="GraphEditorProcessorContainer.h" compile="0"
+                resource="0" file="Source/view/graph_editor/GraphEditorProcessorContainer.h"/>
+          <FILE id="ZnLYJz" name="GraphEditorProcessors.h" compile="0" resource="0"
+                file="Source/view/graph_editor/GraphEditorProcessors.h"/>
+          <FILE id="BRryvM" name="GraphEditorTrack.h" compile="0" resource="0"
+                file="Source/view/graph_editor/GraphEditorTrack.h"/>
+          <FILE id="rdP1hm" name="GraphEditorTracks.h" compile="0" resource="0"
+                file="Source/view/graph_editor/GraphEditorTracks.h"/>
+        </GROUP>
+        <GROUP id="{F36BE8C1-ECF2-1ACA-B882-71C631D751D5}" name="processor_editor">
+          <FILE id="uIRkHq" name="ParameterDisplayComponent.h" compile="0" resource="0"
+                file="Source/view/processor_editor/ParameterDisplayComponent.h"/>
+          <FILE id="woehuG" name="ParametersPanel.h" compile="0" resource="0"
+                file="Source/view/processor_editor/ParametersPanel.h"/>
+          <FILE id="qMwgSS" name="ProcessorEditor.h" compile="0" resource="0"
+                file="Source/view/processor_editor/ProcessorEditor.h"/>
+          <FILE id="l1l8LI" name="SwitchParameterComponent.h" compile="0" resource="0"
+                file="Source/view/processor_editor/SwitchParameterComponent.h"/>
+        </GROUP>
+        <GROUP id="{DD113820-E256-B5BF-389F-6535151FC7F7}" name="push2">
+          <FILE id="jbILNZ" name="Push2Component.h" compile="0" resource="0"
+                file="Source/view/push2/Push2Component.h"/>
+          <FILE id="MlqZnE" name="Push2ComponentBase.h" compile="0" resource="0"
+                file="Source/view/push2/Push2ComponentBase.h"/>
+          <FILE id="R7s67J" name="Push2Listener.h" compile="0" resource="0" file="Source/view/push2/Push2Listener.h"/>
+          <FILE id="bL1dAV" name="Push2ProcessorSelector.h" compile="0" resource="0"
+                file="Source/view/push2/Push2ProcessorSelector.h"/>
+          <FILE id="E2zGFa" name="Push2ProcessorView.h" compile="0" resource="0"
+                file="Source/view/push2/Push2ProcessorView.h"/>
+        </GROUP>
+        <FILE id="zzwwsD" name="PluginWindow.h" compile="0" resource="0" file="Source/view/PluginWindow.h"/>
+        <FILE id="ikX4lz" name="SelectionEditor.h" compile="0" resource="0"
+              file="Source/view/SelectionEditor.h"/>
+        <FILE id="DjaWRY" name="UiColours.h" compile="0" resource="0" file="Source/view/UiColours.h"/>
+      </GROUP>
+      <FILE id="dJezxH" name="ApplicationKeyListener.h" compile="0" resource="0"
+            file="Source/ApplicationKeyListener.h"/>
+      <FILE id="FsVOpZ" name="ApplicationPropertiesAndCommandManager.h" compile="0"
+            resource="0" file="Source/ApplicationPropertiesAndCommandManager.h"/>
+      <FILE id="LbBoeX" name="Identifiers.h" compile="0" resource="0" file="Source/Identifiers.h"/>
+      <FILE id="OqY8md" name="Main.cpp" compile="1" resource="0" file="Source/Main.cpp"/>
+      <FILE id="pnHO7r" name="MidiControlHandler.h" compile="0" resource="0"
+            file="Source/MidiControlHandler.h"/>
+      <FILE id="MDxsZB" name="ProcessorGraph.h" compile="0" resource="0"
+            file="Source/ProcessorGraph.h"/>
+      <FILE id="rZ4Uoo" name="Project.h" compile="0" resource="0" file="Source/Project.h"/>
+      <FILE id="JBJotx" name="Utilities.h" compile="0" resource="0" file="Source/Utilities.h"/>
+      <FILE id="o6WLoO" name="ValueTreeItems.h" compile="0" resource="0"
+            file="Source/ValueTreeItems.h"/>
+      <FILE id="dkaWAx" name="ValueTreeObjectList.h" compile="0" resource="0"
+            file="Source/ValueTreeObjectList.h"/>
     </GROUP>
   </MAINGROUP>
   <EXPORTFORMATS>
-    <XCODE_MAC targetFolder="Builds/MacOSX">
+    <XCODE_MAC targetFolder="Builds/MacOSX" vst3Folder="">
       <CONFIGURATIONS>
         <CONFIGURATION name="Debug" osxCompatibility="10.7 SDK" isDebug="1" optimisation="1"
                        targetName="sound-machine" cppLanguageStandard="c++11" cppLibType="libc++"
@@ -127,10 +207,10 @@
     <MODULE id="juce_gui_basics" showAllCode="1" useLocalCopy="0"/>
     <MODULE id="juce_gui_extra" showAllCode="1" useLocalCopy="0"/>
   </MODULES>
-  <JUCEOPTIONS JUCE_PLUGINHOST_VST="1"
-               JUCE_PLUGINHOST_AU="1" JUCE_WEB_BROWSER="0" JUCE_PLUGINHOST_VST3="1"
-               JUCE_PLUGINHOST_LADSPA="1"/>
+  <JUCEOPTIONS JUCE_PLUGINHOST_VST="1" JUCE_PLUGINHOST_AU="1" JUCE_WEB_BROWSER="0"
+               JUCE_PLUGINHOST_VST3="1" JUCE_PLUGINHOST_LADSPA="1"/>
   <LIVE_SETTINGS>
     <WINDOWS/>
+    <OSX/>
   </LIVE_SETTINGS>
 </JUCERPROJECT>
