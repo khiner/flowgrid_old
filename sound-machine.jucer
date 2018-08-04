@@ -7,6 +7,12 @@
               cppLanguageStandard="14" companyCopyright="odangludo" companyEmail="karl.hiner@gmail.com">
   <MAINGROUP id="zuLs1h" name="sound-machine">
     <GROUP id="{BC4520A3-39AA-03FD-C1B7-F20D01C20117}" name="Resources">
+      <FILE id="mPg19c" name="AbletonSansBold-Regular.otf" compile="0" resource="1"
+            file="Resources/AbletonSansBold-Regular.otf"/>
+      <FILE id="QKAPPm" name="AbletonSansLight-Regular.otf" compile="0" resource="1"
+            file="Resources/AbletonSansLight-Regular.otf"/>
+      <FILE id="vp1wdV" name="AbletonSansMedium-Regular.otf" compile="0"
+            resource="1" file="Resources/AbletonSansMedium-Regular.otf"/>
       <FILE id="bGXkWv" name="PushStartup.png" compile="0" resource="1" file="Resources/PushStartup.png"/>
     </GROUP>
     <GROUP id="{70A85A13-6570-7111-6CCB-8EB5F2BD67E2}" name="Source">

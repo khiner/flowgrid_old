@@ -16,7 +16,7 @@ public:
             valueTreePropertyChanged(this->state, IDs::deviceName);
         if (!showChannelLabels) {
             nameLabel.setColour(findColour(TextEditor::textColourId));
-            nameLabel.setFont(boldFont, true);
+            nameLabel.setFontHeight(largeFontHeight);
             nameLabel.setJustification(Justification::centred);
             addAndMakeVisible(nameLabel);
         }
@@ -104,7 +104,7 @@ public:
     }
 
     void resized() override {
-        auto boxBoundsFloat = getBoxBounds().toFloat();
+        auto boxBoundsFloat = getBoxBounds().reduced(4).toFloat();
         if (auto *processor = getProcessor()) {
             for (auto *pin : pins) {
                 const bool isInput = pin->isInput();
@@ -264,8 +264,8 @@ public:
     ProcessorGraph &graph;
     OwnedArray<GraphEditorPin> pins;
     int pinSize = 16;
-    Font boldFont{13.0f, Font::bold};
-    Font regularFont{13.0f};
+    float largeFontHeight = 18.0f;
+    float smallFontHeight = 15.0f;
     std::unique_ptr<PopupMenu> menu;
 
     class ElementComparator {
@@ -332,7 +332,7 @@ private:
             if (showChannelLabels) {
                 auto& channelLabel = pin->channelLabel;
                 channelLabel.setColour(findColour(TextEditor::textColourId));
-                channelLabel.setFont(regularFont, true);
+                channelLabel.setFontHeight(smallFontHeight);
                 channelLabel.setJustification(Justification::centred);
                 addAndMakeVisible(channelLabel);
             }

@@ -25,6 +25,9 @@ public:
     void initialise(const String &) override {
         getCommandManager().registerAllCommandsForTarget(this);
 
+        const auto &typeface = Typeface::createSystemTypefaceFor(BinaryData::AbletonSansMediumRegular_otf, BinaryData::AbletonSansMediumRegular_otfSize);
+        LookAndFeel::getDefaultLookAndFeel().setDefaultSansSerifTypeface(typeface);
+
         push2MidiCommunicator.setMidiInputCallback([this](const MidiMessage &message) {
             MessageManager::callAsync([this, message]() { midiControlHandler.handleControlMidi(message); });
         });

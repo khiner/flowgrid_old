@@ -8,11 +8,20 @@
 
 namespace BinaryData
 {
+    extern const char*   AbletonSansBoldRegular_otf;
+    const int            AbletonSansBoldRegular_otfSize = 43920;
+
+    extern const char*   AbletonSansLightRegular_otf;
+    const int            AbletonSansLightRegular_otfSize = 42784;
+
+    extern const char*   AbletonSansMediumRegular_otf;
+    const int            AbletonSansMediumRegular_otfSize = 43100;
+
     extern const char*   PushStartup_png;
     const int            PushStartup_pngSize = 16112;
 
     // Number of elements in the namedResourceList and originalFileNames arrays.
-    const int namedResourceListSize = 1;
+    const int namedResourceListSize = 4;
 
     // Points to the start of a list of resource names.
     extern const char* namedResourceList[];

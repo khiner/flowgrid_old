@@ -20,6 +20,9 @@ endif()
 project ("sound-machine" C CXX)
 
 add_executable (APP
+    "../../Resources/AbletonSansBold-Regular.otf"
+    "../../Resources/AbletonSansLight-Regular.otf"
+    "../../Resources/AbletonSansMedium-Regular.otf"
     "../../Resources/PushStartup.png"
     "../../Source/audio_sources/ToneSourceWithParameters.h"
     "../../Source/midi/MidiCommunicator.cpp"
@@ -1324,6 +1327,9 @@ add_executable (APP
     "../../JuceLibraryCode/JuceHeader.h"
 )
 
+set_source_files_properties ("../../Resources/AbletonSansBold-Regular.otf" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Resources/AbletonSansLight-Regular.otf" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Resources/AbletonSansMedium-Regular.otf" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Resources/PushStartup.png" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/audio_sources/ToneSourceWithParameters.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/midi/MidiCommunicator.h" PROPERTIES HEADER_FILE_ONLY TRUE)
