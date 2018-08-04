@@ -174,10 +174,11 @@ public:
     void showPopupMenu() {
         menu = std::make_unique<PopupMenu>();
 
+        if (state[IDs::name] == MidiKeyboardProcessor::name()) {
+            menu->addItem(SHOW_MIDI_KEYBOARD_MENU_ID, "Show onscreen MIDI keyboard");
+        }
         if (isIoProcessor()) {
             menu->addItem(CONFIGURE_AUDIO_MIDI_MENU_ID, "Configure audio/MIDI IO");
-        } else if (state[IDs::name] == MidiKeyboardProcessor::name()) {
-            menu->addItem(SHOW_MIDI_KEYBOARD_MENU_ID, "Show onscreen MIDI keyboard");
         } else {
             menu->addItem(DELETE_MENU_ID, "Delete this processor");
             menu->addItem(TOGGLE_BYPASS_MENU_ID, "Toggle Bypass");
