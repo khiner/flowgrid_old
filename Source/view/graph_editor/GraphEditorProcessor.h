@@ -4,7 +4,7 @@
 #include "JuceHeader.h"
 #include "ConnectorDragListener.h"
 #include "ProcessorGraph.h"
-#include "PinComponent.h"
+#include "GraphEditorPin.h"
 
 class GraphEditorProcessor : public Component, public ValueTree::Listener {
 public:
@@ -142,10 +142,10 @@ public:
         return {};
     }
 
-    PinComponent *findPinAt(const MouseEvent &e) {
+    GraphEditorPin *findPinAt(const MouseEvent &e) {
         auto e2 = e.getEventRelativeTo(this);
         auto *comp = getComponentAt(e2.position.toInt());
-        if (auto *pin = dynamic_cast<PinComponent *> (comp)) {
+        if (auto *pin = dynamic_cast<GraphEditorPin *> (comp)) {
             return pin;
         }
         return nullptr;
@@ -257,7 +257,7 @@ public:
 
     ConnectorDragListener &connectorDragListener;
     ProcessorGraph &graph;
-    OwnedArray<PinComponent> pins;
+    OwnedArray<GraphEditorPin> pins;
     int pinSize = 16;
     Font font{13.0f, Font::bold};
     std::unique_ptr<PopupMenu> menu;
@@ -277,7 +277,7 @@ private:
             SHOW_PLUGIN_GUI_MENU_ID = 10, SHOW_ALL_PROGRAMS_MENU_ID = 11, CONFIGURE_AUDIO_MIDI_MENU_ID = 12,
             SHOW_MIDI_KEYBOARD_MENU_ID = 13;
 
-    PinComponent* findPinWithState(const ValueTree& state) {
+    GraphEditorPin* findPinWithState(const ValueTree& state) {
         for (auto* pin : pins) {
             if (pin->state == state)
                 return pin;
@@ -302,7 +302,7 @@ private:
 
     void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override {
         if (child.hasType(IDs::CHANNEL)) {
-            auto *pin = new PinComponent(child, connectorDragListener);
+            auto *pin = new GraphEditorPin(child, connectorDragListener);
             addAndMakeVisible(pin);
             pins.add(pin);
         }

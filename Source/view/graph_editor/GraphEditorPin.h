@@ -6,8 +6,8 @@
 #include "Identifiers.h"
 #include "ProcessorGraph.h"
 
-struct PinComponent : public Component, public SettableTooltipClient, private Utilities::ValueTreePropertyChangeListener {
-    PinComponent(const ValueTree& state, ConnectorDragListener &connectorDragListener)
+struct GraphEditorPin : public Component, public SettableTooltipClient, private Utilities::ValueTreePropertyChangeListener {
+    GraphEditorPin(const ValueTree& state, ConnectorDragListener &connectorDragListener)
             : state(state), connectorDragListener(connectorDragListener) {
         setSize(16, 16);
     }
@@ -69,5 +69,5 @@ private:
             setTooltip(v[IDs::name]);
     }
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PinComponent)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (GraphEditorPin)GraphEditorPin
 };

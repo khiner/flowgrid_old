@@ -1,7 +1,7 @@
 #pragma once
 
 #include <ProcessorGraph.h>
-#include "PinComponent.h"
+#include "GraphEditorPin.h"
 #include "GraphEditorTracks.h"
 #include "GraphEditorConnectors.h"
 
@@ -183,7 +183,7 @@ private:
 
     GraphEditorProcessor::ElementComparator processorComparator;
 
-    PinComponent *findPinAt(const MouseEvent &e) const {
+    GraphEditorPin *findPinAt(const MouseEvent &e) const {
         if (auto *pin = audioInputProcessor->findPinAt(e)) {
             return pin;
         } else if ((pin = audioOutputProcessor->findPinAt(e))) {

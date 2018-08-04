@@ -94,7 +94,7 @@ public:
         return processors->getProcessorForNodeId(nodeId);
     }
 
-    PinComponent *findPinAt(const MouseEvent &e) const {
+    GraphEditorPin *findPinAt(const MouseEvent &e) const {
         return processors->findPinAt(e);
     }
 

@@ -75,7 +75,7 @@ public:
         return nullptr;
     }
 
-    PinComponent *findPinAt(const MouseEvent &e) const {
+    GraphEditorPin *findPinAt(const MouseEvent &e) const {
         for (auto *track : objects) {
             auto *pin = track->findPinAt(e);
             if (pin != nullptr) {

@@ -6,7 +6,7 @@
 #include "GraphEditorProcessorContainer.h"
 #include "ConnectorDragListener.h"
 #include "ProcessorGraph.h"
-#include "PinComponent.h"
+#include "GraphEditorPin.h"
 
 class GraphEditorProcessors : public Component,
                               public Utilities::ValueTreeObjectList<GraphEditorProcessor>,
@@ -87,7 +87,7 @@ public:
         return nullptr;
     }
 
-    PinComponent *findPinAt(const MouseEvent &e) {
+    GraphEditorPin *findPinAt(const MouseEvent &e) {
         for (auto *processor : objects) {
             if (auto* pin = processor->findPinAt(e)) {
                 return pin;
