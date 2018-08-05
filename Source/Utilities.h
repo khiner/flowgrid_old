@@ -64,13 +64,9 @@ namespace Utilities {
     }
 
     static inline void moveAllChildren(ValueTree fromParent, ValueTree& toParent, UndoManager* undoManager) {
-        Array<ValueTree> children;
-        for (const auto& child : fromParent) {
-            children.add(child);
-        }
-        fromParent.removeAllChildren(undoManager);
-
-        for (const auto& child : children) {
+        while (fromParent.getNumChildren() > 0) {
+            const auto& child = fromParent.getChild(0);
+            fromParent.removeChild(0, undoManager);
             toParent.addChild(child, -1, undoManager);
         }
     }

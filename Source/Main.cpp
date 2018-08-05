@@ -133,8 +133,10 @@ public:
                 RecentlyOpenedFilesList recentFiles;
                 recentFiles.restoreFromString(getApplicationProperties().getUserSettings()->getValue("recentProjectFiles"));
 
-                if (project.saveIfNeededAndUserAgrees() == FileBasedDocument::savedOk)
+                if (project.saveIfNeededAndUserAgrees() == FileBasedDocument::savedOk) {
                     project.loadFrom(recentFiles.getFile(menuItemID - 100), true);
+                    menuItemsChanged();
+                }
             }
         } else if (topLevelMenuIndex == 1) { // Options menu
             if (menuItemID == 1) {

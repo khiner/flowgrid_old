@@ -17,7 +17,6 @@ public:
         project.getState().addListener(this);
         addProcessor(project.getAudioInputProcessorState());
         addProcessor(project.getAudioOutputProcessorState());
-        recursivelyInitializeWithState(project.getMasterTrack());
         recursivelyInitializeWithState(project.getTracks());
 
         if (project.hasConnections()) {
@@ -25,7 +24,6 @@ public:
                 valueTreeChildAdded(project.getConnections(), connection);
             }
         } else {
-            recursivelyInitializeWithState(project.getMasterTrack(), true);
             recursivelyInitializeWithState(project.getTracks(), true);
         }
         this->project.addProjectChangeListener(this);
@@ -295,9 +293,7 @@ private:
             }
         }
         for (const ValueTree& child : state) {
-            if (!child.hasType(IDs::MASTER_TRACK)) {
-                recursivelyInitializeWithState(child, connections);
-            }
+            recursivelyInitializeWithState(child, connections);
         }
     }
 
@@ -558,6 +554,8 @@ private:
                     }
                 }
             }
+        } else if (child.hasType(IDs::TRACK) || child.hasType(IDs::MASTER_TRACK)) {
+            recursivelyInitializeWithState(child);
         }
     }
 

@@ -46,9 +46,10 @@ public:
         deviceManager.addChangeListener(this);
         undoManager.addChangeListener(this);
         RecentlyOpenedFilesList recentFiles;
-        recentFiles.restoreFromString(getApplicationProperties().getUserSettings()->getValue("recentProjectFiles"));
         state.addListener(this);
-        if (recentFiles.getNumFiles() == 0 || !loadFrom(recentFiles.getFile(0), true))
+
+        const auto &lastOpenedProjectFile = getLastDocumentOpened();
+        if (!lastOpenedProjectFile.exists() || !loadFrom(lastOpenedProjectFile, true))
             newDocument();
     }
 
@@ -224,7 +225,7 @@ public:
         if (!isItemDeletable(v))
             return;
         if (v.getParent().isValid()) {
-            if (v.hasType(IDs::TRACK)) {
+            if (v.hasType(IDs::TRACK) || v.hasType(IDs::MASTER_TRACK)) {
                 while (v.getNumChildren() > 0)
                     deleteItem(v.getChild(v.getNumChildren() - 1), undoable);
             }
@@ -483,6 +484,7 @@ public:
             return Result::fail("Not a valid project file");
 //        input = state.getChildWithName(IDs::INPUT);
 //        output = state.getChildWithName(IDs::OUTPUT);
+
         Utilities::moveAllChildren(newState.getChildWithName(IDs::TRACKS), tracks, nullptr);
         Utilities::moveAllChildren(newState.getChildWithName(IDs::CONNECTIONS), connections, nullptr);
 
@@ -528,16 +530,14 @@ private:
 
     ProcessorManager &processorManager;
     AudioDeviceManager& deviceManager;
-
-    bool initializing;
     
     void clear() {
         sendItemSelectedMessage({});
 //        input.removeAllChildren(nullptr);
 //        output.removeAllChildren(nullptr);
-        connections.removeAllChildren(nullptr);
         while (tracks.getNumChildren() > 0)
             deleteItem(tracks.getChild(tracks.getNumChildren() - 1), false);
+        connections.removeAllChildren(nullptr);
         undoManager.clearUndoHistory();
     }
     
@@ -630,7 +630,8 @@ private:
     }
 
     static inline bool isItemDeletable(const ValueTree& item) {
-        return !item.hasType(IDs::MASTER_TRACK);
+//        return !item.hasType(IDs::MASTER_TRACK);
+        return true;
     }
 
     void valueTreeChildAdded(ValueTree &, ValueTree &tree) override {}
@@ -654,11 +655,10 @@ private:
 
     static void deselectAllItemsExcept(const ValueTree& parent, const ValueTree& except) {
         for (auto child : parent) {
-            if (child[IDs::selected] && child != except) {
+            if (child[IDs::selected] && child != except)
                 child.setProperty(IDs::selected, false, nullptr);
-            } else {
+            else
                 deselectAllItemsExcept(child, except);
-            }
         }
     }
     

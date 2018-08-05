@@ -25,11 +25,8 @@ public:
         const int w = r.getWidth() / Project::NUM_VISIBLE_TRACKS;
 
         for (auto *track : objects) {
-            if (!track->isMasterTrack()) {
-                track->setBounds(r.removeFromLeft(w));
-            } else {
-                track->setBounds(getLocalBounds().removeFromBottom(getHeight() - r.getHeight()));
-            }
+            track->setBounds(!track->isMasterTrack() ? r.removeFromLeft(w)
+                                                     : getLocalBounds().removeFromBottom(getHeight() - r.getHeight()));
         }
     }
 
@@ -58,29 +55,25 @@ public:
     GraphEditorProcessor *getProcessorForNodeId(AudioProcessorGraph::NodeID nodeId) const override {
         for (auto *track : objects) {
             auto *processor = track->getProcessorForNodeId(nodeId);
-            if (processor != nullptr) {
+            if (processor != nullptr)
                 return processor;
-            }
         }
         return nullptr;
     }
 
     GraphEditorTrack *getTrackForState(const ValueTree& state) const {
         for (auto *track : objects) {
-            if (track->state == state) {
+            if (track->state == state)
                 return track;
-            }
         }
-
         return nullptr;
     }
 
     GraphEditorPin *findPinAt(const MouseEvent &e) const {
         for (auto *track : objects) {
             auto *pin = track->findPinAt(e);
-            if (pin != nullptr) {
+            if (pin != nullptr)
                 return pin;
-            }
         }
         return nullptr;
     }
@@ -94,9 +87,8 @@ public:
     
     Point<int> trackAndSlotAt(const MouseEvent &e) {
         for (auto* track : objects) {
-            if (track->contains(e.getEventRelativeTo(track).getPosition())) {
+            if (track->contains(e.getEventRelativeTo(track).getPosition()))
                 return { track->getTrackIndex(), track->findSlotAt(e) };
-            }
         }
         return { -1, -1 };
     }
