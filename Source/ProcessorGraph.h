@@ -54,20 +54,17 @@ public:
     }
 
     StatefulAudioProcessorWrapper *getProcessorWrapperForNodeId(NodeID nodeId) const {
-        if (nodeId == NA_NODE_ID) {
+        if (nodeId == NA_NODE_ID)
             return nullptr;
-        } else {
-            if (auto* node = getNodeForId(nodeId)) {
-                AudioProcessor *processor = node->getProcessor();
-                for (auto *processorWrapper : processerWrappers) {
-                    if (processorWrapper->processor == processor) {
-                        return processorWrapper;
-                    }
-                }
-            }
 
-            return nullptr;
+        if (auto* node = getNodeForId(nodeId)) {
+            AudioProcessor *processor = node->getProcessor();
+            for (auto *processorWrapper : processerWrappers) {
+                if (processorWrapper->processor == processor)
+                    return processorWrapper;
+            }
         }
+        return nullptr;
     }
 
     StatefulAudioProcessorWrapper *getMasterGainProcessor() {
@@ -603,6 +600,8 @@ private:
                     }
                 }
             }
+        } else if (child.hasType(IDs::TRACK)) {
+            // TODO remove all of its processors
         }
     }
 

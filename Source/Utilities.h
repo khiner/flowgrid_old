@@ -25,33 +25,33 @@ namespace Utilities {
     }
 
 /** Attempts to load a ValueTree from a file. */
-    static inline juce::ValueTree loadValueTree(const juce::File &file, bool asXml) {
+    static inline ValueTree loadValueTree(const File &file, bool asXml) {
         if (asXml) {
-            if (auto xml = std::unique_ptr<juce::XmlElement>(juce::XmlDocument::parse(file)))
-                return juce::ValueTree::fromXml(*xml);
+            if (auto xml = std::unique_ptr<XmlElement>(XmlDocument::parse(file)))
+                return ValueTree::fromXml(*xml);
         } else {
-            juce::FileInputStream is(file);
+            FileInputStream is(file);
 
             if (is.openedOk())
-                return juce::ValueTree::readFromStream(is);
+                return ValueTree::readFromStream(is);
         }
 
         return {};
     }
 
 /** Saves a ValueTree to a File. */
-    static inline bool saveValueTree(const juce::ValueTree &v, const juce::File &file, bool asXml) {
-        const juce::TemporaryFile temp(file);
+    static inline bool saveValueTree(const ValueTree &v, const File &file, bool asXml) {
+        const TemporaryFile temp(file);
 
         {
-            juce::FileOutputStream os(temp.getFile());
+            FileOutputStream os(temp.getFile());
 
             if (!os.getStatus().wasOk())
                 return false;
 
             if (asXml) {
-                if (auto xml = std::unique_ptr<juce::XmlElement>(v.createXml()))
-                    xml->writeToStream(os, juce::StringRef());
+                if (auto xml = std::unique_ptr<XmlElement>(v.createXml()))
+                    xml->writeToStream(os, StringRef());
             } else {
                 v.writeToStream(os);
             }
@@ -63,6 +63,17 @@ namespace Utilities {
         return false;
     }
 
+    static inline void moveAllChildren(ValueTree fromParent, ValueTree& toParent, UndoManager* undoManager) {
+        Array<ValueTree> children;
+        for (const auto& child : fromParent) {
+            children.add(child);
+        }
+        fromParent.removeAllChildren(undoManager);
+
+        for (const auto& child : children) {
+            toParent.addChild(child, -1, undoManager);
+        }
+    }
 
 /**
     Utility wrapper for ValueTree::Listener's that only want to override valueTreePropertyChanged.
