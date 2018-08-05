@@ -23,14 +23,14 @@ public:
         addChildComponent(processorView);
         addChildComponent(processorSelector);
 
-        project.addChangeListener(this);
+        project.addProjectChangeListener(this);
         setBounds(0, 0, Push2Display::WIDTH, Push2Display::HEIGHT);
         processorView.setBounds(getLocalBounds());
         processorSelector.setBounds(getLocalBounds());
     }
 
     ~Push2Component() override {
-        project.removeChangeListener(this);
+        project.removeProjectChangeListener(this);
     }
 
     void masterEncoderRotated(float changeAmount) override {

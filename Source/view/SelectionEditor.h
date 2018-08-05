@@ -14,7 +14,7 @@ class SelectionEditor : public Component,
 public:
     SelectionEditor(const ValueTree &state, UndoManager &undoManager, Project& project, ProcessorGraph &audioGraphBuilder)
             : undoManager(undoManager), project(project), audioGraphBuilder(audioGraphBuilder) {
-        project.addChangeListener(this);
+        project.addProjectChangeListener(this);
         addChildComponent((processorEditor = std::make_unique<ProcessorEditor>()).get());
         Utilities::visitComponents({&undoButton, &redoButton, &createTrackButton, &addProcessorButton},
                                    [this](Component *c) { addAndMakeVisible(c); });

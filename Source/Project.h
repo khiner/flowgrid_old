@@ -4,24 +4,20 @@
 #include <push2/Push2MidiCommunicator.h>
 #include "ValueTreeItems.h"
 #include "processors/ProcessorManager.h"
+#include "Utilities.h"
 
-class Project : public ProjectChangeBroadcaster,
+class Project : public FileBasedDocument, public ProjectChangeBroadcaster,
                 private ChangeListener, private ValueTree::Listener {
 public:
-    Project(const ValueTree &v, UndoManager &undoManager, ProcessorManager& processorManager, AudioDeviceManager& deviceManager)
-            : state(v), undoManager(undoManager), processorManager(processorManager), deviceManager(deviceManager) {
-        if (!state.isValid()) {
-            state = createDefaultProject();
-        } else {
-            input = state.getChildWithName(IDs::INPUT);
-            output = state.getChildWithName(IDs::OUTPUT);
-            tracks = state.getChildWithName(IDs::TRACKS);
-            masterTrack = tracks.getChildWithName(IDs::MASTER_TRACK);
-            connections = state.getChildWithName(IDs::CONNECTIONS);
-        }
+    Project(UndoManager &undoManager, ProcessorManager& processorManager, AudioDeviceManager& deviceManager)
+            : FileBasedDocument(getFilenameSuffix(), getFilenameWildcard(), "Load a project", "Save a project"),
+              undoManager(undoManager), processorManager(processorManager), deviceManager(deviceManager) {
         deviceManager.addChangeListener(this);
-        jassert(state.hasType(IDs::PROJECT));
-        state.addListener(this);
+        undoManager.addChangeListener(this);
+        RecentlyOpenedFilesList recentFiles;
+        recentFiles.restoreFromString(getApplicationProperties().getUserSettings()->getValue("recentProjectFiles"));
+        if (recentFiles.getNumFiles() == 0 || !loadFrom(recentFiles.getFile(0), true))
+            newDocument();
     }
 
     ~Project() override {
@@ -29,24 +25,55 @@ public:
         deviceManager.removeChangeListener(this);
     }
 
-    ValueTree& getState() {
-        return state;
+    UndoManager& getUndoManager() { return undoManager; }
+
+    ValueTree& getState() { return state; }
+
+    ValueTree& getConnections() { return connections; }
+
+    ValueTree& getInput() { return input; }
+
+    ValueTree& getOutput() { return output; }
+
+    ValueTree& getTracks() { return tracks; }
+
+    int getNumTracks() { return tracks.getNumChildren(); }
+
+    ValueTree getTrack(int trackIndex) { return tracks.getChild(trackIndex); }
+
+    ValueTree& getMasterTrack() { return masterTrack; }
+
+    const ValueTree& getSelectedTrack() const { return selectedTrack; }
+
+    ValueTree& getSelectedProcessor() { return selectedProcessor; }
+
+    void setSelectedProcessor(ValueTree& processor) { processor.setProperty(IDs::selected, true, nullptr); }
+
+    bool hasConnections() { return connections.isValid() && connections.getNumChildren() > 0; }
+
+    const ValueTree getMixerChannelProcessorForTrack(const ValueTree& track) const {
+        return track.getChildWithProperty(IDs::name, MixerChannelProcessor::name());
     }
 
-    UndoManager& getUndoManager() {
-        return undoManager;
+    const ValueTree getMixerChannelProcessorForSelectedTrack() const {
+        return getMixerChannelProcessorForTrack(getSelectedTrack());
     }
 
-    ValueTree& getConnections() {
-        return connections;
+    ValueTree getAudioInputProcessorState() const {
+        return input.getChildWithProperty(IDs::name, processorManager.getAudioInputDescription().name);
     }
 
-    ValueTree& getInput() {
-        return input;
+    ValueTree getAudioOutputProcessorState() const {
+        return output.getChildWithProperty(IDs::name, processorManager.getAudioOutputDescription().name);
     }
 
-    ValueTree& getOutput() {
-        return output;
+    const bool selectedTrackHasMixerChannel() const {
+        return getMixerChannelProcessorForSelectedTrack().isValid();
+    }
+
+    int getMaxProcessorInsertIndex(const ValueTree& track) {
+        const ValueTree &mixerChannelProcessor = getMixerChannelProcessorForTrack(track);
+        return mixerChannelProcessor.isValid() ? track.indexOf(mixerChannelProcessor) : track.getNumChildren() - 1;
     }
 
     Array<ValueTree> getConnectionsForNode(AudioProcessorGraph::NodeID nodeId, bool audio=true, bool midi=true, bool incoming=true, bool outgoing=true) {
@@ -65,38 +92,6 @@ public:
         }
 
         return nodeConnections;
-    }
-
-    ValueTree& getTracks() {
-        return tracks;
-    }
-
-    int getNumTracks() {
-        return tracks.getNumChildren();
-    }
-
-    ValueTree getTrack(int trackIndex) {
-        return tracks.getChild(trackIndex);
-    }
-
-    ValueTree& getMasterTrack() {
-        return masterTrack;
-    }
-
-    const ValueTree& getSelectedTrack() const {
-        return selectedTrack;
-    }
-
-    ValueTree& getSelectedProcessor() {
-        return selectedProcessor;
-    }
-
-    void setSelectedProcessor(ValueTree& processor) {
-        processor.setProperty(IDs::selected, true, nullptr);
-    }
-
-    bool hasConnections() {
-        return connections.isValid() && connections.getNumChildren() > 0;
     }
 
     const ValueTree getConnectionMatching(const AudioProcessorGraph::Connection &connection) {
@@ -248,7 +243,7 @@ public:
 
         for (int tn = 0; tn < 1; ++tn) {
             ValueTree track = createAndAddTrack(false);
-            createAndAddProcessor(SineBank::getPluginDescription(), track, false);
+            createAndAddProcessor(SineBank::getPluginDescription(), track, -1, false);
 
 //            for (int cn = 0; cn < 3; ++cn) {
 //                ValueTree c(IDs::CLIP);
@@ -337,31 +332,6 @@ public:
         sendProcessorCreatedMessage(processor);
 
         return processor;
-    }
-
-    const ValueTree getMixerChannelProcessorForTrack(const ValueTree& track) const {
-        return track.getChildWithProperty(IDs::name, MixerChannelProcessor::name());
-    }
-
-    const ValueTree getMixerChannelProcessorForSelectedTrack() const {
-        return getMixerChannelProcessorForTrack(getSelectedTrack());
-    }
-
-    ValueTree getAudioInputProcessorState() const {
-        return input.getChildWithProperty(IDs::name, processorManager.getAudioInputDescription().name);
-    }
-
-    ValueTree getAudioOutputProcessorState() const {
-        return output.getChildWithProperty(IDs::name, processorManager.getAudioOutputDescription().name);
-    }
-
-    const bool selectedTrackHasMixerChannel() const {
-        return getMixerChannelProcessorForSelectedTrack().isValid();
-    }
-
-    int getMaxProcessorInsertIndex(const ValueTree& track) {
-        const ValueTree &mixerChannelProcessor = getMixerChannelProcessorForTrack(track);
-        return mixerChannelProcessor.isValid() ? track.indexOf(mixerChannelProcessor) : track.getNumChildren() - 1;
     }
 
     void makeSlotsValid(const ValueTree& parent, UndoManager *undoManager) {
@@ -505,6 +475,62 @@ public:
         return "";
     }
 
+    //==============================================================================================================
+    void newDocument() {
+        clear();
+        setFile({});
+        
+        state = createDefaultProject();
+        state.addListener(this);
+    }
+
+    String getDocumentTitle() override {
+        if (!getFile().exists())
+            return "Unnamed";
+
+        return getFile().getFileNameWithoutExtension();
+    }
+
+    Result loadDocument(const File &file) override {
+        clear();
+
+        state = Utilities::loadValueTree(file, true);
+        if (!state.isValid() || !state.hasType(IDs::PROJECT))
+            return Result::fail("Not a valid project file");
+        input = state.getChildWithName(IDs::INPUT);
+        output = state.getChildWithName(IDs::OUTPUT);
+        tracks = state.getChildWithName(IDs::TRACKS);
+        masterTrack = tracks.getChildWithName(IDs::MASTER_TRACK);
+        connections = state.getChildWithName(IDs::CONNECTIONS);
+        state.addListener(this);
+
+        return Result::ok();
+    }
+
+    Result saveDocument(const File &file) override {
+        if (Utilities::saveValueTree(state, file, true))
+            return Result::ok();
+
+        return Result::fail("Could not save the project file");
+    }
+
+    File getLastDocumentOpened() override {
+        RecentlyOpenedFilesList recentFiles;
+        recentFiles.restoreFromString(getApplicationProperties().getUserSettings()->getValue("recentProjectFiles"));
+
+        return recentFiles.getFile(0);
+    }
+
+    void setLastDocumentOpened(const File &file) override {
+        RecentlyOpenedFilesList recentFiles;
+        recentFiles.restoreFromString(getApplicationProperties().getUserSettings()->getValue("recentProjectFiles"));
+        recentFiles.addFile(file);
+        getApplicationProperties().getUserSettings()->setValue("recentProjectFiles", recentFiles.toString());
+    }
+
+    static const char* getFilenameSuffix() { return ".smp"; }
+    static const char* getFilenameWildcard() { return "*.smp"; }
+    
     const static int NUM_VISIBLE_TRACKS = 8;
     const static int NUM_VISIBLE_PROCESSOR_SLOTS = 10;
     // first row is reserved for audio input, last row for audio output. second-to-last is horizontal master track.
@@ -519,6 +545,11 @@ private:
 
     ProcessorManager &processorManager;
     AudioDeviceManager& deviceManager;
+    
+    void clear() {
+        state.removeAllChildren(nullptr);
+        undoManager.clearUndoHistory();
+    }
     
     // NOTE: assumes the track hasn't been added yet!
     const String makeTrackNameUnique(const String& trackName) {
@@ -543,6 +574,9 @@ private:
         if (source == &deviceManager) {
             syncInputDevicesWithDeviceManager();
             syncOutputDevicesWithDeviceManager();
+        } else if (source == &undoManager) {
+            // if there is nothing to undo, there is nothing to save!
+            setChangedFlag(undoManager.canUndo());
         }
     }
 
@@ -609,15 +643,13 @@ private:
         return !item.hasType(IDs::MASTER_TRACK);
     }
 
-    void valueTreeChildAdded(ValueTree &, ValueTree &tree) override {
-    }
+    void valueTreeChildAdded(ValueTree &, ValueTree &tree) override {}
 
     void valueTreeChildRemoved(ValueTree &exParent, ValueTree &tree, int) override {
         sendItemRemovedMessage(tree);
     }
 
-    void valueTreeChildOrderChanged(ValueTree &tree, int, int) override {
-    }
+    void valueTreeChildOrderChanged(ValueTree &tree, int, int) override {}
 
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {
         if (i == IDs::selected && tree[IDs::selected]) {

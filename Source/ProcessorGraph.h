@@ -28,7 +28,7 @@ public:
             recursivelyInitializeWithState(project.getMasterTrack(), true);
             recursivelyInitializeWithState(project.getTracks(), true);
         }
-        this->project.addChangeListener(this);
+        this->project.addProjectChangeListener(this);
         initializing = false;
     }
 
@@ -274,7 +274,7 @@ private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ProcessorGraph)
 
     inline UndoManager* getDragDependentUndoManager() {
-        return currentlyDraggingNodeId == NA_NODE_ID ? &undoManager : nullptr;
+        return (currentlyDraggingNodeId == NA_NODE_ID && !initializing) ? &undoManager : nullptr;
     }
 
     bool doDisconnectNode(NodeID nodeId, ConnectionType connectionType, bool defaults, bool custom, bool incoming, bool outgoing) {

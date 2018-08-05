@@ -28,10 +28,10 @@ public:
     /** Registers a listener to receive change callbacks from this broadcaster.
         Trying to add a listener that's already on the list will have no effect.
     */
-    void addChangeListener (ProjectChangeListener* listener) {
+    void addProjectChangeListener(ProjectChangeListener *listener) {
         // Listeners can only be safely added when the event thread is locked
         // You can  use a MessageManagerLock if you need to call this from another thread.
-        jassert (MessageManager::getInstance()->currentThreadHasLockedMessageManager());
+        jassert(MessageManager::getInstance()->currentThreadHasLockedMessageManager());
 
         changeListeners.add(listener);
     }
@@ -39,10 +39,10 @@ public:
     /** Unregisters a listener from the list.
         If the listener isn't on the list, this won't have any effect.
     */
-    void removeChangeListener (ProjectChangeListener* listener) {
+    void removeProjectChangeListener(ProjectChangeListener *listener) {
         // Listeners can only be safely removed when the event thread is locked
         // You can  use a MessageManagerLock if you need to call this from another thread.
-        jassert (MessageManager::getInstance()->currentThreadHasLockedMessageManager());
+        jassert(MessageManager::getInstance()->currentThreadHasLockedMessageManager());
 
         changeListeners.remove(listener);
     }

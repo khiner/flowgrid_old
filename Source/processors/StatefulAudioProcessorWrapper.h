@@ -347,7 +347,7 @@ public:
 
     StatefulAudioProcessorWrapper(AudioPluginInstance *processor, AudioProcessorGraph::NodeID nodeId, ValueTree state, Project& project, UndoManager &undoManager) :
             processor(processor), state(std::move(state)), project(project), undoManager(undoManager) {
-        this->state.setProperty(IDs::nodeId, int(nodeId), &undoManager);
+        this->state.setProperty(IDs::nodeId, int(nodeId), nullptr);
         processor->addListener(this);
         processor->enableAllBuses();
         updateValueTree();

@@ -12,7 +12,7 @@ File getSaveFile() {
 
 class SoundMachineApplication : public JUCEApplication, public MenuBarModel {
 public:
-    SoundMachineApplication() : project(Utilities::loadValueTree(getSaveFile(), true), undoManager, processorManager, deviceManager),
+    SoundMachineApplication() : project(undoManager, processorManager, deviceManager),
                                 applicationKeyListener(project, undoManager),
                                 processorGraph(project, undoManager, deviceManager) {}
 
@@ -32,7 +32,7 @@ public:
             MessageManager::callAsync([this, message]() { midiControlHandler.handleControlMidi(message); });
         });
 
-        graphEditorWindow = std::make_unique<MainWindow>("Graph Editor", new GraphEditor(processorGraph, project), &applicationKeyListener);
+        graphEditorWindow = std::make_unique<MainWindow>(*this, "Graph Editor", new GraphEditor(processorGraph, project), &applicationKeyListener);
         std::unique_ptr<XmlElement> savedAudioState(getApplicationProperties().getUserSettings()->getXmlValue("audioDeviceState"));
         deviceManager.initialise(256, 256, savedAudioState.get(), true);
         player.setProcessor(&processorGraph);
@@ -41,9 +41,9 @@ public:
 
         Process::makeForegroundProcess();
         auto *push2Component = new Push2Component(project, push2MidiCommunicator, processorGraph);
-        push2Window = std::make_unique<MainWindow>("Push 2 Mirror", push2Component, &applicationKeyListener);
+        push2Window = std::make_unique<MainWindow>(*this, "Push 2 Mirror", push2Component, &applicationKeyListener);
         auto *selectionEditor = new SelectionEditor(project.getState(), undoManager, project, processorGraph);
-        selectionWindow = std::make_unique<MainWindow>("Selection Editor", selectionEditor, &applicationKeyListener);
+        selectionWindow = std::make_unique<MainWindow>(*this, "Selection Editor", selectionEditor, &applicationKeyListener);
 
         pluginListComponent = std::unique_ptr<PluginListComponent>(processorManager.makePluginListComponent());
 
@@ -67,14 +67,16 @@ public:
         push2Window = nullptr;
         selectionWindow = nullptr;
         deviceManager.removeAudioCallback(&player);
-        Utilities::saveValueTree(project.getState(), getSaveFile(), true);
         setMacMainMenu(nullptr);
     }
 
     void systemRequestedQuit() override {
         // This is called when the app is being asked to quit: you can ignore this
         // request and let the app carry on running, or call quit() to allow the app to close.
-        quit();
+        if (graphEditorWindow != nullptr)
+            graphEditorWindow->tryToQuitApplication();
+        else
+            quit();
     }
 
     void anotherInstanceStarted(const String &commandLine) override {
@@ -84,8 +86,7 @@ public:
     }
 
     StringArray getMenuBarNames() override {
-        StringArray names;
-        names.add("Options");
+        StringArray names {"File", "Options"};
         return names;
     }
 
@@ -93,7 +94,22 @@ public:
         PopupMenu menu;
 
         // TODO use ApplicationCommand stuff like in plugin host example
-        if (topLevelMenuIndex == 0) { // "Options" menu
+        if (topLevelMenuIndex == 0) { // File menu
+            menu.addCommandItem(&getCommandManager(), CommandIDs::newFile);
+            menu.addCommandItem(&getCommandManager(), CommandIDs::open);
+
+            RecentlyOpenedFilesList recentFiles;
+            recentFiles.restoreFromString(getApplicationProperties().getUserSettings()->getValue("recentProjectFiles"));
+
+            PopupMenu recentFilesMenu;
+            recentFiles.createPopupMenuItems(recentFilesMenu, 100, true, true);
+            menu.addSubMenu("Open recent project", recentFilesMenu);
+
+            menu.addCommandItem(&getCommandManager(), CommandIDs::save);
+            menu.addCommandItem(&getCommandManager(), CommandIDs::saveAs);
+            menu.addSeparator();
+            menu.addCommandItem (&getCommandManager(), StandardApplicationCommandIDs::quit);
+        } else if (topLevelMenuIndex == 1) { // Options menu
             menu.addCommandItem(&getCommandManager(), CommandIDs::showAudioMidiSettings);
             menu.addItem(2, "Edit the list of available plugins");
 
@@ -112,7 +128,15 @@ public:
     }
 
     void menuItemSelected(int menuItemID, int topLevelMenuIndex) override {
-        if (topLevelMenuIndex == 0) { // "Options" menu
+        if (topLevelMenuIndex == 0) {
+            if (menuItemID >= 100 && menuItemID < 200) {
+                RecentlyOpenedFilesList recentFiles;
+                recentFiles.restoreFromString(getApplicationProperties().getUserSettings()->getValue("recentProjectFiles"));
+
+                if (project.saveIfNeededAndUserAgrees() == FileBasedDocument::savedOk)
+                    project.loadFrom(recentFiles.getFile(menuItemID - 100), true);
+            }
+        } else if (topLevelMenuIndex == 1) { // Options menu
             if (menuItemID == 1) {
                 showAudioMidiSettings();
             } else if (menuItemID == 2) {
@@ -132,47 +156,44 @@ public:
 
     void menuBarActivated(bool isActivated) override {}
 
-    void getAllCommands (Array<CommandID>& commands) override {
+    void getAllCommands(Array<CommandID>& commands) override {
         const CommandID ids[] = {
-//                CommandIDs::newFile,
-//                CommandIDs::open,
-//                CommandIDs::save,
-//                CommandIDs::saveAs,
+                CommandIDs::newFile,
+                CommandIDs::open,
+                CommandIDs::save,
+                CommandIDs::saveAs,
 //                CommandIDs::showPluginListEditor,
                 CommandIDs::showAudioMidiSettings,
 //                CommandIDs::aboutBox,
 //                CommandIDs::allWindowsForward,
         };
 
-        commands.addArray (ids, numElementsInArray(ids));
+        commands.addArray(ids, numElementsInArray(ids));
     }
 
     void getCommandInfo(const CommandID commandID, ApplicationCommandInfo& result) override {
         const String category ("General");
 
-        switch (commandID)
-        {
-//            case CommandIDs::newFile:
-//                result.setInfo ("New", "Creates a new filter graph file", category, 0);
-//                result.defaultKeypresses.add(KeyPress('n', ModifierKeys::commandModifier, 0));
-//                break;
-//
-//            case CommandIDs::open:
-//                result.setInfo ("Open...", "Opens a filter graph file", category, 0);
-//                result.defaultKeypresses.add (KeyPress ('o', ModifierKeys::commandModifier, 0));
-//                break;
-//
-//            case CommandIDs::save:
-//                result.setInfo ("Save", "Saves the current graph to a file", category, 0);
-//                result.defaultKeypresses.add (KeyPress ('s', ModifierKeys::commandModifier, 0));
-//                break;
-//
-//            case CommandIDs::saveAs:
-//                result.setInfo ("Save As...",
-//                                "Saves a copy of the current graph to a file",
-//                                category, 0);
-//                result.defaultKeypresses.add (KeyPress ('s', ModifierKeys::shiftModifier | ModifierKeys::commandModifier, 0));
-//                break;
+        switch (commandID) {
+            case CommandIDs::newFile:
+                result.setInfo("New", "Creates a new project", category, 0);
+                result.defaultKeypresses.add(KeyPress('n', ModifierKeys::commandModifier, 0));
+                break;
+
+            case CommandIDs::open:
+                result.setInfo("Open...", "Opens a project", category, 0);
+                result.defaultKeypresses.add(KeyPress('o', ModifierKeys::commandModifier, 0));
+                break;
+
+            case CommandIDs::save:
+                result.setInfo("Save", "Saves the current project", category, 0);
+                result.defaultKeypresses.add(KeyPress('s', ModifierKeys::commandModifier, 0));
+                break;
+
+            case CommandIDs::saveAs:
+                result.setInfo("Save As...", "Saves a copy of the current project", category, 0);
+                result.defaultKeypresses.add(KeyPress('s', ModifierKeys::shiftModifier | ModifierKeys::commandModifier, 0));
+                break;
 //
 //            case CommandIDs::showPluginListEditor:
 //                result.setInfo ("Edit the list of available plug-Ins...", String(), category, 0);
@@ -180,7 +201,7 @@ public:
 //                break;
 
             case CommandIDs::showAudioMidiSettings:
-                result.setInfo ("Change the audio device settings", String(), category, 0);
+                result.setInfo("Change the audio device settings", String(), category, 0);
                 result.addDefaultKeypress ('a', ModifierKeys::commandModifier);
                 break;
 
@@ -198,29 +219,26 @@ public:
         }
     }
 
-
     bool perform(const InvocationInfo& info) override {
         switch (info.commandID) {
-//            case CommandIDs::newFile:
-//                if (graphHolder != nullptr && graphHolder->graph != nullptr && graphHolder->graph->saveIfNeededAndUserAgrees() == FileBasedDocument::savedOk)
-//                    graphHolder->graph->newDocument();
-//                break;
-//
-//            case CommandIDs::open:
-//                if (graphHolder != nullptr && graphHolder->graph != nullptr && graphHolder->graph->saveIfNeededAndUserAgrees() == FileBasedDocument::savedOk)
-//                    graphHolder->graph->loadFromUserSpecifiedFile (true);
-//                break;
-//
-//            case CommandIDs::save:
-//                if (graphHolder != nullptr && graphHolder->graph != nullptr)
-//                    graphHolder->graph->save (true, true);
-//                break;
-//
-//            case CommandIDs::saveAs:
-//                if (graphHolder != nullptr && graphHolder->graph != nullptr)
-//                    graphHolder->graph->saveAs (File(), true, true, true);
-//                break;
-//
+            case CommandIDs::newFile:
+                if (project.saveIfNeededAndUserAgrees() == FileBasedDocument::savedOk)
+                    project.newDocument();
+                break;
+
+            case CommandIDs::open:
+                if (project.saveIfNeededAndUserAgrees() == FileBasedDocument::savedOk)
+                    project.loadFromUserSpecifiedFile(true);
+                break;
+
+            case CommandIDs::save:
+                project.save(true, true);
+                break;
+
+            case CommandIDs::saveAs:
+                project.saveAs(File(), true, true, true);
+                break;
+
 //            case CommandIDs::showPluginListEditor:
 //                if (pluginListWindow == nullptr)
 //                    pluginListWindow.reset (new PluginListWindow (*this, formatManager));
@@ -259,9 +277,8 @@ public:
     */
     class MainWindow : public DocumentWindow {
     public:
-        explicit MainWindow(const String &name, Component *contentComponent, KeyListener *keyListener) : DocumentWindow(name,
-                                                                                              Colours::lightgrey,
-                                                                                              DocumentWindow::allButtons) {
+        explicit MainWindow(SoundMachineApplication& owner, const String &name, Component *contentComponent, KeyListener *keyListener) :
+                DocumentWindow(name, Colours::lightgrey, DocumentWindow::allButtons), owner(owner) {
             contentComponent->setSize(1, 1); // nonzero size to avoid warnings
             setContentOwned(contentComponent, true);
             setResizable(true, true);
@@ -273,20 +290,39 @@ public:
         }
 
         void closeButtonPressed() override {
-            // This is called when the user tries to close this window. Here, we'll just
-            // ask the app to quit when this happens, but you can change this to do
-            // whatever you need.
-            JUCEApplication::getInstance()->systemRequestedQuit();
+            tryToQuitApplication();
         }
 
-        /* Note: Be careful if you override any DocumentWindow methods - the base
-           class uses a lot of them, so by overriding you might break its functionality.
-           It's best to do all your work in your content component instead, but if
-           you really have to override any DocumentWindow methods, make sure your
-           subclass also calls the superclass's method.
-        */
+        struct AsyncQuitRetrier : private Timer {
+            AsyncQuitRetrier() { startTimer (500); }
 
+            void timerCallback() override {
+                stopTimer();
+                delete this;
+
+                if (auto app = JUCEApplicationBase::getInstance())
+                    app->systemRequestedQuit();
+            }
+        };
+
+        void tryToQuitApplication() {
+            if (owner.processorGraph.closeAnyOpenPluginWindows()) {
+                // Really important thing to note here: if the last call just deleted any plugin windows,
+                // we won't exit immediately - instead we'll use our AsyncQuitRetrier to let the message
+                // loop run for another brief moment, then try again. This will give any plugins a chance
+                // to flush any GUI events that may have been in transit before the app forces them to be unloaded.
+                new AsyncQuitRetrier();
+            } else if (ModalComponentManager::getInstance()->cancelAllModalComponents()) {
+                new AsyncQuitRetrier();
+            } else if (owner.project.saveIfNeededAndUserAgrees() == FileBasedDocument::savedOk) {
+                // Some plug-ins do not want [NSApp stop] to be called
+                // before the plug-ins are deallocated.
+//                owner.releaseGraph();
+                JUCEApplication::quit();
+            }
+        }
     private:
+        SoundMachineApplication &owner;
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainWindow)
     };
 
