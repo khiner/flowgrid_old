@@ -47,6 +47,7 @@ public:
         undoManager.addChangeListener(this);
         RecentlyOpenedFilesList recentFiles;
         recentFiles.restoreFromString(getApplicationProperties().getUserSettings()->getValue("recentProjectFiles"));
+        state.addListener(this);
         if (recentFiles.getNumFiles() == 0 || !loadFrom(recentFiles.getFile(0), true))
             newDocument();
     }
@@ -223,6 +224,10 @@ public:
         if (!isItemDeletable(v))
             return;
         if (v.getParent().isValid()) {
+            if (v.hasType(IDs::TRACK)) {
+                while (v.getNumChildren() > 0)
+                    deleteItem(v.getChild(v.getNumChildren() - 1), undoable);
+            }
             if (v.hasType(IDs::PROCESSOR)) {
                 sendProcessorWillBeDestroyedMessage(v);
             }
@@ -461,7 +466,6 @@ public:
         
         createDefaultProject();
         undoManager.clearUndoHistory();
-        state.addListener(this);
     }
 
     String getDocumentTitle() override {
@@ -481,7 +485,6 @@ public:
 //        output = state.getChildWithName(IDs::OUTPUT);
         Utilities::moveAllChildren(newState.getChildWithName(IDs::TRACKS), tracks, nullptr);
         Utilities::moveAllChildren(newState.getChildWithName(IDs::CONNECTIONS), connections, nullptr);
-        state.addListener(this);
 
         undoManager.clearUndoHistory();
         return Result::ok();
@@ -530,11 +533,11 @@ private:
     
     void clear() {
         sendItemSelectedMessage({});
-        state.removeListener(this);
 //        input.removeAllChildren(nullptr);
 //        output.removeAllChildren(nullptr);
         connections.removeAllChildren(nullptr);
-        tracks.removeAllChildren(nullptr);
+        while (tracks.getNumChildren() > 0)
+            deleteItem(tracks.getChild(tracks.getNumChildren() - 1), false);
         undoManager.clearUndoHistory();
     }
     

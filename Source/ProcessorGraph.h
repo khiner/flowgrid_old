@@ -600,8 +600,6 @@ private:
                     }
                 }
             }
-        } else if (child.hasType(IDs::TRACK)) {
-            // TODO remove all of its processors
         }
     }
 
