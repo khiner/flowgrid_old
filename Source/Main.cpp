@@ -277,7 +277,7 @@ public:
         This class implements the desktop window that contains an instance of
         our MainContentComponent class.
     */
-    class MainWindow : public DocumentWindow {
+    class MainWindow : public DocumentWindow, public FileDragAndDropTarget {
     public:
         explicit MainWindow(SoundMachineApplication& owner, const String &name, Component *contentComponent, KeyListener *keyListener) :
                 DocumentWindow(name, Colours::lightgrey, DocumentWindow::allButtons), owner(owner) {
@@ -323,6 +323,22 @@ public:
                 JUCEApplication::quit();
             }
         }
+
+        bool isInterestedInFileDrag(const StringArray& files) override {
+            return true;
+        }
+
+        void filesDropped(const StringArray& files, int x, int y) override {
+            if (files.size() == 1 && File(files[0]).hasFileExtension(Project::getFilenameSuffix())) {
+                if (owner.project.saveIfNeededAndUserAgrees() == FileBasedDocument::savedOk)
+                    owner.project.loadFrom(File(files[0]), true);
+            }
+        }
+
+        void fileDragEnter(const StringArray& files, int, int) override {}
+        void fileDragMove(const StringArray& files, int, int) override {}
+        void fileDragExit(const StringArray& files) override {}
+
     private:
         SoundMachineApplication &owner;
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainWindow)
