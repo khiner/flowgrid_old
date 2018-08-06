@@ -294,10 +294,6 @@ private:
             if (auto* enabledMidiOutput = deviceManager.getEnabledMidiOutput(deviceName))
                 midiOutputProcessor->setMidiOutput(enabledMidiOutput);
         }
-        const Array<ValueTree> &nodeConnections = project.getConnectionsForNode(newNode->nodeID);
-        for (auto& connection : nodeConnections) {
-            valueTreeChildAdded(project.getConnections(), connection);
-        }
     }
 
     struct NeighborNodes {
