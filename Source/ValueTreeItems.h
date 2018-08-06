@@ -13,8 +13,6 @@ public:
     virtual void processorCreated(const ValueTree&) {};
     virtual void processorWillBeDestroyed(const ValueTree &) {};
     virtual void processorHasBeenDestroyed(const ValueTree &) {};
-    virtual void processorWillBeMoved(const ValueTree &, const ValueTree&) {};
-    virtual void processorHasMoved(const ValueTree &, const ValueTree&) {};
     virtual ~ProjectChangeListener() = default;
 };
 
@@ -88,17 +86,6 @@ public:
         jassert(MessageManager::getInstance()->isThisTheMessageThread());
         changeListeners.call(&ProjectChangeListener::processorHasBeenDestroyed, item);
     }
-
-    virtual void sendProcessorWillBeMovedMessage(const ValueTree& item, const ValueTree& newParent) {
-        jassert(MessageManager::getInstance()->isThisTheMessageThread());
-        changeListeners.call(&ProjectChangeListener::processorWillBeMoved, item, newParent);
-    }
-
-    virtual void sendProcessorHasMovedMessage(const ValueTree& item, const ValueTree& newParent) {
-        jassert(MessageManager::getInstance()->isThisTheMessageThread());
-        changeListeners.call(&ProjectChangeListener::processorHasMoved, item, newParent);
-    }
-
 private:
     ListenerList <ProjectChangeListener> changeListeners;
 
@@ -108,23 +95,6 @@ private:
 namespace Helpers {
     inline void moveSingleItem(ValueTree &item, ValueTree newParent, int insertIndex, UndoManager *undoManager) {
         newParent.moveChildFromParent(item.getParent(), item.getParent().indexOf(item), insertIndex, undoManager);
-    }
-
-    inline void moveItems(ProjectChangeBroadcaster *cb, const OwnedArray<ValueTree> &items,
-                          const ValueTree &newParent, int insertIndex, UndoManager *undoManager) {
-        if (items.isEmpty())
-            return;
-
-        for (int i = items.size(); --i >= 0;) {
-            ValueTree &item = *items.getUnchecked(i);
-            if (item.hasType(IDs::PROCESSOR)) {
-                cb->sendProcessorWillBeMovedMessage(item, newParent);
-                moveSingleItem(item, newParent, insertIndex, undoManager);
-                cb->sendProcessorHasMovedMessage(item, newParent);
-            } else {
-                moveSingleItem(item, newParent, insertIndex, undoManager);
-            }
-        }
     }
 }
 

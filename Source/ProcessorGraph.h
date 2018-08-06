@@ -143,11 +143,15 @@ public:
         if (fromSlot == toSlot && processorState.getParent() == toTrack)
             return;
 
-        processorWillBeMoved(processorState, toTrack);
+        removeDefaultConnections(processorState);
+
         processorState.setProperty(IDs::processorSlot, toSlot, getDragDependentUndoManager());
         const int insertIndex = project.getParentIndexForProcessor(toTrack, processorState, getDragDependentUndoManager());
         Helpers::moveSingleItem(processorState, toTrack, insertIndex, getDragDependentUndoManager());
-        processorHasMoved(processorState, toTrack);
+
+        addDefaultConnections(processorState);
+        project.makeSlotsValid(toTrack, getDragDependentUndoManager());
+        resetDefaultExternalInputConnections();
     }
 
     bool canConnectUi(const Connection& c) const {
@@ -640,16 +644,6 @@ private:
         resetDefaultExternalInputConnections();
     };
 
-    void processorWillBeMoved(const ValueTree& processor, const ValueTree& newParent) override {
-        removeDefaultConnections(processor);
-    };
-
-    void processorHasMoved(const ValueTree& processor, const ValueTree& newParent) override {
-        addDefaultConnections(processor);
-        project.makeSlotsValid(newParent, getDragDependentUndoManager());
-        resetDefaultExternalInputConnections();
-    };
-    
     void itemSelected(const ValueTree&) override {};
 
     void itemRemoved(const ValueTree&) override {};
