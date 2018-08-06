@@ -14,14 +14,12 @@ public:
               undoManager(undoManager), processorManager(processorManager), deviceManager(deviceManager) {
         state = ValueTree(IDs::PROJECT);
         state.setProperty(IDs::name, "My First Project", nullptr);
-        Helpers::createUuidProperty(state);
         input = ValueTree(IDs::INPUT);
         state.addChild(input, -1, nullptr);
         output = ValueTree(IDs::OUTPUT);
         state.addChild(output, -1, nullptr);
         tracks = ValueTree(IDs::TRACKS);
         tracks.setProperty(IDs::name, "Tracks", nullptr);
-        Helpers::createUuidProperty(tracks);
         state.addChild(tracks, -1, nullptr);
         connections = ValueTree(IDs::CONNECTIONS);
         state.addChild(connections, -1, nullptr);
@@ -29,7 +27,6 @@ public:
         {
             PluginDescription &audioInputDescription = processorManager.getAudioInputDescription();
             ValueTree inputProcessor(IDs::PROCESSOR);
-            Helpers::createUuidProperty(inputProcessor);
             inputProcessor.setProperty(IDs::id, audioInputDescription.createIdentifierString(), nullptr);
             inputProcessor.setProperty(IDs::name, audioInputDescription.name, nullptr);
             input.addChild(inputProcessor, -1, nullptr);
@@ -37,7 +34,6 @@ public:
         {
             PluginDescription &audioOutputDescription = processorManager.getAudioOutputDescription();
             ValueTree outputProcessor(IDs::PROCESSOR);
-            Helpers::createUuidProperty(outputProcessor);
             outputProcessor.setProperty(IDs::id, audioOutputDescription.createIdentifierString(), nullptr);
             outputProcessor.setProperty(IDs::name, audioOutputDescription.name, nullptr);
             output.addChild(outputProcessor, -1, nullptr);
@@ -243,7 +239,6 @@ public:
         ValueTree masterTrack(IDs::MASTER_TRACK);
         masterTrack.setProperty(IDs::name, "Master", nullptr);
         masterTrack.setProperty(IDs::colour, Colours::darkslateblue.toString(), nullptr);
-        Helpers::createUuidProperty(masterTrack);
         tracks.addChild(masterTrack, -1, nullptr);
 
         ValueTree masterMixer = createAndAddProcessor(MixerChannelProcessor::getPluginDescription(), masterTrack, -1, false);
@@ -257,7 +252,6 @@ public:
         int numTracks = getNumTracks() - 1; // minus 1 because of master track
 
         ValueTree track(IDs::TRACK);
-        Helpers::createUuidProperty(track);
         track.setProperty(IDs::name, trackName.isEmpty() ? "Track " + String(numTracks + 1) : makeTrackNameUnique(trackName), nullptr);
         track.setProperty(IDs::colour, !colour.isEmpty() ? colour : Colour::fromHSV((1.0f / 8.0f) * numTracks, 0.65f, 0.65f, 1.0f).toString(), nullptr);
         const ValueTree &masterTrack = tracks.getChildWithName(IDs::MASTER_TRACK);
@@ -293,7 +287,6 @@ public:
         }
 
         ValueTree processor(IDs::PROCESSOR);
-        Helpers::createUuidProperty(processor);
         processor.setProperty(IDs::id, description.createIdentifierString(), nullptr);
         processor.setProperty(IDs::name, description.name, nullptr);
 
@@ -587,7 +580,6 @@ private:
             if (deviceManager.isMidiInputEnabled(deviceName) &&
                 !input.getChildWithProperty(IDs::deviceName, deviceName).isValid()) {
                 ValueTree midiInputProcessor(IDs::PROCESSOR);
-                Helpers::createUuidProperty(midiInputProcessor);
                 midiInputProcessor.setProperty(IDs::id, MidiInputProcessor::getPluginDescription().createIdentifierString(), nullptr);
                 midiInputProcessor.setProperty(IDs::name, MidiInputProcessor::name(), nullptr);
                 midiInputProcessor.setProperty(IDs::deviceName, deviceName, nullptr);
@@ -613,7 +605,6 @@ private:
             if (deviceManager.isMidiOutputEnabled(deviceName) &&
                 !output.getChildWithProperty(IDs::deviceName, deviceName).isValid()) {
                 ValueTree midiOutputProcessor(IDs::PROCESSOR);
-                Helpers::createUuidProperty(midiOutputProcessor);
                 midiOutputProcessor.setProperty(IDs::id, MidiOutputProcessor::getPluginDescription().createIdentifierString(), nullptr);
                 midiOutputProcessor.setProperty(IDs::name, MidiOutputProcessor::name(), nullptr);
                 midiOutputProcessor.setProperty(IDs::deviceName, deviceName, nullptr);

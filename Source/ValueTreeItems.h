@@ -126,12 +126,5 @@ namespace Helpers {
             }
         }
     }
-
-    inline ValueTree createUuidProperty(ValueTree &v) {
-        if (!v.hasProperty(IDs::uuid))
-            v.setProperty(IDs::uuid, Uuid().toString(), nullptr);
-
-        return v;
-    }
 }
 
