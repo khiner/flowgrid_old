@@ -43,15 +43,17 @@ public:
         undoManager.addChangeListener(this);
         RecentlyOpenedFilesList recentFiles;
         state.addListener(this);
-
-        const auto &lastOpenedProjectFile = getLastDocumentOpened();
-        if (!lastOpenedProjectFile.exists() || !loadFrom(lastOpenedProjectFile, true))
-            newDocument();
     }
 
     ~Project() override {
         state.removeListener(this);
         deviceManager.removeChangeListener(this);
+    }
+
+    void initialise() {
+        const auto &lastOpenedProjectFile = getLastDocumentOpened();
+        if (!(lastOpenedProjectFile.exists() && loadFrom(lastOpenedProjectFile, true)))
+            newDocument();
     }
 
     UndoManager& getUndoManager() { return undoManager; }

@@ -20,7 +20,7 @@ public:
             nameLabel.setJustification(Justification::centred);
             addAndMakeVisible(nameLabel);
         }
-        
+
         for (auto child : state) {
             if (child.hasType(IDs::INPUT_CHANNELS) || child.hasType(IDs::OUTPUT_CHANNELS)) {
                 for (auto channel : child) {

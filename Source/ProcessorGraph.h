@@ -17,17 +17,7 @@ public:
         project.getState().addListener(this);
         addProcessor(project.getAudioInputProcessorState());
         addProcessor(project.getAudioOutputProcessorState());
-        recursivelyInitializeWithState(project.getTracks());
-
-        if (project.hasConnections()) {
-            for (auto connection : project.getConnections()) {
-                valueTreeChildAdded(project.getConnections(), connection);
-            }
-        } else {
-            recursivelyInitializeWithState(project.getTracks(), true);
-        }
         this->project.addProjectChangeListener(this);
-        initializing = false;
     }
 
     void audioDeviceManagerInitialized() {
@@ -267,13 +257,12 @@ private:
     Array<int> defaultAudioConnectionChannels {0, 1};
     Array<int> defaultMidiConnectionChannels {midiChannelIndex};
 
-    bool initializing { true };
     bool isMoving { false };
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ProcessorGraph)
 
     inline UndoManager* getDragDependentUndoManager() {
-        return (currentlyDraggingNodeId == NA_NODE_ID && !initializing) ? &undoManager : nullptr;
+        return currentlyDraggingNodeId == NA_NODE_ID ? &undoManager : nullptr;
     }
 
     bool doDisconnectNode(NodeID nodeId, ConnectionType connectionType, bool defaults, bool custom, bool incoming, bool outgoing) {
@@ -285,20 +274,6 @@ private:
             }
 
         return anyRemoved;
-    }
-
-    void recursivelyInitializeWithState(const ValueTree &state, bool connections=false) {
-        if (state.hasType(IDs::PROCESSOR)) {
-            if (connections) {
-                return addDefaultConnections(state);
-            } else {
-                addProcessor(state);
-                return;
-            }
-        }
-        for (const ValueTree& child : state) {
-            recursivelyInitializeWithState(child, connections);
-        }
     }
 
     void addProcessor(const ValueTree &processorState) {
@@ -321,12 +296,9 @@ private:
             if (auto* enabledMidiOutput = deviceManager.getEnabledMidiOutput(deviceName))
                 midiOutputProcessor->setMidiOutput(enabledMidiOutput);
         }
-
-        if (!initializing) {
-            const Array<ValueTree> &nodeConnections = project.getConnectionsForNode(newNode->nodeID);
-            for (auto& connection : nodeConnections) {
-                valueTreeChildAdded(project.getConnections(), connection);
-            }
+        const Array<ValueTree> &nodeConnections = project.getConnectionsForNode(newNode->nodeID);
+        for (auto& connection : nodeConnections) {
+            valueTreeChildAdded(project.getConnections(), connection);
         }
     }
 
@@ -527,6 +499,16 @@ private:
             } else if (property == IDs::numInputChannels || property == IDs::numOutputChannels) {
                 removeIllegalConnections();
             }
+        }
+    }
+
+    void recursivelyInitializeWithState(const ValueTree &state) {
+        if (state.hasType(IDs::PROCESSOR)) {
+            addProcessor(state);
+            return;
+        }
+        for (const ValueTree& child : state) {
+            recursivelyInitializeWithState(child);
         }
     }
 

@@ -58,9 +58,11 @@ public:
                                Push2Display::WIDTH, Push2Display::HEIGHT + graphEditorWindow->getTitleBarHeight());
         push2Window->setResizable(false, false);
         midiControlHandler.setPush2Listener(push2Component);
-        project.sendItemSelectedMessage(project.findFirstSelectedItem());
 
         setMacMainMenu(this);
+
+        project.initialise();
+        project.sendItemSelectedMessage(project.findFirstSelectedItem());
     }
 
     void shutdown() override {

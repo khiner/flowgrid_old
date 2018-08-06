@@ -19,13 +19,6 @@ public:
         addAndMakeVisible(*(audioOutputProcessor = std::make_unique<GraphEditorProcessor>(project.getAudioOutputProcessorState(), *this, graph, true)));
         addAndMakeVisible(*(tracks = std::make_unique<GraphEditorTracks>(project, project.getTracks(), *this, graph)));
         addAndMakeVisible(*(connectors = std::make_unique<GraphEditorConnectors>(project.getConnections(), *this, *this, graph)));
-        
-        for (auto inputProcessor : project.getInput()) {
-            valueTreeChildAdded(project.getInput(), inputProcessor);
-        }
-        for (auto outputProcessor : project.getOutput()) {
-            valueTreeChildAdded(project.getOutput(), outputProcessor);
-        }
     }
 
     ~GraphEditorPanel() override {
