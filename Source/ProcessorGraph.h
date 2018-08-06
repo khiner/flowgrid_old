@@ -15,8 +15,6 @@ public:
         enableAllBuses();
 
         project.getState().addListener(this);
-        addProcessor(project.getAudioInputProcessorState());
-        addProcessor(project.getAudioOutputProcessorState());
         this->project.addProjectChangeListener(this);
     }
 

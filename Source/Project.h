@@ -24,21 +24,6 @@ public:
         connections = ValueTree(IDs::CONNECTIONS);
         state.addChild(connections, -1, nullptr);
 
-        {
-            PluginDescription &audioInputDescription = processorManager.getAudioInputDescription();
-            ValueTree inputProcessor(IDs::PROCESSOR);
-            inputProcessor.setProperty(IDs::id, audioInputDescription.createIdentifierString(), nullptr);
-            inputProcessor.setProperty(IDs::name, audioInputDescription.name, nullptr);
-            input.addChild(inputProcessor, -1, nullptr);
-        }
-        {
-            PluginDescription &audioOutputDescription = processorManager.getAudioOutputDescription();
-            ValueTree outputProcessor(IDs::PROCESSOR);
-            outputProcessor.setProperty(IDs::id, audioOutputDescription.createIdentifierString(), nullptr);
-            outputProcessor.setProperty(IDs::name, audioOutputDescription.name, nullptr);
-            output.addChild(outputProcessor, -1, nullptr);
-        }
-
         deviceManager.addChangeListener(this);
         undoManager.addChangeListener(this);
         RecentlyOpenedFilesList recentFiles;
@@ -79,8 +64,6 @@ public:
     ValueTree& getSelectedProcessor() { return selectedProcessor; }
 
     void setSelectedProcessor(ValueTree& processor) { processor.setProperty(IDs::selected, true, nullptr); }
-
-    bool hasConnections() { return connections.isValid() && connections.getNumChildren() > 0; }
 
     const ValueTree getMixerChannelProcessorForTrack(const ValueTree& track) const {
         return track.getChildWithProperty(IDs::name, MixerChannelProcessor::name());
@@ -238,6 +221,8 @@ public:
     }
 
     void createDefaultProject() {
+        createAudioIoProcessors();
+
         ValueTree masterTrack(IDs::MASTER_TRACK);
         masterTrack.setProperty(IDs::name, "Master", nullptr);
         masterTrack.setProperty(IDs::colour, Colours::darkslateblue.toString(), nullptr);
@@ -480,6 +465,7 @@ public:
 //        input = state.getChildWithName(IDs::INPUT);
 //        output = state.getChildWithName(IDs::OUTPUT);
 
+        createAudioIoProcessors();
         Utilities::moveAllChildren(newState.getChildWithName(IDs::TRACKS), tracks, nullptr);
         Utilities::moveAllChildren(newState.getChildWithName(IDs::CONNECTIONS), connections, nullptr);
 
@@ -528,12 +514,29 @@ private:
     
     void clear() {
         sendItemSelectedMessage({});
-//        input.removeAllChildren(nullptr);
-//        output.removeAllChildren(nullptr);
+        input.removeAllChildren(nullptr);
+        output.removeAllChildren(nullptr);
         while (tracks.getNumChildren() > 0)
             deleteItem(tracks.getChild(tracks.getNumChildren() - 1), false);
         connections.removeAllChildren(nullptr);
         undoManager.clearUndoHistory();
+    }
+
+    void createAudioIoProcessors() {
+        {
+            PluginDescription &audioInputDescription = processorManager.getAudioInputDescription();
+            ValueTree inputProcessor(IDs::PROCESSOR);
+            inputProcessor.setProperty(IDs::id, audioInputDescription.createIdentifierString(), nullptr);
+            inputProcessor.setProperty(IDs::name, audioInputDescription.name, nullptr);
+            input.addChild(inputProcessor, -1, nullptr);
+        }
+        {
+            PluginDescription &audioOutputDescription = processorManager.getAudioOutputDescription();
+            ValueTree outputProcessor(IDs::PROCESSOR);
+            outputProcessor.setProperty(IDs::id, audioOutputDescription.createIdentifierString(), nullptr);
+            outputProcessor.setProperty(IDs::name, audioOutputDescription.name, nullptr);
+            output.addChild(outputProcessor, -1, nullptr);
+        }
     }
     
     // NOTE: assumes the track hasn't been added yet!
