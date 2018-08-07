@@ -24,7 +24,6 @@ public:
         connections = ValueTree(IDs::CONNECTIONS);
         state.addChild(connections, -1, nullptr);
 
-        deviceManager.addChangeListener(this);
         undoManager.addChangeListener(this);
         RecentlyOpenedFilesList recentFiles;
         state.addListener(this);
@@ -39,6 +38,9 @@ public:
         const auto &lastOpenedProjectFile = getLastDocumentOpened();
         if (!(lastOpenedProjectFile.exists() && loadFrom(lastOpenedProjectFile, true)))
             newDocument();
+        deviceManager.addChangeListener(this);
+        changeListenerCallback(&deviceManager);
+        undoManager.clearUndoHistory();
     }
 
     UndoManager& getUndoManager() { return undoManager; }
@@ -473,10 +475,10 @@ public:
         const ValueTree& newState = Utilities::loadValueTree(file, true);
         if (!newState.isValid() || !newState.hasType(IDs::PROJECT))
             return Result::fail("Not a valid project file");
-//        input = state.getChildWithName(IDs::INPUT);
-//        output = state.getChildWithName(IDs::OUTPUT);
-
-        createAudioIoProcessors();
+        input.setProperty(IDs::deviceName, newState.getChildWithName(IDs::INPUT)[IDs::deviceName], nullptr);
+        output.setProperty(IDs::deviceName, newState.getChildWithName(IDs::OUTPUT)[IDs::deviceName], nullptr);
+        Utilities::moveAllChildren(newState.getChildWithName(IDs::INPUT), input, nullptr);
+        Utilities::moveAllChildren(newState.getChildWithName(IDs::OUTPUT), output, nullptr);
         Utilities::moveAllChildren(newState.getChildWithName(IDs::TRACKS), tracks, nullptr);
         Utilities::moveAllChildren(newState.getChildWithName(IDs::CONNECTIONS), connections, nullptr);
 
@@ -573,6 +575,12 @@ private:
         if (source == &deviceManager) {
             syncInputDevicesWithDeviceManager();
             syncOutputDevicesWithDeviceManager();
+            AudioDeviceManager::AudioDeviceSetup config;
+            deviceManager.getAudioDeviceSetup(config);
+            if (!input.hasProperty(IDs::deviceName) || input[IDs::deviceName] != config.inputDeviceName)
+                input.setProperty(IDs::deviceName, config.inputDeviceName, &undoManager);
+            if (!output.hasProperty(IDs::deviceName) || output[IDs::deviceName] != config.outputDeviceName)
+                output.setProperty(IDs::deviceName, config.outputDeviceName, &undoManager);
         } else if (source == &undoManager) {
             // if there is nothing to undo, there is nothing to save!
             setChangedFlag(undoManager.canUndo());
@@ -653,6 +661,17 @@ private:
         if (i == IDs::selected && tree[IDs::selected]) {
             deselectAllItemsExcept(state, tree);
             sendItemSelectedMessage(tree);
+        } else if (i == IDs::deviceName && (tree == input || tree == output)) {
+            AudioDeviceManager::AudioDeviceSetup config;
+            deviceManager.getAudioDeviceSetup(config);
+            const String &deviceName = tree[IDs::deviceName];
+
+            if (tree == input) {
+                config.inputDeviceName = deviceName;
+            } else if (tree == output) {
+                config.outputDeviceName = deviceName;
+            }
+            deviceManager.setAudioDeviceSetup(config, true);
         }
     }
 
