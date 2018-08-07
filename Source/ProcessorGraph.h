@@ -453,14 +453,16 @@ private:
         return project.getAudioOutputProcessorState();
     }
 
-    inline bool isProcessorAProducer(const ValueTree &processor, ConnectionType connectionType) const {
-        return (connectionType == audio && int(processor[IDs::numOutputChannels]) > 0) ||
-               (connectionType == midi && processor[IDs::producesMidi]);
+    inline bool isProcessorAProducer(const ValueTree &processorState, ConnectionType connectionType) const {
+        auto *processor = getProcessorWrapperForState(processorState)->processor;
+        return (connectionType == audio && processor->getTotalNumOutputChannels() > 0) ||
+               (connectionType == midi && processor->producesMidi());
     }
 
-    inline bool isProcessorAnEffect(const ValueTree &processor, ConnectionType connectionType) const {
-        return (connectionType == audio && int(processor[IDs::numInputChannels]) > 0) ||
-               (connectionType == midi && processor[IDs::acceptsMidi]);
+    inline bool isProcessorAnEffect(const ValueTree &processorState, ConnectionType connectionType) const {
+        auto *processor = getProcessorWrapperForState(processorState)->processor;
+        return (connectionType == audio && processor->getTotalNumInputChannels() > 0) ||
+               (connectionType == midi && processor->acceptsMidi());
     }
 
     inline bool canProcessorDefaultConnectTo(const ValueTree &parent, const ValueTree &processor,
@@ -469,9 +471,7 @@ private:
         if (!otherProcessor.hasType(IDs::PROCESSOR) || processor == otherProcessor)
             return false;
 
-        bool canConnectAudio = int(processor[IDs::numOutputChannels]) > 0 && int(otherProcessor[IDs::numInputChannels]) > 0;
-        bool canConnectMidi = processor[IDs::producesMidi] && otherProcessor[IDs::acceptsMidi];
-        return (connectionType == audio && canConnectAudio) || (connectionType == midi && canConnectMidi);
+        return isProcessorAProducer(processor, connectionType) && isProcessorAnEffect(otherProcessor, connectionType);
     }
 
     const ValueTree getFirstMasterTrackProcessorWithInputs(ConnectionType connectionType, const ValueTree& excluding={}) const {
@@ -485,13 +485,10 @@ private:
 
     void valueTreePropertyChanged(ValueTree& tree, const Identifier& property) override {
         if (tree.hasType(IDs::PROCESSOR)) {
-            if (property == IDs::processorSlot) {
-            } else if (property == IDs::bypassed) {
+            if (property == IDs::bypassed) {
                 if (auto node = getNodeForState(tree)) {
                     node->setBypassed(tree[IDs::bypassed]);
                 }
-            } else if (property == IDs::numInputChannels || property == IDs::numOutputChannels) {
-                removeIllegalConnections();
             }
         }
     }

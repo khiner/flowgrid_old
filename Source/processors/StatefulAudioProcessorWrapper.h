@@ -378,11 +378,6 @@ public:
                 automatableParameters.add(parameterWrapper);
         }
         audioProcessorChanged(processor);
-        // TODO this bit is hacky.
-        // If we are loading from state, there could have been no propertyChanged messages for this property after
-        // the childAdded message. Since the UI can be created from state before the processor node is created,
-        // we may need to send a message that the UI will receive that will make it update components to find the new node.
-        state.sendPropertyChangeMessage(IDs::numInputChannels);
         // Also a little hacky, but maybe the best we can do.
         // If we're loading from state, bypass state needs to make its way to the processor graph to actually mute.
         state.sendPropertyChangeMessage(IDs::bypassed);
@@ -465,8 +460,6 @@ private:
             oldOutputs.add(channel[IDs::name]);
         }
 
-        state.setProperty(IDs::numInputChannels, processor->getTotalNumInputChannels(), nullptr);
-        state.setProperty(IDs::numOutputChannels, processor->getTotalNumOutputChannels(), nullptr);
         state.setProperty(IDs::acceptsMidi, processor->acceptsMidi(), nullptr);
         state.setProperty(IDs::producesMidi, processor->producesMidi(), nullptr);
 

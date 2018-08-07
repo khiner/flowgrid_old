@@ -216,18 +216,7 @@ private:
         return nullptr;
     }
 
-    void valueTreePropertyChanged(ValueTree& tree, const Identifier& i) override {
-        if (tree.hasType(IDs::PROCESSOR)) {
-            if (i == IDs::processorSlot || i == IDs::selected ||
-                i == IDs::numInputChannels || i == IDs::numOutputChannels ||
-                i == IDs::acceptsMidi || i == IDs::producesMidi) {
-                updateComponents();
-                if (tree.getParent() == project.getInput() || tree.getParent() == project.getOutput()) {
-                    resized();
-                }
-            }
-        }
-    }
+    void valueTreePropertyChanged(ValueTree& tree, const Identifier& i) override {}
 
     void valueTreeChildAdded(ValueTree& parent, ValueTree& child) override {
         if (child.hasType(IDs::PROCESSOR)) {
@@ -247,8 +236,8 @@ private:
                 addAndMakeVisible(*(audioOutputProcessor = std::make_unique<GraphEditorProcessor>(child, *this, graph, true)));
             }
             updateComponents();
-        } else if (child.hasType(IDs::CONNECTION)) {
-            connectors->updateConnectors();
+        } else if (child.hasType(IDs::CONNECTION) || child.hasType(IDs::CHANNEL)) {
+            resized();
         }
     }
 
@@ -263,8 +252,8 @@ private:
             } else {
                 updateComponents();
             }
-        } else if (child.hasType(IDs::CONNECTION)) {
-            connectors->updateConnectors();
+        } else if (child.hasType(IDs::CONNECTION) || child.hasType(IDs::CHANNEL)) {
+            resized();
         }
     }
 

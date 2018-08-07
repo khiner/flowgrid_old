@@ -45,11 +45,11 @@ public:
     }
 
     int getNumInputChannels() const {
-        return state[IDs::numInputChannels];
+        return state.getChildWithName(IDs::INPUT_CHANNELS).getNumChildren();
     }
 
     int getNumOutputChannels() const {
-        return state[IDs::numOutputChannels];
+        return state.getChildWithName(IDs::OUTPUT_CHANNELS).getNumChildren();
     }
 
     bool acceptsMidi() const {
@@ -113,10 +113,6 @@ public:
                 processor->getOffsetInBusBufferForAbsoluteChannelIndex(isInput, channelIndex, busIdx);
 
                 int total = isInput ? getNumInputChannels() : getNumOutputChannels();
-                if (isInput && acceptsMidi())
-                    total += 1;
-                else if (!isInput && producesMidi())
-                    total += 1;
 
                 const int index = pin->isMidi() ? (total - 1) : channelIndex;
 
@@ -286,9 +282,9 @@ private:
 
     Rectangle<int> getBoxBounds() {
         auto r = getLocalBounds().reduced(1);
-        if (getNumInputChannels() > 0 || acceptsMidi())
+        if (getNumInputChannels() > 0)
             r.setTop(pinSize);
-        if (getNumOutputChannels() > 0 || producesMidi())
+        if (getNumOutputChannels() > 0)
             r.setBottom(getHeight() - pinSize);
         return r;
     }

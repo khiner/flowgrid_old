@@ -34,8 +34,6 @@ namespace IDs
     DECLARE_ID(bypassed)
     DECLARE_ID(acceptsMidi)
     DECLARE_ID(producesMidi)
-    DECLARE_ID(numInputChannels)
-    DECLARE_ID(numOutputChannels)
     DECLARE_ID(deviceName)
 
     DECLARE_ID(INPUT_CHANNELS)
