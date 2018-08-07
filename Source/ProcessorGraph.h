@@ -533,6 +533,8 @@ private:
             }
         } else if (child.hasType(IDs::TRACK) || child.hasType(IDs::MASTER_TRACK)) {
             recursivelyInitializeWithState(child);
+        } else if (child.hasType(IDs::CHANNEL)) {
+            updateIoChannelEnabled(child, true);
         }
     }
 
@@ -575,6 +577,8 @@ private:
                     }
                 }
             }
+        } else if (child.hasType(IDs::CHANNEL)) {
+            updateIoChannelEnabled(child, false);
         }
     }
 
@@ -620,4 +624,26 @@ private:
     void itemSelected(const ValueTree&) override {};
 
     void itemRemoved(const ValueTree&) override {};
+
+    void updateIoChannelEnabled(const ValueTree& channel, bool enabled) {
+        String processorName = channel.getParent().getParent()[IDs::name];
+        bool isInput;
+        if (processorName == "Audio Input" && channel.getParent().hasType(IDs::OUTPUT_CHANNELS))
+            isInput = true;
+        else if (processorName == "Audio Output" && channel.getParent().hasType(IDs::INPUT_CHANNELS))
+            isInput = false;
+        else
+            return;
+        if (auto* audioDevice = deviceManager.getCurrentAudioDevice()) {
+            AudioDeviceManager::AudioDeviceSetup config;
+            deviceManager.getAudioDeviceSetup(config);
+            auto &channels = isInput ? config.inputChannels : config.outputChannels;
+            const auto &channelNames = isInput ? audioDevice->getInputChannelNames() : audioDevice->getOutputChannelNames();
+            auto channelIndex = channelNames.indexOf(channel[IDs::name].toString());
+            if (channelIndex != -1 && ((enabled && !channels[channelIndex]) || (!enabled && channels[channelIndex]))) {
+                channels.setBit(channelIndex, enabled);
+                deviceManager.setAudioDeviceSetup(config, true);
+            }
+        }
+    }
 };

@@ -350,9 +350,17 @@ public:
     StatefulAudioProcessorWrapper(AudioPluginInstance *processor, AudioProcessorGraph::NodeID nodeId, ValueTree state, Project& project, UndoManager &undoManager) :
             processor(processor), state(std::move(state)), project(project), undoManager(undoManager) {
         this->state.setProperty(IDs::nodeId, int(nodeId), nullptr);
-        processor->addListener(this);
         processor->enableAllBuses();
+        if (auto* ioProcessor = dynamic_cast<AudioProcessorGraph::AudioGraphIOProcessor*> (processor)) {
+            if (ioProcessor->isInput()) {
+                processor->setPlayConfigDetails(0, processor->getTotalNumOutputChannels(), processor->getSampleRate(), processor->getBlockSize());
+            } else if (ioProcessor->isOutput()) {
+                processor->setPlayConfigDetails(processor->getTotalNumInputChannels(), 0, processor->getSampleRate(), processor->getBlockSize());
+            }
+        }
+
         updateValueTree();
+        processor->addListener(this);
         startTimerHz(10);
     }
 
@@ -460,8 +468,10 @@ private:
             oldOutputs.add(channel[IDs::name]);
         }
 
-        state.setProperty(IDs::acceptsMidi, processor->acceptsMidi(), nullptr);
-        state.setProperty(IDs::producesMidi, processor->producesMidi(), nullptr);
+        if (processor->acceptsMidi())
+            state.setProperty(IDs::acceptsMidi, true, nullptr);
+        if (processor->producesMidi())
+            state.setProperty(IDs::producesMidi, true, nullptr);
 
         updateChannels(oldInputs, newInputs, inputChannels, true);
         updateChannels(oldOutputs, newOutputs, outputChannels, false);
@@ -484,7 +494,7 @@ private:
                 if (!oldChannels.contains(newChannel)) {
                     ValueTree channelState(IDs::CHANNEL);
                     channelState.setProperty(IDs::name, newChannel, nullptr);
-                    channelsState.addChild(channelState, i, nullptr);
+                    channelsState.addChild(channelState, i, &undoManager);
                 }
             }
         }

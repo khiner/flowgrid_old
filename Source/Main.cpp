@@ -35,9 +35,6 @@ public:
         graphEditorWindow = std::make_unique<MainWindow>(*this, "Graph Editor", new GraphEditor(processorGraph, project), &applicationKeyListener);
         std::unique_ptr<XmlElement> savedAudioState(getApplicationProperties().getUserSettings()->getXmlValue("audioDeviceState"));
         deviceManager.initialise(256, 256, savedAudioState.get(), true);
-        player.setProcessor(&processorGraph);
-        deviceManager.addAudioCallback(&player);
-        processorGraph.audioDeviceManagerInitialized();
 
         Process::makeForegroundProcess();
         auto *push2Component = new Push2Component(project, push2MidiCommunicator, processorGraph);
@@ -60,6 +57,10 @@ public:
         midiControlHandler.setPush2Listener(push2Component);
 
         setMacMainMenu(this);
+
+        player.setProcessor(&processorGraph);
+        deviceManager.addAudioCallback(&player);
+        processorGraph.audioDeviceManagerInitialized();
 
         project.initialise();
         project.sendItemSelectedMessage(project.findFirstSelectedItem());
