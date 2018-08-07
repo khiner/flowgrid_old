@@ -260,8 +260,9 @@ private:
             } else if (child[IDs::name] == MidiOutputProcessor::name()) {
                 midiOutputProcessors.removeObject(findMidiOutputProcessorForNodeId(ProcessorGraph::getNodeIdForState(child)));
                 resized();
+            } else {
+                updateComponents();
             }
-            updateComponents();
         } else if (child.hasType(IDs::CONNECTION)) {
             connectors->updateConnectors();
         }

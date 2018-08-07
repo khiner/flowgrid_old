@@ -1,3 +1,5 @@
+#include <utility>
+
 #pragma once
 
 #include <Utilities.h>
@@ -432,45 +434,71 @@ private:
     CriticalSection valueTreeChanging;
 
     void updateStateForProcessor(AudioProcessor *processor) {
-        int previousNumInputChannels = state[IDs::numInputChannels];
-        int previousNumOutputChannels = state[IDs::numOutputChannels];
+        Array<String> newInputs, newOutputs;
+        for (int i = 0; i < processor->getTotalNumInputChannels(); i++)
+            newInputs.add(getChannelName(i, true));
+        if (processor->acceptsMidi())
+            newInputs.add(getChannelName(AudioProcessorGraph::midiChannelIndex, true));
+        for (int i = 0; i < processor->getTotalNumOutputChannels(); i++)
+            newOutputs.add(getChannelName(i, false));
+        if (processor->producesMidi())
+            newOutputs.add(getChannelName(AudioProcessorGraph::midiChannelIndex, false));
+
+        ValueTree inputChannels = state.getChildWithName(IDs::INPUT_CHANNELS);
+        ValueTree outputChannels = state.getChildWithName(IDs::OUTPUT_CHANNELS);
+        if (!inputChannels.isValid()) {
+            inputChannels = ValueTree(IDs::INPUT_CHANNELS);
+            state.addChild(inputChannels, -1, nullptr);
+        }
+        if (!outputChannels.isValid()) {
+            outputChannels = ValueTree(IDs::OUTPUT_CHANNELS);
+            state.addChild(outputChannels, -1, nullptr);
+        }
+
+        Array<String> oldInputs, oldOutputs;
+        for (int i = 0; i < inputChannels.getNumChildren(); i++) {
+            const auto& channel = inputChannels.getChild(i);
+            oldInputs.add(channel[IDs::name]);
+        }
+        for (int i = 0; i < outputChannels.getNumChildren(); i++) {
+            const auto& channel = outputChannels.getChild(i);
+            oldOutputs.add(channel[IDs::name]);
+        }
+
         state.setProperty(IDs::numInputChannels, processor->getTotalNumInputChannels(), nullptr);
         state.setProperty(IDs::numOutputChannels, processor->getTotalNumOutputChannels(), nullptr);
         state.setProperty(IDs::acceptsMidi, processor->acceptsMidi(), nullptr);
         state.setProperty(IDs::producesMidi, processor->producesMidi(), nullptr);
 
-        if (!state.getChildWithName(IDs::INPUT_CHANNELS).isValid()) {
-            ValueTree inputChannels(IDs::INPUT_CHANNELS);
-            state.addChild(inputChannels, -1, nullptr);
-        }
-        if (!state.getChildWithName(IDs::OUTPUT_CHANNELS).isValid()) {
-            ValueTree outputChannels(IDs::OUTPUT_CHANNELS);
-            state.addChild(outputChannels, -1, nullptr);
-        }
-
-        for (int i = 0; i < jmax(previousNumInputChannels, processor->getTotalNumInputChannels()); ++i)
-            updateChannelProperties(i, true);
-        if (processor->acceptsMidi())
-            updateChannelProperties(AudioProcessorGraph::midiChannelIndex, true);
-        for (int i = 0; i < jmax(previousNumOutputChannels, processor->getTotalNumOutputChannels()); ++i)
-            updateChannelProperties(i, false);
-        if (processor->producesMidi())
-            updateChannelProperties(AudioProcessorGraph::midiChannelIndex, false);
+        updateChannels(oldInputs, newInputs, inputChannels, true);
+        updateChannels(oldOutputs, newOutputs, outputChannels, false);
     }
 
-    void updateChannelProperties(int channelIndex, bool isInput) {
-        auto channels = state.getChildWithName(isInput ? IDs::INPUT_CHANNELS : IDs::OUTPUT_CHANNELS);
-        bool isMidi = channelIndex == AudioProcessorGraph::midiChannelIndex;
-        int numChannels = isInput ? state[IDs::numInputChannels] : state[IDs::numOutputChannels];
+    void updateChannels(Array<String>& oldChannels, Array<String>& newChannels, ValueTree& channelsState, bool isInput) {
+        auto nodeId = AudioProcessorGraph::NodeID(int(state[IDs::nodeId]));
 
-        ValueTree channelState = channels.getChildWithProperty(IDs::channel, channelIndex);
-        if (!channelState.isValid() && (channelIndex < numChannels || isMidi)) {
-            channelState = ValueTree(IDs::CHANNEL);
-        } else if (channelState.isValid() && channelIndex >= numChannels && !isMidi) {
-            channels.removeChild(channelState, nullptr);
-            return;
+        if (newChannels.size() < oldChannels.size()) {
+            for (int i = 0; i < oldChannels.size(); i++) {
+                const auto& oldChannel = oldChannels.getUnchecked(i);
+                if (!newChannels.contains(oldChannel)) {
+                    project.removeConnectionForNodeAndChannel(nodeId, i, isInput);
+                    channelsState.removeChild(channelsState.getChildWithProperty(IDs::name, oldChannel), &undoManager);
+                }
+            }
+        } else if (newChannels.size() > oldChannels.size()) {
+            for (int i = 0; i < newChannels.size(); i++) {
+                const auto& newChannel = newChannels.getUnchecked(i);
+                if (!oldChannels.contains(newChannel)) {
+                    ValueTree channelState(IDs::CHANNEL);
+                    channelState.setProperty(IDs::name, newChannel, nullptr);
+                    channelsState.addChild(channelState, i, nullptr);
+                }
+            }
         }
+    }
 
+    String getChannelName(int channelIndex, bool isInput) {
+        bool isMidi = channelIndex == AudioProcessorGraph::midiChannelIndex;
         String channelName;
         if (processor->getName() == "Audio Input" || processor->getName() == "Audio Output") {
             channelName = project.getAudioChannelName(channelIndex, processor->getName() == "Audio Input");
@@ -487,10 +515,7 @@ private:
                     channelName = (isInput ? "Main Input: " : "Main Output: ") + String(channelIndex + 1);
             }
         }
-
-        channelState.setProperty(IDs::name, channelName, nullptr);
-        channelState.setProperty(IDs::channel, channelIndex, nullptr);
-        channels.addChild(channelState, -1, nullptr);
+        return channelName;
     }
 
     void audioProcessorParameterChanged(AudioProcessor *processor, int parameterIndex, float newValue) override {}

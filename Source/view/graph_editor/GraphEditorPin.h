@@ -23,7 +23,7 @@ struct GraphEditorPin : public Component, public SettableTooltipClient, private 
     }
 
     int getChannel() {
-        return state[IDs::channel];
+        return getName().contains("MIDI") ? AudioProcessorGraph::midiChannelIndex : state.getParent().indexOf(state);
     }
 
     bool isMidi() {

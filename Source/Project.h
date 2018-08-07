@@ -160,6 +160,17 @@ public:
         return removeConnection(connectionState, undoManager, defaults, custom);
     }
 
+    void removeConnectionForNodeAndChannel(AudioProcessorGraph::NodeID nodeId, int channelIndex, bool isInput) {
+        const auto &nodeConnections = getConnectionsForNode(nodeId, true, true, isInput, !isInput);
+        for (const auto& nodeConnection : nodeConnections) {
+            if (int(nodeConnection.getChildWithName(IDs::SOURCE)[IDs::channel]) == channelIndex ||
+                int(nodeConnection.getChildWithName(IDs::DESTINATION)[IDs::channel]) == channelIndex) {
+                connections.removeChild(nodeConnection, &undoManager);
+                return;
+            }
+        }
+    }
+
     // make a snapshot of all the information needed to capture AudioGraph connections and UI positions
     void makeConnectionsSnapshot() {
         connectionsSnapshot.clear();
