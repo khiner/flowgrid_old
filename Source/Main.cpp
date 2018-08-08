@@ -37,8 +37,7 @@ public:
         deviceManager.initialise(256, 256, savedAudioState.get(), true);
 
         Process::makeForegroundProcess();
-        auto *push2Component = new Push2Component(project, push2MidiCommunicator, processorGraph);
-        push2Window = std::make_unique<MainWindow>(*this, "Push 2 Mirror", push2Component, &applicationKeyListener);
+        push2Component = std::make_unique<Push2Component>(project, push2MidiCommunicator, processorGraph);
         auto *selectionEditor = new SelectionEditor(project.getState(), undoManager, project, processorGraph);
         selectionWindow = std::make_unique<MainWindow>(*this, "Selection Editor", selectionEditor, &applicationKeyListener);
 
@@ -51,10 +50,7 @@ public:
 
         graphEditorWindow->setBoundsRelative(0.5, 0.1, 0.4, 0.5);
         graphEditorWindow->setSize(graphEditorWindow->getWidth(), int(graphEditorWindow->getWidth() * graphEditorHeightToWidthRatio));
-        push2Window->setBounds(selectionWindow->getPosition().x, selectionWindow->getPosition().y - Push2Display::HEIGHT - graphEditorWindow->getTitleBarHeight(),
-                               Push2Display::WIDTH, Push2Display::HEIGHT + graphEditorWindow->getTitleBarHeight());
-        push2Window->setResizable(false, false);
-        midiControlHandler.setPush2Listener(push2Component);
+        midiControlHandler.setPush2Listener(push2Component.get());
 
         setMacMainMenu(this);
 
@@ -68,6 +64,7 @@ public:
     }
 
     void shutdown() override {
+        push2Component = nullptr;
         push2Window = nullptr;
         selectionWindow = nullptr;
         deviceManager.removeAudioCallback(&player);
@@ -90,7 +87,7 @@ public:
     }
 
     StringArray getMenuBarNames() override {
-        StringArray names {"File", "Options"};
+        StringArray names {"File", "View", "Options"};
         return names;
     }
 
@@ -113,7 +110,9 @@ public:
             menu.addCommandItem(&getCommandManager(), CommandIDs::saveAs);
             menu.addSeparator();
             menu.addCommandItem (&getCommandManager(), StandardApplicationCommandIDs::quit);
-        } else if (topLevelMenuIndex == 1) { // Options menu
+        } else if (topLevelMenuIndex == 1) { // View menu
+            menu.addCommandItem(&getCommandManager(), CommandIDs::showPush2MirrorWindow);
+        } else if (topLevelMenuIndex == 2) { // Options menu
             menu.addCommandItem(&getCommandManager(), CommandIDs::showAudioMidiSettings);
             menu.addItem(2, "Edit the list of available plugins");
 
@@ -142,7 +141,8 @@ public:
                     menuItemsChanged();
                 }
             }
-        } else if (topLevelMenuIndex == 1) { // Options menu
+        } else if (topLevelMenuIndex == 1) { // View menu
+        } else if (topLevelMenuIndex == 2) { // Options menu
             if (menuItemID == 1) {
                 showAudioMidiSettings();
             } else if (menuItemID == 2) {
@@ -169,6 +169,7 @@ public:
                 CommandIDs::save,
                 CommandIDs::saveAs,
 //                CommandIDs::showPluginListEditor,
+                CommandIDs::showPush2MirrorWindow,
                 CommandIDs::showAudioMidiSettings,
 //                CommandIDs::aboutBox,
 //                CommandIDs::allWindowsForward,
@@ -178,7 +179,7 @@ public:
     }
 
     void getCommandInfo(const CommandID commandID, ApplicationCommandInfo& result) override {
-        const String category ("General");
+        const String category("General");
 
         switch (commandID) {
             case CommandIDs::newFile:
@@ -208,7 +209,11 @@ public:
 
             case CommandIDs::showAudioMidiSettings:
                 result.setInfo("Change the audio device settings", String(), category, 0);
-                result.addDefaultKeypress ('a', ModifierKeys::commandModifier);
+                result.addDefaultKeypress('a', ModifierKeys::commandModifier);
+                break;
+
+            case CommandIDs::showPush2MirrorWindow:
+                result.setInfo("Open a window mirroring a Push 2 display", String(), category, 0);
                 break;
 
 //            case CommandIDs::aboutBox:
@@ -256,6 +261,10 @@ public:
                 showAudioMidiSettings();
                 break;
 
+            case CommandIDs::showPush2MirrorWindow:
+                showPush2MirrorWindow();
+                break;
+
 //            case CommandIDs::aboutBox:
 //                // TODO
 //                break;
@@ -277,10 +286,27 @@ public:
         return true;
     }
 
-    /*
-        This class implements the desktop window that contains an instance of
-        our MainContentComponent class.
-    */
+    class BasicWindow : public DocumentWindow {
+    public:
+        explicit BasicWindow(const String &name, Component *contentComponent, bool owned, std::function<void ()> onClose) :
+                DocumentWindow(name, Colours::lightgrey, DocumentWindow::allButtons), onClose(std::move(onClose)) {
+            if (owned)
+                setContentOwned(contentComponent, true);
+            else
+                setContentNonOwned(contentComponent, true);
+            setResizable(true, true);
+            setVisible(true);
+            setBackgroundColour(getUIColourIfAvailable(LookAndFeel_V4::ColourScheme::UIColour::windowBackground));
+        }
+
+        void closeButtonPressed() override {
+            onClose();
+        }
+    private:
+        std::function<void ()> onClose;
+        JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (BasicWindow)
+    };
+
     class MainWindow : public DocumentWindow, public FileDragAndDropTarget {
     public:
         explicit MainWindow(SoundMachineApplication& owner, const String &name, Component *contentComponent, KeyListener *keyListener) :
@@ -353,7 +379,9 @@ private:
 
     ProcessorManager processorManager;
 
-    std::unique_ptr<MainWindow> selectionWindow, push2Window, graphEditorWindow;
+    std::unique_ptr<Push2Component> push2Component;
+    std::unique_ptr<MainWindow> selectionWindow, graphEditorWindow;
+    std::unique_ptr<DocumentWindow> push2Window;
     std::unique_ptr<PluginListComponent> pluginListComponent;
 
     UndoManager undoManager;
@@ -400,6 +428,14 @@ private:
 
         auto *w = o.create();
         w->enterModalState(true, ModalCallbackFunction::create([this](int) {}), true);
+    }
+
+    void showPush2MirrorWindow() {
+        if (push2Window == nullptr) {
+            push2Window = std::make_unique<BasicWindow>("Push 2 Mirror", push2Component.get(), false, [this]() { push2Window = nullptr; });
+            push2Window->setBounds(100, 100, Push2Display::WIDTH, Push2Display::HEIGHT + graphEditorWindow->getTitleBarHeight());
+            push2Window->setResizable(false, false);
+        }
     }
 };
 

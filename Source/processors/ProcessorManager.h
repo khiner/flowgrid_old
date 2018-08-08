@@ -20,7 +20,7 @@ public:
                 userCreatablePluginListInternal.addType(pluginType);
         }
 
-        pluginSortMethod = (KnownPluginList::SortMethod) getApplicationProperties().getUserSettings()->getIntValue("pluginSortMethod", KnownPluginList::sortByManufacturer);
+        pluginSortMethod = (KnownPluginList::SortMethod) getApplicationProperties().getUserSettings()->getIntValue("pluginSortMethod", KnownPluginList::sortByCategory);
         knownPluginListExternal.addChangeListener(this);
 
         formatManager.addDefaultFormats();
