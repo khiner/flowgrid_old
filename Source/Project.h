@@ -464,7 +464,7 @@ public:
 
     String getDocumentTitle() override {
         if (!getFile().exists())
-            return "Unnamed";
+            return TRANS("Unnamed");
 
         return getFile().getFileNameWithoutExtension();
     }
@@ -474,9 +474,25 @@ public:
 
         const ValueTree& newState = Utilities::loadValueTree(file, true);
         if (!newState.isValid() || !newState.hasType(IDs::PROJECT))
-            return Result::fail("Not a valid project file");
-        input.setProperty(IDs::deviceName, newState.getChildWithName(IDs::INPUT)[IDs::deviceName], nullptr);
-        output.setProperty(IDs::deviceName, newState.getChildWithName(IDs::OUTPUT)[IDs::deviceName], nullptr);
+            return Result::fail(TRANS("Not a valid project file"));
+        const String& inputDeviceName = newState.getChildWithName(IDs::INPUT)[IDs::deviceName];
+        const String& outputDeviceName = newState.getChildWithName(IDs::OUTPUT)[IDs::deviceName];
+
+        static const String& failureMessage = TRANS("Could not open an Audio IO device used by this project."
+                                                    "All connections with the missing device will be gone.  "
+                                                    "If you want this project to look like it did when you saved it, "
+                                                    "the best thing to do is to reconnect the missing device and "
+                                                    "reload this project (without saving first!).");
+        if (isDeviceWithNamePresent(inputDeviceName))
+            input.setProperty(IDs::deviceName, inputDeviceName, nullptr);
+        else
+            AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, TRANS("Failed to open input device \"") + inputDeviceName + "\"", failureMessage);
+
+        if (isDeviceWithNamePresent(outputDeviceName))
+            output.setProperty(IDs::deviceName, outputDeviceName, nullptr);
+        else
+            AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, TRANS("Failed to open output device \"") + outputDeviceName + "\"", failureMessage);
+
         Utilities::moveAllChildren(newState.getChildWithName(IDs::INPUT), input, nullptr);
         Utilities::moveAllChildren(newState.getChildWithName(IDs::OUTPUT), output, nullptr);
         Utilities::moveAllChildren(newState.getChildWithName(IDs::TRACKS), tracks, nullptr);
@@ -486,11 +502,21 @@ public:
         return Result::ok();
     }
 
+    bool isDeviceWithNamePresent(const String& deviceName) const {
+        for (auto* deviceType : deviceManager.getAvailableDeviceTypes()) {
+            for (const auto& existingDeviceName : deviceType->getDeviceNames()) {
+                if (deviceName == existingDeviceName)
+                    return true;
+            }
+        }
+        return false;
+    }
+
     Result saveDocument(const File &file) override {
         if (Utilities::saveValueTree(state, file, true))
             return Result::ok();
 
-        return Result::fail("Could not save the project file");
+        return Result::fail(TRANS("Could not save the project file"));
     }
 
     File getLastDocumentOpened() override {
