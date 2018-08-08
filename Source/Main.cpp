@@ -1,7 +1,6 @@
 #include <Utilities.h>
 #include "view/push2/Push2Component.h"
 #include "MidiControlHandler.h"
-#include "ApplicationKeyListener.h"
 #include "ApplicationPropertiesAndCommandManager.h"
 #include <view/SelectionEditor.h>
 #include <view/graph_editor/GraphEditor.h>
@@ -13,7 +12,6 @@ File getSaveFile() {
 class SoundMachineApplication : public JUCEApplication, public MenuBarModel, private ChangeListener {
 public:
     SoundMachineApplication() : project(undoManager, processorManager, deviceManager),
-                                applicationKeyListener(project, undoManager),
                                 processorGraph(project, undoManager, deviceManager) {}
 
     const String getApplicationName() override { return ProjectInfo::projectName; }
@@ -37,12 +35,12 @@ public:
 
         pluginListComponent = std::unique_ptr<PluginListComponent>(processorManager.makePluginListComponent());
 
-        graphEditorWindow = std::make_unique<MainWindow>(*this, "Graph Editor", new GraphEditor(processorGraph, project), &applicationKeyListener);
+        graphEditorWindow = std::make_unique<MainWindow>(*this, "Graph Editor", new GraphEditor(processorGraph, project));
         std::unique_ptr<XmlElement> savedAudioState(getApplicationProperties().getUserSettings()->getXmlValue("audioDeviceState"));
         deviceManager.initialise(256, 256, savedAudioState.get(), true);
 
         auto *selectionEditor = new SelectionEditor(project.getState(), undoManager, project, processorGraph);
-        selectionWindow = std::make_unique<MainWindow>(*this, "Selection Editor", selectionEditor, &applicationKeyListener);
+        selectionWindow = std::make_unique<MainWindow>(*this, "Selection Editor", selectionEditor);
         selectionWindow->setBoundsRelative(0.05, 0.05, 0.45, 0.9);
         graphEditorWindow->setBoundsRelative(0.5, 0.05, 0.45, 0.9);
 
@@ -108,6 +106,7 @@ public:
         } else if (topLevelMenuIndex == 1) { // Edit menu
             menu.addCommandItem(&getCommandManager(), CommandIDs::undo);
             menu.addCommandItem(&getCommandManager(), CommandIDs::redo);
+            menu.addCommandItem(&getCommandManager(), CommandIDs::deleteSelected);
         } else if (topLevelMenuIndex == 2) { // View menu
             menu.addCommandItem(&getCommandManager(), CommandIDs::showPush2MirrorWindow);
         } else if (topLevelMenuIndex == 3) { // Options menu
@@ -169,6 +168,7 @@ public:
                 CommandIDs::saveAs,
                 CommandIDs::undo,
                 CommandIDs::redo,
+                CommandIDs::deleteSelected,
 //                CommandIDs::showPluginListEditor,
                 CommandIDs::showPush2MirrorWindow,
                 CommandIDs::showAudioMidiSettings,
@@ -209,30 +209,29 @@ public:
                 result.addDefaultKeypress('z', ModifierKeys::commandModifier | ModifierKeys::shiftModifier);
                 result.setActive(undoManager.canRedo());
                 break;
-//
+            case CommandIDs::deleteSelected:
+                result.setInfo("Delete", "Delete selected item(s)", category, 0);
+                result.addDefaultKeypress(KeyPress::deleteKey, ModifierKeys::noModifiers);
+                result.addDefaultKeypress(KeyPress::backspaceKey, ModifierKeys::noModifiers);
+                break;
 //            case CommandIDs::showPluginListEditor:
 //                result.setInfo ("Edit the list of available plug-Ins...", String(), category, 0);
 //                result.addDefaultKeypress ('p', ModifierKeys::commandModifier);
 //                break;
-
             case CommandIDs::showAudioMidiSettings:
                 result.setInfo("Change the audio device settings", String(), category, 0);
                 result.addDefaultKeypress('a', ModifierKeys::commandModifier);
                 break;
-
             case CommandIDs::showPush2MirrorWindow:
                 result.setInfo("Open a window mirroring a Push 2 display", String(), category, 0);
                 break;
-
 //            case CommandIDs::aboutBox:
 //                result.setInfo ("About...", String(), category, 0);
 //                break;
-//
 //            case CommandIDs::allWindowsForward:
 //                result.setInfo ("All Windows Forward", "Bring all plug-in windows forward", category, 0);
 //                result.addDefaultKeypress ('w', ModifierKeys::commandModifier);
 //                break;
-
             default:
                 break;
         }
@@ -244,26 +243,24 @@ public:
                 if (project.saveIfNeededAndUserAgrees() == FileBasedDocument::savedOk)
                     project.newDocument();
                 break;
-
             case CommandIDs::open:
                 if (project.saveIfNeededAndUserAgrees() == FileBasedDocument::savedOk)
                     project.loadFromUserSpecifiedFile(true);
                 break;
-
             case CommandIDs::save:
                 project.save(true, true);
                 break;
-
             case CommandIDs::saveAs:
                 project.saveAs(File(), true, true, true);
                 break;
-
             case CommandIDs::undo:
                 project.getUndoManager().undo();
                 break;
-
             case CommandIDs::redo:
                 project.getUndoManager().redo();
+                break;
+            case CommandIDs::deleteSelected:
+                project.deleteSelectedItems();
                 break;
 //            case CommandIDs::showPluginListEditor:
 //                if (pluginListWindow == nullptr)
@@ -271,19 +268,15 @@ public:
 //
 //                pluginListWindow->toFront (true);
 //                break;
-
             case CommandIDs::showAudioMidiSettings:
                 showAudioMidiSettings();
                 break;
-
             case CommandIDs::showPush2MirrorWindow:
                 showPush2MirrorWindow();
                 break;
-
 //            case CommandIDs::aboutBox:
 //                // TODO
 //                break;
-//
 //            case CommandIDs::allWindowsForward:
 //            {
 //                auto& desktop = Desktop::getInstance();
@@ -293,7 +286,6 @@ public:
 //
 //                break;
 //            }
-
             default:
                 return false;
         }
@@ -324,7 +316,7 @@ public:
 
     class MainWindow : public DocumentWindow, public FileDragAndDropTarget {
     public:
-        explicit MainWindow(SoundMachineApplication& owner, const String &name, Component *contentComponent, KeyListener *keyListener) :
+        explicit MainWindow(SoundMachineApplication& owner, const String &name, Component *contentComponent) :
                 DocumentWindow(name, Colours::lightgrey, DocumentWindow::allButtons), owner(owner) {
             contentComponent->setSize(1, 1); // nonzero size to avoid warnings
             setContentOwned(contentComponent, true);
@@ -333,7 +325,6 @@ public:
             centreWithSize(getWidth(), getHeight());
             setVisible(true);
             setBackgroundColour(getUIColourIfAvailable(LookAndFeel_V4::ColourScheme::UIColour::windowBackground));
-            addKeyListener(keyListener);
             addKeyListener(getCommandManager().getKeyMappings());
         }
 
@@ -406,7 +397,6 @@ private:
     Push2MidiCommunicator push2MidiCommunicator;
 
     Project project;
-    ApplicationKeyListener applicationKeyListener;
     ProcessorGraph processorGraph;
     MidiControlHandler midiControlHandler;
     AudioProcessorPlayer player;

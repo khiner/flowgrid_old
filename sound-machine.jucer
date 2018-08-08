@@ -134,8 +134,6 @@
               file="Source/view/SelectionEditor.h"/>
         <FILE id="DjaWRY" name="UiColours.h" compile="0" resource="0" file="Source/view/UiColours.h"/>
       </GROUP>
-      <FILE id="dJezxH" name="ApplicationKeyListener.h" compile="0" resource="0"
-            file="Source/ApplicationKeyListener.h"/>
       <FILE id="FsVOpZ" name="ApplicationPropertiesAndCommandManager.h" compile="0"
             resource="0" file="Source/ApplicationPropertiesAndCommandManager.h"/>
       <FILE id="LbBoeX" name="Identifiers.h" compile="0" resource="0" file="Source/Identifiers.h"/>

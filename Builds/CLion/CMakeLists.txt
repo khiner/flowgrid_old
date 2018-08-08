@@ -79,8 +79,7 @@ add_executable (APP
     "../../Source/view/PluginWindow.h"
     "../../Source/view/SelectionEditor.h"
     "../../Source/view/UiColours.h"
-    "../../Source/ApplicationKeyListener.h"
-    "../../Source/ApplicationPropertiesAndCommandManager.h"
+        "../../Source/ApplicationPropertiesAndCommandManager.h"
     "../../Source/Identifiers.h"
     "../../Source/Main.cpp"
     "../../Source/MidiControlHandler.h"
@@ -1380,7 +1379,6 @@ set_source_files_properties ("../../Source/view/push2/Push2ProcessorView.h" PROP
 set_source_files_properties ("../../Source/view/PluginWindow.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/view/SelectionEditor.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/view/UiColours.h" PROPERTIES HEADER_FILE_ONLY TRUE)
-set_source_files_properties ("../../Source/ApplicationKeyListener.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/ApplicationPropertiesAndCommandManager.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/Identifiers.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/MidiControlHandler.h" PROPERTIES HEADER_FILE_ONLY TRUE)

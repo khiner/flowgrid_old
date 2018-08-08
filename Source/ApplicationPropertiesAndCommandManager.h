@@ -9,6 +9,7 @@ namespace CommandIDs {
     static const int newFile                = 0x10003;
     static const int undo                   = 0x20000;
     static const int redo                   = 0x20001;
+    static const int deleteSelected         = 0x20002;
     static const int showPush2MirrorWindow  = 0x30000;
     static const int showPluginListEditor   = 0x40000;
     static const int showAudioMidiSettings  = 0x40001;
