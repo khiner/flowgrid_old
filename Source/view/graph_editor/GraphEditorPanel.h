@@ -236,7 +236,7 @@ private:
                 addAndMakeVisible(*(audioOutputProcessor = std::make_unique<GraphEditorProcessor>(child, *this, graph, true)));
             }
             updateComponents();
-        } else if (child.hasType(IDs::CONNECTION) || child.hasType(IDs::CHANNEL)) {
+        } else if (child.hasType(IDs::CONNECTION)) {
             resized();
         }
     }
@@ -252,7 +252,7 @@ private:
             } else {
                 updateComponents();
             }
-        } else if (child.hasType(IDs::CONNECTION) || child.hasType(IDs::CHANNEL)) {
+        } else if (child.hasType(IDs::CONNECTION)) {
             resized();
         }
     }

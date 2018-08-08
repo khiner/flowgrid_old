@@ -332,7 +332,9 @@ private:
                 channelLabel.setJustification(Justification::centred);
                 addAndMakeVisible(channelLabel);
             }
-            resized();
+            if (auto* component = dynamic_cast<Component *>(&connectorDragListener)) {
+                component->resized();
+            }
         }
     }
 
@@ -342,7 +344,9 @@ private:
             if (showChannelLabels)
                 removeChildComponent(&pinToRemove->channelLabel);
             pins.removeObject(pinToRemove);
-            resized();
+            if (auto* component = dynamic_cast<Component *>(&connectorDragListener)) {
+                component->resized();
+            }
         }
     }
 
