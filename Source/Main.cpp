@@ -4,10 +4,7 @@
 #include "ApplicationPropertiesAndCommandManager.h"
 #include <view/SelectionEditor.h>
 #include <view/graph_editor/GraphEditor.h>
-
-File getSaveFile() {
-    return File::getSpecialLocation(File::userDesktopDirectory).getChildFile("ValueTreeDemoEdit.xml");
-}
+#include "BasicWindow.h"
 
 class SoundMachineApplication : public JUCEApplication, public MenuBarModel, private ChangeListener, private Timer {
 public:
@@ -311,27 +308,6 @@ public:
 
         return true;
     }
-
-    class BasicWindow : public DocumentWindow {
-    public:
-        explicit BasicWindow(const String &name, Component *contentComponent, bool owned, std::function<void ()> onClose) :
-                DocumentWindow(name, Colours::lightgrey, DocumentWindow::allButtons), onClose(std::move(onClose)) {
-            if (owned)
-                setContentOwned(contentComponent, true);
-            else
-                setContentNonOwned(contentComponent, true);
-            setResizable(true, true);
-            setVisible(true);
-            setBackgroundColour(getUIColourIfAvailable(LookAndFeel_V4::ColourScheme::UIColour::windowBackground));
-        }
-
-        void closeButtonPressed() override {
-            onClose();
-        }
-    private:
-        std::function<void ()> onClose;
-        JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (BasicWindow)
-    };
 
     class MainWindow : public DocumentWindow, public FileDragAndDropTarget {
     public:

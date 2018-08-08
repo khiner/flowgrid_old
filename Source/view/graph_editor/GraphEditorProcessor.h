@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Utilities.h>
+#include <BasicWindow.h>
 #include "JuceHeader.h"
 #include "ConnectorDragListener.h"
 #include "ProcessorGraph.h"
@@ -237,16 +238,7 @@ public:
                             if (auto* midiKeyboardProcessor = dynamic_cast<MidiKeyboardProcessor *>(getProcessor())) {
                                 auto *keyboardComponent = midiKeyboardProcessor->createKeyboard();
                                 keyboardComponent->setSize(800, 1);
-                                DialogWindow::LaunchOptions o;
-                                o.content.setOwned(keyboardComponent);
-                                o.dialogTitle = "Keyboard";
-                                o.componentToCentreAround = this;
-                                o.dialogBackgroundColour = findColour(ResizableWindow::backgroundColourId);
-                                o.escapeKeyTriggersCloseButton = true;
-                                o.useNativeTitleBar = false;
-                                o.resizable = true;
-
-                                o.create()->enterModalState(true, nullptr, true);
+                                new BasicWindow("Keyboard", keyboardComponent, true);
                                 keyboardComponent->grabKeyboardFocus();
                             }
                         default:
