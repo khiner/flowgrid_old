@@ -40,28 +40,36 @@ public:
         return ProcessorGraph::getNodeIdForState(state);
     }
 
-    int getSlot() const {
+    inline int getSlot() const {
         return state[IDs::processorSlot];
     }
 
-    int getNumInputChannels() const {
+    inline int getNumInputChannels() const {
         return state.getChildWithName(IDs::INPUT_CHANNELS).getNumChildren();
     }
 
-    int getNumOutputChannels() const {
+    inline int getNumOutputChannels() const {
         return state.getChildWithName(IDs::OUTPUT_CHANNELS).getNumChildren();
     }
 
-    bool acceptsMidi() const {
+    inline bool acceptsMidi() const {
         return state[IDs::acceptsMidi];
     }
 
-    bool producesMidi() const {
+    inline bool producesMidi() const {
         return state[IDs::producesMidi];
     }
 
-    bool isIoProcessor() const {
+    inline bool isIoProcessor() const {
         return InternalPluginFormat::isIoProcessorName(state[IDs::name]);
+    }
+
+    inline bool isSelected() {
+        return state[IDs::selected];
+    }
+
+    inline void setSelected(bool selected) {
+        state.setProperty(IDs::selected, selected, nullptr);
     }
 
     void paint(Graphics &g) override {
@@ -166,10 +174,6 @@ public:
             return node->getProcessor();
 
         return {};
-    }
-
-    bool isSelected() {
-        return state[IDs::selected];
     }
 
     void showPopupMenu() {
@@ -306,6 +310,12 @@ private:
     }
 
     void valueTreePropertyChanged(ValueTree &v, const Identifier &i) override {
+        if (v.hasType(IDs::PARAM)) {
+            if (!isSelected()) {
+                // If we're looking at something else, change the focus so we know what's changing.
+                setSelected(true);
+            }
+        }
         if (v != state)
             return;
 
