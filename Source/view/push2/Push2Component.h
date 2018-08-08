@@ -129,14 +129,14 @@ private:
                 processorView.setProcessor(processorWrapper);
                 selectChild(&processorView);
             }
-        } else {
+        } else if (!item.hasType(IDs::TRACK) && !item.hasType(IDs::MASTER_TRACK)) {
             selectChild(nullptr);
             processorView.setProcessor(nullptr);
         }
     }
 
     void itemRemoved(const ValueTree& item) override {
-        if (item == project.getSelectedProcessor()) {
+        if (item == project.getSelectedProcessor() || item == project.getSelectedTrack()) {
             itemSelected(ValueTree());
         }
     }

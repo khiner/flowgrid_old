@@ -103,6 +103,7 @@ public:
                 currentlyDraggingProcessor = processor;
                 auto *processorTrack = dynamic_cast<GraphEditorTrack *>(processor->getParentComponent()->getParentComponent());
                 const Point<int> trackAndSlot{processorTrack->getTrackIndex(), processor->getSlot()};
+                processor->setSelected(true);
                 graph.beginDraggingNode(processor->getNodeId(), trackAndSlot);
             }
         }
@@ -146,6 +147,24 @@ public:
     GraphEditorTrack *currentlyDraggingTrack {};
     GraphEditorProcessor *currentlyDraggingProcessor {};
 
+    void valueTreePropertyChanged(ValueTree &v, const juce::Identifier &i) override {
+        if (i == IDs::selected && v[IDs::selected]) {
+            if (isSuitableType(v))
+                deselectAllTracksExcept(v);
+            else
+                deselectAllItemsExcept(parent, v);
+        }
+    }
+
+    void valueTreeChildRemoved(ValueTree &exParent, ValueTree &tree, int index) override {
+        ValueTreeObjectList::valueTreeChildRemoved(exParent, tree, index);
+        if (parent == exParent && isSuitableType(tree)) {
+            auto newSelectedTrackIndex = (index - 1 >= 0) ? index - 1 : index;
+            if (newSelectedTrackIndex < objects.size())
+                objects.getUnchecked(newSelectedTrackIndex)->select();
+        }
+    }
+
     void valueTreeChildWillBeMovedToNewParent(ValueTree child, const ValueTree& oldParent, int oldIndex, const ValueTree& newParent, int newIndex) override {
         if (child.hasType(IDs::PROCESSOR)) {
             auto *fromTrack = getTrackForState(oldParent);
@@ -162,6 +181,23 @@ public:
             auto *toTrack = getTrackForState(newParent);
             fromTrack->setCurrentlyMovingProcessor(nullptr);
             toTrack->setCurrentlyMovingProcessor(nullptr);
+        }
+    }
+
+private:
+    void deselectAllTracksExcept(const ValueTree& except) {
+        for (auto track : parent) {
+            if (track != except) {
+                track.setProperty(IDs::selected, false, nullptr);
+            }
+        }
+    }
+
+    static void deselectAllItemsExcept(const ValueTree& parent, const ValueTree& except) {
+        for (auto child : parent) {
+            if (child[IDs::selected] && child != except)
+                child.setProperty(IDs::selected, false, nullptr);
+            deselectAllItemsExcept(child, except);
         }
     }
 };

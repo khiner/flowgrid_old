@@ -69,7 +69,10 @@ public:
     }
 
     inline void setSelected(bool selected) {
-        state.setProperty(IDs::selected, selected, nullptr);
+        if (!isSelected())
+            state.setProperty(IDs::selected, selected, nullptr);
+        else
+            state.sendPropertyChangeMessage(IDs::selected);
     }
 
     void paint(Graphics &g) override {

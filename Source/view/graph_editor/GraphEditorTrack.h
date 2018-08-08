@@ -35,6 +35,8 @@ public:
                 colourSelector->setSize(300, 400);
 
                 CallOutBox::launchAsynchronously(colourSelector, getScreenBounds(), nullptr);
+            } else {
+                select();
             }
         }
     }
@@ -60,11 +62,12 @@ public:
     }
 
     bool isSelected() const {
-        return processors->anySelected();
+        return state.getProperty(IDs::selected);
     }
 
     void select() {
         processors->select();
+        state.setProperty(IDs::selected, true, nullptr);
     }
 
     const Component *getDragControlComponent() const {
@@ -78,7 +81,7 @@ public:
     }
 
     void paint(Graphics &g) override {
-        if (isSelected()) {
+        if (isSelected() || processors->anySelected()) {
             g.fillAll(getColour().withAlpha(0.10f).withMultipliedBrightness(1.5f));
         }
     }
@@ -116,7 +119,10 @@ private:
     ConnectorDragListener &connectorDragListener;
     ProcessorGraph &graph;
 
-    void valueTreePropertyChanged(juce::ValueTree &v, const juce::Identifier &i) override {
+    void valueTreePropertyChanged(ValueTree &v, const Identifier &i) override {
+        if (v.hasType(IDs::PROCESSOR) && i == IDs::selected)
+            repaint();
+
         if (v != state)
             return;
         if (i == IDs::name) {
@@ -125,6 +131,7 @@ private:
             nameLabel.setColour(Label::backgroundColourId, getColour());
             repaint();
         } else if (i == IDs::selected) {
+            nameLabel.setColour(Label::backgroundColourId, isSelected() ? getColour().brighter(0.25) : getColour());
             repaint();
         }
     }

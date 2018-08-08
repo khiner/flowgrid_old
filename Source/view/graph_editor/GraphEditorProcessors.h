@@ -75,7 +75,13 @@ public:
 
     void newObjectAdded(GraphEditorProcessor *) override { resized(); }
 
-    void objectRemoved(GraphEditorProcessor *) override { resized(); }
+    void objectRemoved(GraphEditorProcessor *object) override {
+        resized();
+        if (object == mostRecentlySelectedProcessor) {
+            mostRecentlySelectedProcessor = nullptr;
+            select();
+        }
+    }
 
     void objectOrderChanged() override { resized(); }
 

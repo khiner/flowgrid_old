@@ -61,15 +61,14 @@ public:
     }
 
     void itemSelected(const ValueTree& item) override {
-        const ValueTree &selectedTrack = project.getSelectedTrack();
-        addProcessorButton.setVisible(selectedTrack.isValid());
+        addProcessorButton.setVisible(item.hasType(IDs::PROCESSOR) || item.hasType(IDs::TRACK) || item.hasType(IDs::MASTER_TRACK));
 
         if (item.hasType(IDs::PROCESSOR)) {
             if (auto *processorWrapper = audioGraphBuilder.getProcessorWrapperForState(item)) {
                 processorEditor->setProcessor(processorWrapper);
                 processorEditor->setVisible(true);
             }
-        } else {
+        } else if (!item.hasType(IDs::TRACK) && !item.hasType(IDs::MASTER_TRACK)) {
             processorEditor->setVisible(false);
             processorEditor->setProcessor(nullptr);
         }
@@ -80,6 +79,7 @@ public:
     void itemRemoved(const ValueTree& item) override {
         if (item == project.getSelectedTrack()) {
             addProcessorButton.setVisible(false);
+            itemSelected(ValueTree());
         } else if (item == project.getSelectedProcessor()) {
             itemSelected(ValueTree());
         }

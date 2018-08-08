@@ -66,8 +66,6 @@ public:
 
     ValueTree& getSelectedProcessor() { return selectedProcessor; }
 
-    void setSelectedProcessor(ValueTree& processor) { processor.setProperty(IDs::selected, true, nullptr); }
-
     const ValueTree getMixerChannelProcessorForTrack(const ValueTree& track) const {
         return track.getChildWithProperty(IDs::name, MixerChannelProcessor::name());
     }
@@ -689,7 +687,6 @@ private:
 
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {
         if (i == IDs::selected && tree[IDs::selected]) {
-            deselectAllItemsExcept(state, tree);
             sendItemSelectedMessage(tree);
         } else if (i == IDs::deviceName && (tree == input || tree == output)) {
             AudioDeviceManager::AudioDeviceSetup config;
@@ -708,15 +705,6 @@ private:
     void valueTreeParentChanged(ValueTree &) override {}
 
     void valueTreeRedirected(ValueTree &) override {}
-
-    static void deselectAllItemsExcept(const ValueTree& parent, const ValueTree& except) {
-        for (auto child : parent) {
-            if (child[IDs::selected] && child != except)
-                child.setProperty(IDs::selected, false, nullptr);
-            else
-                deselectAllItemsExcept(child, except);
-        }
-    }
     
     static ValueTree findFirstItemWithPropertyRecursive(const ValueTree &parent, const Identifier &i, const var &value) {
         for (const auto& child : parent) {
