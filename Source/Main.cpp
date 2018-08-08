@@ -313,6 +313,7 @@ public:
             setVisible(true);
             setBackgroundColour(getUIColourIfAvailable(LookAndFeel_V4::ColourScheme::UIColour::windowBackground));
             addKeyListener(keyListener);
+            addKeyListener(getCommandManager().getKeyMappings());
         }
 
         void closeButtonPressed() override {
