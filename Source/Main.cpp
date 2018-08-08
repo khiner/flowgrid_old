@@ -23,6 +23,8 @@ public:
     bool moreThanOneInstanceAllowed() override { return true; }
 
     void initialise(const String &) override {
+        Process::makeForegroundProcess();
+        setMacMainMenu(this);
         getCommandManager().registerAllCommandsForTarget(this);
 
         const auto &typeface = Typeface::createSystemTypefaceFor(BinaryData::AbletonSansMediumRegular_otf, BinaryData::AbletonSansMediumRegular_otfSize);
@@ -32,27 +34,19 @@ public:
             MessageManager::callAsync([this, message]() { midiControlHandler.handleControlMidi(message); });
         });
 
+        pluginListComponent = std::unique_ptr<PluginListComponent>(processorManager.makePluginListComponent());
+
         graphEditorWindow = std::make_unique<MainWindow>(*this, "Graph Editor", new GraphEditor(processorGraph, project), &applicationKeyListener);
         std::unique_ptr<XmlElement> savedAudioState(getApplicationProperties().getUserSettings()->getXmlValue("audioDeviceState"));
         deviceManager.initialise(256, 256, savedAudioState.get(), true);
 
-        Process::makeForegroundProcess();
-        push2Component = std::make_unique<Push2Component>(project, push2MidiCommunicator, processorGraph);
         auto *selectionEditor = new SelectionEditor(project.getState(), undoManager, project, processorGraph);
         selectionWindow = std::make_unique<MainWindow>(*this, "Selection Editor", selectionEditor, &applicationKeyListener);
+        selectionWindow->setBoundsRelative(0.05, 0.05, 0.45, 0.9);
+        graphEditorWindow->setBoundsRelative(0.5, 0.05, 0.45, 0.9);
 
-        pluginListComponent = std::unique_ptr<PluginListComponent>(processorManager.makePluginListComponent());
-
-        selectionWindow->setBoundsRelative(0.05, 0.25, 0.40, 0.40);
-        selectionWindow->setBounds(selectionWindow->getBounds().withHeight(selectionWindow->getWidth()));
-
-        float graphEditorHeightToWidthRatio = float(Project::NUM_VISIBLE_PROCESSOR_SLOTS) / Project::NUM_VISIBLE_TRACKS;
-
-        graphEditorWindow->setBoundsRelative(0.5, 0.1, 0.4, 0.5);
-        graphEditorWindow->setSize(graphEditorWindow->getWidth(), int(graphEditorWindow->getWidth() * graphEditorHeightToWidthRatio));
+        push2Component = std::make_unique<Push2Component>(project, push2MidiCommunicator, processorGraph);
         midiControlHandler.setPush2Listener(push2Component.get());
-
-        setMacMainMenu(this);
 
         player.setProcessor(&processorGraph);
         deviceManager.addAudioCallback(&player);
