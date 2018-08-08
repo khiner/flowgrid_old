@@ -268,8 +268,8 @@ public:
     }
 
     ValueTree createAndAddProcessor(const PluginDescription &description, ValueTree track, int slot=-1, bool undoable=true) {
-        if (selectedTrackHasMixerChannel() && description.name == MixerChannelProcessor::name())
-            return ValueTree();
+        if (description.name == MixerChannelProcessor::name() && getMixerChannelProcessorForTrack(track).isValid())
+            return ValueTree(); // only one mixer channel per track
 
         if (processorManager.isGeneratorOrInstrument(&description) &&
             processorManager.doesTrackAlreadyHaveGeneratorOrInstrument(track)) {

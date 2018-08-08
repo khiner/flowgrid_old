@@ -3,18 +3,21 @@
 #include "JuceHeader.h"
 
 namespace CommandIDs {
-    static const int open                   = 0x10000;
-    static const int save                   = 0x10001;
-    static const int saveAs                 = 0x10002;
-    static const int newFile                = 0x10003;
-    static const int undo                   = 0x20000;
-    static const int redo                   = 0x20001;
-    static const int deleteSelected         = 0x20002;
-    static const int showPush2MirrorWindow  = 0x30000;
-    static const int showPluginListEditor   = 0x40000;
-    static const int showAudioMidiSettings  = 0x40001;
-    static const int aboutBox               = 0x40002;
-    static const int allWindowsForward      = 0x40003;
+    static const int
+            open                     = 0x10000,
+            save                     = 0x10001,
+            saveAs                   = 0x10002,
+            newFile                  = 0x10003,
+            undo                     = 0x20000,
+            redo                     = 0x20001,
+            deleteSelected           = 0x20002,
+            insertTrack              = 0x30000,
+            insertTrackWithoutMixer  = 0x30001,
+            showPush2MirrorWindow    = 0x40000,
+            showPluginListEditor     = 0x50000,
+            showAudioMidiSettings    = 0x50001,
+            aboutBox                 = 0x50002,
+            allWindowsForward        = 0x50003;
 }
 
 class ApplicationPropertiesAndCommandManager {

@@ -40,7 +40,7 @@ public:
         std::unique_ptr<XmlElement> savedAudioState(getApplicationProperties().getUserSettings()->getXmlValue("audioDeviceState"));
         deviceManager.initialise(256, 256, savedAudioState.get(), true);
 
-        auto *selectionEditor = new SelectionEditor(project.getState(), project, processorGraph);
+        auto *selectionEditor = new SelectionEditor(project, processorGraph);
         undoManager.addChangeListener(selectionEditor);
 
         selectionWindow = std::make_unique<MainWindow>(*this, "Selection Editor", selectionEditor);
@@ -83,7 +83,7 @@ public:
     }
 
     StringArray getMenuBarNames() override {
-        StringArray names {"File", "Edit", "View", "Options"};
+        StringArray names {"File", "Edit", "Create", "View", "Options"};
         return names;
     }
 
@@ -105,14 +105,18 @@ public:
             menu.addCommandItem(&getCommandManager(), CommandIDs::save);
             menu.addCommandItem(&getCommandManager(), CommandIDs::saveAs);
             menu.addSeparator();
-            menu.addCommandItem (&getCommandManager(), StandardApplicationCommandIDs::quit);
+            menu.addCommandItem(&getCommandManager(), StandardApplicationCommandIDs::quit);
         } else if (topLevelMenuIndex == 1) { // Edit menu
             menu.addCommandItem(&getCommandManager(), CommandIDs::undo);
             menu.addCommandItem(&getCommandManager(), CommandIDs::redo);
+            menu.addSeparator();
             menu.addCommandItem(&getCommandManager(), CommandIDs::deleteSelected);
-        } else if (topLevelMenuIndex == 2) { // View menu
+        } else if (topLevelMenuIndex == 2) { // Create menu
+            menu.addCommandItem(&getCommandManager(), CommandIDs::insertTrack);
+            menu.addCommandItem(&getCommandManager(), CommandIDs::insertTrackWithoutMixer);
+        } else if (topLevelMenuIndex == 3) { // View menu
             menu.addCommandItem(&getCommandManager(), CommandIDs::showPush2MirrorWindow);
-        } else if (topLevelMenuIndex == 3) { // Options menu
+        } else if (topLevelMenuIndex == 4) { // Options menu
             menu.addCommandItem(&getCommandManager(), CommandIDs::showAudioMidiSettings);
             menu.addCommandItem(&getCommandManager(), CommandIDs::showPluginListEditor);
 
@@ -131,7 +135,7 @@ public:
     }
 
     void menuItemSelected(int menuItemID, int topLevelMenuIndex) override {
-        if (topLevelMenuIndex == 0) {
+        if (topLevelMenuIndex == 0) { // File menu
             if (menuItemID >= 100 && menuItemID < 200) {
                 RecentlyOpenedFilesList recentFiles;
                 recentFiles.restoreFromString(getApplicationProperties().getUserSettings()->getValue("recentProjectFiles"));
@@ -142,8 +146,9 @@ public:
                 }
             }
         } else if (topLevelMenuIndex == 1) { // Edit menu
-        } else if (topLevelMenuIndex == 2) { // View menu
-        } else if (topLevelMenuIndex == 3) { // Options menu
+        } else if (topLevelMenuIndex == 2) { // Create menu
+        } else if (topLevelMenuIndex == 3) { // View menu
+        } else if (topLevelMenuIndex == 4) { // Options menu
             if (menuItemID == 1) {
                 showAudioMidiSettings();
             } else if (menuItemID >= 200 && menuItemID < 210) {
@@ -170,6 +175,8 @@ public:
                 CommandIDs::undo,
                 CommandIDs::redo,
                 CommandIDs::deleteSelected,
+                CommandIDs::insertTrack,
+                CommandIDs::insertTrackWithoutMixer,
                 CommandIDs::showPluginListEditor,
                 CommandIDs::showPush2MirrorWindow,
                 CommandIDs::showAudioMidiSettings,
@@ -201,17 +208,25 @@ public:
                 result.defaultKeypresses.add(KeyPress('s', ModifierKeys::shiftModifier | ModifierKeys::commandModifier, 0));
                 break;
             case CommandIDs::undo:
-                result.setInfo("Undo", "Undo", category, 0);
+                result.setInfo("Undo", String(), category, 0);
                 result.addDefaultKeypress('z', ModifierKeys::commandModifier);
                 result.setActive(undoManager.canUndo());
                 break;
             case CommandIDs::redo:
-                result.setInfo("Redo", "Redo", category, 0);
+                result.setInfo("Redo", String(), category, 0);
                 result.addDefaultKeypress('z', ModifierKeys::commandModifier | ModifierKeys::shiftModifier);
                 result.setActive(undoManager.canRedo());
                 break;
+            case CommandIDs::insertTrack:
+                result.setInfo("Insert track (with mixer)", String(), category, 0);
+                result.addDefaultKeypress('t', ModifierKeys::commandModifier);
+                break;
+            case CommandIDs::insertTrackWithoutMixer:
+                result.setInfo("Insert track (without mixer)", String(), category, 0);
+                result.addDefaultKeypress('t', ModifierKeys::commandModifier | ModifierKeys::shiftModifier);
+                break;
             case CommandIDs::deleteSelected:
-                result.setInfo("Delete", "Delete selected item(s)", category, 0);
+                result.setInfo("Delete selected item(s)", String(), category, 0);
                 result.addDefaultKeypress(KeyPress::deleteKey, ModifierKeys::noModifiers);
                 result.addDefaultKeypress(KeyPress::backspaceKey, ModifierKeys::noModifiers);
                 break;
@@ -262,6 +277,12 @@ public:
                 break;
             case CommandIDs::deleteSelected:
                 project.deleteSelectedItems();
+                break;
+            case CommandIDs::insertTrack:
+                project.createAndAddTrack();
+                break;
+            case CommandIDs::insertTrackWithoutMixer:
+                project.createAndAddTrack(true, false);
                 break;
             case CommandIDs::showPluginListEditor:
                 showPluginList();

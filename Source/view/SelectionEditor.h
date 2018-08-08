@@ -12,16 +12,15 @@ class SelectionEditor : public Component,
                         private ProjectChangeListener,
                         private Button::Listener {
 public:
-    SelectionEditor(const ValueTree &state, Project& project, ProcessorGraph &audioGraphBuilder)
+    SelectionEditor(Project& project, ProcessorGraph &audioGraphBuilder)
             : project(project), audioGraphBuilder(audioGraphBuilder) {
         project.addProjectChangeListener(this);
         addChildComponent((processorEditor = std::make_unique<ProcessorEditor>()).get());
-        Utilities::visitComponents({&undoButton, &redoButton, &createTrackButton, &addProcessorButton},
+        Utilities::visitComponents({&undoButton, &redoButton, &addProcessorButton},
                                    [this](Component *c) { addAndMakeVisible(c); });
 
         undoButton.addListener(this);
         redoButton.addListener(this);
-        createTrackButton.addListener(this);
         addProcessorButton.addListener(this);
 
         setSize(800, 600);
@@ -36,9 +35,6 @@ public:
         redoButton.setBounds(buttons.removeFromLeft(100));
 
         buttons.removeFromLeft(6);
-        createTrackButton.setBounds(buttons.removeFromLeft(100));
-
-        buttons.removeFromLeft(6);
         addProcessorButton.setBounds(buttons.removeFromLeft(120));
 
         if (processorEditor != nullptr) {
@@ -51,8 +47,6 @@ public:
             getCommandManager().invokeDirectly(CommandIDs::undo, false);
         } else if (b == &redoButton) {
             getCommandManager().invokeDirectly(CommandIDs::redo, false);
-        } else if (b == &createTrackButton) {
-            project.createAndAddTrack();
         } else if (b == &addProcessorButton) {
             if (project.getSelectedTrack().isValid()) {
                 addProcessorMenu = std::make_unique<PopupMenu>();
@@ -99,7 +93,7 @@ public:
     }
 
 private:
-    TextButton undoButton{"Undo"}, redoButton{"Redo"}, createTrackButton{"Add Track"};
+    TextButton undoButton{"Undo"}, redoButton{"Redo"};
 
     TextButton addProcessorButton{"Add Processor"};
 
