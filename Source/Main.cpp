@@ -64,6 +64,7 @@ public:
 
         project.initialise();
         project.sendItemSelectedMessage(project.findFirstSelectedItem());
+        processorGraph.removeIllegalConnections();
     }
 
     void shutdown() override {
