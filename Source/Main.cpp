@@ -60,7 +60,6 @@ public:
 
         player.setProcessor(&processorGraph);
         deviceManager.addAudioCallback(&player);
-        processorGraph.audioDeviceManagerInitialized();
 
         project.initialise();
         project.sendItemSelectedMessage(project.findFirstSelectedItem());

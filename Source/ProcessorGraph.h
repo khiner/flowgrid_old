@@ -17,15 +17,6 @@ public:
         project.getState().addListener(this);
         this->project.addProjectChangeListener(this);
     }
-
-    void audioDeviceManagerInitialized() {
-        for (const auto& inputProcessor : project.getInput())
-            if (inputProcessor.getProperty(IDs::name) == MidiInputProcessor::name())
-                addProcessor(inputProcessor);
-        for (const auto& outputProcessor : project.getOutput())
-            if (outputProcessor.getProperty(IDs::name) == MidiOutputProcessor::name())
-                addProcessor(outputProcessor);
-    }
     
     StatefulAudioProcessorWrapper *getProcessorWrapperForState(const ValueTree &processorState) const {
         return getProcessorWrapperForNodeId(getNodeIdForState(processorState));
