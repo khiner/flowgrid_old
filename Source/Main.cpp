@@ -111,7 +111,7 @@ public:
             menu.addCommandItem(&getCommandManager(), CommandIDs::showPush2MirrorWindow);
         } else if (topLevelMenuIndex == 3) { // Options menu
             menu.addCommandItem(&getCommandManager(), CommandIDs::showAudioMidiSettings);
-            menu.addItem(2, "Edit the list of available plugins");
+            menu.addCommandItem(&getCommandManager(), CommandIDs::showPluginListEditor);
 
             const auto& pluginSortMethod = processorManager.getPluginSortMethod();
 
@@ -143,8 +143,6 @@ public:
         } else if (topLevelMenuIndex == 3) { // Options menu
             if (menuItemID == 1) {
                 showAudioMidiSettings();
-            } else if (menuItemID == 2) {
-                showPluginList();
             } else if (menuItemID >= 200 && menuItemID < 210) {
                 if (menuItemID == 200) processorManager.setPluginSortMethod(KnownPluginList::defaultOrder);
                 else if (menuItemID == 201) processorManager.setPluginSortMethod(KnownPluginList::sortAlphabetically);
@@ -169,7 +167,7 @@ public:
                 CommandIDs::undo,
                 CommandIDs::redo,
                 CommandIDs::deleteSelected,
-//                CommandIDs::showPluginListEditor,
+                CommandIDs::showPluginListEditor,
                 CommandIDs::showPush2MirrorWindow,
                 CommandIDs::showAudioMidiSettings,
 //                CommandIDs::aboutBox,
@@ -214,10 +212,10 @@ public:
                 result.addDefaultKeypress(KeyPress::deleteKey, ModifierKeys::noModifiers);
                 result.addDefaultKeypress(KeyPress::backspaceKey, ModifierKeys::noModifiers);
                 break;
-//            case CommandIDs::showPluginListEditor:
-//                result.setInfo ("Edit the list of available plug-Ins...", String(), category, 0);
-//                result.addDefaultKeypress ('p', ModifierKeys::commandModifier);
-//                break;
+            case CommandIDs::showPluginListEditor:
+                result.setInfo ("Edit the list of available plug-Ins...", String(), category, 0);
+                result.addDefaultKeypress ('p', ModifierKeys::commandModifier);
+                break;
             case CommandIDs::showAudioMidiSettings:
                 result.setInfo("Change the audio device settings", String(), category, 0);
                 result.addDefaultKeypress('a', ModifierKeys::commandModifier);
@@ -262,12 +260,9 @@ public:
             case CommandIDs::deleteSelected:
                 project.deleteSelectedItems();
                 break;
-//            case CommandIDs::showPluginListEditor:
-//                if (pluginListWindow == nullptr)
-//                    pluginListWindow.reset (new PluginListWindow (*this, formatManager));
-//
-//                pluginListWindow->toFront (true);
-//                break;
+            case CommandIDs::showPluginListEditor:
+                showPluginList();
+                break;
             case CommandIDs::showAudioMidiSettings:
                 showAudioMidiSettings();
                 break;
