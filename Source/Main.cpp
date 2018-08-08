@@ -10,7 +10,7 @@ File getSaveFile() {
     return File::getSpecialLocation(File::userDesktopDirectory).getChildFile("ValueTreeDemoEdit.xml");
 }
 
-class SoundMachineApplication : public JUCEApplication, public MenuBarModel {
+class SoundMachineApplication : public JUCEApplication, public MenuBarModel, private ChangeListener {
 public:
     SoundMachineApplication() : project(undoManager, processorManager, deviceManager),
                                 applicationKeyListener(project, undoManager),
@@ -26,6 +26,7 @@ public:
         Process::makeForegroundProcess();
         setMacMainMenu(this);
         getCommandManager().registerAllCommandsForTarget(this);
+        undoManager.addChangeListener(this);
 
         const auto &typeface = Typeface::createSystemTypefaceFor(BinaryData::AbletonSansMediumRegular_otf, BinaryData::AbletonSansMediumRegular_otfSize);
         LookAndFeel::getDefaultLookAndFeel().setDefaultSansSerifTypeface(typeface);
@@ -81,7 +82,7 @@ public:
     }
 
     StringArray getMenuBarNames() override {
-        StringArray names {"File", "View", "Options"};
+        StringArray names {"File", "Edit", "View", "Options"};
         return names;
     }
 
@@ -104,9 +105,12 @@ public:
             menu.addCommandItem(&getCommandManager(), CommandIDs::saveAs);
             menu.addSeparator();
             menu.addCommandItem (&getCommandManager(), StandardApplicationCommandIDs::quit);
-        } else if (topLevelMenuIndex == 1) { // View menu
+        } else if (topLevelMenuIndex == 1) { // Edit menu
+            menu.addCommandItem(&getCommandManager(), CommandIDs::undo);
+            menu.addCommandItem(&getCommandManager(), CommandIDs::redo);
+        } else if (topLevelMenuIndex == 2) { // View menu
             menu.addCommandItem(&getCommandManager(), CommandIDs::showPush2MirrorWindow);
-        } else if (topLevelMenuIndex == 2) { // Options menu
+        } else if (topLevelMenuIndex == 3) { // Options menu
             menu.addCommandItem(&getCommandManager(), CommandIDs::showAudioMidiSettings);
             menu.addItem(2, "Edit the list of available plugins");
 
@@ -135,8 +139,9 @@ public:
                     menuItemsChanged();
                 }
             }
-        } else if (topLevelMenuIndex == 1) { // View menu
-        } else if (topLevelMenuIndex == 2) { // Options menu
+        } else if (topLevelMenuIndex == 1) { // Edit menu
+        } else if (topLevelMenuIndex == 2) { // View menu
+        } else if (topLevelMenuIndex == 3) { // Options menu
             if (menuItemID == 1) {
                 showAudioMidiSettings();
             } else if (menuItemID == 2) {
@@ -162,6 +167,8 @@ public:
                 CommandIDs::open,
                 CommandIDs::save,
                 CommandIDs::saveAs,
+                CommandIDs::undo,
+                CommandIDs::redo,
 //                CommandIDs::showPluginListEditor,
                 CommandIDs::showPush2MirrorWindow,
                 CommandIDs::showAudioMidiSettings,
@@ -180,20 +187,27 @@ public:
                 result.setInfo("New", "Creates a new project", category, 0);
                 result.defaultKeypresses.add(KeyPress('n', ModifierKeys::commandModifier, 0));
                 break;
-
             case CommandIDs::open:
                 result.setInfo("Open...", "Opens a project", category, 0);
                 result.defaultKeypresses.add(KeyPress('o', ModifierKeys::commandModifier, 0));
                 break;
-
             case CommandIDs::save:
                 result.setInfo("Save", "Saves the current project", category, 0);
                 result.defaultKeypresses.add(KeyPress('s', ModifierKeys::commandModifier, 0));
                 break;
-
             case CommandIDs::saveAs:
                 result.setInfo("Save As...", "Saves a copy of the current project", category, 0);
                 result.defaultKeypresses.add(KeyPress('s', ModifierKeys::shiftModifier | ModifierKeys::commandModifier, 0));
+                break;
+            case CommandIDs::undo:
+                result.setInfo("Undo", "Undo", category, 0);
+                result.addDefaultKeypress('z', ModifierKeys::commandModifier);
+                result.setActive(undoManager.canUndo());
+                break;
+            case CommandIDs::redo:
+                result.setInfo("Redo", "Redo", category, 0);
+                result.addDefaultKeypress('z', ModifierKeys::commandModifier | ModifierKeys::shiftModifier);
+                result.setActive(undoManager.canRedo());
                 break;
 //
 //            case CommandIDs::showPluginListEditor:
@@ -244,6 +258,13 @@ public:
                 project.saveAs(File(), true, true, true);
                 break;
 
+            case CommandIDs::undo:
+                project.getUndoManager().undo();
+                break;
+
+            case CommandIDs::redo:
+                project.getUndoManager().redo();
+                break;
 //            case CommandIDs::showPluginListEditor:
 //                if (pluginListWindow == nullptr)
 //                    pluginListWindow.reset (new PluginListWindow (*this, formatManager));
@@ -430,6 +451,12 @@ private:
             push2Window = std::make_unique<BasicWindow>("Push 2 Mirror", push2Component.get(), false, [this]() { push2Window = nullptr; });
             push2Window->setBounds(100, 100, Push2Display::WIDTH, Push2Display::HEIGHT + graphEditorWindow->getTitleBarHeight());
             push2Window->setResizable(false, false);
+        }
+    }
+
+    void changeListenerCallback(ChangeBroadcaster* source) override {
+        if (source == &undoManager) {
+            applicationCommandListChanged(); // TODO wasteful to refresh *all* items. is there a way to just change what we need?
         }
     }
 };
