@@ -61,7 +61,7 @@ public:
         player.setProcessor(&processorGraph);
         deviceManager.addAudioCallback(&player);
 
-        project.initialise();
+        project.initialise(processorGraph);
         project.sendItemSelectedMessage(project.findFirstSelectedItem());
         processorGraph.removeIllegalConnections();
         undoManager.clearUndoHistory();

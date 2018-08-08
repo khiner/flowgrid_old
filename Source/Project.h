@@ -34,7 +34,8 @@ public:
         deviceManager.removeChangeListener(this);
     }
 
-    void initialise() {
+    void initialise(AudioProcessorGraph& graph) {
+        this->graph = &graph;
         const auto &lastOpenedProjectFile = getLastDocumentOpened();
         if (!(lastOpenedProjectFile.exists() && loadFrom(lastOpenedProjectFile, true)))
             newDocument();
@@ -502,6 +503,19 @@ public:
     }
 
     Result saveDocument(const File &file) override {
+        for (const auto& track : tracks) {
+            for (auto processorState : track) {
+                if (processorState.hasType(IDs::PROCESSOR)) {
+                    if (auto* node = graph->getNodeForId(AudioProcessorGraph::NodeID(int(processorState[IDs::nodeId])))) {
+                        MemoryBlock memoryBlock;
+                        if (auto* processor = node->getProcessor()) {
+                            processor->getStateInformation(memoryBlock);
+                            processorState.setProperty(IDs::state, memoryBlock.toBase64Encoding(), nullptr);
+                        }
+                    }
+                }
+            }
+        }
         if (Utilities::saveValueTree(state, file, true))
             return Result::ok();
 
@@ -532,6 +546,7 @@ public:
 private:
     ValueTree state;
     UndoManager &undoManager;
+    AudioProcessorGraph* graph;
     ValueTree input, output, tracks, selectedTrack, selectedProcessor, connections;
 
     Array<ValueTree> connectionsSnapshot;

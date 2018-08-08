@@ -270,11 +270,17 @@ private:
         static String errorMessage = "Could not create processor";
         PluginDescription *desc = project.getTypeForIdentifier(processorState[IDs::id]);
         auto *processor = project.getFormatManager().createPluginInstance(*desc, getSampleRate(), getBlockSize(), errorMessage);
+        if (processorState.hasProperty(IDs::state)) {
+            MemoryBlock memoryBlock;
+            memoryBlock.fromBase64Encoding(processorState[IDs::state].toString());
+            processor->setStateInformation(memoryBlock.getData(), (int) memoryBlock.getSize());
+        }
 
         const Node::Ptr &newNode = processorState.hasProperty(IDs::nodeId) ?
                                    addNode(processor, getNodeIdForState(processorState)) :
                                    addNode(processor);
         auto *processorWrapper = new StatefulAudioProcessorWrapper(processor, newNode->nodeID, processorState, project, undoManager);
+
         if (processorWrappers.size() == 0)
             // About to add the first processor.
             // Start the timer that flushes new processor state to their value trees.
