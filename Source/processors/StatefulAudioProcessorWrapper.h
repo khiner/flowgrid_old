@@ -478,24 +478,18 @@ private:
     }
 
     void updateChannels(Array<String>& oldChannels, Array<String>& newChannels, ValueTree& channelsState, bool isInput) {
-        auto nodeId = AudioProcessorGraph::NodeID(int(state[IDs::nodeId]));
-
-        if (newChannels.size() < oldChannels.size()) {
-            for (int i = 0; i < oldChannels.size(); i++) {
-                const auto& oldChannel = oldChannels.getUnchecked(i);
-                if (!newChannels.contains(oldChannel)) {
-                    project.removeConnectionForNodeAndChannel(nodeId, i, isInput);
-                    channelsState.removeChild(channelsState.getChildWithProperty(IDs::name, oldChannel), &undoManager);
-                }
+        for (int i = 0; i < oldChannels.size(); i++) {
+            const auto& oldChannel = oldChannels.getUnchecked(i);
+            if (!newChannels.contains(oldChannel)) {
+                channelsState.removeChild(channelsState.getChildWithProperty(IDs::name, oldChannel), &undoManager);
             }
-        } else if (newChannels.size() > oldChannels.size()) {
-            for (int i = 0; i < newChannels.size(); i++) {
-                const auto& newChannel = newChannels.getUnchecked(i);
-                if (!oldChannels.contains(newChannel)) {
-                    ValueTree channelState(IDs::CHANNEL);
-                    channelState.setProperty(IDs::name, newChannel, nullptr);
-                    channelsState.addChild(channelState, i, &undoManager);
-                }
+        }
+        for (int i = 0; i < newChannels.size(); i++) {
+            const auto& newChannel = newChannels.getUnchecked(i);
+            if (!oldChannels.contains(newChannel)) {
+                ValueTree channelState(IDs::CHANNEL);
+                channelState.setProperty(IDs::name, newChannel, nullptr);
+                channelsState.addChild(channelState, i, &undoManager);
             }
         }
     }

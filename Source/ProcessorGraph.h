@@ -525,7 +525,8 @@ private:
         } else if (child.hasType(IDs::TRACK) || child.hasType(IDs::MASTER_TRACK)) {
             recursivelyInitializeWithState(child);
         } else if (child.hasType(IDs::CHANNEL)) {
-            updateIoChannelEnabled(child, true);
+            updateIoChannelEnabled(parent, child, true);
+            removeIllegalConnections();
         }
     }
 
@@ -569,7 +570,8 @@ private:
                 }
             }
         } else if (child.hasType(IDs::CHANNEL)) {
-            updateIoChannelEnabled(child, false);
+            updateIoChannelEnabled(parent, child, false);
+            removeIllegalConnections();
         }
     }
 
@@ -616,12 +618,12 @@ private:
 
     void itemRemoved(const ValueTree&) override {};
 
-    void updateIoChannelEnabled(const ValueTree& channel, bool enabled) {
-        String processorName = channel.getParent().getParent()[IDs::name];
+    void updateIoChannelEnabled(const ValueTree& parent, const ValueTree& channel, bool enabled) {
+        String processorName = parent.getParent()[IDs::name];
         bool isInput;
-        if (processorName == "Audio Input" && channel.getParent().hasType(IDs::OUTPUT_CHANNELS))
+        if (processorName == "Audio Input" && parent.hasType(IDs::OUTPUT_CHANNELS))
             isInput = true;
-        else if (processorName == "Audio Output" && channel.getParent().hasType(IDs::INPUT_CHANNELS))
+        else if (processorName == "Audio Output" && parent.hasType(IDs::INPUT_CHANNELS))
             isInput = false;
         else
             return;
