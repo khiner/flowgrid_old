@@ -103,7 +103,9 @@ public:
     void mouseUp(const MouseEvent &e) override {
         if (e.mouseWasDraggedSinceMouseDown()) {
         } else if (e.getNumberOfClicks() == 2) {
-            showPopupMenu();
+            if (getProcessor()->hasEditor()) {
+                showWindow(PluginWindow::Type::normal);
+            }
         }
     }
 
