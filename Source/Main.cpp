@@ -9,7 +9,7 @@ File getSaveFile() {
     return File::getSpecialLocation(File::userDesktopDirectory).getChildFile("ValueTreeDemoEdit.xml");
 }
 
-class SoundMachineApplication : public JUCEApplication, public MenuBarModel, private ChangeListener {
+class SoundMachineApplication : public JUCEApplication, public MenuBarModel, private ChangeListener, private Timer {
 public:
     SoundMachineApplication() : project(undoManager, processorManager, deviceManager),
                                 processorGraph(project, undoManager, deviceManager) {}
@@ -25,6 +25,7 @@ public:
         setMacMainMenu(this);
         getCommandManager().registerAllCommandsForTarget(this);
         undoManager.addChangeListener(this);
+        startTimer(500);
 
         const auto &typeface = Typeface::createSystemTypefaceFor(BinaryData::AbletonSansMediumRegular_otf, BinaryData::AbletonSansMediumRegular_otfSize);
         LookAndFeel::getDefaultLookAndFeel().setDefaultSansSerifTypeface(typeface);
@@ -39,7 +40,9 @@ public:
         std::unique_ptr<XmlElement> savedAudioState(getApplicationProperties().getUserSettings()->getXmlValue("audioDeviceState"));
         deviceManager.initialise(256, 256, savedAudioState.get(), true);
 
-        auto *selectionEditor = new SelectionEditor(project.getState(), undoManager, project, processorGraph);
+        auto *selectionEditor = new SelectionEditor(project.getState(), project, processorGraph);
+        undoManager.addChangeListener(selectionEditor);
+
         selectionWindow = std::make_unique<MainWindow>(*this, "Selection Editor", selectionEditor);
         selectionWindow->setBoundsRelative(0.05, 0.05, 0.45, 0.9);
         graphEditorWindow->setBoundsRelative(0.5, 0.05, 0.45, 0.9);
@@ -443,6 +446,10 @@ private:
         if (source == &undoManager) {
             applicationCommandListChanged(); // TODO wasteful to refresh *all* items. is there a way to just change what we need?
         }
+    }
+
+    void timerCallback() override {
+        undoManager.beginNewTransaction();
     }
 };
 

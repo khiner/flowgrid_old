@@ -8,12 +8,12 @@
 
 class SelectionEditor : public Component,
                         public DragAndDropContainer,
+                        public ChangeListener,
                         private ProjectChangeListener,
-                        private Button::Listener,
-                        private Timer {
+                        private Button::Listener {
 public:
-    SelectionEditor(const ValueTree &state, UndoManager &undoManager, Project& project, ProcessorGraph &audioGraphBuilder)
-            : undoManager(undoManager), project(project), audioGraphBuilder(audioGraphBuilder) {
+    SelectionEditor(const ValueTree &state, Project& project, ProcessorGraph &audioGraphBuilder)
+            : project(project), audioGraphBuilder(audioGraphBuilder) {
         project.addProjectChangeListener(this);
         addChildComponent((processorEditor = std::make_unique<ProcessorEditor>()).get());
         Utilities::visitComponents({&undoButton, &redoButton, &createTrackButton, &addProcessorButton},
@@ -24,7 +24,6 @@ public:
         createTrackButton.addListener(this);
         addProcessorButton.addListener(this);
 
-        startTimer(500);
         setSize(800, 600);
     }
 
@@ -49,9 +48,9 @@ public:
 
     void buttonClicked(Button *b) override {
         if (b == &undoButton) {
-            undoManager.undo();
+            getCommandManager().invokeDirectly(CommandIDs::undo, false);
         } else if (b == &redoButton) {
-            undoManager.redo();
+            getCommandManager().invokeDirectly(CommandIDs::redo, false);
         } else if (b == &createTrackButton) {
             project.createAndAddTrack();
         } else if (b == &addProcessorButton) {
@@ -92,6 +91,13 @@ public:
         }
     }
 
+    void changeListenerCallback(ChangeBroadcaster* source) override {
+        if (auto* undoManager = dynamic_cast<UndoManager *>(source)) {
+            undoButton.setEnabled(undoManager->canUndo());
+            redoButton.setEnabled(undoManager->canRedo());
+        }
+    }
+
 private:
     TextButton undoButton{"Undo"}, redoButton{"Redo"}, createTrackButton{"Add Track"};
 
@@ -99,15 +105,10 @@ private:
 
     std::unique_ptr<ProcessorEditor> processorEditor {};
 
-    UndoManager &undoManager;
     Project &project;
     ProcessorGraph &audioGraphBuilder;
 
     std::unique_ptr<PopupMenu> addProcessorMenu;
-
-    void timerCallback() override {
-        undoManager.beginNewTransaction();
-    }
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SelectionEditor)
 };
