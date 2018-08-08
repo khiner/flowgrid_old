@@ -27,6 +27,7 @@ public:
     }
 
     void mouseDown(const MouseEvent &e) override {
+        select();
         if (e.mods.isPopupMenu()) {
             showPopupMenu(e.position.toInt());
         }
@@ -118,11 +119,18 @@ public:
 
     bool anySelected() const {
         for (auto *processor : objects) {
-            if (processor->isSelected()) {
-                return processor;
-            }
+            if (processor->isSelected())
+                return true;
         }
         return false;
+    }
+
+    void select() {
+        if (mostRecentlySelectedProcessor != nullptr) {
+            mostRecentlySelectedProcessor->setSelected(true);
+        } else if (auto* firstProcessor = objects.getFirst()) {
+            firstProcessor->setSelected(true);
+        }
     }
 
 private:
@@ -131,11 +139,15 @@ private:
     ProcessorGraph &graph;
     std::unique_ptr<PopupMenu> menu;
     GraphEditorProcessor *currentlyMovingProcessor {};
+    GraphEditorProcessor* mostRecentlySelectedProcessor {};
 
     void valueTreePropertyChanged(ValueTree &v, const Identifier &i) override {
-        if (isSuitableType(v))
+        if (isSuitableType(v)) {
             if (i == IDs::processorSlot)
                 resized();
+            else if (i == IDs::selected && v[IDs::selected])
+                mostRecentlySelectedProcessor = findObjectWithState(v);
+        }
 
         Utilities::ValueTreeObjectList<GraphEditorProcessor>::valueTreePropertyChanged(v, i);
     }

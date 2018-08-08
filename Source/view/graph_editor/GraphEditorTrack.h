@@ -35,8 +35,6 @@ public:
                 colourSelector->setSize(300, 400);
 
                 CallOutBox::launchAsynchronously(colourSelector, getScreenBounds(), nullptr);
-            } else {
-                select();
             }
         }
     }
@@ -62,11 +60,11 @@ public:
     }
 
     bool isSelected() const {
-        return state.getProperty(IDs::selected) || anyProcessorsSelected();
+        return processors->anySelected();
     }
 
     void select() {
-        state.setProperty(IDs::selected, true, nullptr);
+        processors->select();
     }
 
     const Component *getDragControlComponent() const {
@@ -135,9 +133,5 @@ private:
         if (auto *cs = dynamic_cast<ColourSelector *> (source)) {
             setColour(cs->getCurrentColour());
         }
-    }
-
-    bool anyProcessorsSelected() const {
-        return processors->anySelected();
     }
 };
