@@ -8,7 +8,8 @@
 #include "processors/ProcessorManager.h"
 #include "Project.h"
 
-class ProcessorGraph : public AudioProcessorGraph, private ValueTree::Listener, private ProjectChangeListener {
+class ProcessorGraph : public AudioProcessorGraph, private ValueTree::Listener,
+                       private ProjectChangeListener, private Timer {
 public:
     explicit ProcessorGraph(Project &project, UndoManager &undoManager, AudioDeviceManager& deviceManager)
             : undoManager(undoManager), project(project), deviceManager(deviceManager) {
@@ -36,7 +37,7 @@ public:
 
         if (auto* node = getNodeForId(nodeId)) {
             AudioProcessor *processor = node->getProcessor();
-            for (auto *processorWrapper : processerWrappers) {
+            for (auto *processorWrapper : processorWrappers) {
                 if (processorWrapper->processor == processor)
                     return processorWrapper;
             }
@@ -240,7 +241,7 @@ private:
     Project &project;
     AudioDeviceManager &deviceManager;
     
-    OwnedArray<StatefulAudioProcessorWrapper> processerWrappers;
+    OwnedArray<StatefulAudioProcessorWrapper> processorWrappers;
     OwnedArray<PluginWindow> activePluginWindows;
 
     Array<int> defaultAudioConnectionChannels {0, 1};
@@ -274,7 +275,11 @@ private:
                                    addNode(processor, getNodeIdForState(processorState)) :
                                    addNode(processor);
         auto *processorWrapper = new StatefulAudioProcessorWrapper(processor, newNode->nodeID, processorState, project, undoManager);
-        processerWrappers.add(processorWrapper);
+        if (processorWrappers.size() == 0)
+            // About to add the first processor.
+            // Start the timer that flushes new processor state to their value trees.
+            startTimerHz(10);
+        processorWrappers.add(processorWrapper);
 
         if (auto *midiInputProcessor = dynamic_cast<MidiInputProcessor *>(processor)) {
             const String &deviceName = processorState.getProperty(IDs::deviceName);
@@ -542,7 +547,7 @@ private:
                                 deviceManager.removeMidiInputCallback(deviceName, &midiInputProcessor->getMidiMessageCollector());
                             }
                         }
-                        processerWrappers.removeObject(processorWrapper);
+                        processorWrappers.removeObject(processorWrapper);
                     }
                     nodes.removeObject(node);
                     topologyChanged();
@@ -638,5 +643,16 @@ private:
                 deviceManager.setAudioDeviceSetup(config, true);
             }
         }
+    }
+
+    void timerCallback() override {
+        bool anythingUpdated = false;
+
+        for (auto* processorWrapper : processorWrappers) {
+            if (processorWrapper->flushParameterValuesToValueTree())
+                anythingUpdated = true;
+        }
+
+        startTimer(anythingUpdated ? 1000 / 50 : jlimit(50, 500, getTimerInterval() + 20));
     }
 };

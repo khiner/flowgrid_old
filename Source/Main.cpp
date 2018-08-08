@@ -64,6 +64,7 @@ public:
         project.initialise();
         project.sendItemSelectedMessage(project.findFirstSelectedItem());
         processorGraph.removeIllegalConnections();
+        undoManager.clearUndoHistory();
     }
 
     void shutdown() override {

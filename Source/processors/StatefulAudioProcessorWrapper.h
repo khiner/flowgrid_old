@@ -7,7 +7,7 @@
 #include "view/processor_editor/SwitchParameterComponent.h"
 #include "Project.h"
 
-class StatefulAudioProcessorWrapper : private AudioProcessorListener, private Timer {
+class StatefulAudioProcessorWrapper : private AudioProcessorListener {
 public:
     struct Parameter
             : public AudioProcessorParameterWithID,
@@ -361,7 +361,6 @@ public:
 
         updateValueTree();
         processor->addListener(this);
-        startTimerHz(10);
     }
 
     ~StatefulAudioProcessorWrapper() override {
@@ -418,12 +417,6 @@ public:
         }
 
         return anythingUpdated;
-    }
-
-    // TODO only one timer callback for all processors
-    void timerCallback() override {
-        auto anythingUpdated = flushParameterValuesToValueTree();
-        startTimer(anythingUpdated ? 1000 / 50 : jlimit(50, 500, getTimerInterval() + 20));
     }
 
     AudioPluginInstance *processor;
