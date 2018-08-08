@@ -236,19 +236,30 @@ public:
         createAndAddProcessor(SineBank::getPluginDescription(), track, -1, false);
     }
 
-    ValueTree createAndAddTrack(bool undoable=true, bool addMixer=true, int insertIndex=-1, const String& trackName="", const String& colour="") {
+    ValueTree createAndAddTrack(bool undoable=true, bool addMixer=true, ValueTree nextToTrack={}) {
         int numTracks = getNumTracks() - 1; // minus 1 because of master track
 
-        ValueTree track(IDs::TRACK);
-        track.setProperty(IDs::name, trackName.isEmpty() ? "Track " + String(numTracks + 1) : makeTrackNameUnique(trackName), nullptr);
-        track.setProperty(IDs::colour, !colour.isEmpty() ? colour : Colour::fromHSV((1.0f / 8.0f) * numTracks, 0.65f, 0.65f, 1.0f).toString(), nullptr);
-        const ValueTree &masterTrack = tracks.getChildWithName(IDs::MASTER_TRACK);
-        if (insertIndex == -1) {
-            // Insert new tracks _before_ the master track, or at the end if there isn't one.
-            insertIndex = masterTrack.isValid() ? tracks.indexOf(masterTrack) : -1;
-        }
+        if (!nextToTrack.isValid()) {
+            if (selectedTrack.isValid()) {
+                // If a track is selected, insert the new track to the left of it if there's no mixer,
+                // or to the right of the first track with a mixer if the new track has a mixer.
+                nextToTrack = selectedTrack;
 
-        tracks.addChild(track, insertIndex, undoable ? &undoManager : nullptr);
+                if (addMixer) {
+                    while (nextToTrack.isValid() && !getMixerChannelProcessorForTrack(nextToTrack).isValid())
+                        nextToTrack = nextToTrack.getSibling(1);
+                }
+            } else if (getMasterTrack().isValid()) {
+                nextToTrack = getMasterTrack();
+            }
+        }
+        ValueTree track(IDs::TRACK);
+        track.setProperty(IDs::name, (addMixer || numTracks == 0) ? ("Track " + String(numTracks + 1)) : makeTrackNameUnique(nextToTrack[IDs::name]), nullptr);
+        track.setProperty(IDs::colour, (addMixer || numTracks == 0) ? Colour::fromHSV((1.0f / 8.0f) * numTracks, 0.65f, 0.65f, 1.0f).toString() : nextToTrack[IDs::colour].toString(), nullptr);
+
+        tracks.addChild(track,
+                nextToTrack.isValid() ? nextToTrack.getParent().indexOf(nextToTrack) + (addMixer ? 1 : 0): -1,
+                undoable ? &undoManager : nullptr);
 
         if (addMixer)
             createAndAddProcessor(MixerChannelProcessor::getPluginDescription(), track, -1, undoable);
@@ -271,7 +282,7 @@ public:
 
         if (processorManager.isGeneratorOrInstrument(&description) &&
             processorManager.doesTrackAlreadyHaveGeneratorOrInstrument(track)) {
-            return createAndAddProcessor(description, createAndAddTrack(undoable, false, track.getParent().indexOf(track), track.getProperty(IDs::name), track.getProperty(IDs::colour)), slot, undoable);
+            return createAndAddProcessor(description, createAndAddTrack(undoable, false, track), slot, undoable);
         }
 
         ValueTree processor(IDs::PROCESSOR);
