@@ -216,7 +216,11 @@ private:
         return nullptr;
     }
 
-    void valueTreePropertyChanged(ValueTree& tree, const Identifier& i) override {}
+    void valueTreePropertyChanged(ValueTree& tree, const Identifier& i) override {
+        if (tree.hasType(IDs::PROCESSOR) && i == IDs::processorSlot) {
+            resized();
+        }
+    }
 
     void valueTreeChildAdded(ValueTree& parent, ValueTree& child) override {
         if (child.hasType(IDs::PROCESSOR)) {

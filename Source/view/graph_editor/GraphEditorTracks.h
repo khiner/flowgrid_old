@@ -128,14 +128,14 @@ public:
         } else if (e.originalComponent == currentlyDraggingProcessor && !e.mods.isRightButtonDown()) {
             const Point<int> &trackAndSlot = trackAndSlotAt(e);
             if (trackAndSlot.x != -1 && trackAndSlot.y != -1) {
-                graph.setNodePosition(currentlyDraggingProcessor->getNodeId(), trackAndSlot);
+                graph.setNodePosition(currentlyDraggingProcessor->getNodeId(), trackAndSlot, !e.mods.isShiftDown());
             }
         }
     }
 
     void mouseUp(const MouseEvent &e) override {
         if (currentlyDraggingProcessor != nullptr)
-            graph.endDraggingNode(currentlyDraggingProcessor->getNodeId());
+            graph.endDraggingNode(currentlyDraggingProcessor->getNodeId(), !e.mods.isShiftDown());
         currentlyDraggingTrack = nullptr;
         currentlyDraggingProcessor = nullptr;
     }

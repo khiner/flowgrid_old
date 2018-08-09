@@ -82,49 +82,52 @@ public:
         }
     }
 
-    void setNodePosition(NodeID nodeId, const Point<int> &trackAndSlot) {
+    void setNodePosition(NodeID nodeId, const Point<int> &trackAndSlot, bool shouldMakeDefaultConnections) {
         if (currentlyDraggingNodeId == NA_NODE_ID)
             return;
         if (auto *processor = getProcessorWrapperForNodeId(nodeId)) {
             if (currentlyDraggingTrackAndSlot != trackAndSlot) {
                 currentlyDraggingTrackAndSlot = trackAndSlot;
 
-                moveProcessor(processor->state, initialDraggingTrackAndSlot.x, initialDraggingTrackAndSlot.y);
+                moveProcessor(processor->state, initialDraggingTrackAndSlot.x, initialDraggingTrackAndSlot.y, shouldMakeDefaultConnections);
                 project.restoreConnectionsSnapshot();
                 if (currentlyDraggingTrackAndSlot != initialDraggingTrackAndSlot) {
-                    moveProcessor(processor->state, trackAndSlot.x, trackAndSlot.y);
+                    moveProcessor(processor->state, trackAndSlot.x, trackAndSlot.y, shouldMakeDefaultConnections);
                 }
             }
         }
     }
 
-    void endDraggingNode(NodeID nodeId) {
+    void endDraggingNode(NodeID nodeId, bool shouldMakeDefaultConnections) {
         if (currentlyDraggingNodeId != NA_NODE_ID && currentlyDraggingTrackAndSlot != initialDraggingTrackAndSlot) {
             // update the audio graph to match the current preview UI graph.
             StatefulAudioProcessorWrapper *processor = getProcessorWrapperForNodeId(nodeId);
-            moveProcessor(processor->state, initialDraggingTrackAndSlot.x, initialDraggingTrackAndSlot.y);
+            moveProcessor(processor->state, initialDraggingTrackAndSlot.x, initialDraggingTrackAndSlot.y, shouldMakeDefaultConnections);
             project.restoreConnectionsSnapshot();
             currentlyDraggingNodeId = NA_NODE_ID;
-            moveProcessor(processor->state, currentlyDraggingTrackAndSlot.x, currentlyDraggingTrackAndSlot.y);
+            moveProcessor(processor->state, currentlyDraggingTrackAndSlot.x, currentlyDraggingTrackAndSlot.y, shouldMakeDefaultConnections);
         }
         currentlyDraggingNodeId = NA_NODE_ID;
     }
 
-    void moveProcessor(ValueTree &processorState, int toTrackIndex, int toSlot) {
+    void moveProcessor(ValueTree &processorState, int toTrackIndex, int toSlot, bool shouldMakeDefaultConnections=true) {
         const ValueTree &toTrack = project.getTrack(toTrackIndex);
         int fromSlot = processorState[IDs::processorSlot];
         if (fromSlot == toSlot && processorState.getParent() == toTrack)
             return;
 
-        removeDefaultConnections(processorState);
+        if (shouldMakeDefaultConnections)
+            removeDefaultConnections(processorState);
 
         processorState.setProperty(IDs::processorSlot, toSlot, getDragDependentUndoManager());
         const int insertIndex = project.getParentIndexForProcessor(toTrack, processorState, getDragDependentUndoManager());
         Helpers::moveSingleItem(processorState, toTrack, insertIndex, getDragDependentUndoManager());
 
-        addDefaultConnections(processorState);
+        if (shouldMakeDefaultConnections)
+            addDefaultConnections(processorState);
         project.makeSlotsValid(toTrack, getDragDependentUndoManager());
-        resetDefaultExternalInputConnections();
+        if (shouldMakeDefaultConnections)
+            resetDefaultExternalInputConnections();
     }
 
     bool canConnectUi(const Connection& c) const {
