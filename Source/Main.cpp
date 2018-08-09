@@ -34,6 +34,7 @@ public:
         pluginListComponent = std::unique_ptr<PluginListComponent>(processorManager.makePluginListComponent());
 
         graphEditorWindow = std::make_unique<MainWindow>(*this, "Graph Editor", new GraphEditor(processorGraph, project));
+
         std::unique_ptr<XmlElement> savedAudioState(getApplicationProperties().getUserSettings()->getXmlValue("audioDeviceState"));
         deviceManager.initialise(256, 256, savedAudioState.get(), true);
 
@@ -378,7 +379,6 @@ public:
 
     ApplicationPropertiesAndCommandManager applicationPropertiesAndCommandManager;
 private:
-
     ProcessorManager processorManager;
 
     std::unique_ptr<Push2Component> push2Component;

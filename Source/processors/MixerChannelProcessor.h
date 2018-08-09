@@ -2,6 +2,7 @@
 
 #include "JuceHeader.h"
 #include "DefaultAudioProcessor.h"
+#include "view/level_meter/LevelMeter.h"
 
 class MixerChannelProcessor : public DefaultAudioProcessor {
 public:
@@ -11,6 +12,8 @@ public:
                                                      AudioProcessorParameter::genericParameter, defaultStringFromValue, defaultValueFromString)),
             gainParameter(new AudioParameterFloat("gain", "Gain", NormalisableRange<float>(0.0f, 1.0f), gain.getTargetValue(), "dB",
                                                   AudioProcessorParameter::genericParameter, defaultStringFromDbValue, defaultValueFromDbString)) {
+
+        inlineEditor = std::make_unique<InlineEditor>(*this);
         balanceParameter->addListener(this);
         gainParameter->addListener(this);
 
@@ -29,7 +32,7 @@ public:
     }
 
     Component* getInlineEditor() override {
-        return &inlineEditor;
+        return inlineEditor.get();
     }
 
     void prepareToPlay(double sampleRate, int maximumExpectedSamplesPerBlock) override {
@@ -65,29 +68,37 @@ public:
                 buffer.setSample(1, i, buffer.getSample(1, i) * rightChannelGain);
             }
         }
+        meterSource.measureBlock(buffer);
         gain.applyGain(buffer, buffer.getNumSamples());
+    }
+
+    LevelMeterSource* getMeterSource() {
+        return &meterSource;
     }
 
 private:
     class InlineEditor : public Component {
     public:
-        InlineEditor() {
-            label.setText("Inline editor", dontSendNotification);
-            addAndMakeVisible(label);
+        explicit InlineEditor(MixerChannelProcessor &processor) : processor(processor) {
+            meter = std::make_unique<LevelMeter>();
+            meter->setMeterSource(processor.getMeterSource());
+            addAndMakeVisible(meter.get());
         }
 
         void resized() override {
-            label.setBounds(getLocalBounds());
+            meter->setBounds(getLocalBounds().removeFromLeft(getWidth() / 3).withX(getWidth() / 6));
         }
     private:
-        Label label;
+        MixerChannelProcessor &processor;
+        std::unique_ptr<LevelMeter> meter;
     };
+
+    std::unique_ptr<InlineEditor> inlineEditor;
 
     LinearSmoothedValue<float> balance { 0.5 };
     LinearSmoothedValue<float> gain { 0.5 };
 
     AudioParameterFloat *balanceParameter;
     AudioParameterFloat *gainParameter;
-
-    InlineEditor inlineEditor;
+    LevelMeterSource meterSource;
 };

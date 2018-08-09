@@ -1324,6 +1324,7 @@ add_executable (APP
     "../../JuceLibraryCode/include_juce_gui_basics.mm"
     "../../JuceLibraryCode/include_juce_gui_extra.mm"
     "../../JuceLibraryCode/JuceHeader.h"
+        ../../Source/view/level_meter/LevelMeterSource.h
         ../../Source/BasicWindow.h)
 
 set_source_files_properties ("../../Resources/AbletonSansBold-Regular.otf" PROPERTIES HEADER_FILE_ONLY TRUE)

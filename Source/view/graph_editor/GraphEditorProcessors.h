@@ -35,10 +35,17 @@ public:
 
     void resized() override {
         auto r = getLocalBounds();
-        const int cellSize = getCellSize();
+        int totalSize = isMasterTrack() ? getWidth() : getHeight();
+
+        int mixerChannelSize = isMasterTrack() ? getHeight() : int(totalSize * MIXER_CHANNEL_SLOT_RATIO);
+        for (int slot = 0; slot < Project::NUM_AVAILABLE_PROCESSOR_SLOTS; slot++) {
+            cellSizes[slot] = (slot != Project::NUM_AVAILABLE_PROCESSOR_SLOTS - 1)
+                              ? (totalSize - mixerChannelSize) / (Project::NUM_AVAILABLE_PROCESSOR_SLOTS - 1)
+                              : mixerChannelSize;
+        }
 
         for (int slot = 0; slot < Project::NUM_AVAILABLE_PROCESSOR_SLOTS; slot++) {
-            auto processorBounds = isMasterTrack() ? r.removeFromLeft(cellSize) : r.removeFromTop(cellSize);
+            auto processorBounds = isMasterTrack() ? r.removeFromLeft(cellSizes[slot]) : r.removeFromTop(cellSizes[slot]);
             if (auto *processor = findProcessorAtSlot(slot)) {
                 processor->setBounds(processorBounds);
             }
@@ -47,10 +54,8 @@ public:
 
     void paint(Graphics &g) override {
         auto r = getLocalBounds();
-        const int cellSize = getCellSize();
-
         g.setColour(findColour(ResizableWindow::backgroundColourId).brighter(0.15));
-        for (int i = 0; i < Project::NUM_AVAILABLE_PROCESSOR_SLOTS; i++)
+        for (int cellSize : cellSizes)
             g.drawRect(isMasterTrack() ? r.removeFromLeft(cellSize) : r.removeFromTop(cellSize));
     }
 
@@ -105,8 +110,7 @@ public:
 
     int findSlotAt(const MouseEvent &e) {
         const MouseEvent &relative = e.getEventRelativeTo(this);
-        int slot = isMasterTrack() ? relative.x / getCellSize() : relative.y / getCellSize();
-        return jlimit(0, Project::NUM_AVAILABLE_PROCESSOR_SLOTS - 1, slot);
+        return findSlotAt(relative.getPosition());
     }
     
     void update() {
@@ -140,12 +144,16 @@ public:
     }
 
 private:
+    const float MIXER_CHANNEL_SLOT_RATIO = 0.2f;
+
     Project &project;
     ConnectorDragListener &connectorDragListener;
     ProcessorGraph &graph;
     std::unique_ptr<PopupMenu> menu;
     GraphEditorProcessor *currentlyMovingProcessor {};
     GraphEditorProcessor* mostRecentlySelectedProcessor {};
+
+    int cellSizes[Project::NUM_AVAILABLE_PROCESSOR_SLOTS];
 
     void valueTreePropertyChanged(ValueTree &v, const Identifier &i) override {
         if (isSuitableType(v)) {
@@ -168,7 +176,7 @@ private:
     }
 
     void showPopupMenu(const Point<int> &mousePos) {
-        int slot = isMasterTrack() ? mousePos.x / getCellSize() : mousePos.y / getCellSize();
+        int slot = findSlotAt(mousePos);
         menu = std::make_unique<PopupMenu>();
         project.addPluginsToMenu(*menu, parent);
         menu->showMenuAsync({}, ModalCallbackFunction::create([this, slot](int r) {
@@ -180,5 +188,10 @@ private:
 
     int getCellSize() const {
         return (isMasterTrack() ? getWidth() : getHeight()) / Project::NUM_AVAILABLE_PROCESSOR_SLOTS;
+    }
+
+    int findSlotAt(const Point<int> relativePosition) {
+        int slot = isMasterTrack() ? relativePosition.x / getCellSize() : relativePosition.y / getCellSize();
+        return jlimit(0, Project::NUM_AVAILABLE_PROCESSOR_SLOTS - 1, slot);
     }
 };
