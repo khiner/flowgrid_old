@@ -21,6 +21,15 @@ public:
     void belowScreenButtonPressed(int buttonIndex) override {}
     void arrowPressed(Direction direction) override {}
 
+    void setVisible(bool visible) override {
+        Component::setVisible(visible);
+        if (!visible) {
+            push2MidiCommunicator.setAllAboveScreenButtonEnabled(false);
+            push2MidiCommunicator.setAllBelowScreenButtonEnabled(false);
+            push2MidiCommunicator.setAllArrowButtonsEnabled(false);
+        }
+    }
+
 protected:
     Project& project;
     Push2MidiCommunicator& push2MidiCommunicator;

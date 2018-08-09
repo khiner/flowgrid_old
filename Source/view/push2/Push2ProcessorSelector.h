@@ -140,7 +140,7 @@ public:
     }
 
     void setVisible(bool visible) override {
-        Component::setVisible(visible);
+        Push2ComponentBase::setVisible(visible);
         topProcessorSelector->setVisible(visible);
         bottomProcessorSelector->setVisible(visible);
         
@@ -163,7 +163,6 @@ public:
         } else {
             setCurrentTree(topProcessorSelector.get(), nullptr);
             setCurrentTree(bottomProcessorSelector.get(), nullptr);
-            updateEnabledPush2Arrows();
         }
     }
 

@@ -30,6 +30,7 @@ public:
     }
 
     ~Push2Component() override {
+        setVisible(false);
         project.removeProjectChangeListener(this);
     }
 
