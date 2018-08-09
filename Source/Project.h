@@ -477,7 +477,7 @@ public:
         const String& inputDeviceName = newState.getChildWithName(IDs::INPUT)[IDs::deviceName];
         const String& outputDeviceName = newState.getChildWithName(IDs::OUTPUT)[IDs::deviceName];
 
-        static const String& failureMessage = TRANS("Could not open an Audio IO device used by this project."
+        static const String& failureMessage = TRANS("Could not open an Audio IO device used by this project.  "
                                                     "All connections with the missing device will be gone.  "
                                                     "If you want this project to look like it did when you saved it, "
                                                     "the best thing to do is to reconnect the missing device and "
@@ -503,6 +503,12 @@ public:
 
     bool isDeviceWithNamePresent(const String& deviceName) const {
         for (auto* deviceType : deviceManager.getAvailableDeviceTypes()) {
+            // Input devices
+            for (const auto& existingDeviceName : deviceType->getDeviceNames(true)) {
+                if (deviceName == existingDeviceName)
+                    return true;
+            }
+            // Output devices
             for (const auto& existingDeviceName : deviceType->getDeviceNames()) {
                 if (deviceName == existingDeviceName)
                     return true;
