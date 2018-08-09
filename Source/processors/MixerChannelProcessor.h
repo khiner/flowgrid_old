@@ -28,6 +28,10 @@ public:
         return DefaultAudioProcessor::getPluginDescription(name(), false, false);
     }
 
+    Component* getInlineEditor() override {
+        return &inlineEditor;
+    }
+
     void prepareToPlay(double sampleRate, int maximumExpectedSamplesPerBlock) override {
         balance.reset(getSampleRate(), 0.05);
         gain.reset(getSampleRate(), 0.05);
@@ -65,9 +69,25 @@ public:
     }
 
 private:
+    class InlineEditor : public Component {
+    public:
+        InlineEditor() {
+            label.setText("Inline editor", dontSendNotification);
+            addAndMakeVisible(label);
+        }
+
+        void resized() override {
+            label.setBounds(getLocalBounds());
+        }
+    private:
+        Label label;
+    };
+
     LinearSmoothedValue<float> balance { 0.5 };
     LinearSmoothedValue<float> gain { 0.5 };
 
     AudioParameterFloat *balanceParameter;
     AudioParameterFloat *gainParameter;
+
+    InlineEditor inlineEditor;
 };

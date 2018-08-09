@@ -146,6 +146,10 @@ public:
             if (!showChannelLabels) {
                 nameLabel.setBoundingBox(rotateRectIfNarrow(boxBoundsFloat));
             }
+
+            if (inlineEditor != nullptr) {
+                inlineEditor->setBounds(boxBoundsFloat.toNearestInt());
+            }
         }
     }
 
@@ -264,7 +268,8 @@ public:
 private:
     DrawableText nameLabel;
     const bool showChannelLabels;
-    
+    Component* inlineEditor {};
+
     static constexpr int
             DELETE_MENU_ID = 1, TOGGLE_BYPASS_MENU_ID = 2, CONNECT_DEFAULTS_MENU_ID = 3, DISCONNECT_ALL_MENU_ID = 4,
             DISCONNECT_DEFAULTS_MENU_ID = 5, DISCONNECT_CUSTOM_MENU_ID = 6,
@@ -305,6 +310,14 @@ private:
         if (v != state)
             return;
 
+        if (inlineEditor == nullptr) {
+            if (auto *defaultProcessor = dynamic_cast<DefaultAudioProcessor *>(getProcessor())) {
+                if (auto* editor = defaultProcessor->getInlineEditor()) {
+                    addAndMakeVisible(inlineEditor = editor);
+                    removeChildComponent(&nameLabel);
+                }
+            }
+        }
         if (i == IDs::deviceName) {
             setName(v[IDs::deviceName]);
             nameLabel.setText(getName());

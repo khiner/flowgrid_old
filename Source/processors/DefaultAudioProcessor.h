@@ -30,6 +30,11 @@ public:
         this->setPlayConfigDetails(getTotalNumInputChannels(), getTotalNumOutputChannels(), sampleRate, estimatedSamplesPerBlock);
     }
 
+    // Inline editors are not part of the normal plugin API.
+    // They are used internally to draw anything that the processor would like
+    // inside the node in the graph editor UI.
+    virtual Component* getInlineEditor() { return nullptr; }
+
     const String getName() const override { return name; }
     int getNumParameters() override { return getParameters().size(); }
     double getTailLengthSeconds() const override { return 0.0; }
@@ -80,6 +85,7 @@ public:
 
         return descr;
     }
+
     const static std::function<String (float, int)> defaultStringFromValue;
     const static std::function<String (float, int)> defaultStringFromDbValue;
     const static std::function<float (const String&)> defaultValueFromString;
