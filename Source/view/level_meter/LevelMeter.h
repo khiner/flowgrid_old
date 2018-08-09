@@ -16,9 +16,10 @@ public:
         meterGradientLowColour,   /**< Colour for the meter bar under the warn threshold */
         meterGradientMidColour,   /**< Colour for the meter bar in the warn area */
         meterGradientMaxColour,   /**< Colour for the meter bar at the clip threshold */
+        gainControlColour,
     };
 
-    LevelMeter() : source(nullptr), refreshRate(24), backgroundNeedsRepaint(true) {
+    LevelMeter() : source(nullptr), refreshRate(24) {
         setColour(LevelMeter::meterForegroundColour, Colours::green);
         setColour(LevelMeter::meterOutlineColour, Colours::lightgrey);
         setColour(LevelMeter::meterBackgroundColour, Colours::darkgrey);
@@ -28,6 +29,10 @@ public:
         setColour(LevelMeter::meterGradientLowColour, Colours::green);
         setColour(LevelMeter::meterGradientMidColour, Colours::yellow);
         setColour(LevelMeter::meterGradientMaxColour, Colours::red);
+        setColour(LevelMeter::gainControlColour, Colours::lightgrey.withAlpha(0.75f));
+
+        gainValueControl.addMouseListener(this, false);
+        addAndMakeVisible(gainValueControl);
 
         startTimerHz(refreshRate);
     }
@@ -36,6 +41,19 @@ public:
         stopTimer();
     }
 
+    float getValue() const { return gainValue; }
+    
+    void setValue(float newValue, NotificationType notification) {
+        jassert(notification == dontSendNotification || notification == sendNotificationSync);
+        
+        if (gainValue != newValue) {
+            gainValue = newValue;
+            if (notification == sendNotificationSync)
+                listeners.call([this](Listener &l) { l.levelMeterValueChanged(this); });
+            resized();
+        }
+    }
+    
     void paint(Graphics &g) override {
         Graphics::ScopedSaveState saved(g);
 
@@ -47,24 +65,28 @@ public:
 
     void resized() override {
         updateMeterGradients();
-        backgroundNeedsRepaint = true;
+        int gainControlY = int(getHeight() * (1.0f - gainValue));
+        gainValueControl.setBounds(getLocalBounds().withHeight(8).withY(gainControlY - 4));
     }
-
-    void visibilityChanged() override {
-        backgroundNeedsRepaint = true;
-    }
-
+    
     void timerCallback() override { repaint(); }
 
     void setMeterSource(LevelMeterSource *source) {
         this->source = source;
     }
 
-    void mouseDown(const MouseEvent &event) override {}
+    void mouseDrag(const MouseEvent &event) override {
+        if (event.originalComponent == &gainValueControl) {
+            float newValue = jlimit(0.0f, 1.0f, 1.0f - float(event.getEventRelativeTo(this).getPosition().y) / float(getHeight()));
+            setValue(newValue, sendNotificationSync);
+        }
+    }
 
     class Listener {
     public:
         virtual ~Listener() {}
+
+        virtual void levelMeterValueChanged(LevelMeter*) = 0;
     };
 
     void addListener(Listener *listener) { listeners.add(listener); }
@@ -78,8 +100,11 @@ private:
     ColourGradient verticalGradient;
     ListenerList<Listener> listeners;
 
+    TextButton gainValueControl;
+    
     int refreshRate;
-    bool backgroundNeedsRepaint;
+
+    float gainValue {0.5f};
 
     void updateMeterGradients() {
         verticalGradient.clearColours();

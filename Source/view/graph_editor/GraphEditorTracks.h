@@ -103,7 +103,6 @@ public:
                 currentlyDraggingProcessor = processor;
                 auto *processorTrack = dynamic_cast<GraphEditorTrack *>(processor->getParentComponent()->getParentComponent());
                 const Point<int> trackAndSlot{processorTrack->getTrackIndex(), processor->getSlot()};
-                processor->setSelected(true);
                 graph.beginDraggingNode(processor->getNodeId(), trackAndSlot);
             }
         }

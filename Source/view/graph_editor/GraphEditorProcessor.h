@@ -32,6 +32,8 @@ public:
     }
 
     ~GraphEditorProcessor() override {
+        if (inlineEditor != nullptr)
+            inlineEditor->removeMouseListener(this);
         state.removeListener(this);
     }
 
@@ -95,7 +97,7 @@ public:
     }
 
     void mouseDown(const MouseEvent &e) override {
-        toFront(true);
+        setSelected(true);
         if (e.mods.isPopupMenu())
             showPopupMenu();
     }
@@ -314,6 +316,7 @@ private:
             if (auto *defaultProcessor = dynamic_cast<DefaultAudioProcessor *>(getProcessor())) {
                 if (auto* editor = defaultProcessor->getInlineEditor()) {
                     addAndMakeVisible(inlineEditor = editor);
+                    inlineEditor->addMouseListener(this, true);
                     removeChildComponent(&nameLabel);
                 }
             }

@@ -13,7 +13,7 @@ public:
             : public AudioProcessorParameterWithID,
               private Utilities::ValueTreePropertyChangeListener,
               public AudioProcessorParameter::Listener, public Slider::Listener, public Button::Listener,
-              public ComboBox::Listener, public SwitchParameterComponent::Listener {
+              public ComboBox::Listener, public SwitchParameterComponent::Listener, public LevelMeter::Listener {
         explicit Parameter(AudioProcessorParameter *parameter)
                 : AudioProcessorParameterWithID(parameter->getName(32), parameter->getName(32),
                                                 parameter->getLabel(), parameter->getCategory()),
@@ -102,7 +102,7 @@ public:
         void setAttachedComponentValues(float newValue) {
             const ScopedLock selfCallbackLock(selfCallbackMutex);
             {
-                ScopedValueSetter<bool> svs (ignoreCallbacks, true);
+                ScopedValueSetter<bool> svs(ignoreCallbacks, true);
                 for (auto* label : attachedLabels) {
                     label->setText(valueToTextFunction(newValue), dontSendNotification);
                 }
@@ -119,6 +119,9 @@ public:
                 for (auto* parameterSwitch : attachedSwitches) {
                     auto index = roundToInt(newValue * (parameterSwitch->getNumItems() - 1));
                     parameterSwitch->setSelectedItemIndex(index, sendNotificationSync);
+                }
+                for (auto* levelMeter : attachedLevelMeters) {
+                    levelMeter->setValue(newValue, sendNotificationSync);
                 }
             }
         }
@@ -158,8 +161,9 @@ public:
             if (valueLabel != nullptr) {
                 attachedLabels.add(valueLabel);
                 valueLabel->onTextChange = [this, valueLabel] { textChanged(valueLabel); };
+
+                setAttachedComponentValues(value);
             }
-            setAttachedComponentValues(value);
         }
 
         void detachLabel(Label *valueLabel) {
@@ -176,8 +180,9 @@ public:
                 slider->valueFromTextFunction = textToValueFunction;
                 attachedSliders.add(slider);
                 slider->addListener(this);
+
+                setAttachedComponentValues(value);
             }
-            setAttachedComponentValues(value);
         }
 
         void detachSlider(Slider *slider) {
@@ -193,8 +198,9 @@ public:
             if (button != nullptr) {
                 attachedButtons.add(button);
                 button->addListener(this);
+
+                setAttachedComponentValues(value);
             }
-            setAttachedComponentValues(value);
         }
 
         void detachButton(Button *button) {
@@ -208,8 +214,9 @@ public:
             if (comboBox != nullptr) {
                 attachedComboBoxes.add(comboBox);
                 comboBox->addListener(this);
+
+                setAttachedComponentValues(value);
             }
-            setAttachedComponentValues(value);
         }
 
         void detachComboBox(ComboBox *comboBox) {
@@ -223,14 +230,31 @@ public:
             if (parameterSwitch != nullptr) {
                 attachedSwitches.add(parameterSwitch);
                 parameterSwitch->addListener(this);
+
+                setAttachedComponentValues(value);
             }
-            setAttachedComponentValues(value);
         }
 
         void detachSwitch(SwitchParameterComponent *parameterSwitch) {
             if (parameterSwitch != nullptr) {
                 parameterSwitch->removeListener(this);
                 attachedSwitches.removeObject(parameterSwitch, false);
+            }
+        }
+
+        void attachLevelMeter(LevelMeter *levelMeter) {
+            if (levelMeter != nullptr) {
+                attachedLevelMeters.add(levelMeter);
+                levelMeter->addListener(this);
+
+                setAttachedComponentValues(value);
+            }
+        }
+
+        void detachLevelMeter(LevelMeter *levelMeter) {
+            if (levelMeter != nullptr) {
+                levelMeter->removeListener(this);
+                attachedLevelMeters.removeObject(levelMeter, false);
             }
         }
 
@@ -270,6 +294,7 @@ public:
         OwnedArray<Button> attachedButtons {};
         OwnedArray<ComboBox> attachedComboBoxes {};
         OwnedArray<SwitchParameterComponent> attachedSwitches {};
+        OwnedArray<LevelMeter> attachedLevelMeters {};
 
         void valueTreePropertyChanged(ValueTree &tree, const Identifier &p) override {
             if (ignoreParameterChangedCallbacks)
@@ -329,6 +354,13 @@ public:
                 setUnnormalizedValue(newValue);
                 endParameterChange();
             }
+        }
+
+        void levelMeterValueChanged(LevelMeter* levelMeter) override {
+            const ScopedLock selfCallbackLock(selfCallbackMutex);
+
+            if (!ignoreCallbacks)
+                setUnnormalizedValue(levelMeter->getValue());
         }
 
         void beginParameterChange() {
