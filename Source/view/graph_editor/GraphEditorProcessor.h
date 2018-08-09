@@ -185,9 +185,6 @@ public:
     void showPopupMenu() {
         menu = std::make_unique<PopupMenu>();
 
-        if (state[IDs::name] == MidiKeyboardProcessor::name()) {
-            menu->addItem(SHOW_MIDI_KEYBOARD_MENU_ID, "Show onscreen MIDI keyboard");
-        }
         if (isIoProcessor()) {
             menu->addItem(CONFIGURE_AUDIO_MIDI_MENU_ID, "Configure audio/MIDI IO");
         } else {
@@ -236,13 +233,6 @@ public:
                         case CONFIGURE_AUDIO_MIDI_MENU_ID:
                             getCommandManager().invokeDirectly(CommandIDs::showAudioMidiSettings, false);
                             break;
-                        case SHOW_MIDI_KEYBOARD_MENU_ID:
-                            if (auto* midiKeyboardProcessor = dynamic_cast<MidiKeyboardProcessor *>(getProcessor())) {
-                                auto *keyboardComponent = midiKeyboardProcessor->createKeyboard();
-                                keyboardComponent->setSize(800, 1);
-                                new BasicWindow("Keyboard", keyboardComponent, true);
-                                keyboardComponent->grabKeyboardFocus();
-                            }
                         default:
                             break;
                     }
@@ -278,8 +268,7 @@ private:
     static constexpr int
             DELETE_MENU_ID = 1, TOGGLE_BYPASS_MENU_ID = 2, CONNECT_DEFAULTS_MENU_ID = 3, DISCONNECT_ALL_MENU_ID = 4,
             DISCONNECT_DEFAULTS_MENU_ID = 5, DISCONNECT_CUSTOM_MENU_ID = 6,
-            SHOW_PLUGIN_GUI_MENU_ID = 10, SHOW_ALL_PROGRAMS_MENU_ID = 11, CONFIGURE_AUDIO_MIDI_MENU_ID = 12,
-            SHOW_MIDI_KEYBOARD_MENU_ID = 13;
+            SHOW_PLUGIN_GUI_MENU_ID = 10, SHOW_ALL_PROGRAMS_MENU_ID = 11, CONFIGURE_AUDIO_MIDI_MENU_ID = 12;
 
     Rectangle<int> getBoxBounds() {
         auto r = getLocalBounds().reduced(1);

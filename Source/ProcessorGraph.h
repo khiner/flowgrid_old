@@ -50,20 +50,15 @@ public:
         return getProcessorWrapperForState(gain);
     }
 
-    PluginWindow* getOrCreateWindowFor(AudioProcessorGraph::Node* node, PluginWindow::Type type) {
+    ResizableWindow* getOrCreateWindowFor(AudioProcessorGraph::Node* node, PluginWindow::Type type) {
         jassert(node != nullptr);
 
         for (auto* w : activePluginWindows)
             if (w->node == node && w->type == type)
                 return w;
 
-        if (auto* processor = node->getProcessor()) {
-            if (auto* plugin = dynamic_cast<AudioPluginInstance*>(processor)) {
-                auto description = plugin->getPluginDescription();
-            }
-
+        if (auto* processor = node->getProcessor())
             return activePluginWindows.add(new PluginWindow(node, type, activePluginWindows));
-        }
 
         return nullptr;
     }

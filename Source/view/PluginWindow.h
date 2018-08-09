@@ -1,6 +1,7 @@
 #pragma once
 
 #include "JuceHeader.h"
+#include "processors/MidiKeyboardProcessor.h"
 
 /**
     A desktop window containing a plugin's GUI.
@@ -21,7 +22,13 @@ public:
               node(n), type(t) {
         setSize(400, 300);
 
-        if (auto *ui = createProcessorEditor(*node->getProcessor(), type))
+        Component* keyboardComponent {};
+        if (auto *midiKeyboardProcessor = dynamic_cast<MidiKeyboardProcessor *>(n->getProcessor())) {
+            keyboardComponent = midiKeyboardProcessor->createKeyboard();
+            keyboardComponent->setSize(800, 1);
+            setContentOwned(keyboardComponent, true);
+            keyboardComponent->grabKeyboardFocus();
+        } else if (auto *ui = createProcessorEditor(*node->getProcessor(), type))
             setContentOwned(ui, true);
 
         setTopLeftPosition(node->properties.getWithDefault(getLastXProp(type), Random::getSystemRandom().nextInt(500)),
@@ -30,9 +37,11 @@ public:
         node->properties.set(getOpenProp(type), true);
 
         setVisible(true);
+        if (keyboardComponent != nullptr)
+            keyboardComponent->grabKeyboardFocus();
     }
 
-    ~PluginWindow() {
+    ~PluginWindow() override {
         clearContentComponent();
     }
 
@@ -90,7 +99,7 @@ private:
 
     //==============================================================================
     struct ProgramAudioProcessorEditor : public AudioProcessorEditor {
-        ProgramAudioProcessorEditor(AudioProcessor &p) : AudioProcessorEditor(p) {
+        explicit ProgramAudioProcessorEditor(AudioProcessor &p) : AudioProcessorEditor(p) {
             setOpaque(true);
 
             addAndMakeVisible(panel);
@@ -131,7 +140,7 @@ private:
                 owner.addListener(this);
             }
 
-            ~PropertyComp() {
+            ~PropertyComp() override {
                 owner.removeListener(this);
             }
 
