@@ -31,6 +31,9 @@ public:
         setColour(LevelMeter::meterGradientMaxColour, Colours::red);
         setColour(LevelMeter::gainControlColour, Colours::lightgrey.withAlpha(0.75f));
 
+        gainValueControl.setColour(ComboBox::outlineColourId, Colours::transparentBlack);
+        gainValueControl.setColour(TextButton::buttonColourId, findColour(Slider::thumbColourId).withAlpha(0.8f));
+
         gainValueControl.addMouseListener(this, false);
         addAndMakeVisible(gainValueControl);
 
@@ -38,6 +41,7 @@ public:
     }
 
     ~LevelMeter() override {
+        gainValueControl.removeMouseListener(this);
         stopTimer();
     }
 
@@ -66,7 +70,7 @@ public:
     void resized() override {
         updateMeterGradients();
         int gainControlY = int(getHeight() * (1.0f - gainValue));
-        gainValueControl.setBounds(getLocalBounds().withHeight(8).withY(gainControlY - 4));
+        gainValueControl.setBounds(getLocalBounds().withHeight(10).withY(gainControlY - 5));
     }
     
     void timerCallback() override { repaint(); }
