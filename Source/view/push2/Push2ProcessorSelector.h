@@ -16,17 +16,36 @@ class Push2ProcessorSelector : public Push2ComponentBase {
             }
         }
 
+        KnownPluginList::PluginTree* selectFolder(int index) {
+            if (currentTree == nullptr)
+                return nullptr;
+            if (index + currentViewOffset < currentTree->subFolders.size()) {
+                auto *subfolder = currentTree->subFolders.getUnchecked(index + currentViewOffset);
+                selectFolder(subfolder);
+                return subfolder;
+            }
+
+            return nullptr;
+        }
+
+        void selectFolder(KnownPluginList::PluginTree* subfolder) {
+            jassert(currentTree->subFolders.contains(subfolder));
+
+            for (auto* folder : currentTree->subFolders) {
+                folder->selected = false;
+            }
+            subfolder->selected = true;
+            updateLabels();
+        }
+
         const PluginDescription* selectProcessor(int index) {
             if (currentTree == nullptr)
                 return nullptr;
 
-            if (index + currentViewOffsetIndex < currentTree->subFolders.size()) {
-                setCurrentTree(currentTree->subFolders.getUnchecked(index + currentViewOffsetIndex));
-                return nullptr;
-            } else {
+            if (index + currentViewOffset >= currentTree->subFolders.size()) {
                 index -= currentTree->subFolders.size();
-                if (index + currentViewOffsetIndex < currentTree->plugins.size() && labels[index]->isEnabled()) {
-                    return currentTree->plugins.getUnchecked(index + currentViewOffsetIndex);
+                if (index + currentViewOffset < currentTree->plugins.size() && labels[index]->isEnabled()) {
+                    return currentTree->plugins.getUnchecked(index + currentViewOffset);
                 }
             }
 
@@ -45,8 +64,7 @@ class Push2ProcessorSelector : public Push2ComponentBase {
             currentTree = tree;
             if (currentTree != nullptr)
                 currentTree->selected = true;
-            currentViewOffsetIndex = 0;
-            updateLabels(project.selectedTrackHasMixerChannel());
+            setCurrentViewOffset(0);
         }
 
         void setSelected(bool selected) {
@@ -54,29 +72,48 @@ class Push2ProcessorSelector : public Push2ComponentBase {
             repaint();
         }
 
-        Label* findSelectedLabel() const {
+        int getCurrentViewOffset() {
+            return currentViewOffset;
+        }
+
+        void setCurrentViewOffset(int currentViewOffset) {
+            this->currentViewOffset = currentViewOffset;
+            updateLabels();
+        }
+
+        KnownPluginList::PluginTree* findSelectedSubfolder() const {
             if (currentTree == nullptr)
                 return nullptr;
 
-            for (int i = 0; i < jmin(getTotalNumberOfTreeItems() - currentViewOffsetIndex, NUM_ITEMS_PER_ROW); i++) {
-                if (i + currentViewOffsetIndex < currentTree->subFolders.size()) {
-                    if (currentTree->subFolders.getUnchecked(i + currentViewOffsetIndex)->selected)
-                        return labels[i];
+            for (int i = 0; i < jmin(getTotalNumberOfTreeItems() - currentViewOffset, NUM_ITEMS_PER_ROW); i++) {
+                if (i + currentViewOffset < currentTree->subFolders.size()) {
+                    auto *subfolder = currentTree->subFolders.getUnchecked(i + currentViewOffset);
+                    if (subfolder->selected)
+                        return subfolder;
                 }
             }
-            if (currentViewOffsetIndex < currentTree->subFolders.size()) {
-                return labels.getUnchecked(0); // default to first subfolder in view
+            if (currentViewOffset < currentTree->subFolders.size()) {
+                // default to first subfolder in view
+                return currentTree->subFolders.getUnchecked(currentViewOffset);
             }
+
+            return nullptr;
+        }
+        
+        Label* findSelectedLabel() const {
+            auto* selectedSubfolder = findSelectedSubfolder();
+            if (selectedSubfolder != nullptr)
+                return labels.getUnchecked(currentTree->subFolders.indexOf(selectedSubfolder) - currentViewOffset);
+
             return nullptr;
         }
 
         void arrowPressed(Direction direction) {
-            if (direction == Direction::left) {
-                currentViewOffsetIndex = jmax(0, currentViewOffsetIndex - NUM_ITEMS_PER_ROW);
-            } else if (direction == Direction::right && currentTree != nullptr) {
-                currentViewOffsetIndex = jmin(currentViewOffsetIndex + NUM_ITEMS_PER_ROW, getTotalNumberOfTreeItems() - getTotalNumberOfTreeItems() % NUM_ITEMS_PER_ROW);
-            }
-            updateLabels(project.selectedTrackHasMixerChannel());
+            if (direction == Direction::left)
+                setCurrentViewOffset(jmax(0, currentViewOffset - NUM_ITEMS_PER_ROW));
+            else if (direction == Direction::right && currentTree != nullptr)
+                setCurrentViewOffset(jmin(currentViewOffset + NUM_ITEMS_PER_ROW,
+                        getTotalNumberOfTreeItems() - getTotalNumberOfTreeItems() % NUM_ITEMS_PER_ROW));
         }
 
         int getTotalNumberOfTreeItems() const {
@@ -94,15 +131,16 @@ class Push2ProcessorSelector : public Push2ComponentBase {
             }
         }
 
-        int currentViewOffsetIndex { 0 };
         KnownPluginList::PluginTree* currentTree{};
 
         OwnedArray<Label> labels;
     private:
+        int currentViewOffset { 0 };
         bool selected { false };
         Project &project;
 
-        void updateLabels(bool trackHasMixerAlready) {
+        void updateLabels() {
+            bool trackHasMixerAlready = project.selectedTrackHasMixerChannel();
             for (int i = 0; i < labels.size(); i++) {
                 Label *label = labels.getUnchecked(i);
                 label->setColour(Label::ColourIds::backgroundColourId, Colours::transparentBlack);
@@ -112,14 +150,14 @@ class Push2ProcessorSelector : public Push2ComponentBase {
             if (currentTree == nullptr)
                 return;
 
-            for (int i = 0; i < jmin(getTotalNumberOfTreeItems() - currentViewOffsetIndex, NUM_ITEMS_PER_ROW); i++) {
+            for (int i = 0; i < jmin(getTotalNumberOfTreeItems() - currentViewOffset, NUM_ITEMS_PER_ROW); i++) {
                 Label *label = labels.getUnchecked(i);
                 labels[i]->setVisible(true);
-                if (i + currentViewOffsetIndex < currentTree->subFolders.size()) {
-                    KnownPluginList::PluginTree *subFolder = currentTree->subFolders.getUnchecked(i + currentViewOffsetIndex);
+                if (i + currentViewOffset < currentTree->subFolders.size()) {
+                    KnownPluginList::PluginTree *subFolder = currentTree->subFolders.getUnchecked(i + currentViewOffset);
                     label->setText(subFolder->folder, dontSendNotification);
-                } else if (i + currentViewOffsetIndex < getTotalNumberOfTreeItems()) {
-                    const PluginDescription *plugin = currentTree->plugins.getUnchecked(i + currentViewOffsetIndex - currentTree->subFolders.size());
+                } else if (i + currentViewOffset < getTotalNumberOfTreeItems()) {
+                    const PluginDescription *plugin = currentTree->plugins.getUnchecked(i + currentViewOffset - currentTree->subFolders.size());
                     labels[i]->setText(plugin->name, dontSendNotification);
                     labels[i]->setEnabled(!trackHasMixerAlready || plugin->name != MixerChannelProcessor::name());
                 }
@@ -166,14 +204,11 @@ public:
     }
 
     const PluginDescription* selectTopProcessor(int index) {
-        KnownPluginList::PluginTree *previousTree = topProcessorSelector->currentTree;
-        const PluginDescription *description = topProcessorSelector->selectProcessor(index);
-        if (description != nullptr)
+        if (const auto *description = topProcessorSelector->selectProcessor(index))
             return description;
 
-        if (topProcessorSelector->currentTree != previousTree) {
-            setCurrentTree(bottomProcessorSelector.get(), topProcessorSelector->currentTree);
-            setCurrentTree(topProcessorSelector.get(), previousTree);
+        if (auto* subfolder = topProcessorSelector->selectFolder(index)) {
+            setCurrentTree(bottomProcessorSelector.get(), subfolder);
             selectProcessorRow(bottomProcessorSelector.get());
             updateEnabledPush2Arrows();
         }
@@ -181,13 +216,13 @@ public:
     }
 
     const PluginDescription* selectBottomProcessor(int index) {
-        KnownPluginList::PluginTree *previousTree = bottomProcessorSelector->currentTree;
-        const PluginDescription *description = bottomProcessorSelector->selectProcessor(index);
-        if (description != nullptr)
+        if (const auto *description = bottomProcessorSelector->selectProcessor(index))
             return description;
 
-        if (bottomProcessorSelector->currentTree != previousTree) {
-            setCurrentTree(topProcessorSelector.get(), previousTree);
+        if (auto* subfolder = bottomProcessorSelector->selectFolder(index)) {
+            setCurrentTree(topProcessorSelector.get(), bottomProcessorSelector->currentTree);
+            topProcessorSelector->setCurrentViewOffset(bottomProcessorSelector->getCurrentViewOffset());
+            setCurrentTree(bottomProcessorSelector.get(), subfolder);
             updateEnabledPush2Arrows();
         }
         return nullptr;
@@ -210,7 +245,6 @@ public:
             return;
         if (currentProcessorSelector != nullptr && (direction == Direction::left || direction == Direction::right)) {
             currentProcessorSelector->arrowPressed(direction);
-            updateEnabledPush2Arrows();
         } else if (direction == Direction::down) {
             if (auto* selectedLabel = currentProcessorSelector->findSelectedLabel()) {
                 int selectedIndex = currentProcessorSelector->labels.indexOf(selectedLabel);
@@ -223,13 +257,14 @@ public:
         } else if (direction == Direction::up) {
             if (currentProcessorSelector == bottomProcessorSelector.get()) {
                 selectProcessorRow(topProcessorSelector.get());
-                updateEnabledPush2Arrows();
-            } else if (currentProcessorSelector->currentTree->parent != nullptr) {
+            } else if (auto* parent = currentProcessorSelector->currentTree->parent) {
                 setCurrentTree(bottomProcessorSelector.get(), topProcessorSelector->currentTree);
-                setCurrentTree(topProcessorSelector.get(), currentProcessorSelector->currentTree->parent);
-                updateEnabledPush2Arrows();
+                bottomProcessorSelector->setCurrentViewOffset(topProcessorSelector->getCurrentViewOffset());
+                bottomProcessorSelector->selectFolder(topProcessorSelector->findSelectedSubfolder());
+                setCurrentTree(topProcessorSelector.get(), parent);
             }
         }
+        updateEnabledPush2Arrows();
     }
 
     void resized() override {
@@ -292,9 +327,9 @@ private:
         }
     }
 
-    bool canNavigateRight() const { return currentProcessorSelector->currentViewOffsetIndex + NUM_ITEMS_PER_ROW < currentProcessorSelector->getTotalNumberOfTreeItems(); }
+    bool canNavigateRight() const { return currentProcessorSelector->getCurrentViewOffset() + NUM_ITEMS_PER_ROW < currentProcessorSelector->getTotalNumberOfTreeItems(); }
     bool canNavigateDown() const { return currentProcessorSelector->findSelectedLabel() != nullptr; }
-    bool canNavigateLeft() const { return currentProcessorSelector->currentViewOffsetIndex > 0; }
+    bool canNavigateLeft() const { return currentProcessorSelector->getCurrentViewOffset() > 0; }
     bool canNavigateUp() const { return bottomProcessorSelector.get() == currentProcessorSelector || currentProcessorSelector->currentTree->parent != nullptr; }
 
     KnownPluginList::PluginTree rootTree;
