@@ -42,11 +42,11 @@ public:
             }
             switch(ccNumber) {
                 case Push2::shift:
-                    isShiftHeld = true;
+                    push2Listener->shiftPressed();
                     return;
-                case Push2::undo: return push2Listener->undoButtonPressed(isShiftHeld);
+                case Push2::undo: return push2Listener->undoButtonPressed();
                 case Push2::delete_: return push2Listener->deleteButtonPressed();
-                case Push2::addTrack: return push2Listener->addTrackButtonPressed(isShiftHeld);
+                case Push2::addTrack: return push2Listener->addTrackButtonPressed();
                 case Push2::addDevice: return push2Listener->addDeviceButtonPressed();
                 case Push2::master: return push2Listener->masterButtonPressed();
                 default: return;
@@ -54,7 +54,7 @@ public:
         } else if (Push2::isButtonReleaseControlMessage(midiMessage)) {
             switch(ccNumber) {
                 case Push2::shift:
-                    isShiftHeld = false;
+                    push2Listener->shiftReleased();
                     return;
                 default: return;
             }
@@ -63,5 +63,4 @@ public:
 
 private:
     Push2Listener *push2Listener {};
-    bool isShiftHeld = false;
 };

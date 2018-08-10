@@ -14,10 +14,12 @@ public:
             : project(project), push2(push2MidiCommunicator) {}
 
     // Let inheritors implement only what they need.
+    void shiftPressed() override { isShiftHeld = true; }
+    void shiftReleased() override { isShiftHeld = false; }
     void masterEncoderRotated(float changeAmount) override {}
     void encoderRotated(int encoderIndex, float changeAmount) override {}
-    void undoButtonPressed(bool shiftHeld) override {}
-    void addTrackButtonPressed(bool shiftHeld) override {}
+    void undoButtonPressed() override {}
+    void addTrackButtonPressed() override {}
     void deleteButtonPressed() override {}
     void addDeviceButtonPressed() override {}
     void masterButtonPressed() override {}
@@ -39,6 +41,8 @@ public:
 protected:
     const static int NUM_COLUMNS = 8;
     const static int HEADER_FOOTER_HEIGHT = 20;
+
+    bool isShiftHeld { false };
 
     Project& project;
     Push2MidiCommunicator& push2;

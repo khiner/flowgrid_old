@@ -13,7 +13,8 @@
 class Push2Component :
         public Timer,
         public Push2ComponentBase,
-        private ProjectChangeListener {
+        private ProjectChangeListener,
+        private ChangeListener {
 public:
     explicit Push2Component(Project &project, Push2MidiCommunicator &push2MidiCommunicator, ProcessorGraph &audioGraphBuilder)
             : Push2ComponentBase(project, push2MidiCommunicator), graph(audioGraphBuilder),
@@ -24,6 +25,7 @@ public:
         addChildComponent(processorSelector);
 
         project.addProjectChangeListener(this);
+        project.getUndoManager().addChangeListener(this);
         setBounds(0, 0, Push2Display::WIDTH, Push2Display::HEIGHT);
         processorView.setBounds(getLocalBounds());
         processorSelector.setBounds(getLocalBounds());
@@ -32,6 +34,7 @@ public:
 
     ~Push2Component() override {
         setVisible(false);
+        project.getUndoManager().removeChangeListener(this);
         project.removeProjectChangeListener(this);
     }
 
@@ -40,6 +43,17 @@ public:
         push2.disableWhiteLedButton(Push2::addTrack);
         push2.disableWhiteLedButton(Push2::addDevice);
         push2.disableWhiteLedButton(Push2::master);
+        push2.disableWhiteLedButton(Push2::undo);
+    }
+
+    void shiftPressed() override {
+        Push2ComponentBase::shiftPressed();
+        changeListenerCallback(&project.getUndoManager());
+    }
+
+    void shiftReleased() override {
+        Push2ComponentBase::shiftReleased();
+        changeListenerCallback(&project.getUndoManager());
     }
 
     void masterEncoderRotated(float changeAmount) override {
@@ -54,15 +68,12 @@ public:
         }
     }
     
-    void undoButtonPressed(bool shiftHeld) override {
-        if (shiftHeld)
-            project.getUndoManager().redo();
-        else
-            project.getUndoManager().undo();
+    void undoButtonPressed() override {
+        getCommandManager().invokeDirectly(isShiftHeld ? CommandIDs::redo : CommandIDs::undo, false);
     }
     
-    void addTrackButtonPressed(bool shiftHeld) override {
-        getCommandManager().invokeDirectly(shiftHeld ? CommandIDs::insertTrackWithoutMixer : CommandIDs::insertTrack, false);
+    void addTrackButtonPressed() override {
+        getCommandManager().invokeDirectly(isShiftHeld ? CommandIDs::insertTrackWithoutMixer : CommandIDs::insertTrack, false);
     }
     
     void deleteButtonPressed() override {
@@ -159,6 +170,15 @@ private:
     void itemRemoved(const ValueTree& item) override {
         if (item == project.getSelectedProcessor() || item == project.getSelectedTrack()) {
             itemSelected(ValueTree());
+        }
+    }
+
+    void changeListenerCallback(ChangeBroadcaster* source) override {
+        if (auto* undoManager = dynamic_cast<UndoManager *>(source)) {
+            if ((!isShiftHeld && undoManager->canUndo()) || (isShiftHeld && undoManager->canRedo()))
+                push2.activateWhiteLedButton(Push2::undo);
+            else
+                push2.enableWhiteLedButton(Push2::undo);
         }
     }
 };

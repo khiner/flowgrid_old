@@ -7,10 +7,12 @@ public:
     virtual ~Push2Listener() = default;
     using Direction = Push2MidiCommunicator::Direction;
 
+    virtual void shiftPressed() = 0;
+    virtual void shiftReleased() = 0;
     virtual void masterEncoderRotated(float changeAmount) = 0;
     virtual void encoderRotated(int encoderIndex, float changeAmount) = 0;
-    virtual void undoButtonPressed(bool shiftHeld) = 0;
-    virtual void addTrackButtonPressed(bool shiftHeld) = 0;
+    virtual void undoButtonPressed() = 0;
+    virtual void addTrackButtonPressed() = 0;
     virtual void deleteButtonPressed() = 0;
     virtual void masterButtonPressed() = 0;
     virtual void addDeviceButtonPressed() = 0;
