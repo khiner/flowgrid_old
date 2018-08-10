@@ -26,7 +26,7 @@ class Push2ProcessorSelector : public Push2ComponentBase {
     class ProcessorSelectorRow : public Component {
     public:
         explicit ProcessorSelectorRow(Project &project) : project(project) {
-            for (int i = 0; i < NUM_ITEMS_PER_ROW; i++) {
+            for (int i = 0; i < NUM_COLUMNS; i++) {
                 auto *label = new LabelWithUnderline();
                 addChildComponent(label);
                 label->setJustificationType(Justification::centred);
@@ -103,7 +103,7 @@ class Push2ProcessorSelector : public Push2ComponentBase {
             if (currentTree == nullptr)
                 return nullptr;
 
-            for (int i = 0; i < jmin(getTotalNumberOfTreeItems() - currentViewOffset, NUM_ITEMS_PER_ROW); i++) {
+            for (int i = 0; i < jmin(getTotalNumberOfTreeItems() - currentViewOffset, NUM_COLUMNS); i++) {
                 if (i + currentViewOffset < currentTree->subFolders.size()) {
                     auto *subfolder = currentTree->subFolders.getUnchecked(i + currentViewOffset);
                     if (subfolder->selected)
@@ -128,10 +128,10 @@ class Push2ProcessorSelector : public Push2ComponentBase {
 
         void arrowPressed(Direction direction) {
             if (direction == Direction::left)
-                setCurrentViewOffset(jmax(0, currentViewOffset - NUM_ITEMS_PER_ROW));
+                setCurrentViewOffset(jmax(0, currentViewOffset - NUM_COLUMNS));
             else if (direction == Direction::right && currentTree != nullptr)
-                setCurrentViewOffset(jmin(currentViewOffset + NUM_ITEMS_PER_ROW,
-                        getTotalNumberOfTreeItems() - getTotalNumberOfTreeItems() % NUM_ITEMS_PER_ROW));
+                setCurrentViewOffset(jmin(currentViewOffset + NUM_COLUMNS,
+                        getTotalNumberOfTreeItems() - getTotalNumberOfTreeItems() % NUM_COLUMNS));
         }
 
         int getTotalNumberOfTreeItems() const {
@@ -145,7 +145,7 @@ class Push2ProcessorSelector : public Push2ComponentBase {
         void resized() override {
             auto r = getLocalBounds();
             for (auto *label : labels) {
-                label->setBounds(r.removeFromLeft(getWidth() / NUM_ITEMS_PER_ROW));
+                label->setBounds(r.removeFromLeft(getWidth() / NUM_COLUMNS));
             }
         }
 
@@ -169,7 +169,7 @@ class Push2ProcessorSelector : public Push2ComponentBase {
             if (currentTree == nullptr)
                 return;
 
-            for (int i = 0; i < jmin(getTotalNumberOfTreeItems() - currentViewOffset, NUM_ITEMS_PER_ROW); i++) {
+            for (int i = 0; i < jmin(getTotalNumberOfTreeItems() - currentViewOffset, NUM_COLUMNS); i++) {
                 LabelWithUnderline *label = labels.getUnchecked(i);
                 labels[i]->setVisible(true);
                 if (i + currentViewOffset < currentTree->subFolders.size()) {
@@ -294,8 +294,6 @@ public:
         bottomProcessorSelector->setBounds(r.removeFromBottom(30));
     }
 private:
-    static const int NUM_ITEMS_PER_ROW = 8;
-
     void setCurrentTree(ProcessorSelectorRow *processorSelectorRow, KnownPluginList::PluginTree* tree) {
         processorSelectorRow->setCurrentTree(tree);
         updateEnabledPush2Buttons();
@@ -347,7 +345,7 @@ private:
         }
     }
 
-    bool canNavigateRight() const { return currentProcessorSelector->getCurrentViewOffset() + NUM_ITEMS_PER_ROW < currentProcessorSelector->getTotalNumberOfTreeItems(); }
+    bool canNavigateRight() const { return currentProcessorSelector->getCurrentViewOffset() + NUM_COLUMNS < currentProcessorSelector->getTotalNumberOfTreeItems(); }
     bool canNavigateDown() const { return currentProcessorSelector->findSelectedLabel() != nullptr; }
     bool canNavigateLeft() const { return currentProcessorSelector->getCurrentViewOffset() > 0; }
     bool canNavigateUp() const { return bottomProcessorSelector.get() == currentProcessorSelector || currentProcessorSelector->currentTree->parent != nullptr; }

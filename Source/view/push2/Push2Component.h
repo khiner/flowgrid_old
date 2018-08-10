@@ -16,7 +16,7 @@ class Push2Component :
         private ProjectChangeListener {
 public:
     explicit Push2Component(Project &project, Push2MidiCommunicator &push2MidiCommunicator, ProcessorGraph &audioGraphBuilder)
-            : Push2ComponentBase(project, push2MidiCommunicator), audioGraphBuilder(audioGraphBuilder),
+            : Push2ComponentBase(project, push2MidiCommunicator), graph(audioGraphBuilder),
               processorView(project, push2MidiCommunicator), processorSelector(project, push2MidiCommunicator) {
         startTimer(60);
 
@@ -42,7 +42,7 @@ public:
     }
 
     void masterEncoderRotated(float changeAmount) override {
-        auto *masterGainParameter = audioGraphBuilder.getMasterGainProcessor()->getParameter(1);
+        auto *masterGainParameter = graph.getMasterGainProcessor()->getParameter(1);
         if (masterGainParameter != nullptr)
             masterGainParameter->setValue(masterGainParameter->getValue() + changeAmount);
     }
@@ -100,7 +100,7 @@ public:
 
 private:
     Push2DisplayBridge displayBridge;
-    ProcessorGraph &audioGraphBuilder;
+    ProcessorGraph &graph;
 
     Push2ProcessorView processorView;
     Push2ProcessorSelector processorSelector;
@@ -133,16 +133,17 @@ private:
 
     void itemSelected(const ValueTree& item) override {
         if (item.hasType(IDs::PROCESSOR)) {
-            if (auto *processorWrapper = audioGraphBuilder.getProcessorWrapperForState(item)) {
-                processorView.setProcessor(processorWrapper);
+            if (auto *processorWrapper = graph.getProcessorWrapperForState(item)) {
+                processorView.processorSelected(processorWrapper);
                 selectChild(&processorView);
             }
             push2MidiCommunicator.setAddDeviceButtonEnabled(true);
         } else if (item.hasType(IDs::TRACK) || item.hasType(IDs::MASTER_TRACK)) {
             push2MidiCommunicator.setAddDeviceButtonEnabled(true);
+            selectChild(&processorView);
         } else {
             selectChild(nullptr);
-            processorView.setProcessor(nullptr);
+            processorView.processorSelected(nullptr);
             push2MidiCommunicator.setAddDeviceButtonEnabled(false);
         }
     }

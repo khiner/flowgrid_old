@@ -373,9 +373,9 @@ public:
     }
     
     void sendItemSelectedMessage(ValueTree item) override {
-        if (item.hasType(IDs::TRACK))
+        if (item.hasType(IDs::TRACK) || item.hasType(IDs::MASTER_TRACK))
             selectedTrack = item;
-        else if (item.getParent().hasType(IDs::TRACK))
+        else if (item.getParent().hasType(IDs::TRACK) || item.getParent().hasType(IDs::MASTER_TRACK))
             selectedTrack = item.getParent();
         else
             selectedTrack = ValueTree();

@@ -4,6 +4,7 @@
 #include <Project.h>
 #include "JuceHeader.h"
 #include "Push2Listener.h"
+#include "Push2Label.h"
 
 class Push2ComponentBase : public Component, public Push2Listener {
 public:
@@ -31,6 +32,9 @@ public:
     }
 
 protected:
+    const static int NUM_COLUMNS = 8;
+    const static int HEADER_FOOTER_HEIGHT = 20;
+
     Project& project;
     Push2MidiCommunicator& push2MidiCommunicator;
 };

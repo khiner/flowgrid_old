@@ -66,7 +66,6 @@ public:
     }
 
     void select() {
-        processors->select();
         state.setProperty(IDs::selected, true, nullptr);
     }
 
@@ -131,6 +130,11 @@ private:
             nameLabel.setColour(Label::backgroundColourId, getColour());
             repaint();
         } else if (i == IDs::selected) {
+            if (v[IDs::selected]) {
+                processors->select();
+                // selecting a processor deselects everything else.
+                state.setPropertyExcludingListener(this, IDs::selected, true, nullptr);
+            }
             nameLabel.setColour(Label::backgroundColourId, isSelected() ? getColour().brighter(0.25) : getColour());
             repaint();
         }
