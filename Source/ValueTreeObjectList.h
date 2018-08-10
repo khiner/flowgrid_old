@@ -131,15 +131,6 @@ namespace Utilities {
             return -1;
         }
 
-        ObjectType* findObjectWithState(const ValueTree& v) const noexcept {
-            for (auto* object : objects) {
-                if (object->state == v)
-                    return object;
-            }
-
-            return nullptr;
-        }
-
         void sortArray() {
             objects.sort(*this);
         }

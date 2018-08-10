@@ -46,7 +46,7 @@ public:
         delete track;
     }
 
-    void newObjectAdded(GraphEditorTrack *) override { getParentComponent()->resized(); }
+    void newObjectAdded(GraphEditorTrack *track) override { getParentComponent()->resized(); }
 
     void objectRemoved(GraphEditorTrack *) override { getParentComponent()->resized(); }
 
@@ -148,10 +148,11 @@ public:
 
     void valueTreePropertyChanged(ValueTree &v, const juce::Identifier &i) override {
         if (i == IDs::selected && v[IDs::selected]) {
-            if (isSuitableType(v))
+            if (isSuitableType(v)) {
                 deselectAllTracksExcept(v);
-            else
-                deselectAllItemsExcept(parent, v);
+            } else if (isSuitableType(v.getParent())) {
+                deselectAllTracksExcept(v.getParent());
+            }
         }
     }
 
@@ -160,7 +161,7 @@ public:
         if (parent == exParent && isSuitableType(tree)) {
             auto newSelectedTrackIndex = (index - 1 >= 0) ? index - 1 : index;
             if (newSelectedTrackIndex < objects.size())
-                objects.getUnchecked(newSelectedTrackIndex)->select();
+                objects.getUnchecked(newSelectedTrackIndex)->setSelected(true);
         }
     }
 
@@ -187,7 +188,10 @@ private:
     void deselectAllTracksExcept(const ValueTree& except) {
         for (auto track : parent) {
             if (track != except) {
-                track.setProperty(IDs::selected, false, nullptr);
+                if (track[IDs::selected])
+                    track.setProperty(IDs::selected, false, nullptr);
+                else
+                    track.sendPropertyChangeMessage(IDs::selected);
             }
         }
     }

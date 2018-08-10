@@ -223,7 +223,9 @@ private:
     }
 
     void valueTreeChildAdded(ValueTree& parent, ValueTree& child) override {
-        if (child.hasType(IDs::PROCESSOR)) {
+        if (child.hasType(IDs::TRACK) || child.hasType(IDs::MASTER_TRACK)) {
+            resized();
+        } else if (child.hasType(IDs::PROCESSOR)) {
             if (child[IDs::name] == MidiInputProcessor::name()) {
                 auto *midiInputProcessor = new GraphEditorProcessor(child, *this, graph);
                 addAndMakeVisible(midiInputProcessor);
@@ -246,7 +248,9 @@ private:
     }
 
     void valueTreeChildRemoved(ValueTree& parent, ValueTree& child, int indexFromWhichChildWasRemoved) override {
-        if (child.hasType(IDs::PROCESSOR)) {
+        if (child.hasType(IDs::TRACK) || child.hasType(IDs::MASTER_TRACK)) {
+            resized();
+        } else if (child.hasType(IDs::PROCESSOR)) {
             if (child[IDs::name] == MidiInputProcessor::name()) {
                 midiInputProcessors.removeObject(findMidiInputProcessorForNodeId(ProcessorGraph::getNodeIdForState(child)));
                 resized();

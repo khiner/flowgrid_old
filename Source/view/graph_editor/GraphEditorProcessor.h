@@ -75,11 +75,11 @@ public:
         return state[IDs::selected];
     }
 
-    inline void setSelected(bool selected) {
-        if (!isSelected())
-            state.setProperty(IDs::selected, selected, nullptr);
-        else
+    inline void setSelected(bool selected, ValueTree::Listener *listenerToExclude=nullptr) {
+        if (isSelected() && selected && listenerToExclude == nullptr)
             state.sendPropertyChangeMessage(IDs::selected);
+        else
+            state.setPropertyExcludingListener(listenerToExclude, IDs::selected, selected, nullptr);
     }
 
     void paint(Graphics &g) override {

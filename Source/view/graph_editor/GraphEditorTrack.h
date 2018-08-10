@@ -40,7 +40,7 @@ public:
 
                 CallOutBox::launchAsynchronously(colourSelector, getScreenBounds(), nullptr);
             } else {
-                select();
+                setSelected(true);
             }
         }
     }
@@ -69,8 +69,8 @@ public:
         return state.getProperty(IDs::selected);
     }
 
-    void select() {
-        state.setProperty(IDs::selected, true, nullptr);
+    void setSelected(bool selected) {
+        state.setProperty(IDs::selected, selected, nullptr);
     }
 
     const Component *getDragControlComponent() const {
@@ -125,8 +125,13 @@ private:
     ProcessorGraph &graph;
 
     void valueTreePropertyChanged(ValueTree &v, const Identifier &i) override {
-        if (v.hasType(IDs::PROCESSOR) && i == IDs::selected)
+        if (v.hasType(IDs::PROCESSOR) && i == IDs::selected) {
+            if (v[IDs::selected]) {
+                state.setPropertyExcludingListener(this, IDs::selected, false, nullptr);
+                nameLabel.setColour(Label::backgroundColourId, getColour());
+            }
             repaint();
+        }
 
         if (v != state)
             return;
@@ -136,11 +141,7 @@ private:
             nameLabel.setColour(Label::backgroundColourId, getColour());
             repaint();
         } else if (i == IDs::selected) {
-            if (v[IDs::selected]) {
-                processors->select();
-                // selecting a processor deselects everything else.
-                state.setPropertyExcludingListener(this, IDs::selected, true, nullptr);
-            }
+            processors->setSelected(v[IDs::selected], this);
             nameLabel.setColour(Label::backgroundColourId, isSelected() ? getColour().brighter(0.25) : getColour());
             repaint();
         }

@@ -16,6 +16,10 @@ public:
             : Utilities::ValueTreeObjectList<GraphEditorProcessor>(state),
               project(project), connectorDragListener(connectorDragListener), graph(graph) {
         rebuildObjects();
+        for (auto* object : objects) {
+            if (object->isSelected())
+                mostRecentlySelectedProcessor = object;
+        }
     }
 
     ~GraphEditorProcessors() override {
@@ -27,7 +31,7 @@ public:
     }
 
     void mouseDown(const MouseEvent &e) override {
-        select();
+        setSelected(true);
         if (e.mods.isPopupMenu()) {
             showPopupMenu(e.position.toInt());
         }
@@ -84,7 +88,7 @@ public:
         resized();
         if (object == mostRecentlySelectedProcessor) {
             mostRecentlySelectedProcessor = nullptr;
-            select();
+            setSelected(true);
         }
     }
 
@@ -135,11 +139,19 @@ public:
         return false;
     }
 
-    void select() {
-        if (mostRecentlySelectedProcessor != nullptr) {
-            mostRecentlySelectedProcessor->setSelected(true);
-        } else if (auto* firstProcessor = objects.getFirst()) {
-            firstProcessor->setSelected(true);
+    void setSelected(bool selected, ValueTree::Listener *listenerToExclude=nullptr) {
+        if (selected) {
+            if (mostRecentlySelectedProcessor != nullptr) {
+                mostRecentlySelectedProcessor->setSelected(true, listenerToExclude);
+            } else if (auto *firstProcessor = objects.getFirst()) {
+                firstProcessor->setSelected(true, listenerToExclude);
+            } else {
+                parent.setPropertyExcludingListener(listenerToExclude, IDs::selected, true, nullptr);
+            }
+        } else {
+            for (auto *processor : objects) {
+                processor->setSelected(false, listenerToExclude);
+            }
         }
     }
 
@@ -159,13 +171,19 @@ private:
         if (isSuitableType(v)) {
             if (i == IDs::processorSlot)
                 resized();
-            else if (i == IDs::selected && v[IDs::selected])
-                mostRecentlySelectedProcessor = findObjectWithState(v);
+            else if (i == IDs::selected && v[IDs::selected]) {
+                for (auto* processor : objects) {
+                    if (processor->getState() == v)
+                        mostRecentlySelectedProcessor = processor;
+                    else
+                        processor->setSelected(false);
+                }
+            }
         }
 
         Utilities::ValueTreeObjectList<GraphEditorProcessor>::valueTreePropertyChanged(v, i);
     }
-    
+
     GraphEditorProcessor* findProcessorAtSlot(int slot) const {
         for (auto* processor : objects) {
             if (processor->getSlot() == slot) {

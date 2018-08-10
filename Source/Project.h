@@ -241,10 +241,11 @@ public:
         setTrackColour(masterTrack, Colours::darkslateblue, nullptr);
 
         ValueTree masterMixer = createAndAddProcessor(MixerChannelProcessor::getPluginDescription(), masterTrack, -1, false);
-        masterMixer.setProperty(IDs::selected, true, nullptr);
 
         ValueTree track = createAndAddTrack(false);
         createAndAddProcessor(SineBank::getPluginDescription(), track, -1, false);
+
+        masterMixer.setProperty(IDs::selected, true, nullptr);
     }
 
     ValueTree createAndAddTrack(bool undoable=true, bool addMixer=true, ValueTree nextToTrack={}) {
@@ -266,11 +267,14 @@ public:
         }
         ValueTree track(IDs::TRACK);
         track.setProperty(IDs::name, (addMixer || numTracks == 0) ? ("Track " + String(numTracks + 1)) : makeTrackNameUnique(nextToTrack[IDs::name]), nullptr);
+        track.setProperty(IDs::colour, Colours::white.toString(), nullptr); // tmp color
 
         tracks.addChild(track,
                 nextToTrack.isValid() ? nextToTrack.getParent().indexOf(nextToTrack) + (addMixer ? 1 : 0): -1,
                 undoable ? &undoManager : nullptr);
         setTrackColour(track, (addMixer || numTracks == 0) ? Colour::fromHSV((1.0f / 8.0f) * numTracks, 0.65f, 0.65f, 1.0f) : Colour::fromString(nextToTrack[IDs::colour].toString()), nullptr);
+
+        track.setProperty(IDs::selected, true, undoable ? &undoManager : nullptr);
 
         if (addMixer)
             createAndAddProcessor(MixerChannelProcessor::getPluginDescription(), track, -1, undoable);

@@ -140,6 +140,9 @@ private:
             push2MidiCommunicator.setAddDeviceButtonEnabled(true);
         } else if (item.hasType(IDs::TRACK) || item.hasType(IDs::MASTER_TRACK)) {
             push2MidiCommunicator.setAddDeviceButtonEnabled(true);
+            if (item.getNumChildren() == 0) {
+                processorView.emptyTrackSelected(item);
+            }
             selectChild(&processorView);
         } else {
             selectChild(nullptr);

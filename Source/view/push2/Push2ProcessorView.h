@@ -53,6 +53,11 @@ public:
         }
     }
 
+    void emptyTrackSelected(const ValueTree& emptyTrack) {
+        parametersPanel->setProcessor(nullptr);
+        updateLabels();
+    }
+    
     void processorSelected(StatefulAudioProcessorWrapper *const processorWrapper) {
         parametersPanel->setProcessor(processorWrapper);
         updateLabels();
@@ -135,7 +140,7 @@ private:
             }
         }
 
-        if (processorHasFocus) {
+        if (processorHasFocus) { // TODO reset when processor changes
             for (auto* label : processorLabels)
                 label->setVisible(false);
             updatePageButtonVisibility();
@@ -153,6 +158,10 @@ private:
                     label->setText(processor[IDs::name], dontSendNotification);
                     label->setSelected(processor[IDs::selected]);
                 }
+            } else if (i == 0 && selectedTrack.getNumChildren() == 0) {
+                label->setVisible(true);
+                label->setText("No processors", dontSendNotification);
+                label->setSelected(false);
             } else {
                 label->setVisible(false);
             }
