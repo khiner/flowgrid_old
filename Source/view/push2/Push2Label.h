@@ -10,6 +10,10 @@ public:
         updateColours();
     }
 
+    ~Push2Label() override {
+        setVisible(false);
+    }
+
     void setVisible(bool visible) override {
         Label::setVisible(visible);
         updatePush2Button();

@@ -30,6 +30,7 @@ public:
         processorView.setBounds(getLocalBounds());
         processorSelector.setBounds(getLocalBounds());
         push2MidiCommunicator.enableWhiteLedButton(Push2::addTrack);
+        push2.activateWhiteLedButton(Push2::shift);
     }
 
     ~Push2Component() override {
@@ -40,11 +41,14 @@ public:
 
     void setVisible(bool visible) override {
         Push2ComponentBase::setVisible(visible);
-        push2.disableWhiteLedButton(Push2::addTrack);
-        push2.disableWhiteLedButton(Push2::delete_);
-        push2.disableWhiteLedButton(Push2::addDevice);
-        push2.disableWhiteLedButton(Push2::master);
-        push2.disableWhiteLedButton(Push2::undo);
+        if (!visible) {
+            push2.disableWhiteLedButton(Push2::shift);
+            push2.disableWhiteLedButton(Push2::addTrack);
+            push2.disableWhiteLedButton(Push2::delete_);
+            push2.disableWhiteLedButton(Push2::addDevice);
+            push2.disableWhiteLedButton(Push2::master);
+            push2.disableWhiteLedButton(Push2::undo);
+        }
     }
 
     void shiftPressed() override {

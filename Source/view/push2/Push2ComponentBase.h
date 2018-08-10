@@ -30,8 +30,6 @@ public:
     void setVisible(bool visible) override {
         Component::setVisible(visible);
         if (!visible) {
-            push2.setAllAboveScreenButtonEnabled(false);
-            push2.setAllBelowScreenButtonEnabled(false);
             for (Direction direction : Push2::directions) {
                 push2.disableWhiteLedButton(Push2::ccNumberForArrowButton(direction));
             }
