@@ -5,11 +5,29 @@
 #include "Push2ComponentBase.h"
 
 class Push2ProcessorSelector : public Push2ComponentBase {
+    class LabelWithUnderline : public Label {
+    public:
+        void setUnderline(bool underline) {
+            this->underline = underline;
+        }
+
+        void paint(Graphics& g) override {
+            Label::paint(g);
+            if (underline) {
+                g.setColour(findColour(textColourId));
+                g.drawLine(8, getHeight() - 1, getWidth() - 8, getHeight() - 1);
+            }
+        }
+
+    private:
+        bool underline { false };
+    };
+
     class ProcessorSelectorRow : public Component {
     public:
         explicit ProcessorSelectorRow(Project &project) : project(project) {
             for (int i = 0; i < NUM_ITEMS_PER_ROW; i++) {
-                auto *label = new Label();
+                auto *label = new LabelWithUnderline();
                 addChildComponent(label);
                 label->setJustificationType(Justification::centred);
                 labels.add(label);
@@ -100,7 +118,7 @@ class Push2ProcessorSelector : public Push2ComponentBase {
             return nullptr;
         }
         
-        Label* findSelectedLabel() const {
+        LabelWithUnderline* findSelectedLabel() const {
             auto* selectedSubfolder = findSelectedSubfolder();
             if (selectedSubfolder != nullptr)
                 return labels.getUnchecked(currentTree->subFolders.indexOf(selectedSubfolder) - currentViewOffset);
@@ -133,14 +151,15 @@ class Push2ProcessorSelector : public Push2ComponentBase {
 
         KnownPluginList::PluginTree* currentTree{};
 
-        OwnedArray<Label> labels;
+        OwnedArray<LabelWithUnderline> labels;
     private:
         int currentViewOffset { 0 };
         bool selected { false };
         Project &project;
 
         void updateLabels() {
-            bool trackHasMixerAlready = project.selectedTrackHasMixerChannel();
+            const bool trackHasMixerAlready = project.selectedTrackHasMixerChannel();
+
             for (int i = 0; i < labels.size(); i++) {
                 Label *label = labels.getUnchecked(i);
                 label->setColour(Label::ColourIds::backgroundColourId, Colours::transparentBlack);
@@ -151,15 +170,17 @@ class Push2ProcessorSelector : public Push2ComponentBase {
                 return;
 
             for (int i = 0; i < jmin(getTotalNumberOfTreeItems() - currentViewOffset, NUM_ITEMS_PER_ROW); i++) {
-                Label *label = labels.getUnchecked(i);
+                LabelWithUnderline *label = labels.getUnchecked(i);
                 labels[i]->setVisible(true);
                 if (i + currentViewOffset < currentTree->subFolders.size()) {
                     KnownPluginList::PluginTree *subFolder = currentTree->subFolders.getUnchecked(i + currentViewOffset);
                     label->setText(subFolder->folder, dontSendNotification);
+                    label->setUnderline(true);
                 } else if (i + currentViewOffset < getTotalNumberOfTreeItems()) {
                     const PluginDescription *plugin = currentTree->plugins.getUnchecked(i + currentViewOffset - currentTree->subFolders.size());
-                    labels[i]->setText(plugin->name, dontSendNotification);
-                    labels[i]->setEnabled(!trackHasMixerAlready || plugin->name != MixerChannelProcessor::name());
+                    label->setText(plugin->name, dontSendNotification);
+                    label->setEnabled(!trackHasMixerAlready || plugin->name != MixerChannelProcessor::name());
+                    label->setUnderline(false);
                 }
             }
             if (auto *selectedLabel = findSelectedLabel()) {
@@ -272,7 +293,6 @@ public:
         topProcessorSelector->setBounds(r.removeFromTop(30));
         bottomProcessorSelector->setBounds(r.removeFromBottom(30));
     }
-
 private:
     static const int NUM_ITEMS_PER_ROW = 8;
 
