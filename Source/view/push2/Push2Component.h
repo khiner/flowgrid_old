@@ -41,6 +41,7 @@ public:
     void setVisible(bool visible) override {
         Push2ComponentBase::setVisible(visible);
         push2.disableWhiteLedButton(Push2::addTrack);
+        push2.disableWhiteLedButton(Push2::delete_);
         push2.disableWhiteLedButton(Push2::addDevice);
         push2.disableWhiteLedButton(Push2::master);
         push2.disableWhiteLedButton(Push2::undo);
@@ -165,12 +166,15 @@ private:
             processorView.processorSelected(nullptr);
             push2.disableWhiteLedButton(Push2::addDevice);
         }
+        if (project.isItemDeletable(item))
+            push2.activateWhiteLedButton(Push2::delete_);
+        else
+            push2.disableWhiteLedButton(Push2::delete_);
     }
 
     void itemRemoved(const ValueTree& item) override {
-        if (item == project.getSelectedProcessor() || item == project.getSelectedTrack()) {
+        if (item == project.getSelectedProcessor() || item == project.getSelectedTrack())
             itemSelected(ValueTree());
-        }
     }
 
     void changeListenerCallback(ChangeBroadcaster* source) override {

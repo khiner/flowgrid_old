@@ -390,7 +390,12 @@ public:
     ValueTree findFirstSelectedItem() {
         return findFirstItemWithPropertyRecursive(state, IDs::selected, true);
     }
-    
+
+    bool isItemDeletable(const ValueTree& item) {
+        return item.isValid();
+    }
+
+
     void sendItemSelectedMessage(ValueTree item) override {
         if (item.hasType(IDs::TRACK) || item.hasType(IDs::MASTER_TRACK))
             selectedTrack = item;
@@ -707,11 +712,6 @@ private:
         for (const auto &selectedItem : allSelectedItems) {
             deleteItem(selectedItem, true);
         }
-    }
-
-    static inline bool isItemDeletable(const ValueTree& item) {
-//        return !item.hasType(IDs::MASTER_TRACK);
-        return true;
     }
 
     void valueTreeChildAdded(ValueTree &, ValueTree &tree) override {}

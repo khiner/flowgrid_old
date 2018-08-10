@@ -68,7 +68,7 @@ public:
                 processorEditor->setProcessor(processorWrapper);
                 processorEditor->setVisible(true);
             }
-        } else if ((item.hasType(IDs::TRACK) || item.hasType(IDs::MASTER_TRACK)) && item.getNumChildren() == 0) {
+        } else {
             processorEditor->setVisible(false);
             processorEditor->setProcessor(nullptr);
         }

@@ -210,6 +210,8 @@ private:
         if (tree.hasType(IDs::MASTER_TRACK) || tree.hasType(IDs::TRACK)) {
             if (i == IDs::name || i == IDs::colour) {
                 int trackIndex = tree.getParent().indexOf(tree);
+                if (trackIndex == -1)
+                    return;
                 jassert(trackIndex < trackLabels.size()); // TODO left/right buttons
                 if (i == IDs::name) {
                     trackLabels.getUnchecked(trackIndex)->setText(tree[IDs::name], dontSendNotification);
