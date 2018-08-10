@@ -137,6 +137,21 @@ public:
         bottomProcessorSelector = std::make_unique<ProcessorSelectorRow>(project);
         addChildComponent(topProcessorSelector.get());
         addChildComponent(bottomProcessorSelector.get());
+
+        rootTree = KnownPluginList::PluginTree();
+
+        KnownPluginList::PluginTree *internalPluginTree = project.getUserCreatablePluginListInternal().createTree(project.getPluginSortMethod());
+        internalPluginTree->folder = "Internal";
+        KnownPluginList::PluginTree *externalPluginTree = project.getPluginListExternal().createTree(project.getPluginSortMethod());
+        externalPluginTree->folder = "External";
+        internalPluginTree->parent = &rootTree;
+        externalPluginTree->parent = &rootTree;
+
+        rootTree.subFolders.add(internalPluginTree);
+        rootTree.subFolders.add(externalPluginTree);
+
+        setCurrentTree(topProcessorSelector.get(), &rootTree);
+        selectProcessorRow(topProcessorSelector.get());
     }
 
     void setVisible(bool visible) override {
@@ -145,24 +160,8 @@ public:
         bottomProcessorSelector->setVisible(visible);
         
         if (visible) {
-            rootTree = KnownPluginList::PluginTree();
-            
-            KnownPluginList::PluginTree *internalPluginTree = project.getUserCreatablePluginListInternal().createTree(project.getPluginSortMethod());
-            internalPluginTree->folder = "Internal";
-            KnownPluginList::PluginTree *externalPluginTree = project.getPluginListExternal().createTree(project.getPluginSortMethod());
-            externalPluginTree->folder = "External";
-            internalPluginTree->parent = &rootTree;
-            externalPluginTree->parent = &rootTree;
-
-            rootTree.subFolders.add(internalPluginTree);
-            rootTree.subFolders.add(externalPluginTree);
-
-            setCurrentTree(topProcessorSelector.get(), &rootTree);
-            selectProcessorRow(topProcessorSelector.get());
+            updateEnabledPush2Buttons();
             updateEnabledPush2Arrows();
-        } else {
-            setCurrentTree(topProcessorSelector.get(), nullptr);
-            setCurrentTree(bottomProcessorSelector.get(), nullptr);
         }
     }
 
@@ -243,22 +242,8 @@ private:
     static const int NUM_ITEMS_PER_ROW = 8;
 
     void setCurrentTree(ProcessorSelectorRow *processorSelectorRow, KnownPluginList::PluginTree* tree) {
-        for (int i = 0; i < NUM_ITEMS_PER_ROW; i++) {
-            if (topProcessorSelector.get() == processorSelectorRow)
-                push2MidiCommunicator.setAboveScreenButtonEnabled(i, false);
-            else if (bottomProcessorSelector.get() == processorSelectorRow)
-                push2MidiCommunicator.setBelowScreenButtonEnabled(i, false);
-        }
-
         processorSelectorRow->setCurrentTree(tree);
-        for (int i = 0; i < processorSelectorRow->labels.size(); i++){
-            if (processorSelectorRow->labels.getUnchecked(i)->isVisible()) {
-                if (topProcessorSelector.get() == processorSelectorRow)
-                    push2MidiCommunicator.setAboveScreenButtonEnabled(i, true);
-                else if (bottomProcessorSelector.get() == processorSelectorRow)
-                    push2MidiCommunicator.setBelowScreenButtonEnabled(i, true);
-            }
-        }
+        updateEnabledPush2Buttons();
     }
 
     void selectProcessorRow(ProcessorSelectorRow* processorSelectorRow) {
@@ -271,7 +256,24 @@ private:
         }
     }
 
+    void updateEnabledPush2Buttons() {
+        if (!isVisible())
+            return;
+        if (topProcessorSelector != nullptr) {
+            for (int i = 0; i < topProcessorSelector->labels.size(); i++){
+                push2MidiCommunicator.setAboveScreenButtonEnabled(i, topProcessorSelector->labels.getUnchecked(i)->isVisible());
+            }
+        }
+        if (bottomProcessorSelector != nullptr) {
+            for (int i = 0; i < bottomProcessorSelector->labels.size(); i++){
+                push2MidiCommunicator.setBelowScreenButtonEnabled(i, bottomProcessorSelector->labels.getUnchecked(i)->isVisible());
+            }
+        }
+    }
+
     void updateEnabledPush2Arrows() {
+        if (!isVisible())
+            return;
         if (currentProcessorSelector == nullptr) {
             push2MidiCommunicator.setAllArrowButtonsEnabled(false);
         } else {
