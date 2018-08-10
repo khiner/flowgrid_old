@@ -125,7 +125,7 @@ namespace Utilities {
 
         int indexOf(const ValueTree &v) const noexcept {
             for (int i = 0; i < objects.size(); ++i)
-                if (objects.getUnchecked(i)->state == v)
+                if (objects.getUnchecked(i)->getState() == v)
                     return i;
 
             return -1;
@@ -146,8 +146,8 @@ namespace Utilities {
 
     public:
         int compareElements(ObjectType *first, ObjectType *second) const {
-            int index1 = parent.indexOf(first->state);
-            int index2 = parent.indexOf(second->state);
+            int index1 = parent.indexOf(first->getState());
+            int index2 = parent.indexOf(second->getState());
             return index1 - index2;
         }
 

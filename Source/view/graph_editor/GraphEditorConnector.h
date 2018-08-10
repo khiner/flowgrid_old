@@ -21,6 +21,10 @@ struct GraphEditorConnector : public Component, public SettableTooltipClient {
         return connection;
     }
 
+    const ValueTree& getState() const {
+        return state;
+    }
+
     bool isCustom() const {
         return !state.isValid() || state[IDs::isCustomConnection];
     }
@@ -184,6 +188,7 @@ struct GraphEditorConnector : public Component, public SettableTooltipClient {
         distanceFromEnd = p2.getDistanceFrom(p);
     }
 
+private:
     ValueTree state;
 
     ConnectorDragListener &connectorDragListener;
@@ -193,7 +198,6 @@ struct GraphEditorConnector : public Component, public SettableTooltipClient {
     Path linePath, hitPath;
     bool dragging = false;
 
-private:
     AudioProcessorGraph::Connection connection{{0, 0}, {0, 0}};
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (GraphEditorConnector)

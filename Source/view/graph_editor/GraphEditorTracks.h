@@ -63,7 +63,7 @@ public:
 
     GraphEditorTrack *getTrackForState(const ValueTree& state) const {
         for (auto *track : objects) {
-            if (track->state == state)
+            if (track->getState() == state)
                 return track;
         }
         return nullptr;
@@ -95,7 +95,7 @@ public:
     
     void mouseDown(const MouseEvent &e) override {
         if (auto* track = dynamic_cast<GraphEditorTrack *>(e.originalComponent->getParentComponent())) {
-            if (e.originalComponent == track->getDragControlComponent() && track->state != project.getMasterTrack()) {
+            if (e.originalComponent == track->getDragControlComponent() && track->getState() != project.getMasterTrack()) {
                 currentlyDraggingTrack = track;
             }
         } else if (auto* processor = dynamic_cast<GraphEditorProcessor *>(e.originalComponent)) {
@@ -111,7 +111,7 @@ public:
     void mouseDrag(const MouseEvent &e) override {
         if (e.originalComponent->getParentComponent() == currentlyDraggingTrack) {
             auto pos = e.getEventRelativeTo(this).getPosition();
-            int currentIndex = parent.indexOf(currentlyDraggingTrack->state);
+            int currentIndex = parent.indexOf(currentlyDraggingTrack->getState());
             for (auto* track : objects) {
                 if (track == currentlyDraggingTrack)
                     continue;

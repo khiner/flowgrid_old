@@ -8,7 +8,7 @@
 class GraphEditorTrack : public Component, public Utilities::ValueTreePropertyChangeListener, public GraphEditorProcessorContainer, private ChangeListener {
 public:
     explicit GraphEditorTrack(Project& project, ValueTree v, ConnectorDragListener &connectorDragListener, ProcessorGraph& graph)
-            : state(std::move(v)), connectorDragListener(connectorDragListener), graph(graph) {
+            : project(project), state(std::move(v)), connectorDragListener(connectorDragListener), graph(graph) {
         nameLabel.setText(isMasterTrack() ? "M\nA\nS\nT\nE\nR" : getTrackName(), dontSendNotification);
         nameLabel.setJustificationType(Justification::centred);
         nameLabel.setColour(Label::backgroundColourId, getColour());
@@ -22,6 +22,10 @@ public:
         addAndMakeVisible(nameLabel);
         addAndMakeVisible(*(processors = std::make_unique<GraphEditorProcessors>(project, state, connectorDragListener, graph)));
         state.addListener(this);
+    }
+
+    const ValueTree& getState() const {
+        return state;
     }
 
     void mouseDown(const MouseEvent &e) override {
@@ -58,7 +62,7 @@ public:
     }
 
     void setColour(const Colour& colour) {
-        state.setProperty(IDs::colour, colour.toString(), &graph.undoManager);
+        project.setTrackColour(state, colour, &graph.undoManager);
     }
 
     bool isSelected() const {
@@ -111,8 +115,10 @@ public:
         processors->setCurrentlyMovingProcessor(currentlyMovingProcessor);
     }
 
-    ValueTree state;
 private:
+    Project& project;
+    ValueTree state;
+
     Label nameLabel;
     std::unique_ptr<GraphEditorProcessors> processors;
     ConnectorDragListener &connectorDragListener;

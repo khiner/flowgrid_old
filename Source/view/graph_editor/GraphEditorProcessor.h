@@ -37,6 +37,10 @@ public:
         state.removeListener(this);
     }
 
+    const ValueTree& getState() const {
+        return state;
+    }
+
     AudioProcessorGraph::NodeID getNodeId() const {
         if (!state.isValid())
             return ProcessorGraph::NA_NODE_ID;
@@ -251,15 +255,6 @@ public:
                 w->toFront(true);
     }
 
-    ValueTree state;
-
-    ConnectorDragListener &connectorDragListener;
-    ProcessorGraph &graph;
-    OwnedArray<GraphEditorPin> pins;
-    int pinSize = 16;
-    float largeFontHeight = 18.0f;
-    float smallFontHeight = 15.0f;
-    std::unique_ptr<PopupMenu> menu;
 
     class ElementComparator {
     public:
@@ -267,10 +262,19 @@ public:
             return first->getName().compare(second->getName());
         }
     };
+    ValueTree state;
+
 private:
     DrawableText nameLabel;
-    const bool showChannelLabels;
     Component* inlineEditor {};
+    ConnectorDragListener &connectorDragListener;
+    ProcessorGraph &graph;
+    OwnedArray<GraphEditorPin> pins;
+    const bool showChannelLabels;
+    int pinSize = 16;
+    float largeFontHeight = 18.0f;
+    float smallFontHeight = 15.0f;
+    std::unique_ptr<PopupMenu> menu;
 
     static constexpr int
             DELETE_MENU_ID = 1, TOGGLE_BYPASS_MENU_ID = 2, CONNECT_DEFAULTS_MENU_ID = 3, DISCONNECT_ALL_MENU_ID = 4,

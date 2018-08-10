@@ -8,7 +8,7 @@
 
 class SoundMachineApplication : public JUCEApplication, public MenuBarModel, private ChangeListener, private Timer {
 public:
-    SoundMachineApplication() : project(undoManager, processorManager, deviceManager),
+    SoundMachineApplication() : project(undoManager, processorManager, deviceManager, push2MidiCommunicator),
                                 processorGraph(project, undoManager, deviceManager) {}
 
     const String getApplicationName() override { return ProjectInfo::projectName; }

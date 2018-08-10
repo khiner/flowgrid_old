@@ -9,9 +9,9 @@ class Push2ProcessorView : public Push2ComponentBase, private Utilities::ValueTr
 public:
     explicit Push2ProcessorView(Project &project, Push2MidiCommunicator &push2MidiCommunicator)
             : Push2ComponentBase(project, push2MidiCommunicator),
-              escapeProcessorFocusButton("Back", 0.5, Colours::blue),
-              parameterPageLeftButton("Page left", 0.5, Colours::orangered),
-              parameterPageRightButton("Page right", 0.0, Colours::orangered) {
+              escapeProcessorFocusButton("Back", 0.5, Colours::white),
+              parameterPageLeftButton("Page left", 0.5, Colours::white),
+              parameterPageRightButton("Page right", 0.0, Colours::white) {
 
         project.getState().addListener(this);
 
@@ -55,8 +55,7 @@ public:
 
     void processorSelected(StatefulAudioProcessorWrapper *const processorWrapper) {
         parametersPanel->setProcessor(processorWrapper);
-        updateTrackLabels();
-        updateProcessorLabels();
+        updateLabels();
     }
 
     void updatePageButtonVisibility() {
@@ -104,7 +103,7 @@ private:
 
     void focusOnProcessor(bool focus) {
         processorHasFocus = focus;
-        updateProcessorLabels();
+        updateLabels();
     }
 
     void pageLeft() {
@@ -117,8 +116,10 @@ private:
         updatePageButtonVisibility();
     }
 
-    void updateTrackLabels() {
-        const auto &selectedTrack = project.getSelectedTrack();
+    void updateLabels() {
+        auto &selectedTrack = project.getSelectedTrack();
+        if (!selectedTrack.isValid())
+            return;
 
         for (int i = 0; i < trackLabels.size(); i++) {
             auto *label = trackLabels.getUnchecked(i);
@@ -126,43 +127,37 @@ private:
             if (i < project.getNumTracks()) {
                 const auto &track = project.getTrack(i);
                 label->setVisible(true);
-                label->setText(track[IDs::name], dontSendNotification);
                 label->setMainColour(Colour::fromString(track[IDs::colour].toString()));
+                label->setText(track[IDs::name], dontSendNotification);
                 label->setSelected(track == selectedTrack);
             } else {
                 label->setVisible(false);
             }
         }
-    }
 
-    void updateProcessorLabels() {
         if (processorHasFocus) {
             for (auto* label : processorLabels)
                 label->setVisible(false);
             updatePageButtonVisibility();
             return;
         }
-
         updatePageButtonVisibility();
-        const auto &selectedTrack = project.getSelectedTrack();
-        if (!selectedTrack.isValid())
-            return;
 
         for (int i = 0; i < processorLabels.size(); i++) {
             auto *label = processorLabels.getUnchecked(i);
-             // TODO left/right buttons
-             if (i < selectedTrack.getNumChildren()) {
-                 const auto &processor = selectedTrack.getChild(i);
-                 if (processor.hasType(IDs::PROCESSOR)) {
-                     label->setVisible(true);
-                     label->setText(processor[IDs::name], dontSendNotification);
-                     label->setMainColour(Colour::fromString(selectedTrack[IDs::colour].toString()));
-                     label->setSelected(processor[IDs::selected]);
-                 }
-             } else {
-                 label->setVisible(false);
-             }
+            // TODO left/right buttons
+            if (i < selectedTrack.getNumChildren()) {
+                const auto &processor = selectedTrack.getChild(i);
+                if (processor.hasType(IDs::PROCESSOR)) {
+                    label->setVisible(true);
+                    label->setText(processor[IDs::name], dontSendNotification);
+                    label->setSelected(processor[IDs::selected]);
+                }
+            } else {
+                label->setVisible(false);
+            }
         }
+        valueTreePropertyChanged(selectedTrack, IDs::colour);
     }
 
     void updateEnabledPush2Buttons() {
@@ -197,8 +192,13 @@ private:
                 } else if (i == IDs::colour) {
                     const auto &trackColour = Colour::fromString(tree[IDs::colour].toString());
                     trackLabels.getUnchecked(trackIndex)->setMainColour(trackColour);
-                    for (auto* processorLabel : processorLabels) {
-                        processorLabel->setMainColour(trackColour);
+                    if (tree == project.getSelectedTrack()) {
+                        for (auto *processorLabel : processorLabels) {
+                            processorLabel->setMainColour(trackColour);
+                        }
+                        escapeProcessorFocusButton.setColour(trackColour);
+                        parameterPageLeftButton.setColour(trackColour);
+                        parameterPageRightButton.setColour(trackColour);
                     }
                 }
             }

@@ -117,6 +117,35 @@ public:
         return message.getControllerValue() == 0;
     }
 
+    bool setColour(uint8 colourIndex, const Colour& colour) {
+        jassert(colourIndex > 0 && colourIndex < CHAR_MAX - 1);
+
+        uint32 argb = colour.getARGB();
+        // 8 bytes: 2 for each of R, G, B, W. First byte contains the 7 LSBs; Second byte contains the 1 MSB.
+        uint8 bgra[8];
+
+        for (int i = 0; i < 4; i++) {
+            auto c = static_cast<uint8>(argb >> (i * CHAR_BIT));
+            bgra[i * 2] = static_cast<uint8>(c & 0x7F);
+            bgra[i * 2 + 1] = static_cast<uint8>(c & 0x80) >> 7;
+        }
+
+        const uint8 setLedColourPaletteEntryCommand[] { 0x00, 0x21, 0x1D, 0x01, 0x01, 0x03, colourIndex,
+                                                        bgra[4], bgra[5], bgra[2], bgra[3], bgra[0], bgra[1], bgra[6], bgra[7] };
+        auto setLedColourPaletteEntryMessage = MidiMessage::createSysExMessage(setLedColourPaletteEntryCommand, 15);
+        sendMessageChecked(setLedColourPaletteEntryMessage);
+        static const uint8 reapplyColorPaletteCommand[] { 0x00, 0x21, 0x1D, 0x01, 0x01, 0x05 };
+        sendMessageChecked(MidiMessage::createSysExMessage(reapplyColorPaletteCommand, 6));
+
+        indexForColour[colour.toString()] = colourIndex;
+
+        return true;
+    }
+
+    bool setTrackColour(uint8 trackIndex, const Colour& trackColour) {
+        return setColour(FIRST_TRACK_COLOUR_INDEX + trackIndex, trackColour);
+    }
+
     void setAboveScreenButtonColour(int buttonIndex, const Colour &colour) {
         setButtonColour(topDisplayButton1 + buttonIndex, colour);
     }
@@ -160,9 +189,10 @@ public:
 
 private:
     static const int NO_ANIMATION_LED_CHANNEL = 1;
+    static const uint8 FIRST_TRACK_COLOUR_INDEX = 50;
 
     std::unordered_map<String, uint8> indexForColour;
-    Array<Colour> colours;
+    uint8 numRegisteredNonTrackColours = 0;
 
     void sendMessageChecked(const MidiMessage& message) const {
         if (isOutputConnected()) {
@@ -194,27 +224,8 @@ private:
     }
 
     void addColour(const Colour &colour) {
-        jassert(colours.size() < CHAR_MAX); // no sensible way to prioritize which colours to switch out
-
-        auto colourIndex = static_cast<uint8>(colours.size() + 1);
-        uint32 argb = colour.getARGB();
-        // 8 bytes: 2 for each of R, G, B, W. First byte contains the 7 LSBs; Second byte contains the 1 MSB.
-        uint8 bgra[8];
-
-        for (int i = 0; i < 4; i++) {
-            auto c = static_cast<uint8>(argb >> (i * CHAR_BIT));
-            bgra[i * 2] = static_cast<uint8>(c & 0x7F);
-            bgra[i * 2 + 1] = static_cast<uint8>(c & 0x80) >> 7;
-        }
-
-        const uint8 setLedColourPaletteEntryCommand[] { 0x00, 0x21, 0x1D, 0x01, 0x01, 0x03, colourIndex,
-                                                        bgra[4], bgra[5], bgra[2], bgra[3], bgra[0], bgra[1], bgra[6], bgra[7] };
-        auto setLedColourPaletteEntryMessage = MidiMessage::createSysExMessage(setLedColourPaletteEntryCommand, 15);
-        sendMessageChecked(setLedColourPaletteEntryMessage);
-        static const uint8 reapplyColorPaletteCommand[] { 0x00, 0x21, 0x1D, 0x01, 0x01, 0x05 };
-        sendMessageChecked(MidiMessage::createSysExMessage(reapplyColorPaletteCommand, 6));
-
-        colours.add(colour);
-        indexForColour.insert(std::make_pair(colour.toString(), colourIndex));
+        jassert(numRegisteredNonTrackColours + 1 < FIRST_TRACK_COLOUR_INDEX);
+        if (setColour(numRegisteredNonTrackColours + 1, colour))
+            numRegisteredNonTrackColours++;
     }
 };

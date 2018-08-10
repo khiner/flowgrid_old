@@ -9,9 +9,9 @@
 class Project : public FileBasedDocument, public ProjectChangeBroadcaster,
                 private ChangeListener, private ValueTree::Listener {
 public:
-    Project(UndoManager &undoManager, ProcessorManager& processorManager, AudioDeviceManager& deviceManager)
+    Project(UndoManager &undoManager, ProcessorManager& processorManager, AudioDeviceManager& deviceManager, Push2MidiCommunicator& push2MidiCommunicator)
             : FileBasedDocument(getFilenameSuffix(), getFilenameWildcard(), "Load a project", "Save a project"),
-              undoManager(undoManager), processorManager(processorManager), deviceManager(deviceManager) {
+              undoManager(undoManager), processorManager(processorManager), deviceManager(deviceManager), push2MidiCommunicator(push2MidiCommunicator) {
         state = ValueTree(IDs::PROJECT);
         state.setProperty(IDs::name, "My First Project", nullptr);
         input = ValueTree(IDs::INPUT);
@@ -62,7 +62,7 @@ public:
 
     ValueTree getMasterTrack() { return tracks.getChildWithName(IDs::MASTER_TRACK); }
 
-    const ValueTree& getSelectedTrack() const { return selectedTrack; }
+    ValueTree& getSelectedTrack() { return selectedTrack; }
 
     ValueTree& getSelectedProcessor() { return selectedProcessor; }
 
@@ -70,7 +70,7 @@ public:
         return track.getChildWithProperty(IDs::name, MixerChannelProcessor::name());
     }
 
-    const ValueTree getMixerChannelProcessorForSelectedTrack() const {
+    const ValueTree getMixerChannelProcessorForSelectedTrack() {
         return getMixerChannelProcessorForTrack(getSelectedTrack());
     }
 
@@ -82,7 +82,7 @@ public:
         return output.getChildWithProperty(IDs::name, processorManager.getAudioOutputDescription().name);
     }
 
-    const bool selectedTrackHasMixerChannel() const {
+    const bool selectedTrackHasMixerChannel() {
         return getMixerChannelProcessorForSelectedTrack().isValid();
     }
 
@@ -221,13 +221,24 @@ public:
         }
     }
 
+    // IMPORTANT: always set track colours this way instead of directly through state.
+    // Unfortunately, we can't specify an explicit state-listener notification order,
+    // We need to register the colour to Push2 _before_ something else tries to set a Push2 button colour,
+    // to avoid it creating a new (non-track) colour slot to accomadate it.
+    // Thus, everybody can _listen_ to a track colour change and set the Push2 buttons as needed,
+    // but nobody else can _modify_ a track colour state directly :(
+    void setTrackColour(ValueTree& track, const Colour& colour, UndoManager* undoManager) {
+        push2MidiCommunicator.setTrackColour(uint8(track.getParent().indexOf(track)), colour);
+        track.setProperty(IDs::colour, colour.toString(), undoManager);
+    }
+
     void createDefaultProject() {
         createAudioIoProcessors();
 
         ValueTree masterTrack(IDs::MASTER_TRACK);
         masterTrack.setProperty(IDs::name, "Master", nullptr);
-        masterTrack.setProperty(IDs::colour, Colours::darkslateblue.toString(), nullptr);
         tracks.addChild(masterTrack, -1, nullptr);
+        setTrackColour(masterTrack, Colours::darkslateblue, nullptr);
 
         ValueTree masterMixer = createAndAddProcessor(MixerChannelProcessor::getPluginDescription(), masterTrack, -1, false);
         masterMixer.setProperty(IDs::selected, true, nullptr);
@@ -255,11 +266,11 @@ public:
         }
         ValueTree track(IDs::TRACK);
         track.setProperty(IDs::name, (addMixer || numTracks == 0) ? ("Track " + String(numTracks + 1)) : makeTrackNameUnique(nextToTrack[IDs::name]), nullptr);
-        track.setProperty(IDs::colour, (addMixer || numTracks == 0) ? Colour::fromHSV((1.0f / 8.0f) * numTracks, 0.65f, 0.65f, 1.0f).toString() : nextToTrack[IDs::colour].toString(), nullptr);
 
         tracks.addChild(track,
                 nextToTrack.isValid() ? nextToTrack.getParent().indexOf(nextToTrack) + (addMixer ? 1 : 0): -1,
                 undoable ? &undoManager : nullptr);
+        setTrackColour(track, (addMixer || numTracks == 0) ? Colour::fromHSV((1.0f / 8.0f) * numTracks, 0.65f, 0.65f, 1.0f) : Colour::fromString(nextToTrack[IDs::colour].toString()), nullptr);
 
         if (addMixer)
             createAndAddProcessor(MixerChannelProcessor::getPluginDescription(), track, -1, undoable);
@@ -569,7 +580,8 @@ private:
 
     ProcessorManager &processorManager;
     AudioDeviceManager& deviceManager;
-    
+    Push2MidiCommunicator& push2MidiCommunicator;
+
     void clear() {
         sendItemSelectedMessage({});
         input.removeAllChildren(nullptr);
