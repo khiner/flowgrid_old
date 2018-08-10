@@ -154,10 +154,14 @@ public:
         }
     }
 
+    void setAddTrackButtonEnabled(bool enabled) const { setWhiteLedButtonEnabled(addTrack, enabled); }
+
+    void setAddDeviceButtonEnabled(bool enabled) const { setWhiteLedButtonEnabled(addDevice, enabled); }
+
 private:
     static const int NO_ANIMATION_LED_CHANNEL = 1;
 
-    std::unordered_map<String, int> indexForColour;
+    std::unordered_map<String, uint8> indexForColour;
     Array<Colour> colours;
 
     void sendMessageChecked(const MidiMessage& message) const {
@@ -175,6 +179,10 @@ private:
 
         jassert(entry != indexForColour.end());
         sendMessageChecked(MidiMessage::controllerEvent(NO_ANIMATION_LED_CHANNEL, buttonCcNumber, entry->second));
+    }
+
+    void setWhiteLedButtonEnabled(int buttonCcNumber, bool enabled) const {
+        sendMessageChecked(MidiMessage::controllerEvent(NO_ANIMATION_LED_CHANNEL, buttonCcNumber, enabled ? 127 : 0));
     }
 
     void setColourButtonEnabled(int buttonCcNumber, bool enabled) {

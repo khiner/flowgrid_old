@@ -27,11 +27,18 @@ public:
         setBounds(0, 0, Push2Display::WIDTH, Push2Display::HEIGHT);
         processorView.setBounds(getLocalBounds());
         processorSelector.setBounds(getLocalBounds());
+        push2MidiCommunicator.setAddTrackButtonEnabled(true);
     }
 
     ~Push2Component() override {
         setVisible(false);
         project.removeProjectChangeListener(this);
+    }
+
+    void setVisible(bool visible) override {
+        Push2ComponentBase::setVisible(visible);
+        push2MidiCommunicator.setAddTrackButtonEnabled(false);
+        push2MidiCommunicator.setAddDeviceButtonEnabled(false);
     }
 
     void masterEncoderRotated(float changeAmount) override {
@@ -53,12 +60,12 @@ public:
             project.getUndoManager().undo();
     }
     
-    void addTrackButtonPressed() override {
-        project.createAndAddTrack();
+    void addTrackButtonPressed(bool shiftHeld) override {
+        getCommandManager().invokeDirectly(shiftHeld ? CommandIDs::insertTrackWithoutMixer : CommandIDs::insertTrack, false);
     }
     
     void deleteButtonPressed() override {
-        project.deleteSelectedItems();
+        getCommandManager().invokeDirectly(CommandIDs::deleteSelected, false);
     }
     
     void addDeviceButtonPressed() override {
@@ -130,9 +137,13 @@ private:
                 processorView.setProcessor(processorWrapper);
                 selectChild(&processorView);
             }
-        } else if (!item.hasType(IDs::TRACK) && !item.hasType(IDs::MASTER_TRACK)) {
+            push2MidiCommunicator.setAddDeviceButtonEnabled(true);
+        } else if (item.hasType(IDs::TRACK) || item.hasType(IDs::MASTER_TRACK)) {
+            push2MidiCommunicator.setAddDeviceButtonEnabled(true);
+        } else {
             selectChild(nullptr);
             processorView.setProcessor(nullptr);
+            push2MidiCommunicator.setAddDeviceButtonEnabled(false);
         }
     }
 

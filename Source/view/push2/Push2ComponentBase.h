@@ -14,7 +14,7 @@ public:
     void masterEncoderRotated(float changeAmount) override {}
     void encoderRotated(int encoderIndex, float changeAmount) override {}
     void undoButtonPressed(bool shiftHeld) override {}
-    void addTrackButtonPressed() override {}
+    void addTrackButtonPressed(bool shiftHeld) override {}
     void deleteButtonPressed() override {}
     void addDeviceButtonPressed() override {}
     void aboveScreenButtonPressed(int buttonIndex) override {}

@@ -46,7 +46,7 @@ public:
                     return;
                 case Push2::undo: return push2Listener->undoButtonPressed(isShiftHeld);
                 case Push2::delete_: return push2Listener->deleteButtonPressed();
-                case Push2::addTrack: return push2Listener->addTrackButtonPressed();
+                case Push2::addTrack: return push2Listener->addTrackButtonPressed(isShiftHeld);
                 case Push2::addDevice: return push2Listener->addDeviceButtonPressed();
                 default: return;
             }
