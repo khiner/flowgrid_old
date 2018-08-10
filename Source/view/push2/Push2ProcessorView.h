@@ -34,6 +34,13 @@ public:
         project.getState().removeListener(this);
     }
 
+    void setVisible(bool visible) override {
+        Push2ComponentBase::setVisible(visible);
+        push2.enableWhiteLedButton(Push2::master);
+        if (visible)
+            updateLabels();
+    }
+
     void resized() override {
         auto r = getLocalBounds();
         auto top = r.removeFromTop(HEADER_FOOTER_HEIGHT);
@@ -140,6 +147,14 @@ private:
             }
         }
 
+        if (!project.getMasterTrack().isValid())
+            push2.disableWhiteLedButton(Push2::master);
+        else if (selectedTrack != project.getMasterTrack()) {
+            push2.enableWhiteLedButton(Push2::master);
+        } else {
+            push2.activateWhiteLedButton(Push2::master);
+        }
+
         if (processorHasFocus) { // TODO reset when processor changes
             for (auto* label : processorLabels)
                 label->setVisible(false);
@@ -172,9 +187,9 @@ private:
     void updateEnabledPush2Buttons() {
         if (processorHasFocus) {
             // TODO update these buttons to manage the push buttons on their own, similar to Push2Label
-            push2MidiCommunicator.setAboveScreenButtonEnabled(0, true); // back button
-            push2MidiCommunicator.setAboveScreenButtonEnabled(NUM_COLUMNS - 2, parametersPanel->canPageLeft());
-            push2MidiCommunicator.setAboveScreenButtonEnabled(NUM_COLUMNS - 1, parametersPanel->canPageRight());
+            push2.setAboveScreenButtonEnabled(0, true); // back button
+            push2.setAboveScreenButtonEnabled(NUM_COLUMNS - 2, parametersPanel->canPageLeft());
+            push2.setAboveScreenButtonEnabled(NUM_COLUMNS - 1, parametersPanel->canPageRight());
         }
     }
 

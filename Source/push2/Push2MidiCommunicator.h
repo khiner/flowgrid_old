@@ -172,34 +172,23 @@ public:
             setBelowScreenButtonEnabled(buttonIndex, enabled);
     }
 
-    void setArrowButtonEnabled(Direction direction, bool enabled) const {
-        uint8 ccNumber = ccNumberForArrowButton(direction);
-        sendMessageChecked(MidiMessage::controllerEvent(NO_ANIMATION_LED_CHANNEL, ccNumber, enabled ? CHAR_MAX : 0));
+    void enableWhiteLedButton(int buttonCcNumber) const {
+        sendMessageChecked(MidiMessage::controllerEvent(NO_ANIMATION_LED_CHANNEL, buttonCcNumber, 14));
     }
 
-    void setAllArrowButtonsEnabled(bool enabled) const {
-        for (Direction direction : Push2MidiCommunicator::directions) {
-            setArrowButtonEnabled(direction, enabled);
-        }
+    void disableWhiteLedButton(int buttonCcNumber) const {
+        sendMessageChecked(MidiMessage::controllerEvent(NO_ANIMATION_LED_CHANNEL, buttonCcNumber, 0));
     }
 
-    void setAddTrackButtonEnabled(bool enabled) const { setWhiteLedButtonEnabled(addTrack, enabled); }
+    void activateWhiteLedButton(int buttonCcNumber) const {
+        sendMessageChecked(MidiMessage::controllerEvent(NO_ANIMATION_LED_CHANNEL, buttonCcNumber, 127));
+    }
 
-    void setAddDeviceButtonEnabled(bool enabled) const { setWhiteLedButtonEnabled(addDevice, enabled); }
-
-    void setMasterButtonEnabled(bool enabled) const { setWhiteLedButtonEnabled(master, enabled); }
-
-private:
-    static const int NO_ANIMATION_LED_CHANNEL = 1;
-    static const uint8 FIRST_TRACK_COLOUR_INDEX = 50;
-
-    std::unordered_map<String, uint8> indexForColour;
-    uint8 numRegisteredNonTrackColours = 0;
-
-    void sendMessageChecked(const MidiMessage& message) const {
-        if (isOutputConnected()) {
-            midiOutput->sendMessageNow(message);
-        }
+    void setColourButtonEnabled(int buttonCcNumber, bool enabled) {
+        if (enabled)
+            setButtonColour(buttonCcNumber, Colours::white);
+        else
+            disableWhiteLedButton(buttonCcNumber);
     }
 
     void setButtonColour(int buttonCcNumber, const Colour &colour) {
@@ -213,15 +202,16 @@ private:
         sendMessageChecked(MidiMessage::controllerEvent(NO_ANIMATION_LED_CHANNEL, buttonCcNumber, entry->second));
     }
 
-    void setWhiteLedButtonEnabled(int buttonCcNumber, bool enabled) const {
-        sendMessageChecked(MidiMessage::controllerEvent(NO_ANIMATION_LED_CHANNEL, buttonCcNumber, enabled ? 127 : 0));
-    }
+private:
+    static const int NO_ANIMATION_LED_CHANNEL = 1;
+    static const uint8 FIRST_TRACK_COLOUR_INDEX = 50;
 
-    void setColourButtonEnabled(int buttonCcNumber, bool enabled) {
-        if (enabled) {
-            setButtonColour(buttonCcNumber, Colours::white);
-        } else {
-            sendMessageChecked(MidiMessage::controllerEvent(NO_ANIMATION_LED_CHANNEL, buttonCcNumber, 0));
+    std::unordered_map<String, uint8> indexForColour;
+    uint8 numRegisteredNonTrackColours = 0;
+
+    void sendMessageChecked(const MidiMessage& message) const {
+        if (isOutputConnected()) {
+            midiOutput->sendMessageNow(message);
         }
     }
 

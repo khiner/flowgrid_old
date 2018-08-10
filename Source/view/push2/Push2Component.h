@@ -27,7 +27,7 @@ public:
         setBounds(0, 0, Push2Display::WIDTH, Push2Display::HEIGHT);
         processorView.setBounds(getLocalBounds());
         processorSelector.setBounds(getLocalBounds());
-        push2MidiCommunicator.setAddTrackButtonEnabled(true);
+        push2MidiCommunicator.enableWhiteLedButton(Push2::addTrack);
     }
 
     ~Push2Component() override {
@@ -37,9 +37,9 @@ public:
 
     void setVisible(bool visible) override {
         Push2ComponentBase::setVisible(visible);
-        push2MidiCommunicator.setAddTrackButtonEnabled(false);
-        push2MidiCommunicator.setAddDeviceButtonEnabled(false);
-        push2MidiCommunicator.setMasterButtonEnabled(false);
+        push2.disableWhiteLedButton(Push2::addTrack);
+        push2.disableWhiteLedButton(Push2::addDevice);
+        push2.disableWhiteLedButton(Push2::master);
     }
 
     void masterEncoderRotated(float changeAmount) override {
@@ -142,9 +142,9 @@ private:
                 processorView.processorSelected(processorWrapper);
                 selectChild(&processorView);
             }
-            push2MidiCommunicator.setAddDeviceButtonEnabled(true);
+            push2.enableWhiteLedButton(Push2::addDevice);
         } else if (item.hasType(IDs::TRACK) || item.hasType(IDs::MASTER_TRACK)) {
-            push2MidiCommunicator.setAddDeviceButtonEnabled(true);
+            push2.enableWhiteLedButton(Push2::addDevice);
             if (item.getNumChildren() == 0) {
                 processorView.emptyTrackSelected(item);
             }
@@ -152,9 +152,8 @@ private:
         } else {
             selectChild(nullptr);
             processorView.processorSelected(nullptr);
-            push2MidiCommunicator.setAddDeviceButtonEnabled(false);
+            push2.disableWhiteLedButton(Push2::addDevice);
         }
-        push2MidiCommunicator.setMasterButtonEnabled(project.getMasterTrack().isValid());
     }
 
     void itemRemoved(const ValueTree& item) override {

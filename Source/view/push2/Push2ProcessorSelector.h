@@ -221,6 +221,9 @@ public:
         if (visible) {
             updateEnabledPush2Buttons();
             updateEnabledPush2Arrows();
+            push2.activateWhiteLedButton(Push2::addDevice);
+        } else {
+            push2.enableWhiteLedButton(Push2::addDevice);
         }
     }
 
@@ -314,12 +317,12 @@ private:
             return;
         if (topProcessorSelector != nullptr) {
             for (int i = 0; i < topProcessorSelector->labels.size(); i++){
-                push2MidiCommunicator.setAboveScreenButtonEnabled(i, topProcessorSelector->labels.getUnchecked(i)->isVisible());
+                push2.setAboveScreenButtonEnabled(i, topProcessorSelector->labels.getUnchecked(i)->isVisible());
             }
         }
         if (bottomProcessorSelector != nullptr) {
             for (int i = 0; i < bottomProcessorSelector->labels.size(); i++){
-                push2MidiCommunicator.setBelowScreenButtonEnabled(i, bottomProcessorSelector->labels.getUnchecked(i)->isVisible());
+                push2.setBelowScreenButtonEnabled(i, bottomProcessorSelector->labels.getUnchecked(i)->isVisible());
             }
         }
     }
@@ -327,12 +330,11 @@ private:
     void updateEnabledPush2Arrows() {
         if (!isVisible())
             return;
-        if (currentProcessorSelector == nullptr) {
-            push2MidiCommunicator.setAllArrowButtonsEnabled(false);
-        } else {
-            for (Direction direction : Push2MidiCommunicator::directions) {
-                push2MidiCommunicator.setArrowButtonEnabled(direction, canNavigateInDirection(direction));
-            }
+        for (Direction direction : Push2MidiCommunicator::directions) {
+            if (currentProcessorSelector != nullptr && canNavigateInDirection(direction))
+                push2.activateWhiteLedButton(Push2::ccNumberForArrowButton(direction));
+            else
+                push2.disableWhiteLedButton(Push2::ccNumberForArrowButton(direction));
         }
     }
 
