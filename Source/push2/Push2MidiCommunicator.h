@@ -187,6 +187,8 @@ public:
 
     void setAddDeviceButtonEnabled(bool enabled) const { setWhiteLedButtonEnabled(addDevice, enabled); }
 
+    void setMasterButtonEnabled(bool enabled) const { setWhiteLedButtonEnabled(master, enabled); }
+
 private:
     static const int NO_ANIMATION_LED_CHANNEL = 1;
     static const uint8 FIRST_TRACK_COLOUR_INDEX = 50;

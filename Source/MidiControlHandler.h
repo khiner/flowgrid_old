@@ -48,6 +48,7 @@ public:
                 case Push2::delete_: return push2Listener->deleteButtonPressed();
                 case Push2::addTrack: return push2Listener->addTrackButtonPressed(isShiftHeld);
                 case Push2::addDevice: return push2Listener->addDeviceButtonPressed();
+                case Push2::master: return push2Listener->masterButtonPressed();
                 default: return;
             }
         } else if (Push2::isButtonReleaseControlMessage(midiMessage)) {

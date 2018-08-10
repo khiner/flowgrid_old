@@ -39,6 +39,7 @@ public:
         Push2ComponentBase::setVisible(visible);
         push2MidiCommunicator.setAddTrackButtonEnabled(false);
         push2MidiCommunicator.setAddDeviceButtonEnabled(false);
+        push2MidiCommunicator.setMasterButtonEnabled(false);
     }
 
     void masterEncoderRotated(float changeAmount) override {
@@ -70,6 +71,10 @@ public:
     
     void addDeviceButtonPressed() override {
         selectChild(&processorSelector);
+    }
+
+    void masterButtonPressed() override {
+        project.getMasterTrack().setProperty(IDs::selected, true, nullptr);
     }
 
     void aboveScreenButtonPressed(int buttonIndex) override {
@@ -149,6 +154,7 @@ private:
             processorView.processorSelected(nullptr);
             push2MidiCommunicator.setAddDeviceButtonEnabled(false);
         }
+        push2MidiCommunicator.setMasterButtonEnabled(project.getMasterTrack().isValid());
     }
 
     void itemRemoved(const ValueTree& item) override {

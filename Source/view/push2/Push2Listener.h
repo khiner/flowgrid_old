@@ -12,6 +12,7 @@ public:
     virtual void undoButtonPressed(bool shiftHeld) = 0;
     virtual void addTrackButtonPressed(bool shiftHeld) = 0;
     virtual void deleteButtonPressed() = 0;
+    virtual void masterButtonPressed() = 0;
     virtual void addDeviceButtonPressed() = 0;
     virtual void aboveScreenButtonPressed(int buttonIndex) = 0;
     virtual void belowScreenButtonPressed(int buttonIndex) = 0;

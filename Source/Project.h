@@ -58,6 +58,10 @@ public:
 
     int getNumTracks() { return tracks.getNumChildren(); }
 
+    int getNumNonMasterTracks() {
+        return getMasterTrack().isValid() ? tracks.getNumChildren() - 1 : tracks.getNumChildren();
+    }
+
     ValueTree getTrack(int trackIndex) { return tracks.getChild(trackIndex); }
 
     ValueTree getMasterTrack() { return tracks.getChildWithName(IDs::MASTER_TRACK); }

@@ -18,6 +18,7 @@ public:
     void addTrackButtonPressed(bool shiftHeld) override {}
     void deleteButtonPressed() override {}
     void addDeviceButtonPressed() override {}
+    void masterButtonPressed() override {}
     void aboveScreenButtonPressed(int buttonIndex) override {}
     void belowScreenButtonPressed(int buttonIndex) override {}
     void arrowPressed(Direction direction) override {}

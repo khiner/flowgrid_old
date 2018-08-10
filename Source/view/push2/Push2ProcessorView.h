@@ -129,7 +129,7 @@ private:
         for (int i = 0; i < trackLabels.size(); i++) {
             auto *label = trackLabels.getUnchecked(i);
             // TODO left/right buttons
-            if (i < project.getNumTracks()) {
+            if (i < project.getNumNonMasterTracks()) {
                 const auto &track = project.getTrack(i);
                 label->setVisible(true);
                 label->setMainColour(Colour::fromString(track[IDs::colour].toString()));
@@ -179,7 +179,7 @@ private:
     }
 
     void selectTrack(int trackIndex) {
-        if (trackIndex < project.getNumTracks()) {
+        if (trackIndex < project.getNumNonMasterTracks()) {
             project.getTrack(trackIndex).setProperty(IDs::selected, true, nullptr);
         }
     }
