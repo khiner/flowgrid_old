@@ -161,7 +161,7 @@ private:
             push2.enableWhiteLedButton(Push2::addDevice);
         } else if (item.hasType(IDs::TRACK) || item.hasType(IDs::MASTER_TRACK)) {
             push2.enableWhiteLedButton(Push2::addDevice);
-            if (item.getNumChildren() == 0) {
+            if (item.getNumChildren() == 0) { // TODO manage this on its own
                 processorView.emptyTrackSelected(item);
             }
             selectChild(&processorView);

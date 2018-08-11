@@ -2,22 +2,19 @@
 
 #include <processors/StatefulAudioProcessorWrapper.h>
 #include "JuceHeader.h"
-#include "Push2ComponentBase.h"
+#include "Push2TrackManagingView.h"
 #include "view/processor_editor/ParametersPanel.h"
 
-class Push2ProcessorView : public Push2ComponentBase, private Utilities::ValueTreePropertyChangeListener {
+class Push2ProcessorView : public Push2TrackManagingView {
 public:
     explicit Push2ProcessorView(Project &project, Push2MidiCommunicator &push2MidiCommunicator)
-            : Push2ComponentBase(project, push2MidiCommunicator),
+            : Push2TrackManagingView(project, push2MidiCommunicator),
               escapeProcessorFocusButton("Back", 0.5, Colours::white),
               parameterPageLeftButton("Page left", 0.5, Colours::white),
               parameterPageRightButton("Page right", 0.0, Colours::white) {
 
-        project.getState().addListener(this);
-
         for (int i = 0; i < NUM_COLUMNS; i++) {
             addChildComponent(processorLabels.add(new Push2Label(i, true, push2MidiCommunicator)));
-            addChildComponent(trackLabels.add(new Push2Label(i, false, push2MidiCommunicator)));
         }
 
         addChildComponent(escapeProcessorFocusButton);
@@ -30,18 +27,9 @@ public:
         parameterPageRightButton.onClick = [this]() { pageRight(); };
     }
 
-    ~Push2ProcessorView() override {
-        project.getState().removeListener(this);
-    }
-
-    void setVisible(bool visible) override {
-        Push2ComponentBase::setVisible(visible);
-        push2.enableWhiteLedButton(Push2::master);
-        if (visible)
-            updateLabels();
-    }
-
     void resized() override {
+        Push2TrackManagingView::resized();
+
         auto r = getLocalBounds();
         auto top = r.removeFromTop(HEADER_FOOTER_HEIGHT);
         auto labelWidth = getWidth() / NUM_COLUMNS;
@@ -54,9 +42,6 @@ public:
         top = getLocalBounds().removeFromTop(HEADER_FOOTER_HEIGHT);
         for (auto* processorLabel : processorLabels) {
             processorLabel->setBounds(top.removeFromLeft(labelWidth));
-        }
-        for (auto* trackLabel : trackLabels) {
-            trackLabel->setBounds(bottom.removeFromLeft(labelWidth));
         }
     }
 
@@ -94,10 +79,6 @@ public:
         }
     }
 
-    void belowScreenButtonPressed(int buttonIndex) override {
-        selectTrack(buttonIndex);
-    }
-
     void encoderRotated(int encoderIndex, float changeAmount) override {
         jassert(encoderIndex >= 0 && encoderIndex < NUM_COLUMNS);
         if (auto *parameter = parametersPanel->getParameterForIndex(encoderIndex)) {
@@ -108,7 +89,6 @@ public:
 private:
     std::unique_ptr<ParametersPanel> parametersPanel;
     OwnedArray<Push2Label> processorLabels;
-    OwnedArray<Push2Label> trackLabels;
     ArrowButton escapeProcessorFocusButton, parameterPageLeftButton, parameterPageRightButton;
 
     bool processorHasFocus { false };
@@ -128,32 +108,12 @@ private:
         updatePageButtonVisibility();
     }
 
-    void updateLabels() {
+    void updateLabels() override {
+        Push2TrackManagingView::updateLabels();
+
         auto &selectedTrack = project.getSelectedTrack();
         if (!selectedTrack.isValid())
             return;
-
-        for (int i = 0; i < trackLabels.size(); i++) {
-            auto *label = trackLabels.getUnchecked(i);
-            // TODO left/right buttons
-            if (i < project.getNumNonMasterTracks()) {
-                const auto &track = project.getTrack(i);
-                label->setVisible(true);
-                label->setMainColour(Colour::fromString(track[IDs::colour].toString()));
-                label->setText(track[IDs::name], dontSendNotification);
-                label->setSelected(track == selectedTrack);
-            } else {
-                label->setVisible(false);
-            }
-        }
-
-        if (!project.getMasterTrack().isValid())
-            push2.disableWhiteLedButton(Push2::master);
-        else if (selectedTrack != project.getMasterTrack()) {
-            push2.enableWhiteLedButton(Push2::master);
-        } else {
-            push2.activateWhiteLedButton(Push2::master);
-        }
 
         if (processorHasFocus) { // TODO reset when processor changes
             for (auto* label : processorLabels)
@@ -193,12 +153,6 @@ private:
         }
     }
 
-    void selectTrack(int trackIndex) {
-        if (trackIndex < project.getNumNonMasterTracks()) {
-            project.getTrack(trackIndex).setProperty(IDs::selected, true, nullptr);
-        }
-    }
-
     void selectProcessor(int processorIndex) {
         const auto& selectedTrack = project.getSelectedTrack();
         if (selectedTrack.isValid() && processorIndex < selectedTrack.getNumChildren()) {
@@ -207,34 +161,24 @@ private:
     }
 
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {
-        if (tree.hasType(IDs::MASTER_TRACK) || tree.hasType(IDs::TRACK)) {
-            if (i == IDs::name || i == IDs::colour) {
-                int trackIndex = tree.getParent().indexOf(tree);
-                if (trackIndex == -1)
-                    return;
-                jassert(trackIndex < trackLabels.size()); // TODO left/right buttons
-                if (i == IDs::name) {
-                    trackLabels.getUnchecked(trackIndex)->setText(tree[IDs::name], dontSendNotification);
-                } else if (i == IDs::colour) {
-                    const auto &trackColour = Colour::fromString(tree[IDs::colour].toString());
-                    trackLabels.getUnchecked(trackIndex)->setMainColour(trackColour);
-                    if (tree == project.getSelectedTrack()) {
-                        for (auto *processorLabel : processorLabels) {
-                            processorLabel->setMainColour(trackColour);
-                        }
-                        escapeProcessorFocusButton.setColour(trackColour);
-                        parameterPageLeftButton.setColour(trackColour);
-                        parameterPageRightButton.setColour(trackColour);
-                    }
-                }
-            }
-        } else if (tree.hasType(IDs::PROCESSOR)) {
+        Push2TrackManagingView::valueTreePropertyChanged(tree, i);
+
+        if (tree.hasType(IDs::PROCESSOR)) {
             int processorIndex = tree.getParent().indexOf(tree);
             jassert(processorIndex < processorLabels.size()); // TODO left/right buttons
             if (i == IDs::name) {
                 processorLabels.getUnchecked(processorIndex)->setText(tree[IDs::name], dontSendNotification);
             }
         }
+    }
+
+    void selectedTrackColourChanged(const Colour& newColour) override {
+        for (auto *processorLabel : processorLabels) {
+            processorLabel->setMainColour(newColour);
+        }
+        escapeProcessorFocusButton.setColour(newColour);
+        parameterPageLeftButton.setColour(newColour);
+        parameterPageRightButton.setColour(newColour);
     }
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Push2ProcessorView)
