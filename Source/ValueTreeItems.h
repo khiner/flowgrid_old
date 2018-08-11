@@ -8,7 +8,6 @@ class ValueTreeItem;
 
 class ProjectChangeListener {
 public:
-    virtual void itemSelected(const ValueTree&) = 0;
     virtual void itemRemoved(const ValueTree&) = 0;
     virtual void processorCreated(const ValueTree&) {};
     virtual void processorWillBeDestroyed(const ValueTree &) {};
@@ -43,16 +42,6 @@ public:
         jassert(MessageManager::getInstance()->currentThreadHasLockedMessageManager());
 
         changeListeners.remove(listener);
-    }
-
-    virtual void sendItemSelectedMessage(ValueTree item) {
-        if (MessageManager::getInstance()->isThisTheMessageThread()) {
-            changeListeners.call(&ProjectChangeListener::itemSelected, item);
-        } else {
-            MessageManager::callAsync([this, item] {
-                changeListeners.call(&ProjectChangeListener::itemSelected, item);
-            });
-        }
     }
 
     virtual void sendItemRemovedMessage(ValueTree item) {

@@ -14,7 +14,8 @@ class Push2Component :
         public Timer,
         public Push2ComponentBase,
         private ProjectChangeListener,
-        private ChangeListener {
+        private ChangeListener,
+        private Utilities::ValueTreePropertyChangeListener {
 public:
     explicit Push2Component(Project &project, Push2MidiCommunicator &push2MidiCommunicator, ProcessorGraph &audioGraphBuilder)
             : Push2ComponentBase(project, push2MidiCommunicator), graph(audioGraphBuilder),
@@ -24,6 +25,7 @@ public:
         addChildComponent(processorView);
         addChildComponent(processorSelector);
 
+        project.getState().addListener(this);
         project.addProjectChangeListener(this);
         project.getUndoManager().addChangeListener(this);
         setBounds(0, 0, Push2Display::WIDTH, Push2Display::HEIGHT);
@@ -37,6 +39,7 @@ public:
         setVisible(false);
         project.getUndoManager().removeChangeListener(this);
         project.removeProjectChangeListener(this);
+        project.getState().removeListener(this);
     }
 
     void setVisible(bool visible) override {
@@ -152,33 +155,38 @@ private:
 
     void timerCallback() override { drawFrame(); }
 
-    void itemSelected(const ValueTree& item) override {
-        if (item.hasType(IDs::PROCESSOR)) {
-            if (auto *processorWrapper = graph.getProcessorWrapperForState(item)) {
-                processorView.processorSelected(processorWrapper);
+    void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {
+        if (i == IDs::selected && tree[IDs::selected]) {
+            if (tree.hasType(IDs::PROCESSOR)) {
+                if (auto *processorWrapper = graph.getProcessorWrapperForState(tree)) {
+                    processorView.processorSelected(processorWrapper);
+                    selectChild(&processorView);
+                }
+                push2.enableWhiteLedButton(Push2::addDevice);
+            } else if (tree.hasType(IDs::TRACK) || tree.hasType(IDs::MASTER_TRACK)) {
+                push2.enableWhiteLedButton(Push2::addDevice);
                 selectChild(&processorView);
+            } else {
+                selectChild(nullptr);
+                processorView.processorSelected(nullptr);
+                push2.disableWhiteLedButton(Push2::addDevice);
             }
-            push2.enableWhiteLedButton(Push2::addDevice);
-        } else if (item.hasType(IDs::TRACK) || item.hasType(IDs::MASTER_TRACK)) {
-            push2.enableWhiteLedButton(Push2::addDevice);
-            if (item.getNumChildren() == 0) { // TODO manage this on its own
-                processorView.emptyTrackSelected(item);
-            }
-            selectChild(&processorView);
-        } else {
-            selectChild(nullptr);
-            processorView.processorSelected(nullptr);
-            push2.disableWhiteLedButton(Push2::addDevice);
+            if (project.isItemDeletable(tree))
+                push2.activateWhiteLedButton(Push2::delete_);
+            else
+                push2.disableWhiteLedButton(Push2::delete_);
         }
-        if (project.isItemDeletable(item))
-            push2.activateWhiteLedButton(Push2::delete_);
-        else
-            push2.disableWhiteLedButton(Push2::delete_);
     }
 
     void itemRemoved(const ValueTree& item) override {
-        if (item == project.getSelectedProcessor() || item == project.getSelectedTrack())
-            itemSelected(ValueTree());
+        if (item.hasType(IDs::MASTER_TRACK) || item.hasType(IDs::TRACK) || item.hasType(IDs::PROCESSOR)) {
+            if (!project.getSelectedTrack().isValid()) {
+                selectChild(nullptr);
+                processorView.processorSelected(nullptr);
+                push2.disableWhiteLedButton(Push2::addDevice);
+                push2.disableWhiteLedButton(Push2::delete_);
+            }
+        }
     }
 
     void changeListenerCallback(ChangeBroadcaster* source) override {

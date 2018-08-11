@@ -43,8 +43,12 @@ protected:
 
     virtual void selectedTrackColourChanged(const Colour& colour) = 0;
 
+    virtual void emptyTrackSelected(const ValueTree& emptyTrack) {
+        updateLabels();
+    }
+
     virtual void updateLabels() {
-        auto &selectedTrack = project.getSelectedTrack();
+        auto selectedTrack = project.getSelectedTrack();
         if (!selectedTrack.isValid())
             return;
 
@@ -85,6 +89,10 @@ protected:
                     if (tree == project.getSelectedTrack()) {
                         selectedTrackColourChanged(trackColour);
                     }
+                }
+            } else if (i == IDs::selected && tree[IDs::selected]) {
+                if (tree.getNumChildren() == 0) { // TODO manage this on its own
+                    emptyTrackSelected(tree);
                 }
             }
         }

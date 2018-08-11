@@ -621,8 +621,6 @@ private:
         resetDefaultExternalInputConnections();
     };
 
-    void itemSelected(const ValueTree&) override {};
-
     void itemRemoved(const ValueTree&) override {};
 
     void updateIoChannelEnabled(const ValueTree& parent, const ValueTree& channel, bool enabled) {

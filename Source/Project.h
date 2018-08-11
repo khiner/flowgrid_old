@@ -66,9 +66,27 @@ public:
 
     ValueTree getMasterTrack() { return tracks.getChildWithName(IDs::MASTER_TRACK); }
 
-    ValueTree& getSelectedTrack() { return selectedTrack; }
+    ValueTree getSelectedTrack() {
+        for (const auto& track : tracks) {
+            if (track[IDs::selected])
+                return track;
+            for (const auto& processor : track) {
+                if (processor.hasType(IDs::PROCESSOR) && processor[IDs::selected])
+                    return track;
+            }
+        }
+        return {};
+    }
 
-    ValueTree& getSelectedProcessor() { return selectedProcessor; }
+    ValueTree getSelectedProcessor() {
+        for (const auto& track : tracks) {
+            for (const auto& processor : track) {
+                if (processor.hasType(IDs::PROCESSOR) && processor[IDs::selected])
+                    return processor;
+            }
+        }
+        return {};
+    }
 
     const ValueTree getMixerChannelProcessorForTrack(const ValueTree& track) const {
         return track.getChildWithProperty(IDs::name, MixerChannelProcessor::name());
@@ -253,7 +271,8 @@ public:
     }
 
     ValueTree createAndAddTrack(bool undoable=true, bool addMixer=true, ValueTree nextToTrack={}) {
-        int numTracks = getNumTracks() - 1; // minus 1 because of master track
+        int numTracks = getNumNonMasterTracks();
+        const auto& selectedTrack = getSelectedTrack();
 
         if (!nextToTrack.isValid()) {
             if (selectedTrack.isValid()) {
@@ -287,12 +306,10 @@ public:
     }
 
     ValueTree createAndAddProcessor(const PluginDescription& description, bool undoable=true) {
-        const ValueTree& selectedTrack = getSelectedTrack();
-        if (selectedTrack.isValid()) {
-            return createAndAddProcessor(description, selectedTrack, -1, undoable);
-        } else {
+        if (getSelectedTrack().isValid())
+            return createAndAddProcessor(description, getSelectedTrack(), -1, undoable);
+        else
             return ValueTree();
-        }
     }
 
     ValueTree createAndAddProcessor(const PluginDescription &description, ValueTree track, int slot=-1, bool undoable=true) {
@@ -394,32 +411,7 @@ public:
     bool isItemDeletable(const ValueTree& item) {
         return item.isValid();
     }
-
-
-    void sendItemSelectedMessage(ValueTree item) override {
-        if (item.hasType(IDs::TRACK) || item.hasType(IDs::MASTER_TRACK))
-            selectedTrack = item;
-        else if (item.getParent().hasType(IDs::TRACK) || item.getParent().hasType(IDs::MASTER_TRACK))
-            selectedTrack = item.getParent();
-        else
-            selectedTrack = ValueTree();
-
-        if (item.hasType(IDs::PROCESSOR))
-            selectedProcessor = item;
-        else
-            selectedProcessor = ValueTree();
-
-        ProjectChangeBroadcaster::sendItemSelectedMessage(item);
-    }
-
-    void sendItemRemovedMessage(ValueTree item) override {
-        ProjectChangeBroadcaster::sendItemRemovedMessage(item);
-        if (item == selectedTrack)
-            selectedTrack = ValueTree();
-        if (item == selectedProcessor)
-            selectedProcessor = ValueTree();
-    }
-
+    
     void addPluginsToMenu(PopupMenu& menu, const ValueTree& track) const {
         StringArray disabledPluginIds;
         if (getMixerChannelProcessorForTrack(track).isValid()) {
@@ -586,7 +578,7 @@ private:
     ValueTree state;
     UndoManager &undoManager;
     AudioProcessorGraph* graph;
-    ValueTree input, output, tracks, selectedTrack, selectedProcessor, connections;
+    ValueTree input, output, tracks, connections;
 
     Array<ValueTree> connectionsSnapshot;
     std::unordered_map<int, int> slotForNodeIdSnapshot;
@@ -596,7 +588,6 @@ private:
     Push2MidiCommunicator& push2MidiCommunicator;
 
     void clear() {
-        sendItemSelectedMessage({});
         input.removeAllChildren(nullptr);
         output.removeAllChildren(nullptr);
         while (tracks.getNumChildren() > 0)
@@ -723,9 +714,7 @@ private:
     void valueTreeChildOrderChanged(ValueTree &tree, int, int) override {}
 
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {
-        if (i == IDs::selected && tree[IDs::selected]) {
-            sendItemSelectedMessage(tree);
-        } else if (i == IDs::deviceName && (tree == input || tree == output)) {
+        if (i == IDs::deviceName && (tree == input || tree == output)) {
             AudioDeviceManager::AudioDeviceSetup config;
             deviceManager.getAudioDeviceSetup(config);
             const String &deviceName = tree[IDs::deviceName];

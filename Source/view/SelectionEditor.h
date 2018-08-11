@@ -10,10 +10,12 @@ class SelectionEditor : public Component,
                         public DragAndDropContainer,
                         public ChangeListener,
                         private ProjectChangeListener,
-                        private Button::Listener {
+                        private Button::Listener,
+                        private Utilities::ValueTreePropertyChangeListener {
 public:
     SelectionEditor(Project& project, ProcessorGraph &audioGraphBuilder)
             : project(project), audioGraphBuilder(audioGraphBuilder) {
+        project.getState().addListener(this);
         project.addProjectChangeListener(this);
         addChildComponent((processorEditor = std::make_unique<ProcessorEditor>()).get());
         Utilities::visitComponents({&undoButton, &redoButton, &addProcessorButton},
@@ -24,6 +26,11 @@ public:
         addProcessorButton.addListener(this);
 
         setSize(800, 600);
+    }
+
+    ~SelectionEditor() override {
+        project.removeProjectChangeListener(this);
+        project.getState().removeListener(this);
     }
 
     void resized() override {
@@ -60,28 +67,13 @@ public:
         }
     }
 
-    void itemSelected(const ValueTree& item) override {
-        addProcessorButton.setVisible(item.hasType(IDs::PROCESSOR) || item.hasType(IDs::TRACK) || item.hasType(IDs::MASTER_TRACK));
-
-        if (item.hasType(IDs::PROCESSOR)) {
-            if (auto *processorWrapper = audioGraphBuilder.getProcessorWrapperForState(item)) {
-                processorEditor->setProcessor(processorWrapper);
-                processorEditor->setVisible(true);
-            }
-        } else {
-            processorEditor->setVisible(false);
-            processorEditor->setProcessor(nullptr);
-        }
-
-        resized();
-    }
-
     void itemRemoved(const ValueTree& item) override {
-        if (item == project.getSelectedTrack()) {
-            addProcessorButton.setVisible(false);
-            itemSelected(ValueTree());
-        } else if (item == project.getSelectedProcessor()) {
-            itemSelected(ValueTree());
+        if (item.hasType(IDs::MASTER_TRACK) || item.hasType(IDs::TRACK) || item.hasType(IDs::PROCESSOR)) {
+            if (!project.getSelectedTrack().isValid()) {
+                addProcessorButton.setVisible(false);
+                processorEditor->setVisible(false);
+                processorEditor->setProcessor(nullptr);
+            }
         }
     }
 
@@ -103,6 +95,24 @@ private:
     ProcessorGraph &audioGraphBuilder;
 
     std::unique_ptr<PopupMenu> addProcessorMenu;
+
+    void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {
+        if (i == IDs::selected && tree[IDs::selected]) {
+            addProcessorButton.setVisible(tree.hasType(IDs::PROCESSOR) || tree.hasType(IDs::TRACK) || tree.hasType(IDs::MASTER_TRACK));
+
+            if (tree.hasType(IDs::PROCESSOR)) {
+                if (auto *processorWrapper = audioGraphBuilder.getProcessorWrapperForState(tree)) {
+                    processorEditor->setProcessor(processorWrapper);
+                    processorEditor->setVisible(true);
+                }
+            } else {
+                processorEditor->setVisible(false);
+                processorEditor->setProcessor(nullptr);
+            }
+
+            resized();
+        }
+    }
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SelectionEditor)
 };

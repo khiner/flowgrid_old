@@ -45,9 +45,9 @@ public:
         }
     }
 
-    void emptyTrackSelected(const ValueTree& emptyTrack) {
+    void emptyTrackSelected(const ValueTree& emptyTrack) override {
+        Push2TrackManagingView::emptyTrackSelected(emptyTrack);
         parametersPanel->setProcessor(nullptr);
-        updateLabels();
     }
     
     void processorSelected(StatefulAudioProcessorWrapper *const processorWrapper) {
@@ -111,7 +111,7 @@ private:
     void updateLabels() override {
         Push2TrackManagingView::updateLabels();
 
-        auto &selectedTrack = project.getSelectedTrack();
+        auto selectedTrack = project.getSelectedTrack();
         if (!selectedTrack.isValid())
             return;
 
