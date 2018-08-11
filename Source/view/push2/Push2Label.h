@@ -36,10 +36,22 @@ public:
         updateColours();
     }
 
+    void setUnderlined(bool underlined) {
+        this->underlined = underlined;
+    }
+
+    void paint(Graphics& g) override {
+        Label::paint(g);
+        if (underlined) {
+            g.setColour(colour);
+            g.drawLine(0, getHeight() - 1, getWidth(), getHeight() - 1);
+        }
+    }
+
 private:
     int position;
     bool top;
-    bool selected { false };
+    bool selected { false }, underlined { false };
     Colour colour { Colours::white };
 
     Push2MidiCommunicator& push2MidiCommunicator;

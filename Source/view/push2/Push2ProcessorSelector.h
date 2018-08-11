@@ -5,33 +5,16 @@
 #include "Push2ComponentBase.h"
 
 class Push2ProcessorSelector : public Push2ComponentBase {
-    class LabelWithUnderline : public Label {
-    public:
-        void setUnderline(bool underline) {
-            this->underline = underline;
-        }
-
-        void paint(Graphics& g) override {
-            Label::paint(g);
-            if (underline) {
-                g.setColour(findColour(textColourId));
-                g.drawLine(8, getHeight() - 1, getWidth() - 8, getHeight() - 1);
-            }
-        }
-
-    private:
-        bool underline { false };
-    };
-
     class ProcessorSelectorRow : public Component {
     public:
-        explicit ProcessorSelectorRow(Project &project) : project(project) {
+        explicit ProcessorSelectorRow(Project &project, Push2 &push2, bool top) : project(project) {
             for (int i = 0; i < NUM_COLUMNS; i++) {
-                auto *label = new LabelWithUnderline();
+                auto *label = new Push2Label(i, top, push2);
                 addChildComponent(label);
                 label->setJustificationType(Justification::centred);
                 labels.add(label);
             }
+            addAndMakeVisible(selectionRectangleOverlay);
         }
 
         KnownPluginList::PluginTree* selectFolder(int index) {
@@ -86,8 +69,7 @@ class Push2ProcessorSelector : public Push2ComponentBase {
         }
 
         void setSelected(bool selected) {
-            this->selected = selected;
-            repaint();
+            selectionRectangleOverlay.setFill(selected ? Colours::white.withAlpha(0.1f) : Colours::transparentBlack);
         }
 
         int getCurrentViewOffset() {
@@ -118,7 +100,7 @@ class Push2ProcessorSelector : public Push2ComponentBase {
             return nullptr;
         }
         
-        LabelWithUnderline* findSelectedLabel() const {
+        Push2Label* findSelectedLabel() const {
             auto* selectedSubfolder = findSelectedSubfolder();
             if (selectedSubfolder != nullptr)
                 return labels.getUnchecked(currentTree->subFolders.indexOf(selectedSubfolder) - currentViewOffset);
@@ -138,31 +120,28 @@ class Push2ProcessorSelector : public Push2ComponentBase {
             return currentTree != nullptr ? currentTree->subFolders.size() + currentTree->plugins.size() : 0;
         }
 
-        void paint(Graphics& g) override {
-            g.fillAll(selected ? Colours::white.withAlpha(0.07f) : Colours::transparentBlack);
-        }
-
         void resized() override {
             auto r = getLocalBounds();
             for (auto *label : labels) {
                 label->setBounds(r.removeFromLeft(getWidth() / NUM_COLUMNS));
             }
+            selectionRectangleOverlay.setBounds(getLocalBounds());
+            selectionRectangleOverlay.setRectangle(getLocalBounds().toFloat());
         }
 
         KnownPluginList::PluginTree* currentTree{};
-
-        OwnedArray<LabelWithUnderline> labels;
+        OwnedArray<Push2Label> labels;
     private:
         int currentViewOffset { 0 };
-        bool selected { false };
         Project &project;
+        DrawableRectangle selectionRectangleOverlay;
 
         void updateLabels() {
             const bool trackHasMixerAlready = project.selectedTrackHasMixerChannel();
 
             for (int i = 0; i < labels.size(); i++) {
-                Label *label = labels.getUnchecked(i);
-                label->setColour(Label::ColourIds::backgroundColourId, Colours::transparentBlack);
+                Push2Label *label = labels.getUnchecked(i);
+                label->setSelected(false);
                 label->setVisible(false);
             }
 
@@ -170,21 +149,21 @@ class Push2ProcessorSelector : public Push2ComponentBase {
                 return;
 
             for (int i = 0; i < jmin(getTotalNumberOfTreeItems() - currentViewOffset, NUM_COLUMNS); i++) {
-                LabelWithUnderline *label = labels.getUnchecked(i);
+                Push2Label *label = labels.getUnchecked(i);
                 labels[i]->setVisible(true);
                 if (i + currentViewOffset < currentTree->subFolders.size()) {
                     KnownPluginList::PluginTree *subFolder = currentTree->subFolders.getUnchecked(i + currentViewOffset);
                     label->setText(subFolder->folder, dontSendNotification);
-                    label->setUnderline(true);
+                    label->setUnderlined(true);
                 } else if (i + currentViewOffset < getTotalNumberOfTreeItems()) {
                     const PluginDescription *plugin = currentTree->plugins.getUnchecked(i + currentViewOffset - currentTree->subFolders.size());
                     label->setText(plugin->name, dontSendNotification);
                     label->setEnabled(!trackHasMixerAlready || plugin->name != MixerChannelProcessor::name());
-                    label->setUnderline(false);
+                    label->setUnderlined(false);
                 }
             }
             if (auto *selectedLabel = findSelectedLabel()) {
-                selectedLabel->setColour(Label::ColourIds::backgroundColourId, Colours::white.withAlpha(0.08f));
+                selectedLabel->setSelected(true);
             }
         }
     };
@@ -192,8 +171,8 @@ class Push2ProcessorSelector : public Push2ComponentBase {
 public:
     Push2ProcessorSelector(Project &project, Push2MidiCommunicator &push2MidiCommunicator)
             : Push2ComponentBase(project, push2MidiCommunicator) {
-        topProcessorSelector = std::make_unique<ProcessorSelectorRow>(project);
-        bottomProcessorSelector = std::make_unique<ProcessorSelectorRow>(project);
+        topProcessorSelector = std::make_unique<ProcessorSelectorRow>(project, push2, true);
+        bottomProcessorSelector = std::make_unique<ProcessorSelectorRow>(project, push2, false);
         addChildComponent(topProcessorSelector.get());
         addChildComponent(bottomProcessorSelector.get());
 
