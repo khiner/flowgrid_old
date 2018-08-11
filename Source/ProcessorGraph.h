@@ -621,8 +621,6 @@ private:
         resetDefaultExternalInputConnections();
     };
 
-    void itemRemoved(const ValueTree&) override {};
-
     void updateIoChannelEnabled(const ValueTree& parent, const ValueTree& channel, bool enabled) {
         String processorName = parent.getParent()[IDs::name];
         bool isInput;

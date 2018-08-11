@@ -411,7 +411,7 @@ public:
     bool isItemDeletable(const ValueTree& item) {
         return item.isValid();
     }
-    
+
     void addPluginsToMenu(PopupMenu& menu, const ValueTree& track) const {
         StringArray disabledPluginIds;
         if (getMixerChannelProcessorForTrack(track).isValid()) {
@@ -707,9 +707,7 @@ private:
 
     void valueTreeChildAdded(ValueTree &, ValueTree &tree) override {}
 
-    void valueTreeChildRemoved(ValueTree &exParent, ValueTree &tree, int) override {
-        sendItemRemovedMessage(tree);
-    }
+    void valueTreeChildRemoved(ValueTree &exParent, ValueTree &tree, int) override {}
 
     void valueTreeChildOrderChanged(ValueTree &tree, int, int) override {}
 

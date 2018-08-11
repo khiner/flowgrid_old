@@ -9,14 +9,12 @@
 class SelectionEditor : public Component,
                         public DragAndDropContainer,
                         public ChangeListener,
-                        private ProjectChangeListener,
                         private Button::Listener,
                         private Utilities::ValueTreePropertyChangeListener {
 public:
     SelectionEditor(Project& project, ProcessorGraph &audioGraphBuilder)
             : project(project), audioGraphBuilder(audioGraphBuilder) {
         project.getState().addListener(this);
-        project.addProjectChangeListener(this);
         addChildComponent((processorEditor = std::make_unique<ProcessorEditor>()).get());
         Utilities::visitComponents({&undoButton, &redoButton, &addProcessorButton},
                                    [this](Component *c) { addAndMakeVisible(c); });
@@ -29,7 +27,6 @@ public:
     }
 
     ~SelectionEditor() override {
-        project.removeProjectChangeListener(this);
         project.getState().removeListener(this);
     }
 
@@ -67,8 +64,8 @@ public:
         }
     }
 
-    void itemRemoved(const ValueTree& item) override {
-        if (item.hasType(IDs::MASTER_TRACK) || item.hasType(IDs::TRACK) || item.hasType(IDs::PROCESSOR)) {
+    void valueTreeChildRemoved(ValueTree &exParent, ValueTree &tree, int) override {
+        if (tree.hasType(IDs::MASTER_TRACK) || tree.hasType(IDs::TRACK) || tree.hasType(IDs::PROCESSOR)) {
             if (!project.getSelectedTrack().isValid()) {
                 addProcessorButton.setVisible(false);
                 processorEditor->setVisible(false);

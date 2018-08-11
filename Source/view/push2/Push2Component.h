@@ -13,7 +13,6 @@
 class Push2Component :
         public Timer,
         public Push2ComponentBase,
-        private ProjectChangeListener,
         private ChangeListener,
         private Utilities::ValueTreePropertyChangeListener {
 public:
@@ -26,7 +25,6 @@ public:
         addChildComponent(processorSelector);
 
         project.getState().addListener(this);
-        project.addProjectChangeListener(this);
         project.getUndoManager().addChangeListener(this);
         setBounds(0, 0, Push2Display::WIDTH, Push2Display::HEIGHT);
         processorView.setBounds(getLocalBounds());
@@ -38,7 +36,6 @@ public:
     ~Push2Component() override {
         setVisible(false);
         project.getUndoManager().removeChangeListener(this);
-        project.removeProjectChangeListener(this);
         project.getState().removeListener(this);
     }
 
@@ -178,8 +175,8 @@ private:
         }
     }
 
-    void itemRemoved(const ValueTree& item) override {
-        if (item.hasType(IDs::MASTER_TRACK) || item.hasType(IDs::TRACK) || item.hasType(IDs::PROCESSOR)) {
+    void valueTreeChildRemoved(ValueTree &exParent, ValueTree &tree, int) override {
+        if (tree.hasType(IDs::MASTER_TRACK) || tree.hasType(IDs::TRACK) || tree.hasType(IDs::PROCESSOR)) {
             if (!project.getSelectedTrack().isValid()) {
                 selectChild(nullptr);
                 processorView.processorSelected(nullptr);
