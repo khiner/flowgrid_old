@@ -81,7 +81,7 @@ public:
 
     void encoderRotated(int encoderIndex, float changeAmount) override {
         jassert(encoderIndex >= 0 && encoderIndex < NUM_COLUMNS);
-        if (auto *parameter = parametersPanel->getParameterForIndex(encoderIndex)) {
+        if (auto *parameter = parametersPanel->getParameterOnCurrentPageAt(encoderIndex)) {
             parameter->setValue(jlimit(0.0f, 1.0f, parameter->getValue() + changeAmount));
         }
     }

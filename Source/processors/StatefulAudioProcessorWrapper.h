@@ -400,9 +400,9 @@ public:
         automatableParameters.clear(false);
     }
 
-    Parameter *getParameter(int parameterIndex) {
-        return parameters[parameterIndex];
-    }
+    int getNumParameters() { return parameters.size(); }
+
+    Parameter *getParameter(int parameterIndex) { return parameters[parameterIndex]; }
 
     Parameter *getAutomatableParameter(int parameterIndex) {
         return automatableParameters[parameterIndex];

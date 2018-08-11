@@ -7,39 +7,44 @@
 class ParametersPanel : public Component {
 public:
     explicit ParametersPanel(int maxRows) : maxRows(maxRows) {
-        for (int paramIndex = 0; paramIndex < 8 * maxRows; paramIndex++) {
+        for (int paramIndex = 0; paramIndex < numColumns * maxRows; paramIndex++) {
             addChildComponent(paramComponents.add(new ParameterDisplayComponent()));
         }
     }
 
+    ~ParametersPanel() override {
+        clearParameters();
+    }
+
     void setProcessor(StatefulAudioProcessorWrapper *processorWrapper) {
-        if (this->processorWrapper != processorWrapper) {
-            currentPage = 0;
-        }
+        if (this->processorWrapper == processorWrapper)
+            return;
+
+        parameters.clear(false);
+        currentPage = 0;
         this->processorWrapper = processorWrapper;
+        if (processorWrapper != nullptr) {
+            for (int i = 0; i < processorWrapper->getNumParameters(); i++) {
+                parameters.add(processorWrapper->getParameter(i));
+            }
+        }
         updateParameterComponents();
     }
 
-    void updateParameterComponents() {
-        for (int paramIndex = 0; paramIndex < paramComponents.size(); paramIndex++) {
-            auto *parameter = getParameterForIndex(paramIndex);
-            auto *component = paramComponents.getUnchecked(paramIndex);
-            if (parameter != nullptr) {
-                component->setParameter(parameter);
-                component->setVisible(true);
-            } else {
-                component->setVisible(false);
-                component->setParameter(nullptr);
-            }
-        }
+    void addParameter(StatefulAudioProcessorWrapper::Parameter* parameter) {
+        processorWrapper = nullptr; // manual changes mean this is no longer 1:1 with a single processor
+        parameters.add(parameter);
+        updateParameterComponents();
     }
 
-    StatefulAudioProcessorWrapper::Parameter* getParameterForIndex(int parameterIndex) const {
-        if (processorWrapper == nullptr) {
-            return nullptr;
-        }
-        int pageCorrectedParameterIndex = currentPage * maxRows * 8 + parameterIndex;
-        return processorWrapper->getAutomatableParameter(pageCorrectedParameterIndex);
+    void clearParameters() {
+        parameters.clear(false);
+        updateParameterComponents();
+    }
+
+    StatefulAudioProcessorWrapper::Parameter* getParameterOnCurrentPageAt(int parameterIndex) const {
+        int pageCorrectedParameterIndex = currentPage * maxRows * numColumns + parameterIndex;
+        return parameters[pageCorrectedParameterIndex];
     }
     
     void pageLeft() {
@@ -61,13 +66,12 @@ public:
     }
 
     bool canPageRight() {
-        return processorWrapper != nullptr &&
-               (currentPage + 1) * maxRows * 8 < processorWrapper->processor->getParameters().size();
+        return (currentPage + 1) * maxRows * numColumns < parameters.size();
     }
 
     void resized() override {
         auto r = getLocalBounds();
-        auto componentWidth = r.getWidth() / 8;
+        auto componentWidth = r.getWidth() / numColumns;
         auto componentHeight = componentWidth * 7 / 5;
         Rectangle<int> currentRowArea = r.removeFromTop(componentHeight);
 
@@ -84,10 +88,25 @@ public:
     }
 
 private:
+    static const int numColumns {8};
     int maxRows;
     int currentPage{0};
     OwnedArray<ParameterDisplayComponent> paramComponents;
+    OwnedArray<StatefulAudioProcessorWrapper::Parameter> parameters;
     StatefulAudioProcessorWrapper *processorWrapper{};
+
+    void updateParameterComponents() {
+        for (int paramIndex = 0; paramIndex < paramComponents.size(); paramIndex++) {
+            auto *component = paramComponents.getUnchecked(paramIndex);
+            if (auto *parameter = getParameterOnCurrentPageAt(paramIndex)) {
+                component->setParameter(parameter);
+                component->setVisible(true);
+            } else {
+                component->setVisible(false);
+                component->setParameter(nullptr);
+            }
+        }
+    }
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ParametersPanel)
 };
