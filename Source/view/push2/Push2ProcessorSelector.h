@@ -17,6 +17,11 @@ class Push2ProcessorSelector : public Push2ComponentBase {
             addAndMakeVisible(selectionRectangleOverlay);
         }
 
+        void setVisible(bool visible) override {
+            Component::setVisible(visible);
+            updateLabels();
+        }
+
         KnownPluginList::PluginTree* selectFolder(int index) {
             if (currentTree == nullptr)
                 return nullptr;
@@ -197,13 +202,10 @@ public:
         topProcessorSelector->setVisible(visible);
         bottomProcessorSelector->setVisible(visible);
         
-        if (visible) {
-            updateEnabledPush2Buttons();
-            updateEnabledPush2Arrows();
+        if (visible)
             push2.activateWhiteLedButton(Push2::addDevice);
-        } else {
+        else
             push2.enableWhiteLedButton(Push2::addDevice);
-        }
     }
 
     const PluginDescription* selectTopProcessor(int index) {
@@ -278,7 +280,6 @@ public:
 private:
     void setCurrentTree(ProcessorSelectorRow *processorSelectorRow, KnownPluginList::PluginTree* tree) {
         processorSelectorRow->setCurrentTree(tree);
-        updateEnabledPush2Buttons();
     }
 
     void selectProcessorRow(ProcessorSelectorRow* processorSelectorRow) {
@@ -288,21 +289,6 @@ private:
         if (processorSelectorRow) {
             currentProcessorSelector = processorSelectorRow;
             currentProcessorSelector->setSelected(true);
-        }
-    }
-
-    void updateEnabledPush2Buttons() {
-        if (!isVisible())
-            return;
-        if (topProcessorSelector != nullptr) {
-            for (int i = 0; i < topProcessorSelector->labels.size(); i++){
-                push2.setAboveScreenButtonEnabled(i, topProcessorSelector->labels.getUnchecked(i)->isVisible());
-            }
-        }
-        if (bottomProcessorSelector != nullptr) {
-            for (int i = 0; i < bottomProcessorSelector->labels.size(); i++){
-                push2.setBelowScreenButtonEnabled(i, bottomProcessorSelector->labels.getUnchecked(i)->isVisible());
-            }
         }
     }
 
