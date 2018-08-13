@@ -10,7 +10,7 @@ public:
     virtual StatefulAudioProcessorWrapper *getProcessorWrapperForNodeId(AudioProcessorGraph::NodeID nodeId) const = 0;
 
     StatefulAudioProcessorWrapper *getProcessorWrapperForState(const ValueTree &processorState) const {
-        return getProcessorWrapperForNodeId(getNodeIdForState(processorState));
+        return processorState.isValid() ? getProcessorWrapperForNodeId(getNodeIdForState(processorState)) : nullptr;
     }
 
     static const AudioProcessorGraph::NodeID getNodeIdForState(const ValueTree &processorState) {

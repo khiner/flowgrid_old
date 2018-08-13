@@ -291,6 +291,11 @@ private:
             if (auto* enabledMidiOutput = deviceManager.getEnabledMidiOutput(deviceName))
                 midiOutputProcessor->setMidiOutput(enabledMidiOutput);
         }
+
+        if (processorState.hasProperty(IDs::processorInitialized))
+            ValueTree(processorState).sendPropertyChangeMessage(IDs::processorInitialized);
+        else
+            ValueTree(processorState).setProperty(IDs::processorInitialized, true, nullptr);
     }
 
     struct NeighborNodes {
@@ -612,6 +617,7 @@ private:
     };
 
     void processorWillBeDestroyed(const ValueTree& processor) override {
+        ValueTree(processor).removeProperty(IDs::processorInitialized, nullptr);
         removeDefaultConnections(processor);
         disconnectNode(getNodeIdForState(processor));
     };

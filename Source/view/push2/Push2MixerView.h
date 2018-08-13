@@ -65,8 +65,8 @@ private:
     ParametersPanel volumeParametersPanel, panParametersPanel;
     ParametersPanel *selectedParametersPanel {};
 
-    void trackAdded(const ValueTree &track) override {
-        Push2TrackManagingView::trackAdded(track);
+    void trackSelected(const ValueTree &track) override {
+        Push2TrackManagingView::trackSelected(track);
         updateParameters();
     }
 
@@ -75,17 +75,39 @@ private:
         updateParameters();
     }
 
+    void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {
+        Push2TrackManagingView::valueTreePropertyChanged(tree, i);
+        if (i == IDs::processorInitialized && tree[i])
+            updateParameters();
+    }
+
+    void valueTreeChildRemoved(ValueTree &exParent, ValueTree& child, int index) override {
+        Push2TrackManagingView::valueTreeChildRemoved(exParent, child, index);
+        if (child.hasType(IDs::PROCESSOR)) {
+            updateParameters();
+        }
+    }
+
     void updateParameters() {
         volumeParametersPanel.clearParameters();
         panParametersPanel.clearParameters();
 
-        for (const auto& track : project.getTracks()) {
-            const auto& mixerChannel = project.getMixerChannelProcessorForTrack(track);
-            if (mixerChannel.isValid()) { // TODO correct index when tracks are missing MixerChannels
-                if (auto* processorWrapper = project.getProcessorWrapperForState(mixerChannel)) {
+        if (project.getSelectedTrack() == project.getMasterTrack()) {
+            const auto& mixerChannel = project.getMixerChannelProcessorForSelectedTrack();
+            if (auto* processorWrapper = project.getProcessorWrapperForState(mixerChannel)) {
+                volumeParametersPanel.addParameter(processorWrapper->getParameter(1));
+                panParametersPanel.addParameter(processorWrapper->getParameter(0));
+            }
+        } else {
+            for (int i = 0; i < project.getNumNonMasterTracks(); i++) {
+                const auto &mixerChannel = project.getMixerChannelProcessorForTrack(project.getTrack(i));
+                if (auto *processorWrapper = project.getProcessorWrapperForState(mixerChannel)) {
                     // TODO use param identifiers instead of indexes
                     volumeParametersPanel.addParameter(processorWrapper->getParameter(1));
                     panParametersPanel.addParameter(processorWrapper->getParameter(0));
+                } else {
+                    volumeParametersPanel.addParameter(nullptr);
+                    panParametersPanel.addParameter(nullptr);
                 }
             }
         }

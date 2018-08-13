@@ -29,6 +29,7 @@ namespace IDs
     DECLARE_ID(selected)
 
     DECLARE_ID(PROCESSOR)
+    DECLARE_ID(processorInitialized)
     DECLARE_ID(processorSlot)
     DECLARE_ID(nodeId)
     DECLARE_ID(bypassed)
