@@ -135,6 +135,13 @@ private:
 
     Push2ComponentBase *currentlyViewingChild {};
 
+    void selectProcessorIfNeeded(StatefulAudioProcessorWrapper* processorWrapper) {
+        if (currentlyViewingChild != &mixerView || !dynamic_cast<MixerChannelProcessor *>(processorWrapper->processor)) {
+            processorView.processorSelected(processorWrapper);
+            selectChild(&processorView);
+        }
+    }
+
     void selectChild(Push2ComponentBase* child) {
         if (currentlyViewingChild == child)
             return;
@@ -163,13 +170,11 @@ private:
         if (i == IDs::selected && tree[IDs::selected]) {
             if (tree.hasType(IDs::PROCESSOR)) {
                 if (auto *processorWrapper = graph.getProcessorWrapperForState(tree)) {
-                    processorView.processorSelected(processorWrapper);
-                    selectChild(&processorView);
+                    selectProcessorIfNeeded(processorWrapper);
                 }
                 push2.enableWhiteLedButton(Push2::addDevice);
             } else if (tree.hasType(IDs::TRACK) || tree.hasType(IDs::MASTER_TRACK)) {
                 push2.enableWhiteLedButton(Push2::addDevice);
-                selectChild(&processorView);
             } else {
                 selectChild(nullptr);
                 processorView.processorSelected(nullptr);
