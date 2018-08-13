@@ -8,7 +8,7 @@ class MixerChannelProcessor : public DefaultAudioProcessor {
 public:
     explicit MixerChannelProcessor() :
             DefaultAudioProcessor(getPluginDescription()),
-            balanceParameter(new AudioParameterFloat("balance", "Balance", NormalisableRange<float>(0.0f, 1.0f), balance.getTargetValue(), "",
+            balanceParameter(new AudioParameterFloat("balance", "Balance", NormalisableRange<float>(-1.0f, 1.0f), balance.getTargetValue(), "",
                                                      AudioProcessorParameter::genericParameter, defaultStringFromValue, defaultValueFromString)),
             gainParameter(createDefaultGainParameter("gain", "Gain")) {
         balanceParameter->addListener(this);
@@ -52,11 +52,11 @@ public:
                 const float balanceValue = balance.getNextValue();
 
                 float leftChannelGain, rightChannelGain;
-                if (balanceValue < 0.5) {
+                if (balanceValue < 0.0) {
                     leftChannelGain = 1;
-                    rightChannelGain = balanceValue * 2;
+                    rightChannelGain = 1 + balanceValue;
                 } else {
-                    leftChannelGain = (1 - balanceValue) * 2;
+                    leftChannelGain = 1 - balanceValue;
                     rightChannelGain = 1;
                 }
 
@@ -80,7 +80,7 @@ public:
         return balanceParameter;
     }
 private:
-    LinearSmoothedValue<float> balance { 0.5 };
+    LinearSmoothedValue<float> balance { 0.0 };
     LinearSmoothedValue<float> gain { Decibels::decibelsToGain(0.0f) };
 
     AudioParameterFloat *balanceParameter;

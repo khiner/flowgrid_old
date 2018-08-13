@@ -82,6 +82,11 @@ public:
             auto *slider = new Slider(Slider::RotaryHorizontalVerticalDrag, Slider::TextEntryBoxPosition::NoTextBox);
             parameterWrapper->attachSlider(slider);
             parameterWrapper->attachLabel(&valueLabel);
+
+            if (parameterWrapper->range.getRange().getStart() < 0 && parameterWrapper->range.getRange().getEnd() > 0) {
+                slider->getProperties().set("fromCentre", true);
+            }
+
             parameterComponent.reset(slider);
         }
 
