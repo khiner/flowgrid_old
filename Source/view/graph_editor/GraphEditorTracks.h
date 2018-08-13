@@ -21,7 +21,7 @@ public:
     }
 
     void resized() override {
-        auto r = getLocalBounds().withHeight(getHeight() * Project::NUM_AVAILABLE_PROCESSOR_SLOTS / (Project::NUM_AVAILABLE_PROCESSOR_SLOTS + 1));
+        auto r = getLocalBounds().withHeight(getHeight() * Project::NUM_AVAILABLE_PROCESSOR_SLOTS / (Project::NUM_AVAILABLE_PROCESSOR_SLOTS + 1.2f));
         const int w = r.getWidth() / Project::NUM_VISIBLE_TRACKS;
 
         for (auto *track : objects) {

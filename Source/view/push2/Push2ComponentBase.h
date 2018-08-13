@@ -22,6 +22,7 @@ public:
     void addTrackButtonPressed() override {}
     void deleteButtonPressed() override {}
     void addDeviceButtonPressed() override {}
+    void mixButtonPressed() override {}
     void masterButtonPressed() override {}
     void aboveScreenButtonPressed(int buttonIndex) override {}
     void belowScreenButtonPressed(int buttonIndex) override {}

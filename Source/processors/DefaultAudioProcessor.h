@@ -30,10 +30,7 @@ public:
         this->setPlayConfigDetails(getTotalNumInputChannels(), getTotalNumOutputChannels(), sampleRate, estimatedSamplesPerBlock);
     }
 
-    // Inline editors are not part of the normal plugin API.
-    // They are used internally to draw anything that the processor would like
-    // inside the node in the graph editor UI.
-    virtual Component* getInlineEditor() { return nullptr; }
+    virtual bool showInlineEditor() { return false; }
 
     const String getName() const override { return name; }
     int getNumParameters() override { return getParameters().size(); }
@@ -84,6 +81,11 @@ public:
         descr.numOutputChannels = channelSetToUse.size();
 
         return descr;
+    }
+
+    static AudioParameterFloat* createDefaultGainParameter(const String &id, const String& name, float defaultValue=0.0f) {
+        return new AudioParameterFloat(id, name, NormalisableRange<float>(float(Decibels::defaultMinusInfinitydB), 6.0f, 0.0f, 4.0f), defaultValue, "dB",
+                                AudioProcessorParameter::genericParameter, defaultStringFromDbValue, defaultValueFromDbString);
     }
 
     const static std::function<String (float, int)> defaultStringFromValue;

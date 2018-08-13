@@ -8,7 +8,7 @@
 #include "ProcessorGraph.h"
 #include "Push2ProcessorView.h"
 #include "Push2ProcessorSelector.h"
-#include "Push2ComponentBase.h"
+#include "Push2MixerView.h"
 
 class Push2Component :
         public Timer,
@@ -18,18 +18,23 @@ class Push2Component :
 public:
     explicit Push2Component(Project &project, Push2MidiCommunicator &push2MidiCommunicator, ProcessorGraph &audioGraphBuilder)
             : Push2ComponentBase(project, push2MidiCommunicator), graph(audioGraphBuilder),
-              processorView(project, push2MidiCommunicator), processorSelector(project, push2MidiCommunicator) {
+              processorView(project, push2MidiCommunicator), processorSelector(project, push2MidiCommunicator),
+              mixerView(project, push2MidiCommunicator) {
         startTimer(60);
 
         addChildComponent(processorView);
         addChildComponent(processorSelector);
+        addChildComponent(mixerView);
 
         project.getState().addListener(this);
         project.getUndoManager().addChangeListener(this);
         setBounds(0, 0, Push2Display::WIDTH, Push2Display::HEIGHT);
-        processorView.setBounds(getLocalBounds());
-        processorSelector.setBounds(getLocalBounds());
+        const auto &r = getLocalBounds();
+        mixerView.setBounds(r);
+        processorView.setBounds(r);
+        processorSelector.setBounds(r);
         push2MidiCommunicator.enableWhiteLedButton(Push2::addTrack);
+        push2.enableWhiteLedButton(Push2::mix);
         push2.activateWhiteLedButton(Push2::shift);
     }
 
@@ -42,12 +47,9 @@ public:
     void setVisible(bool visible) override {
         Push2ComponentBase::setVisible(visible);
         if (!visible) {
-            push2.disableWhiteLedButton(Push2::shift);
-            push2.disableWhiteLedButton(Push2::addTrack);
-            push2.disableWhiteLedButton(Push2::delete_);
-            push2.disableWhiteLedButton(Push2::addDevice);
-            push2.disableWhiteLedButton(Push2::master);
-            push2.disableWhiteLedButton(Push2::undo);
+            for (auto buttonId : {Push2::shift, Push2::addTrack, Push2::delete_, Push2::addDevice, Push2::mix, Push2::master, Push2::undo}) {
+                push2.disableWhiteLedButton(buttonId);
+            }
         }
     }
 
@@ -89,6 +91,10 @@ public:
         selectChild(&processorSelector);
     }
 
+    void mixButtonPressed() override {
+        selectChild(&mixerView);
+    }
+
     void masterButtonPressed() override {
         project.getMasterTrack().setProperty(IDs::selected, true, nullptr);
     }
@@ -125,6 +131,7 @@ private:
 
     Push2ProcessorView processorView;
     Push2ProcessorSelector processorSelector;
+    Push2MixerView mixerView;
 
     Push2ComponentBase *currentlyViewingChild {};
 
@@ -175,8 +182,10 @@ private:
         }
     }
 
-    void valueTreeChildRemoved(ValueTree &exParent, ValueTree &tree, int) override {
-        if (tree.hasType(IDs::MASTER_TRACK) || tree.hasType(IDs::TRACK) || tree.hasType(IDs::PROCESSOR)) {
+    void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override {}
+
+    void valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int) override {
+        if (child.hasType(IDs::MASTER_TRACK) || child.hasType(IDs::TRACK) || child.hasType(IDs::PROCESSOR)) {
             if (!project.getSelectedTrack().isValid()) {
                 selectChild(nullptr);
                 processorView.processorSelected(nullptr);

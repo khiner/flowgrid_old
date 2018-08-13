@@ -40,17 +40,14 @@ public:
     }
 
 protected:
+    virtual void trackAdded(const ValueTree &track) { updateLabels(); }
+    virtual void trackRemoved(const ValueTree &track) { updateLabels(); }
+    virtual void trackSelected(const ValueTree &track) { updateLabels(); }
 
     virtual void selectedTrackColourChanged(const Colour& colour) = 0;
 
-    virtual void emptyTrackSelected(const ValueTree& emptyTrack) {
-        updateLabels();
-    }
-
     virtual void updateLabels() {
         auto selectedTrack = project.getSelectedTrack();
-        if (!selectedTrack.isValid())
-            return;
 
         for (int i = 0; i < trackLabels.size(); i++) {
             auto *label = trackLabels.getUnchecked(i);
@@ -74,6 +71,18 @@ protected:
             push2.activateWhiteLedButton(Push2::master);
     }
 
+    void valueTreeChildAdded(ValueTree &parent, ValueTree& child) override {
+        if (child.hasType(IDs::MASTER_TRACK) || child.hasType(IDs::TRACK)) {
+            trackAdded(child);
+        }
+    }
+
+    void valueTreeChildRemoved(ValueTree &exParent, ValueTree& child, int index) override {
+        if (child.hasType(IDs::MASTER_TRACK) || child.hasType(IDs::TRACK)) {
+            trackRemoved(child);
+        }
+    }
+
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {
         if (tree.hasType(IDs::MASTER_TRACK) || tree.hasType(IDs::TRACK)) {
             if (i == IDs::name || i == IDs::colour) {
@@ -91,9 +100,7 @@ protected:
                     }
                 }
             } else if (i == IDs::selected && tree[IDs::selected]) {
-                if (tree.getNumChildren() == 0) { // TODO manage this on its own
-                    emptyTrackSelected(tree);
-                }
+                trackSelected(tree);
             }
         }
     }

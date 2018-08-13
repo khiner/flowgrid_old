@@ -5,7 +5,9 @@
 #include <Utilities.h>
 #include "Identifiers.h"
 #include "view/processor_editor/SwitchParameterComponent.h"
-#include "Project.h"
+#include "view/level_meter/LevelMeter.h"
+#include "DeviceManagerUtilities.h"
+#include "MixerChannelProcessor.h"
 
 class StatefulAudioProcessorWrapper : private AudioProcessorListener {
 public:
@@ -14,13 +16,14 @@ public:
               private Utilities::ValueTreePropertyChangeListener,
               public AudioProcessorParameter::Listener, public Slider::Listener, public Button::Listener,
               public ComboBox::Listener, public SwitchParameterComponent::Listener, public LevelMeter::Listener {
-        explicit Parameter(AudioProcessorParameter *parameter)
+        explicit Parameter(AudioProcessorParameter *parameter, StatefulAudioProcessorWrapper* processorWrapper)
                 : AudioProcessorParameterWithID(parameter->getName(32), parameter->getName(32),
                                                 parameter->getLabel(), parameter->getCategory()),
                   sourceParameter(parameter),
                   defaultValue(parameter->getDefaultValue()), value(parameter->getDefaultValue()),
                   valueToTextFunction([this](float value) { return sourceParameter->getCurrentValueAsText(); }),
-                  textToValueFunction([this](const String &text) { return sourceParameter->getValueForText(text); }) {
+                  textToValueFunction([this](const String &text) { return sourceParameter->getValueForText(text); }),
+                  processorWrapper(processorWrapper) {
             if (auto *p = dynamic_cast<AudioParameterFloat *>(sourceParameter)) {
                 range = p->range;
             } else {
@@ -60,6 +63,10 @@ public:
                 parameterSwitch->removeListener(this);
             }
             attachedSwitches.clear(false);
+            for (auto* levelMeter : attachedLevelMeters) {
+                levelMeter->removeListener(this);
+            }
+            attachedLevelMeters.clear(false);
         }
 
         String getText(float v, int length) const override {
@@ -244,6 +251,7 @@ public:
 
         void attachLevelMeter(LevelMeter *levelMeter) {
             if (levelMeter != nullptr) {
+                levelMeter->setNormalisableRange(range);
                 attachedLevelMeters.add(levelMeter);
                 levelMeter->addListener(this);
 
@@ -267,6 +275,16 @@ public:
                     textToValueFunction != nullptr ? textToValueFunction(text) : text.getFloatValue());
         }
 
+        LevelMeterSource* getLevelMeterSource() {
+            if (auto* mixerChannelProcessor = dynamic_cast<MixerChannelProcessor *>(processorWrapper->processor)) {
+                if (sourceParameter == mixerChannelProcessor->getGainParameter()) {
+                    return mixerChannelProcessor->getMeterSource();
+                }
+            }
+
+            return nullptr;
+        }
+
         static NormalisableRange<double> doubleRangeFromFloatRange(NormalisableRange<float> &floatRange) {
             return NormalisableRange<double>(floatRange.start, floatRange.end, floatRange.interval, floatRange.skew,
                                              floatRange.symmetricSkew);
@@ -281,7 +299,7 @@ public:
         std::atomic<bool> needsUpdate{true};
         ValueTree state;
         UndoManager *undoManager{nullptr};
-
+        StatefulAudioProcessorWrapper *processorWrapper;
     private:
         bool listenersNeedCalling{true};
         bool ignoreParameterChangedCallbacks = false;
@@ -379,8 +397,8 @@ public:
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(Parameter)
     };
 
-    StatefulAudioProcessorWrapper(AudioPluginInstance *processor, AudioProcessorGraph::NodeID nodeId, ValueTree state, Project& project, UndoManager &undoManager) :
-            processor(processor), state(std::move(state)), project(project), undoManager(undoManager) {
+    StatefulAudioProcessorWrapper(AudioPluginInstance *processor, AudioProcessorGraph::NodeID nodeId, ValueTree state, UndoManager &undoManager, AudioDeviceManager& deviceManager) :
+            processor(processor), state(std::move(state)), undoManager(undoManager), deviceManager(deviceManager) {
         this->state.setProperty(IDs::nodeId, int(nodeId), nullptr);
         processor->enableAllBuses();
         if (auto* ioProcessor = dynamic_cast<AudioProcessorGraph::AudioGraphIOProcessor*> (processor)) {
@@ -402,6 +420,8 @@ public:
 
     int getNumParameters() { return parameters.size(); }
 
+    int getNumAutomatableParameters() { return automatableParameters.size(); }
+
     Parameter *getParameter(int parameterIndex) { return parameters[parameterIndex]; }
 
     Parameter *getAutomatableParameter(int parameterIndex) {
@@ -410,7 +430,7 @@ public:
 
     void updateValueTree() {
         for (auto parameter : processor->getParameters()) {
-            auto *parameterWrapper = new Parameter(parameter);
+            auto *parameterWrapper = new Parameter(parameter, this);
             parameterWrapper->setNewState(getOrCreateChildValueTree(parameterWrapper->paramID), &undoManager);
             parameters.add(parameterWrapper);
             if (parameter->isAutomatable())
@@ -454,8 +474,9 @@ public:
     AudioPluginInstance *processor;
     ValueTree state;
 private:
-    Project &project;
     UndoManager &undoManager;
+    AudioDeviceManager &deviceManager;
+
     OwnedArray<Parameter> parameters;
     OwnedArray<Parameter> automatableParameters;
 
@@ -523,7 +544,7 @@ private:
         bool isMidi = channelIndex == AudioProcessorGraph::midiChannelIndex;
         String channelName;
         if (processor->getName() == "Audio Input" || processor->getName() == "Audio Output") {
-            channelName = project.getAudioChannelName(channelIndex, processor->getName() == "Audio Input");
+            channelName = DeviceManagerUtilities::getAudioChannelName(deviceManager, channelIndex, processor->getName() == "Audio Input");
         } else {
             int busIndex = 0;
             if (isMidi) {

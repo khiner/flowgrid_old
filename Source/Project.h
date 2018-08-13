@@ -5,8 +5,9 @@
 #include "ValueTreeItems.h"
 #include "processors/ProcessorManager.h"
 #include "Utilities.h"
+#include "StatefulAudioProcessorContainer.h"
 
-class Project : public FileBasedDocument, public ProjectChangeBroadcaster,
+class Project : public FileBasedDocument, public ProjectChangeBroadcaster, public StatefulAudioProcessorContainer,
                 private ChangeListener, private ValueTree::Listener {
 public:
     Project(UndoManager &undoManager, ProcessorManager& processorManager, AudioDeviceManager& deviceManager, Push2MidiCommunicator& push2MidiCommunicator)
@@ -44,7 +45,20 @@ public:
         undoManager.clearUndoHistory();
     }
 
+    void setStatefulAudioProcessorContainer(StatefulAudioProcessorContainer* statefulAudioProcessorContainer) {
+        this->statefulAudioProcessorContainer = statefulAudioProcessorContainer;
+    }
+
+    StatefulAudioProcessorWrapper *getProcessorWrapperForNodeId(AudioProcessorGraph::NodeID nodeId) const override {
+        if (statefulAudioProcessorContainer != nullptr)
+            return statefulAudioProcessorContainer->getProcessorWrapperForNodeId(nodeId);
+
+        return nullptr;
+    }
+
     UndoManager& getUndoManager() { return undoManager; }
+
+    AudioDeviceManager& getDeviceManager() { return deviceManager; }
 
     ValueTree& getState() { return state; }
 
@@ -135,8 +149,8 @@ public:
         for (auto connectionState : connections) {
             auto sourceState = connectionState.getChildWithName(IDs::SOURCE);
             auto destState = connectionState.getChildWithName(IDs::DESTINATION);
-            if (AudioProcessorGraph::NodeID(int(sourceState[IDs::nodeId])) == connection.source.nodeID &&
-                AudioProcessorGraph::NodeID(int(destState[IDs::nodeId])) == connection.destination.nodeID &&
+            if (getNodeIdForState(sourceState) == connection.source.nodeID &&
+                getNodeIdForState(destState) == connection.destination.nodeID &&
                 int(sourceState[IDs::channel]) == connection.source.channelIndex &&
                 int(destState[IDs::channel]) == connection.destination.channelIndex) {
                 return connectionState;
@@ -453,21 +467,6 @@ public:
         return processorManager.getDescriptionForIdentifier(identifier);
     }
 
-    String getAudioChannelName(int channelIndex, bool input) {
-        if (auto *audioDevice = deviceManager.getCurrentAudioDevice()) {
-            auto channelNames = input ? audioDevice->getInputChannelNames() : audioDevice->getOutputChannelNames();
-            auto activeChannels = input ? audioDevice->getActiveInputChannels()
-                                        : audioDevice->getActiveOutputChannels();
-            int activeIndex = 0;
-            for (int i = 0; i < channelNames.size(); i++) {
-                if (activeChannels[i] && activeIndex++ == channelIndex) {
-                    return channelNames[i];
-                }
-            }
-        }
-        return "";
-    }
-
     //==============================================================================================================
     void newDocument() {
         clear();
@@ -537,9 +536,9 @@ public:
         for (const auto& track : tracks) {
             for (auto processorState : track) {
                 if (processorState.hasType(IDs::PROCESSOR)) {
-                    if (auto* node = graph->getNodeForId(AudioProcessorGraph::NodeID(int(processorState[IDs::nodeId])))) {
+                    if (auto* processorWrapper = getProcessorWrapperForState(processorState)) {
                         MemoryBlock memoryBlock;
-                        if (auto* processor = node->getProcessor()) {
+                        if (auto* processor = processorWrapper->processor) {
                             processor->getStateInformation(memoryBlock);
                             processorState.setProperty(IDs::state, memoryBlock.toBase64Encoding(), nullptr);
                         }
@@ -586,6 +585,8 @@ private:
     ProcessorManager &processorManager;
     AudioDeviceManager& deviceManager;
     Push2MidiCommunicator& push2MidiCommunicator;
+
+    StatefulAudioProcessorContainer* statefulAudioProcessorContainer;
 
     void clear() {
         input.removeAllChildren(nullptr);

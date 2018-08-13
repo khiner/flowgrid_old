@@ -1325,7 +1325,7 @@ add_executable (APP
     "../../JuceLibraryCode/include_juce_gui_extra.mm"
     "../../JuceLibraryCode/JuceHeader.h"
         ../../Source/view/level_meter/LevelMeterSource.h
-        ../../Source/BasicWindow.h ../../Source/view/push2/Push2Label.h ../../Source/view/push2/Push2TrackManagingView.h)
+        ../../Source/BasicWindow.h ../../Source/view/push2/Push2Label.h ../../Source/view/push2/Push2TrackManagingView.h ../../Source/view/push2/Push2MixerView.h ../../Source/StatefulAudioProcessorContainer.h ../../Source/DeviceManagerUtilities.h)
 
 set_source_files_properties ("../../Resources/AbletonSansBold-Regular.otf" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Resources/AbletonSansLight-Regular.otf" PROPERTIES HEADER_FILE_ONLY TRUE)

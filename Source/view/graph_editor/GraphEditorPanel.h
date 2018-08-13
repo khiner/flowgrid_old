@@ -41,7 +41,7 @@ public:
         for (auto *midiInputProcessor : midiInputProcessors) {
             midiInputProcessor->setBounds(top.removeFromLeft(int(getWidth() * (1 - audioInputWidthRatio) / midiInputProcessors.size())));
         }
-        tracks->setBounds(r.withHeight(getHeight() * Project::NUM_AVAILABLE_PROCESSOR_SLOTS / (Project::NUM_VISIBLE_PROCESSOR_SLOTS - 1)));
+        tracks->setBounds(r.withHeight(getHeight() * (Project::NUM_VISIBLE_PROCESSOR_SLOTS - 2) / Project::NUM_VISIBLE_PROCESSOR_SLOTS ));
         auto bottom = r.removeFromBottom(int(getHeight() * 1.0 / Project::NUM_VISIBLE_PROCESSOR_SLOTS));
         int midiOutputProcessorWidthInChannels = midiOutputProcessors.size() * 2;
         float audioOutputWidthRatio = audioOutputProcessor

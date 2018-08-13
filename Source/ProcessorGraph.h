@@ -7,8 +7,9 @@
 #include "JuceHeader.h"
 #include "processors/ProcessorManager.h"
 #include "Project.h"
+#include "StatefulAudioProcessorContainer.h"
 
-class ProcessorGraph : public AudioProcessorGraph, private ValueTree::Listener,
+class ProcessorGraph : public AudioProcessorGraph, public StatefulAudioProcessorContainer, private ValueTree::Listener,
                        private ProjectChangeListener, private Timer {
 public:
     explicit ProcessorGraph(Project &project, UndoManager &undoManager, AudioDeviceManager& deviceManager)
@@ -17,21 +18,16 @@ public:
 
         project.getState().addListener(this);
         this->project.addProjectChangeListener(this);
-    }
-    
-    StatefulAudioProcessorWrapper *getProcessorWrapperForState(const ValueTree &processorState) const {
-        return getProcessorWrapperForNodeId(getNodeIdForState(processorState));
+        project.setStatefulAudioProcessorContainer(this);
     }
 
-    static const NodeID getNodeIdForState(const ValueTree &processorState) {
-        return processorState.isValid() ? NodeID(int(processorState[IDs::nodeId])) : NA_NODE_ID;
+    ~ProcessorGraph() override {
+        project.setStatefulAudioProcessorContainer(nullptr);
+        this->project.removeProjectChangeListener(this);
+        project.getState().removeListener(this);
     }
 
-    Node* getNodeForState(const ValueTree &processorState) const {
-        return getNodeForId(getNodeIdForState(processorState));
-    }
-
-    StatefulAudioProcessorWrapper *getProcessorWrapperForNodeId(NodeID nodeId) const {
+    StatefulAudioProcessorWrapper *getProcessorWrapperForNodeId(NodeID nodeId) const override {
         if (nodeId == NA_NODE_ID)
             return nullptr;
 
@@ -43,6 +39,10 @@ public:
             }
         }
         return nullptr;
+    }
+
+    Node* getNodeForState(const ValueTree &processorState) const {
+        return getNodeForId(getNodeIdForState(processorState));
     }
 
     StatefulAudioProcessorWrapper *getMasterGainProcessor() {
@@ -226,7 +226,6 @@ public:
         return false;
     }
 
-    const static NodeID NA_NODE_ID = 0;
     UndoManager &undoManager;
 private:
 
@@ -275,7 +274,7 @@ private:
         const Node::Ptr &newNode = processorState.hasProperty(IDs::nodeId) ?
                                    addNode(processor, getNodeIdForState(processorState)) :
                                    addNode(processor);
-        auto *processorWrapper = new StatefulAudioProcessorWrapper(processor, newNode->nodeID, processorState, project, undoManager);
+        auto *processorWrapper = new StatefulAudioProcessorWrapper(processor, newNode->nodeID, processorState, undoManager, project.getDeviceManager());
 
         if (processorWrappers.size() == 0)
             // About to add the first processor.

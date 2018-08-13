@@ -2,6 +2,7 @@
 
 #include "JuceHeader.h"
 #include "processors/StatefulAudioProcessorWrapper.h"
+#include "processors/MixerChannelProcessor.h"
 
 class ParameterDisplayComponent : public Component {
 public:
@@ -23,7 +24,6 @@ public:
         }
 
         detachParameterComponent();
-        parameterComponent = nullptr;
 
         this->parameterWrapper = parameterWrapper;
 
@@ -71,21 +71,25 @@ public:
             auto *parameterSwitch = new SwitchParameterComponent(labels);
             parameterWrapper->attachSwitch(parameterSwitch);
             parameterComponent.reset(parameterSwitch);
+        } else if (auto* levelMeterSource = parameterWrapper->getLevelMeterSource()) {
+            auto* levelMeter = new LevelMeter();
+            levelMeter->setMeterSource(levelMeterSource);
+            parameterWrapper->attachLevelMeter(levelMeter);
+            parameterWrapper->attachLabel(&valueLabel);
+            parameterComponent.reset(levelMeter);
         } else {
             // Everything else can be represented as a slider.
             auto *slider = new Slider(Slider::RotaryHorizontalVerticalDrag, Slider::TextEntryBoxPosition::NoTextBox);
             parameterWrapper->attachSlider(slider);
             parameterWrapper->attachLabel(&valueLabel);
             parameterComponent.reset(slider);
+        }
 
-            valueLabel.setColour(Label::outlineColourId,
-                                 parameterComponent->findColour(Slider::textBoxOutlineColourId));
-            valueLabel.setBorderSize({1, 1, 1, 1});
+        if (getSlider() || getLevelMeter()) {
             valueLabel.setJustificationType(Justification::centred);
             valueLabel.setEditable(true, true);
             valueLabel.setVisible(true);
         }
-
         addAndMakeVisible(parameterComponent.get());
         resized();
     }
@@ -93,31 +97,35 @@ public:
     void resized() override {
         if (parameterComponent == nullptr)
             return;
-        auto area = getLocalBounds().reduced(5);
+        auto area = getLocalBounds().reduced(2);
         parameterName.setBounds(area.removeFromTop(area.getHeight() / 5));
         auto bottom = area.removeFromBottom(area.getHeight() / 5);
 
-        bool isSlider = dynamic_cast<Slider *>(parameterComponent.get());
-        bool isButton = dynamic_cast<Button *>(parameterComponent.get());
-        bool isCombobox = dynamic_cast<ComboBox *>(parameterComponent.get());
-        bool isSwitch = dynamic_cast<SwitchParameterComponent *>(parameterComponent.get());
-
         if (parameterLabel.isVisible())
-            parameterLabel.setBounds(isSlider ? bottom.removeFromRight(bottom.getWidth() / 4) : bottom);
-        if (isSlider) {
+            parameterLabel.setBounds(getSlider() || getLevelMeter() ? bottom.removeFromRight(bottom.getWidth() / 3) : bottom);
+        if (getSlider() || getLevelMeter()) {
             valueLabel.setBounds(bottom);
-        } else if (isCombobox) {
+        }
+        if (getCombobox()) {
             area.setHeight(area.getHeight() / 3);
-        } else if (isSwitch) {
+        } else if (getSwitch()) {
             area = area.withSizeKeepingCentre(area.getWidth(),
                                               area.getHeight() / 2); // TODO compute height by num items
-        } else if (isButton) {
+        } else if (getButton()) {
             auto smallerSquare = area.withWidth(area.getWidth() / 3).withHeight(area.getWidth() / 3);
             smallerSquare.setCentre(area.getCentre());
             area = smallerSquare;
+        } else if (getLevelMeter()) {
+            area = area.withSizeKeepingCentre(jmin(40, area.getWidth()), area.getHeight());
         }
         parameterComponent->setBounds(area);
     }
+
+    Slider* getSlider() { return dynamic_cast<Slider *>(parameterComponent.get()); }
+    Button* getButton() { return dynamic_cast<Button *>(parameterComponent.get()); }
+    ComboBox* getCombobox() { return dynamic_cast<ComboBox *>(parameterComponent.get()); }
+    SwitchParameterComponent* getSwitch() { return dynamic_cast<SwitchParameterComponent *>(parameterComponent.get()); }
+    LevelMeter* getLevelMeter() { return dynamic_cast<LevelMeter *>(parameterComponent.get()); }
 
 private:
     Label parameterName, parameterLabel, valueLabel;
@@ -127,15 +135,18 @@ private:
     void detachParameterComponent() {
         if (parameterComponent == nullptr || parameterWrapper == nullptr)
             return;
-        if (auto *slider = dynamic_cast<Slider *>(parameterComponent.get())) {
+        if (auto* slider = getSlider()) {
             parameterWrapper->detachSlider(slider);
             parameterWrapper->detachLabel(&valueLabel);
-        } else if (auto *button = dynamic_cast<Button *>(parameterComponent.get()))
+        } else if (auto *button = getButton())
             parameterWrapper->detachButton(button);
-        else if (auto *comboBox = dynamic_cast<ComboBox *>(parameterComponent.get()))
+        else if (auto *comboBox = getCombobox())
             parameterWrapper->detachComboBox(comboBox);
-        else if (auto *parameterSwitch = dynamic_cast<SwitchParameterComponent *>(parameterComponent.get()))
+        else if (auto *parameterSwitch = getSwitch())
             parameterWrapper->detachSwitch(parameterSwitch);
+        else if (auto *levelMeter = getLevelMeter())
+            parameterWrapper->detachLevelMeter(levelMeter);
+        parameterComponent = nullptr;
     }
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ParameterDisplayComponent)

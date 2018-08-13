@@ -16,6 +16,7 @@ public:
     virtual void deleteButtonPressed() = 0;
     virtual void masterButtonPressed() = 0;
     virtual void addDeviceButtonPressed() = 0;
+    virtual void mixButtonPressed() = 0;
     virtual void aboveScreenButtonPressed(int buttonIndex) = 0;
     virtual void belowScreenButtonPressed(int buttonIndex) = 0;
     virtual void arrowPressed(Direction direction) = 0;

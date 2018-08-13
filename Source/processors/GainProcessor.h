@@ -7,8 +7,7 @@ class GainProcessor : public DefaultAudioProcessor {
 public:
     explicit GainProcessor() :
             DefaultAudioProcessor(getPluginDescription()),
-            gainParameter(new AudioParameterFloat("gain", "Gain", NormalisableRange<float>(0.0f, 1.0f), gain.getTargetValue(), "dB",
-                                                  AudioProcessorParameter::genericParameter, defaultStringFromDbValue, defaultValueFromDbString)) {
+            gainParameter(createDefaultGainParameter("gain", "Gain")) {
         gainParameter->addListener(this);
         addParameter(gainParameter);
     }
@@ -29,7 +28,7 @@ public:
 
     void parameterChanged(AudioProcessorParameter *parameter, float newValue) override {
         if (parameter == gainParameter) {
-            gain.setValue(newValue);
+            gain.setValue(Decibels::decibelsToGain(newValue));
         }
     }
 
@@ -38,6 +37,6 @@ public:
     }
 
 private:
-    LinearSmoothedValue<float> gain { 0.5 };
+    LinearSmoothedValue<float> gain { Decibels::decibelsToGain(0.0f) };
     AudioParameterFloat *gainParameter;
 };

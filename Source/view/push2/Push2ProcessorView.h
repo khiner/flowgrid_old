@@ -45,9 +45,11 @@ public:
         }
     }
 
-    void emptyTrackSelected(const ValueTree& emptyTrack) override {
-        Push2TrackManagingView::emptyTrackSelected(emptyTrack);
-        parametersPanel->setProcessor(nullptr);
+    void trackSelected(const ValueTree &track) override {
+        Push2TrackManagingView::trackSelected(track);
+        if (track.getNumChildren() == 0) {
+            parametersPanel->setProcessor(nullptr);
+        }
     }
     
     void processorSelected(StatefulAudioProcessorWrapper *const processorWrapper) {
@@ -80,7 +82,6 @@ public:
     }
 
     void encoderRotated(int encoderIndex, float changeAmount) override {
-        jassert(encoderIndex >= 0 && encoderIndex < NUM_COLUMNS);
         if (auto *parameter = parametersPanel->getParameterOnCurrentPageAt(encoderIndex)) {
             parameter->setValue(jlimit(0.0f, 1.0f, parameter->getValue() + changeAmount));
         }

@@ -6,7 +6,7 @@
 
 class ParametersPanel : public Component {
 public:
-    explicit ParametersPanel(int maxRows) : maxRows(maxRows) {
+    explicit ParametersPanel(int maxRows, int numColumns=8) : maxRows(maxRows), numColumns(numColumns) {
         for (int paramIndex = 0; paramIndex < numColumns * maxRows; paramIndex++) {
             addChildComponent(paramComponents.add(new ParameterDisplayComponent()));
         }
@@ -24,8 +24,8 @@ public:
         currentPage = 0;
         this->processorWrapper = processorWrapper;
         if (processorWrapper != nullptr) {
-            for (int i = 0; i < processorWrapper->getNumParameters(); i++) {
-                parameters.add(processorWrapper->getParameter(i));
+            for (int i = 0; i < processorWrapper->getNumAutomatableParameters(); i++) {
+                parameters.add(processorWrapper->getAutomatableParameter(i));
             }
         }
         updateParameterComponents();
@@ -72,7 +72,7 @@ public:
     void resized() override {
         auto r = getLocalBounds();
         auto componentWidth = r.getWidth() / numColumns;
-        auto componentHeight = componentWidth * 7 / 5;
+        auto componentHeight = maxRows == 1 ? r.getHeight() : componentWidth * 7 / 5;
         Rectangle<int> currentRowArea = r.removeFromTop(componentHeight);
 
         int column = 1, row = 1;
@@ -88,8 +88,8 @@ public:
     }
 
 private:
-    static const int numColumns {8};
     int maxRows;
+    int numColumns;
     int currentPage{0};
     OwnedArray<ParameterDisplayComponent> paramComponents;
     OwnedArray<StatefulAudioProcessorWrapper::Parameter> parameters;

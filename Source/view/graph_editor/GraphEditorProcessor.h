@@ -6,6 +6,7 @@
 #include "ConnectorDragListener.h"
 #include "ProcessorGraph.h"
 #include "GraphEditorPin.h"
+#include "view/processor_editor/ParametersPanel.h"
 
 class GraphEditorProcessor : public Component, public ValueTree::Listener {
 public:
@@ -32,8 +33,8 @@ public:
     }
 
     ~GraphEditorProcessor() override {
-        if (inlineEditor != nullptr)
-            inlineEditor->removeMouseListener(this);
+        if (parametersPanel != nullptr)
+            parametersPanel->removeMouseListener(this);
         state.removeListener(this);
     }
 
@@ -153,8 +154,8 @@ public:
                 nameLabel.setBoundingBox(rotateRectIfNarrow(boxBoundsFloat));
             }
 
-            if (inlineEditor != nullptr) {
-                inlineEditor->setBounds(boxBoundsFloat.toNearestInt());
+            if (parametersPanel != nullptr) {
+                parametersPanel->setBounds(boxBoundsFloat.toNearestInt());
             }
         }
     }
@@ -182,7 +183,11 @@ public:
     }
 
     AudioProcessorGraph::Node::Ptr getNode() const {
-        return graph.getNodeForId(getNodeId());
+        return graph.getNodeForState(state);
+    }
+
+    StatefulAudioProcessorWrapper *getProcessorWrapper() {
+        return graph.getProcessorWrapperForState(state);
     }
 
     AudioProcessor *getProcessor() const {
@@ -266,7 +271,7 @@ public:
 
 private:
     DrawableText nameLabel;
-    Component* inlineEditor {};
+    std::unique_ptr<ParametersPanel> parametersPanel;
     ConnectorDragListener &connectorDragListener;
     ProcessorGraph &graph;
     OwnedArray<GraphEditorPin> pins;
@@ -316,12 +321,17 @@ private:
         if (v != state)
             return;
 
-        if (inlineEditor == nullptr) {
-            if (auto *defaultProcessor = dynamic_cast<DefaultAudioProcessor *>(getProcessor())) {
-                if (auto* editor = defaultProcessor->getInlineEditor()) {
-                    addAndMakeVisible(inlineEditor = editor);
-                    inlineEditor->addMouseListener(this, true);
-                    removeChildComponent(&nameLabel);
+        if (parametersPanel == nullptr) {
+            if (auto* processorWrapper = getProcessorWrapper()) {
+                if (auto* defaultProcessor = dynamic_cast<DefaultAudioProcessor *>(processorWrapper->processor)) {
+                    if (defaultProcessor->showInlineEditor()) {
+                        addAndMakeVisible((parametersPanel = std::make_unique<ParametersPanel>(1, processorWrapper->getNumParameters())).get());
+                        parametersPanel->addMouseListener(this, true);
+                        parametersPanel->addParameter(processorWrapper->getParameter(0));
+                        parametersPanel->addParameter(processorWrapper->getParameter(1));
+                        removeChildComponent(&nameLabel);
+                        resized();
+                    }
                 }
             }
         }

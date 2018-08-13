@@ -7,10 +7,10 @@
 class SineBank : public DefaultAudioProcessor {
 public:
     explicit SineBank() : DefaultAudioProcessor(getPluginDescription()),
-            toneSource1("1", defaultStringFromValue, defaultStringFromDbValue, defaultValueFromString, defaultValueFromDbString),
-            toneSource2("2", defaultStringFromValue, defaultStringFromDbValue, defaultValueFromString, defaultValueFromDbString),
-            toneSource3("3", defaultStringFromValue, defaultStringFromDbValue, defaultValueFromString, defaultValueFromDbString),
-            toneSource4("4", defaultStringFromValue, defaultStringFromDbValue, defaultValueFromString, defaultValueFromDbString) {
+            toneSource1("1", defaultStringFromValue, defaultValueFromString, createDefaultGainParameter),
+            toneSource2("2", defaultStringFromValue, defaultValueFromString, createDefaultGainParameter),
+            toneSource3("3", defaultStringFromValue, defaultValueFromString, createDefaultGainParameter),
+            toneSource4("4", defaultStringFromValue, defaultValueFromString, createDefaultGainParameter) {
 
         addParameter(toneSource1.getAmpParameter());
         addParameter(toneSource1.getFreqParameter());
@@ -59,21 +59,21 @@ public:
 
     void parameterChanged(AudioProcessorParameter *parameter, float newValue) override {
         if (parameter == toneSource1.getAmpParameter()) {
-            toneSource1.get()->setAmplitude(newValue);
+            toneSource1.setAmplitude(newValue);
         } else if (parameter == toneSource1.getFreqParameter()) {
-            toneSource1.get()->setFrequency(newValue);
+            toneSource1.setFrequency(newValue);
         } else if (parameter == toneSource2.getAmpParameter()) {
-            toneSource2.get()->setAmplitude(newValue);
+            toneSource2.setAmplitude(newValue);
         } else if (parameter == toneSource2.getFreqParameter()) {
-            toneSource2.get()->setFrequency(newValue);
+            toneSource2.setFrequency(newValue);
         } else if (parameter == toneSource3.getAmpParameter()) {
-            toneSource3.get()->setAmplitude(newValue);
+            toneSource3.setAmplitude(newValue);
         } else if (parameter == toneSource3.getFreqParameter()) {
-            toneSource3.get()->setFrequency(newValue);
+            toneSource3.setFrequency(newValue);
         } else if (parameter == toneSource4.getAmpParameter()) {
-            toneSource4.get()->setAmplitude(newValue);
+            toneSource4.setAmplitude(newValue);
         } else if (parameter == toneSource4.getFreqParameter()) {
-            toneSource4.get()->setFrequency(newValue);
+            toneSource4.setFrequency(newValue);
         }
     }
 

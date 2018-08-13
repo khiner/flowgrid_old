@@ -1,7 +1,7 @@
 #include "DefaultAudioProcessor.h"
 
-const std::function<String (float, int)> DefaultAudioProcessor::defaultStringFromValue = [](float value, int radix) { return String(value, jmin(4, radix)); };
-const std::function<String (float, int)> DefaultAudioProcessor::defaultStringFromDbValue = [](float value, int radix) { return String(Decibels::gainToDecibels(value), jmin(4, radix)); };
+const std::function<String (float, int)> DefaultAudioProcessor::defaultStringFromValue = [](float value, int radix) { return String(value, jmin(3, radix)); };
+const std::function<String (float, int)> DefaultAudioProcessor::defaultStringFromDbValue = [](float value, int radix) { return value <= Decibels::defaultMinusInfinitydB ? "-inf" : String(value, jmin(2, radix)); };
 const std::function<float (const String&)> DefaultAudioProcessor::defaultValueFromString = [](const String &text) {
     auto t = text.trimStart();
     while (t.startsWithChar ('+'))
@@ -11,8 +11,6 @@ const std::function<float (const String&)> DefaultAudioProcessor::defaultValueFr
 };
 
 const std::function<float (const String&)> DefaultAudioProcessor::defaultValueFromDbString = [](const String &text) {
-    auto t = text.trimStart();
-    if (t.endsWithIgnoreCase("db"))
-        t = t.substring (0, t.length() - 2);
-    return Decibels::decibelsToGain(DefaultAudioProcessor::defaultValueFromString(t));
+    auto decibelText = text.upToFirstOccurrenceOf("dB", false, false).trim();
+    return decibelText == "-inf" ? Decibels::defaultMinusInfinitydB : DefaultAudioProcessor::defaultValueFromString(decibelText);
 };

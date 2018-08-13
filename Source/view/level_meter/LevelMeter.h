@@ -45,11 +45,14 @@ public:
         stopTimer();
     }
 
-    float getValue() const { return gainValue; }
-    
-    void setValue(float newValue, NotificationType notification) {
+    float getValue() const { return normalisableRange.convertFrom0to1(gainValue); }
+
+    float getRawValue() const { return gainValue; }
+
+    void setValue(float newUnnormalizedValue, NotificationType notification) {
         jassert(notification == dontSendNotification || notification == sendNotificationSync);
-        
+
+        float newValue = normalisableRange.convertTo0to1(newUnnormalizedValue);
         if (gainValue != newValue) {
             gainValue = newValue;
             if (notification == sendNotificationSync)
@@ -57,7 +60,15 @@ public:
             resized();
         }
     }
-    
+
+    void setRawValue(float newNormalizedValue, NotificationType notificationType) {
+        setValue(normalisableRange.convertFrom0to1(newNormalizedValue), notificationType);
+    }
+
+    void setNormalisableRange(NormalisableRange<float> newRange) {
+        normalisableRange = std::move(newRange);
+    }
+
     void paint(Graphics &g) override {
         Graphics::ScopedSaveState saved(g);
 
@@ -82,7 +93,7 @@ public:
     void mouseDrag(const MouseEvent &event) override {
         if (event.originalComponent == &gainValueControl) {
             float newValue = jlimit(0.0f, 1.0f, 1.0f - float(event.getEventRelativeTo(this).getPosition().y) / float(getHeight()));
-            setValue(newValue, sendNotificationSync);
+            setValue(normalisableRange.convertFrom0to1(newValue), sendNotificationSync);
         }
     }
 
@@ -109,6 +120,7 @@ private:
     int refreshRate;
 
     float gainValue {0.5f};
+    NormalisableRange<float> normalisableRange;
 
     void updateMeterGradients() {
         verticalGradient.clearColours();
