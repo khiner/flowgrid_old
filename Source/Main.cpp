@@ -5,6 +5,7 @@
 #include <view/SelectionEditor.h>
 #include <view/graph_editor/GraphEditor.h>
 #include "BasicWindow.h"
+#include "DeviceChangeMonitor.h"
 
 class SoundMachineApplication : public JUCEApplication, public MenuBarModel, private ChangeListener, private Timer {
 public:
@@ -19,6 +20,8 @@ public:
 
     void initialise(const String &) override {
         Process::makeForegroundProcess();
+        deviceChangeMonitor = std::make_unique<DeviceChangeMonitor>(deviceManager);
+
         setMacMainMenu(this);
         getCommandManager().registerAllCommandsForTarget(this);
         undoManager.addChangeListener(this);
@@ -61,6 +64,7 @@ public:
         push2Component = nullptr;
         push2Window = nullptr;
         selectionWindow = nullptr;
+        deviceChangeMonitor = nullptr;
         deviceManager.removeAudioCallback(&player);
         setMacMainMenu(nullptr);
     }
@@ -88,7 +92,6 @@ public:
     PopupMenu getMenuForIndex(int topLevelMenuIndex, const String & /*menuName*/) override {
         PopupMenu menu;
 
-        // TODO use ApplicationCommand stuff like in plugin host example
         if (topLevelMenuIndex == 0) { // File menu
             menu.addCommandItem(&getCommandManager(), CommandIDs::newFile);
             menu.addCommandItem(&getCommandManager(), CommandIDs::open);
@@ -385,7 +388,6 @@ private:
     std::unique_ptr<MainWindow> selectionWindow, graphEditorWindow;
     std::unique_ptr<DocumentWindow> push2Window;
     std::unique_ptr<PluginListComponent> pluginListComponent;
-
     UndoManager undoManager;
     AudioDeviceManager deviceManager;
 
@@ -395,6 +397,8 @@ private:
     ProcessorGraph processorGraph;
     MidiControlHandler midiControlHandler;
     AudioProcessorPlayer player;
+
+    std::unique_ptr<DeviceChangeMonitor> deviceChangeMonitor;
 
     void showAudioMidiSettings() {
         auto* audioSettingsComponent = new AudioDeviceSelectorComponent(deviceManager, 2, 256, 2, 256, true, true, true, false);

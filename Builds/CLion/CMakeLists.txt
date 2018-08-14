@@ -25,8 +25,7 @@ add_executable (APP
     "../../Resources/AbletonSansMedium-Regular.otf"
     "../../Resources/PushStartup.png"
     "../../Source/audio_sources/ToneSourceWithParameters.h"
-    "../../Source/midi/MidiCommunicator.cpp"
-    "../../Source/midi/MidiCommunicator.h"
+        "../../Source/midi/MidiCommunicator.h"
     "../../Source/processors/Arpeggiator.h"
     "../../Source/processors/BalanceProcessor.h"
     "../../Source/processors/DefaultAudioProcessor.cpp"
@@ -53,8 +52,7 @@ add_executable (APP
     "../../Source/usb/libusb/config_msvc.h"
     "../../Source/usb/libusb/config_xcode.h"
     "../../Source/usb/libusb/libusb_platform_wrapper.c"
-    "../../Source/usb/UsbCommunicator.cpp"
-    "../../Source/usb/UsbCommunicator.h"
+        "../../Source/usb/UsbCommunicator.h"
     "../../Source/view/graph_editor/ConnectorDragListener.h"
     "../../Source/view/graph_editor/GraphEditor.h"
     "../../Source/view/graph_editor/GraphEditorConnector.h"
@@ -1325,7 +1323,7 @@ add_executable (APP
     "../../JuceLibraryCode/include_juce_gui_extra.mm"
     "../../JuceLibraryCode/JuceHeader.h"
         ../../Source/view/level_meter/LevelMeterSource.h
-        ../../Source/BasicWindow.h ../../Source/view/push2/Push2Label.h ../../Source/view/push2/Push2TrackManagingView.h ../../Source/view/push2/Push2MixerView.h ../../Source/StatefulAudioProcessorContainer.h ../../Source/DeviceManagerUtilities.h)
+        ../../Source/BasicWindow.h ../../Source/view/push2/Push2Label.h ../../Source/view/push2/Push2TrackManagingView.h ../../Source/view/push2/Push2MixerView.h ../../Source/StatefulAudioProcessorContainer.h ../../Source/DeviceManagerUtilities.h ../../Source/DeviceChangeMonitor.h)
 
 set_source_files_properties ("../../Resources/AbletonSansBold-Regular.otf" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Resources/AbletonSansLight-Regular.otf" PROPERTIES HEADER_FILE_ONLY TRUE)

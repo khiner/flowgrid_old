@@ -5,18 +5,7 @@
 
 class Push2MidiCommunicator : public MidiCommunicator {
 public:
-    Push2MidiCommunicator(): Push2MidiCommunicator("ableton push 2") {};
-
-    explicit Push2MidiCommunicator(const std::string &deviceName) : MidiCommunicator(deviceName) {
-        /*
-         * https://github.com/Ableton/push-interface/blob/master/doc/AbletonPush2MIDIDisplayInterface.asc#Aftertouch
-         * In channel pressure mode (default), the pad with the highest pressure determines the value sent. The pressure range that produces aftertouch is given by the aftertouch threshold pad parameters. The value curve is linear to the pressure and in range 0 to 127. See Pad Parameters.
-         * In polyphonic key pressure mode, aftertouch for each pressed key is sent individually. The value is defined by the pad velocity curve and in range 1…​127. See Velocity Curve.
-         * */
-        static const uint8 setAftertouchModePolyphonic[] { 0x00, 0x21, 0x1D, 0x01, 0x01, 0x1E, 0x01 };
-        auto polyphonicAftertouchSysExMessage = MidiMessage::createSysExMessage(setAftertouchModePolyphonic, 7);
-        sendMessageChecked(polyphonicAftertouchSysExMessage);
-    }
+    Push2MidiCommunicator(): MidiCommunicator("ableton push 2") {};
 
     static const uint8
             topKnob1 = 14, topKnob2 = 15, topKnob3 = 71, topKnob4 = 72, topKnob5 = 73, topKnob6 = 74, topKnob7 = 75,
@@ -46,12 +35,11 @@ public:
     // This function returns a value between -1 and 1 normalized so that (roughly) the magnitude of a full rotation would sum to 1.
     // i.e. Turning 210 'steps' to the left would total to ~-1, and turning 210 steps to the right would total ~1.
     static float encoderCcMessageToRotationChange(const MidiMessage& message) {
-        int value = message.getControllerValue();
-        if (value <= 63) {
-            return static_cast<float>(value) / 210.0f;
-        } else {
-            return (static_cast<float>(value) - 128.0f) / 210.0f;
-        }
+        auto value = float(message.getControllerValue());
+        if (value <= 63)
+            return value / 210.0f;
+        else
+            return (value - 128.0f) / 210.0f;
     }
 
     static uint8 ccNumberForTopKnobIndex(int topKnobIndex) {
@@ -208,6 +196,23 @@ private:
 
     std::unordered_map<String, uint8> indexForColour;
     uint8 numRegisteredNonTrackColours = 0;
+
+    bool findDeviceAndStart() override {
+        if (!MidiCommunicator::findDeviceAndStart())
+            return false;
+        /*
+         * https://github.com/Ableton/push-interface/blob/master/doc/AbletonPush2MIDIDisplayInterface.asc#Aftertouch
+         * In channel pressure mode (default), the pad with the highest pressure determines the value sent.
+         * The pressure range that produces aftertouch is given by the aftertouch threshold pad parameters.
+         * The value curve is linear to the pressure and in range 0 to 127. See Pad Parameters.
+         * In polyphonic key pressure mode, aftertouch for each pressed key is sent individually.
+         * The value is defined by the pad velocity curve and in range 1…​127. See Velocity Curve.
+         */
+        static const uint8 setAftertouchModePolyphonic[] { 0x00, 0x21, 0x1D, 0x01, 0x01, 0x1E, 0x01 };
+        auto polyphonicAftertouchSysExMessage = MidiMessage::createSysExMessage(setAftertouchModePolyphonic, 7);
+        sendMessageChecked(polyphonicAftertouchSysExMessage);
+        return true;
+    }
 
     void sendMessageChecked(const MidiMessage& message) const {
         if (isOutputConnected()) {

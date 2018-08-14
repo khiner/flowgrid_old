@@ -635,6 +635,7 @@ private:
 
     void changeListenerCallback(ChangeBroadcaster* source) override {
         if (source == &deviceManager) {
+            std::cout << "Changed" << '\n';
             syncInputDevicesWithDeviceManager();
             syncOutputDevicesWithDeviceManager();
             AudioDeviceManager::AudioDeviceSetup config;
