@@ -113,10 +113,10 @@ class Push2ProcessorSelector : public Push2ComponentBase {
             return nullptr;
         }
 
-        void arrowPressed(Direction direction) {
-            if (direction == Direction::left)
+        void arrowPressed(int direction) {
+            if (direction == Push2::leftArrowDirection)
                 setCurrentViewOffset(jmax(0, currentViewOffset - NUM_COLUMNS));
-            else if (direction == Direction::right && currentTree != nullptr)
+            else if (direction == Push2::rightArrowDirection && currentTree != nullptr)
                 setCurrentViewOffset(jmin(currentViewOffset + NUM_COLUMNS,
                         getTotalNumberOfTreeItems() - getTotalNumberOfTreeItems() % NUM_COLUMNS));
         }
@@ -240,12 +240,12 @@ public:
         }
     }
 
-    void arrowPressed(Direction direction) override {
+    void arrowPressed(int direction) override {
         if (!canNavigateInDirection(direction))
             return;
-        if (currentProcessorSelector != nullptr && (direction == Direction::left || direction == Direction::right)) {
+        if (currentProcessorSelector != nullptr && (direction == Push2::leftArrowDirection || direction == Push2::rightArrowDirection)) {
             currentProcessorSelector->arrowPressed(direction);
-        } else if (direction == Direction::down) {
+        } else if (direction == Push2::downArrowDirection) {
             if (auto* selectedLabel = currentProcessorSelector->findSelectedLabel()) {
                 int selectedIndex = currentProcessorSelector->labels.indexOf(selectedLabel);
                 if (currentProcessorSelector == topProcessorSelector.get()) {
@@ -254,7 +254,7 @@ public:
                     selectBottomProcessor(selectedIndex);
                 }
             }
-        } else if (direction == Direction::up) {
+        } else if (direction == Push2::upArrowDirection) {
             if (currentProcessorSelector == bottomProcessorSelector.get()) {
                 selectProcessorRow(topProcessorSelector.get());
             } else if (auto* parent = currentProcessorSelector->currentTree->parent) {
@@ -273,7 +273,6 @@ public:
         bottomProcessorSelector->setBounds(r.removeFromBottom(30));
     }
 
-protected:
     void updateEnabledPush2Buttons() override {
         if (isVisible())
             push2.activateWhiteLedButton(Push2::addDevice);
@@ -298,7 +297,7 @@ private:
     }
 
     void updateEnabledPush2Arrows() {
-        for (Direction direction : Push2MidiCommunicator::directions) {
+        for (int direction : Push2MidiCommunicator::directions) {
             if (isVisible() && currentProcessorSelector != nullptr && canNavigateInDirection(direction))
                 push2.activateWhiteLedButton(Push2::ccNumberForArrowButton(direction));
             else
@@ -306,12 +305,13 @@ private:
         }
     }
 
-    bool canNavigateInDirection(Direction direction) {
+    bool canNavigateInDirection(int direction) {
         switch (direction) {
-            case Direction::right: return canNavigateRight();
-            case Direction::down: return canNavigateDown();
-            case Direction::left: return canNavigateLeft();
-            case Direction::up: return canNavigateUp();
+            case Push2::rightArrowDirection: return canNavigateRight();
+            case Push2::downArrowDirection: return canNavigateDown();
+            case Push2::leftArrowDirection: return canNavigateLeft();
+            case Push2::upArrowDirection: return canNavigateUp();
+            default: return false;
         }
     }
 

@@ -3,8 +3,6 @@
 
 class MidiCommunicator: public MidiInputCallback, private Timer {
 public:
-    using midi_callback_t = std::function<void(const MidiMessage &)>;
-
     explicit MidiCommunicator(const String &deviceName) {
         this->deviceName = deviceName;
         if (!findDeviceAndStart())
@@ -28,21 +26,12 @@ public:
 
         return -1;
     }
-
-    void setMidiInputCallback(const midi_callback_t &midiCallback) {
-        this->midiCallback = midiCallback;
-    }
-
-    void handleIncomingMidiMessage(MidiInput * /*source*/, const MidiMessage &message) override {
-        if (midiCallback) {
-            midiCallback(message);
-        }
-    }
 protected:
     String deviceName;
     std::unique_ptr<MidiInput> midiInput;
     std::unique_ptr<MidiOutput> midiOutput;
-    midi_callback_t midiCallback;
+
+    virtual void initialize() { midiInput->start(); }
 
     virtual bool findDeviceAndStart() {
         int deviceIndex = findDeviceIdByDeviceName(deviceName);
@@ -57,8 +46,7 @@ protected:
         if (!midiOutput)
             throw std::runtime_error("Failed to open MIDI output device");
 
-        midiInput->start();
-
+        initialize();
         return true;
     }
 

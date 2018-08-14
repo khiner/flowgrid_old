@@ -13,6 +13,10 @@ public:
     Push2ComponentBase(Project& project, Push2MidiCommunicator& push2MidiCommunicator)
             : project(project), push2(push2MidiCommunicator) {}
 
+    virtual void updateEnabledPush2Buttons() = 0;
+
+    void deviceConnected() override { updateEnabledPush2Buttons(); }
+
     // Let inheritors implement only what they need.
     void shiftPressed() override { isShiftHeld = true; }
     void shiftReleased() override { isShiftHeld = false; }
@@ -26,7 +30,7 @@ public:
     void masterButtonPressed() override {}
     void aboveScreenButtonPressed(int buttonIndex) override {}
     void belowScreenButtonPressed(int buttonIndex) override {}
-    void arrowPressed(Direction direction) override {}
+    void arrowPressed(int direction) override {}
 
     void setVisible(bool visible) override {
         Component::setVisible(visible);
@@ -41,6 +45,4 @@ protected:
 
     Project& project;
     Push2MidiCommunicator& push2;
-
-    virtual void updateEnabledPush2Buttons() = 0;
 };

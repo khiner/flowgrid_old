@@ -105,21 +105,20 @@ public:
         }
     }
 
-    void arrowPressed(Direction direction) override {
+    void arrowPressed(int arrowDirection) override {
         if (currentlyViewingChild != nullptr) {
-            currentlyViewingChild->arrowPressed(direction);
+            currentlyViewingChild->arrowPressed(arrowDirection);
             return;
         }
-        switch (direction) {
-            case Direction::up: return project.moveSelectionUp();
-            case Direction::down: return project.moveSelectionDown();
-            case Direction::left: return project.moveSelectionLeft();
-            case Direction::right: return project.moveSelectionRight();
+        switch (arrowDirection) {
+            case Push2::upArrowDirection: return project.moveSelectionUp();
+            case Push2::downArrowDirection: return project.moveSelectionDown();
+            case Push2::leftArrowDirection: return project.moveSelectionLeft();
+            case Push2::rightArrowDirection: return project.moveSelectionRight();
             default: return;
         }
     }
 
-protected:
     void updateEnabledPush2Buttons() override {
         if (isVisible()) {
             push2.enableWhiteLedButton(Push2::addTrack);
@@ -127,6 +126,8 @@ protected:
             push2.activateWhiteLedButton(Push2::shift);
             updatePush2SelectionDependentButtons();
             changeListenerCallback(&project.getUndoManager());
+            if (currentlyViewingChild != nullptr)
+                currentlyViewingChild->updateEnabledPush2Buttons();
         } else {
             for (auto buttonId : {Push2::shift, Push2::addTrack, Push2::delete_, Push2::addDevice,
                                   Push2::mix, Push2::master, Push2::undo}) {

@@ -35,13 +35,6 @@ public:
         }
     }
 
-protected:
-    virtual void trackAdded(const ValueTree &track) { updateEnabledPush2Buttons(); }
-    virtual void trackRemoved(const ValueTree &track) { updateEnabledPush2Buttons(); }
-    virtual void trackSelected(const ValueTree &track) { updateEnabledPush2Buttons(); }
-
-    virtual void selectedTrackColourChanged(const Colour& colour) = 0;
-
     void updateEnabledPush2Buttons() override {
         auto selectedTrack = project.getSelectedTrack();
         const auto& masterTrack = project.getMasterTrack();
@@ -64,6 +57,13 @@ protected:
             label->setSelected(track == selectedTrack);
         }
     }
+
+protected:
+    virtual void trackAdded(const ValueTree &track) { updateEnabledPush2Buttons(); }
+    virtual void trackRemoved(const ValueTree &track) { updateEnabledPush2Buttons(); }
+    virtual void trackSelected(const ValueTree &track) { updateEnabledPush2Buttons(); }
+
+    virtual void selectedTrackColourChanged(const Colour& colour) = 0;
 
     void valueTreeChildAdded(ValueTree &parent, ValueTree& child) override {
         if (child.hasType(IDs::MASTER_TRACK) || child.hasType(IDs::TRACK)) {

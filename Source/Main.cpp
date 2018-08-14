@@ -1,6 +1,5 @@
 #include <Utilities.h>
 #include "view/push2/Push2Component.h"
-#include "MidiControlHandler.h"
 #include "ApplicationPropertiesAndCommandManager.h"
 #include <view/SelectionEditor.h>
 #include <view/graph_editor/GraphEditor.h>
@@ -30,10 +29,6 @@ public:
         const auto &typeface = Typeface::createSystemTypefaceFor(BinaryData::AbletonSansMediumRegular_otf, BinaryData::AbletonSansMediumRegular_otfSize);
         LookAndFeel::getDefaultLookAndFeel().setDefaultSansSerifTypeface(typeface);
 
-        push2MidiCommunicator.setMidiInputCallback([this](const MidiMessage &message) {
-            MessageManager::callAsync([this, message]() { midiControlHandler.handleControlMidi(message); });
-        });
-
         pluginListComponent = std::unique_ptr<PluginListComponent>(processorManager.makePluginListComponent());
 
         graphEditorWindow = std::make_unique<MainWindow>(*this, "Graph Editor", new GraphEditor(processorGraph, project));
@@ -49,7 +44,9 @@ public:
         graphEditorWindow->setBoundsRelative(0.5, 0.05, 0.45, 0.9);
 
         push2Component = std::make_unique<Push2Component>(project, push2MidiCommunicator, processorGraph);
-        midiControlHandler.setPush2Listener(push2Component.get());
+        push2Component->setVisible(true);
+
+        push2MidiCommunicator.setPush2Listener(push2Component.get());
 
         player.setProcessor(&processorGraph);
         deviceManager.addAudioCallback(&player);
@@ -395,7 +392,6 @@ private:
 
     Project project;
     ProcessorGraph processorGraph;
-    MidiControlHandler midiControlHandler;
     AudioProcessorPlayer player;
 
     std::unique_ptr<DeviceChangeMonitor> deviceChangeMonitor;

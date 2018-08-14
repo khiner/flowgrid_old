@@ -2,10 +2,68 @@
 
 #include <midi/MidiCommunicator.h>
 #include <unordered_map>
+#include "view/push2/Push2Listener.h"
 
 class Push2MidiCommunicator : public MidiCommunicator {
 public:
     Push2MidiCommunicator(): MidiCommunicator("ableton push 2") {};
+
+    void initialize() override {
+        MidiCommunicator::initialize();
+        push2Listener->deviceConnected();
+    }
+
+    void setPush2Listener(Push2Listener *push2Listener) {
+        this->push2Listener = push2Listener;
+    }
+
+    void handleIncomingMidiMessage(MidiInput * /*source*/, const MidiMessage &message) override {
+        MessageManager::callAsync([this, message]() {
+        if (!message.isController() || push2Listener == nullptr)
+            return;
+
+        const int ccNumber = message.getControllerNumber();
+
+        if (isEncoderCcNumber(ccNumber)) {
+            float changeAmount = encoderCcMessageToRotationChange(message);
+            if (ccNumber == masterKnob) {
+                return push2Listener->masterEncoderRotated(changeAmount / 2.0f);
+            } else if (isAboveScreenEncoderCcNumber(ccNumber)) {
+                return push2Listener->encoderRotated(ccNumber - ccNumberForTopKnobIndex(0), changeAmount / 2.0f);
+            }
+            return;
+        }
+
+        if (isButtonPressControlMessage(message)) {
+            if (isAboveScreenButtonCcNumber(ccNumber)) {
+                return push2Listener->aboveScreenButtonPressed(ccNumber - topDisplayButton1);
+            } else if (isBelowScreenButtonCcNumber(ccNumber)) {
+                return push2Listener->belowScreenButtonPressed(ccNumber - bottomDisplayButton1);
+            } else if (isArrowButtonCcNumber(ccNumber)) {
+                return push2Listener->arrowPressed(directionForArrowButtonCcNumber(ccNumber));
+            }
+            switch(ccNumber) {
+                case shift:
+                    push2Listener->shiftPressed();
+                    return;
+                case undo: return push2Listener->undoButtonPressed();
+                case delete_: return push2Listener->deleteButtonPressed();
+                case addTrack: return push2Listener->addTrackButtonPressed();
+                case addDevice: return push2Listener->addDeviceButtonPressed();
+                case mix: return push2Listener->mixButtonPressed();
+                case master: return push2Listener->masterButtonPressed();
+                default: return;
+            }
+        } else if (isButtonReleaseControlMessage(message)) {
+            switch(ccNumber) {
+                case shift:
+                    push2Listener->shiftReleased();
+                    return;
+                default: return;
+            }
+        }
+        });
+    }
 
     static const uint8
             topKnob1 = 14, topKnob2 = 15, topKnob3 = 71, topKnob4 = 72, topKnob5 = 73, topKnob6 = 74, topKnob7 = 75,
@@ -22,8 +80,8 @@ public:
             left = 44, right = 45, up = 46, down = 47, repeat = 56, accent = 57, scale = 58, layout = 31, note = 50,
             session = 51, octaveUp = 55, octaveDown = 54, pageLeft = 62, pageRight = 63, shift = 49, select = 48;
 
-    enum class Direction { up, down, left, right };
-    static const Direction directions[4];
+    static const int upArrowDirection = 0, downArrowDirection = 1, leftArrowDirection = 2, rightArrowDirection = 3;
+    static const int directions[4];
 
     // From https://github.com/Ableton/push-interface/blob/master/doc/AbletonPush2MIDIDisplayInterface.asc#Encoders:
     //
@@ -56,24 +114,24 @@ public:
         }
     }
 
-    static uint8 ccNumberForArrowButton(Direction direction) {
+    static uint8 ccNumberForArrowButton(int direction) {
         switch(direction) {
-            case Direction::up: return up;
-            case Direction::down: return down;
-            case Direction::left: return left;
-            case Direction::right: return right;
+            case upArrowDirection: return up;
+            case downArrowDirection: return down;
+            case leftArrowDirection: return left;
+            case rightArrowDirection: return right;
             default: return 0;
         }
     }
 
-    static Direction directionForArrowButtonCcNumber(int ccNumber) {
+    static int directionForArrowButtonCcNumber(int ccNumber) {
         jassert(isArrowButtonCcNumber(ccNumber));
 
         switch (ccNumber) {
-            case left: return Direction::left;
-            case right: return Direction::right;
-            case up: return Direction::up;
-            default: return Direction::down;
+            case left: return leftArrowDirection;
+            case right: return rightArrowDirection;
+            case up: return upArrowDirection;
+            default: return downArrowDirection;
         }
     }
 
@@ -196,6 +254,7 @@ private:
 
     std::unordered_map<String, uint8> indexForColour;
     uint8 numRegisteredNonTrackColours = 0;
+    Push2Listener *push2Listener {};
 
     bool findDeviceAndStart() override {
         if (!MidiCommunicator::findDeviceAndStart())

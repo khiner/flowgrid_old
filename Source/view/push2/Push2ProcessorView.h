@@ -76,7 +76,6 @@ public:
         }
     }
 
-protected:
     void updateEnabledPush2Buttons() override {
         Push2TrackManagingView::updateEnabledPush2Buttons();
 
