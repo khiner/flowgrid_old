@@ -21,6 +21,8 @@ public:
         Process::makeForegroundProcess();
         deviceChangeMonitor = std::make_unique<DeviceChangeMonitor>(deviceManager);
 
+        deviceManager.addChangeListener(this);
+
         setMacMainMenu(this);
         getCommandManager().registerAllCommandsForTarget(this);
         undoManager.addChangeListener(this);
@@ -378,6 +380,9 @@ public:
     };
 
     ApplicationPropertiesAndCommandManager applicationPropertiesAndCommandManager;
+
+    String push2MidiDeviceName = "ableton push 2 live port";
+
 private:
     ProcessorManager processorManager;
 
@@ -442,6 +447,14 @@ private:
     void changeListenerCallback(ChangeBroadcaster* source) override {
         if (source == &undoManager) {
             applicationCommandListChanged(); // TODO wasteful to refresh *all* items. is there a way to just change what we need?
+        } else if (source == &deviceManager) {
+            if (!push2MidiCommunicator.isInitialized() && MidiInput::getDevices().contains(push2MidiDeviceName, true)) {
+                MidiInput *midiInput = MidiInput::openDevice(MidiInput::getDevices().indexOf(push2MidiDeviceName, true), &push2MidiCommunicator);
+                MidiOutput *midiOutput = MidiOutput::openDevice(MidiOutput::getDevices().indexOf(push2MidiDeviceName, true));
+                push2MidiCommunicator.setMidiInputAndOutput(midiInput, midiOutput);
+            } else if (push2MidiCommunicator.isInitialized() && !MidiInput::getDevices().contains(push2MidiDeviceName, true)) {
+                push2MidiCommunicator.setMidiInputAndOutput(nullptr, nullptr);
+            }
         }
     }
 

@@ -6,11 +6,23 @@
 
 class Push2MidiCommunicator : public MidiCommunicator {
 public:
-    Push2MidiCommunicator(): MidiCommunicator("ableton push 2") {};
+    Push2MidiCommunicator() = default;
 
     void initialize() override {
         MidiCommunicator::initialize();
         registerAllIndexedColours();
+        /*
+         * https://github.com/Ableton/push-interface/blob/master/doc/AbletonPush2MIDIDisplayInterface.asc#Aftertouch
+         * In channel pressure mode (default), the pad with the highest pressure determines the value sent.
+         * The pressure range that produces aftertouch is given by the aftertouch threshold pad parameters.
+         * The value curve is linear to the pressure and in range 0 to 127. See Pad Parameters.
+         * In polyphonic key pressure mode, aftertouch for each pressed key is sent individually.
+         * The value is defined by the pad velocity curve and in range 1…​127. See Velocity Curve.
+         */
+        static const uint8 setAftertouchModePolyphonic[] { 0x00, 0x21, 0x1D, 0x01, 0x01, 0x1E, 0x01 };
+        auto polyphonicAftertouchSysExMessage = MidiMessage::createSysExMessage(setAftertouchModePolyphonic, 7);
+        sendMessageChecked(polyphonicAftertouchSysExMessage);
+
         push2Listener->deviceConnected();
     }
 
@@ -256,23 +268,6 @@ private:
     std::unordered_map<String, uint8> indexForColour;
     uint8 numRegisteredNonTrackColours = 0;
     Push2Listener *push2Listener {};
-
-    bool findDeviceAndStart() override {
-        if (!MidiCommunicator::findDeviceAndStart())
-            return false;
-        /*
-         * https://github.com/Ableton/push-interface/blob/master/doc/AbletonPush2MIDIDisplayInterface.asc#Aftertouch
-         * In channel pressure mode (default), the pad with the highest pressure determines the value sent.
-         * The pressure range that produces aftertouch is given by the aftertouch threshold pad parameters.
-         * The value curve is linear to the pressure and in range 0 to 127. See Pad Parameters.
-         * In polyphonic key pressure mode, aftertouch for each pressed key is sent individually.
-         * The value is defined by the pad velocity curve and in range 1…​127. See Velocity Curve.
-         */
-        static const uint8 setAftertouchModePolyphonic[] { 0x00, 0x21, 0x1D, 0x01, 0x01, 0x1E, 0x01 };
-        auto polyphonicAftertouchSysExMessage = MidiMessage::createSysExMessage(setAftertouchModePolyphonic, 7);
-        sendMessageChecked(polyphonicAftertouchSysExMessage);
-        return true;
-    }
 
     void sendMessageChecked(const MidiMessage& message) const {
         if (isOutputConnected()) {
