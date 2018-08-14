@@ -10,6 +10,7 @@ public:
 
     void initialize() override {
         MidiCommunicator::initialize();
+        registerAllIndexedColours();
         push2Listener->deviceConnected();
     }
 
@@ -283,5 +284,11 @@ private:
         jassert(numRegisteredNonTrackColours + 1 < FIRST_TRACK_COLOUR_INDEX);
         if (setColour(numRegisteredNonTrackColours + 1, colour))
             numRegisteredNonTrackColours++;
+    }
+
+    void registerAllIndexedColours() {
+        for (std::pair<String, uint8> pair : indexForColour) {
+            setColour(pair.second, Colour::fromString(pair.first));
+        }
     }
 };

@@ -80,7 +80,6 @@ add_executable (APP
         "../../Source/ApplicationPropertiesAndCommandManager.h"
     "../../Source/Identifiers.h"
     "../../Source/Main.cpp"
-    "../../Source/MidiControlHandler.h"
     "../../Source/ProcessorGraph.h"
     "../../Source/Project.h"
     "../../Source/Utilities.h"
