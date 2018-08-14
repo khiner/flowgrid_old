@@ -5,12 +5,6 @@
 #include <usb/UsbCommunicator.h>
 #include "Push2Display.h"
 
-// Forward declarations. This avoid having to include libusb.h from here
-// which leads to declaration conflicts with juce
-class libusb_transfer;
-
-class libusb_device_handle;
-
 /*!
  *  This class manages the communication with the Push 2 display over usb.
  *
@@ -25,27 +19,88 @@ public:
     }
 
     inline void onFrameFillCompleted() {
-        if (frameHeaderTransfer == nullptr) {
+        if (frameHeaderTransfer == nullptr || headerNeedsSending.load()) {
             startSending();
         }
     }
+
 protected:
     /*!
      *  Initiate the send process
      */
-    void startSending() override;
+    void startSending() override {
+        currentLine = 0;
+
+        // transfer struct for the frame header
+        static unsigned char frameHeader[16] = {
+                0xFF, 0xCC, 0xAA, 0x88,
+                0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00
+        };
+
+        static const unsigned char push2BulkEPOut = 0x01;
+        frameHeaderTransfer =
+                allocateAndPrepareTransferChunk(handle, this, frameHeader, sizeof(frameHeader), push2BulkEPOut);
+
+        for (int i = 0; i < SEND_BUFFER_COUNT; i++) {
+            unsigned char *buffer = (sendBuffers + i * SEND_BUFFER_SIZE);
+
+            // Allocates a transfer struct for the send buffers
+            libusb_transfer *transfer =
+                    allocateAndPrepareTransferChunk(handle, this, buffer, SEND_BUFFER_SIZE, push2BulkEPOut);
+
+            // Start a request for this buffer
+            sendNextSlice(transfer);
+        }
+    }
 
     /*!
      *  Send the next slice of data using the provided transfer struct
      */
-    void sendNextSlice(libusb_transfer *transfer) override;
+    void sendNextSlice(libusb_transfer *transfer) override {
+        // Start of a new frame, so send header first
+        if (currentLine == 0) {
+            if (libusb_submit_transfer(frameHeaderTransfer) < 0) {
+                std::cerr << "could not submit frame header transfer" << '\n';
+                headerNeedsSending.store(true);
+                return;
+            } else {
+                headerNeedsSending.store(false);
+            }
+        }
+
+        // Copy the next slice of the source data (represented by currentLine)
+        // to the transfer buffer
+        unsigned char *dst = transfer->buffer;
+
+        const unsigned char *src = (const unsigned char *) pixels + LINE_SIZE_BYTES * currentLine;
+        unsigned char *end = dst + SEND_BUFFER_SIZE;
+
+        while (dst < end) {
+            *dst++ = *src++;
+        }
+
+        if (libusb_submit_transfer(transfer) < 0) {
+            std::cerr << "could not submit display data transfer" << '\n';
+            return;
+        }
+
+        // Update slice position
+        currentLine += LINE_COUNT_PER_SEND_BUFFER;
+
+        if (currentLine >= NUM_LINES) {
+            currentLine = 0;
+        }
+    }
+
 
     /*!
      *  Callback for when a full frame has been sent
      *  Note that there's no real need of doing double buffering since the
      *  display deals nicely with it already
      */
-    void onFrameSendCompleted() override;
+    void onFrameSendCompleted() override {}
 
 private:
     static const int LINE_WIDTH = 1024;

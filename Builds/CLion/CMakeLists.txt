@@ -46,7 +46,6 @@ add_executable (APP
     "../../Source/push2/Push2DisplayBridge.h"
     "../../Source/push2/Push2MidiCommunicator.cpp"
     "../../Source/push2/Push2MidiCommunicator.h"
-    "../../Source/push2/Push2UsbCommunicator.cpp"
     "../../Source/push2/Push2UsbCommunicator.h"
     "../../Source/usb/libusb/config.h"
     "../../Source/usb/libusb/config_msvc.h"

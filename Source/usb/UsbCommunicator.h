@@ -13,12 +13,14 @@ class UsbCommunicator : private Timer {
 public:
     UsbCommunicator(const uint16_t vendorId, const uint16_t productId):
             vendorId(vendorId), productId(productId), frameHeaderTransfer(nullptr), terminate(false) {
-        if (!findDeviceHandleAndStartPolling())
-            startTimer(1000); // check back every second
+        auto errorCode = libusb_init(nullptr);
+        if (errorCode < 0)
+            throw std::runtime_error("Failed to initialize usblib");
+
+        startTimer(1000); // check back every second
     }
 
-    virtual ~UsbCommunicator() {
-        // shutdown the polling thread
+    ~UsbCommunicator() override {
         terminate = true;
         if (pollThread.joinable()) {
             pollThread.join();
@@ -56,6 +58,9 @@ public:
                     printf("snd transfer failed with status: %d\n", transfer->status);
                     break;
             }
+            terminate.store(true);
+            libusb_close(handle);
+            handle = nullptr;
         } else if (transfer->length != transfer->actual_length) {
             char errorMsg[256];
             sprintf(errorMsg, "only transferred %d of %d bytes\n", transfer->actual_length, transfer->length);
@@ -122,18 +127,15 @@ protected:
     uint16_t productId;
     libusb_transfer *frameHeaderTransfer;
     libusb_device_handle *handle {};
+    std::atomic<bool> headerNeedsSending { true };
 
 private:
     void timerCallback() override {
-        if (findDeviceHandleAndStartPolling())
-            stopTimer();
+        if (handle == nullptr)
+            findDeviceHandleAndStartPolling();
     }
 
     bool findDeviceHandleAndStartPolling() {
-        auto errorCode = libusb_init(nullptr);
-        if (errorCode < 0)
-            throw std::runtime_error("Failed to initialize usblib");
-
         libusb_device **devices;
         auto count = libusb_get_device_list(nullptr, &devices);
         if (count < 0)
@@ -141,8 +143,8 @@ private:
 
         // Look for the one matching Push 2's descriptors
         libusb_device *device;
-        handle = nullptr;
 
+        int errorCode;
         for (int i = 0; (device = devices[i]) != nullptr; i++) {
             struct libusb_device_descriptor descriptor{};
             if ((errorCode = libusb_get_device_descriptor(device, &descriptor)) < 0) {
@@ -168,6 +170,11 @@ private:
         libusb_free_device_list(devices, 1);
 
         if (handle != nullptr) {
+            if (pollThread.joinable()) {
+                pollThread.join();
+                headerNeedsSending.store(true);
+                terminate.store(false);
+            }
             pollThread = std::thread(&UsbCommunicator::pollUsbForEvents, this);
             return true;
         }
