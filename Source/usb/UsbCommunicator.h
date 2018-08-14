@@ -33,7 +33,6 @@ public:
      */
     void LIBUSB_CALL onTransferFinished(libusb_transfer *transfer) {
         if (transfer->status != LIBUSB_TRANSFER_COMPLETED) {
-            assert(false);
             switch (transfer->status) {
                 case LIBUSB_TRANSFER_ERROR:
                     printf("transfer failed\n");
