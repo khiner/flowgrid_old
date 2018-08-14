@@ -201,11 +201,6 @@ public:
         Push2ComponentBase::setVisible(visible);
         topProcessorSelector->setVisible(visible);
         bottomProcessorSelector->setVisible(visible);
-        
-        if (visible)
-            push2.activateWhiteLedButton(Push2::addDevice);
-        else
-            push2.enableWhiteLedButton(Push2::addDevice);
     }
 
     const PluginDescription* selectTopProcessor(int index) {
@@ -277,6 +272,16 @@ public:
         topProcessorSelector->setBounds(r.removeFromTop(30));
         bottomProcessorSelector->setBounds(r.removeFromBottom(30));
     }
+
+protected:
+    void updateEnabledPush2Buttons() override {
+        if (isVisible())
+            push2.activateWhiteLedButton(Push2::addDevice);
+        else
+            push2.enableWhiteLedButton(Push2::addDevice);
+        updateEnabledPush2Arrows();
+    }
+
 private:
     void setCurrentTree(ProcessorSelectorRow *processorSelectorRow, KnownPluginList::PluginTree* tree) {
         processorSelectorRow->setCurrentTree(tree);
@@ -293,10 +298,8 @@ private:
     }
 
     void updateEnabledPush2Arrows() {
-        if (!isVisible())
-            return;
         for (Direction direction : Push2MidiCommunicator::directions) {
-            if (currentProcessorSelector != nullptr && canNavigateInDirection(direction))
+            if (isVisible() && currentProcessorSelector != nullptr && canNavigateInDirection(direction))
                 push2.activateWhiteLedButton(Push2::ccNumberForArrowButton(direction));
             else
                 push2.disableWhiteLedButton(Push2::ccNumberForArrowButton(direction));

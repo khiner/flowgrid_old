@@ -78,6 +78,15 @@ public:
 
     ValueTree getTrack(int trackIndex) { return tracks.getChild(trackIndex); }
 
+    ValueTree getNonMasterTrack(int trackIndex) {
+        int nonMasterIndex = 0;
+        for (auto track : tracks) {
+            if (!track.hasType(IDs::MASTER_TRACK) && nonMasterIndex++ == trackIndex)
+                return track;
+        }
+        return {};
+    }
+
     ValueTree getMasterTrack() { return tracks.getChildWithName(IDs::MASTER_TRACK); }
 
     ValueTree getSelectedTrack() {
@@ -635,7 +644,6 @@ private:
 
     void changeListenerCallback(ChangeBroadcaster* source) override {
         if (source == &deviceManager) {
-            std::cout << "Changed" << '\n';
             syncInputDevicesWithDeviceManager();
             syncOutputDevicesWithDeviceManager();
             AudioDeviceManager::AudioDeviceSetup config;

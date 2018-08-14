@@ -19,13 +19,6 @@ public:
         project.getState().removeListener(this);
     }
 
-    void setVisible(bool visible) override {
-        Push2ComponentBase::setVisible(visible);
-        push2.enableWhiteLedButton(Push2::master);
-        if (visible)
-            updateLabels();
-    }
-
     void resized() override {
         auto r = getLocalBounds();
         auto labelWidth = getWidth() / NUM_COLUMNS;
@@ -36,39 +29,40 @@ public:
     }
 
     void belowScreenButtonPressed(int buttonIndex) override {
-        selectTrack(buttonIndex);
+        auto track = project.getNonMasterTrack(buttonIndex);
+        if (track.isValid()) {
+            track.setProperty(IDs::selected, true, nullptr);
+        }
     }
 
 protected:
-    virtual void trackAdded(const ValueTree &track) { updateLabels(); }
-    virtual void trackRemoved(const ValueTree &track) { updateLabels(); }
-    virtual void trackSelected(const ValueTree &track) { updateLabels(); }
+    virtual void trackAdded(const ValueTree &track) { updateEnabledPush2Buttons(); }
+    virtual void trackRemoved(const ValueTree &track) { updateEnabledPush2Buttons(); }
+    virtual void trackSelected(const ValueTree &track) { updateEnabledPush2Buttons(); }
 
     virtual void selectedTrackColourChanged(const Colour& colour) = 0;
 
-    virtual void updateLabels() {
+    void updateEnabledPush2Buttons() override {
         auto selectedTrack = project.getSelectedTrack();
-
-        for (int i = 0; i < trackLabels.size(); i++) {
-            auto *label = trackLabels.getUnchecked(i);
-            // TODO left/right buttons
-            if (i < project.getNumNonMasterTracks()) {
-                const auto &track = project.getTrack(i);
-                label->setVisible(true);
-                label->setMainColour(Colour::fromString(track[IDs::colour].toString()));
-                label->setText(track[IDs::name], dontSendNotification);
-                label->setSelected(track == selectedTrack);
-            } else {
-                label->setVisible(false);
-            }
+        const auto& masterTrack = project.getMasterTrack();
+        for (auto* label : trackLabels) {
+            label->setVisible(false);
         }
-
-        if (!project.getMasterTrack().isValid())
-            push2.disableWhiteLedButton(Push2::master);
-        else if (selectedTrack != project.getMasterTrack())
-            push2.enableWhiteLedButton(Push2::master);
-        else
-            push2.activateWhiteLedButton(Push2::master);
+        if (!isVisible())
+            return;
+        int labelIndex = 0;
+        for (const auto& track : project.getTracks()) {
+            if (track == masterTrack)
+                continue;
+            if (labelIndex >= trackLabels.size())
+                return;
+            auto *label = trackLabels.getUnchecked(labelIndex++);
+            // TODO left/right buttons
+            label->setVisible(true);
+            label->setMainColour(Colour::fromString(track[IDs::colour].toString()));
+            label->setText(track[IDs::name], dontSendNotification);
+            label->setSelected(track == selectedTrack);
+        }
     }
 
     void valueTreeChildAdded(ValueTree &parent, ValueTree& child) override {
@@ -90,11 +84,13 @@ protected:
                 if (trackIndex == -1)
                     return;
                 jassert(trackIndex < trackLabels.size()); // TODO left/right buttons
-                if (i == IDs::name) {
+                if (i == IDs::name && !tree.hasType(IDs::MASTER_TRACK)) {
                     trackLabels.getUnchecked(trackIndex)->setText(tree[IDs::name], dontSendNotification);
                 } else if (i == IDs::colour) {
                     const auto &trackColour = Colour::fromString(tree[IDs::colour].toString());
-                    trackLabels.getUnchecked(trackIndex)->setMainColour(trackColour);
+                    if (!tree.hasType(IDs::MASTER_TRACK)) {
+                        trackLabels.getUnchecked(trackIndex)->setMainColour(trackColour);
+                    }
                     if (tree == project.getSelectedTrack()) {
                         selectedTrackColourChanged(trackColour);
                     }
@@ -107,12 +103,6 @@ protected:
 
 private:
     OwnedArray<Push2Label> trackLabels;
-
-    void selectTrack(int trackIndex) {
-        if (trackIndex < project.getNumNonMasterTracks()) {
-            project.getTrack(trackIndex).setProperty(IDs::selected, true, nullptr);
-        }
-    }
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Push2TrackManagingView)
 };

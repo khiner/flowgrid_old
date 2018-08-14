@@ -23,14 +23,9 @@ public:
         selectPanel(&volumeParametersPanel);
     }
 
-    void setVisible(bool visible) override {
-        Push2TrackManagingView::setVisible(visible);
-        volumesLabel.setVisible(visible);
-        pansLabel.setVisible(visible);
-        if (visible)
-            push2.activateWhiteLedButton(Push2::mix);
-        else
-            push2.enableWhiteLedButton(Push2::mix);
+    ~Push2MixerView() override {
+        volumeParametersPanel.clearParameters();
+        panParametersPanel.clearParameters();
     }
 
     void resized() override {
@@ -60,13 +55,24 @@ public:
         }
     }
 
+protected:
+    void updateEnabledPush2Buttons() override {
+        Push2TrackManagingView::updateEnabledPush2Buttons();
+        volumesLabel.setVisible(isVisible());
+        pansLabel.setVisible(isVisible());
+        if (isVisible())
+            push2.activateWhiteLedButton(Push2::mix);
+        else
+            push2.enableWhiteLedButton(Push2::mix);
+    }
+
 private:
     Push2Label volumesLabel, pansLabel;
     ParametersPanel volumeParametersPanel, panParametersPanel;
     ParametersPanel *selectedParametersPanel {};
 
-    void trackSelected(const ValueTree &track) override {
-        Push2TrackManagingView::trackSelected(track);
+    void trackAdded(const ValueTree &track) override {
+        Push2TrackManagingView::trackAdded(track);
         updateParameters();
     }
 
@@ -99,8 +105,10 @@ private:
                 panParametersPanel.addParameter(processorWrapper->getParameter(0));
             }
         } else {
-            for (int i = 0; i < project.getNumNonMasterTracks(); i++) {
-                const auto &mixerChannel = project.getMixerChannelProcessorForTrack(project.getTrack(i));
+            for (const auto& track : project.getTracks()) {
+                if (track == project.getMasterTrack())
+                    continue;
+                const auto &mixerChannel = project.getMixerChannelProcessorForTrack(track);
                 if (auto *processorWrapper = project.getProcessorWrapperForState(mixerChannel)) {
                     // TODO use param identifiers instead of indexes
                     volumeParametersPanel.addParameter(processorWrapper->getParameter(1));

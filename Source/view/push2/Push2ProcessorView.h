@@ -22,9 +22,6 @@ public:
         addChildComponent(parameterPageRightButton);
 
         addAndMakeVisible((parametersPanel = std::make_unique<ParametersPanel>(1)).get());
-
-        parameterPageLeftButton.onClick = [this]() { pageLeft(); };
-        parameterPageRightButton.onClick = [this]() { pageRight(); };
     }
 
     void resized() override {
@@ -54,30 +51,22 @@ public:
     
     void processorSelected(StatefulAudioProcessorWrapper *const processorWrapper) {
         parametersPanel->setProcessor(processorWrapper);
-        updateLabels();
-    }
-
-    void updatePageButtonVisibility() {
-        escapeProcessorFocusButton.setVisible(processorHasFocus);
-        parameterPageLeftButton.setVisible(processorHasFocus && parametersPanel->canPageLeft());
-        parameterPageRightButton.setVisible(processorHasFocus && parametersPanel->canPageRight());
         updateEnabledPush2Buttons();
     }
 
     void aboveScreenButtonPressed(int buttonIndex) override {
-        if (!processorHasFocus) {
-            if (processorLabels.getUnchecked(buttonIndex)->isSelected()) {
-                focusOnProcessor(true);
-            } else {
-                selectProcessor(buttonIndex);
-            }
-        } else {
+        if (processorHasFocus) {
             if (buttonIndex == 0)
                 focusOnProcessor(false);
             else if (buttonIndex == NUM_COLUMNS - 2)
                 pageLeft();
             else if (buttonIndex == NUM_COLUMNS - 1)
                 pageRight();
+        } else {
+            if (processorLabels.getUnchecked(buttonIndex)->isSelected())
+                focusOnProcessor(true);
+            else
+                selectProcessor(buttonIndex);
         }
     }
 
@@ -85,6 +74,14 @@ public:
         if (auto *parameter = parametersPanel->getParameterOnCurrentPageAt(encoderIndex)) {
             parameter->setValue(jlimit(0.0f, 1.0f, parameter->getValue() + changeAmount));
         }
+    }
+
+protected:
+    void updateEnabledPush2Buttons() override {
+        Push2TrackManagingView::updateEnabledPush2Buttons();
+
+        updateProcessorButtons();
+        updatePageButtonVisibility();
     }
 
 private:
@@ -96,7 +93,55 @@ private:
 
     void focusOnProcessor(bool focus) {
         processorHasFocus = focus;
-        updateLabels();
+        updateEnabledPush2Buttons();
+    }
+
+    void updatePageButtonVisibility() {
+        if (processorHasFocus) { // TODO reset when processor changes
+            for (auto *label : processorLabels)
+                label->setVisible(false);
+
+            // TODO use Push2Label to unite these two sets of updates into one automagically
+            push2.setAboveScreenButtonEnabled(0, true); // back button
+            push2.setAboveScreenButtonEnabled(NUM_COLUMNS - 2, parametersPanel->canPageLeft());
+            push2.setAboveScreenButtonEnabled(NUM_COLUMNS - 1, parametersPanel->canPageRight());
+
+            escapeProcessorFocusButton.setVisible(true);
+            parameterPageLeftButton.setVisible(parametersPanel->canPageLeft());
+            parameterPageRightButton.setVisible(parametersPanel->canPageRight());
+        } else {
+            escapeProcessorFocusButton.setVisible(false);
+            parameterPageLeftButton.setVisible(false);
+            parameterPageRightButton.setVisible(false);
+        }
+    }
+
+    void updateProcessorButtons() {
+        auto selectedTrack = project.getSelectedTrack();
+        if (processorHasFocus || !selectedTrack.isValid()) { // TODO reset when processor changes
+            for (auto* label : processorLabels)
+                label->setVisible(false);
+        } else {
+            for (int i = 0; i < processorLabels.size(); i++) {
+                auto *label = processorLabels.getUnchecked(i);
+                // TODO left/right buttons
+                if (i < selectedTrack.getNumChildren()) {
+                    const auto &processor = selectedTrack.getChild(i);
+                    if (processor.hasType(IDs::PROCESSOR)) {
+                        label->setVisible(true);
+                        label->setText(processor[IDs::name], dontSendNotification);
+                        label->setSelected(processor[IDs::selected]);
+                    }
+                } else if (i == 0 && selectedTrack.getNumChildren() == 0) {
+                    label->setVisible(true);
+                    label->setText("No processors", dontSendNotification);
+                    label->setSelected(false);
+                } else {
+                    label->setVisible(false);
+                }
+            }
+            valueTreePropertyChanged(selectedTrack, IDs::colour);
+        }
     }
 
     void pageLeft() {
@@ -107,51 +152,6 @@ private:
     void pageRight() {
         parametersPanel->pageRight();
         updatePageButtonVisibility();
-    }
-
-    void updateLabels() override {
-        Push2TrackManagingView::updateLabels();
-
-        auto selectedTrack = project.getSelectedTrack();
-        if (!selectedTrack.isValid())
-            return;
-
-        if (processorHasFocus) { // TODO reset when processor changes
-            for (auto* label : processorLabels)
-                label->setVisible(false);
-            updatePageButtonVisibility();
-            return;
-        }
-        updatePageButtonVisibility();
-
-        for (int i = 0; i < processorLabels.size(); i++) {
-            auto *label = processorLabels.getUnchecked(i);
-            // TODO left/right buttons
-            if (i < selectedTrack.getNumChildren()) {
-                const auto &processor = selectedTrack.getChild(i);
-                if (processor.hasType(IDs::PROCESSOR)) {
-                    label->setVisible(true);
-                    label->setText(processor[IDs::name], dontSendNotification);
-                    label->setSelected(processor[IDs::selected]);
-                }
-            } else if (i == 0 && selectedTrack.getNumChildren() == 0) {
-                label->setVisible(true);
-                label->setText("No processors", dontSendNotification);
-                label->setSelected(false);
-            } else {
-                label->setVisible(false);
-            }
-        }
-        valueTreePropertyChanged(selectedTrack, IDs::colour);
-    }
-
-    void updateEnabledPush2Buttons() {
-        if (processorHasFocus) {
-            // TODO update these buttons to manage the push buttons on their own, similar to Push2Label
-            push2.setAboveScreenButtonEnabled(0, true); // back button
-            push2.setAboveScreenButtonEnabled(NUM_COLUMNS - 2, parametersPanel->canPageLeft());
-            push2.setAboveScreenButtonEnabled(NUM_COLUMNS - 1, parametersPanel->canPageRight());
-        }
     }
 
     void selectProcessor(int processorIndex) {

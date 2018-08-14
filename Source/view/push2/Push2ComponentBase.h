@@ -30,11 +30,7 @@ public:
 
     void setVisible(bool visible) override {
         Component::setVisible(visible);
-        if (!visible) {
-            for (Direction direction : Push2::directions) {
-                push2.disableWhiteLedButton(Push2::ccNumberForArrowButton(direction));
-            }
-        }
+        updateEnabledPush2Buttons();
     }
 
 protected:
@@ -45,4 +41,6 @@ protected:
 
     Project& project;
     Push2MidiCommunicator& push2;
+
+    virtual void updateEnabledPush2Buttons() = 0;
 };

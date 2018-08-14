@@ -33,9 +33,7 @@ public:
         mixerView.setBounds(r);
         processorView.setBounds(r);
         processorSelector.setBounds(r);
-        push2MidiCommunicator.enableWhiteLedButton(Push2::addTrack);
-        push2.enableWhiteLedButton(Push2::mix);
-        push2.activateWhiteLedButton(Push2::shift);
+        updateEnabledPush2Buttons();
     }
 
     ~Push2Component() override {
@@ -46,11 +44,7 @@ public:
 
     void setVisible(bool visible) override {
         Push2ComponentBase::setVisible(visible);
-        if (!visible) {
-            for (auto buttonId : {Push2::shift, Push2::addTrack, Push2::delete_, Push2::addDevice, Push2::mix, Push2::master, Push2::undo}) {
-                push2.disableWhiteLedButton(buttonId);
-            }
-        }
+        updateEnabledPush2Buttons();
     }
 
     void shiftPressed() override {
@@ -125,6 +119,22 @@ public:
         }
     }
 
+protected:
+    void updateEnabledPush2Buttons() override {
+        if (isVisible()) {
+            push2.enableWhiteLedButton(Push2::addTrack);
+            push2.enableWhiteLedButton(Push2::mix);
+            push2.activateWhiteLedButton(Push2::shift);
+            updatePush2SelectionDependentButtons();
+            changeListenerCallback(&project.getUndoManager());
+        } else {
+            for (auto buttonId : {Push2::shift, Push2::addTrack, Push2::delete_, Push2::addDevice,
+                                  Push2::mix, Push2::master, Push2::undo}) {
+                push2.disableWhiteLedButton(buttonId);
+            }
+        }
+    }
+
 private:
     Push2DisplayBridge displayBridge;
     ProcessorGraph &graph;
@@ -134,6 +144,36 @@ private:
     Push2MixerView mixerView;
 
     Push2ComponentBase *currentlyViewingChild {};
+
+    void timerCallback() override { drawFrame(); }
+
+    // Render a frame and send it to the Push 2 display (if it's available)
+    void inline drawFrame() {
+        static const juce::Colour CLEAR_COLOR = juce::Colour(0xff000000);
+
+        auto &g = displayBridge.getGraphics();
+        g.fillAll(CLEAR_COLOR);
+        paintEntireComponent(g, true);
+        displayBridge.writeFrameToDisplay();
+    }
+
+    void updatePush2SelectionDependentButtons() {
+        const auto &selectedTrack = project.getSelectedTrack();
+        if (selectedTrack.isValid()) {
+            push2.activateWhiteLedButton(Push2MidiCommunicator::delete_);
+            push2.enableWhiteLedButton(Push2MidiCommunicator::addDevice);
+        } else {
+            push2.disableWhiteLedButton(Push2MidiCommunicator::delete_);
+            push2.disableWhiteLedButton(Push2MidiCommunicator::addDevice);
+        }
+
+        if (!project.getMasterTrack().isValid())
+            push2.disableWhiteLedButton(Push2MidiCommunicator::master);
+        else if (selectedTrack != project.getMasterTrack())
+            push2.enableWhiteLedButton(Push2MidiCommunicator::master);
+        else
+            push2.activateWhiteLedButton(Push2MidiCommunicator::master);
+    }
 
     void selectProcessorIfNeeded(StatefulAudioProcessorWrapper* processorWrapper) {
         if (currentlyViewingChild != &mixerView || !dynamic_cast<MixerChannelProcessor *>(processorWrapper->processor)) {
@@ -154,48 +194,29 @@ private:
             currentlyViewingChild->setVisible(true);
     }
 
-    // Render a frame and send it to the Push 2 display
-    void inline drawFrame() {
-        static const juce::Colour CLEAR_COLOR = juce::Colour(0xff000000);
-
-        auto &g = displayBridge.getGraphics();
-        g.fillAll(CLEAR_COLOR);
-        paintEntireComponent(g, true);
-        displayBridge.writeFrameToDisplay();
-    }
-
-    void timerCallback() override { drawFrame(); }
-
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {
         if (i == IDs::selected && tree[IDs::selected]) {
+            updatePush2SelectionDependentButtons();
             if (tree.hasType(IDs::PROCESSOR)) {
                 if (auto *processorWrapper = graph.getProcessorWrapperForState(tree)) {
                     selectProcessorIfNeeded(processorWrapper);
                 }
-                push2.enableWhiteLedButton(Push2::addDevice);
-            } else if (tree.hasType(IDs::TRACK) || tree.hasType(IDs::MASTER_TRACK)) {
-                push2.enableWhiteLedButton(Push2::addDevice);
-            } else {
-                selectChild(nullptr);
-                processorView.processorSelected(nullptr);
-                push2.disableWhiteLedButton(Push2::addDevice);
             }
-            if (project.isItemDeletable(tree))
-                push2.activateWhiteLedButton(Push2::delete_);
-            else
-                push2.disableWhiteLedButton(Push2::delete_);
         }
     }
 
-    void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override {}
+    void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override {
+        if (child.hasType(IDs::MASTER_TRACK) || child.hasType(IDs::TRACK) || child.hasType(IDs::PROCESSOR)) {
+            updatePush2SelectionDependentButtons();
+        }
+    }
 
     void valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int) override {
         if (child.hasType(IDs::MASTER_TRACK) || child.hasType(IDs::TRACK) || child.hasType(IDs::PROCESSOR)) {
+            updatePush2SelectionDependentButtons();
             if (!project.getSelectedTrack().isValid()) {
                 selectChild(nullptr);
                 processorView.processorSelected(nullptr);
-                push2.disableWhiteLedButton(Push2::addDevice);
-                push2.disableWhiteLedButton(Push2::delete_);
             }
         }
     }
