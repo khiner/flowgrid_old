@@ -1,7 +1,7 @@
 #pragma once
 
 #include <unordered_map>
-#include <push2/Push2MidiCommunicator.h>
+#include <view/push2/Push2Colours.h>
 #include "ValueTreeItems.h"
 #include "processors/ProcessorManager.h"
 #include "Utilities.h"
@@ -10,9 +10,9 @@
 class Project : public FileBasedDocument, public ProjectChangeBroadcaster, public StatefulAudioProcessorContainer,
                 private ChangeListener, private ValueTree::Listener {
 public:
-    Project(UndoManager &undoManager, ProcessorManager& processorManager, AudioDeviceManager& deviceManager, Push2MidiCommunicator& push2MidiCommunicator)
+    Project(UndoManager &undoManager, ProcessorManager& processorManager, AudioDeviceManager& deviceManager)
             : FileBasedDocument(getFilenameSuffix(), getFilenameWildcard(), "Load a project", "Save a project"),
-              undoManager(undoManager), processorManager(processorManager), deviceManager(deviceManager), push2MidiCommunicator(push2MidiCommunicator) {
+              undoManager(undoManager), processorManager(processorManager), deviceManager(deviceManager) {
         state = ValueTree(IDs::PROJECT);
         state.setProperty(IDs::name, "My First Project", nullptr);
         input = ValueTree(IDs::INPUT);
@@ -24,9 +24,9 @@ public:
         state.addChild(tracks, -1, nullptr);
         connections = ValueTree(IDs::CONNECTIONS);
         state.addChild(connections, -1, nullptr);
-
+        viewState = ValueTree(IDs::VIEW_STATE);
+        state.addChild(viewState, -1, nullptr);
         undoManager.addChangeListener(this);
-        RecentlyOpenedFilesList recentFiles;
         state.addListener(this);
     }
 
@@ -60,8 +60,6 @@ public:
 
     AudioDeviceManager& getDeviceManager() { return deviceManager; }
 
-    Push2MidiCommunicator& getPush2MidiCommunicator() { return push2MidiCommunicator; }
-
     ValueTree& getState() { return state; }
 
     ValueTree& getConnections() { return connections; }
@@ -80,15 +78,6 @@ public:
 
     ValueTree getTrack(int trackIndex) { return tracks.getChild(trackIndex); }
 
-    ValueTree getNonMasterTrack(int trackIndex) {
-        int nonMasterIndex = 0;
-        for (auto track : tracks) {
-            if (!track.hasType(IDs::MASTER_TRACK) && nonMasterIndex++ == trackIndex)
-                return track;
-        }
-        return {};
-    }
-
     ValueTree getMasterTrack() { return tracks.getChildWithName(IDs::MASTER_TRACK); }
 
     ValueTree getSelectedTrack() {
@@ -103,12 +92,10 @@ public:
         return {};
     }
 
-    ValueTree getSelectedProcessor() {
+    ValueTree findTrackWithUuid(const String& uuid) {
         for (const auto& track : tracks) {
-            for (const auto& processor : track) {
-                if (processor.hasType(IDs::PROCESSOR) && processor[IDs::selected])
-                    return processor;
-            }
+            if (track[IDs::uuid] == uuid)
+                return track;
         }
         return {};
     }
@@ -132,6 +119,10 @@ public:
     const bool selectedTrackHasMixerChannel() {
         return getMixerChannelProcessorForSelectedTrack().isValid();
     }
+
+    bool isInNoteMode() { return viewState.getProperty(IDs::controlMode) == noteControlMode; }
+
+    bool isInSessionMode() { return viewState.getProperty(IDs::controlMode) == sessionControlMode; }
 
     int getMaxProcessorInsertIndex(const ValueTree& track) {
         const ValueTree &mixerChannelProcessor = getMixerChannelProcessorForTrack(track);
@@ -251,7 +242,7 @@ public:
     }
 
     void deleteItem(const ValueTree &v, bool undoable=true) {
-        if (!isItemDeletable(v))
+        if (!v.isValid())
             return;
         if (v.getParent().isValid()) {
             if (v.hasType(IDs::TRACK) || v.hasType(IDs::MASTER_TRACK)) {
@@ -268,24 +259,13 @@ public:
         }
     }
 
-    // IMPORTANT: always set track colours this way instead of directly through state.
-    // Unfortunately, we can't specify an explicit state-listener notification order,
-    // We need to register the colour to Push2 _before_ something else tries to set a Push2 button colour,
-    // to avoid it creating a new (non-track) colour slot to accomadate it.
-    // Thus, everybody can _listen_ to a track colour change and set the Push2 buttons as needed,
-    // but nobody else can _modify_ a track colour state directly :(
-    void setTrackColour(ValueTree& track, const Colour& colour, UndoManager* undoManager) {
-        push2MidiCommunicator.setTrackColour(uint8(track.getParent().indexOf(track)), colour);
-        track.setProperty(IDs::colour, colour.toString(), undoManager);
-    }
-
     void createDefaultProject() {
         createAudioIoProcessors();
 
         ValueTree masterTrack(IDs::MASTER_TRACK);
         masterTrack.setProperty(IDs::name, "Master", nullptr);
+        masterTrack.setProperty(IDs::colour, Colours::darkslateblue.toString(), nullptr);
         tracks.addChild(masterTrack, -1, nullptr);
-        setTrackColour(masterTrack, Colours::darkslateblue, nullptr);
 
         ValueTree masterMixer = createAndAddProcessor(MixerChannelProcessor::getPluginDescription(), masterTrack, -1, false);
 
@@ -293,6 +273,8 @@ public:
         createAndAddProcessor(SineBank::getPluginDescription(), track, -1, false);
 
         masterMixer.setProperty(IDs::selected, true, nullptr);
+
+        viewState.setProperty(IDs::controlMode, noteControlMode, nullptr);
     }
 
     ValueTree createAndAddTrack(bool undoable=true, bool addMixer=true, ValueTree nextToTrack={}) {
@@ -309,18 +291,19 @@ public:
                     while (nextToTrack.isValid() && !getMixerChannelProcessorForTrack(nextToTrack).isValid())
                         nextToTrack = nextToTrack.getSibling(1);
                 }
-            } else if (getMasterTrack().isValid()) {
-                nextToTrack = getMasterTrack();
             }
         }
+        if (nextToTrack == getMasterTrack())
+            nextToTrack = {};
+
         ValueTree track(IDs::TRACK);
+        track.setProperty(IDs::uuid, Uuid().toString(), nullptr);
         track.setProperty(IDs::name, (addMixer || numTracks == 0) ? ("Track " + String(numTracks + 1)) : makeTrackNameUnique(nextToTrack[IDs::name]), nullptr);
         track.setProperty(IDs::colour, Colours::white.toString(), nullptr); // tmp color
-
+        track.setProperty(IDs::colour, (addMixer || numTracks == 0) ? Colour::fromHSV((1.0f / 8.0f) * numTracks, 0.65f, 0.65f, 1.0f).toString() : nextToTrack[IDs::colour].toString(), nullptr);
         tracks.addChild(track,
-                nextToTrack.isValid() ? nextToTrack.getParent().indexOf(nextToTrack) + (addMixer ? 1 : 0): -1,
+                nextToTrack.isValid() ? nextToTrack.getParent().indexOf(nextToTrack) + (addMixer ? 1 : 0): numTracks,
                 undoable ? &undoManager : nullptr);
-        setTrackColour(track, (addMixer || numTracks == 0) ? Colour::fromHSV((1.0f / 8.0f) * numTracks, 0.65f, 0.65f, 1.0f) : Colour::fromString(nextToTrack[IDs::colour].toString()), nullptr);
 
         track.setProperty(IDs::selected, true, undoable ? &undoManager : nullptr);
 
@@ -431,10 +414,6 @@ public:
 
     ValueTree findFirstSelectedItem() {
         return findFirstItemWithPropertyRecursive(state, IDs::selected, true);
-    }
-
-    bool isItemDeletable(const ValueTree& item) {
-        return item.isValid();
     }
 
     void addPluginsToMenu(PopupMenu& menu, const ValueTree& track) const {
@@ -584,20 +563,22 @@ public:
     const static int NUM_VISIBLE_PROCESSOR_SLOTS = 10;
     // first row is reserved for audio input, last row for audio output. second-to-last is horizontal master track.
     const static int NUM_AVAILABLE_PROCESSOR_SLOTS = NUM_VISIBLE_PROCESSOR_SLOTS - 3;
+
+    const String sessionControlMode = "session", noteControlMode = "note";
+
 private:
     ValueTree state;
     UndoManager &undoManager;
-    AudioProcessorGraph* graph;
-    ValueTree input, output, tracks, connections;
+    ValueTree input, output, tracks, connections, viewState;
 
     Array<ValueTree> connectionsSnapshot;
     std::unordered_map<int, int> slotForNodeIdSnapshot;
 
     ProcessorManager &processorManager;
     AudioDeviceManager& deviceManager;
-    Push2MidiCommunicator& push2MidiCommunicator;
 
-    StatefulAudioProcessorContainer* statefulAudioProcessorContainer;
+    AudioProcessorGraph* graph {};
+    StatefulAudioProcessorContainer* statefulAudioProcessorContainer {};
 
     void clear() {
         input.removeAllChildren(nullptr);

@@ -62,7 +62,7 @@ public:
     }
 
     void setColour(const Colour& colour) {
-        project.setTrackColour(state, colour, &graph.undoManager);
+        state.setProperty(IDs::colour, colour.toString(), &graph.undoManager);
     }
 
     bool isSelected() const {

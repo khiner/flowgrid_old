@@ -297,7 +297,7 @@ private:
     }
 
     void updateEnabledPush2Arrows() {
-        for (int direction : Push2MidiCommunicator::directions) {
+        for (int direction : { Push2::upArrowDirection, Push2::downArrowDirection, Push2::leftArrowDirection, Push2::rightArrowDirection }) {
             if (isVisible() && currentProcessorSelector != nullptr && canNavigateInDirection(direction))
                 push2.activateWhiteLedButton(Push2::ccNumberForArrowButton(direction));
             else

@@ -44,7 +44,6 @@ add_executable (APP
     "../../Source/processors/StatefulAudioProcessorWrapper.h"
     "../../Source/push2/Push2Display.h"
     "../../Source/push2/Push2DisplayBridge.h"
-    "../../Source/push2/Push2MidiCommunicator.cpp"
     "../../Source/push2/Push2MidiCommunicator.h"
     "../../Source/push2/Push2UsbCommunicator.h"
     "../../Source/usb/libusb/config.h"
@@ -1321,7 +1320,7 @@ add_executable (APP
     "../../JuceLibraryCode/include_juce_gui_extra.mm"
     "../../JuceLibraryCode/JuceHeader.h"
         ../../Source/view/level_meter/LevelMeterSource.h
-        ../../Source/BasicWindow.h ../../Source/view/push2/Push2Label.h ../../Source/view/push2/Push2TrackManagingView.h ../../Source/view/push2/Push2MixerView.h ../../Source/StatefulAudioProcessorContainer.h ../../Source/DeviceManagerUtilities.h ../../Source/DeviceChangeMonitor.h)
+        ../../Source/BasicWindow.h ../../Source/view/push2/Push2Label.h ../../Source/view/push2/Push2TrackManagingView.h ../../Source/view/push2/Push2MixerView.h ../../Source/StatefulAudioProcessorContainer.h ../../Source/DeviceManagerUtilities.h ../../Source/DeviceChangeMonitor.h ../../Source/view/push2/Push2Colours.h)
 
 set_source_files_properties ("../../Resources/AbletonSansBold-Regular.otf" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Resources/AbletonSansLight-Regular.otf" PROPERTIES HEADER_FILE_ONLY TRUE)

@@ -51,5 +51,8 @@ namespace IDs
     DECLARE_ID(channel)
     DECLARE_ID(isCustomConnection)
 
+    DECLARE_ID(VIEW_STATE)
+    DECLARE_ID(controlMode)
+
     #undef DECLARE_ID
 }

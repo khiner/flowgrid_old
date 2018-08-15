@@ -139,7 +139,20 @@ private:
                     label->setVisible(false);
                 }
             }
-            valueTreePropertyChanged(selectedTrack, IDs::colour);
+            updateColours();
+        }
+    }
+
+    void updateColours() {
+        const auto& selectedTrack = project.getSelectedTrack();
+        if (selectedTrack.isValid()) {
+            const auto& colour = Colour::fromString(selectedTrack[IDs::colour].toString());
+            for (auto *processorLabel : processorLabels) {
+                processorLabel->setMainColour(colour);
+            }
+            escapeProcessorFocusButton.setColour(colour);
+            parameterPageLeftButton.setColour(colour);
+            parameterPageRightButton.setColour(colour);
         }
     }
 
@@ -172,13 +185,12 @@ private:
         }
     }
 
-    void selectedTrackColourChanged(const Colour& newColour) override {
-        for (auto *processorLabel : processorLabels) {
-            processorLabel->setMainColour(newColour);
+    void trackColourChanged(const String &trackUuid, const Colour &colour) override {
+        Push2TrackManagingView::trackColourChanged(trackUuid, colour);
+        auto track = project.findTrackWithUuid(trackUuid);
+        if (track == project.getSelectedTrack()) {
+            updateColours();
         }
-        escapeProcessorFocusButton.setColour(newColour);
-        parameterPageLeftButton.setColour(newColour);
-        parameterPageRightButton.setColour(newColour);
     }
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Push2ProcessorView)

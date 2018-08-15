@@ -1,16 +1,20 @@
 #pragma once
 
 #include <midi/MidiCommunicator.h>
-#include <unordered_map>
 #include "view/push2/Push2Listener.h"
+#include "view/push2/Push2Colours.h"
+#include "Project.h"
 
-class Push2MidiCommunicator : public MidiCommunicator {
+class Push2MidiCommunicator : public MidiCommunicator, private Push2Colours::Listener {
 public:
-    Push2MidiCommunicator() = default;
+    explicit Push2MidiCommunicator(Project& project, Push2Colours& push2Colours) :
+            project(project), push2Colours(push2Colours) {};
 
     void initialize() override {
         MidiCommunicator::initialize();
+        push2Colours.addListener(this);
         registerAllIndexedColours();
+
         /*
          * https://github.com/Ableton/push-interface/blob/master/doc/AbletonPush2MIDIDisplayInterface.asc#Aftertouch
          * In channel pressure mode (default), the pad with the highest pressure determines the value sent.
@@ -26,14 +30,21 @@ public:
         push2Listener->deviceConnected();
     }
 
+    ~Push2MidiCommunicator() override {
+        push2Colours.removeListener(this);
+    }
+
+    Push2Colours& getPush2Colours() { return push2Colours; }
+
     void setPush2Listener(Push2Listener *push2Listener) {
         this->push2Listener = push2Listener;
     }
 
     void handleIncomingMidiMessage(MidiInput *source, const MidiMessage &message) override {
-        // TODO only call parent (and pass midi messages to input callbacks) if we're in a mode that doesn't want
-        // pads for other control reasons.
-        MidiCommunicator::handleIncomingMidiMessage(source, message);
+        if (project.isInNoteMode()) {
+            // only pass note messages to listeners if we're in a non-control mode.
+            MidiCommunicator::handleIncomingMidiMessage(source, message);
+        }
 
         MessageManager::callAsync([this, message]() {
         if (!message.isController() || push2Listener == nullptr)
@@ -98,7 +109,6 @@ public:
             session = 51, octaveUp = 55, octaveDown = 54, pageLeft = 62, pageRight = 63, shift = 49, select = 48;
 
     static const int upArrowDirection = 0, downArrowDirection = 1, leftArrowDirection = 2, rightArrowDirection = 3;
-    static const int directions[4];
 
     // From https://github.com/Ableton/push-interface/blob/master/doc/AbletonPush2MIDIDisplayInterface.asc#Encoders:
     //
@@ -180,35 +190,6 @@ public:
         return message.getControllerValue() == 0;
     }
 
-    bool setColour(uint8 colourIndex, const Colour& colour) {
-        jassert(colourIndex > 0 && colourIndex < CHAR_MAX - 1);
-
-        uint32 argb = colour.getARGB();
-        // 8 bytes: 2 for each of R, G, B, W. First byte contains the 7 LSBs; Second byte contains the 1 MSB.
-        uint8 bgra[8];
-
-        for (int i = 0; i < 4; i++) {
-            auto c = static_cast<uint8>(argb >> (i * CHAR_BIT));
-            bgra[i * 2] = static_cast<uint8>(c & 0x7F);
-            bgra[i * 2 + 1] = static_cast<uint8>(c & 0x80) >> 7;
-        }
-
-        const uint8 setLedColourPaletteEntryCommand[] { 0x00, 0x21, 0x1D, 0x01, 0x01, 0x03, colourIndex,
-                                                        bgra[4], bgra[5], bgra[2], bgra[3], bgra[0], bgra[1], bgra[6], bgra[7] };
-        auto setLedColourPaletteEntryMessage = MidiMessage::createSysExMessage(setLedColourPaletteEntryCommand, 15);
-        sendMessageChecked(setLedColourPaletteEntryMessage);
-        static const uint8 reapplyColorPaletteCommand[] { 0x00, 0x21, 0x1D, 0x01, 0x01, 0x05 };
-        sendMessageChecked(MidiMessage::createSysExMessage(reapplyColorPaletteCommand, 6));
-
-        indexForColour[colour.toString()] = colourIndex;
-
-        return true;
-    }
-
-    bool setTrackColour(uint8 trackIndex, const Colour& trackColour) {
-        return setColour(FIRST_TRACK_COLOUR_INDEX + trackIndex, trackColour);
-    }
-
     void setAboveScreenButtonColour(int buttonIndex, const Colour &colour) {
         setButtonColour(topDisplayButton1 + buttonIndex, colour);
     }
@@ -223,16 +204,6 @@ public:
 
     void setBelowScreenButtonEnabled(int buttonIndex, bool enabled) {
         setColourButtonEnabled(bottomDisplayButton1 + buttonIndex, enabled);
-    }
-
-    void setAllAboveScreenButtonEnabled(bool enabled) {
-        for (int buttonIndex = 0; buttonIndex < 8; buttonIndex++)
-            setAboveScreenButtonEnabled(buttonIndex, enabled);
-    }
-
-    void setAllBelowScreenButtonEnabled(bool enabled) {
-        for (int buttonIndex = 0; buttonIndex < 8; buttonIndex++)
-            setBelowScreenButtonEnabled(buttonIndex, enabled);
     }
 
     void enableWhiteLedButton(int buttonCcNumber) const {
@@ -255,22 +226,15 @@ public:
     }
 
     void setButtonColour(int buttonCcNumber, const Colour &colour) {
-        auto entry = indexForColour.find(colour.toString());
-        if (entry == indexForColour.end()) {
-            addColour(colour);
-            entry = indexForColour.find(colour.toString());
-        }
-
-        jassert(entry != indexForColour.end());
-        sendMessageChecked(MidiMessage::controllerEvent(NO_ANIMATION_LED_CHANNEL, buttonCcNumber, entry->second));
+        auto colourIndex = push2Colours.findIndexForColourAddingIfNeeded(colour);
+        sendMessageChecked(MidiMessage::controllerEvent(NO_ANIMATION_LED_CHANNEL, buttonCcNumber, colourIndex));
     }
 
 private:
     static const int NO_ANIMATION_LED_CHANNEL = 1;
-    static const uint8 FIRST_TRACK_COLOUR_INDEX = 50;
 
-    std::unordered_map<String, uint8> indexForColour;
-    uint8 numRegisteredNonTrackColours = 0;
+    Project& project;
+    Push2Colours& push2Colours;
     Push2Listener *push2Listener {};
 
     void sendMessageChecked(const MidiMessage& message) const {
@@ -279,15 +243,32 @@ private:
         }
     }
 
-    void addColour(const Colour &colour) {
-        jassert(numRegisteredNonTrackColours + 1 < FIRST_TRACK_COLOUR_INDEX);
-        if (setColour(numRegisteredNonTrackColours + 1, colour))
-            numRegisteredNonTrackColours++;
-    }
-
     void registerAllIndexedColours() {
-        for (std::pair<String, uint8> pair : indexForColour) {
-            setColour(pair.second, Colour::fromString(pair.first));
+        for (std::pair<String, uint8> pair : push2Colours.indexForColour) {
+            colourAdded(Colour::fromString(pair.first), pair.second);
         }
     }
+
+    void colourAdded(const Colour& colour, uint8 colourIndex) override {
+        jassert(colourIndex > 0 && colourIndex < CHAR_MAX - 1);
+
+        uint32 argb = colour.getARGB();
+        // 8 bytes: 2 for each of R, G, B, W. First byte contains the 7 LSBs; Second byte contains the 1 MSB.
+        uint8 bgra[8];
+
+        for (int i = 0; i < 4; i++) {
+            auto c = static_cast<uint8>(argb >> (i * CHAR_BIT));
+            bgra[i * 2] = static_cast<uint8>(c & 0x7F);
+            bgra[i * 2 + 1] = static_cast<uint8>(c & 0x80) >> 7;
+        }
+
+        const uint8 setLedColourPaletteEntryCommand[] { 0x00, 0x21, 0x1D, 0x01, 0x01, 0x03, colourIndex,
+                                                        bgra[4], bgra[5], bgra[2], bgra[3], bgra[0], bgra[1], bgra[6], bgra[7] };
+        auto setLedColourPaletteEntryMessage = MidiMessage::createSysExMessage(setLedColourPaletteEntryCommand, 15);
+        sendMessageChecked(setLedColourPaletteEntryMessage);
+        static const uint8 reapplyColorPaletteCommand[] { 0x00, 0x21, 0x1D, 0x01, 0x01, 0x05 };
+        sendMessageChecked(MidiMessage::createSysExMessage(reapplyColorPaletteCommand, 6));
+    }
+
+    void trackColourChanged(const String &trackUuid, const Colour &colour) override {}
 };

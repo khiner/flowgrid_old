@@ -97,7 +97,7 @@ private:
         volumeParametersPanel.clearParameters();
         panParametersPanel.clearParameters();
 
-        if (project.getSelectedTrack() == project.getMasterTrack()) {
+        if (project.getSelectedTrack().hasType(IDs::MASTER_TRACK)) {
             const auto& mixerChannel = project.getMixerChannelProcessorForSelectedTrack();
             if (auto* processorWrapper = project.getProcessorWrapperForState(mixerChannel)) {
                 volumeParametersPanel.addParameter(processorWrapper->getParameter(1));
@@ -105,7 +105,7 @@ private:
             }
         } else {
             for (const auto& track : project.getTracks()) {
-                if (track == project.getMasterTrack())
+                if (track.hasType(IDs::MASTER_TRACK))
                     continue;
                 const auto &mixerChannel = project.getMixerChannelProcessorForTrack(track);
                 if (auto *processorWrapper = project.getProcessorWrapperForState(mixerChannel)) {
@@ -119,8 +119,6 @@ private:
             }
         }
     }
-
-    void selectedTrackColourChanged(const Colour& newColour) override {}
 
     void selectPanel(ParametersPanel *panel) {
         if (selectedParametersPanel == panel)

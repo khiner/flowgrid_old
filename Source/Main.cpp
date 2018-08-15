@@ -8,8 +8,10 @@
 
 class SoundMachineApplication : public JUCEApplication, public MenuBarModel, private ChangeListener, private Timer {
 public:
-    SoundMachineApplication() : project(undoManager, processorManager, deviceManager, push2MidiCommunicator),
-                                processorGraph(project, undoManager, deviceManager) {}
+    SoundMachineApplication() : project(undoManager, processorManager, deviceManager),
+                                push2Colours(project.getState()),
+                                push2MidiCommunicator(project, push2Colours),
+                                processorGraph(project, undoManager, deviceManager, push2MidiCommunicator) {}
 
     const String getApplicationName() override { return ProjectInfo::projectName; }
 
@@ -391,9 +393,9 @@ private:
     UndoManager undoManager;
     AudioDeviceManager deviceManager;
 
-    Push2MidiCommunicator push2MidiCommunicator;
-
     Project project;
+    Push2Colours push2Colours;
+    Push2MidiCommunicator push2MidiCommunicator;
     ProcessorGraph processorGraph;
     AudioProcessorPlayer player;
 

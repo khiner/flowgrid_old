@@ -8,12 +8,13 @@
 #include "processors/ProcessorManager.h"
 #include "Project.h"
 #include "StatefulAudioProcessorContainer.h"
+#include "push2/Push2MidiCommunicator.h"
 
 class ProcessorGraph : public AudioProcessorGraph, public StatefulAudioProcessorContainer, private ValueTree::Listener,
                        private ProjectChangeListener, private Timer {
 public:
-    explicit ProcessorGraph(Project &project, UndoManager &undoManager, AudioDeviceManager& deviceManager)
-            : undoManager(undoManager), project(project), deviceManager(deviceManager) {
+    explicit ProcessorGraph(Project &project, UndoManager &undoManager, AudioDeviceManager& deviceManager, Push2MidiCommunicator& push2MidiCommunicator)
+            : undoManager(undoManager), project(project), deviceManager(deviceManager), push2MidiCommunicator(push2MidiCommunicator) {
         enableAllBuses();
 
         project.getState().addListener(this);
@@ -224,13 +225,13 @@ public:
 
     UndoManager &undoManager;
 private:
-
     NodeID currentlyDraggingNodeId = NA_NODE_ID;
     Point<int> currentlyDraggingTrackAndSlot;
     Point<int> initialDraggingTrackAndSlot;
 
     Project &project;
     AudioDeviceManager &deviceManager;
+    Push2MidiCommunicator &push2MidiCommunicator;
     
     OwnedArray<StatefulAudioProcessorWrapper> processorWrappers;
     OwnedArray<PluginWindow> activePluginWindows;
@@ -282,7 +283,7 @@ private:
             const String &deviceName = processorState.getProperty(IDs::deviceName);
             midiInputProcessor->setDeviceName(deviceName);
             if (deviceName.containsIgnoreCase(push2MidiDeviceName)) {
-                project.getPush2MidiCommunicator().addMidiInputCallback(&midiInputProcessor->getMidiMessageCollector());
+                push2MidiCommunicator.addMidiInputCallback(&midiInputProcessor->getMidiMessageCollector());
             } else {
                 deviceManager.addMidiInputCallback(deviceName, &midiInputProcessor->getMidiMessageCollector());
             }
@@ -551,7 +552,7 @@ private:
                             if (auto *midiInputProcessor = dynamic_cast<MidiInputProcessor *>(processorWrapper->processor)) {
                                 const String &deviceName = processorWrapper->state.getProperty(IDs::deviceName);
                                 if (deviceName.containsIgnoreCase(push2MidiDeviceName)) {
-                                    project.getPush2MidiCommunicator().removeMidiInputCallback(&midiInputProcessor->getMidiMessageCollector());
+                                    push2MidiCommunicator.removeMidiInputCallback(&midiInputProcessor->getMidiMessageCollector());
                                 } else {
                                     deviceManager.removeMidiInputCallback(deviceName, &midiInputProcessor->getMidiMessageCollector());
                                 }
