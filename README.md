@@ -1,3 +1,5 @@
+<p align="center"><img src="/Logotype.png" alt="sound-machine" height="260px"></p>
+
 # README #
 
 ## About this repository ##
