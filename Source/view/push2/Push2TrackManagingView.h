@@ -4,13 +4,11 @@
 #include "Push2ComponentBase.h"
 #include "view/processor_editor/ParametersPanel.h"
 
-class Push2TrackManagingView : public Push2ComponentBase, protected ValueTree::Listener,
-                               protected Push2Colours::Listener {
+class Push2TrackManagingView : public Push2ComponentBase, protected ValueTree::Listener {
 public:
     explicit Push2TrackManagingView(Project &project, Push2MidiCommunicator &push2)
             : Push2ComponentBase(project, push2) {
         project.getState().addListener(this);
-        push2.getPush2Colours().addListener(this);
 
         for (int i = 0; i < NUM_COLUMNS; i++) {
             addChildComponent(trackLabels.add(new Push2Label(i, false, push2)));
@@ -111,8 +109,6 @@ protected:
 
 private:
     OwnedArray<Push2Label> trackLabels;
-
-    void colourAdded(const Colour& colour, uint8 index) override {}
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Push2TrackManagingView)
 };

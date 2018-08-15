@@ -52,6 +52,8 @@ public:
     void setVisible(bool visible) override {
         if (currentlyViewingChild != nullptr)
             currentlyViewingChild->setVisible(visible);
+        push2NoteModePadLedManager.setVisible(visible && project.isInNoteMode());
+
         Push2ComponentBase::setVisible(visible);
     }
 
@@ -193,6 +195,7 @@ private:
             push2.enableWhiteLedButton(Push2MidiCommunicator::master);
         else
             push2.activateWhiteLedButton(Push2MidiCommunicator::master);
+        push2NoteModePadLedManager.trackSelected(selectedTrack);
     }
 
     void selectProcessorIfNeeded(StatefulAudioProcessorWrapper* processorWrapper) {
@@ -224,7 +227,7 @@ private:
             }
         } else if (i == IDs::controlMode) {
             updateEnabledPush2Buttons();
-
+            push2NoteModePadLedManager.setVisible(project.isInNoteMode());
         }
     }
 

@@ -8,10 +8,16 @@
 
 using Push2 = Push2MidiCommunicator;
 
-class Push2ComponentBase : public Component, public Push2Listener {
+class Push2ComponentBase : public Component, public Push2Listener, public Push2Colours::Listener {
 public:
-    Push2ComponentBase(Project& project, Push2MidiCommunicator& push2MidiCommunicator)
-            : project(project), push2(push2MidiCommunicator) {}
+    Push2ComponentBase(Project& project, Push2MidiCommunicator& push2)
+            : project(project), push2(push2) {
+        push2.getPush2Colours().addListener(this);
+    }
+
+    ~Push2ComponentBase() override {
+        push2.getPush2Colours().removeListener(this);
+    }
 
     virtual void updateEnabledPush2Buttons() = 0;
 
@@ -19,6 +25,9 @@ public:
 
     // Let inheritors implement only what they need.
     void handleIncomingMidiMessage(MidiInput *source, const MidiMessage &message) override {}
+
+    void trackColourChanged(const String &trackUuid, const Colour &colour) override {}
+    void colourAdded(const Colour& colour, uint8 index) override {}
 
     void shiftPressed() override { isShiftHeld = true; }
     void shiftReleased() override { isShiftHeld = false; }
