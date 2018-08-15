@@ -9,6 +9,7 @@
 #include "Push2ProcessorView.h"
 #include "Push2ProcessorSelector.h"
 #include "Push2MixerView.h"
+#include "Push2NoteModePadLedManager.h"
 
 class Push2Component :
         public Timer,
@@ -19,7 +20,7 @@ public:
     explicit Push2Component(Project &project, Push2MidiCommunicator &push2MidiCommunicator, ProcessorGraph &audioGraphBuilder)
             : Push2ComponentBase(project, push2MidiCommunicator), graph(audioGraphBuilder),
               processorView(project, push2MidiCommunicator), processorSelector(project, push2MidiCommunicator),
-              mixerView(project, push2MidiCommunicator) {
+              mixerView(project, push2MidiCommunicator), push2NoteModePadLedManager(project, push2MidiCommunicator) {
         startTimer(60);
 
         addChildComponent(processorView);
@@ -40,6 +41,12 @@ public:
         setVisible(false);
         project.getUndoManager().removeChangeListener(this);
         project.getState().removeListener(this);
+    }
+
+    void handleIncomingMidiMessage(MidiInput *source, const MidiMessage &message) override {
+        if (message.isNoteOff() || (message.isNoteOnOrOff() && project.isInNoteMode())) {
+            push2NoteModePadLedManager.handleIncomingMidiMessage(source, message);
+        }
     }
 
     void setVisible(bool visible) override {
@@ -154,6 +161,7 @@ private:
     Push2ProcessorView processorView;
     Push2ProcessorSelector processorSelector;
     Push2MixerView mixerView;
+    Push2NoteModePadLedManager push2NoteModePadLedManager;
 
     Push2ComponentBase *currentlyViewingChild {};
 
@@ -216,6 +224,7 @@ private:
             }
         } else if (i == IDs::controlMode) {
             updateEnabledPush2Buttons();
+
         }
     }
 

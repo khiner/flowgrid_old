@@ -1,8 +1,10 @@
 #pragma once
 
-class Push2Listener {
+#include "JuceHeader.h"
+
+class Push2Listener : public MidiInputCallback {
 public:
-    virtual ~Push2Listener() = default;
+    ~Push2Listener() override = default;
 
     virtual void deviceConnected() = 0;
     virtual void shiftPressed() = 0;

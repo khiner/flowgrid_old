@@ -18,6 +18,8 @@ public:
     void deviceConnected() override { updateEnabledPush2Buttons(); }
 
     // Let inheritors implement only what they need.
+    void handleIncomingMidiMessage(MidiInput *source, const MidiMessage &message) override {}
+
     void shiftPressed() override { isShiftHeld = true; }
     void shiftReleased() override { isShiftHeld = false; }
     void masterEncoderRotated(float changeAmount) override {}

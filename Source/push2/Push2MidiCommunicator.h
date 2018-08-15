@@ -47,50 +47,64 @@ public:
             MidiCommunicator::handleIncomingMidiMessage(source, message);
         }
 
-        MessageManager::callAsync([this, message]() {
-        if (!message.isController() || push2Listener == nullptr)
+        MessageManager::callAsync([this, source, message]() {
+        if (push2Listener == nullptr)
             return;
 
-        const int ccNumber = message.getControllerNumber();
+        if (message.isController()) {
+            const int ccNumber = message.getControllerNumber();
 
-        if (isEncoderCcNumber(ccNumber)) {
-            float changeAmount = encoderCcMessageToRotationChange(message);
-            if (ccNumber == masterKnob) {
-                return push2Listener->masterEncoderRotated(changeAmount / 2.0f);
-            } else if (isAboveScreenEncoderCcNumber(ccNumber)) {
-                return push2Listener->encoderRotated(ccNumber - ccNumberForTopKnobIndex(0), changeAmount / 2.0f);
+            if (isEncoderCcNumber(ccNumber)) {
+                float changeAmount = encoderCcMessageToRotationChange(message);
+                if (ccNumber == masterKnob) {
+                    return push2Listener->masterEncoderRotated(changeAmount / 2.0f);
+                } else if (isAboveScreenEncoderCcNumber(ccNumber)) {
+                    return push2Listener->encoderRotated(ccNumber - ccNumberForTopKnobIndex(0), changeAmount / 2.0f);
+                }
+                return;
             }
-            return;
-        }
 
-        if (isButtonPressControlMessage(message)) {
-            if (isAboveScreenButtonCcNumber(ccNumber))
-                return push2Listener->aboveScreenButtonPressed(ccNumber - topDisplayButton1);
-            else if (isBelowScreenButtonCcNumber(ccNumber))
-                return push2Listener->belowScreenButtonPressed(ccNumber - bottomDisplayButton1);
-            else if (isArrowButtonCcNumber(ccNumber))
-                return push2Listener->arrowPressed(directionForArrowButtonCcNumber(ccNumber));
-            switch(ccNumber) {
-                case shift:
-                    push2Listener->shiftPressed();
-                    return;
-                case undo: return push2Listener->undoButtonPressed();
-                case delete_: return push2Listener->deleteButtonPressed();
-                case addTrack: return push2Listener->addTrackButtonPressed();
-                case addDevice: return push2Listener->addDeviceButtonPressed();
-                case mix: return push2Listener->mixButtonPressed();
-                case master: return push2Listener->masterButtonPressed();
-                case note: return push2Listener->noteButtonPressed();
-                case session: return push2Listener->sessionButtonPressed();
-                default: return;
+            if (isButtonPressControlMessage(message)) {
+                if (isAboveScreenButtonCcNumber(ccNumber))
+                    return push2Listener->aboveScreenButtonPressed(ccNumber - topDisplayButton1);
+                else if (isBelowScreenButtonCcNumber(ccNumber))
+                    return push2Listener->belowScreenButtonPressed(ccNumber - bottomDisplayButton1);
+                else if (isArrowButtonCcNumber(ccNumber))
+                    return push2Listener->arrowPressed(directionForArrowButtonCcNumber(ccNumber));
+                switch (ccNumber) {
+                    case shift:
+                        push2Listener->shiftPressed();
+                        return;
+                    case undo:
+                        return push2Listener->undoButtonPressed();
+                    case delete_:
+                        return push2Listener->deleteButtonPressed();
+                    case addTrack:
+                        return push2Listener->addTrackButtonPressed();
+                    case addDevice:
+                        return push2Listener->addDeviceButtonPressed();
+                    case mix:
+                        return push2Listener->mixButtonPressed();
+                    case master:
+                        return push2Listener->masterButtonPressed();
+                    case note:
+                        return push2Listener->noteButtonPressed();
+                    case session:
+                        return push2Listener->sessionButtonPressed();
+                    default:
+                        return;
+                }
+            } else if (isButtonReleaseControlMessage(message)) {
+                switch (ccNumber) {
+                    case shift:
+                        push2Listener->shiftReleased();
+                        return;
+                    default:
+                        return;
+                }
             }
-        } else if (isButtonReleaseControlMessage(message)) {
-            switch(ccNumber) {
-                case shift:
-                    push2Listener->shiftReleased();
-                    return;
-                default: return;
-            }
+        } else {
+            push2Listener->handleIncomingMidiMessage(source, message);
         }
         });
     }
@@ -230,6 +244,15 @@ public:
     void setButtonColour(int buttonCcNumber, const Colour &colour) {
         auto colourIndex = push2Colours.findIndexForColourAddingIfNeeded(colour);
         sendMessageChecked(MidiMessage::controllerEvent(NO_ANIMATION_LED_CHANNEL, buttonCcNumber, colourIndex));
+    }
+
+    void disablePad(int midiNote) {
+        sendMessageChecked(MidiMessage::noteOn(NO_ANIMATION_LED_CHANNEL, midiNote, uint8(0)));
+    }
+
+    void setPadColour(int midiNote, const Colour &colour) {
+        auto colourIndex = push2Colours.findIndexForColourAddingIfNeeded(colour);
+        sendMessageChecked(MidiMessage::noteOn(NO_ANIMATION_LED_CHANNEL, midiNote, colourIndex));
     }
 
 private:
