@@ -63,13 +63,12 @@ public:
         }
 
         if (isButtonPressControlMessage(message)) {
-            if (isAboveScreenButtonCcNumber(ccNumber)) {
+            if (isAboveScreenButtonCcNumber(ccNumber))
                 return push2Listener->aboveScreenButtonPressed(ccNumber - topDisplayButton1);
-            } else if (isBelowScreenButtonCcNumber(ccNumber)) {
+            else if (isBelowScreenButtonCcNumber(ccNumber))
                 return push2Listener->belowScreenButtonPressed(ccNumber - bottomDisplayButton1);
-            } else if (isArrowButtonCcNumber(ccNumber)) {
+            else if (isArrowButtonCcNumber(ccNumber))
                 return push2Listener->arrowPressed(directionForArrowButtonCcNumber(ccNumber));
-            }
             switch(ccNumber) {
                 case shift:
                     push2Listener->shiftPressed();
@@ -80,6 +79,8 @@ public:
                 case addDevice: return push2Listener->addDeviceButtonPressed();
                 case mix: return push2Listener->mixButtonPressed();
                 case master: return push2Listener->masterButtonPressed();
+                case note: return push2Listener->noteButtonPressed();
+                case session: return push2Listener->sessionButtonPressed();
                 default: return;
             }
         } else if (isButtonReleaseControlMessage(message)) {

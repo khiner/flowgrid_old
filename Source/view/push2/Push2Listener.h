@@ -18,4 +18,6 @@ public:
     virtual void aboveScreenButtonPressed(int buttonIndex) = 0;
     virtual void belowScreenButtonPressed(int buttonIndex) = 0;
     virtual void arrowPressed(int direction) = 0;
+    virtual void noteButtonPressed() = 0;
+    virtual void sessionButtonPressed() = 0;
 };

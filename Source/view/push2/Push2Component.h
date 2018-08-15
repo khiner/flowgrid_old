@@ -119,18 +119,30 @@ public:
         }
     }
 
+    void noteButtonPressed() override { project.setNoteMode(); }
+
+    void sessionButtonPressed() override { project.setSessionMode(); }
+
     void updateEnabledPush2Buttons() override {
         if (isVisible()) {
             push2.enableWhiteLedButton(Push2::addTrack);
             push2.enableWhiteLedButton(Push2::mix);
+            if (project.isInNoteMode()) {
+                push2.activateWhiteLedButton(Push2::note);
+                push2.enableWhiteLedButton(Push2::session);
+            } else if (project.isInSessionMode()) {
+                push2.enableWhiteLedButton(Push2::note);
+                push2.activateWhiteLedButton(Push2::session);
+            }
             push2.activateWhiteLedButton(Push2::shift);
             updatePush2SelectionDependentButtons();
             changeListenerCallback(&project.getUndoManager());
             if (currentlyViewingChild != nullptr)
                 currentlyViewingChild->updateEnabledPush2Buttons();
         } else {
-            for (auto buttonId : {Push2::shift, Push2::addTrack, Push2::delete_, Push2::addDevice,
-                                  Push2::mix, Push2::master, Push2::undo}) {
+            for (auto buttonId : {Push2::addTrack, Push2::delete_, Push2::addDevice,
+                                  Push2::mix, Push2::master, Push2::undo, Push2::note, Push2::session,
+                                  Push2::shift}) {
                 push2.disableWhiteLedButton(buttonId);
             }
         }
@@ -203,6 +215,8 @@ private:
                     selectProcessorIfNeeded(processorWrapper);
                 }
             }
+        } else if (i == IDs::controlMode) {
+            updateEnabledPush2Buttons();
         }
     }
 

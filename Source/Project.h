@@ -120,9 +120,12 @@ public:
         return getMixerChannelProcessorForSelectedTrack().isValid();
     }
 
-    bool isInNoteMode() { return viewState.getProperty(IDs::controlMode) == noteControlMode; }
+    bool isInNoteMode() { return viewState[IDs::controlMode] == noteControlMode; }
 
-    bool isInSessionMode() { return viewState.getProperty(IDs::controlMode) == sessionControlMode; }
+    bool isInSessionMode() { return viewState[IDs::controlMode] == sessionControlMode; }
+
+    void setNoteMode() { viewState.setProperty(IDs::controlMode, noteControlMode, nullptr); }
+    void setSessionMode() { viewState.setProperty(IDs::controlMode, sessionControlMode, nullptr); }
 
     int getMaxProcessorInsertIndex(const ValueTree& track) {
         const ValueTree &mixerChannelProcessor = getMixerChannelProcessorForTrack(track);
@@ -488,12 +491,12 @@ public:
                                                     "the best thing to do is to reconnect the missing device and "
                                                     "reload this project (without saving first!).");
         if (isDeviceWithNamePresent(inputDeviceName))
-            input.setProperty(IDs::deviceName, inputDeviceName, nullptr);
+            input.copyPropertiesFrom(newState.getChildWithName(IDs::INPUT), nullptr);
         else
             AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, TRANS("Failed to open input device \"") + inputDeviceName + "\"", failureMessage);
 
         if (isDeviceWithNamePresent(outputDeviceName))
-            output.setProperty(IDs::deviceName, outputDeviceName, nullptr);
+            output.copyPropertiesFrom(newState.getChildWithName(IDs::OUTPUT), nullptr);
         else
             AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, TRANS("Failed to open output device \"") + outputDeviceName + "\"", failureMessage);
 
@@ -502,6 +505,7 @@ public:
         Utilities::moveAllChildren(newState.getChildWithName(IDs::TRACKS), tracks, nullptr);
         Utilities::moveAllChildren(newState.getChildWithName(IDs::CONNECTIONS), connections, nullptr);
 
+        viewState.copyPropertiesFrom(newState.getChildWithName(IDs::VIEW_STATE), nullptr);
         undoManager.clearUndoHistory();
         return Result::ok();
     }

@@ -31,6 +31,8 @@ public:
     void aboveScreenButtonPressed(int buttonIndex) override {}
     void belowScreenButtonPressed(int buttonIndex) override {}
     void arrowPressed(int direction) override {}
+    void noteButtonPressed() override {}
+    void sessionButtonPressed() override {}
 
     void setVisible(bool visible) override {
         Component::setVisible(visible);
