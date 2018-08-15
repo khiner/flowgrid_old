@@ -41,8 +41,9 @@ public:
     }
 
     void handleIncomingMidiMessage(MidiInput *source, const MidiMessage &message) override {
-        if (project.isInNoteMode()) {
-            // only pass note messages to listeners if we're in a non-control mode.
+        // only pass note messages to listeners if we're in a non-control mode.
+        // (allow note-off messages through in case switch to control mode happened during note events)
+        if (project.isInNoteMode() || message.isNoteOff()) {
             MidiCommunicator::handleIncomingMidiMessage(source, message);
         }
 
