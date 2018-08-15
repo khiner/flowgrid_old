@@ -43,8 +43,9 @@ public:
     }
 
     void setVisible(bool visible) override {
+        if (currentlyViewingChild != nullptr)
+            currentlyViewingChild->setVisible(visible);
         Push2ComponentBase::setVisible(visible);
-        updateEnabledPush2Buttons();
     }
 
     void shiftPressed() override {
@@ -137,8 +138,6 @@ public:
             push2.activateWhiteLedButton(Push2::shift);
             updatePush2SelectionDependentButtons();
             changeListenerCallback(&project.getUndoManager());
-            if (currentlyViewingChild != nullptr)
-                currentlyViewingChild->updateEnabledPush2Buttons();
         } else {
             for (auto buttonId : {Push2::addTrack, Push2::delete_, Push2::addDevice,
                                   Push2::mix, Push2::master, Push2::undo, Push2::note, Push2::session,
