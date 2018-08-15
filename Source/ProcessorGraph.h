@@ -216,10 +216,6 @@ public:
         if (auto* processorWrapper = getProcessorWrapperForNodeId(nodeId)) {
             removeDefaultConnections(processorWrapper->state);
             disconnectCustom(nodeId);
-            if (auto *midiInputProcessor = dynamic_cast<MidiInputProcessor *>(processorWrapper->processor)) {
-                const String &deviceName = processorWrapper->state.getProperty(IDs::deviceName);
-                deviceManager.removeMidiInputCallback(deviceName, &midiInputProcessor->getMidiMessageCollector());
-            }
             processorWrapper->state.getParent().removeChild(processorWrapper->state, &undoManager);
             return true;
         }
@@ -285,7 +281,11 @@ private:
         if (auto *midiInputProcessor = dynamic_cast<MidiInputProcessor *>(processor)) {
             const String &deviceName = processorState.getProperty(IDs::deviceName);
             midiInputProcessor->setDeviceName(deviceName);
-            deviceManager.addMidiInputCallback(deviceName, &midiInputProcessor->getMidiMessageCollector());
+            if (deviceName.containsIgnoreCase(push2MidiDeviceName)) {
+                project.getPush2MidiCommunicator().addMidiInputCallback(&midiInputProcessor->getMidiMessageCollector());
+            } else {
+                deviceManager.addMidiInputCallback(deviceName, &midiInputProcessor->getMidiMessageCollector());
+            }
         } else if (auto *midiOutputProcessor = dynamic_cast<MidiOutputProcessor *>(processor)) {
             const String &deviceName = processorState.getProperty(IDs::deviceName);
             if (auto* enabledMidiOutput = deviceManager.getEnabledMidiOutput(deviceName))
@@ -549,8 +549,12 @@ private:
                     if (auto* processorWrapper = getProcessorWrapperForNodeId(node->nodeID)) {
                         if (child[IDs::name] == MidiInputProcessor::name()) {
                             if (auto *midiInputProcessor = dynamic_cast<MidiInputProcessor *>(processorWrapper->processor)) {
-                                const String &deviceName = child.getProperty(IDs::deviceName);
-                                deviceManager.removeMidiInputCallback(deviceName, &midiInputProcessor->getMidiMessageCollector());
+                                const String &deviceName = processorWrapper->state.getProperty(IDs::deviceName);
+                                if (deviceName.containsIgnoreCase(push2MidiDeviceName)) {
+                                    project.getPush2MidiCommunicator().removeMidiInputCallback(&midiInputProcessor->getMidiMessageCollector());
+                                } else {
+                                    deviceManager.removeMidiInputCallback(deviceName, &midiInputProcessor->getMidiMessageCollector());
+                                }
                             }
                         }
                         processorWrappers.removeObject(processorWrapper);

@@ -381,8 +381,6 @@ public:
 
     ApplicationPropertiesAndCommandManager applicationPropertiesAndCommandManager;
 
-    String push2MidiDeviceName = "ableton push 2 live port";
-
 private:
     ProcessorManager processorManager;
 

@@ -30,7 +30,11 @@ public:
         this->push2Listener = push2Listener;
     }
 
-    void handleIncomingMidiMessage(MidiInput * /*source*/, const MidiMessage &message) override {
+    void handleIncomingMidiMessage(MidiInput *source, const MidiMessage &message) override {
+        // TODO only call parent (and pass midi messages to input callbacks) if we're in a mode that doesn't want
+        // pads for other control reasons.
+        MidiCommunicator::handleIncomingMidiMessage(source, message);
+
         MessageManager::callAsync([this, message]() {
         if (!message.isController() || push2Listener == nullptr)
             return;

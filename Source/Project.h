@@ -60,6 +60,8 @@ public:
 
     AudioDeviceManager& getDeviceManager() { return deviceManager; }
 
+    Push2MidiCommunicator& getPush2MidiCommunicator() { return push2MidiCommunicator; }
+
     ValueTree& getState() { return state; }
 
     ValueTree& getConnections() { return connections; }
