@@ -90,10 +90,9 @@ public:
             if (currentlyDraggingTrackAndSlot != trackAndSlot) {
                 currentlyDraggingTrackAndSlot = trackAndSlot;
 
-                moveProcessor(processor->state, initialDraggingTrackAndSlot.x, initialDraggingTrackAndSlot.y);
-                project.restoreConnectionsSnapshot();
-                if (currentlyDraggingTrackAndSlot != initialDraggingTrackAndSlot) {
-                    moveProcessor(processor->state, trackAndSlot.x, trackAndSlot.y);
+                moveProcessor(processor->state, trackAndSlot.x, trackAndSlot.y);
+                if (currentlyDraggingTrackAndSlot == initialDraggingTrackAndSlot) {
+                    project.restoreConnectionsSnapshot();
                 }
             }
         }
@@ -117,14 +116,12 @@ public:
         if (fromSlot == toSlot && processorState.getParent() == toTrack)
             return;
 
-        removeDefaultConnections(processorState);
-
         processorState.setProperty(IDs::processorSlot, toSlot, getDragDependentUndoManager());
+
         const int insertIndex = project.getParentIndexForProcessor(toTrack, processorState, getDragDependentUndoManager());
         Helpers::moveSingleItem(processorState, toTrack, insertIndex, getDragDependentUndoManager());
 
         project.makeSlotsValid(toTrack, getDragDependentUndoManager());
-        addDefaultConnections(processorState);
     }
 
     bool canConnectUi(const Connection& c) const {
@@ -236,6 +233,8 @@ private:
     Array<int> defaultMidiConnectionChannels {midiChannelIndex};
 
     bool isMoving { false };
+
+    ValueTree lastSelectedProcessor {};
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ProcessorGraph)
 
@@ -566,9 +565,13 @@ private:
                 if (auto node = getNodeForState(tree)) {
                     node->setBypassed(tree[IDs::bypassed]);
                 }
-            } else if (i == IDs::selected && tree[IDs::selected]) {
+            } else if (i == IDs::selected && tree[IDs::selected] && tree != lastSelectedProcessor) {
+                lastSelectedProcessor = tree;
                 disconnectDefaultExternalInputs();
                 connectDefaultExternalInputs(tree);
+            } else if (i == IDs::processorSlot) {
+                removeDefaultConnections(tree);
+                addDefaultConnections(tree);
             }
         }
     }
@@ -579,15 +582,17 @@ private:
                 if (getProcessorWrapperForState(child) == nullptr) {
                     addProcessor(child);
                 }
-                addDefaultConnections(child);
                 ValueTree mutableProcessor = child;
                 if (child.hasProperty(IDs::processorInitialized))
                     mutableProcessor.sendPropertyChangeMessage(IDs::processorInitialized);
                 else
                     mutableProcessor.setProperty(IDs::processorInitialized, true, nullptr);
-                if (child[IDs::selected])
+                if (child[IDs::selected]) {
+                    lastSelectedProcessor = child;
                     child.sendPropertyChangeMessage(IDs::selected);
+                }
             }
+            addDefaultConnections(child);
         } else if (child.hasType(IDs::CONNECTION)) {
             if (currentlyDraggingNodeId == NA_NODE_ID) {
                 const ValueTree &sourceState = child.getChildWithName(IDs::SOURCE);
@@ -614,8 +619,8 @@ private:
 
     void valueTreeChildRemoved(ValueTree& parent, ValueTree& child, int indexFromWhichChildWasRemoved) override {
         if (child.hasType(IDs::PROCESSOR)) {
+            removeDefaultConnections(child);
             if (currentlyDraggingNodeId == NA_NODE_ID) {
-                removeDefaultConnections(child);
                 if (!isMoving) {
                     removeProcessor(child);
                 }
@@ -625,6 +630,8 @@ private:
                     activePluginWindows.remove(i);
                 }
             }
+            if (child == lastSelectedProcessor)
+                lastSelectedProcessor = {};
         } else if (child.hasType(IDs::CONNECTION)) {
             if (currentlyDraggingNodeId == NA_NODE_ID) {
                 const ValueTree &sourceState = child.getChildWithName(IDs::SOURCE);
