@@ -124,11 +124,9 @@ public:
         const int insertIndex = project.getParentIndexForProcessor(toTrack, processorState, getDragDependentUndoManager());
         Helpers::moveSingleItem(processorState, toTrack, insertIndex, getDragDependentUndoManager());
 
-        if (shouldMakeDefaultConnections)
-            addDefaultConnections(processorState);
         project.makeSlotsValid(toTrack, getDragDependentUndoManager());
         if (shouldMakeDefaultConnections)
-            resetDefaultExternalInputConnections();
+            addDefaultConnections(processorState);
     }
 
     bool canConnectUi(const Connection& c) const {
@@ -172,19 +170,19 @@ public:
     }
 
     bool removeConnection(const Connection& c) override {
-        return project.removeConnection(c, getDragDependentUndoManager(), true, true);
+        return project.removeConnection(c, true, true);
     }
 
     bool addDefaultConnection(const Connection& c) {
         if (canConnectUi(c)) {
-            project.addConnection(c, getDragDependentUndoManager());
+            project.addConnection(c, nullptr);
             return true;
         }
         return false;
     }
 
     bool removeDefaultConnection(const Connection& c) {
-        return project.removeConnection(c, getDragDependentUndoManager(), true, false);
+        return project.removeConnection(c, true, false);
     }
 
     enum ConnectionType { audio, midi, all };
@@ -197,15 +195,15 @@ public:
         return doDisconnectNode(nodeId, all, true, true, true, true);
     }
 
-    bool disconnectDefaults(NodeID nodeId) {
+    bool disconnectDefaults(NodeID nodeId, bool undoable=true) {
         return doDisconnectNode(nodeId, all, true, false, true, true);
     }
 
-    bool disconnectDefaultOutgoing(NodeID nodeId, ConnectionType connectionType) {
+    bool disconnectDefaultOutgoing(NodeID nodeId, ConnectionType connectionType, bool undoable=true) {
         return doDisconnectNode(nodeId, connectionType, true, false, false, true);
     }
 
-    bool disconnectDefaultIncoming(NodeID nodeId) {
+    bool disconnectDefaultIncoming(NodeID nodeId, bool undoable=true) {
         return doDisconnectNode(nodeId, all, true, false, true, false);
     }
 
@@ -248,12 +246,15 @@ private:
     }
 
     bool doDisconnectNode(NodeID nodeId, ConnectionType connectionType, bool defaults, bool custom, bool incoming, bool outgoing) {
-        const Array<ValueTree> connections = project.getConnectionsForNode(nodeId, connectionType == audio || connectionType == all, connectionType == midi || connectionType == all, incoming, outgoing);
+        const auto connections = project.getConnectionsForNode(nodeId,
+                                                               connectionType == audio || connectionType == all,
+                                                               connectionType == midi || connectionType == all,
+                                                               incoming, outgoing);
         bool anyRemoved = false;
-        for (const auto &connection : connections)
-            if (project.removeConnection(connection, getDragDependentUndoManager(), defaults, custom)) {
+        for (const auto &connection : connections) {
+            if (project.removeConnection(connection, defaults, custom))
                 anyRemoved = true;
-            }
+        }
 
         return anyRemoved;
     }
@@ -292,11 +293,6 @@ private:
             if (auto* enabledMidiOutput = deviceManager.getEnabledMidiOutput(deviceName))
                 midiOutputProcessor->setMidiOutput(enabledMidiOutput);
         }
-
-        if (processorState.hasProperty(IDs::processorInitialized))
-            ValueTree(processorState).sendPropertyChangeMessage(IDs::processorInitialized);
-        else
-            ValueTree(processorState).setProperty(IDs::processorInitialized, true, nullptr);
     }
 
     struct NeighborNodes {
@@ -304,45 +300,75 @@ private:
         NodeID after = NA_NODE_ID;
     };
 
-    void resetDefaultExternalInputConnections() {
+    ValueTree findRightmostProcessorParent(const ValueTree &processor, ConnectionType connectionType) {
+        auto nodeId = getNodeIdForState(processor);
+        Array<ValueTree> connections = project.getConnectionsForNode(nodeId, connectionType == audio, connectionType == midi, true, false);
+        int greatestTrackIndex = -1;
+        ValueTree rightmostProcessorAncestor;
+        for (const auto& connection : connections) {
+            auto* processorWrapper = getProcessorWrapperForState(connection.getChildWithName(IDs::SOURCE));
+            int trackIndex = project.getTracks().indexOf(processorWrapper->state.getParent());
+            if (trackIndex > greatestTrackIndex) {
+                greatestTrackIndex = trackIndex;
+                rightmostProcessorAncestor = processorWrapper->state;
+            }
+        }
+        return rightmostProcessorAncestor;
+    }
+
+    void disconnectDefaultExternalInputs() {
         auto audioInputNodeId = getNodeIdForState(project.getAudioInputProcessorState());
-        resetDefaultExternalInputConnections(audioInputNodeId, audio);
+        disconnectDefaultOutgoing(audioInputNodeId, audio, getDragDependentUndoManager());
         for (const auto& midiInputProcessor : project.getInput())
             if (midiInputProcessor.getProperty(IDs::name) == MidiInputProcessor::name())
-                resetDefaultExternalInputConnections(getNodeIdForState(midiInputProcessor), midi);
+                disconnectDefaultOutgoing(getNodeIdForState(midiInputProcessor), midi, getDragDependentUndoManager());
     }
-    
-    void resetDefaultExternalInputConnections(NodeID externalSourceNodeId, ConnectionType connectionType) {
-        for (const auto& track : project.getTracks()) {
-            if (track.hasType(IDs::MASTER_TRACK))
-                continue;
-            const auto &defaultConnectionChannels = getDefaultConnectionChannels(connectionType);
-            for (const auto& child : track) {
-                if (child.hasType(IDs::PROCESSOR)) {
-                    auto nodeId = getNodeIdForState(child);
-                    for (auto channel : defaultConnectionChannels) {
-                        removeDefaultConnection({{externalSourceNodeId, channel}, {nodeId, channel}});
-                    }
-                }
+
+    void connectDefaultExternalInputs(const ValueTree &selectedProcessor) {
+        if (!selectedProcessor.isValid())
+            return;
+        auto audioInputNodeId = getNodeIdForState(project.getAudioInputProcessorState());
+        addDefaultExternalInputConnections(selectedProcessor, audioInputNodeId, audio, getDragDependentUndoManager());
+        for (const auto& midiInputProcessor : project.getInput()) {
+            if (midiInputProcessor.getProperty(IDs::name) == MidiInputProcessor::name()) {
+                auto nodeId = getNodeIdForState(midiInputProcessor);
+                addDefaultExternalInputConnections(selectedProcessor, nodeId, midi, getDragDependentUndoManager());
             }
-            const auto& firstChild = track.getChildWithName(IDs::PROCESSOR);
-            if (firstChild.isValid() && isProcessorAnEffect(firstChild, connectionType)) {
-                auto nodeId = getNodeIdForState(firstChild);
-                for (auto channel : defaultConnectionChannels) {
-                    addDefaultConnection({{externalSourceNodeId, channel}, {nodeId, channel}});
-                }
+        }
+    }
+
+    void addDefaultExternalInputConnections(const ValueTree &selectedProcessor,
+                                            NodeID externalSourceNodeId, ConnectionType connectionType,
+                                            UndoManager* undoManager) {
+        const auto &defaultConnectionChannels = getDefaultConnectionChannels(connectionType);
+
+        // Find the furthest-upstream ancestor of the selected processor. If that processor accepts inputs,
+        // connect it to external audio/midi inputs.
+        ValueTree parent = {}, rightmostEffectProcessorAncestor = selectedProcessor;
+        while ((parent = findRightmostProcessorParent(rightmostEffectProcessorAncestor, connectionType)).isValid()) {
+            rightmostEffectProcessorAncestor = parent;
+        }
+
+        if (isProcessorAnEffect(rightmostEffectProcessorAncestor, connectionType)) {
+            auto nodeId = getNodeIdForState(rightmostEffectProcessorAncestor);
+            for (auto channel : defaultConnectionChannels) {
+                addDefaultConnection({{externalSourceNodeId, channel}, {nodeId, channel}});
             }
         }
     }
 
     void addDefaultConnections(const ValueTree &processor) {
+        disconnectDefaultExternalInputs();
         addDefaultConnections(processor, audio);
         addDefaultConnections(processor, midi);
+        connectDefaultExternalInputs(project.getSelectedProcessor());
     }
 
     void removeDefaultConnections(const ValueTree &processor) {
+        disconnectDefaultExternalInputs();
         removeDefaultConnections(processor, audio);
         removeDefaultConnections(processor, midi);
+        connectDefaultExternalInputs(project.getSelectedProcessor());
     }
 
     void addDefaultConnections(const ValueTree &processor, ConnectionType connectionType) {
@@ -375,7 +401,8 @@ private:
             for (auto channel : defaultConnectionChannels) {
                 removeDefaultConnection({{before, channel}, {nodeId, channel}});
             }
-            const NeighborNodes &neighborsForBeforeNode = findNeighborProcessors(getProcessorWrapperForNodeId(before)->state, connectionType, processor, false, true);
+            const auto &beforeState = getProcessorWrapperForNodeId(before)->state;
+            const NeighborNodes &neighborsForBeforeNode = findNeighborProcessors(beforeState, connectionType, processor, false, true);
             if (neighborsForBeforeNode.after != NA_NODE_ID) {
                 for (auto channel : defaultConnectionChannels) {
                     addDefaultConnection({{before, channel}, {neighborsForBeforeNode.after, channel}});
@@ -390,7 +417,21 @@ private:
 
     NeighborNodes findNeighborProcessors(const ValueTree &processor, ConnectionType connectionType, const ValueTree& excluding={}, bool before=true, bool after=true) {
         NeighborNodes neighborNodes {};
-        const ValueTree &parent = processor.getParent();
+        auto nodeId = getNodeIdForState(processor);
+        auto connections = project.getConnectionsForNode(nodeId, connectionType == audio, connectionType == midi, before, after, false);
+        if (!connections.isEmpty()) {
+            for (const auto& connection : connections) {
+                if (getNodeIdForState(connection.getChildWithName(IDs::SOURCE)) == nodeId) {
+                    neighborNodes.after = getNodeIdForState(connection.getChildWithName(IDs::DESTINATION));
+                } else if (getNodeIdForState(connection.getChildWithName(IDs::DESTINATION)) == nodeId && before) {
+                    neighborNodes.before.add(getNodeIdForState(connection.getChildWithName(IDs::SOURCE)));
+                }
+            }
+            return neighborNodes;
+        }
+        
+        const auto& parent = processor.getParent();
+        
         if (before) {
             getAllNodesFlowingInto(parent, processor, neighborNodes.before, connectionType, excluding);
         }
@@ -457,15 +498,19 @@ private:
     }
 
     inline bool isProcessorAProducer(const ValueTree &processorState, ConnectionType connectionType) const {
-        auto *processor = getProcessorWrapperForState(processorState)->processor;
-        return (connectionType == audio && processor->getTotalNumOutputChannels() > 0) ||
-               (connectionType == midi && processor->producesMidi());
+        if (auto *processorWrapper = getProcessorWrapperForState(processorState)) {
+            return (connectionType == audio && processorWrapper->processor->getTotalNumOutputChannels() > 0) ||
+                   (connectionType == midi && processorWrapper->processor->producesMidi());
+        }
+        return false;
     }
 
     inline bool isProcessorAnEffect(const ValueTree &processorState, ConnectionType connectionType) const {
-        auto *processor = getProcessorWrapperForState(processorState)->processor;
-        return (connectionType == audio && processor->getTotalNumInputChannels() > 0) ||
-               (connectionType == midi && processor->acceptsMidi());
+        if (auto *processorWrapper = getProcessorWrapperForState(processorState)) {
+            return (connectionType == audio && processorWrapper->processor->getTotalNumInputChannels() > 0) ||
+                   (connectionType == midi && processorWrapper->processor->acceptsMidi());
+        }
+        return false;
     }
 
     inline bool canProcessorDefaultConnectTo(const ValueTree &parent, const ValueTree &processor,
@@ -486,23 +531,26 @@ private:
         return {};
     }
 
-    void valueTreePropertyChanged(ValueTree& tree, const Identifier& property) override {
-        if (tree.hasType(IDs::PROCESSOR)) {
-            if (property == IDs::bypassed) {
-                if (auto node = getNodeForState(tree)) {
-                    node->setBypassed(tree[IDs::bypassed]);
-                }
-            }
-        }
-    }
-
-    void recursivelyInitializeWithState(const ValueTree &state) {
+    void recursivelyInitializeState(const ValueTree &state) {
         if (state.hasType(IDs::PROCESSOR)) {
             addProcessor(state);
             return;
         }
         for (const ValueTree& child : state) {
-            recursivelyInitializeWithState(child);
+            recursivelyInitializeState(child);
+        }
+    }
+    
+    void valueTreePropertyChanged(ValueTree& tree, const Identifier& i) override {
+        if (tree.hasType(IDs::PROCESSOR)) {
+            if (i == IDs::bypassed) {
+                if (auto node = getNodeForState(tree)) {
+                    node->setBypassed(tree[IDs::bypassed]);
+                }
+            } else if (i == IDs::selected && tree[IDs::selected]) {
+                disconnectDefaultExternalInputs();
+                connectDefaultExternalInputs(tree);
+            }
         }
     }
 
@@ -512,11 +560,14 @@ private:
                 if (getProcessorWrapperForState(child) == nullptr) {
                     addProcessor(child);
                 }
-            }
-            // Kind of crappy - the order of the listeners seems to be nondeterministic,
-            // so send (maybe _another_) select message that will update the UI in case this was already selected.
-            if (child[IDs::selected]) {
-                child.sendPropertyChangeMessage(IDs::selected);
+                addDefaultConnections(child);
+                ValueTree mutableProcessor = child;
+                if (child.hasProperty(IDs::processorInitialized))
+                    mutableProcessor.sendPropertyChangeMessage(IDs::processorInitialized);
+                else
+                    mutableProcessor.setProperty(IDs::processorInitialized, true, nullptr);
+                if (child[IDs::selected])
+                    child.sendPropertyChangeMessage(IDs::selected);
             }
         } else if (child.hasType(IDs::CONNECTION)) {
             if (currentlyDraggingNodeId == NA_NODE_ID) {
@@ -535,7 +586,7 @@ private:
                 }
             }
         } else if (child.hasType(IDs::TRACK) || child.hasType(IDs::MASTER_TRACK)) {
-            recursivelyInitializeWithState(child);
+            recursivelyInitializeState(child);
         } else if (child.hasType(IDs::CHANNEL)) {
             updateIoChannelEnabled(parent, child, true);
             removeIllegalConnections();
@@ -544,6 +595,7 @@ private:
 
     void valueTreeChildRemoved(ValueTree& parent, ValueTree& child, int indexFromWhichChildWasRemoved) override {
         if (child.hasType(IDs::PROCESSOR)) {
+            removeDefaultConnections(child);
             if (currentlyDraggingNodeId == NA_NODE_ID && !isMoving) {
                 if (auto *node = getNodeForState(child)) {
                     // disconnect should have already been called before delete! (to avoid nested undo actions)
@@ -616,20 +668,14 @@ private:
      * This way, the ValueTreeChanged methods in this class only update the AudioGraph
      * and UI state.
      */
-    void processorCreated(const ValueTree& processor) override {
-        addDefaultConnections(processor);
-        resetDefaultExternalInputConnections();
-    };
+    void processorCreated(const ValueTree& processor) override {};
 
     void processorWillBeDestroyed(const ValueTree& processor) override {
         ValueTree(processor).removeProperty(IDs::processorInitialized, nullptr);
-        removeDefaultConnections(processor);
-        disconnectNode(getNodeIdForState(processor));
+        disconnectCustom(getNodeIdForState(processor));
     };
 
-    void processorHasBeenDestroyed(const ValueTree& processor) override {
-        resetDefaultExternalInputConnections();
-    };
+    void processorHasBeenDestroyed(const ValueTree& processor) override {};
 
     void updateIoChannelEnabled(const ValueTree& parent, const ValueTree& channel, bool enabled) {
         String processorName = parent.getParent()[IDs::name];

@@ -88,7 +88,7 @@ public:
         resized();
         if (object == mostRecentlySelectedProcessor) {
             mostRecentlySelectedProcessor = nullptr;
-            setSelected(true);
+            setSelected(currentlyMovingProcessor == nullptr);
         }
     }
 

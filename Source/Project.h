@@ -80,6 +80,16 @@ public:
 
     ValueTree getMasterTrack() { return tracks.getChildWithName(IDs::MASTER_TRACK); }
 
+    ValueTree getSelectedProcessor() {
+        for (const auto& track : tracks) {
+            for (const auto& processor : track) {
+                if (processor.hasType(IDs::PROCESSOR) && processor[IDs::selected])
+                    return processor;
+            }
+        }
+        return {};
+    }
+
     ValueTree getSelectedTrack() {
         for (const auto& track : tracks) {
             if (track[IDs::selected])
@@ -132,9 +142,12 @@ public:
         return mixerChannelProcessor.isValid() ? track.indexOf(mixerChannelProcessor) : track.getNumChildren() - 1;
     }
 
-    Array<ValueTree> getConnectionsForNode(AudioProcessorGraph::NodeID nodeId, bool audio=true, bool midi=true, bool incoming=true, bool outgoing=true) {
+    Array<ValueTree> getConnectionsForNode(AudioProcessorGraph::NodeID nodeId, bool audio=true, bool midi=true, bool incoming=true, bool outgoing=true, bool includeCustom=true) {
         Array<ValueTree> nodeConnections;
         for (const auto& connection : connections) {
+            if (connection[IDs::isCustomConnection] && !includeCustom)
+                continue;
+
             const auto &connectionType = connection.getChildWithProperty(IDs::nodeId, int(nodeId));
 
             if (!connectionType.isValid())
@@ -142,6 +155,7 @@ public:
             bool directionIsAcceptable = (incoming && connectionType.hasType(IDs::DESTINATION)) || (outgoing && connectionType.hasType(IDs::SOURCE));
             bool typeIsAcceptable = (audio && int(connectionType[IDs::channel]) != AudioProcessorGraph::midiChannelIndex) ||
                                     (midi && int(connectionType[IDs::channel]) == AudioProcessorGraph::midiChannelIndex);
+
             if (directionIsAcceptable && typeIsAcceptable) {
                 nodeConnections.add(connection);
             }
@@ -184,22 +198,22 @@ public:
         connections.addChild(connectionState, -1, undoManager);
     }
 
-    bool removeConnection(const ValueTree& connection, UndoManager* undoManager, bool defaults, bool custom) {
+    bool removeConnection(const ValueTree& connection, bool defaults, bool custom) {
         if (!connection.isValid())
             return false;
 
         bool customIsAcceptable = (custom && connection.hasProperty(IDs::isCustomConnection)) ||
                                   (defaults && !connection.hasProperty(IDs::isCustomConnection));
         if (customIsAcceptable) {
-            connections.removeChild(connection, undoManager);
+            connections.removeChild(connection, connection[IDs::isCustomConnection] ? &undoManager : nullptr);
             return true;
         }
         return false;
     }
 
-    bool removeConnection(const AudioProcessorGraph::Connection &connection, UndoManager* undoManager, bool defaults, bool custom) {
+    bool removeConnection(const AudioProcessorGraph::Connection &connection, bool defaults, bool custom) {
         const ValueTree &connectionState = getConnectionMatching(connection);
-        return removeConnection(connectionState, undoManager, defaults, custom);
+        return removeConnection(connectionState, defaults, custom);
     }
 
     // make a snapshot of all the information needed to capture AudioGraph connections and UI positions
@@ -275,8 +289,6 @@ public:
         ValueTree track = createAndAddTrack(false);
         createAndAddProcessor(SineBank::getPluginDescription(), track, -1, false);
 
-        masterMixer.setProperty(IDs::selected, true, nullptr);
-
         viewState.setProperty(IDs::controlMode, noteControlMode, nullptr);
     }
 
@@ -335,6 +347,7 @@ public:
         ValueTree processor(IDs::PROCESSOR);
         processor.setProperty(IDs::id, description.createIdentifierString(), nullptr);
         processor.setProperty(IDs::name, description.name, nullptr);
+        processor.setProperty(IDs::selected, true, nullptr);
 
         // TODO can simplify
         int insertIndex;
