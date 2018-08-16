@@ -130,13 +130,13 @@ public:
         return getMixerChannelProcessorForSelectedTrack().isValid();
     }
 
-    bool isInShiftMode() { return shiftMode; }
+    bool isInShiftMode() { return numShiftsHeld >= 1; }
 
     bool isInNoteMode() { return viewState[IDs::controlMode] == noteControlMode; }
 
     bool isInSessionMode() { return viewState[IDs::controlMode] == sessionControlMode; }
 
-    void setShiftMode(bool shiftMode) { this->shiftMode = shiftMode; }
+    void setShiftMode(bool shiftMode) { shiftMode ? numShiftsHeld++ : numShiftsHeld--; }
     void setNoteMode() { viewState.setProperty(IDs::controlMode, noteControlMode, nullptr); }
     void setSessionMode() { viewState.setProperty(IDs::controlMode, sessionControlMode, nullptr); }
 
@@ -602,7 +602,9 @@ private:
     AudioProcessorGraph* graph {};
     StatefulAudioProcessorContainer* statefulAudioProcessorContainer {};
 
-    bool shiftMode { false };
+    // If either keyboard shift OR Push2 shift (or any other object calling `setShiftMode(...)`) has shift down,
+    // we're in shift mode. Keep an inc/dec counter so they don't squash each other.
+    int numShiftsHeld { 0 };
 
     void clear() {
         input.removeAllChildren(nullptr);
