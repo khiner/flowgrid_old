@@ -130,10 +130,13 @@ public:
         return getMixerChannelProcessorForSelectedTrack().isValid();
     }
 
+    bool isInShiftMode() { return shiftMode; }
+
     bool isInNoteMode() { return viewState[IDs::controlMode] == noteControlMode; }
 
     bool isInSessionMode() { return viewState[IDs::controlMode] == sessionControlMode; }
 
+    void setShiftMode(bool shiftMode) { this->shiftMode = shiftMode; }
     void setNoteMode() { viewState.setProperty(IDs::controlMode, noteControlMode, nullptr); }
     void setSessionMode() { viewState.setProperty(IDs::controlMode, sessionControlMode, nullptr); }
 
@@ -181,6 +184,8 @@ public:
 
     // checks for duplicate add should be done before! (not done here to avoid redundant checks)
     void addConnection(const AudioProcessorGraph::Connection &connection, UndoManager* undoManager, bool isDefault=true) {
+        if (isDefault && isInShiftMode())
+            return; // no default connection stuff while shift is held
         ValueTree connectionState(IDs::CONNECTION);
         ValueTree source(IDs::SOURCE);
         source.setProperty(IDs::nodeId, int(connection.source.nodeID), nullptr);
@@ -198,12 +203,12 @@ public:
         connections.addChild(connectionState, -1, undoManager);
     }
 
-    bool removeConnection(const ValueTree& connection, bool defaults, bool custom) {
-        if (!connection.isValid())
-            return false;
+    bool removeConnection(const ValueTree& connection, bool allowDefaults, bool allowCustom) {
+        if (!connection.isValid() || (!connection[IDs::isCustomConnection] && isInShiftMode()))
+            return false; // no default connection stuff while shift is held
 
-        bool customIsAcceptable = (custom && connection.hasProperty(IDs::isCustomConnection)) ||
-                                  (defaults && !connection.hasProperty(IDs::isCustomConnection));
+        bool customIsAcceptable = (allowCustom && connection.hasProperty(IDs::isCustomConnection)) ||
+                                  (allowDefaults && !connection.hasProperty(IDs::isCustomConnection));
         if (customIsAcceptable) {
             connections.removeChild(connection, connection[IDs::isCustomConnection] ? &undoManager : nullptr);
             return true;
@@ -596,6 +601,8 @@ private:
 
     AudioProcessorGraph* graph {};
     StatefulAudioProcessorContainer* statefulAudioProcessorContainer {};
+
+    bool shiftMode { false };
 
     void clear() {
         input.removeAllChildren(nullptr);

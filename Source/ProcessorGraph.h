@@ -83,50 +83,48 @@ public:
         }
     }
 
-    void setNodePosition(NodeID nodeId, const Point<int> &trackAndSlot, bool shouldMakeDefaultConnections) {
+    void setNodePosition(NodeID nodeId, const Point<int> &trackAndSlot) {
         if (currentlyDraggingNodeId == NA_NODE_ID)
             return;
         if (auto *processor = getProcessorWrapperForNodeId(nodeId)) {
             if (currentlyDraggingTrackAndSlot != trackAndSlot) {
                 currentlyDraggingTrackAndSlot = trackAndSlot;
 
-                moveProcessor(processor->state, initialDraggingTrackAndSlot.x, initialDraggingTrackAndSlot.y, shouldMakeDefaultConnections);
+                moveProcessor(processor->state, initialDraggingTrackAndSlot.x, initialDraggingTrackAndSlot.y);
                 project.restoreConnectionsSnapshot();
                 if (currentlyDraggingTrackAndSlot != initialDraggingTrackAndSlot) {
-                    moveProcessor(processor->state, trackAndSlot.x, trackAndSlot.y, shouldMakeDefaultConnections);
+                    moveProcessor(processor->state, trackAndSlot.x, trackAndSlot.y);
                 }
             }
         }
     }
 
-    void endDraggingNode(NodeID nodeId, bool shouldMakeDefaultConnections) {
+    void endDraggingNode(NodeID nodeId) {
         if (currentlyDraggingNodeId != NA_NODE_ID && currentlyDraggingTrackAndSlot != initialDraggingTrackAndSlot) {
             // update the audio graph to match the current preview UI graph.
             StatefulAudioProcessorWrapper *processor = getProcessorWrapperForNodeId(nodeId);
-            moveProcessor(processor->state, initialDraggingTrackAndSlot.x, initialDraggingTrackAndSlot.y, shouldMakeDefaultConnections);
+            moveProcessor(processor->state, initialDraggingTrackAndSlot.x, initialDraggingTrackAndSlot.y);
             project.restoreConnectionsSnapshot();
             currentlyDraggingNodeId = NA_NODE_ID;
-            moveProcessor(processor->state, currentlyDraggingTrackAndSlot.x, currentlyDraggingTrackAndSlot.y, shouldMakeDefaultConnections);
+            moveProcessor(processor->state, currentlyDraggingTrackAndSlot.x, currentlyDraggingTrackAndSlot.y);
         }
         currentlyDraggingNodeId = NA_NODE_ID;
     }
 
-    void moveProcessor(ValueTree &processorState, int toTrackIndex, int toSlot, bool shouldMakeDefaultConnections=true) {
+    void moveProcessor(ValueTree &processorState, int toTrackIndex, int toSlot) {
         const ValueTree &toTrack = project.getTrack(toTrackIndex);
         int fromSlot = processorState[IDs::processorSlot];
         if (fromSlot == toSlot && processorState.getParent() == toTrack)
             return;
 
-        if (shouldMakeDefaultConnections)
-            removeDefaultConnections(processorState);
+        removeDefaultConnections(processorState);
 
         processorState.setProperty(IDs::processorSlot, toSlot, getDragDependentUndoManager());
         const int insertIndex = project.getParentIndexForProcessor(toTrack, processorState, getDragDependentUndoManager());
         Helpers::moveSingleItem(processorState, toTrack, insertIndex, getDragDependentUndoManager());
 
         project.makeSlotsValid(toTrack, getDragDependentUndoManager());
-        if (shouldMakeDefaultConnections)
-            addDefaultConnections(processorState);
+        addDefaultConnections(processorState);
     }
 
     bool canConnectUi(const Connection& c) const {
@@ -292,6 +290,27 @@ private:
             const String &deviceName = processorState.getProperty(IDs::deviceName);
             if (auto* enabledMidiOutput = deviceManager.getEnabledMidiOutput(deviceName))
                 midiOutputProcessor->setMidiOutput(enabledMidiOutput);
+        }
+    }
+
+    void removeProcessor(const ValueTree &processor) {
+        if (auto *node = getNodeForState(processor)) {
+            // disconnect should have already been called before delete! (to avoid nested undo actions)
+            if (auto* processorWrapper = getProcessorWrapperForNodeId(node->nodeID)) {
+                if (processor[IDs::name] == MidiInputProcessor::name()) {
+                    if (auto *midiInputProcessor = dynamic_cast<MidiInputProcessor *>(processorWrapper->processor)) {
+                        const String &deviceName = processorWrapper->state.getProperty(IDs::deviceName);
+                        if (deviceName.containsIgnoreCase(push2MidiDeviceName)) {
+                            push2MidiCommunicator.removeMidiInputCallback(&midiInputProcessor->getMidiMessageCollector());
+                        } else {
+                            deviceManager.removeMidiInputCallback(deviceName, &midiInputProcessor->getMidiMessageCollector());
+                        }
+                    }
+                }
+                processorWrappers.removeObject(processorWrapper);
+            }
+            nodes.removeObject(node);
+            topologyChanged();
         }
     }
 
@@ -595,25 +614,10 @@ private:
 
     void valueTreeChildRemoved(ValueTree& parent, ValueTree& child, int indexFromWhichChildWasRemoved) override {
         if (child.hasType(IDs::PROCESSOR)) {
-            removeDefaultConnections(child);
-            if (currentlyDraggingNodeId == NA_NODE_ID && !isMoving) {
-                if (auto *node = getNodeForState(child)) {
-                    // disconnect should have already been called before delete! (to avoid nested undo actions)
-                    if (auto* processorWrapper = getProcessorWrapperForNodeId(node->nodeID)) {
-                        if (child[IDs::name] == MidiInputProcessor::name()) {
-                            if (auto *midiInputProcessor = dynamic_cast<MidiInputProcessor *>(processorWrapper->processor)) {
-                                const String &deviceName = processorWrapper->state.getProperty(IDs::deviceName);
-                                if (deviceName.containsIgnoreCase(push2MidiDeviceName)) {
-                                    push2MidiCommunicator.removeMidiInputCallback(&midiInputProcessor->getMidiMessageCollector());
-                                } else {
-                                    deviceManager.removeMidiInputCallback(deviceName, &midiInputProcessor->getMidiMessageCollector());
-                                }
-                            }
-                        }
-                        processorWrappers.removeObject(processorWrapper);
-                    }
-                    nodes.removeObject(node);
-                    topologyChanged();
+            if (currentlyDraggingNodeId == NA_NODE_ID) {
+                removeDefaultConnections(child);
+                if (!isMoving) {
+                    removeProcessor(child);
                 }
             }
             for (int i = activePluginWindows.size(); --i >= 0;) {

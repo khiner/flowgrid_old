@@ -233,8 +233,8 @@ public:
                 result.addDefaultKeypress(KeyPress::backspaceKey, ModifierKeys::noModifiers);
                 break;
             case CommandIDs::showPluginListEditor:
-                result.setInfo ("Edit the list of available plug-Ins...", String(), category, 0);
-                result.addDefaultKeypress ('p', ModifierKeys::commandModifier);
+                result.setInfo("Edit the list of available plug-Ins...", String(), category, 0);
+                result.addDefaultKeypress('p', ModifierKeys::commandModifier);
                 break;
             case CommandIDs::showAudioMidiSettings:
                 result.setInfo("Change the audio device settings", String(), category, 0);
@@ -326,6 +326,11 @@ public:
             setVisible(true);
             setBackgroundColour(getUIColourIfAvailable(LookAndFeel_V4::ColourScheme::UIColour::windowBackground));
             addKeyListener(getCommandManager().getKeyMappings());
+        }
+
+        void modifierKeysChanged(const ModifierKeys& modifiers) override {
+            DocumentWindow::modifierKeysChanged(modifiers);
+            owner.project.setShiftMode(modifiers.isShiftDown());
         }
 
         void closeButtonPressed() override {
