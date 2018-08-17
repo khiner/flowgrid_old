@@ -190,15 +190,15 @@ public:
         return doDisconnectNode(nodeId, all, true, true, true, true);
     }
 
-    bool disconnectDefaults(NodeID nodeId, bool undoable=true) {
+    bool disconnectDefaults(NodeID nodeId) {
         return doDisconnectNode(nodeId, all, true, false, true, true);
     }
 
-    bool disconnectDefaultOutgoing(NodeID nodeId, ConnectionType connectionType, bool undoable=true) {
+    bool disconnectDefaultOutgoing(NodeID nodeId, ConnectionType connectionType) {
         return doDisconnectNode(nodeId, connectionType, true, false, false, true);
     }
 
-    bool disconnectDefaultIncoming(NodeID nodeId, bool undoable=true) {
+    bool disconnectDefaultIncoming(NodeID nodeId) {
         return doDisconnectNode(nodeId, all, true, false, true, false);
     }
 
@@ -336,10 +336,10 @@ private:
 
     void disconnectDefaultExternalInputs() {
         auto audioInputNodeId = getNodeIdForState(project.getAudioInputProcessorState());
-        disconnectDefaultOutgoing(audioInputNodeId, audio, getDragDependentUndoManager());
+        disconnectDefaultOutgoing(audioInputNodeId, audio);
         for (const auto& midiInputProcessor : project.getInput())
             if (midiInputProcessor.getProperty(IDs::name) == MidiInputProcessor::name())
-                disconnectDefaultOutgoing(getNodeIdForState(midiInputProcessor), midi, getDragDependentUndoManager());
+                disconnectDefaultOutgoing(getNodeIdForState(midiInputProcessor), midi);
     }
 
     void connectDefaultExternalInputs(const ValueTree &selectedProcessor) {
