@@ -407,18 +407,12 @@ private:
     }
 
     void removeDefaultConnections(const ValueTree &processor, ConnectionType connectionType) {
-        const auto& defaultConnectionChannels = getDefaultConnectionChannels(connectionType);
-        const NeighborNodes &neighbors = findNeighborProcessors(processor, connectionType);
         auto nodeId = getNodeIdForState(processor);
-        if (neighbors.after != NA_NODE_ID) {
-            for (auto channel : defaultConnectionChannels) {
-                removeDefaultConnection({{nodeId, channel}, {neighbors.after, channel}});
-            }
-        }
+        const NeighborNodes &neighbors = getDefaultConnectedNeighbors(processor, connectionType);
+        disconnectDefaults(nodeId);
+
+        const auto& defaultConnectionChannels = getDefaultConnectionChannels(connectionType);
         for (auto before : neighbors.before) {
-            for (auto channel : defaultConnectionChannels) {
-                removeDefaultConnection({{before, channel}, {nodeId, channel}});
-            }
             const auto &beforeState = getProcessorWrapperForNodeId(before)->state;
             const NeighborNodes &neighborsForBeforeNode = findNeighborProcessors(beforeState, connectionType, processor, false, true);
             if (neighborsForBeforeNode.after != NA_NODE_ID) {
@@ -435,19 +429,6 @@ private:
 
     NeighborNodes findNeighborProcessors(const ValueTree &processor, ConnectionType connectionType, const ValueTree& excluding={}, bool before=true, bool after=true) {
         NeighborNodes neighborNodes {};
-        auto nodeId = getNodeIdForState(processor);
-        auto connections = project.getConnectionsForNode(nodeId, connectionType == audio, connectionType == midi, before, after, false);
-        if (!connections.isEmpty()) {
-            for (const auto& connection : connections) {
-                if (getNodeIdForState(connection.getChildWithName(IDs::SOURCE)) == nodeId) {
-                    neighborNodes.after = getNodeIdForState(connection.getChildWithName(IDs::DESTINATION));
-                } else if (getNodeIdForState(connection.getChildWithName(IDs::DESTINATION)) == nodeId && before) {
-                    neighborNodes.before.add(getNodeIdForState(connection.getChildWithName(IDs::SOURCE)));
-                }
-            }
-            return neighborNodes;
-        }
-        
         const auto& parent = processor.getParent();
         
         if (before) {
@@ -458,6 +439,19 @@ private:
             neighborNodes.after = getNodeIdForState(afterNodeState);
         }
 
+        return neighborNodes;
+    }
+
+    NeighborNodes getDefaultConnectedNeighbors(const ValueTree &processor, ConnectionType connectionType, bool before = true, bool after = true) {
+        NeighborNodes neighborNodes {};
+        auto nodeId = getNodeIdForState(processor);
+        auto connections = project.getConnectionsForNode(nodeId, connectionType == audio, connectionType == midi, before, after, false);
+        for (const auto &connection : connections) {
+            if (getNodeIdForState(connection.getChildWithName(IDs::SOURCE)) == nodeId)
+                neighborNodes.after = getNodeIdForState(connection.getChildWithName(IDs::DESTINATION));
+            else if (getNodeIdForState(connection.getChildWithName(IDs::DESTINATION)) == nodeId && before)
+                neighborNodes.before.add(getNodeIdForState(connection.getChildWithName(IDs::SOURCE)));
+        }
         return neighborNodes;
     }
 
