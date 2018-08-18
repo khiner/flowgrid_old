@@ -187,6 +187,7 @@ public:
 
     bool addConnection(const Connection& c) override {
         if (canConnectUi(c)) {
+            disconnectDefaultOutgoing(c.source.nodeID, c.source.isMIDI() ? midi : audio);
             project.addConnection(c, getDragDependentUndoManager(), false);
             return true;
         }
