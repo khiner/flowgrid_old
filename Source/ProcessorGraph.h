@@ -351,54 +351,65 @@ private:
         }
     }
 
-    ValueTree findRightmostProcessorParent(const ValueTree &processor, ConnectionType connectionType) {
-        auto nodeId = getNodeIdForState(processor);
-        Array<ValueTree> connections = project.getConnectionsForNode(nodeId, connectionType == audio, connectionType == midi, true, false);
-        int greatestTrackIndex = -1;
-        ValueTree rightmostProcessorAncestor;
-        for (const auto& connection : connections) {
-            auto* processorWrapper = getProcessorWrapperForState(connection.getChildWithName(IDs::SOURCE));
-            int trackIndex = project.getTracks().indexOf(processorWrapper->state.getParent());
-            if (trackIndex > greatestTrackIndex) {
-                greatestTrackIndex = trackIndex;
-                rightmostProcessorAncestor = processorWrapper->state;
-            }
-        }
-        return rightmostProcessorAncestor;
-    }
-
     void resetDefaultExternalInputs(const ValueTree &selectedProcessor) {
         auto audioInputNodeId = getNodeIdForState(project.getAudioInputProcessorState());
         disconnectDefaultOutgoing(audioInputNodeId, audio);
         if (selectedProcessor.isValid())
-            addDefaultExternalInputConnections(selectedProcessor, audioInputNodeId, audio, getDragDependentUndoManager());
+            addDefaultExternalInputConnections(selectedProcessor, audioInputNodeId, audio);
         for (const auto& midiInputProcessor : project.getInput()) {
             if (midiInputProcessor.getProperty(IDs::name) == MidiInputProcessor::name()) {
                 auto nodeId = getNodeIdForState(midiInputProcessor);
                 disconnectDefaultOutgoing(nodeId, midi);
                 if (selectedProcessor.isValid())
-                    addDefaultExternalInputConnections(selectedProcessor, nodeId, midi, getDragDependentUndoManager());
+                    addDefaultExternalInputConnections(selectedProcessor, nodeId, midi);
             }
         }
     }
 
+    // Find the upper-right-most processor that flows into the selected processor
     void addDefaultExternalInputConnections(const ValueTree &selectedProcessor,
-                                            NodeID externalSourceNodeId, ConnectionType connectionType, UndoManager* undoManager) {
+                                            NodeID externalSourceNodeId, ConnectionType connectionType) {
+        if (project.getNumTracks() == 0)
+            return;
+
         const auto &defaultConnectionChannels = getDefaultConnectionChannels(connectionType);
 
-        // Find the furthest-upstream ancestor of the selected processor. If that processor accepts inputs,
-        // connect it to external audio/midi inputs.
-        ValueTree parent = {}, rightmostEffectProcessorAncestor = selectedProcessor;
-        while ((parent = findRightmostProcessorParent(rightmostEffectProcessorAncestor, connectionType)).isValid()) {
-            rightmostEffectProcessorAncestor = parent;
-        }
+        int lowestSlot = INT_MAX;
+        NodeID upperRightMostProcessorNodeId = NA_NODE_ID;
+        for (int i = project.getNumTracks() - 1; i >= 0; i--) {
+            const auto& track = project.getTrack(i);
+            if (track.getNumChildren() == 0)
+                continue;
 
-        if (isProcessorAnEffect(rightmostEffectProcessorAncestor, connectionType) && rightmostEffectProcessorAncestor[IDs::allowDefaultConnections]) {
-            auto nodeId = getNodeIdForState(rightmostEffectProcessorAncestor);
-            for (auto channel : defaultConnectionChannels) {
-                addDefaultConnection({{externalSourceNodeId, channel}, {nodeId, channel}});
+            const auto& firstProcessor = track.getChild(0);
+            auto firstProcessorNodeId = getNodeIdForState(firstProcessor);
+            int slot = firstProcessor[IDs::processorSlot];
+            if (slot < lowestSlot && areProcessorsConnected(firstProcessorNodeId, getNodeIdForState(selectedProcessor), connectionType)) {
+                lowestSlot = firstProcessor[IDs::processorSlot];
+                upperRightMostProcessorNodeId = firstProcessorNodeId;
             }
         }
+        if (upperRightMostProcessorNodeId != NA_NODE_ID) {
+            for (auto channel : defaultConnectionChannels) {
+                addDefaultConnection({{externalSourceNodeId, channel}, {upperRightMostProcessorNodeId, channel}});
+            }
+        }
+    }
+
+    bool areProcessorsConnected(NodeID upstreamNodeId, NodeID downstreamNodeId, ConnectionType connectionType) const {
+        if (upstreamNodeId == downstreamNodeId)
+            return true;
+
+        auto outgoingConnections = project.getConnectionsForNode(upstreamNodeId,
+                                                                 connectionType == audio, connectionType == midi,
+                                                                 false, true);
+        for (const auto& outgoingConnection : outgoingConnections) {
+            auto otherDownstreamNodeId = getNodeIdForState(outgoingConnection.getChildWithName(IDs::DESTINATION));
+            if (downstreamNodeId == otherDownstreamNodeId ||
+                areProcessorsConnected(otherDownstreamNodeId, downstreamNodeId, connectionType))
+                return true;
+        }
+        return false;
     }
 
     inline const Array<int>& getDefaultConnectionChannels(ConnectionType connectionType) const {
