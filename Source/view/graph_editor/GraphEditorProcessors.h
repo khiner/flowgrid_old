@@ -32,7 +32,7 @@ public:
 
     void mouseDown(const MouseEvent &e) override {
         setSelected(true);
-        if (e.mods.isPopupMenu()) {
+        if (e.mods.isPopupMenu() || e.getNumberOfClicks() == 2) {
             showPopupMenu(e.position.toInt());
         }
     }
