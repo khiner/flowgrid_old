@@ -368,7 +368,7 @@ public:
         int insertIndex;
         if (description.name == MixerChannelProcessor::name()) {
             insertIndex = -1;
-            slot = NUM_AVAILABLE_PROCESSOR_SLOTS - (track.hasType(IDs::MASTER_TRACK) ? 0 : 1);
+            slot = maxSlotForTrack(track);
         } else if (slot == -1) {
             if (description.numInputChannels == 0) {
                 insertIndex = 0;
@@ -393,6 +393,10 @@ public:
         sendProcessorCreatedMessage(processor);
 
         return processor;
+    }
+
+    int maxSlotForTrack(const ValueTree& track) {
+        return NUM_AVAILABLE_PROCESSOR_SLOTS - (track.hasType(IDs::MASTER_TRACK) ? 0 : 1);
     }
 
     void makeSlotsValid(const ValueTree& parent, UndoManager* undoManager) {

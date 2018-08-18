@@ -87,7 +87,7 @@ public:
         if (currentlyDraggingNodeId == NA_NODE_ID)
             return;
         if (auto *processor = getProcessorWrapperForNodeId(nodeId)) {
-            if (currentlyDraggingTrackAndSlot != trackAndSlot) {
+            if (currentlyDraggingTrackAndSlot != trackAndSlot && trackAndSlot.y < project.maxSlotForTrack(project.getTrack(trackAndSlot.x))) {
                 currentlyDraggingTrackAndSlot = trackAndSlot;
 
                 moveProcessor(processor->state, trackAndSlot.x, trackAndSlot.y);
