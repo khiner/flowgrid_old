@@ -119,6 +119,7 @@ public:
         } else if (topLevelMenuIndex == 2) { // Create menu
             menu.addCommandItem(&getCommandManager(), CommandIDs::insertTrack);
             menu.addCommandItem(&getCommandManager(), CommandIDs::insertTrackWithoutMixer);
+            menu.addCommandItem(&getCommandManager(), CommandIDs::createMasterTrack);
             menu.addCommandItem(&getCommandManager(), CommandIDs::addMixerChannel);
         } else if (topLevelMenuIndex == 3) { // View menu
             menu.addCommandItem(&getCommandManager(), CommandIDs::showPush2MirrorWindow);
@@ -183,6 +184,7 @@ public:
                 CommandIDs::deleteSelected,
                 CommandIDs::insertTrack,
                 CommandIDs::insertTrackWithoutMixer,
+                CommandIDs::createMasterTrack,
                 CommandIDs::addMixerChannel,
                 CommandIDs::showPluginListEditor,
                 CommandIDs::showPush2MirrorWindow,
@@ -231,6 +233,11 @@ public:
             case CommandIDs::insertTrackWithoutMixer:
                 result.setInfo("Insert track (without mixer)", String(), category, 0);
                 result.addDefaultKeypress('t', ModifierKeys::commandModifier | ModifierKeys::shiftModifier);
+                break;
+            case CommandIDs::createMasterTrack:
+                result.setInfo("Create master track", String(), category, 0);
+                result.addDefaultKeypress('m', ModifierKeys::commandModifier | ModifierKeys::shiftModifier);
+                result.setActive(!project.getMasterTrack().isValid());
                 break;
             case CommandIDs::addMixerChannel:
                 result.setInfo("Add mixer channel", String(), category, 0);
@@ -295,6 +302,9 @@ public:
                 break;
             case CommandIDs::insertTrackWithoutMixer:
                 project.createAndAddTrack(true, false);
+                break;
+            case CommandIDs::createMasterTrack:
+                project.createAndAddMasterTrack(true, true);
                 break;
             case CommandIDs::addMixerChannel:
                 project.createAndAddProcessor(MixerChannelProcessor::getPluginDescription(), true);
@@ -477,12 +487,12 @@ private:
     }
 
     void processorCreated(const ValueTree& child) override {
-        if (child[IDs::name] == MixerChannelProcessor::name())
+        if (child.hasProperty(IDs::isMasterTrack) || child[IDs::name] == MixerChannelProcessor::name())
             applicationCommandListChanged(); // TODO same - wasteful
     }
 
     void processorHasBeenDestroyed(const ValueTree &child) override {
-        if (child[IDs::name] == MixerChannelProcessor::name())
+        if (child.hasProperty(IDs::isMasterTrack) || child[IDs::name] == MixerChannelProcessor::name())
             applicationCommandListChanged(); // TODO same - wasteful
     }
 

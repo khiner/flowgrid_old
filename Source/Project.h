@@ -293,18 +293,28 @@ public:
     void createDefaultProject() {
         createAudioIoProcessors();
 
+        ValueTree track = createAndAddTrack(false);
+        createAndAddProcessor(SineBank::getPluginDescription(), track, -1, false);
+
+        createAndAddMasterTrack(false, true);
+
+        viewState.setProperty(IDs::controlMode, noteControlMode, nullptr);
+    }
+
+    ValueTree createAndAddMasterTrack(bool undoable=true, bool addMixer=true) {
+        if (getMasterTrack().isValid())
+            return {}; // only one master track allowed!
+
         ValueTree masterTrack(IDs::TRACK);
         masterTrack.setProperty(IDs::isMasterTrack, true, nullptr);
         masterTrack.setProperty(IDs::name, "Master", nullptr);
         masterTrack.setProperty(IDs::colour, Colours::darkslateblue.toString(), nullptr);
-        tracks.addChild(masterTrack, -1, nullptr);
+        tracks.addChild(masterTrack, -1, undoable ? &undoManager : nullptr);
 
-        ValueTree masterMixer = createAndAddProcessor(MixerChannelProcessor::getPluginDescription(), masterTrack, -1, false);
+        if (addMixer)
+            createAndAddProcessor(MixerChannelProcessor::getPluginDescription(), masterTrack, -1, undoable);
 
-        ValueTree track = createAndAddTrack(false);
-        createAndAddProcessor(SineBank::getPluginDescription(), track, -1, false);
-
-        viewState.setProperty(IDs::controlMode, noteControlMode, nullptr);
+        return masterTrack;
     }
 
     ValueTree createAndAddTrack(bool undoable=true, bool addMixer=true, ValueTree nextToTrack={}) {
