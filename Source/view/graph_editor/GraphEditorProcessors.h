@@ -26,9 +26,9 @@ public:
         freeObjects();
     }
 
-    bool isMasterTrack() const {
-        return parent.hasType(IDs::MASTER_TRACK);
-    }
+    bool isMasterTrack() const { return parent.hasType(IDs::MASTER_TRACK); }
+
+    int getNumAvailableSlots() const { return Project::NUM_AVAILABLE_PROCESSOR_SLOTS + (isMasterTrack() ? 1 : 0); }
 
     void mouseDown(const MouseEvent &e) override {
         setSelected(true);
@@ -41,15 +41,15 @@ public:
         auto r = getLocalBounds();
         int totalSize = isMasterTrack() ? getWidth() : getHeight();
 
-        int mixerChannelSize = isMasterTrack() ? getHeight() : int(totalSize * MIXER_CHANNEL_SLOT_RATIO);
-        for (int slot = 0; slot < Project::NUM_AVAILABLE_PROCESSOR_SLOTS; slot++) {
-            cellSizes[slot] = (slot != Project::NUM_AVAILABLE_PROCESSOR_SLOTS - 1)
-                              ? (totalSize - mixerChannelSize) / (Project::NUM_AVAILABLE_PROCESSOR_SLOTS - 1)
+        int mixerChannelSize = int(totalSize * MIXER_CHANNEL_SLOT_RATIO);
+        for (int slot = 0; slot < getNumAvailableSlots(); slot++) {
+            cellSizes[slot] = (slot != getNumAvailableSlots() - 1)
+                              ? (totalSize - mixerChannelSize) / (getNumAvailableSlots() - 1)
                               : mixerChannelSize;
         }
 
-        for (int slot = 0; slot < Project::NUM_AVAILABLE_PROCESSOR_SLOTS; slot++) {
-            auto processorBounds = isMasterTrack() ? r.removeFromLeft(cellSizes[slot]) : r.removeFromTop(cellSizes[slot]);
+        for (int slot = 0; slot < getNumAvailableSlots(); slot++) {
+            auto processorBounds = isMasterTrack() ? r.removeFromLeft(getCellSize()) : r.removeFromTop(cellSizes[slot]);
             if (auto *processor = findProcessorAtSlot(slot)) {
                 processor->setBounds(processorBounds);
             }
@@ -59,8 +59,8 @@ public:
     void paint(Graphics &g) override {
         auto r = getLocalBounds();
         g.setColour(findColour(ResizableWindow::backgroundColourId).brighter(0.15));
-        for (int cellSize : cellSizes)
-            g.drawRect(isMasterTrack() ? r.removeFromLeft(cellSize) : r.removeFromTop(cellSize));
+        for (int i = 0; i < getNumAvailableSlots(); i++)
+            g.drawRect(isMasterTrack() ? r.removeFromLeft(getCellSize()) : r.removeFromTop(cellSizes[i]));
     }
 
     bool isSuitableType(const ValueTree &v) const override {
@@ -205,11 +205,12 @@ private:
     }
 
     int getCellSize() const {
-        return (isMasterTrack() ? getWidth() : getHeight()) / Project::NUM_AVAILABLE_PROCESSOR_SLOTS;
+        return (isMasterTrack() ? getWidth() : getHeight()) / getNumAvailableSlots();
     }
 
     int findSlotAt(const Point<int> relativePosition) {
         int slot = isMasterTrack() ? relativePosition.x / getCellSize() : relativePosition.y / getCellSize();
-        return jlimit(0, Project::NUM_AVAILABLE_PROCESSOR_SLOTS - 1, slot);
+        // master track has one more available slot than other tracks.
+        return jlimit(0, getNumAvailableSlots() - 1, slot);
     }
 };

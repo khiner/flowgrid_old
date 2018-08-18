@@ -9,17 +9,21 @@ class GraphEditorTrack : public Component, public Utilities::ValueTreePropertyCh
 public:
     explicit GraphEditorTrack(Project& project, ValueTree v, ConnectorDragListener &connectorDragListener, ProcessorGraph& graph)
             : project(project), state(std::move(v)), connectorDragListener(connectorDragListener), graph(graph) {
-        nameLabel.setText(isMasterTrack() ? "M\nA\nS\nT\nE\nR" : getTrackName(), dontSendNotification);
         nameLabel.setJustificationType(Justification::centred);
         nameLabel.setColour(Label::backgroundColourId, getColour());
+        addAndMakeVisible(nameLabel);
         if (!isMasterTrack()) {
+            nameLabel.setText(getTrackName(), dontSendNotification);
             nameLabel.setEditable(false, true);
             nameLabel.onTextChange = [this] { state.setProperty(IDs::name, nameLabel.getText(false), &this->graph.undoManager); };
+        } else {
+            masterTrackName.setText(getTrackName());
+            masterTrackName.setColour(findColour(TextEditor::textColourId));
+            masterTrackName.setJustification(Justification::centred);
+            addAndMakeVisible(masterTrackName);
         }
-
         nameLabel.addMouseListener(this, false);
-
-        addAndMakeVisible(nameLabel);
+        
         addAndMakeVisible(*(processors = std::make_unique<GraphEditorProcessors>(project, state, connectorDragListener, graph)));
         state.addListener(this);
     }
@@ -73,13 +77,23 @@ public:
         state.setProperty(IDs::selected, selected, nullptr);
     }
 
-    const Component *getDragControlComponent() const {
+    const Label *getNameLabel() const {
         return &nameLabel;
+    }
+
+    const Component *getDragControlComponent() const {
+        return getNameLabel();
     }
 
     void resized() override {
         auto r = getLocalBounds();
-        nameLabel.setBounds(isMasterTrack() ? r.removeFromLeft(getWidth() / 24) : r.removeFromTop(getHeight() / 24));
+        const auto &nameLabelBounds = isMasterTrack() ? r.removeFromLeft(jmax(getWidth() / 30, 32)) : r.removeFromTop(jmax(getHeight() / 30, 32));
+        nameLabel.setBounds(nameLabelBounds);
+        if (isMasterTrack()) {
+            const auto& labelBoundsFloat = nameLabelBounds.toFloat();
+            masterTrackName.setBoundingBox(Parallelogram<float>(labelBoundsFloat.getBottomLeft(), labelBoundsFloat.getTopLeft(), labelBoundsFloat.getBottomRight()));
+            masterTrackName.setFontHeight(labelBoundsFloat.getHeight() / 6);
+        }
         processors->setBounds(r);
     }
 
@@ -120,6 +134,7 @@ private:
     ValueTree state;
 
     Label nameLabel;
+    DrawableText masterTrackName;
     std::unique_ptr<GraphEditorProcessors> processors;
     ConnectorDragListener &connectorDragListener;
     ProcessorGraph &graph;

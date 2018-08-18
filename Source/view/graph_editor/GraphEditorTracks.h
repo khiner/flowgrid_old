@@ -21,13 +21,29 @@ public:
     }
 
     void resized() override {
-        auto r = getLocalBounds().withHeight(getHeight() * Project::NUM_AVAILABLE_PROCESSOR_SLOTS / (Project::NUM_AVAILABLE_PROCESSOR_SLOTS + 1.2f));
-        const int w = r.getWidth() / Project::NUM_VISIBLE_TRACKS;
+        auto r = getLocalBounds().withHeight(getHeight() * Project::NUM_AVAILABLE_PROCESSOR_SLOTS / (Project::NUM_AVAILABLE_PROCESSOR_SLOTS + 1));
 
-        for (auto *track : objects) {
-            track->setBounds(!track->isMasterTrack() ? r.removeFromLeft(w)
-                                                     : getLocalBounds().removeFromBottom(getHeight() - r.getHeight()));
+        auto* masterTrack = findMasterTrack();
+        if (masterTrack != nullptr) {
+            masterTrack->setBounds(getLocalBounds().removeFromBottom(getHeight() - r.getHeight()));
+            r.removeFromLeft(masterTrack->getNameLabel()->getWidth());
         }
+
+        const int w = r.getWidth() / Project::NUM_VISIBLE_TRACKS;
+        for (auto *track : objects) {
+            if (!track->isMasterTrack()) {
+                track->setBounds(r.removeFromLeft(w));
+            }
+        }
+    }
+
+    GraphEditorTrack* findMasterTrack() const {
+        for (auto *track : objects) {
+            if (track->isMasterTrack())
+                return track;
+        }
+
+        return nullptr;
     }
 
     bool isSuitableType(const ValueTree &v) const override {

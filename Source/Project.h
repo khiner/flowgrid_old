@@ -368,7 +368,7 @@ public:
         int insertIndex;
         if (description.name == MixerChannelProcessor::name()) {
             insertIndex = -1;
-            slot = NUM_AVAILABLE_PROCESSOR_SLOTS - 1;
+            slot = NUM_AVAILABLE_PROCESSOR_SLOTS - (track.hasType(IDs::MASTER_TRACK) ? 0 : 1);
         } else if (slot == -1) {
             if (description.numInputChannels == 0) {
                 insertIndex = 0;
