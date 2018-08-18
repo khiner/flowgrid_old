@@ -385,6 +385,7 @@ public:
                 }
             }
         } else {
+            processor.setProperty(IDs::processorSlot, slot, nullptr);
             insertIndex = getParentIndexForProcessor(track, processor, nullptr);
         }
         processor.setProperty(IDs::processorSlot, slot, nullptr);

@@ -163,7 +163,9 @@ public:
     }
 
 private:
-    const float MIXER_CHANNEL_SLOT_RATIO = 0.2f;
+    static constexpr int ADD_MIXER_CHANNEL_MENU_ID = 1;
+
+    static constexpr float MIXER_CHANNEL_SLOT_RATIO = 0.2f;
 
     Project &project;
     ConnectorDragListener &connectorDragListener;
@@ -203,10 +205,18 @@ private:
     void showPopupMenu(const Point<int> &mousePos) {
         int slot = findSlotAt(mousePos);
         menu = std::make_unique<PopupMenu>();
-        project.addPluginsToMenu(*menu, parent);
+        if (slot != project.maxSlotForTrack(parent)) {
+            project.addPluginsToMenu(*menu, parent);
+        } else {
+            menu->addItem(ADD_MIXER_CHANNEL_MENU_ID, "Add mixer channel");
+        }
         menu->showMenuAsync({}, ModalCallbackFunction::create([this, slot](int r) {
-            if (auto *description = project.getChosenType(r)) {
-                project.createAndAddProcessor(*description, parent, slot);
+            if (slot != project.maxSlotForTrack(parent)) {
+                if (auto *description = project.getChosenType(r)) {
+                    project.createAndAddProcessor(*description, parent, slot);
+                }
+            } else if (r == ADD_MIXER_CHANNEL_MENU_ID) {
+                getCommandManager().invokeDirectly(CommandIDs::addMixerChannel, false);
             }
         }));
     }

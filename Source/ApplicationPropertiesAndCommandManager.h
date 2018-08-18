@@ -13,6 +13,7 @@ namespace CommandIDs {
             deleteSelected           = 0x20002,
             insertTrack              = 0x30000,
             insertTrackWithoutMixer  = 0x30001,
+            addMixerChannel          = 0x30002,
             showPush2MirrorWindow    = 0x40000,
             showPluginListEditor     = 0x50000,
             showAudioMidiSettings    = 0x50001,

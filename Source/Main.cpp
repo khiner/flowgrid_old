@@ -6,7 +6,7 @@
 #include "BasicWindow.h"
 #include "DeviceChangeMonitor.h"
 
-class SoundMachineApplication : public JUCEApplication, public MenuBarModel, private ChangeListener, private Timer {
+class SoundMachineApplication : public JUCEApplication, public MenuBarModel, private ChangeListener, private Timer, private ProjectChangeListener, private Utilities::ValueTreePropertyChangeListener {
 public:
     SoundMachineApplication() : project(undoManager, processorManager, deviceManager),
                                 push2Colours(project.getState()),
@@ -21,6 +21,9 @@ public:
 
     void initialise(const String &) override {
         Process::makeForegroundProcess();
+
+        project.addChangeListener(this);
+
         deviceChangeMonitor = std::make_unique<DeviceChangeMonitor>(deviceManager);
 
         deviceManager.addChangeListener(this);
@@ -116,6 +119,7 @@ public:
         } else if (topLevelMenuIndex == 2) { // Create menu
             menu.addCommandItem(&getCommandManager(), CommandIDs::insertTrack);
             menu.addCommandItem(&getCommandManager(), CommandIDs::insertTrackWithoutMixer);
+            menu.addCommandItem(&getCommandManager(), CommandIDs::addMixerChannel);
         } else if (topLevelMenuIndex == 3) { // View menu
             menu.addCommandItem(&getCommandManager(), CommandIDs::showPush2MirrorWindow);
         } else if (topLevelMenuIndex == 4) { // Options menu
@@ -179,6 +183,7 @@ public:
                 CommandIDs::deleteSelected,
                 CommandIDs::insertTrack,
                 CommandIDs::insertTrackWithoutMixer,
+                CommandIDs::addMixerChannel,
                 CommandIDs::showPluginListEditor,
                 CommandIDs::showPush2MirrorWindow,
                 CommandIDs::showAudioMidiSettings,
@@ -226,6 +231,11 @@ public:
             case CommandIDs::insertTrackWithoutMixer:
                 result.setInfo("Insert track (without mixer)", String(), category, 0);
                 result.addDefaultKeypress('t', ModifierKeys::commandModifier | ModifierKeys::shiftModifier);
+                break;
+            case CommandIDs::addMixerChannel:
+                result.setInfo("Add mixer channel", String(), category, 0);
+                result.addDefaultKeypress('m', ModifierKeys::commandModifier);
+                result.setActive(project.getSelectedTrack().isValid() && !project.getMixerChannelProcessorForSelectedTrack().isValid());
                 break;
             case CommandIDs::deleteSelected:
                 result.setInfo("Delete selected item(s)", String(), category, 0);
@@ -285,6 +295,9 @@ public:
                 break;
             case CommandIDs::insertTrackWithoutMixer:
                 project.createAndAddTrack(true, false);
+                break;
+            case CommandIDs::addMixerChannel:
+                project.createAndAddProcessor(MixerChannelProcessor::getPluginDescription(), true);
                 break;
             case CommandIDs::showPluginListEditor:
                 showPluginList();
@@ -459,6 +472,24 @@ private:
                 push2MidiCommunicator.setMidiInputAndOutput(midiInput, midiOutput);
             } else if (push2MidiCommunicator.isInitialized() && !MidiInput::getDevices().contains(push2MidiDeviceName, true)) {
                 push2MidiCommunicator.setMidiInputAndOutput(nullptr, nullptr);
+            }
+        }
+    }
+
+    void processorCreated(const ValueTree& child) override {
+        if (child[IDs::name] == MixerChannelProcessor::name())
+            applicationCommandListChanged(); // TODO same - wasteful
+    }
+
+    void processorHasBeenDestroyed(const ValueTree &child) override {
+        if (child[IDs::name] == MixerChannelProcessor::name())
+            applicationCommandListChanged(); // TODO same - wasteful
+    }
+
+    void valueTreePropertyChanged(ValueTree& child, const Identifier& i) override {
+        if (child.hasType(IDs::TRACK) || child.hasType(IDs::PROCESSOR)) {
+            if (i == IDs::selected && child[IDs::selected]) {
+                applicationCommandListChanged(); // TODO same - wasteful
             }
         }
     }
