@@ -348,6 +348,7 @@ public:
         processor.setProperty(IDs::id, description.createIdentifierString(), nullptr);
         processor.setProperty(IDs::name, description.name, nullptr);
         processor.setProperty(IDs::allowDefaultConnections, true, nullptr);
+
         processor.setProperty(IDs::selected, true, nullptr);
 
         int insertIndex;
@@ -716,6 +717,7 @@ private:
                 ValueTree midiOutputProcessor(IDs::PROCESSOR);
                 midiOutputProcessor.setProperty(IDs::id, MidiOutputProcessor::getPluginDescription().createIdentifierString(), nullptr);
                 midiOutputProcessor.setProperty(IDs::name, MidiOutputProcessor::name(), nullptr);
+                midiOutputProcessor.setProperty(IDs::allowDefaultConnections, true, nullptr);
                 midiOutputProcessor.setProperty(IDs::deviceName, deviceName, nullptr);
                 output.addChild(midiOutputProcessor, -1, nullptr);
             }
