@@ -61,6 +61,13 @@ public:
         g.setColour(findColour(ResizableWindow::backgroundColourId).brighter(0.15));
         for (int i = 0; i < getNumAvailableSlots(); i++)
             g.drawRect(isMasterTrack() ? r.removeFromLeft(getCellSize()) : r.removeFromTop(cellSizes[i]));
+        if (!project.getMixerChannelProcessorForTrack(parent).isValid()) {
+            auto r = getLocalBounds().reduced(1);
+            g.setColour(findColour(ResizableWindow::backgroundColourId).brighter(0.05));
+            g.fillRect(isMasterTrack()
+                       ? r.removeFromRight(getCellSize())
+                       : r.removeFromBottom(cellSizes[getNumAvailableSlots() - 1]));
+        }
     }
 
     bool isSuitableType(const ValueTree &v) const override {
