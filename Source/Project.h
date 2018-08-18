@@ -145,10 +145,10 @@ public:
         return mixerChannelProcessor.isValid() ? track.indexOf(mixerChannelProcessor) : track.getNumChildren() - 1;
     }
 
-    Array<ValueTree> getConnectionsForNode(AudioProcessorGraph::NodeID nodeId, bool audio=true, bool midi=true, bool incoming=true, bool outgoing=true, bool includeCustom=true) {
+    Array<ValueTree> getConnectionsForNode(AudioProcessorGraph::NodeID nodeId, bool audio=true, bool midi=true, bool incoming=true, bool outgoing=true, bool includeCustom=true, bool includeDefault=true) {
         Array<ValueTree> nodeConnections;
         for (const auto& connection : connections) {
-            if (connection[IDs::isCustomConnection] && !includeCustom)
+            if ((connection[IDs::isCustomConnection] && !includeCustom) || (!connection[IDs::isCustomConnection] && !includeDefault))
                 continue;
 
             const auto &connectionType = connection.getChildWithProperty(IDs::nodeId, int(nodeId));

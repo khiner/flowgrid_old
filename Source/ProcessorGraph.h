@@ -69,7 +69,7 @@ public:
         activePluginWindows.clear();
         return !wasEmpty;
     }
-    
+
     void beginDraggingNode(NodeID nodeId, const Point<int> &trackAndSlot) {
         if (auto* processorWrapper = getProcessorWrapperForNodeId(nodeId)) {
             if (processorWrapper->processor->getName() == MixerChannelProcessor::name())
@@ -106,6 +106,11 @@ public:
             project.restoreConnectionsSnapshot();
             currentlyDraggingNodeId = NA_NODE_ID;
             moveProcessor(processor->state, currentlyDraggingTrackAndSlot.x, currentlyDraggingTrackAndSlot.y);
+            if (project.isInShiftMode()) {
+                project.setShiftMode(false);
+                makeInvalidDefaultConnectionsCustom(processor->state);
+                project.setShiftMode(true);
+            }
         }
         currentlyDraggingNodeId = NA_NODE_ID;
     }
@@ -183,7 +188,7 @@ public:
     enum ConnectionType { audio, midi, all };
 
     void connectDefaults(NodeID nodeId) {
-        addDefaultConnections(getProcessorWrapperForNodeId(nodeId)->state);
+        updateDefaultConnections(getProcessorWrapperForNodeId(nodeId)->state);
     }
 
     bool disconnectNode(NodeID nodeId) override {
@@ -198,8 +203,8 @@ public:
         return doDisconnectNode(nodeId, connectionType, true, false, false, true);
     }
 
-    bool disconnectDefaultIncoming(NodeID nodeId) {
-        return doDisconnectNode(nodeId, all, true, false, true, false);
+    bool disconnectDefaultIncoming(NodeID nodeId, ConnectionType connectionType) {
+        return doDisconnectNode(nodeId, connectionType, true, false, true, false);
     }
 
     bool disconnectCustom(NodeID nodeId) {
@@ -375,10 +380,10 @@ private:
         }
     }
 
-    void addDefaultConnections(const ValueTree &processor) {
+    void updateDefaultConnections(const ValueTree &processor) {
         disconnectDefaultExternalInputs();
-        addDefaultConnections(processor, audio);
-        addDefaultConnections(processor, midi);
+        updateDefaultConnections(processor, audio);
+        updateDefaultConnections(processor, midi);
         connectDefaultExternalInputs(project.getSelectedProcessor());
     }
 
@@ -389,26 +394,41 @@ private:
         connectDefaultExternalInputs(project.getSelectedProcessor());
     }
 
-    void addDefaultConnections(const ValueTree &processor, ConnectionType connectionType) {
+    void updateDefaultConnections(const ValueTree &processor, ConnectionType connectionType) {
         const auto& defaultConnectionChannels = getDefaultConnectionChannels(connectionType);
-        const NeighborNodes &neighbors = findNeighborProcessors(processor, connectionType);
         auto nodeId = getNodeIdForState(processor);
-        for (auto before : neighbors.before) {
-            disconnectDefaultOutgoing(before, connectionType);
+
+        bool alreadyHasOutgoingCustomConnections = !project.getConnectionsForNode(nodeId, connectionType == audio, connectionType == midi,
+                                                                                  false, true, true, false).isEmpty();
+        const auto& shouldBeConnected = findNeighborProcessors(processor, connectionType, {}, true, !alreadyHasOutgoingCustomConnections);
+        const auto& alreadyConnected = getDefaultConnectedNeighbors(processor, connectionType);
+
+        if (alreadyConnected.after != shouldBeConnected.after) {
             for (auto channel : defaultConnectionChannels) {
-                addDefaultConnection({{before, channel}, {nodeId, channel}});
+                removeDefaultConnection({{nodeId, channel}, {alreadyConnected.after, channel}});
+                addDefaultConnection({{nodeId, channel}, {shouldBeConnected.after, channel}});
             }
         }
-        if (neighbors.after != NA_NODE_ID) {
-            for (auto channel : defaultConnectionChannels) {
-                addDefaultConnection({{nodeId, channel}, {neighbors.after, channel}});
+        for (const auto alreadyConnectedNodeId : alreadyConnected.before) {
+            if (!shouldBeConnected.before.contains(alreadyConnectedNodeId)) {
+                for (auto channel : defaultConnectionChannels) {
+                    removeDefaultConnection({{alreadyConnectedNodeId, channel}, {nodeId, channel}});
+                }
+            }
+        }
+        for (const auto shouldBeConnectedNodeId : shouldBeConnected.before) {
+            if (!alreadyConnected.before.contains(shouldBeConnectedNodeId)) {
+                disconnectDefaultOutgoing(shouldBeConnectedNodeId, connectionType);
+                for (auto channel : defaultConnectionChannels) {
+                    addDefaultConnection({{shouldBeConnectedNodeId, channel}, {nodeId, channel}});
+                }
             }
         }
     }
 
     void removeDefaultConnections(const ValueTree &processor, ConnectionType connectionType) {
         auto nodeId = getNodeIdForState(processor);
-        const NeighborNodes &neighbors = getDefaultConnectedNeighbors(processor, connectionType);
+        const auto& neighbors = getDefaultConnectedNeighbors(processor, connectionType);
         disconnectDefaults(nodeId);
 
         const auto& defaultConnectionChannels = getDefaultConnectionChannels(connectionType);
@@ -420,6 +440,35 @@ private:
                     addDefaultConnection({{before, channel}, {neighborsForBeforeNode.after, channel}});
                 }
             }
+        }
+    }
+
+    void makeInvalidDefaultConnectionsCustom(const ValueTree &processor) {
+        auto nodeId = getNodeIdForState(processor);
+        Array<Connection> invalidConnections;
+        for (ConnectionType type : {audio, midi}) {
+            const auto& defaultConnectionChannels = getDefaultConnectionChannels(type);
+            const auto& alreadyConnected = getDefaultConnectedNeighbors(processor, type);
+            const auto& shouldBeConnected = findNeighborProcessors(processor, type);
+
+            if (alreadyConnected.after != shouldBeConnected.after) {
+                for (auto channel : defaultConnectionChannels) {
+                    invalidConnections.add({{nodeId, channel}, {alreadyConnected.after, channel}});
+                }
+            }
+            for (const auto alreadyConnectedNodeId : alreadyConnected.before) {
+                if (!shouldBeConnected.before.contains(alreadyConnectedNodeId)) {
+                    for (auto channel : defaultConnectionChannels) {
+                        invalidConnections.add({{alreadyConnectedNodeId, channel}, {nodeId, channel}});
+                    }
+                }
+            }
+        }
+        for (auto& connection : invalidConnections) {
+            project.removeConnection(connection, true, false);
+        }
+        for (auto& connection : invalidConnections) {
+            project.addConnection(connection, &undoManager, false);
         }
     }
 
@@ -564,8 +613,7 @@ private:
                 disconnectDefaultExternalInputs();
                 connectDefaultExternalInputs(tree);
             } else if (i == IDs::processorSlot) {
-                removeDefaultConnections(tree);
-                addDefaultConnections(tree);
+                updateDefaultConnections(tree);
             }
         }
     }
@@ -586,7 +634,7 @@ private:
                     child.sendPropertyChangeMessage(IDs::selected);
                 }
             }
-            addDefaultConnections(child);
+            updateDefaultConnections(child);
         } else if (child.hasType(IDs::CONNECTION)) {
             if (currentlyDraggingNodeId == NA_NODE_ID) {
                 const ValueTree &sourceState = child.getChildWithName(IDs::SOURCE);
@@ -601,6 +649,9 @@ private:
                         dest->inputs.add({source, sourceChannel, destChannel});
                         topologyChanged();
                     }
+                }
+                if (child.hasProperty(IDs::isCustomConnection)) {
+                    updateDefaultConnections(getProcessorWrapperForState(sourceState)->state);
                 }
             }
         } else if (child.hasType(IDs::TRACK) || child.hasType(IDs::MASTER_TRACK)) {
@@ -640,6 +691,9 @@ private:
                         dest->inputs.removeAllInstancesOf({source, sourceChannel, destChannel});
                         topologyChanged();
                     }
+                }
+                if (child.hasProperty(IDs::isCustomConnection)) {
+                    updateDefaultConnections(getProcessorWrapperForState(sourceState)->state);
                 }
             }
         } else if (child.hasType(IDs::CHANNEL)) {
