@@ -65,7 +65,7 @@ public:
     }
 
     void valueTreeChildRemoved(ValueTree &exParent, ValueTree &tree, int) override {
-        if (tree.hasType(IDs::MASTER_TRACK) || tree.hasType(IDs::TRACK) || tree.hasType(IDs::PROCESSOR)) {
+        if (tree.hasType(IDs::TRACK) || tree.hasType(IDs::PROCESSOR)) {
             if (!project.getSelectedTrack().isValid()) {
                 addProcessorButton.setVisible(false);
                 processorEditor->setVisible(false);
@@ -95,7 +95,7 @@ private:
 
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {
         if (i == IDs::selected && tree[IDs::selected]) {
-            addProcessorButton.setVisible(tree.hasType(IDs::PROCESSOR) || tree.hasType(IDs::TRACK) || tree.hasType(IDs::MASTER_TRACK));
+            addProcessorButton.setVisible(tree.hasType(IDs::PROCESSOR) || tree.hasType(IDs::TRACK));
 
             if (tree.hasType(IDs::PROCESSOR)) {
                 if (auto *processorWrapper = audioGraphBuilder.getProcessorWrapperForState(tree)) {

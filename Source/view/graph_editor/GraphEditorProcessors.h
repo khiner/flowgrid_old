@@ -26,7 +26,7 @@ public:
         freeObjects();
     }
 
-    bool isMasterTrack() const { return parent.hasType(IDs::MASTER_TRACK); }
+    bool isMasterTrack() const { return parent.hasProperty(IDs::isMasterTrack); }
 
     int getNumAvailableSlots() const { return Project::NUM_AVAILABLE_PROCESSOR_SLOTS + (isMasterTrack() ? 1 : 0); }
 

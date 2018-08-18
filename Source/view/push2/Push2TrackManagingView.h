@@ -31,7 +31,7 @@ public:
 
     void belowScreenButtonPressed(int buttonIndex) override {
         auto track = project.getTrack(buttonIndex);
-        if (track.isValid() && !track.hasType(IDs::MASTER_TRACK)) {
+        if (track.isValid() && !track.hasProperty(IDs::isMasterTrack)) {
             track.setProperty(IDs::selected, true, nullptr);
         }
     }
@@ -61,25 +61,25 @@ protected:
     virtual void trackSelected(const ValueTree &track) { updateEnabledPush2Buttons(); }
 
     void valueTreeChildAdded(ValueTree &parent, ValueTree& child) override {
-        if (child.hasType(IDs::MASTER_TRACK) || child.hasType(IDs::TRACK)) {
+        if (child.hasType(IDs::TRACK)) {
             trackAdded(child);
         }
     }
 
     void valueTreeChildRemoved(ValueTree &exParent, ValueTree& child, int index) override {
-        if (child.hasType(IDs::MASTER_TRACK) || child.hasType(IDs::TRACK)) {
+        if (child.hasType(IDs::TRACK)) {
             trackRemoved(child);
         }
     }
 
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {
-        if (tree.hasType(IDs::MASTER_TRACK) || tree.hasType(IDs::TRACK)) {
+        if (tree.hasType(IDs::TRACK)) {
             if (i == IDs::name || i == IDs::colour) {
                 int trackIndex = tree.getParent().indexOf(tree);
                 if (trackIndex == -1)
                     return;
                 jassert(trackIndex < trackLabels.size()); // TODO left/right buttons
-                if (i == IDs::name && !tree.hasType(IDs::MASTER_TRACK)) {
+                if (i == IDs::name && !tree.hasProperty(IDs::isMasterTrack)) {
                     trackLabels.getUnchecked(trackIndex)->setText(tree[IDs::name], dontSendNotification);
                 }
             } else if (i == IDs::selected && tree[IDs::selected]) {
@@ -101,7 +101,7 @@ protected:
 protected:
     void trackColourChanged(const String &trackUuid, const Colour &colour) override {
         auto track = project.findTrackWithUuid(trackUuid);
-        if (!track.hasType(IDs::MASTER_TRACK)) {
+        if (!track.hasProperty(IDs::isMasterTrack)) {
             trackLabels.getUnchecked(track.getParent().indexOf(track))->setMainColour(colour);
         }
 

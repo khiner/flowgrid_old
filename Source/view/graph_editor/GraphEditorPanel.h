@@ -223,7 +223,7 @@ private:
     }
 
     void valueTreeChildAdded(ValueTree& parent, ValueTree& child) override {
-        if (child.hasType(IDs::TRACK) || child.hasType(IDs::MASTER_TRACK)) {
+        if (child.hasType(IDs::TRACK)) {
             resized();
         } else if (child.hasType(IDs::PROCESSOR)) {
             if (child[IDs::name] == MidiInputProcessor::name()) {
@@ -248,7 +248,7 @@ private:
     }
 
     void valueTreeChildRemoved(ValueTree& parent, ValueTree& child, int indexFromWhichChildWasRemoved) override {
-        if (child.hasType(IDs::TRACK) || child.hasType(IDs::MASTER_TRACK)) {
+        if (child.hasType(IDs::TRACK)) {
             resized();
         } else if (child.hasType(IDs::PROCESSOR)) {
             if (child[IDs::name] == MidiInputProcessor::name()) {

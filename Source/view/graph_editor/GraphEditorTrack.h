@@ -50,7 +50,7 @@ public:
     }
 
     bool isMasterTrack() const {
-        return state.hasType(IDs::MASTER_TRACK);
+        return state.hasProperty(IDs::isMasterTrack);
     }
 
     int getTrackIndex() const {

@@ -56,7 +56,7 @@ private:
     }
 
     void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override {
-        if (child.hasType(IDs::MASTER_TRACK) || child.hasType(IDs::TRACK)) {
+        if (child.hasType(IDs::TRACK)) {
             const String& uuid = child[IDs::uuid];
             const auto &colour = Colour::fromString(child[IDs::colour].toString());
             auto index = findIndexForColourAddingIfNeeded(colour);
@@ -66,7 +66,7 @@ private:
     }
 
     void valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int) override {
-        if (child.hasType(IDs::MASTER_TRACK) || child.hasType(IDs::TRACK)) {
+        if (child.hasType(IDs::TRACK)) {
             const auto &uuid = child[IDs::uuid].toString();
             auto index = indexForTrackUuid[uuid];
             availableColourIndexes.add(index);
@@ -75,7 +75,7 @@ private:
     }
 
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {
-        if (tree.hasType(IDs::MASTER_TRACK) || tree.hasType(IDs::TRACK)) {
+        if (tree.hasType(IDs::TRACK)) {
             if (i == IDs::colour) {
                 const String& uuid = tree[IDs::uuid];
                 auto index = indexForTrackUuid[uuid];

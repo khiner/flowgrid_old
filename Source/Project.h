@@ -78,7 +78,7 @@ public:
 
     ValueTree getTrack(int trackIndex) { return tracks.getChild(trackIndex); }
 
-    ValueTree getMasterTrack() { return tracks.getChildWithName(IDs::MASTER_TRACK); }
+    ValueTree getMasterTrack() { return tracks.getChildWithProperty(IDs::isMasterTrack, true); }
 
     ValueTree getSelectedProcessor() {
         for (const auto& track : tracks) {
@@ -276,7 +276,7 @@ public:
         if (!v.isValid())
             return;
         if (v.getParent().isValid()) {
-            if (v.hasType(IDs::TRACK) || v.hasType(IDs::MASTER_TRACK)) {
+            if (v.hasType(IDs::TRACK)) {
                 while (v.getNumChildren() > 0)
                     deleteItem(v.getChild(v.getNumChildren() - 1), undoable);
             }
@@ -293,7 +293,8 @@ public:
     void createDefaultProject() {
         createAudioIoProcessors();
 
-        ValueTree masterTrack(IDs::MASTER_TRACK);
+        ValueTree masterTrack(IDs::TRACK);
+        masterTrack.setProperty(IDs::isMasterTrack, true, nullptr);
         masterTrack.setProperty(IDs::name, "Master", nullptr);
         masterTrack.setProperty(IDs::colour, Colours::darkslateblue.toString(), nullptr);
         tracks.addChild(masterTrack, -1, nullptr);
@@ -396,7 +397,7 @@ public:
     }
 
     int maxSlotForTrack(const ValueTree& track) {
-        return NUM_AVAILABLE_PROCESSOR_SLOTS - (track.hasType(IDs::MASTER_TRACK) ? 0 : 1);
+        return NUM_AVAILABLE_PROCESSOR_SLOTS - (track.hasProperty(IDs::isMasterTrack) ? 0 : 1);
     }
 
     void makeSlotsValid(const ValueTree& parent, UndoManager* undoManager) {

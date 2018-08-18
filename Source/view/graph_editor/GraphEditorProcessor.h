@@ -102,7 +102,7 @@ public:
     }
 
     void mouseDown(const MouseEvent &e) override {
-        if (state.getParent().hasType(IDs::TRACK) || state.getParent().hasType(IDs::MASTER_TRACK))
+        if (state.getParent().hasType(IDs::TRACK))
             setSelected(true);
         if (e.mods.isPopupMenu())
             showPopupMenu();

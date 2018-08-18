@@ -588,7 +588,7 @@ private:
                     updateDefaultConnectionsForProcessor(processor, true);
                 }
             }
-        } else if (child.hasType(IDs::TRACK) || child.hasType(IDs::MASTER_TRACK)) {
+        } else if (child.hasType(IDs::TRACK)) {
             recursivelyInitializeState(child);
         } else if (child.hasType(IDs::CHANNEL)) {
             updateIoChannelEnabled(parent, child, true);

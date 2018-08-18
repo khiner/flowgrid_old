@@ -16,8 +16,6 @@ namespace IDs
     DECLARE_ID(MIDI_INPUT)
     DECLARE_ID(MIDI_OUTPUT)
 
-    DECLARE_ID(MASTER_TRACK)
-
     DECLARE_ID(PROJECT)
     DECLARE_ID(uuid)
     DECLARE_ID(mediaId)
@@ -27,6 +25,7 @@ namespace IDs
     DECLARE_ID(name)
     DECLARE_ID(image)
     DECLARE_ID(selected)
+    DECLARE_ID(isMasterTrack)
 
     DECLARE_ID(PROCESSOR)
     DECLARE_ID(processorInitialized)

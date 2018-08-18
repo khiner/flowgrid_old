@@ -238,7 +238,7 @@ private:
     }
 
     void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override {
-        if (child.hasType(IDs::MASTER_TRACK) || child.hasType(IDs::TRACK) || child.hasType(IDs::PROCESSOR)) {
+        if (child.hasType(IDs::TRACK) || child.hasType(IDs::PROCESSOR)) {
             updatePush2SelectionDependentButtons();
         } else if (child.hasType(IDs::CONNECTION)) {
             updatePush2NoteModePadLedManagerVisibility();
@@ -246,7 +246,7 @@ private:
     }
 
     void valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int) override {
-        if (child.hasType(IDs::MASTER_TRACK) || child.hasType(IDs::TRACK) || child.hasType(IDs::PROCESSOR)) {
+        if (child.hasType(IDs::TRACK) || child.hasType(IDs::PROCESSOR)) {
             updatePush2SelectionDependentButtons();
             if (!project.getSelectedTrack().isValid()) {
                 selectChild(nullptr);
