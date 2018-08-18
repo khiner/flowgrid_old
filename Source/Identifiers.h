@@ -37,6 +37,7 @@ namespace IDs
     DECLARE_ID(producesMidi)
     DECLARE_ID(deviceName)
     DECLARE_ID(state)
+    DECLARE_ID(allowDefaultConnections)
 
     DECLARE_ID(INPUT_CHANNELS)
     DECLARE_ID(OUTPUT_CHANNELS)

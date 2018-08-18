@@ -207,9 +207,9 @@ public:
             menu->addItem(TOGGLE_BYPASS_MENU_ID, "Toggle Bypass");
         }
         menu->addSeparator();
-        menu->addItem(CONNECT_DEFAULTS_MENU_ID, "Connect all defaults");
+        menu->addItem(ALLOW_DEFAULTS_MENU_ID, "Allow default connections");
+        menu->addItem(DISALLOW_DEFAULTS_MENU_ID, "Disallow default connections");
         menu->addItem(DISCONNECT_ALL_MENU_ID, "Disconnect all");
-        menu->addItem(DISCONNECT_DEFAULTS_MENU_ID, "Disconnect all defaults");
         menu->addItem(DISCONNECT_CUSTOM_MENU_ID, "Disconnect all custom");
 
         if (getProcessor()->hasEditor()) {
@@ -227,14 +227,14 @@ public:
                         case TOGGLE_BYPASS_MENU_ID:
                             state.setProperty(IDs::bypassed, !state.getProperty(IDs::bypassed), &graph.undoManager);
                             break;
-                        case CONNECT_DEFAULTS_MENU_ID:
-                            graph.connectDefaults(getNodeId());
+                        case ALLOW_DEFAULTS_MENU_ID:
+                            graph.setDefaultConnectionsAllowed(getNodeId(), true);
                             break;
                         case DISCONNECT_ALL_MENU_ID:
                             graph.disconnectNode(getNodeId());
                             break;
-                        case DISCONNECT_DEFAULTS_MENU_ID:
-                            graph.disconnectDefaults(getNodeId());
+                        case DISALLOW_DEFAULTS_MENU_ID:
+                            graph.setDefaultConnectionsAllowed(getNodeId(), false);
                             break;
                         case DISCONNECT_CUSTOM_MENU_ID:
                             graph.disconnectCustom(getNodeId());
@@ -282,8 +282,8 @@ private:
     std::unique_ptr<PopupMenu> menu;
 
     static constexpr int
-            DELETE_MENU_ID = 1, TOGGLE_BYPASS_MENU_ID = 2, CONNECT_DEFAULTS_MENU_ID = 3, DISCONNECT_ALL_MENU_ID = 4,
-            DISCONNECT_DEFAULTS_MENU_ID = 5, DISCONNECT_CUSTOM_MENU_ID = 6,
+            DELETE_MENU_ID = 1, TOGGLE_BYPASS_MENU_ID = 2, ALLOW_DEFAULTS_MENU_ID = 3, DISCONNECT_ALL_MENU_ID = 4,
+            DISALLOW_DEFAULTS_MENU_ID = 5, DISCONNECT_CUSTOM_MENU_ID = 6,
             SHOW_PLUGIN_GUI_MENU_ID = 10, SHOW_ALL_PROGRAMS_MENU_ID = 11, CONFIGURE_AUDIO_MIDI_MENU_ID = 12;
 
     Rectangle<int> getBoxBounds() {

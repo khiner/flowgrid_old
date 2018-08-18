@@ -30,6 +30,10 @@ struct GraphEditorPin : public Component, public SettableTooltipClient, private 
         return getChannel() == AudioProcessorGraph::midiChannelIndex;
     }
 
+    bool allowDefaultConnections() {
+        return state.getParent().getParent()[IDs::allowDefaultConnections];
+    }
+
     AudioProcessorGraph::NodeAndChannel getPin() {
         return {ProcessorGraph::getNodeIdForState(state.getParent().getParent()), getChannel()};
     }
@@ -42,7 +46,7 @@ struct GraphEditorPin : public Component, public SettableTooltipClient, private 
         p.addEllipse(w * 0.25f, h * 0.25f, w * 0.5f, h * 0.5f);
         p.addRectangle(w * 0.4f, isInput() ? (0.5f * h) : 0.0f, w * 0.2f, h * 0.5f);
 
-        auto colour = (isMidi() ? Colours::red : Colours::green);
+        auto colour = (isMidi() ? Colours::red : (allowDefaultConnections() ? Colours::green : Colours::yellowgreen));
 
         g.setColour(colour.withRotatedHue(busIdx / 5.0f));
         g.fillPath(p);

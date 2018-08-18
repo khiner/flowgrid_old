@@ -352,6 +352,7 @@ public:
         ValueTree processor(IDs::PROCESSOR);
         processor.setProperty(IDs::id, description.createIdentifierString(), nullptr);
         processor.setProperty(IDs::name, description.name, nullptr);
+        processor.setProperty(IDs::allowDefaultConnections, true, nullptr);
         processor.setProperty(IDs::selected, true, nullptr);
 
         // TODO can simplify
@@ -377,28 +378,6 @@ public:
         sendProcessorCreatedMessage(processor);
 
         return processor;
-    }
-
-    void makeSlotsValid(const ValueTree& parent, UndoManager *undoManager) {
-        std::__1::vector<int> slots;
-        for (const ValueTree& child : parent) {
-            if (child.hasType(IDs::PROCESSOR)) {
-                slots.push_back(int(child[IDs::processorSlot]));
-            }
-        }
-        sort(slots.begin(), slots.end());
-        for (int i = 1; i < slots.size(); i++) {
-            while (slots[i] <= slots[i - 1]) {
-                slots[i] += 1;
-            }
-        }
-
-        auto iterator = slots.begin();
-        for (ValueTree child : parent) {
-            if (child.hasType(IDs::PROCESSOR)) {
-                child.setProperty(IDs::processorSlot, *(iterator++), undoManager);
-            }
-        }
     }
 
     int getParentIndexForProcessor(const ValueTree &parent, const ValueTree &processorState, UndoManager* undoManager) {
@@ -621,6 +600,7 @@ private:
             ValueTree inputProcessor(IDs::PROCESSOR);
             inputProcessor.setProperty(IDs::id, audioInputDescription.createIdentifierString(), nullptr);
             inputProcessor.setProperty(IDs::name, audioInputDescription.name, nullptr);
+            inputProcessor.setProperty(IDs::allowDefaultConnections, true, nullptr);
             input.addChild(inputProcessor, -1, nullptr);
         }
         {
@@ -628,6 +608,7 @@ private:
             ValueTree outputProcessor(IDs::PROCESSOR);
             outputProcessor.setProperty(IDs::id, audioOutputDescription.createIdentifierString(), nullptr);
             outputProcessor.setProperty(IDs::name, audioOutputDescription.name, nullptr);
+            outputProcessor.setProperty(IDs::allowDefaultConnections, true, nullptr);
             output.addChild(outputProcessor, -1, nullptr);
         }
     }
@@ -686,6 +667,7 @@ private:
                 ValueTree midiInputProcessor(IDs::PROCESSOR);
                 midiInputProcessor.setProperty(IDs::id, MidiInputProcessor::getPluginDescription().createIdentifierString(), nullptr);
                 midiInputProcessor.setProperty(IDs::name, MidiInputProcessor::name(), nullptr);
+                midiInputProcessor.setProperty(IDs::allowDefaultConnections, true, nullptr);
                 midiInputProcessor.setProperty(IDs::deviceName, deviceName, nullptr);
                 input.addChild(midiInputProcessor, -1, nullptr);
             }

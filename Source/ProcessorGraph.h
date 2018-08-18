@@ -108,7 +108,7 @@ public:
             moveProcessor(processor->state, currentlyDraggingTrackAndSlot.x, currentlyDraggingTrackAndSlot.y);
             if (project.isInShiftMode()) {
                 project.setShiftMode(false);
-                makeInvalidDefaultConnectionsCustom(processor->state);
+                updateAllDefaultConnections(true);
                 project.setShiftMode(true);
             }
         }
@@ -126,7 +126,31 @@ public:
         const int insertIndex = project.getParentIndexForProcessor(toTrack, processorState, getDragDependentUndoManager());
         Helpers::moveSingleItem(processorState, toTrack, insertIndex, getDragDependentUndoManager());
 
-        project.makeSlotsValid(toTrack, getDragDependentUndoManager());
+        makeSlotsValid(toTrack);
+        updateAllDefaultConnections();
+    }
+
+    void makeSlotsValid(const ValueTree& parent) {
+        std::vector<int> slots;
+        for (const ValueTree& child : parent) {
+            if (child.hasType(IDs::PROCESSOR)) {
+                slots.push_back(int(child[IDs::processorSlot]));
+            }
+        }
+        sort(slots.begin(), slots.end());
+        for (int i = 1; i < slots.size(); i++) {
+            while (slots[i] <= slots[i - 1]) {
+                slots[i] += 1;
+            }
+        }
+
+        auto iterator = slots.begin();
+        for (ValueTree child : parent) {
+            if (child.hasType(IDs::PROCESSOR)) {
+                int newSlot = *(iterator++);
+                child.setProperty(IDs::processorSlot, newSlot, getDragDependentUndoManager());
+            }
+        }
     }
 
     bool canConnectUi(const Connection& c) const {
@@ -181,14 +205,23 @@ public:
         return false;
     }
 
+    bool addCustomConnection(const Connection& c, UndoManager* undoManager) {
+        if (canConnectUi(c)) {
+            project.addConnection(c, undoManager, false);
+            return true;
+        }
+        return false;
+    }
+
     bool removeDefaultConnection(const Connection& c) {
         return project.removeConnection(c, true, false);
     }
 
     enum ConnectionType { audio, midi, all };
 
-    void connectDefaults(NodeID nodeId) {
-        updateDefaultConnections(getProcessorWrapperForNodeId(nodeId)->state);
+    void setDefaultConnectionsAllowed(NodeID nodeId, bool defaultConnectionsAllowed) {
+        auto &processor = getProcessorWrapperForNodeId(nodeId)->state;
+        processor.setProperty(IDs::allowDefaultConnections, defaultConnectionsAllowed, &undoManager);
     }
 
     bool disconnectNode(NodeID nodeId) override {
@@ -213,9 +246,9 @@ public:
 
     bool removeNode(NodeID nodeId) override  {
         if (auto* processorWrapper = getProcessorWrapperForNodeId(nodeId)) {
-            removeDefaultConnections(processorWrapper->state);
             disconnectCustom(nodeId);
             processorWrapper->state.getParent().removeChild(processorWrapper->state, &undoManager);
+            updateAllDefaultConnections();
             return true;
         }
         return false;
@@ -318,11 +351,6 @@ private:
         }
     }
 
-    struct NeighborNodes {
-        Array<NodeID> before {};
-        NodeID after = NA_NODE_ID;
-    };
-
     ValueTree findRightmostProcessorParent(const ValueTree &processor, ConnectionType connectionType) {
         auto nodeId = getNodeIdForState(processor);
         Array<ValueTree> connections = project.getConnectionsForNode(nodeId, connectionType == audio, connectionType == midi, true, false);
@@ -339,30 +367,23 @@ private:
         return rightmostProcessorAncestor;
     }
 
-    void disconnectDefaultExternalInputs() {
+    void resetDefaultExternalInputs(const ValueTree &selectedProcessor) {
         auto audioInputNodeId = getNodeIdForState(project.getAudioInputProcessorState());
         disconnectDefaultOutgoing(audioInputNodeId, audio);
-        for (const auto& midiInputProcessor : project.getInput())
-            if (midiInputProcessor.getProperty(IDs::name) == MidiInputProcessor::name())
-                disconnectDefaultOutgoing(getNodeIdForState(midiInputProcessor), midi);
-    }
-
-    void connectDefaultExternalInputs(const ValueTree &selectedProcessor) {
-        if (!selectedProcessor.isValid())
-            return;
-        auto audioInputNodeId = getNodeIdForState(project.getAudioInputProcessorState());
-        addDefaultExternalInputConnections(selectedProcessor, audioInputNodeId, audio, getDragDependentUndoManager());
+        if (selectedProcessor.isValid())
+            addDefaultExternalInputConnections(selectedProcessor, audioInputNodeId, audio, getDragDependentUndoManager());
         for (const auto& midiInputProcessor : project.getInput()) {
             if (midiInputProcessor.getProperty(IDs::name) == MidiInputProcessor::name()) {
                 auto nodeId = getNodeIdForState(midiInputProcessor);
-                addDefaultExternalInputConnections(selectedProcessor, nodeId, midi, getDragDependentUndoManager());
+                disconnectDefaultOutgoing(nodeId, midi);
+                if (selectedProcessor.isValid())
+                    addDefaultExternalInputConnections(selectedProcessor, nodeId, midi, getDragDependentUndoManager());
             }
         }
     }
 
     void addDefaultExternalInputConnections(const ValueTree &selectedProcessor,
-                                            NodeID externalSourceNodeId, ConnectionType connectionType,
-                                            UndoManager* undoManager) {
+                                            NodeID externalSourceNodeId, ConnectionType connectionType, UndoManager* undoManager) {
         const auto &defaultConnectionChannels = getDefaultConnectionChannels(connectionType);
 
         // Find the furthest-upstream ancestor of the selected processor. If that processor accepts inputs,
@@ -372,7 +393,7 @@ private:
             rightmostEffectProcessorAncestor = parent;
         }
 
-        if (isProcessorAnEffect(rightmostEffectProcessorAncestor, connectionType)) {
+        if (isProcessorAnEffect(rightmostEffectProcessorAncestor, connectionType) && rightmostEffectProcessorAncestor[IDs::allowDefaultConnections]) {
             auto nodeId = getNodeIdForState(rightmostEffectProcessorAncestor);
             for (auto channel : defaultConnectionChannels) {
                 addDefaultConnection({{externalSourceNodeId, channel}, {nodeId, channel}});
@@ -380,145 +401,8 @@ private:
         }
     }
 
-    void updateDefaultConnections(const ValueTree &processor) {
-        disconnectDefaultExternalInputs();
-        updateDefaultConnections(processor, audio);
-        updateDefaultConnections(processor, midi);
-        connectDefaultExternalInputs(project.getSelectedProcessor());
-    }
-
-    void removeDefaultConnections(const ValueTree &processor) {
-        disconnectDefaultExternalInputs();
-        removeDefaultConnections(processor, audio);
-        removeDefaultConnections(processor, midi);
-        connectDefaultExternalInputs(project.getSelectedProcessor());
-    }
-
-    void updateDefaultConnections(const ValueTree &processor, ConnectionType connectionType) {
-        const auto& defaultConnectionChannels = getDefaultConnectionChannels(connectionType);
-        auto nodeId = getNodeIdForState(processor);
-
-        bool alreadyHasOutgoingCustomConnections = !project.getConnectionsForNode(nodeId, connectionType == audio, connectionType == midi,
-                                                                                  false, true, true, false).isEmpty();
-        const auto& shouldBeConnected = findNeighborProcessors(processor, connectionType, {}, true, !alreadyHasOutgoingCustomConnections);
-        const auto& alreadyConnected = getDefaultConnectedNeighbors(processor, connectionType);
-
-        if (alreadyConnected.after != shouldBeConnected.after) {
-            for (auto channel : defaultConnectionChannels) {
-                removeDefaultConnection({{nodeId, channel}, {alreadyConnected.after, channel}});
-                addDefaultConnection({{nodeId, channel}, {shouldBeConnected.after, channel}});
-            }
-        }
-        for (const auto alreadyConnectedNodeId : alreadyConnected.before) {
-            if (!shouldBeConnected.before.contains(alreadyConnectedNodeId)) {
-                for (auto channel : defaultConnectionChannels) {
-                    removeDefaultConnection({{alreadyConnectedNodeId, channel}, {nodeId, channel}});
-                }
-            }
-        }
-        for (const auto shouldBeConnectedNodeId : shouldBeConnected.before) {
-            if (!alreadyConnected.before.contains(shouldBeConnectedNodeId)) {
-                disconnectDefaultOutgoing(shouldBeConnectedNodeId, connectionType);
-                for (auto channel : defaultConnectionChannels) {
-                    addDefaultConnection({{shouldBeConnectedNodeId, channel}, {nodeId, channel}});
-                }
-            }
-        }
-    }
-
-    void removeDefaultConnections(const ValueTree &processor, ConnectionType connectionType) {
-        auto nodeId = getNodeIdForState(processor);
-        const auto& neighbors = getDefaultConnectedNeighbors(processor, connectionType);
-        disconnectDefaults(nodeId);
-
-        const auto& defaultConnectionChannels = getDefaultConnectionChannels(connectionType);
-        for (auto before : neighbors.before) {
-            const auto &beforeState = getProcessorWrapperForNodeId(before)->state;
-            const NeighborNodes &neighborsForBeforeNode = findNeighborProcessors(beforeState, connectionType, processor, false, true);
-            if (neighborsForBeforeNode.after != NA_NODE_ID) {
-                for (auto channel : defaultConnectionChannels) {
-                    addDefaultConnection({{before, channel}, {neighborsForBeforeNode.after, channel}});
-                }
-            }
-        }
-    }
-
-    void makeInvalidDefaultConnectionsCustom(const ValueTree &processor) {
-        auto nodeId = getNodeIdForState(processor);
-        Array<Connection> invalidConnections;
-        for (ConnectionType type : {audio, midi}) {
-            const auto& defaultConnectionChannels = getDefaultConnectionChannels(type);
-            const auto& alreadyConnected = getDefaultConnectedNeighbors(processor, type);
-            const auto& shouldBeConnected = findNeighborProcessors(processor, type);
-
-            if (alreadyConnected.after != shouldBeConnected.after) {
-                for (auto channel : defaultConnectionChannels) {
-                    invalidConnections.add({{nodeId, channel}, {alreadyConnected.after, channel}});
-                }
-            }
-            for (const auto alreadyConnectedNodeId : alreadyConnected.before) {
-                if (!shouldBeConnected.before.contains(alreadyConnectedNodeId)) {
-                    for (auto channel : defaultConnectionChannels) {
-                        invalidConnections.add({{alreadyConnectedNodeId, channel}, {nodeId, channel}});
-                    }
-                }
-            }
-        }
-        for (auto& connection : invalidConnections) {
-            project.removeConnection(connection, true, false);
-        }
-        for (auto& connection : invalidConnections) {
-            project.addConnection(connection, &undoManager, false);
-        }
-    }
-
     inline const Array<int>& getDefaultConnectionChannels(ConnectionType connectionType) const {
         return connectionType == audio ? defaultAudioConnectionChannels : defaultMidiConnectionChannels;
-    }
-
-    NeighborNodes findNeighborProcessors(const ValueTree &processor, ConnectionType connectionType, const ValueTree& excluding={}, bool before=true, bool after=true) {
-        NeighborNodes neighborNodes {};
-        const auto& parent = processor.getParent();
-        
-        if (before) {
-            getAllNodesFlowingInto(parent, processor, neighborNodes.before, connectionType, excluding);
-        }
-        if (after) {
-            const ValueTree &afterNodeState = findProcessorToFlowInto(parent, processor, connectionType, excluding);
-            neighborNodes.after = getNodeIdForState(afterNodeState);
-        }
-
-        return neighborNodes;
-    }
-
-    NeighborNodes getDefaultConnectedNeighbors(const ValueTree &processor, ConnectionType connectionType, bool before = true, bool after = true) {
-        NeighborNodes neighborNodes {};
-        auto nodeId = getNodeIdForState(processor);
-        auto connections = project.getConnectionsForNode(nodeId, connectionType == audio, connectionType == midi, before, after, false);
-        for (const auto &connection : connections) {
-            if (getNodeIdForState(connection.getChildWithName(IDs::SOURCE)) == nodeId)
-                neighborNodes.after = getNodeIdForState(connection.getChildWithName(IDs::DESTINATION));
-            else if (getNodeIdForState(connection.getChildWithName(IDs::DESTINATION)) == nodeId && before)
-                neighborNodes.before.add(getNodeIdForState(connection.getChildWithName(IDs::SOURCE)));
-        }
-        return neighborNodes;
-    }
-
-    void getAllNodesFlowingInto(const ValueTree& parent, const ValueTree &processor, Array<NodeID>& nodes,
-                                ConnectionType connectionType, const ValueTree& excluding={}) {
-        if (!processor.hasType(IDs::PROCESSOR))
-            return;
-
-        int siblingDelta = 0;
-        ValueTree otherParent;
-        while ((otherParent = parent.getSibling(siblingDelta--)).isValid()) {
-            for (const auto &otherProcessor : otherParent) {
-                if (otherProcessor != excluding &&
-                    findProcessorToFlowInto(otherParent, otherProcessor, connectionType) == processor) {
-                    nodes.add(getNodeIdForState(otherProcessor));
-                }
-            }
-        }
     }
 
     const ValueTree findProcessorToFlowInto(const ValueTree &parent, const ValueTree &processor,
@@ -602,6 +486,64 @@ private:
         }
     }
     
+    void updateAllDefaultConnections(bool makeInvalidDefaultsIntoCustom=false) {
+        for (auto track : project.getTracks()) {
+            for (auto processor : track) {
+                updateDefaultConnectionsForProcessor(processor, false, makeInvalidDefaultsIntoCustom);
+            }
+        }
+        resetDefaultExternalInputs(project.getSelectedProcessor());
+    }
+    
+    void updateDefaultConnectionsForProcessor(const ValueTree &processor, bool updateExternalInputs, bool makeInvalidDefaultsIntoCustom=false) {
+        for (auto connectionType : {audio, midi}) {
+            NodeID nodeId = getNodeIdForState(processor);
+            if (!processor[IDs::allowDefaultConnections]) {
+                disconnectDefaults(nodeId);
+                return;
+            }
+            auto outgoingCustomConnections = project.getConnectionsForNode(nodeId, connectionType == audio,
+                                                                           connectionType == midi, false, true, true,
+                                                                           false);
+            if (!outgoingCustomConnections.isEmpty()) {
+                disconnectDefaultOutgoing(nodeId, connectionType);
+                return;
+            }
+            auto outgoingDefaultConnections = project.getConnectionsForNode(nodeId, connectionType == audio,
+                                                                            connectionType == midi, false, true, false,
+                                                                            true);
+            auto processorToConnectTo = findProcessorToFlowInto(processor.getParent(), processor, connectionType);
+            auto nodeIdToConnectTo = getNodeIdForState(processorToConnectTo);
+
+            const auto &defaultChannels = getDefaultConnectionChannels(connectionType);
+            bool anyCustomAdded = false;
+            for (const auto &connection : outgoingDefaultConnections) {
+                NodeID nodeIdCurrentlyConnectedTo = getNodeIdForState(connection.getChildWithName(IDs::DESTINATION));
+                if (nodeIdCurrentlyConnectedTo != nodeIdToConnectTo) {
+                    for (auto channel : defaultChannels) {
+                        removeDefaultConnection({{nodeId, channel}, {nodeIdCurrentlyConnectedTo, channel}});
+                    }
+                    if (makeInvalidDefaultsIntoCustom) {
+                        for (auto channel : defaultChannels) {
+                            if (addCustomConnection({{nodeId, channel}, {nodeIdCurrentlyConnectedTo, channel}}, &undoManager))
+                                anyCustomAdded = true;
+                        }
+                    }
+                }
+            }
+            if (!anyCustomAdded) {
+                if (processor[IDs::allowDefaultConnections] && processorToConnectTo[IDs::allowDefaultConnections]) {
+                    for (auto channel : defaultChannels) {
+                        addDefaultConnection({{nodeId, channel}, {nodeIdToConnectTo, channel}});
+                    }
+                }
+            }
+        }
+        if (updateExternalInputs) {
+            resetDefaultExternalInputs(project.getSelectedProcessor());
+        }
+    }
+    
     void valueTreePropertyChanged(ValueTree& tree, const Identifier& i) override {
         if (tree.hasType(IDs::PROCESSOR)) {
             if (i == IDs::bypassed) {
@@ -610,10 +552,11 @@ private:
                 }
             } else if (i == IDs::selected && tree[IDs::selected] && tree != lastSelectedProcessor) {
                 lastSelectedProcessor = tree;
-                disconnectDefaultExternalInputs();
-                connectDefaultExternalInputs(tree);
+                resetDefaultExternalInputs(tree);
             } else if (i == IDs::processorSlot) {
-                updateDefaultConnections(tree);
+                updateAllDefaultConnections();
+            } else if (i == IDs::allowDefaultConnections) {
+                updateDefaultConnectionsForProcessor(tree, true);
             }
         }
     }
@@ -629,12 +572,13 @@ private:
                     mutableProcessor.sendPropertyChangeMessage(IDs::processorInitialized);
                 else
                     mutableProcessor.setProperty(IDs::processorInitialized, true, nullptr);
+
                 if (child[IDs::selected]) {
                     lastSelectedProcessor = child;
                     child.sendPropertyChangeMessage(IDs::selected);
                 }
             }
-            updateDefaultConnections(child);
+            updateAllDefaultConnections();
         } else if (child.hasType(IDs::CONNECTION)) {
             if (currentlyDraggingNodeId == NA_NODE_ID) {
                 const ValueTree &sourceState = child.getChildWithName(IDs::SOURCE);
@@ -651,7 +595,8 @@ private:
                     }
                 }
                 if (child.hasProperty(IDs::isCustomConnection)) {
-                    updateDefaultConnections(getProcessorWrapperForState(sourceState)->state);
+                    const auto& processor = getProcessorWrapperForNodeId(getNodeIdForState(sourceState))->state;
+                    updateDefaultConnectionsForProcessor(processor, true);
                 }
             }
         } else if (child.hasType(IDs::TRACK) || child.hasType(IDs::MASTER_TRACK)) {
@@ -664,12 +609,13 @@ private:
 
     void valueTreeChildRemoved(ValueTree& parent, ValueTree& child, int indexFromWhichChildWasRemoved) override {
         if (child.hasType(IDs::PROCESSOR)) {
-            removeDefaultConnections(child);
+            disconnectDefaults(getNodeIdForState(child));
             if (currentlyDraggingNodeId == NA_NODE_ID) {
                 if (!isMoving) {
                     removeProcessor(child);
                 }
             }
+            updateAllDefaultConnections();
             for (int i = activePluginWindows.size(); --i >= 0;) {
                 if (!nodes.contains(activePluginWindows.getUnchecked(i)->node)) {
                     activePluginWindows.remove(i);
@@ -693,7 +639,8 @@ private:
                     }
                 }
                 if (child.hasProperty(IDs::isCustomConnection)) {
-                    updateDefaultConnections(getProcessorWrapperForState(sourceState)->state);
+                    const auto& processor = getProcessorWrapperForNodeId(getNodeIdForState(sourceState))->state;
+                    updateDefaultConnectionsForProcessor(processor, true);
                 }
             }
         } else if (child.hasType(IDs::CHANNEL)) {
