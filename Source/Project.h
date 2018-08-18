@@ -140,11 +140,6 @@ public:
     void setNoteMode() { viewState.setProperty(IDs::controlMode, noteControlMode, nullptr); }
     void setSessionMode() { viewState.setProperty(IDs::controlMode, sessionControlMode, nullptr); }
 
-    int getMaxProcessorInsertIndex(const ValueTree& track) {
-        const ValueTree &mixerChannelProcessor = getMixerChannelProcessorForTrack(track);
-        return mixerChannelProcessor.isValid() ? track.indexOf(mixerChannelProcessor) : track.getNumChildren() - 1;
-    }
-
     Array<ValueTree> getConnectionsForNode(AudioProcessorGraph::NodeID nodeId, bool audio=true, bool midi=true, bool incoming=true, bool outgoing=true, bool includeCustom=true, bool includeDefault=true) {
         Array<ValueTree> nodeConnections;
         for (const auto& connection : connections) {
@@ -355,29 +350,57 @@ public:
         processor.setProperty(IDs::allowDefaultConnections, true, nullptr);
         processor.setProperty(IDs::selected, true, nullptr);
 
-        // TODO can simplify
         int insertIndex;
         if (description.name == MixerChannelProcessor::name()) {
             insertIndex = -1;
             slot = NUM_AVAILABLE_PROCESSOR_SLOTS - 1;
-            processor.setProperty(IDs::processorSlot, slot, nullptr);
         } else if (slot == -1) {
-            // Insert new processors _right before_ the first MixerChannel processor, or at the end if there isn't one.
-            insertIndex = getMaxProcessorInsertIndex(track);
-            slot = 0;
-            if (track.getNumChildren() > 1) {
-                slot = int(track.getChild(track.getNumChildren() - 2)[IDs::processorSlot]) + 1;
+            if (description.numInputChannels == 0) {
+                insertIndex = 0;
+                slot = 0;
+            } else {
+                // Insert new effect processors _right before_ the first MixerChannel processor.
+                const ValueTree &mixerChannelProcessor = getMixerChannelProcessorForTrack(track);
+                insertIndex = mixerChannelProcessor.isValid() ? track.indexOf(mixerChannelProcessor) : track.getNumChildren() - 1;
+                if (mixerChannelProcessor.isValid()) {
+                    slot = track.getNumChildren() > 1 ? int(track.getChild(track.getNumChildren() - 2)[IDs::processorSlot]) + 1 : 0;
+                } else {
+                    slot = track.getNumChildren() > 0 ? int(track.getChild(track.getNumChildren() - 1)[IDs::processorSlot]) + 1 : 0;
+                }
             }
-            processor.setProperty(IDs::processorSlot, slot, nullptr);
         } else {
-            processor.setProperty(IDs::processorSlot, slot, nullptr);
             insertIndex = getParentIndexForProcessor(track, processor, nullptr);
         }
+        processor.setProperty(IDs::processorSlot, slot, nullptr);
 
         track.addChild(processor, insertIndex, undoable ? &undoManager : nullptr);
+        makeSlotsValid(track, undoable ? &undoManager : nullptr);
         sendProcessorCreatedMessage(processor);
 
         return processor;
+    }
+
+    void makeSlotsValid(const ValueTree& parent, UndoManager* undoManager) {
+        std::vector<int> slots;
+        for (const ValueTree& child : parent) {
+            if (child.hasType(IDs::PROCESSOR)) {
+                slots.push_back(int(child[IDs::processorSlot]));
+            }
+        }
+        sort(slots.begin(), slots.end());
+        for (int i = 1; i < slots.size(); i++) {
+            while (slots[i] <= slots[i - 1]) {
+                slots[i] += 1;
+            }
+        }
+
+        auto iterator = slots.begin();
+        for (ValueTree child : parent) {
+            if (child.hasType(IDs::PROCESSOR)) {
+                int newSlot = *(iterator++);
+                child.setProperty(IDs::processorSlot, newSlot, undoManager);
+            }
+        }
     }
 
     int getParentIndexForProcessor(const ValueTree &parent, const ValueTree &processorState, UndoManager* undoManager) {

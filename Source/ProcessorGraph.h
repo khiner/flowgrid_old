@@ -126,31 +126,8 @@ public:
         const int insertIndex = project.getParentIndexForProcessor(toTrack, processorState, getDragDependentUndoManager());
         Helpers::moveSingleItem(processorState, toTrack, insertIndex, getDragDependentUndoManager());
 
-        makeSlotsValid(toTrack);
+        project.makeSlotsValid(toTrack, getDragDependentUndoManager());
         updateAllDefaultConnections();
-    }
-
-    void makeSlotsValid(const ValueTree& parent) {
-        std::vector<int> slots;
-        for (const ValueTree& child : parent) {
-            if (child.hasType(IDs::PROCESSOR)) {
-                slots.push_back(int(child[IDs::processorSlot]));
-            }
-        }
-        sort(slots.begin(), slots.end());
-        for (int i = 1; i < slots.size(); i++) {
-            while (slots[i] <= slots[i - 1]) {
-                slots[i] += 1;
-            }
-        }
-
-        auto iterator = slots.begin();
-        for (ValueTree child : parent) {
-            if (child.hasType(IDs::PROCESSOR)) {
-                int newSlot = *(iterator++);
-                child.setProperty(IDs::processorSlot, newSlot, getDragDependentUndoManager());
-            }
-        }
     }
 
     bool canConnectUi(const Connection& c) const {
