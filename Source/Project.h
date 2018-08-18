@@ -126,6 +126,20 @@ public:
         return output.getChildWithProperty(IDs::name, processorManager.getAudioOutputDescription().name);
     }
 
+    ValueTree getPush2MidiInputProcessor() const {
+        return input.getChildWithProperty(IDs::deviceName, push2MidiDeviceName);
+    }
+
+    bool isPush2MidiInputProcessorConnected() const {
+        auto push2MidiInputProcessorNodeId = getNodeIdForState(getPush2MidiInputProcessor());
+        for (const auto& connection : connections) {
+            if (getNodeIdForState(connection.getChildWithName(IDs::SOURCE)) == push2MidiInputProcessorNodeId)
+                return true;
+        }
+
+        return false;
+    }
+
     const bool selectedTrackHasMixerChannel() {
         return getMixerChannelProcessorForSelectedTrack().isValid();
     }

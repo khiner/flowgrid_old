@@ -52,9 +52,9 @@ public:
     void setVisible(bool visible) override {
         if (currentlyViewingChild != nullptr)
             currentlyViewingChild->setVisible(visible);
-        push2NoteModePadLedManager.setVisible(visible && project.isInNoteMode());
 
         Push2ComponentBase::setVisible(visible);
+        updatePush2NoteModePadLedManagerVisibility();
     }
 
     void shiftPressed() override {
@@ -200,6 +200,10 @@ private:
         push2NoteModePadLedManager.trackSelected(selectedTrack);
     }
 
+    void updatePush2NoteModePadLedManagerVisibility() {
+        push2NoteModePadLedManager.setVisible(isVisible() && project.isInNoteMode() && project.isPush2MidiInputProcessorConnected());
+    }
+
     void selectProcessorIfNeeded(StatefulAudioProcessorWrapper* processorWrapper) {
         if (currentlyViewingChild != &mixerView || !dynamic_cast<MixerChannelProcessor *>(processorWrapper->processor)) {
             processorView.processorSelected(processorWrapper);
@@ -229,13 +233,15 @@ private:
             }
         } else if (i == IDs::controlMode) {
             updateEnabledPush2Buttons();
-            push2NoteModePadLedManager.setVisible(project.isInNoteMode());
+            updatePush2NoteModePadLedManagerVisibility();
         }
     }
 
     void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override {
         if (child.hasType(IDs::MASTER_TRACK) || child.hasType(IDs::TRACK) || child.hasType(IDs::PROCESSOR)) {
             updatePush2SelectionDependentButtons();
+        } else if (child.hasType(IDs::CONNECTION)) {
+            updatePush2NoteModePadLedManagerVisibility();
         }
     }
 
@@ -246,6 +252,8 @@ private:
                 selectChild(nullptr);
                 processorView.processorSelected(nullptr);
             }
+        } else if (child.hasType(IDs::CONNECTION)) {
+            updatePush2NoteModePadLedManagerVisibility();
         }
     }
 

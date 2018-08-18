@@ -20,7 +20,7 @@ namespace CommandIDs {
             allWindowsForward        = 0x50003;
 }
 
-const String push2MidiDeviceName = "ableton push 2 live port";
+const String push2MidiDeviceName = "Ableton Push 2 Live Port";
 
 class ApplicationPropertiesAndCommandManager {
 public:
