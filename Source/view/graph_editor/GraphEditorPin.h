@@ -18,21 +18,15 @@ struct GraphEditorPin : public Component, public SettableTooltipClient, private 
         state.removeListener(this);
     }
 
-    bool isInput() {
-        return state.getParent().hasType(IDs::INPUT_CHANNELS);
-    }
-
     int getChannel() {
         return getName().contains("MIDI") ? AudioProcessorGraph::midiChannelIndex : state.getParent().indexOf(state);
     }
 
-    bool isMidi() {
-        return getChannel() == AudioProcessorGraph::midiChannelIndex;
-    }
+    bool isInput() { return state.getParent().hasType(IDs::INPUT_CHANNELS); }
 
-    bool allowDefaultConnections() {
-        return state.getParent().getParent()[IDs::allowDefaultConnections];
-    }
+    bool isMidi() { return getChannel() == AudioProcessorGraph::midiChannelIndex; }
+
+    bool allowDefaultConnections() { return state.getParent().getParent()[IDs::allowDefaultConnections]; }
 
     AudioProcessorGraph::NodeAndChannel getPin() {
         return {ProcessorGraph::getNodeIdForState(state.getParent().getParent()), getChannel()};
@@ -46,7 +40,9 @@ struct GraphEditorPin : public Component, public SettableTooltipClient, private 
         p.addEllipse(w * 0.25f, h * 0.25f, w * 0.5f, h * 0.5f);
         p.addRectangle(w * 0.4f, isInput() ? (0.5f * h) : 0.0f, w * 0.2f, h * 0.5f);
 
-        auto colour = (isMidi() ? Colours::red : (allowDefaultConnections() ? Colours::green : Colours::yellowgreen));
+        auto colour = isMidi() ?
+                      (allowDefaultConnections() ? Colours::red : Colours::orange) :
+                      (allowDefaultConnections() ? Colours::green : Colours::greenyellow);
 
         g.setColour(colour.withRotatedHue(busIdx / 5.0f));
         g.fillPath(p);
@@ -67,7 +63,6 @@ struct GraphEditorPin : public Component, public SettableTooltipClient, private 
     }
 
     ValueTree state;
-
     DrawableText channelLabel;
     
 private:

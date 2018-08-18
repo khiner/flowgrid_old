@@ -96,7 +96,8 @@ struct GraphEditorConnector : public Component, public SettableTooltipClient {
 
     void paint(Graphics &g) override {
         Colour pathColour = connection.source.isMIDI() || connection.destination.isMIDI()
-                            ? Colours::red : (isCustom() ? Colours::greenyellow : Colours::green);
+                            ? (isCustom() ? Colours::orange : Colours::red)
+                            : (isCustom() ? Colours::greenyellow : Colours::green);
         g.setColour(pathColour.withAlpha(0.75f));
         g.fillPath(linePath);
     }
