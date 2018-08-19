@@ -688,6 +688,7 @@ private:
 
     void changeListenerCallback(ChangeBroadcaster* source) override {
         if (source == &deviceManager) {
+            deviceManager.updateEnabledMidiInputsAndOutputs();
             syncInputDevicesWithDeviceManager();
             syncOutputDevicesWithDeviceManager();
             AudioDeviceManager::AudioDeviceSetup config;
