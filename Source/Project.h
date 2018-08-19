@@ -293,15 +293,15 @@ public:
     void createDefaultProject() {
         createAudioIoProcessors();
 
-        ValueTree track = createAndAddTrack(false);
-        createAndAddProcessor(SineBank::getPluginDescription(), track, -1, false);
+        ValueTree track = createAndAddTrack(nullptr);
+        createAndAddProcessor(SineBank::getPluginDescription(), track, nullptr, -1);
 
-        createAndAddMasterTrack(false, true);
+        createAndAddMasterTrack(nullptr, true);
 
         viewState.setProperty(IDs::controlMode, noteControlMode, nullptr);
     }
 
-    ValueTree createAndAddMasterTrack(bool undoable=true, bool addMixer=true) {
+    ValueTree createAndAddMasterTrack(UndoManager* undoManager, bool addMixer=true) {
         if (getMasterTrack().isValid())
             return {}; // only one master track allowed!
 
@@ -309,15 +309,15 @@ public:
         masterTrack.setProperty(IDs::isMasterTrack, true, nullptr);
         masterTrack.setProperty(IDs::name, "Master", nullptr);
         masterTrack.setProperty(IDs::colour, Colours::darkslateblue.toString(), nullptr);
-        tracks.addChild(masterTrack, -1, undoable ? &undoManager : nullptr);
+        tracks.addChild(masterTrack, -1, undoManager);
 
         if (addMixer)
-            createAndAddProcessor(MixerChannelProcessor::getPluginDescription(), masterTrack, -1, undoable);
+            createAndAddProcessor(MixerChannelProcessor::getPluginDescription(), masterTrack, undoManager, -1);
 
         return masterTrack;
     }
 
-    ValueTree createAndAddTrack(bool undoable=true, bool addMixer=true, ValueTree nextToTrack={}) {
+    ValueTree createAndAddTrack(UndoManager* undoManager, bool addMixer=true, ValueTree nextToTrack={}) {
         int numTracks = getNumNonMasterTracks();
         const auto& selectedTrack = getSelectedTrack();
 
@@ -338,35 +338,32 @@ public:
 
         ValueTree track(IDs::TRACK);
         track.setProperty(IDs::uuid, Uuid().toString(), nullptr);
-        track.setProperty(IDs::name, (addMixer || numTracks == 0) ? ("Track " + String(numTracks + 1)) : makeTrackNameUnique(nextToTrack[IDs::name]), nullptr);
-        track.setProperty(IDs::colour, Colours::white.toString(), nullptr); // tmp color
-        track.setProperty(IDs::colour, (addMixer || numTracks == 0) ? Colour::fromHSV((1.0f / 8.0f) * numTracks, 0.65f, 0.65f, 1.0f).toString() : nextToTrack[IDs::colour].toString(), nullptr);
-        tracks.addChild(track,
-                nextToTrack.isValid() ? nextToTrack.getParent().indexOf(nextToTrack) + (addMixer ? 1 : 0): numTracks,
-                undoable ? &undoManager : nullptr);
+        track.setProperty(IDs::name, nextToTrack.isValid() ? makeTrackNameUnique(nextToTrack[IDs::name]) : ("Track " + String(numTracks + 1)), nullptr);
+        track.setProperty(IDs::colour, nextToTrack.isValid() ? nextToTrack[IDs::colour].toString() : Colour::fromHSV((1.0f / 8.0f) * numTracks, 0.65f, 0.65f, 1.0f).toString(), nullptr);
+        tracks.addChild(track, nextToTrack.isValid() ? nextToTrack.getParent().indexOf(nextToTrack) + (addMixer ? 1 : 0): numTracks, undoManager);
 
-        track.setProperty(IDs::selected, true, undoable ? &undoManager : nullptr);
+        track.setProperty(IDs::selected, true, undoManager);
 
         if (addMixer)
-            createAndAddProcessor(MixerChannelProcessor::getPluginDescription(), track, -1, undoable);
+            createAndAddProcessor(MixerChannelProcessor::getPluginDescription(), track, undoManager, -1);
 
         return track;
     }
 
-    ValueTree createAndAddProcessor(const PluginDescription& description, bool undoable=true) {
+    ValueTree createAndAddProcessor(const PluginDescription& description, UndoManager* undoManager) {
         if (getSelectedTrack().isValid())
-            return createAndAddProcessor(description, getSelectedTrack(), -1, undoable);
+            return createAndAddProcessor(description, getSelectedTrack(), undoManager, -1);
         else
             return ValueTree();
     }
 
-    ValueTree createAndAddProcessor(const PluginDescription &description, ValueTree track, int slot=-1, bool undoable=true) {
+    ValueTree createAndAddProcessor(const PluginDescription &description, ValueTree track, UndoManager *undoManager, int slot = -1) {
         if (description.name == MixerChannelProcessor::name() && getMixerChannelProcessorForTrack(track).isValid())
             return ValueTree(); // only one mixer channel per track
 
         if (processorManager.isGeneratorOrInstrument(&description) &&
             processorManager.doesTrackAlreadyHaveGeneratorOrInstrument(track)) {
-            return createAndAddProcessor(description, createAndAddTrack(undoable, false, track), slot, undoable);
+            return createAndAddProcessor(description, createAndAddTrack(undoManager, false, track), undoManager, slot);
         }
 
         ValueTree processor(IDs::PROCESSOR);
@@ -400,8 +397,8 @@ public:
         }
         processor.setProperty(IDs::processorSlot, slot, nullptr);
 
-        track.addChild(processor, insertIndex, undoable ? &undoManager : nullptr);
-        makeSlotsValid(track, undoable ? &undoManager : nullptr);
+        track.addChild(processor, insertIndex, undoManager);
+        makeSlotsValid(track, undoManager);
         sendProcessorCreatedMessage(processor);
 
         return processor;

@@ -47,8 +47,9 @@ public:
         undoManager.addChangeListener(selectionEditor);
 
         selectionWindow = std::make_unique<MainWindow>(*this, "Selection Editor", selectionEditor);
-        selectionWindow->setBoundsRelative(0.05, 0.05, 0.45, 0.9);
-        graphEditorWindow->setBoundsRelative(0.5, 0.05, 0.45, 0.9);
+
+        graphEditorWindow->setBoundsRelative(0.02, 0.02, 0.53, 0.96);
+        selectionWindow->setBoundsRelative(0.55, 0.02, 0.43, 0.96);
 
         push2Component = std::make_unique<Push2Component>(project, push2MidiCommunicator, processorGraph);
         push2Component->setVisible(true);
@@ -298,16 +299,16 @@ public:
                 project.deleteSelectedItems();
                 break;
             case CommandIDs::insertTrack:
-                project.createAndAddTrack();
+                project.createAndAddTrack(&undoManager);
                 break;
             case CommandIDs::insertTrackWithoutMixer:
-                project.createAndAddTrack(true, false);
+                project.createAndAddTrack(&undoManager, false);
                 break;
             case CommandIDs::createMasterTrack:
-                project.createAndAddMasterTrack(true, true);
+                project.createAndAddMasterTrack(&undoManager, true);
                 break;
             case CommandIDs::addMixerChannel:
-                project.createAndAddProcessor(MixerChannelProcessor::getPluginDescription(), true);
+                project.createAndAddProcessor(MixerChannelProcessor::getPluginDescription(), &undoManager);
                 break;
             case CommandIDs::showPluginListEditor:
                 showPluginList();

@@ -57,7 +57,7 @@ public:
                 project.addPluginsToMenu(*addProcessorMenu, project.getSelectedTrack());
                 addProcessorMenu->showMenuAsync({}, ModalCallbackFunction::create([this](int r) {
                     if (auto *description = project.getChosenType(r)) {
-                        project.createAndAddProcessor(*description);
+                        project.createAndAddProcessor(*description, &project.getUndoManager());
                     }
                 }));
             }

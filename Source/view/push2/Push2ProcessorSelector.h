@@ -230,13 +230,13 @@ public:
 
     void aboveScreenButtonPressed(int buttonIndex) override {
         if (const auto* selectedProcessor = selectTopProcessor(buttonIndex)) {
-            project.createAndAddProcessor(*selectedProcessor);
+            project.createAndAddProcessor(*selectedProcessor, &project.getUndoManager());
         }
     }
 
     void belowScreenButtonPressed(int buttonIndex) override {
         if (const auto* selectedProcessor = selectBottomProcessor(buttonIndex)) {
-            project.createAndAddProcessor(*selectedProcessor);
+            project.createAndAddProcessor(*selectedProcessor, &project.getUndoManager());
         }
     }
 
