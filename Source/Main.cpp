@@ -443,11 +443,7 @@ private:
         o.resizable = true;
 
         auto *w = o.create();
-        w->enterModalState(true, ModalCallbackFunction::create([this](int) {
-            std::unique_ptr<XmlElement> audioState(deviceManager.createStateXml());
-            getApplicationProperties().getUserSettings()->setValue("audioDeviceState", audioState.get());
-            getApplicationProperties().getUserSettings()->saveIfNeeded();
-        }), true);
+        w->enterModalState(true, nullptr, true);
     }
 
     void showPluginList() {
@@ -483,6 +479,9 @@ private:
             } else if (push2MidiCommunicator.isInitialized() && !MidiInput::getDevices().contains(push2MidiDeviceName, true)) {
                 push2MidiCommunicator.setMidiInputAndOutput(nullptr, nullptr);
             }
+            std::unique_ptr<XmlElement> audioState(deviceManager.createStateXml());
+            getApplicationProperties().getUserSettings()->setValue("audioDeviceState", audioState.get());
+            getApplicationProperties().getUserSettings()->saveIfNeeded();
         }
     }
 

@@ -344,7 +344,7 @@ private:
             nameLabel.setText(getName());
         }
 
-        repaint();
+        update();
     }
 
     void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override {

@@ -77,7 +77,6 @@ public:
     GraphEditorProcessor *createNewObject(const ValueTree &v) override {
         GraphEditorProcessor *processor = currentlyMovingProcessor != nullptr ? currentlyMovingProcessor : new GraphEditorProcessor(v, connectorDragListener, graph);
         addAndMakeVisible(processor);
-        processor->update();
         return processor;
     }
 
