@@ -272,18 +272,18 @@ public:
         deleteAllSelectedItems(state);
     }
 
-    void deleteItem(const ValueTree &v, bool undoable=true) {
+    void deleteItem(const ValueTree &v, UndoManager* undoManager) {
         if (!v.isValid())
             return;
         if (v.getParent().isValid()) {
             if (v.hasType(IDs::TRACK)) {
                 while (v.getNumChildren() > 0)
-                    deleteItem(v.getChild(v.getNumChildren() - 1), undoable);
+                    deleteItem(v.getChild(v.getNumChildren() - 1), undoManager);
             }
             if (v.hasType(IDs::PROCESSOR)) {
                 sendProcessorWillBeDestroyedMessage(v);
             }
-            v.getParent().removeChild(v, undoable ? &undoManager : nullptr);
+            v.getParent().removeChild(v, undoManager);
             if (v.hasType(IDs::PROCESSOR)) {
                 sendProcessorHasBeenDestroyedMessage(v);
             }
@@ -643,7 +643,7 @@ private:
         input.removeAllChildren(nullptr);
         output.removeAllChildren(nullptr);
         while (tracks.getNumChildren() > 0)
-            deleteItem(tracks.getChild(tracks.getNumChildren() - 1), false);
+            deleteItem(tracks.getChild(tracks.getNumChildren() - 1), nullptr);
         connections.removeAllChildren(nullptr);
         undoManager.clearUndoHistory();
     }
@@ -714,7 +714,7 @@ private:
             }
         }
         for (const auto& inputChild : inputChildrenToDelete) {
-            deleteItem(inputChild, false);
+            deleteItem(inputChild, &undoManager);
         }
         for (const auto& deviceName : MidiInput::getDevices()) {
             if (deviceManager.isMidiInputEnabled(deviceName) &&
@@ -724,7 +724,7 @@ private:
                 midiInputProcessor.setProperty(IDs::name, MidiInputProcessor::name(), nullptr);
                 midiInputProcessor.setProperty(IDs::allowDefaultConnections, true, nullptr);
                 midiInputProcessor.setProperty(IDs::deviceName, deviceName, nullptr);
-                input.addChild(midiInputProcessor, -1, nullptr);
+                input.addChild(midiInputProcessor, -1, &undoManager);
             }
         }
     }
@@ -740,7 +740,7 @@ private:
             }
         }
         for (const auto& outputChild : outputChildrenToDelete) {
-            deleteItem(outputChild, false);
+            deleteItem(outputChild, &undoManager);
         }
         for (const auto& deviceName : MidiOutput::getDevices()) {
             if (deviceManager.isMidiOutputEnabled(deviceName) &&
@@ -750,7 +750,7 @@ private:
                 midiOutputProcessor.setProperty(IDs::name, MidiOutputProcessor::name(), nullptr);
                 midiOutputProcessor.setProperty(IDs::allowDefaultConnections, true, nullptr);
                 midiOutputProcessor.setProperty(IDs::deviceName, deviceName, nullptr);
-                output.addChild(midiOutputProcessor, -1, nullptr);
+                output.addChild(midiOutputProcessor, -1, &undoManager);
             }
         }
     }
@@ -758,13 +758,25 @@ private:
     void deleteAllSelectedItems(const ValueTree &parent) {
         Array<ValueTree> allSelectedItems = findAllItemsWithPropertyRecursive(parent, IDs::selected, true);
         for (const auto &selectedItem : allSelectedItems) {
-            deleteItem(selectedItem, true);
+            deleteItem(selectedItem, &undoManager);
         }
     }
 
-    void valueTreeChildAdded(ValueTree &, ValueTree &tree) override {}
+    void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override {
+        if (child[IDs::name] == MidiInputProcessor::name() && !deviceManager.isMidiInputEnabled(child[IDs::deviceName])) {
+            deviceManager.setMidiInputEnabled(child[IDs::deviceName], true);
+        } else if (child[IDs::name] == MidiOutputProcessor::name() && !deviceManager.isMidiOutputEnabled(child[IDs::deviceName])) {
+            deviceManager.setMidiOutputEnabled(child[IDs::deviceName], true);
+        }
+    }
 
-    void valueTreeChildRemoved(ValueTree &exParent, ValueTree &tree, int) override {}
+    void valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int) override {
+        if (child[IDs::name] == MidiInputProcessor::name() && deviceManager.isMidiInputEnabled(child[IDs::deviceName])) {
+            deviceManager.setMidiInputEnabled(child[IDs::deviceName], false);
+        } else if (child[IDs::name] == MidiOutputProcessor::name() && deviceManager.isMidiOutputEnabled(child[IDs::deviceName])) {
+            deviceManager.setMidiOutputEnabled(child[IDs::deviceName], false);
+        }
+    }
 
     void valueTreeChildOrderChanged(ValueTree &tree, int, int) override {}
 
