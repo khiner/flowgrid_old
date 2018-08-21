@@ -20,26 +20,26 @@ public:
         freeObjects();
     }
 
+    void setTrackWidth(int trackWidth) { this->trackWidth = trackWidth; }
+
+    void setMasterTrackWidthAndXOffset(int xOffset) {
+        if (auto* masterTrack = findMasterTrack()) {
+            masterTrack->setBounds(masterTrack->getBounds().withX(xOffset).withWidth(GraphEditorTrack::LABEL_HEIGHT + Project::NUM_VISIBLE_TRACKS * trackWidth));
+        }
+    }
+
     void resized() override {
         auto r = getLocalBounds().withHeight(getHeight() * Project::NUM_AVAILABLE_PROCESSOR_SLOTS / (Project::NUM_AVAILABLE_PROCESSOR_SLOTS + 1));
 
-        auto* masterTrack = findMasterTrack();
-        if (masterTrack != nullptr) {
-            masterTrack->setBounds(getLocalBounds().removeFromBottom(getHeight() - r.getHeight()));
-            r.removeFromLeft(masterTrack->getNameLabel()->getWidth());
+        if (auto* masterTrack = findMasterTrack()) {
+            masterTrack->setBounds(masterTrack->getBounds().withHeight(getHeight() - r.getHeight()).withBottomY(getHeight()));
+            r.removeFromLeft(GraphEditorTrack::LABEL_HEIGHT);
         }
 
-        const int w = r.getWidth() / Project::NUM_VISIBLE_TRACKS;
         for (auto *track : objects) {
             if (track->isMasterTrack())
                 continue;
-            int viewIndex = track->getTrackViewIndex();
-            if (viewIndex < 0 || viewIndex >= 8)
-                track->setVisible(false);
-            else {
-                track->setVisible(true);
-                track->setBounds(r.removeFromLeft(w));
-            }
+            track->setBounds(r.removeFromLeft(trackWidth));
         }
     }
 
@@ -207,6 +207,8 @@ public:
     }
 
 private:
+    int trackWidth {0};
+
     void deselectAllTracksExcept(const ValueTree& except) {
         for (auto track : parent) {
             if (track != except) {

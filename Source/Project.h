@@ -797,13 +797,6 @@ private:
             deviceManager.setMidiInputEnabled(child[IDs::deviceName], true);
         } else if (child[IDs::name] == MidiOutputProcessor::name() && !deviceManager.isMidiOutputEnabled(child[IDs::deviceName])) {
             deviceManager.setMidiOutputEnabled(child[IDs::deviceName], true);
-        } else if (child.hasType(IDs::TRACK) && !child.hasProperty(IDs::isMasterTrack)) {
-            auto viewTrackOffset = getGridViewTrackOffset();
-            auto trackIndex = tracks.indexOf(child);
-            if (trackIndex >= viewTrackOffset + 8)
-                viewState.setProperty(IDs::gridViewTrackOffset, trackIndex - 7, nullptr);
-            else if (trackIndex < viewTrackOffset)
-                viewState.setProperty(IDs::gridViewTrackOffset, trackIndex, nullptr);
         }
     }
 
@@ -823,19 +816,34 @@ private:
             deviceManager.getAudioDeviceSetup(config);
             const String &deviceName = tree[IDs::deviceName];
 
-            if (tree == input) {
+            if (tree == input)
                 config.inputDeviceName = deviceName;
-            } else if (tree == output) {
+            else if (tree == output)
                 config.outputDeviceName = deviceName;
-            }
+
             deviceManager.setAudioDeviceSetup(config, true);
+        } else if ((tree.hasType(IDs::TRACK) || tree.hasType(IDs::PROCESSOR)) && i == IDs::selected && tree[IDs::selected]) {
+            const auto& track = tree.hasType(IDs::TRACK) ? tree : tree.getParent();
+            auto trackIndex = tracks.indexOf(track);
+            updateViewTrackOffsetToInclude(trackIndex);
         }
     }
 
     void valueTreeParentChanged(ValueTree &) override {}
 
     void valueTreeRedirected(ValueTree &) override {}
-    
+
+    void updateViewTrackOffsetToInclude(int trackIndex) {
+        auto viewTrackOffset = getGridViewTrackOffset();
+        if (trackIndex >= viewTrackOffset + 8)
+            viewState.setProperty(IDs::gridViewTrackOffset, trackIndex - 7, nullptr);
+        else if (trackIndex < viewTrackOffset)
+            viewState.setProperty(IDs::gridViewTrackOffset, trackIndex, nullptr);
+        else if (getNumNonMasterTracks() - viewTrackOffset < 8 && getNumNonMasterTracks() >= 8)
+            // always show last 8 tracks if available
+            viewState.setProperty(IDs::gridViewTrackOffset, getNumNonMasterTracks() - 8, nullptr);
+    }
+
     static ValueTree findFirstItemWithPropertyRecursive(const ValueTree &parent, const Identifier &i, const var &value) {
         for (const auto& child : parent) {
             if (child[i] == value)

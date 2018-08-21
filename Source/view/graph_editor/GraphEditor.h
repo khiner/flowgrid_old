@@ -8,22 +8,25 @@
 class GraphEditor : public Component {
 public:
     GraphEditor(ProcessorGraph &graph, Project &project)
-            : graph(graph), project(project), graphPanel(graph, project) {
-        addAndMakeVisible(graphPanel);
+            : graph(graph), project(project), graphPanel(graph, project, graphPanelViewport) {
         addAndMakeVisible(statusBar);
-        graphPanel.updateComponents();
+        graphPanelViewport.setScrollBarsShown(false, false);
+        graphPanelViewport.setViewedComponent(&graphPanel, false);
+        addAndMakeVisible(graphPanelViewport);
     }
 
     void resized() override {
         auto r = getLocalBounds();
         statusBar.setBounds(r.removeFromBottom(20));
-        graphPanel.setBounds(r);
+        graphPanelViewport.setBounds(r);
+        graphPanel.resize();
     }
 
 private:
     ProcessorGraph &graph;
     Project &project;
 
+    Viewport graphPanelViewport;
     GraphEditorPanel graphPanel;
 
     struct TooltipBar : public Component, private Timer {

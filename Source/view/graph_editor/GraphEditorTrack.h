@@ -28,10 +28,6 @@ public:
         state.addListener(this);
     }
 
-    const ValueTree& getState() const {
-        return state;
-    }
-
     void mouseDown(const MouseEvent &e) override {
         if (e.eventComponent == &nameLabel) {
             if (e.mods.isRightButtonDown()) {
@@ -49,54 +45,36 @@ public:
         }
     }
 
-    bool isMasterTrack() const {
-        return state.hasProperty(IDs::isMasterTrack);
-    }
+    const ValueTree& getState() const { return state; }
 
-    int getTrackIndex() const {
-        return state.getParent().indexOf(state);
-    }
+    bool isMasterTrack() const { return state.hasProperty(IDs::isMasterTrack); }
 
-    int getTrackViewIndex() const {
-        return project.getViewIndexForTrack(state);
-    }
+    int getTrackIndex() const { return state.getParent().indexOf(state); }
 
-    String getTrackName() const {
-        return state[IDs::name].toString();
-    }
+    int getTrackViewIndex() const { return project.getViewIndexForTrack(state); }
 
-    Colour getColour() const {
-        return Colour::fromString(state[IDs::colour].toString());
-    }
+    String getTrackName() const { return state[IDs::name].toString(); }
 
-    void setColour(const Colour& colour) {
-        state.setProperty(IDs::colour, colour.toString(), &graph.undoManager);
-    }
+    Colour getColour() const { return Colour::fromString(state[IDs::colour].toString()); }
 
-    bool isSelected() const {
-        return state.getProperty(IDs::selected);
-    }
+    void setColour(const Colour& colour) { state.setProperty(IDs::colour, colour.toString(), &graph.undoManager); }
 
-    void setSelected(bool selected) {
-        state.setProperty(IDs::selected, selected, nullptr);
-    }
+    bool isSelected() const { return state.getProperty(IDs::selected); }
 
-    const Label *getNameLabel() const {
-        return &nameLabel;
-    }
+    void setSelected(bool selected) { state.setProperty(IDs::selected, selected, nullptr); }
 
-    const Component *getDragControlComponent() const {
-        return getNameLabel();
-    }
+    const Label *getNameLabel() const { return &nameLabel; }
+
+    const Component *getDragControlComponent() const { return getNameLabel(); }
 
     void resized() override {
         auto r = getLocalBounds();
-        const auto &nameLabelBounds = isMasterTrack() ? r.removeFromLeft(jmax(getWidth() / 30, 32)) : r.removeFromTop(jmax(getHeight() / 30, 32));
+        const auto &nameLabelBounds = isMasterTrack() ? r.removeFromLeft(LABEL_HEIGHT) : r.removeFromTop(LABEL_HEIGHT);
         nameLabel.setBounds(nameLabelBounds);
         if (isMasterTrack()) {
             const auto& labelBoundsFloat = nameLabelBounds.toFloat();
             masterTrackName.setBoundingBox(Parallelogram<float>(labelBoundsFloat.getBottomLeft(), labelBoundsFloat.getTopLeft(), labelBoundsFloat.getBottomRight()));
-            masterTrackName.setFontHeight(labelBoundsFloat.getHeight() / 6);
+            masterTrackName.setFontHeight(3 * LABEL_HEIGHT / 4);
         }
         processors->setBounds(r);
     }
@@ -133,6 +111,7 @@ public:
         processors->setCurrentlyMovingProcessor(currentlyMovingProcessor);
     }
 
+    static constexpr int LABEL_HEIGHT = 32;
 private:
     Project& project;
     ValueTree state;

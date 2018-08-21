@@ -9,8 +9,8 @@ class GraphEditorPanel
         : public Component, public ConnectorDragListener, public GraphEditorProcessorContainer,
           private ValueTree::Listener {
 public:
-    GraphEditorPanel(ProcessorGraph &g, Project &project)
-            : graph(g), project(project) {
+    GraphEditorPanel(ProcessorGraph &g, Project &project, Viewport &parentViewport)
+            : graph(g), project(project), parentViewport(parentViewport) {
         setOpaque(true);
 
         project.getState().addListener(this);
@@ -23,14 +23,24 @@ public:
         draggingConnector = nullptr;
     }
 
+    // call this method when the parent viewport size has changed
+    void resize() {
+        setBounds(0, 0, getTrackWidth() * jmax(Project::NUM_VISIBLE_TRACKS, project.getNumNonMasterTracks()) + GraphEditorTrack::LABEL_HEIGHT, getParentComponent()->getHeight());
+    }
+
     void paint(Graphics &g) override {
         g.fillAll(findColour(ResizableWindow::backgroundColourId));
     }
 
     void resized() override {
+        tracks->setTrackWidth(getTrackWidth());
+
+        int xOffset = project.getGridViewTrackOffset() * getTrackWidth();
+        parentViewport.setViewPosition(xOffset, 0);
+
         auto r = getLocalBounds();
         connectors->setBounds(r);
-        auto top = r.removeFromTop(int(getHeight() * 1.0 / Project::NUM_VISIBLE_PROCESSOR_SLOTS));
+        auto top = r.removeFromTop(int(getHeight() * 1.0 / Project::NUM_VISIBLE_PROCESSOR_SLOTS)).withX(xOffset).withWidth(parentViewport.getWidth());
         int midiInputProcessorWidthInChannels = midiInputProcessors.size() * 2;
         float audioInputWidthRatio = audioInputProcessor
                 ? float(audioInputProcessor->getNumOutputChannels()) / float(audioInputProcessor->getNumOutputChannels() + midiInputProcessorWidthInChannels)
@@ -41,8 +51,10 @@ public:
         for (auto *midiInputProcessor : midiInputProcessors) {
             midiInputProcessor->setBounds(top.removeFromLeft(int(getWidth() * (1 - audioInputWidthRatio) / midiInputProcessors.size())));
         }
+
+        tracks->setMasterTrackWidthAndXOffset(xOffset);
         tracks->setBounds(r.withHeight(getHeight() * (Project::NUM_VISIBLE_PROCESSOR_SLOTS - 2) / Project::NUM_VISIBLE_PROCESSOR_SLOTS ));
-        auto bottom = r.removeFromBottom(int(getHeight() * 1.0 / Project::NUM_VISIBLE_PROCESSOR_SLOTS));
+        auto bottom = r.removeFromBottom(int(getHeight() * 1.0 / Project::NUM_VISIBLE_PROCESSOR_SLOTS)).withX(xOffset).withWidth(parentViewport.getWidth());
         int midiOutputProcessorWidthInChannels = midiOutputProcessors.size() * 2;
         float audioOutputWidthRatio = audioOutputProcessor
                 ? float(audioOutputProcessor->getNumInputChannels()) / float(audioOutputProcessor->getNumInputChannels() + midiOutputProcessorWidthInChannels)
@@ -184,6 +196,13 @@ private:
 
     GraphEditorProcessor::ElementComparator processorComparator;
 
+    // Ideally we wouldn't call up to the parent to manage its view offsets, and the parent would instead manage
+    // all of this stuff on its own. However, I don't think that cleanliness is quite worth adding yet another
+    // project state listener.
+    Viewport &parentViewport;
+
+    int getTrackWidth() { return (parentViewport.getWidth() - GraphEditorTrack::LABEL_HEIGHT) / Project::NUM_VISIBLE_TRACKS; }
+    
     GraphEditorPin *findPinAt(const MouseEvent &e) const {
         if (auto *pin = audioInputProcessor->findPinAt(e))
             return pin;
@@ -226,7 +245,7 @@ private:
 
     void valueTreeChildAdded(ValueTree& parent, ValueTree& child) override {
         if (child.hasType(IDs::TRACK)) {
-            resized();
+            resize();
         } else if (child.hasType(IDs::PROCESSOR)) {
             if (child[IDs::name] == MidiInputProcessor::name()) {
                 auto *midiInputProcessor = new GraphEditorProcessor(child, *this, graph);
@@ -251,7 +270,7 @@ private:
 
     void valueTreeChildRemoved(ValueTree& parent, ValueTree& child, int indexFromWhichChildWasRemoved) override {
         if (child.hasType(IDs::TRACK)) {
-            resized();
+            resize();
         } else if (child.hasType(IDs::PROCESSOR)) {
             if (child[IDs::name] == MidiInputProcessor::name()) {
                 midiInputProcessors.removeObject(findMidiInputProcessorForNodeId(ProcessorGraph::getNodeIdForState(child)));
