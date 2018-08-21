@@ -5,7 +5,7 @@
 #include "view/push2/Push2Colours.h"
 #include "Project.h"
 
-class Push2MidiCommunicator : public MidiCommunicator, private Push2Colours::Listener {
+class Push2MidiCommunicator : public MidiCommunicator, private Push2Colours::Listener, private Timer {
 public:
     explicit Push2MidiCommunicator(Project& project, Push2Colours& push2Colours) :
             project(project), push2Colours(push2Colours) {};
@@ -52,7 +52,7 @@ public:
             return;
 
         if (message.isController()) {
-            const int ccNumber = message.getControllerNumber();
+            const auto ccNumber = message.getControllerNumber();
 
             if (isEncoderCcNumber(ccNumber)) {
                 float changeAmount = encoderCcMessageToRotationChange(message);
@@ -65,48 +65,64 @@ public:
             }
 
             if (isButtonPressControlMessage(message)) {
-                if (isAboveScreenButtonCcNumber(ccNumber))
-                    return push2Listener->aboveScreenButtonPressed(ccNumber - topDisplayButton1);
-                else if (isBelowScreenButtonCcNumber(ccNumber))
-                    return push2Listener->belowScreenButtonPressed(ccNumber - bottomDisplayButton1);
-                else if (isArrowButtonCcNumber(ccNumber))
-                    return push2Listener->arrowPressed(directionForArrowButtonCcNumber(ccNumber));
-                switch (ccNumber) {
-                    case shift:
-                        push2Listener->shiftPressed();
-                        return;
-                    case undo:
-                        return push2Listener->undoButtonPressed();
-                    case delete_:
-                        return push2Listener->deleteButtonPressed();
-                    case addTrack:
-                        return push2Listener->addTrackButtonPressed();
-                    case addDevice:
-                        return push2Listener->addDeviceButtonPressed();
-                    case mix:
-                        return push2Listener->mixButtonPressed();
-                    case master:
-                        return push2Listener->masterButtonPressed();
-                    case note:
-                        return push2Listener->noteButtonPressed();
-                    case session:
-                        return push2Listener->sessionButtonPressed();
-                    default:
-                        return;
+                static const Array<int> repeatableButtonCcNumbers { undo, up, down, left, right };
+                if (repeatableButtonCcNumbers.contains(ccNumber)) {
+                    buttonHoldStopped();
+                    currentlyHeldRepeatableButtonCcNumber = ccNumber;
+                    startTimer(BUTTON_HOLD_WAIT_FOR_REPEAT_MS);
                 }
-            } else if (isButtonReleaseControlMessage(message)) {
-                switch (ccNumber) {
-                    case shift:
-                        push2Listener->shiftReleased();
-                        return;
-                    default:
-                        return;
-                }
+                return handleButtonPressMidiCcNumber(ccNumber);
+            }
+            else if (isButtonReleaseControlMessage(message)) {
+                buttonHoldStopped();
+                return handleButtonReleaseMidiCcNumber(ccNumber);
             }
         } else {
             push2Listener->handleIncomingMidiMessage(source, message);
         }
         });
+    }
+
+    void handleButtonPressMidiCcNumber(int ccNumber) {
+        if (isAboveScreenButtonCcNumber(ccNumber))
+            return push2Listener->aboveScreenButtonPressed(ccNumber - topDisplayButton1);
+        else if (isBelowScreenButtonCcNumber(ccNumber))
+            return push2Listener->belowScreenButtonPressed(ccNumber - bottomDisplayButton1);
+        else if (isArrowButtonCcNumber(ccNumber))
+            return push2Listener->arrowPressed(directionForArrowButtonCcNumber(ccNumber));
+        switch (ccNumber) {
+            case shift:
+                push2Listener->shiftPressed();
+                return;
+            case undo:
+                return push2Listener->undoButtonPressed();
+            case delete_:
+                return push2Listener->deleteButtonPressed();
+            case addTrack:
+                return push2Listener->addTrackButtonPressed();
+            case addDevice:
+                return push2Listener->addDeviceButtonPressed();
+            case mix:
+                return push2Listener->mixButtonPressed();
+            case master:
+                return push2Listener->masterButtonPressed();
+            case note:
+                return push2Listener->noteButtonPressed();
+            case session:
+                return push2Listener->sessionButtonPressed();
+            default:
+                return;
+        }
+    }
+
+    void handleButtonReleaseMidiCcNumber(int ccNumber) {
+        switch (ccNumber) {
+            case shift:
+                push2Listener->shiftReleased();
+                return;
+            default:
+                return;
+        }
     }
 
     static const uint8
@@ -256,11 +272,17 @@ public:
     }
 
 private:
-    static const int NO_ANIMATION_LED_CHANNEL = 1;
+    static constexpr int NO_ANIMATION_LED_CHANNEL = 1;
+    static constexpr int BUTTON_HOLD_REPEAT_HZ = 10; // how often to repeat a repeatable button press when it is held
+    static constexpr int BUTTON_HOLD_WAIT_FOR_REPEAT_MS = 500; // how long to wait before starting held button message repeats
 
     Project& project;
     Push2Colours& push2Colours;
     Push2Listener *push2Listener {};
+
+    int currentlyHeldRepeatableButtonCcNumber {0};
+
+    bool holdRepeatIsHappeningNow { false };
 
     void sendMessageChecked(const MidiMessage& message) const {
         if (isOutputConnected()) {
@@ -296,4 +318,23 @@ private:
     }
 
     void trackColourChanged(const String &trackUuid, const Colour &colour) override {}
+
+    void buttonHoldStopped() {
+        currentlyHeldRepeatableButtonCcNumber = 0;
+        holdRepeatIsHappeningNow = false;
+        stopTimer();
+    }
+
+    void timerCallback() override {
+        if (currentlyHeldRepeatableButtonCcNumber != 0) {
+            handleButtonPressMidiCcNumber(currentlyHeldRepeatableButtonCcNumber);
+            if (!holdRepeatIsHappeningNow) {
+                holdRepeatIsHappeningNow = true;
+                // after the initial wait for a long hold, start sending the message repeatedly during hold
+                startTimerHz(BUTTON_HOLD_REPEAT_HZ);
+            }
+        } else {
+            buttonHoldStopped();
+        }
+    }
 };
