@@ -187,8 +187,10 @@ public:
                 CommandIDs::insertTrackWithoutMixer,
                 CommandIDs::createMasterTrack,
                 CommandIDs::addMixerChannel,
-                CommandIDs::showPluginListEditor,
                 CommandIDs::showPush2MirrorWindow,
+                CommandIDs::navigateLeft,
+                CommandIDs::navigateRight,
+                CommandIDs::showPluginListEditor,
                 CommandIDs::showAudioMidiSettings,
 //                CommandIDs::aboutBox,
 //                CommandIDs::allWindowsForward,
@@ -250,6 +252,17 @@ public:
                 result.addDefaultKeypress(KeyPress::deleteKey, ModifierKeys::noModifiers);
                 result.addDefaultKeypress(KeyPress::backspaceKey, ModifierKeys::noModifiers);
                 break;
+            case CommandIDs::showPush2MirrorWindow:
+                result.setInfo("Open a window mirroring a Push 2 display", String(), category, 0);
+                break;
+            case CommandIDs::navigateLeft:
+                result.setInfo("Select whatever is to the left of the current selection", String(), category, 0);
+                result.addDefaultKeypress(KeyPress::leftKey, ModifierKeys::noModifiers);
+                break;
+            case CommandIDs::navigateRight:
+                result.setInfo("Select whatever is to the right of the current selection", String(), category, 0);
+                result.addDefaultKeypress(KeyPress::rightKey, ModifierKeys::noModifiers);
+                break;
             case CommandIDs::showPluginListEditor:
                 result.setInfo("Edit the list of available plug-Ins...", String(), category, 0);
                 result.addDefaultKeypress('p', ModifierKeys::commandModifier);
@@ -257,9 +270,6 @@ public:
             case CommandIDs::showAudioMidiSettings:
                 result.setInfo("Change the audio device settings", String(), category, 0);
                 result.addDefaultKeypress('a', ModifierKeys::commandModifier);
-                break;
-            case CommandIDs::showPush2MirrorWindow:
-                result.setInfo("Open a window mirroring a Push 2 display", String(), category, 0);
                 break;
 //            case CommandIDs::aboutBox:
 //                result.setInfo ("About...", String(), category, 0);
@@ -310,14 +320,20 @@ public:
             case CommandIDs::addMixerChannel:
                 project.createAndAddProcessor(MixerChannelProcessor::getPluginDescription(), &undoManager);
                 break;
+            case CommandIDs::showPush2MirrorWindow:
+                showPush2MirrorWindow();
+                break;
+            case CommandIDs::navigateLeft:
+                project.navigateLeft();
+                break;
+            case CommandIDs::navigateRight:
+                project.navigateRight();
+                break;
             case CommandIDs::showPluginListEditor:
                 showPluginList();
                 break;
             case CommandIDs::showAudioMidiSettings:
                 showAudioMidiSettings();
-                break;
-            case CommandIDs::showPush2MirrorWindow:
-                showPush2MirrorWindow();
                 break;
 //            case CommandIDs::aboutBox:
 //                // TODO

@@ -291,15 +291,13 @@ public:
 
     void moveSelectionUp() {}
 
-    void moveSelectionDown() {}
+    void moveSelectionDown() { }
 
-    void moveSelectionLeft() {}
+    void navigateLeft() { changeSelectionByDelta(-1); }
 
-    void moveSelectionRight() {}
+    void navigateRight() { changeSelectionByDelta(1); }
 
-    void deleteSelectedItems() {
-        deleteAllSelectedItems(state);
-    }
+    void deleteSelectedItems() { deleteAllSelectedItems(state); }
 
     void deleteItem(const ValueTree &v, UndoManager* undoManager) {
         if (!v.isValid())
@@ -781,6 +779,23 @@ private:
                 midiOutputProcessor.setProperty(IDs::allowDefaultConnections, true, nullptr);
                 midiOutputProcessor.setProperty(IDs::deviceName, deviceName, nullptr);
                 output.addChild(midiOutputProcessor, -1, &undoManager);
+            }
+        }
+    }
+
+    void changeSelectionByDelta(int delta) const {
+        const auto& selectedTrack = getSelectedTrack();
+        if (selectedTrack.isValid()) {
+            auto siblingToSelect = selectedTrack.getSibling(delta);
+            if (siblingToSelect.isValid()) {
+                // Track is considered selected when one of its processors is.
+                if (selectedTrack[IDs::selected] || selectedTrack.getNumChildren() == 0) {
+                    // If the actual track is selected, select a sibling track.
+                    siblingToSelect.setProperty(IDs::selected, true, nullptr);
+                } else {
+                    // Otherwise, select sibling's first processor
+                    siblingToSelect.getChild(0).setProperty(IDs::selected, true, nullptr);
+                }
             }
         }
     }
