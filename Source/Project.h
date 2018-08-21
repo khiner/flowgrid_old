@@ -304,6 +304,14 @@ public:
 
     void navigateRight() { selectItemIfValid(findItemToSelectWithLeftRightDelta(1)); }
 
+    bool canNavigateUp() const { return findItemToSelectWithUpDownDelta(-1).isValid(); }
+
+    bool canNavigateDown() const { return findItemToSelectWithUpDownDelta(1).isValid(); }
+
+    bool canNavigateLeft() const { return findItemToSelectWithLeftRightDelta(-1).isValid(); }
+
+    bool canNavigateRight() const { return findItemToSelectWithLeftRightDelta(1).isValid(); }
+
     void deleteSelectedItems() { deleteAllSelectedItems(state); }
 
     void deleteItem(const ValueTree &v, UndoManager* undoManager) {

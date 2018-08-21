@@ -118,7 +118,7 @@ public:
     }
 
     void arrowPressed(int arrowDirection) override {
-        if (currentlyViewingChild != nullptr) {
+        if (currentlyViewingChild == &processorSelector) {
             currentlyViewingChild->arrowPressed(arrowDirection);
             return;
         }
@@ -152,7 +152,7 @@ public:
         } else {
             for (auto buttonId : {Push2::addTrack, Push2::delete_, Push2::addDevice,
                                   Push2::mix, Push2::master, Push2::undo, Push2::note, Push2::session,
-                                  Push2::shift}) {
+                                  Push2::shift, Push2::left, Push2::right, Push2::up, Push2::down}) {
                 push2.disableWhiteLedButton(buttonId);
             }
         }
@@ -198,6 +198,23 @@ private:
         else
             push2.activateWhiteLedButton(Push2MidiCommunicator::master);
         push2NoteModePadLedManager.trackSelected(selectedTrack);
+
+        for (int direction : { Push2::upArrowDirection, Push2::downArrowDirection, Push2::leftArrowDirection, Push2::rightArrowDirection }) {
+            if (isVisible() && currentlyViewingChild != &processorSelector && canNavigateInDirection(direction))
+                push2.activateWhiteLedButton(Push2::ccNumberForArrowButton(direction));
+            else
+                push2.disableWhiteLedButton(Push2::ccNumberForArrowButton(direction));
+        }
+    }
+
+    bool canNavigateInDirection(int direction) const {
+        switch (direction) {
+            case Push2::rightArrowDirection: return project.canNavigateRight();
+            case Push2::downArrowDirection: return project.canNavigateDown();
+            case Push2::leftArrowDirection: return project.canNavigateLeft();
+            case Push2::upArrowDirection: return project.canNavigateUp();
+            default: return false;
+        }
     }
 
     void updatePush2NoteModePadLedManagerVisibility() {
@@ -225,12 +242,12 @@ private:
 
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {
         if (i == IDs::selected && tree[IDs::selected]) {
-            updatePush2SelectionDependentButtons();
             if (tree.hasType(IDs::PROCESSOR)) {
                 if (auto *processorWrapper = graph.getProcessorWrapperForState(tree)) {
                     selectProcessorIfNeeded(processorWrapper);
                 }
             }
+            updatePush2SelectionDependentButtons();
         } else if (i == IDs::controlMode) {
             updateEnabledPush2Buttons();
             updatePush2NoteModePadLedManagerVisibility();
