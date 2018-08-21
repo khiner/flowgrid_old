@@ -44,7 +44,6 @@ public:
         deviceManager.initialise(256, 256, savedAudioState.get(), true);
 
         auto *selectionEditor = new SelectionEditor(project, processorGraph);
-        undoManager.addChangeListener(selectionEditor);
 
         selectionWindow = std::make_unique<MainWindow>(*this, "Selection Editor", selectionEditor);
 

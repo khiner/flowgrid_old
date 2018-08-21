@@ -9,7 +9,6 @@
 
 class SelectionEditor : public Component,
                         public DragAndDropContainer,
-                        public ChangeListener,
                         private Button::Listener,
                         private Utilities::ValueTreePropertyChangeListener {
 public:
@@ -18,11 +17,8 @@ public:
         project.getState().addListener(this);
         addAndMakeVisible(contextPane);
         addChildComponent((processorEditor = std::make_unique<ProcessorEditor>()).get());
-        Utilities::visitComponents({&undoButton, &redoButton, &addProcessorButton},
-                                   [this](Component *c) { addAndMakeVisible(c); });
+        addAndMakeVisible(addProcessorButton);
 
-        undoButton.addListener(this);
-        redoButton.addListener(this);
         addProcessorButton.addListener(this);
 
         setSize(800, 600);
@@ -35,12 +31,7 @@ public:
     void resized() override {
         Rectangle<int> r(getLocalBounds().reduced(4));
 
-        Rectangle<int> buttons(r.removeFromBottom(22));
-        undoButton.setBounds(buttons.removeFromLeft(100));
-        buttons.removeFromLeft(6);
-        redoButton.setBounds(buttons.removeFromLeft(100));
-
-        buttons.removeFromLeft(6);
+        Rectangle<int> buttons(r.removeFromTop(22));
         addProcessorButton.setBounds(buttons.removeFromLeft(120));
 
         contextPane.setBounds(r.removeFromBottom(400).reduced(4));
@@ -50,11 +41,7 @@ public:
     }
 
     void buttonClicked(Button *b) override {
-        if (b == &undoButton) {
-            getCommandManager().invokeDirectly(CommandIDs::undo, false);
-        } else if (b == &redoButton) {
-            getCommandManager().invokeDirectly(CommandIDs::redo, false);
-        } else if (b == &addProcessorButton) {
+        if (b == &addProcessorButton) {
             if (project.getSelectedTrack().isValid()) {
                 addProcessorMenu = std::make_unique<PopupMenu>();
                 project.addPluginsToMenu(*addProcessorMenu, project.getSelectedTrack());
@@ -77,16 +64,7 @@ public:
         }
     }
 
-    void changeListenerCallback(ChangeBroadcaster* source) override {
-        if (auto* undoManager = dynamic_cast<UndoManager *>(source)) {
-            undoButton.setEnabled(undoManager->canUndo());
-            redoButton.setEnabled(undoManager->canRedo());
-        }
-    }
-
 private:
-    TextButton undoButton{"Undo"}, redoButton{"Redo"};
-
     TextButton addProcessorButton{"Add Processor"};
 
     std::unique_ptr<ProcessorEditor> processorEditor {};
