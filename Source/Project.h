@@ -809,35 +809,40 @@ private:
         auto selectedProcessor = getSelectedProcessor();
         if (selectedProcessor.isValid()) {
             auto siblingToSelect = selectedProcessor.getSibling(delta);
-            if (siblingToSelect.isValid()) {
-                return siblingToSelect;
-            } else {
-                auto track = selectedProcessor.getParent();
-                if (delta < 0) {
-                    if (track[IDs::selected] && track.hasProperty(IDs::isMasterTrack)) {
-                        const auto& lastVisibleTrack = getTrackWithViewIndex(NUM_VISIBLE_TRACKS - 1);
-                        return lastVisibleTrack.isValid() ? lastVisibleTrack : track.getSibling(-1);
-                    }
-                    else
-                        return track;
-                } else if (delta > 0) {
-                    // Track is considered selected when one of its processors is. The track itself may not be selected.
-                    if (track[IDs::selected]) {
-                        // reselecting the processor will deselect the parent.
-                        selectedProcessor.sendPropertyChangeMessage(IDs::selected);
-                        return {};
-                    } else if (!track.hasProperty(IDs::isMasterTrack)) {
-                        return getMasterTrack();
-                    }
+            auto track = selectedProcessor.getParent();
+            if (delta > 0) {
+                // Track is considered selected when one of its processors is. The track itself may not be selected.
+                if (track[IDs::selected]) {
+                    // reselecting the processor will deselect the parent.
+                    return selectedProcessor;
+                } else if (!siblingToSelect.isValid() && !track.hasProperty(IDs::isMasterTrack)) {
+                    return getMasterTrack();
+                }
+            } else if (delta < 0) {
+                if (track[IDs::selected] && track.hasProperty(IDs::isMasterTrack)) {
+                    const auto& lastVisibleTrack = getTrackWithViewIndex(NUM_VISIBLE_TRACKS - 1);
+                    const auto& trackToSelect = lastVisibleTrack.isValid() ? lastVisibleTrack : track.getSibling(-1);
+                    if (trackToSelect.getNumChildren() > 0)
+                        return trackToSelect.getChild(trackToSelect.getNumChildren() - 1);
+                    else if (trackToSelect.isValid())
+                        return trackToSelect;
+                } else if (!siblingToSelect.isValid() && !track[IDs::selected]) {
+                    return track;
                 }
             }
+            if (siblingToSelect.isValid())
+                return siblingToSelect;
         }
         return {};
     }
 
     void selectItemIfValid(ValueTree item) const {
-        if (item.isValid())
-            item.setProperty(IDs::selected, true, nullptr);
+        if (item.isValid()) {
+            if (!item[IDs::selected])
+                item.setProperty(IDs::selected, true, nullptr);
+            else
+                item.sendPropertyChangeMessage(IDs::selected);
+        }
     }
 
     void deleteAllSelectedItems(const ValueTree &parent) {
