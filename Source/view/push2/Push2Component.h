@@ -123,10 +123,10 @@ public:
             return;
         }
         switch (arrowDirection) {
-            case Push2::upArrowDirection: return project.moveSelectionUp();
-            case Push2::downArrowDirection: return project.moveSelectionDown();
             case Push2::leftArrowDirection: return project.navigateLeft();
             case Push2::rightArrowDirection: return project.navigateRight();
+            case Push2::upArrowDirection: return project.navigateUp();
+            case Push2::downArrowDirection: return project.navigateDown();
             default: return;
         }
     }

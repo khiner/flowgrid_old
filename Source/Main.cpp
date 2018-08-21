@@ -189,6 +189,8 @@ public:
                 CommandIDs::showPush2MirrorWindow,
                 CommandIDs::navigateLeft,
                 CommandIDs::navigateRight,
+                CommandIDs::navigateUp,
+                CommandIDs::navigateDown,
                 CommandIDs::showPluginListEditor,
                 CommandIDs::showAudioMidiSettings,
 //                CommandIDs::aboutBox,
@@ -262,6 +264,14 @@ public:
                 result.setInfo("Select whatever is to the right of the current selection", String(), category, 0);
                 result.addDefaultKeypress(KeyPress::rightKey, ModifierKeys::noModifiers);
                 break;
+            case CommandIDs::navigateUp:
+                result.setInfo("Select whatever is above the current selection", String(), category, 0);
+                result.addDefaultKeypress(KeyPress::upKey, ModifierKeys::noModifiers);
+                break;
+            case CommandIDs::navigateDown:
+                result.setInfo("Select whatever is below the current selection", String(), category, 0);
+                result.addDefaultKeypress(KeyPress::downKey, ModifierKeys::noModifiers);
+                break;
             case CommandIDs::showPluginListEditor:
                 result.setInfo("Edit the list of available plug-Ins...", String(), category, 0);
                 result.addDefaultKeypress('p', ModifierKeys::commandModifier);
@@ -327,6 +337,12 @@ public:
                 break;
             case CommandIDs::navigateRight:
                 project.navigateRight();
+                break;
+            case CommandIDs::navigateUp:
+                project.navigateUp();
+                break;
+            case CommandIDs::navigateDown:
+                project.navigateDown();
                 break;
             case CommandIDs::showPluginListEditor:
                 showPluginList();

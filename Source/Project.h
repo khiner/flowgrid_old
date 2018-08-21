@@ -296,13 +296,13 @@ public:
         }
     }
 
-    void moveSelectionUp() {}
+    void navigateUp() { selectItemIfValid(findItemToSelectWithUpDownDelta(-1)); }
 
-    void moveSelectionDown() { }
+    void navigateDown() { selectItemIfValid(findItemToSelectWithUpDownDelta(1)); }
 
-    void navigateLeft() { changeSelectionByDelta(-1); }
+    void navigateLeft() { selectItemIfValid(findItemToSelectWithLeftRightDelta(-1)); }
 
-    void navigateRight() { changeSelectionByDelta(1); }
+    void navigateRight() { selectItemIfValid(findItemToSelectWithLeftRightDelta(1)); }
 
     void deleteSelectedItems() { deleteAllSelectedItems(state); }
 
@@ -790,21 +790,54 @@ private:
         }
     }
 
-    void changeSelectionByDelta(int delta) const {
+    ValueTree findItemToSelectWithLeftRightDelta(int delta) const {
         const auto& selectedTrack = getSelectedTrack();
         if (selectedTrack.isValid()) {
             auto siblingToSelect = selectedTrack.getSibling(delta);
             if (siblingToSelect.isValid()) {
-                // Track is considered selected when one of its processors is.
-                if (selectedTrack[IDs::selected] || selectedTrack.getNumChildren() == 0) {
-                    // If the actual track is selected, select a sibling track.
-                    siblingToSelect.setProperty(IDs::selected, true, nullptr);
-                } else {
-                    // Otherwise, select sibling's first processor
-                    siblingToSelect.getChild(0).setProperty(IDs::selected, true, nullptr);
+                // Track is considered selected when one of its processors is. The track itself may not be selected.
+                if (selectedTrack[IDs::selected] || selectedTrack.getNumChildren() == 0)
+                    return siblingToSelect;
+                else
+                    return siblingToSelect.getChild(0);
+            }
+        }
+        return {};
+    }
+
+    ValueTree findItemToSelectWithUpDownDelta(int delta) const {
+        auto selectedProcessor = getSelectedProcessor();
+        if (selectedProcessor.isValid()) {
+            auto siblingToSelect = selectedProcessor.getSibling(delta);
+            if (siblingToSelect.isValid()) {
+                return siblingToSelect;
+            } else {
+                auto track = selectedProcessor.getParent();
+                if (delta < 0) {
+                    if (track[IDs::selected] && track.hasProperty(IDs::isMasterTrack)) {
+                        const auto& lastVisibleTrack = getTrackWithViewIndex(NUM_VISIBLE_TRACKS - 1);
+                        return lastVisibleTrack.isValid() ? lastVisibleTrack : track.getSibling(-1);
+                    }
+                    else
+                        return track;
+                } else if (delta > 0) {
+                    // Track is considered selected when one of its processors is. The track itself may not be selected.
+                    if (track[IDs::selected]) {
+                        // reselecting the processor will deselect the parent.
+                        selectedProcessor.sendPropertyChangeMessage(IDs::selected);
+                        return {};
+                    } else if (!track.hasProperty(IDs::isMasterTrack)) {
+                        return getMasterTrack();
+                    }
                 }
             }
         }
+        return {};
+    }
+
+    void selectItemIfValid(ValueTree item) const {
+        if (item.isValid())
+            item.setProperty(IDs::selected, true, nullptr);
     }
 
     void deleteAllSelectedItems(const ValueTree &parent) {
@@ -846,8 +879,10 @@ private:
             deviceManager.setAudioDeviceSetup(config, true);
         } else if ((tree.hasType(IDs::TRACK) || tree.hasType(IDs::PROCESSOR)) && i == IDs::selected && tree[IDs::selected]) {
             const auto& track = tree.hasType(IDs::TRACK) ? tree : tree.getParent();
-            auto trackIndex = tracks.indexOf(track);
-            updateViewTrackOffsetToInclude(trackIndex);
+            if (!track.hasProperty(IDs::isMasterTrack)) {
+                auto trackIndex = tracks.indexOf(track);
+                updateViewTrackOffsetToInclude(trackIndex);
+            }
         }
     }
 

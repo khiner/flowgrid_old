@@ -18,6 +18,8 @@ namespace CommandIDs {
             showPush2MirrorWindow    = 0x40000,
             navigateLeft             = 0x40001,
             navigateRight            = 0x40002,
+            navigateUp               = 0x40003,
+            navigateDown             = 0x40004,
             showPluginListEditor     = 0x50000,
             showAudioMidiSettings    = 0x50001,
             aboutBox                 = 0x50002,
