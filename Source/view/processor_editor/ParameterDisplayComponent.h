@@ -4,7 +4,7 @@
 #include "processors/StatefulAudioProcessorWrapper.h"
 #include "processors/MixerChannelProcessor.h"
 
-class ParameterDisplayComponent : public Component {
+class ParameterDisplayComponent : public Component, public StatefulAudioProcessorWrapper::Parameter::Listener {
 public:
     ParameterDisplayComponent() {
         addChildComponent(parameterName);
@@ -19,6 +19,7 @@ public:
     void setParameter(StatefulAudioProcessorWrapper::Parameter *parameterWrapper) {
         if (this->parameterWrapper == parameterWrapper)
             return;
+
         for (auto *child : getChildren()) {
             child->setVisible(false);
         }
@@ -29,6 +30,8 @@ public:
 
         if (this->parameterWrapper == nullptr)
             return;
+
+        this->parameterWrapper->addListener(this);
 
         auto *parameter = parameterWrapper->sourceParameter;
 
@@ -126,6 +129,11 @@ public:
         parameterComponent->setBounds(area);
     }
 
+    void parameterWillBeDestroyed(StatefulAudioProcessorWrapper::Parameter* parameter) override {
+        if (parameter == this->parameterWrapper)
+            detachParameterComponent();
+    }
+
     Slider* getSlider() { return dynamic_cast<Slider *>(parameterComponent.get()); }
     Button* getButton() { return dynamic_cast<Button *>(parameterComponent.get()); }
     ComboBox* getCombobox() { return dynamic_cast<ComboBox *>(parameterComponent.get()); }
@@ -140,6 +148,8 @@ private:
     void detachParameterComponent() {
         if (parameterComponent == nullptr || parameterWrapper == nullptr)
             return;
+
+        parameterWrapper->removeListener(this);
         if (auto* slider = getSlider()) {
             parameterWrapper->detachSlider(slider);
             parameterWrapper->detachLabel(&valueLabel);
@@ -149,8 +159,10 @@ private:
             parameterWrapper->detachComboBox(comboBox);
         else if (auto *parameterSwitch = getSwitch())
             parameterWrapper->detachSwitch(parameterSwitch);
-        else if (auto *levelMeter = getLevelMeter())
+        else if (auto *levelMeter = getLevelMeter()) {
             parameterWrapper->detachLevelMeter(levelMeter);
+            parameterWrapper->detachLabel(&valueLabel);
+        }
         parameterComponent = nullptr;
     }
 

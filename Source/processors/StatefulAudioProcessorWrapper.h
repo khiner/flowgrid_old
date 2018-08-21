@@ -16,6 +16,12 @@ public:
               private Utilities::ValueTreePropertyChangeListener,
               public AudioProcessorParameter::Listener, public Slider::Listener, public Button::Listener,
               public ComboBox::Listener, public SwitchParameterComponent::Listener, public LevelMeter::Listener {
+        class Listener {
+        public:
+            virtual ~Listener() = default;
+            virtual void parameterWillBeDestroyed(Parameter* parameter) = 0;
+        };
+
         explicit Parameter(AudioProcessorParameter *parameter, StatefulAudioProcessorWrapper* processorWrapper)
                 : AudioProcessorParameterWithID(parameter->getName(32), parameter->getName(32),
                                                 parameter->getLabel(), parameter->getCategory()),
@@ -40,6 +46,8 @@ public:
         }
 
         ~Parameter() override {
+            listeners.call(&Listener::parameterWillBeDestroyed, this);
+
             if (state.isValid())
                 state.removeListener(this);
             sourceParameter->removeListener(this);
@@ -68,6 +76,10 @@ public:
             }
             attachedLevelMeters.clear(false);
         }
+
+        void addListener(Listener* listener) { listeners.add(listener); }
+
+        void removeListener(Listener* listener) { listeners.remove(listener); }
 
         String getText(float v, int length) const override {
             return valueToTextFunction != nullptr ?
@@ -301,6 +313,8 @@ public:
         UndoManager *undoManager{nullptr};
         StatefulAudioProcessorWrapper *processorWrapper;
     private:
+        ListenerList<Listener> listeners;
+
         bool listenersNeedCalling{true};
         bool ignoreParameterChangedCallbacks = false;
 
