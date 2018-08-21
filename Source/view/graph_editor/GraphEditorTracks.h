@@ -20,26 +20,29 @@ public:
         freeObjects();
     }
 
-    void setTrackWidth(int trackWidth) { this->trackWidth = trackWidth; }
+    int getTrackViewXOffset() const { return trackViewXOffset; }
 
-    void setMasterTrackWidthAndXOffset(int xOffset) {
-        if (auto* masterTrack = findMasterTrack()) {
-            masterTrack->setBounds(masterTrack->getBounds().withX(xOffset).withWidth(GraphEditorTrack::LABEL_HEIGHT + Project::NUM_VISIBLE_TRACKS * trackWidth));
-        }
-    }
+    void setTrackWidth(int trackWidth) { this->trackWidth = trackWidth; }
 
     void resized() override {
         auto r = getLocalBounds().withHeight(getHeight() * Project::NUM_AVAILABLE_PROCESSOR_SLOTS / (Project::NUM_AVAILABLE_PROCESSOR_SLOTS + 1));
 
-        if (auto* masterTrack = findMasterTrack()) {
-            masterTrack->setBounds(masterTrack->getBounds().withHeight(getHeight() - r.getHeight()).withBottomY(getHeight()));
-            r.removeFromLeft(GraphEditorTrack::LABEL_HEIGHT);
-        }
+        Component* offsetTrack {};
 
+        r.removeFromLeft(GraphEditorTrack::LABEL_HEIGHT);
         for (auto *track : objects) {
             if (track->isMasterTrack())
                 continue;
             track->setBounds(r.removeFromLeft(trackWidth));
+            if (track->getTrackViewIndex() == 0)
+                offsetTrack = track;
+        }
+
+        if (offsetTrack != nullptr)
+            trackViewXOffset = offsetTrack->getX();
+
+        if (auto* masterTrack = findMasterTrack()) {
+            masterTrack->setBounds(trackViewXOffset - GraphEditorTrack::LABEL_HEIGHT, r.getBottom(), GraphEditorTrack::LABEL_HEIGHT + trackWidth * Project::NUM_VISIBLE_TRACKS, getHeight() - r.getHeight());
         }
     }
 
@@ -208,6 +211,7 @@ public:
 
 private:
     int trackWidth {0};
+    int trackViewXOffset {0};
 
     void deselectAllTracksExcept(const ValueTree& except) {
         for (auto track : parent) {

@@ -23,9 +23,10 @@ public:
         draggingConnector = nullptr;
     }
 
-    // call this method when the parent viewport size has changed
+    // Call this method when the parent viewport size has changed or when the number of tracks has changed.
     void resize() {
-        setBounds(0, 0, getTrackWidth() * jmax(Project::NUM_VISIBLE_TRACKS, project.getNumNonMasterTracks()) + GraphEditorTrack::LABEL_HEIGHT, getParentComponent()->getHeight());
+        setSize(getTrackWidth() * jmax(Project::NUM_VISIBLE_TRACKS, project.getNumNonMasterTracks()) + GraphEditorTrack::LABEL_HEIGHT * 2, getParentComponent()->getHeight());
+        tracks->setTrackWidth(getTrackWidth());
     }
 
     void paint(Graphics &g) override {
@@ -33,18 +34,26 @@ public:
     }
 
     void resized() override {
-        tracks->setTrackWidth(getTrackWidth());
-
-        int xOffset = project.getGridViewTrackOffset() * getTrackWidth();
-        parentViewport.setViewPosition(xOffset, 0);
-
         auto r = getLocalBounds();
         connectors->setBounds(r);
-        auto top = r.removeFromTop(int(getHeight() * 1.0 / Project::NUM_VISIBLE_PROCESSOR_SLOTS)).withX(xOffset).withWidth(parentViewport.getWidth());
+
+        auto ioProcessorHeight = getHeight() / Project::NUM_VISIBLE_PROCESSOR_SLOTS;
+        auto top = r.removeFromTop(ioProcessorHeight);
+        auto bottom = r.removeFromBottom(ioProcessorHeight);
+
+        tracks->setBounds(r.withHeight(getHeight() * (Project::NUM_VISIBLE_PROCESSOR_SLOTS - 2) / Project::NUM_VISIBLE_PROCESSOR_SLOTS ));
+        parentViewport.setViewPosition(tracks->getTrackViewXOffset() - GraphEditorTrack::LABEL_HEIGHT, 0);
+
+        auto ioProcessorWidth = parentViewport.getWidth() - GraphEditorTrack::LABEL_HEIGHT * 2;
+        top.setX(tracks->getTrackViewXOffset());
+        top.setWidth(ioProcessorWidth);
+        bottom.setX(tracks->getTrackViewXOffset());
+        bottom.setWidth(ioProcessorWidth);
+
         int midiInputProcessorWidthInChannels = midiInputProcessors.size() * 2;
         float audioInputWidthRatio = audioInputProcessor
-                ? float(audioInputProcessor->getNumOutputChannels()) / float(audioInputProcessor->getNumOutputChannels() + midiInputProcessorWidthInChannels)
-                : 0;
+                                     ? float(audioInputProcessor->getNumOutputChannels()) / float(audioInputProcessor->getNumOutputChannels() + midiInputProcessorWidthInChannels)
+                                     : 0;
         if (audioInputProcessor != nullptr) {
             audioInputProcessor->setBounds(top.removeFromLeft(int(getWidth() * audioInputWidthRatio)));
         }
@@ -52,9 +61,6 @@ public:
             midiInputProcessor->setBounds(top.removeFromLeft(int(getWidth() * (1 - audioInputWidthRatio) / midiInputProcessors.size())));
         }
 
-        tracks->setMasterTrackWidthAndXOffset(xOffset);
-        tracks->setBounds(r.withHeight(getHeight() * (Project::NUM_VISIBLE_PROCESSOR_SLOTS - 2) / Project::NUM_VISIBLE_PROCESSOR_SLOTS ));
-        auto bottom = r.removeFromBottom(int(getHeight() * 1.0 / Project::NUM_VISIBLE_PROCESSOR_SLOTS)).withX(xOffset).withWidth(parentViewport.getWidth());
         int midiOutputProcessorWidthInChannels = midiOutputProcessors.size() * 2;
         float audioOutputWidthRatio = audioOutputProcessor
                 ? float(audioOutputProcessor->getNumInputChannels()) / float(audioOutputProcessor->getNumInputChannels() + midiOutputProcessorWidthInChannels)
@@ -201,7 +207,7 @@ private:
     // project state listener.
     Viewport &parentViewport;
 
-    int getTrackWidth() { return (parentViewport.getWidth() - GraphEditorTrack::LABEL_HEIGHT) / Project::NUM_VISIBLE_TRACKS; }
+    int getTrackWidth() { return (parentViewport.getWidth() - GraphEditorTrack::LABEL_HEIGHT * 2) / Project::NUM_VISIBLE_TRACKS; }
     
     GraphEditorPin *findPinAt(const MouseEvent &e) const {
         if (auto *pin = audioInputProcessor->findPinAt(e))
@@ -237,8 +243,10 @@ private:
 
     void valueTreePropertyChanged(ValueTree& tree, const Identifier& i) override {
         if (tree.hasType(IDs::PROCESSOR) && i == IDs::processorSlot) {
+            tracks->resized();
             resized();
         } else if (i == IDs::gridViewTrackOffset || i == IDs::gridViewSlotOffset) {
+            tracks->resized();
             resized();
         }
     }
@@ -264,7 +272,7 @@ private:
             }
             updateComponents();
         } else if (child.hasType(IDs::CONNECTION)) {
-            resized();
+            connectors->updateConnectors();
         }
     }
 
@@ -282,7 +290,7 @@ private:
                 updateComponents();
             }
         } else if (child.hasType(IDs::CONNECTION)) {
-            resized();
+            connectors->updateConnectors();
         }
     }
 
