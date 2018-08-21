@@ -219,6 +219,8 @@ private:
     void valueTreePropertyChanged(ValueTree& tree, const Identifier& i) override {
         if (tree.hasType(IDs::PROCESSOR) && i == IDs::processorSlot) {
             resized();
+        } else if (i == IDs::gridViewTrackOffset || i == IDs::gridViewSlotOffset) {
+            resized();
         }
     }
 

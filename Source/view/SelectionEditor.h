@@ -5,6 +5,7 @@
 #include <processors/ProcessorManager.h>
 #include "UiColours.h"
 #include "processor_editor/ProcessorEditor.h"
+#include "view/context_pane/ContextPane.h"
 
 class SelectionEditor : public Component,
                         public DragAndDropContainer,
@@ -13,8 +14,9 @@ class SelectionEditor : public Component,
                         private Utilities::ValueTreePropertyChangeListener {
 public:
     SelectionEditor(Project& project, ProcessorGraph &audioGraphBuilder)
-            : project(project), audioGraphBuilder(audioGraphBuilder) {
+            : project(project), audioGraphBuilder(audioGraphBuilder), contextPane(project) {
         project.getState().addListener(this);
+        addAndMakeVisible(contextPane);
         addChildComponent((processorEditor = std::make_unique<ProcessorEditor>()).get());
         Utilities::visitComponents({&undoButton, &redoButton, &addProcessorButton},
                                    [this](Component *c) { addAndMakeVisible(c); });
@@ -41,6 +43,7 @@ public:
         buttons.removeFromLeft(6);
         addProcessorButton.setBounds(buttons.removeFromLeft(120));
 
+        contextPane.setBounds(r.removeFromBottom(400).reduced(4));
         if (processorEditor != nullptr) {
             processorEditor->setBounds(r);
         }
@@ -91,6 +94,7 @@ private:
     Project &project;
     ProcessorGraph &audioGraphBuilder;
 
+    ContextPane contextPane;
     std::unique_ptr<PopupMenu> addProcessorMenu;
 
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {

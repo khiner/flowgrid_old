@@ -31,7 +31,13 @@ public:
 
         const int w = r.getWidth() / Project::NUM_VISIBLE_TRACKS;
         for (auto *track : objects) {
-            if (!track->isMasterTrack()) {
+            if (track->isMasterTrack())
+                continue;
+            int viewIndex = track->getTrackViewIndex();
+            if (viewIndex < 0 || viewIndex >= 8)
+                track->setVisible(false);
+            else {
+                track->setVisible(true);
                 track->setBounds(r.removeFromLeft(w));
             }
         }

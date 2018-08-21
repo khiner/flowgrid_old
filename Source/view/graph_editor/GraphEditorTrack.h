@@ -57,6 +57,10 @@ public:
         return state.getParent().indexOf(state);
     }
 
+    int getTrackViewIndex() const {
+        return project.getViewIndexForTrack(state);
+    }
+
     String getTrackName() const {
         return state[IDs::name].toString();
     }

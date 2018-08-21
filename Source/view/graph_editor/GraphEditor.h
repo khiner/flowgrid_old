@@ -8,32 +8,23 @@
 class GraphEditor : public Component {
 public:
     GraphEditor(ProcessorGraph &graph, Project &project)
-            : graph(graph), project(project) {
-        init();
-    }
-
-    ~GraphEditor() override {
-        releaseGraph();
+            : graph(graph), project(project), graphPanel(graph, project) {
+        addAndMakeVisible(graphPanel);
+        addAndMakeVisible(statusBar);
+        graphPanel.updateComponents();
     }
 
     void resized() override {
         auto r = getLocalBounds();
-        statusBar->setBounds(r.removeFromBottom(20));
-        graphPanel->setBounds(r);
+        statusBar.setBounds(r.removeFromBottom(20));
+        graphPanel.setBounds(r);
     }
 
-    void releaseGraph() {
-        if (graphPanel != nullptr) {
-            graphPanel = nullptr;
-        }
-
-        statusBar = nullptr;
-    }
-
-    std::unique_ptr<GraphEditorPanel> graphPanel;
 private:
     ProcessorGraph &graph;
     Project &project;
+
+    GraphEditorPanel graphPanel;
 
     struct TooltipBar : public Component, private Timer {
         TooltipBar() {
@@ -42,7 +33,7 @@ private:
 
         void paint(Graphics &g) override {
             g.setFont(Font(getHeight() * 0.7f, Font::bold));
-            g.setColour(Colours::black);
+            g.setColour(findColour(TextEditor::textColourId));
             g.drawFittedText(tip, 10, 0, getWidth() - 12, getHeight(), Justification::centredLeft, 1);
         }
 
@@ -65,17 +56,7 @@ private:
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (TooltipBar)
     };
 
-    std::unique_ptr<TooltipBar> statusBar;
-
-    void init() {
-        graphPanel = std::make_unique<GraphEditorPanel>(graph, project);
-        addAndMakeVisible(graphPanel.get());
-
-        statusBar = std::make_unique<TooltipBar>();
-        addAndMakeVisible(statusBar.get());
-
-        graphPanel->updateComponents();
-    }
+    TooltipBar statusBar;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (GraphEditor)
 };

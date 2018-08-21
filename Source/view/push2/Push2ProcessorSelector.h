@@ -130,7 +130,6 @@ class Push2ProcessorSelector : public Push2ComponentBase {
             for (auto *label : labels) {
                 label->setBounds(r.removeFromLeft(getWidth() / NUM_COLUMNS));
             }
-            selectionRectangleOverlay.setBounds(getLocalBounds());
             selectionRectangleOverlay.setRectangle(getLocalBounds().toFloat());
         }
 

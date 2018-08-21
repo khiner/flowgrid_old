@@ -48,8 +48,8 @@ public:
 
         selectionWindow = std::make_unique<MainWindow>(*this, "Selection Editor", selectionEditor);
 
-        graphEditorWindow->setBoundsRelative(0.02, 0.02, 0.53, 0.96);
-        selectionWindow->setBoundsRelative(0.55, 0.02, 0.43, 0.96);
+        graphEditorWindow->setBoundsRelative(0.02, 0.02, 0.58, 0.96);
+        selectionWindow->setBoundsRelative(0.60, 0.02, 0.38, 0.96);
 
         push2Component = std::make_unique<Push2Component>(project, push2MidiCommunicator, processorGraph);
         push2Component->setVisible(true);

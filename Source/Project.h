@@ -70,17 +70,21 @@ public:
 
     ValueTree& getTracks() { return tracks; }
 
-    int getNumTracks() { return tracks.getNumChildren(); }
+    int getNumTracks() const { return tracks.getNumChildren(); }
 
-    int getNumNonMasterTracks() {
+    int getNumNonMasterTracks() const {
         return getMasterTrack().isValid() ? tracks.getNumChildren() - 1 : tracks.getNumChildren();
     }
 
-    ValueTree getTrack(int trackIndex) { return tracks.getChild(trackIndex); }
+    ValueTree getTrack(int trackIndex) const { return tracks.getChild(trackIndex); }
 
-    ValueTree getMasterTrack() { return tracks.getChildWithProperty(IDs::isMasterTrack, true); }
+    ValueTree getTrackWithViewIndex(int trackViewIndex) const {
+        return tracks.getChild(trackViewIndex + getGridViewTrackOffset());
+    }
 
-    ValueTree getSelectedProcessor() {
+    ValueTree getMasterTrack() const { return tracks.getChildWithProperty(IDs::isMasterTrack, true); }
+
+    ValueTree getSelectedProcessor() const {
         for (const auto& track : tracks) {
             for (const auto& processor : track) {
                 if (processor.hasType(IDs::PROCESSOR) && processor[IDs::selected])
@@ -90,14 +94,20 @@ public:
         return {};
     }
 
-    ValueTree getSelectedTrack() {
+    bool isTrackSelected(const ValueTree& track) const {
+        if (track[IDs::selected])
+            return true;
+        for (const auto& processor : track) {
+            if (processor.hasType(IDs::PROCESSOR) && processor[IDs::selected])
+                return true;
+        }
+        return false;
+    }
+
+    ValueTree getSelectedTrack() const {
         for (const auto& track : tracks) {
-            if (track[IDs::selected])
+            if (isTrackSelected(track))
                 return track;
-            for (const auto& processor : track) {
-                if (processor.hasType(IDs::PROCESSOR) && processor[IDs::selected])
-                    return track;
-            }
         }
         return {};
     }
@@ -114,7 +124,7 @@ public:
         return track.getChildWithProperty(IDs::name, MixerChannelProcessor::name());
     }
 
-    const ValueTree getMixerChannelProcessorForSelectedTrack() {
+    const ValueTree getMixerChannelProcessorForSelectedTrack() const {
         return getMixerChannelProcessorForTrack(getSelectedTrack());
     }
 
@@ -140,15 +150,34 @@ public:
         return false;
     }
 
-    const bool selectedTrackHasMixerChannel() {
+    const bool selectedTrackHasMixerChannel() const {
         return getMixerChannelProcessorForSelectedTrack().isValid();
     }
 
-    bool isInShiftMode() { return numShiftsHeld >= 1; }
+    int getNumProcessorSlots() const { return viewState[IDs::numProcessorSlots]; }
 
-    bool isInNoteMode() { return viewState[IDs::controlMode] == noteControlMode; }
+    int getMaxMasterTrackProcessorSlot() const {
+        int maxProcessorSlot = 0;
+        for (const auto& processor : getMasterTrack()) {
+            maxProcessorSlot = jmax(int(processor[IDs::processorSlot]), maxProcessorSlot);
+        }
+        return maxProcessorSlot;
+    }
 
-    bool isInSessionMode() { return viewState[IDs::controlMode] == sessionControlMode; }
+    int getGridViewTrackOffset() const { return viewState[IDs::gridViewTrackOffset]; }
+    int getGridViewSlotOffset() const { return viewState[IDs::gridViewSlotOffset]; }
+
+    int getMasterViewSlotOffset() const { return viewState[IDs::masterViewSlotOffset]; }
+
+    int getViewIndexForTrack(const ValueTree& track) {
+        return track.getParent().indexOf(track) - getGridViewTrackOffset();
+    }
+
+    bool isInShiftMode() const { return numShiftsHeld >= 1; }
+
+    bool isInNoteMode() const { return viewState[IDs::controlMode] == noteControlMode; }
+
+    bool isInSessionMode() const { return viewState[IDs::controlMode] == sessionControlMode; }
 
     void setShiftMode(bool shiftMode) { shiftMode ? numShiftsHeld++ : numShiftsHeld--; }
     void setNoteMode() { viewState.setProperty(IDs::controlMode, noteControlMode, nullptr); }
@@ -291,14 +320,18 @@ public:
     }
 
     void createDefaultProject() {
+        viewState.setProperty(IDs::controlMode, noteControlMode, nullptr);
+        viewState.setProperty(IDs::numProcessorSlots, 7, nullptr);
+        viewState.setProperty(IDs::gridViewTrackOffset, 0, nullptr);
+        viewState.setProperty(IDs::gridViewSlotOffset, 0, nullptr);
+        viewState.setProperty(IDs::masterViewSlotOffset, 0, nullptr);
+
         createAudioIoProcessors();
 
         ValueTree track = createAndAddTrack(nullptr);
         createAndAddProcessor(SineBank::getPluginDescription(), track, nullptr, -1);
 
         createAndAddMasterTrack(nullptr, true);
-
-        viewState.setProperty(IDs::controlMode, noteControlMode, nullptr);
     }
 
     ValueTree createAndAddMasterTrack(UndoManager* undoManager, bool addMixer=true) {
@@ -338,8 +371,8 @@ public:
 
         ValueTree track(IDs::TRACK);
         track.setProperty(IDs::uuid, Uuid().toString(), nullptr);
-        track.setProperty(IDs::name, nextToTrack.isValid() ? makeTrackNameUnique(nextToTrack[IDs::name]) : ("Track " + String(numTracks + 1)), nullptr);
-        track.setProperty(IDs::colour, nextToTrack.isValid() ? nextToTrack[IDs::colour].toString() : Colour::fromHSV((1.0f / 8.0f) * numTracks, 0.65f, 0.65f, 1.0f).toString(), nullptr);
+        track.setProperty(IDs::name, (nextToTrack.isValid() && !addMixer) ? makeTrackNameUnique(nextToTrack[IDs::name]) : ("Track " + String(numTracks + 1)), nullptr);
+        track.setProperty(IDs::colour, (nextToTrack.isValid() && !addMixer) ? nextToTrack[IDs::colour].toString() : Colour::fromHSV((1.0f / 8.0f) * numTracks, 0.65f, 0.65f, 1.0f).toString(), nullptr);
         tracks.addChild(track, nextToTrack.isValid() ? nextToTrack.getParent().indexOf(nextToTrack) + (addMixer ? 1 : 0): numTracks, undoManager);
 
         track.setProperty(IDs::selected, true, undoManager);
@@ -764,6 +797,13 @@ private:
             deviceManager.setMidiInputEnabled(child[IDs::deviceName], true);
         } else if (child[IDs::name] == MidiOutputProcessor::name() && !deviceManager.isMidiOutputEnabled(child[IDs::deviceName])) {
             deviceManager.setMidiOutputEnabled(child[IDs::deviceName], true);
+        } else if (child.hasType(IDs::TRACK) && !child.hasProperty(IDs::isMasterTrack)) {
+            auto viewTrackOffset = getGridViewTrackOffset();
+            auto trackIndex = tracks.indexOf(child);
+            if (trackIndex >= viewTrackOffset + 8)
+                viewState.setProperty(IDs::gridViewTrackOffset, trackIndex - 7, nullptr);
+            else if (trackIndex < viewTrackOffset)
+                viewState.setProperty(IDs::gridViewTrackOffset, trackIndex, nullptr);
         }
     }
 

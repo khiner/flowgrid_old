@@ -46,7 +46,7 @@ public:
         int labelIndex = 0;
         for (int i = 0; i < jmin(trackLabels.size(), project.getNumNonMasterTracks()); i++) {
             auto *label = trackLabels.getUnchecked(labelIndex++);
-            const auto& track = project.getTrack(i);
+            const auto& track = project.getTrackWithViewIndex(i);
             // TODO left/right buttons
             label->setVisible(true);
             label->setMainColour(Colour::fromString(track[IDs::colour].toString()));
@@ -75,8 +75,8 @@ protected:
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {
         if (tree.hasType(IDs::TRACK)) {
             if (i == IDs::name || i == IDs::colour) {
-                int trackIndex = tree.getParent().indexOf(tree);
-                if (trackIndex == -1)
+                int trackIndex = project.getViewIndexForTrack(tree);
+                if (trackIndex < 0 || trackIndex >= trackLabels.size())
                     return;
                 jassert(trackIndex < trackLabels.size()); // TODO left/right buttons
                 if (i == IDs::name && !tree.hasProperty(IDs::isMasterTrack)) {
@@ -85,6 +85,8 @@ protected:
             } else if (i == IDs::selected && tree[IDs::selected]) {
                 trackSelected(tree);
             }
+        } else if (i == IDs::gridViewTrackOffset) {
+            updateEnabledPush2Buttons();
         }
     }
 
@@ -102,9 +104,10 @@ protected:
     void trackColourChanged(const String &trackUuid, const Colour &colour) override {
         auto track = project.findTrackWithUuid(trackUuid);
         if (!track.hasProperty(IDs::isMasterTrack)) {
-            trackLabels.getUnchecked(track.getParent().indexOf(track))->setMainColour(colour);
+            if (auto *trackLabel = trackLabels[project.getViewIndexForTrack(track)]) {
+                trackLabel->setMainColour(colour);
+            }
         }
-
     }
 
 private:

@@ -188,7 +188,7 @@ private:
     void trackColourChanged(const String &trackUuid, const Colour &colour) override {
         Push2TrackManagingView::trackColourChanged(trackUuid, colour);
         auto track = project.findTrackWithUuid(trackUuid);
-        if (track == project.getSelectedTrack()) {
+        if (project.isTrackSelected(track)) {
             updateColours();
         }
     }
