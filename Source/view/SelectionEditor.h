@@ -79,11 +79,10 @@ private:
         if (i == IDs::selected && tree[IDs::selected]) {
             addProcessorButton.setVisible(tree.hasType(IDs::PROCESSOR) || tree.hasType(IDs::TRACK));
 
-            if (tree.hasType(IDs::PROCESSOR)) {
-                if (auto *processorWrapper = audioGraphBuilder.getProcessorWrapperForState(tree)) {
-                    processorEditor->setProcessor(processorWrapper);
-                    processorEditor->setVisible(true);
-                }
+            const auto& selectedProcessor = tree.hasType(IDs::PROCESSOR) ? tree : project.findSelectedProcessorForTrack(tree);
+            if (auto *processorWrapper = audioGraphBuilder.getProcessorWrapperForState(selectedProcessor)) {
+                processorEditor->setProcessor(processorWrapper);
+                processorEditor->setVisible(true);
             } else {
                 processorEditor->setVisible(false);
                 processorEditor->setProcessor(nullptr);

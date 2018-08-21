@@ -84,17 +84,24 @@ public:
 
     ValueTree getMasterTrack() const { return tracks.getChildWithProperty(IDs::isMasterTrack, true); }
 
-    ValueTree getSelectedProcessor() const {
-        for (const auto& track : tracks) {
-            for (const auto& processor : track) {
-                if (processor.hasType(IDs::PROCESSOR) && processor[IDs::selected])
-                    return processor;
-            }
+    inline ValueTree findSelectedProcessorForTrack(const ValueTree &track) const {
+        for (const auto& processor : track) {
+            if (processor.hasType(IDs::PROCESSOR) && processor[IDs::selected])
+                return processor;
         }
         return {};
     }
 
-    bool isTrackSelected(const ValueTree& track) const {
+    inline ValueTree getSelectedProcessor() const {
+        for (const auto& track : tracks) {
+            const auto& selectedProcessor = findSelectedProcessorForTrack(track);
+            if (selectedProcessor.isValid())
+                return selectedProcessor;
+        }
+        return {};
+    }
+
+    inline bool isTrackSelected(const ValueTree& track) const {
         if (track[IDs::selected])
             return true;
         for (const auto& processor : track) {
@@ -104,7 +111,7 @@ public:
         return false;
     }
 
-    ValueTree getSelectedTrack() const {
+    inline ValueTree getSelectedTrack() const {
         for (const auto& track : tracks) {
             if (isTrackSelected(track))
                 return track;
