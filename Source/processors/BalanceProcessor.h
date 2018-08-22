@@ -7,7 +7,7 @@ class BalanceProcessor : public DefaultAudioProcessor {
 public:
     explicit BalanceProcessor() :
             DefaultAudioProcessor(getPluginDescription()),
-            balanceParameter(new AudioParameterFloat("balance", "Balance", NormalisableRange<float>(0.0f, 1.0f), balance.getTargetValue(), "",
+            balanceParameter(new AudioParameterFloat("balance", "Balance", NormalisableRange<float>(-1.0f, 1.0f), balance.getTargetValue(), "",
                                                      AudioProcessorParameter::genericParameter, defaultStringFromValue, defaultValueFromString)) {
         balanceParameter->addListener(this);
         addParameter(balanceParameter);
@@ -41,11 +41,11 @@ public:
                 const float balanceValue = balance.getNextValue();
 
                 float leftChannelGain, rightChannelGain;
-                if (balanceValue < 0.5) {
+                if (balanceValue < 0.0) {
                     leftChannelGain = 1;
-                    rightChannelGain = balanceValue * 2;
+                    rightChannelGain = 1 + balanceValue;
                 } else {
-                    leftChannelGain = (1 - balanceValue) * 2;
+                    leftChannelGain = 1 - balanceValue;
                     rightChannelGain = 1;
                 }
 
@@ -56,6 +56,6 @@ public:
     }
 
 private:
-    LinearSmoothedValue<float> balance { 0.5f };
+    LinearSmoothedValue<float> balance { 0.0f };
     AudioParameterFloat *balanceParameter;
 };
