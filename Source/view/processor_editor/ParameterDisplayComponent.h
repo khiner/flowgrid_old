@@ -117,7 +117,7 @@ public:
         if (getCombobox()) {
             area.setHeight(area.getHeight() / 3);
         } else if (getSwitch()) {
-            area = area.withSizeKeepingCentre(area.getWidth(),
+            area = area.withSizeKeepingCentre(area.getWidth() - 4,
                                               area.getHeight() / 2); // TODO compute height by num items
         } else if (getButton()) {
             auto smallerSquare = area.withWidth(area.getWidth() / 3).withHeight(area.getWidth() / 3);

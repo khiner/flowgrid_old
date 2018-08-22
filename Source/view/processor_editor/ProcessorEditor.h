@@ -15,8 +15,14 @@ public:
         addAndMakeVisible(titleLabel);
         addAndMakeVisible(pageLeftButton);
         addAndMakeVisible(pageRightButton);
-
         addAndMakeVisible((parametersPanel = std::make_unique<ParametersPanel>(maxRows)).get());
+
+        parametersPanel->setBackgroundColour(findColour(ResizableWindow::backgroundColourId).brighter(0.1));
+        parametersPanel->setOutlineColour(findColour(TextEditor::backgroundColourId));
+
+        titleLabel.setColour(findColour(TextEditor::textColourId));
+        titleLabel.setJustification(Justification::verticallyCentred);
+        titleLabel.setFontHeight(18);
 
         pageLeftButton.onClick = [this]() {
             parametersPanel->pageLeft();
@@ -29,21 +35,32 @@ public:
         };
     }
 
+    void paint(Graphics& g) override {
+        auto r = getLocalBounds();
+        auto top = r.removeFromTop(40);
+        g.setColour(findColour(TextEditor::backgroundColourId));
+        g.fillRect(top);
+    }
+
     void resized() override {
         auto r = getLocalBounds();
-        auto top = r.removeFromTop(30);
+        auto top = r.removeFromTop(40);
+        top.removeFromLeft(8);
+        titleLabel.setBoundingBox(top.removeFromLeft(200).reduced(2).toFloat());
+
+        top.reduce(4, 4);
         pageRightButton.setBounds(top.removeFromRight(30).reduced(5));
         pageLeftButton.setBounds(top.removeFromRight(30).reduced(5));
-        titleLabel.setBounds(top);
 
         parametersPanel->setBounds(r);
     }
 
     void setProcessor(StatefulAudioProcessorWrapper *const processorWrapper) {
         if (processorWrapper != nullptr) {
-            titleLabel.setText(processorWrapper->processor->getName(), dontSendNotification);
+            titleLabel.setText(processorWrapper->processor->getName());
         }
         parametersPanel->setProcessor(processorWrapper);
+        parametersPanel->resized();
         updatePageButtonVisibility();
     }
 
@@ -54,7 +71,7 @@ public:
 
 private:
     std::unique_ptr<ParametersPanel> parametersPanel;
-    Label titleLabel;
+    DrawableText titleLabel;
     ArrowButton pageLeftButton, pageRightButton;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ProcessorEditor)

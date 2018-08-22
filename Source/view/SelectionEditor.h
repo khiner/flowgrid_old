@@ -28,14 +28,14 @@ public:
     }
 
     void resized() override {
-        Rectangle<int> r(getLocalBounds().reduced(4));
-
-        Rectangle<int> buttons(r.removeFromTop(22));
+        auto r(getLocalBounds().reduced(4));
+        auto buttons(r.removeFromTop(22));
         addProcessorButton.setBounds(buttons.removeFromLeft(120));
 
         contextPane.setBounds(r.removeFromBottom(400).reduced(4));
         if (processorEditor != nullptr) {
-            processorEditor->setBounds(r);
+            r.removeFromTop(8);
+            processorEditor->setBounds(r.reduced(4));
         }
     }
 

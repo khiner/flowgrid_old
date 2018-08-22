@@ -69,22 +69,54 @@ public:
         return (currentPage + 1) * maxRows * numColumns < parameters.size();
     }
 
+    // todo switch to adding new LookAndFeel colour IDs
+    void setBackgroundColour(const Colour &backgroundColour) {
+        this->backgroundColour = backgroundColour;
+    }
+
+    void setOutlineColour(const Colour &outlineColour) {
+        this->outlineColour = outlineColour;
+    }
+
+    void paint(Graphics& g) override {
+        auto r = getLocalBounds();
+        r.setHeight(getTotalParameterHeight());
+        g.setColour(backgroundColour);
+        g.fillRect(r);
+        g.setColour(outlineColour);
+        g.drawRect(r, 2);
+    }
+
     void resized() override {
         auto r = getLocalBounds();
-        auto componentWidth = r.getWidth() / numColumns;
-        auto componentHeight = maxRows == 1 ? r.getHeight() : componentWidth * 7 / 5;
-        Rectangle<int> currentRowArea = r.removeFromTop(componentHeight);
+        auto parameterWidth = getParameterWidth();
+        auto parameterHeight = getParameterHeight();
+        auto currentRowArea = r.removeFromTop(parameterHeight);
 
         int column = 1, row = 1;
         for (auto *comp : paramComponents) {
-            if (column++ % 9 == 0) {
+            if (column++ % (numColumns + 1) == 0) {
                 column = 1;
-                if (row++ >= 2)
+                if (row++ >= maxRows)
                     break;
-                currentRowArea = r.removeFromTop(componentHeight);
+                currentRowArea = r.removeFromTop(parameterHeight);
             }
-            comp->setBounds(currentRowArea.removeFromLeft(componentWidth));
+            comp->setBounds(currentRowArea.removeFromLeft(parameterWidth));
         }
+        repaint();
+    }
+
+    int getParameterWidth() {
+        return getLocalBounds().getWidth() / numColumns;
+    }
+
+    int getParameterHeight() {
+        return maxRows == 1 ? getLocalBounds().getHeight() : getParameterWidth() * 7 / 5;
+    }
+
+    int getTotalParameterHeight() {
+        int numRows = parameters.isEmpty() ? 1 : jmin(maxRows, int(ceil(float(parameters.size()) / float(numColumns))));
+        return numRows * getParameterHeight();
     }
 
 private:
@@ -94,6 +126,9 @@ private:
     OwnedArray<ParameterDisplayComponent> paramComponents;
     OwnedArray<StatefulAudioProcessorWrapper::Parameter> parameters;
     StatefulAudioProcessorWrapper *processorWrapper{};
+
+    Colour backgroundColour = Colours::transparentBlack;
+    Colour outlineColour = Colours::transparentBlack;
 
     void updateParameterComponents() {
         for (int paramIndex = 0; paramIndex < paramComponents.size(); paramIndex++) {
