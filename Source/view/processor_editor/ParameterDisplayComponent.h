@@ -86,7 +86,7 @@ public:
             parameterWrapper->attachSlider(slider);
             parameterWrapper->attachLabel(&valueLabel);
 
-            if (parameterWrapper->range.getRange().getStart() < 0 && parameterWrapper->range.getRange().getEnd() > 0) {
+            if (parameterWrapper->range.getRange().getStart() == -1 && parameterWrapper->range.getRange().getEnd() == 1) {
                 slider->getProperties().set("fromCentre", true);
             }
 
