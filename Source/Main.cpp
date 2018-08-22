@@ -495,6 +495,7 @@ private:
     void showPush2MirrorWindow() {
         if (push2Window == nullptr) {
             push2Window = std::make_unique<BasicWindow>("Push 2 Mirror", push2Component.get(), false, [this]() { push2Window = nullptr; });
+            push2Window->setBackgroundColour(Colours::black);
             push2Window->setBounds(100, 100, Push2Display::WIDTH, Push2Display::HEIGHT + graphEditorWindow->getTitleBarHeight());
             push2Window->setResizable(false, false);
         }
