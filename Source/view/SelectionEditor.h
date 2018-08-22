@@ -3,7 +3,6 @@
 #include <Identifiers.h>
 #include <ValueTreeItems.h>
 #include <processors/ProcessorManager.h>
-#include "UiColours.h"
 #include "processor_editor/ProcessorEditor.h"
 #include "view/context_pane/ContextPane.h"
 

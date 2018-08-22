@@ -95,7 +95,7 @@ public:
         if (state[IDs::bypassed])
             boxColour = boxColour.brighter();
         else if (selected)
-            boxColour = boxColour.brighter(0.04);
+            boxColour = boxColour.brighter(0.02);
 
         g.setColour(boxColour);
         g.fillRect(getBoxBounds());

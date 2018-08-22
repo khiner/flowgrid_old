@@ -11,8 +11,6 @@ class GraphEditorPanel
 public:
     GraphEditorPanel(ProcessorGraph &g, Project &project, Viewport &parentViewport)
             : graph(g), project(project), parentViewport(parentViewport) {
-        setOpaque(true);
-
         project.getState().addListener(this);
 
         addAndMakeVisible(*(tracks = std::make_unique<GraphEditorTracks>(project, project.getTracks(), *this, graph)));
@@ -27,10 +25,6 @@ public:
     void resize() {
         setSize(getTrackWidth() * jmax(Project::NUM_VISIBLE_TRACKS, project.getNumNonMasterTracks()) + GraphEditorTrack::LABEL_HEIGHT * 2, getParentComponent()->getHeight());
         tracks->setTrackWidth(getTrackWidth());
-    }
-
-    void paint(Graphics &g) override {
-        g.fillAll(findColour(ResizableWindow::backgroundColourId));
     }
 
     void resized() override {

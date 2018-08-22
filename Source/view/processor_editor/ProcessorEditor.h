@@ -29,10 +29,6 @@ public:
         };
     }
 
-    void paint(Graphics &g) override {
-        g.fillAll(getLookAndFeel().findColour(ResizableWindow::backgroundColourId));
-    }
-
     void resized() override {
         auto r = getLocalBounds();
         auto top = r.removeFromTop(30);

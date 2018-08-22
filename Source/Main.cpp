@@ -33,8 +33,11 @@ public:
         undoManager.addChangeListener(this);
         startTimer(500);
 
-        const auto &typeface = Typeface::createSystemTypefaceFor(BinaryData::AbletonSansMediumRegular_otf, BinaryData::AbletonSansMediumRegular_otfSize);
-        LookAndFeel::getDefaultLookAndFeel().setDefaultSansSerifTypeface(typeface);
+        auto &lookAndFeel = LookAndFeel::getDefaultLookAndFeel();
+        lookAndFeel.setDefaultSansSerifTypeface(Typeface::createSystemTypefaceFor(
+                BinaryData::AbletonSansMediumRegular_otf, BinaryData::AbletonSansMediumRegular_otfSize));
+        lookAndFeel.setColour(Slider::rotarySliderOutlineColourId,
+                lookAndFeel.findColour(Slider::rotarySliderOutlineColourId).brighter(0.06));
 
         pluginListComponent = std::unique_ptr<PluginListComponent>(processorManager.makePluginListComponent());
 
@@ -379,7 +382,7 @@ public:
 
             centreWithSize(getWidth(), getHeight());
             setVisible(true);
-            setBackgroundColour(getUIColourIfAvailable(LookAndFeel_V4::ColourScheme::UIColour::windowBackground));
+            setBackgroundColour(getLookAndFeel().findColour(ResizableWindow::backgroundColourId).brighter(0.04));
             addKeyListener(getCommandManager().getKeyMappings());
         }
 
