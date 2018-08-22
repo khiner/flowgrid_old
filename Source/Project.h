@@ -7,6 +7,8 @@
 #include "Utilities.h"
 #include "StatefulAudioProcessorContainer.h"
 
+enum ConnectionType { audio, midi, all };
+
 class Project : public FileBasedDocument, public ProjectChangeBroadcaster, public StatefulAudioProcessorContainer,
                 private ChangeListener, private ValueTree::Listener {
 public:
@@ -190,29 +192,27 @@ public:
     void setNoteMode() { viewState.setProperty(IDs::controlMode, noteControlMode, nullptr); }
     void setSessionMode() { viewState.setProperty(IDs::controlMode, sessionControlMode, nullptr); }
 
-    Array<ValueTree> getConnectionsForNode(AudioProcessorGraph::NodeID nodeId, bool audio=true, bool midi=true, bool incoming=true, bool outgoing=true, bool includeCustom=true, bool includeDefault=true) {
+    Array<ValueTree> getConnectionsForNode(AudioProcessorGraph::NodeID nodeId, ConnectionType connectionType,
+                                           bool incoming=true, bool outgoing=true,
+                                           bool includeCustom=true, bool includeDefault=true) const {
         Array<ValueTree> nodeConnections;
         for (const auto& connection : connections) {
             if ((connection[IDs::isCustomConnection] && !includeCustom) || (!connection[IDs::isCustomConnection] && !includeDefault))
                 continue;
 
-            const auto &connectionType = connection.getChildWithProperty(IDs::nodeId, int(nodeId));
+            const auto &endpointType = connection.getChildWithProperty(IDs::nodeId, int(nodeId));
+            bool directionIsAcceptable = (incoming && endpointType.hasType(IDs::DESTINATION)) || (outgoing && endpointType.hasType(IDs::SOURCE));
+            bool typeIsAcceptable = connectionType == all || (connectionType == audio && int(endpointType[IDs::channel]) != AudioProcessorGraph::midiChannelIndex) ||
+                                    (connectionType == midi && int(endpointType[IDs::channel]) == AudioProcessorGraph::midiChannelIndex);
 
-            if (!connectionType.isValid())
-                continue;
-            bool directionIsAcceptable = (incoming && connectionType.hasType(IDs::DESTINATION)) || (outgoing && connectionType.hasType(IDs::SOURCE));
-            bool typeIsAcceptable = (audio && int(connectionType[IDs::channel]) != AudioProcessorGraph::midiChannelIndex) ||
-                                    (midi && int(connectionType[IDs::channel]) == AudioProcessorGraph::midiChannelIndex);
-
-            if (directionIsAcceptable && typeIsAcceptable) {
+            if (directionIsAcceptable && typeIsAcceptable)
                 nodeConnections.add(connection);
-            }
         }
 
         return nodeConnections;
     }
 
-    const ValueTree getConnectionMatching(const AudioProcessorGraph::Connection &connection) {
+    const ValueTree getConnectionMatching(const AudioProcessorGraph::Connection &connection) const {
         for (auto connectionState : connections) {
             auto sourceState = connectionState.getChildWithName(IDs::SOURCE);
             auto destState = connectionState.getChildWithName(IDs::DESTINATION);
@@ -224,7 +224,10 @@ public:
             }
         }
         return {};
+    }
 
+    bool hasIncomingConnections(AudioProcessorGraph::NodeID nodeId, ConnectionType connectionType) const {
+        return !getConnectionsForNode(nodeId, connectionType, true, false).isEmpty();
     }
 
     // checks for duplicate add should be done before! (not done here to avoid redundant checks)

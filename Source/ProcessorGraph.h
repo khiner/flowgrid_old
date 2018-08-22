@@ -194,8 +194,6 @@ public:
         return project.removeConnection(c, true, false);
     }
 
-    enum ConnectionType { audio, midi, all };
-
     void setDefaultConnectionsAllowed(NodeID nodeId, bool defaultConnectionsAllowed) {
         auto processor = getProcessorStateForNodeId(nodeId);
         jassert(processor.isValid());
@@ -261,10 +259,7 @@ private:
     }
 
     bool doDisconnectNode(NodeID nodeId, ConnectionType connectionType, bool defaults, bool custom, bool incoming, bool outgoing) {
-        const auto connections = project.getConnectionsForNode(nodeId,
-                                                               connectionType == audio || connectionType == all,
-                                                               connectionType == midi || connectionType == all,
-                                                               incoming, outgoing);
+        const auto connections = project.getConnectionsForNode(nodeId, connectionType, incoming, outgoing);
         bool anyRemoved = false;
         for (const auto &connection : connections) {
             if (project.removeConnection(connection, defaults, custom))
@@ -360,8 +355,10 @@ private:
             const auto& firstProcessor = track.getChild(0);
             auto firstProcessorNodeId = getNodeIdForState(firstProcessor);
             int slot = firstProcessor[IDs::processorSlot];
-            if (slot < lowestSlot && areProcessorsConnected(firstProcessorNodeId, getNodeIdForState(selectedProcessor), connectionType) &&
-                !hasIncomingConnections(firstProcessorNodeId, connectionType)) {
+            if (slot < lowestSlot &&
+                areProcessorsConnected(firstProcessorNodeId, getNodeIdForState(selectedProcessor), connectionType) &&
+                !project.hasIncomingConnections(firstProcessorNodeId, connectionType)) {
+
                 lowestSlot = firstProcessor[IDs::processorSlot];
                 upperRightMostProcessorNodeId = firstProcessorNodeId;
             }
@@ -373,17 +370,11 @@ private:
         }
     }
 
-    bool hasIncomingConnections(NodeID nodeId, ConnectionType connectionType) const {
-        return !project.getConnectionsForNode(nodeId, connectionType == audio, connectionType == midi, true, false).isEmpty();
-    }
-
     bool areProcessorsConnected(NodeID upstreamNodeId, NodeID downstreamNodeId, ConnectionType connectionType) const {
         if (upstreamNodeId == downstreamNodeId)
             return true;
 
-        auto outgoingConnections = project.getConnectionsForNode(upstreamNodeId,
-                                                                 connectionType == audio, connectionType == midi,
-                                                                 false, true);
+        auto outgoingConnections = project.getConnectionsForNode(upstreamNodeId, connectionType, false, true);
         for (const auto& outgoingConnection : outgoingConnections) {
             auto otherDownstreamNodeId = getNodeIdForState(outgoingConnection.getChildWithName(IDs::DESTINATION));
             if (downstreamNodeId == otherDownstreamNodeId ||
@@ -491,16 +482,12 @@ private:
                 disconnectDefaults(nodeId);
                 return;
             }
-            auto outgoingCustomConnections = project.getConnectionsForNode(nodeId, connectionType == audio,
-                                                                           connectionType == midi, false, true, true,
-                                                                           false);
+            auto outgoingCustomConnections = project.getConnectionsForNode(nodeId, connectionType, false, true, true, false);
             if (!outgoingCustomConnections.isEmpty()) {
                 disconnectDefaultOutgoing(nodeId, connectionType);
                 return;
             }
-            auto outgoingDefaultConnections = project.getConnectionsForNode(nodeId, connectionType == audio,
-                                                                            connectionType == midi, false, true, false,
-                                                                            true);
+            auto outgoingDefaultConnections = project.getConnectionsForNode(nodeId, connectionType, false, true, false, true);
             auto processorToConnectTo = findProcessorToFlowInto(processor.getParent(), processor, connectionType);
             auto nodeIdToConnectTo = getNodeIdForState(processorToConnectTo);
 
