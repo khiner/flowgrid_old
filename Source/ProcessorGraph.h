@@ -360,7 +360,8 @@ private:
             const auto& firstProcessor = track.getChild(0);
             auto firstProcessorNodeId = getNodeIdForState(firstProcessor);
             int slot = firstProcessor[IDs::processorSlot];
-            if (slot < lowestSlot && areProcessorsConnected(firstProcessorNodeId, getNodeIdForState(selectedProcessor), connectionType)) {
+            if (slot < lowestSlot && areProcessorsConnected(firstProcessorNodeId, getNodeIdForState(selectedProcessor), connectionType) &&
+                !hasIncomingConnections(firstProcessorNodeId, connectionType)) {
                 lowestSlot = firstProcessor[IDs::processorSlot];
                 upperRightMostProcessorNodeId = firstProcessorNodeId;
             }
@@ -370,6 +371,10 @@ private:
                 addDefaultConnection({{externalSourceNodeId, channel}, {upperRightMostProcessorNodeId, channel}});
             }
         }
+    }
+
+    bool hasIncomingConnections(NodeID nodeId, ConnectionType connectionType) const {
+        return !project.getConnectionsForNode(nodeId, connectionType == audio, connectionType == midi, true, false).isEmpty();
     }
 
     bool areProcessorsConnected(NodeID upstreamNodeId, NodeID downstreamNodeId, ConnectionType connectionType) const {
@@ -407,7 +412,8 @@ private:
         while ((otherParent = parent.getSibling(siblingDelta++)).isValid()) {
             for (const auto &otherProcessor : otherParent) {
                 if (otherProcessor == processor || otherProcessor == excluding) continue;
-                bool isBelow = int(otherProcessor[IDs::processorSlot]) > int(processor[IDs::processorSlot]);
+                bool isBelow = int(otherProcessor[IDs::processorSlot]) > int(processor[IDs::processorSlot]) ||
+                               (otherParent.hasProperty(IDs::isMasterTrack) && parent != otherParent);
                 if (!isBelow) continue;
                 if (canProcessorDefaultConnectTo(parent, processor, otherParent, otherProcessor, connectionType) &&
                     (!fallbackBlockingProcessor.isValid() || int(otherProcessor[IDs::processorSlot]) <= int(fallbackBlockingProcessor[IDs::processorSlot]))) {
@@ -421,10 +427,6 @@ private:
 
         if (fallbackBlockingProcessor.isValid())
             return fallbackBlockingProcessor;
-
-        const auto firstMasterTrackProcessorWithInputs = getFirstMasterTrackProcessorWithInputs(connectionType, excluding);
-        if (firstMasterTrackProcessorWithInputs.isValid() && processor.getParent() != project.getMasterTrack())
-            return firstMasterTrackProcessorWithInputs;
 
         return project.getAudioOutputProcessorState();
     }
