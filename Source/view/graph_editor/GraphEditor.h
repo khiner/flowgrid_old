@@ -4,30 +4,35 @@
 #include <Project.h>
 #include "JuceHeader.h"
 #include "GraphEditorPanel.h"
+#include "view/SelectionEditor.h"
 
 class GraphEditor : public Component {
 public:
     GraphEditor(ProcessorGraph &graph, Project &project)
-            : graph(graph), project(project), graphPanel(graph, project, graphPanelViewport) {
+            : graph(graph), project(project),
+              graphPanel(graph, project, graphPanelViewport),
+              selectionEditor(project, graph) {
         addAndMakeVisible(statusBar);
         graphPanelViewport.setScrollBarsShown(false, false);
         graphPanelViewport.setViewedComponent(&graphPanel, false);
         addAndMakeVisible(graphPanelViewport);
+        addAndMakeVisible(selectionEditor);
     }
 
     void resized() override {
         auto r = getLocalBounds();
         statusBar.setBounds(r.removeFromBottom(20));
-        graphPanelViewport.setBounds(r);
+        graphPanelViewport.setBounds(r.removeFromLeft(int(r.getWidth() * 0.6f)));
         graphPanel.resize();
+        selectionEditor.setBounds(r);
     }
 
 private:
     ProcessorGraph &graph;
     Project &project;
-
     Viewport graphPanelViewport;
     GraphEditorPanel graphPanel;
+    SelectionEditor selectionEditor;
 
     struct TooltipBar : public Component, private Timer {
         TooltipBar() {

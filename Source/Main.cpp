@@ -1,7 +1,6 @@
 #include <Utilities.h>
 #include "view/push2/Push2Component.h"
 #include "ApplicationPropertiesAndCommandManager.h"
-#include <view/SelectionEditor.h>
 #include <view/graph_editor/GraphEditor.h>
 #include "BasicWindow.h"
 #include "DeviceChangeMonitor.h"
@@ -41,17 +40,11 @@ public:
 
         pluginListComponent = std::unique_ptr<PluginListComponent>(processorManager.makePluginListComponent());
 
-        graphEditorWindow = std::make_unique<MainWindow>(*this, "Graph Editor", new GraphEditor(processorGraph, project));
+        mainWindow = std::make_unique<MainWindow>(*this, "Sound Machine", new GraphEditor(processorGraph, project));
 
         std::unique_ptr<XmlElement> savedAudioState(getApplicationProperties().getUserSettings()->getXmlValue("audioDeviceState"));
         deviceManager.initialise(256, 256, savedAudioState.get(), true);
-
-        auto *selectionEditor = new SelectionEditor(project, processorGraph);
-
-        selectionWindow = std::make_unique<MainWindow>(*this, "Selection Editor", selectionEditor);
-
-        graphEditorWindow->setBoundsRelative(0.02, 0.02, 0.58, 0.96);
-        selectionWindow->setBoundsRelative(0.60, 0.02, 0.38, 0.96);
+        mainWindow->setBoundsRelative(0.02, 0.02, 0.96, 0.96);
 
         push2Component = std::make_unique<Push2Component>(project, push2MidiCommunicator, processorGraph);
         push2Component->setVisible(true);
@@ -70,7 +63,6 @@ public:
     void shutdown() override {
         push2Component = nullptr;
         push2Window = nullptr;
-        selectionWindow = nullptr;
         deviceChangeMonitor = nullptr;
         deviceManager.removeAudioCallback(&player);
         setMacMainMenu(nullptr);
@@ -79,8 +71,8 @@ public:
     void systemRequestedQuit() override {
         // This is called when the app is being asked to quit: you can ignore this
         // request and let the app carry on running, or call quit() to allow the app to close.
-        if (graphEditorWindow != nullptr)
-            graphEditorWindow->tryToQuitApplication();
+        if (mainWindow != nullptr)
+            mainWindow->tryToQuitApplication();
         else
             quit();
     }
@@ -450,7 +442,7 @@ private:
     ProcessorManager processorManager;
 
     std::unique_ptr<Push2Component> push2Component;
-    std::unique_ptr<MainWindow> selectionWindow, graphEditorWindow;
+    std::unique_ptr<MainWindow> mainWindow;
     std::unique_ptr<DocumentWindow> push2Window;
     std::unique_ptr<PluginListComponent> pluginListComponent;
     UndoManager undoManager;
@@ -471,8 +463,8 @@ private:
         DialogWindow::LaunchOptions o;
         o.content.setOwned(audioSettingsComponent);
         o.dialogTitle = "Audio Settings";
-        o.componentToCentreAround = selectionWindow.get();
-        o.dialogBackgroundColour = selectionWindow->findColour(ResizableWindow::backgroundColourId);
+        o.componentToCentreAround = mainWindow.get();
+        o.dialogBackgroundColour = mainWindow->findColour(ResizableWindow::backgroundColourId);
         o.escapeKeyTriggersCloseButton = true;
         o.useNativeTitleBar = false;
         o.resizable = true;
@@ -485,8 +477,8 @@ private:
         DialogWindow::LaunchOptions o;
         o.content.setNonOwned(pluginListComponent.get());
         o.dialogTitle = "Available Plugins";
-        o.componentToCentreAround = graphEditorWindow.get();
-        o.dialogBackgroundColour = graphEditorWindow->findColour(ResizableWindow::backgroundColourId);
+        o.componentToCentreAround = mainWindow.get();
+        o.dialogBackgroundColour = mainWindow->findColour(ResizableWindow::backgroundColourId);
         o.escapeKeyTriggersCloseButton = true;
         o.useNativeTitleBar = false;
         o.resizable = true;
@@ -499,7 +491,7 @@ private:
         if (push2Window == nullptr) {
             push2Window = std::make_unique<BasicWindow>("Push 2 Mirror", push2Component.get(), false, [this]() { push2Window = nullptr; });
             push2Window->setBackgroundColour(Colours::black);
-            push2Window->setBounds(100, 100, Push2Display::WIDTH, Push2Display::HEIGHT + graphEditorWindow->getTitleBarHeight());
+            push2Window->setBounds(100, 100, Push2Display::WIDTH, Push2Display::HEIGHT + mainWindow->getTitleBarHeight());
             push2Window->setResizable(false, false);
         }
     }
