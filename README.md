@@ -1,5 +1,7 @@
 # Sound Machine
 
+![](docs/quick-demo.gif)
+
 This is an ongoing project to try and make a _flexible_, _fast_ and _fun_ music production and performance tool that I will actually use.
 
 _*Big caveat right up front:* This tool isn't what I want it to be yet. There's still a ton to do!_
