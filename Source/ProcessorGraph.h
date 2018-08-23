@@ -343,8 +343,6 @@ private:
         if (project.getNumTracks() == 0)
             return;
 
-        const auto &defaultConnectionChannels = getDefaultConnectionChannels(connectionType);
-
         int lowestSlot = INT_MAX;
         NodeID upperRightMostProcessorNodeId = NA_NODE_ID;
         for (int i = project.getNumTracks() - 1; i >= 0; i--) {
@@ -356,14 +354,16 @@ private:
             auto firstProcessorNodeId = getNodeIdForState(firstProcessor);
             int slot = firstProcessor[IDs::processorSlot];
             if (slot < lowestSlot &&
-                areProcessorsConnected(firstProcessorNodeId, getNodeIdForState(selectedProcessor), connectionType) &&
+                areProcessorsConnected(firstProcessorNodeId, getNodeIdForState(selectedProcessor), all) &&
                 !project.hasIncomingConnections(firstProcessorNodeId, connectionType)) {
 
                 lowestSlot = firstProcessor[IDs::processorSlot];
                 upperRightMostProcessorNodeId = firstProcessorNodeId;
             }
         }
+
         if (upperRightMostProcessorNodeId != NA_NODE_ID) {
+            const auto &defaultConnectionChannels = getDefaultConnectionChannels(connectionType);
             for (auto channel : defaultConnectionChannels) {
                 addDefaultConnection({{externalSourceNodeId, channel}, {upperRightMostProcessorNodeId, channel}});
             }
