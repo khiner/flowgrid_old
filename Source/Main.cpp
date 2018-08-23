@@ -268,7 +268,7 @@ public:
                 result.addDefaultKeypress(KeyPress::downKey, ModifierKeys::noModifiers);
                 break;
             case CommandIDs::showPluginListEditor:
-                result.setInfo("Edit the list of available plug-Ins...", String(), category, 0);
+                result.setInfo("Edit the list of available plugins", String(), category, 0);
                 result.addDefaultKeypress('p', ModifierKeys::commandModifier);
                 break;
             case CommandIDs::showAudioMidiSettings:

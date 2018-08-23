@@ -208,8 +208,9 @@ public:
             menu->addItem(TOGGLE_BYPASS_MENU_ID, "Toggle Bypass");
         }
         menu->addSeparator();
-        menu->addItem(ALLOW_DEFAULTS_MENU_ID, "Allow default connections");
-        menu->addItem(DISALLOW_DEFAULTS_MENU_ID, "Disallow default connections");
+        // todo single, stateful, menu item for enable/disable default connections
+        menu->addItem(ENABLE_DEFAULTS_MENU_ID, "Enable default connections");
+        menu->addItem(DISABLE_DEFAULTS_MENU_ID, "Disable default connections");
         menu->addItem(DISCONNECT_ALL_MENU_ID, "Disconnect all");
         menu->addItem(DISCONNECT_CUSTOM_MENU_ID, "Disconnect all custom");
 
@@ -228,13 +229,13 @@ public:
                         case TOGGLE_BYPASS_MENU_ID:
                             state.setProperty(IDs::bypassed, !state.getProperty(IDs::bypassed), &graph.undoManager);
                             break;
-                        case ALLOW_DEFAULTS_MENU_ID:
+                        case ENABLE_DEFAULTS_MENU_ID:
                             graph.setDefaultConnectionsAllowed(getNodeId(), true);
                             break;
                         case DISCONNECT_ALL_MENU_ID:
                             graph.disconnectNode(getNodeId());
                             break;
-                        case DISALLOW_DEFAULTS_MENU_ID:
+                        case DISABLE_DEFAULTS_MENU_ID:
                             graph.setDefaultConnectionsAllowed(getNodeId(), false);
                             break;
                         case DISCONNECT_CUSTOM_MENU_ID:
@@ -283,8 +284,8 @@ private:
     std::unique_ptr<PopupMenu> menu;
 
     static constexpr int
-            DELETE_MENU_ID = 1, TOGGLE_BYPASS_MENU_ID = 2, ALLOW_DEFAULTS_MENU_ID = 3, DISCONNECT_ALL_MENU_ID = 4,
-            DISALLOW_DEFAULTS_MENU_ID = 5, DISCONNECT_CUSTOM_MENU_ID = 6,
+            DELETE_MENU_ID = 1, TOGGLE_BYPASS_MENU_ID = 2, ENABLE_DEFAULTS_MENU_ID = 3, DISCONNECT_ALL_MENU_ID = 4,
+            DISABLE_DEFAULTS_MENU_ID = 5, DISCONNECT_CUSTOM_MENU_ID = 6,
             SHOW_PLUGIN_GUI_MENU_ID = 10, SHOW_ALL_PROGRAMS_MENU_ID = 11, CONFIGURE_AUDIO_MIDI_MENU_ID = 12;
 
     Rectangle<int> getBoxBounds() {
