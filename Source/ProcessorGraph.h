@@ -169,29 +169,38 @@ public:
         }
         return false;
     }
-
+    
     bool removeConnection(const Connection& c) override {
-        return project.removeConnection(c, true, true);
+        const ValueTree &connectionState = project.getConnectionMatching(c);
+        bool removed = project.removeConnection(c, getDragDependentUndoManager(), true, true);
+        if (removed && connectionState.hasProperty(IDs::isCustomConnection)) {
+            const auto& sourceState = connectionState.getChildWithName(IDs::SOURCE);
+            auto nodeId = getNodeIdForState(sourceState);
+            const auto& processor = getProcessorStateForNodeId(nodeId);
+            jassert(processor.isValid());
+            updateDefaultConnectionsForProcessor(processor, true);
+        }
+        return removed;
     }
 
     bool addDefaultConnection(const Connection& c) {
         if (canConnectUi(c)) {
-            project.addConnection(c, nullptr);
+            project.addConnection(c, getDragDependentUndoManager());
             return true;
         }
         return false;
     }
 
-    bool addCustomConnection(const Connection& c, UndoManager* undoManager) {
+    bool addCustomConnection(const Connection& c) {
         if (canConnectUi(c)) {
-            project.addConnection(c, undoManager, false);
+            project.addConnection(c, &undoManager, false);
             return true;
         }
         return false;
     }
 
     bool removeDefaultConnection(const Connection& c) {
-        return project.removeConnection(c, true, false);
+        return project.removeConnection(c, getDragDependentUndoManager(), true, false);
     }
 
     void setDefaultConnectionsAllowed(NodeID nodeId, bool defaultConnectionsAllowed) {
@@ -262,7 +271,7 @@ private:
         const auto connections = project.getConnectionsForNode(nodeId, connectionType, incoming, outgoing);
         bool anyRemoved = false;
         for (const auto &connection : connections) {
-            if (project.removeConnection(connection, defaults, custom))
+            if (project.removeConnection(connection, getDragDependentUndoManager(), defaults, custom))
                 anyRemoved = true;
         }
 
@@ -501,7 +510,7 @@ private:
                     }
                     if (makeInvalidDefaultsIntoCustom) {
                         for (auto channel : defaultChannels) {
-                            if (addCustomConnection({{nodeId, channel}, {nodeIdCurrentlyConnectedTo, channel}}, &undoManager))
+                            if (addCustomConnection({{nodeId, channel}, {nodeIdCurrentlyConnectedTo, channel}}))
                                 anyCustomAdded = true;
                         }
                     }
@@ -529,8 +538,6 @@ private:
             } else if (i == IDs::selected && tree[IDs::selected] && tree != lastSelectedProcessor) {
                 lastSelectedProcessor = tree;
                 resetDefaultExternalInputs(tree);
-            } else if (i == IDs::processorSlot) {
-                updateAllDefaultConnections();
             } else if (i == IDs::allowDefaultConnections) {
                 updateDefaultConnectionsForProcessor(tree, true);
             }
@@ -554,7 +561,6 @@ private:
                     child.sendPropertyChangeMessage(IDs::selected);
                 }
             }
-            updateAllDefaultConnections();
         } else if (child.hasType(IDs::CONNECTION)) {
             if (currentlyDraggingNodeId == NA_NODE_ID) {
                 const ValueTree &sourceState = child.getChildWithName(IDs::SOURCE);
@@ -586,13 +592,11 @@ private:
 
     void valueTreeChildRemoved(ValueTree& parent, ValueTree& child, int indexFromWhichChildWasRemoved) override {
         if (child.hasType(IDs::PROCESSOR)) {
-            disconnectDefaults(getNodeIdForState(child));
             if (currentlyDraggingNodeId == NA_NODE_ID) {
                 if (!isMoving) {
                     removeProcessor(child);
                 }
             }
-            updateAllDefaultConnections();
             for (int i = activePluginWindows.size(); --i >= 0;) {
                 if (!nodes.contains(activePluginWindows.getUnchecked(i)->node)) {
                     activePluginWindows.remove(i);
@@ -614,11 +618,6 @@ private:
                         dest->inputs.removeAllInstancesOf({source, sourceChannel, destChannel});
                         topologyChanged();
                     }
-                }
-                if (child.hasProperty(IDs::isCustomConnection)) {
-                    const auto& processor = getProcessorStateForNodeId(getNodeIdForState(sourceState));
-                    jassert(processor.isValid());
-                    updateDefaultConnectionsForProcessor(processor, true);
                 }
             }
         } else if (child.hasType(IDs::CHANNEL)) {
@@ -652,14 +651,18 @@ private:
      * This way, the ValueTreeChanged methods in this class only update the AudioGraph
      * and UI state.
      */
-    void processorCreated(const ValueTree& processor) override {};
+    void processorCreated(const ValueTree& processor) override {
+        updateAllDefaultConnections();
+    };
 
     void processorWillBeDestroyed(const ValueTree& processor) override {
         ValueTree(processor).removeProperty(IDs::processorInitialized, nullptr);
-        disconnectCustom(getNodeIdForState(processor));
+        disconnectNode(getNodeIdForState(processor));
     };
 
-    void processorHasBeenDestroyed(const ValueTree& processor) override {};
+    void processorHasBeenDestroyed(const ValueTree& processor) override {
+        updateAllDefaultConnections();
+    };
 
     void updateIoChannelEnabled(const ValueTree& parent, const ValueTree& channel, bool enabled) {
         String processorName = parent.getParent()[IDs::name];

@@ -251,22 +251,22 @@ public:
         connections.addChild(connectionState, -1, undoManager);
     }
 
-    bool removeConnection(const ValueTree& connection, bool allowDefaults, bool allowCustom) {
+    bool removeConnection(const ValueTree& connection, UndoManager* undoManager, bool allowDefaults, bool allowCustom) {
         if (!connection.isValid() || (!connection[IDs::isCustomConnection] && isInShiftMode()))
             return false; // no default connection stuff while shift is held
 
         bool customIsAcceptable = (allowCustom && connection.hasProperty(IDs::isCustomConnection)) ||
                                   (allowDefaults && !connection.hasProperty(IDs::isCustomConnection));
         if (customIsAcceptable) {
-            connections.removeChild(connection, connection[IDs::isCustomConnection] ? &undoManager : nullptr);
+            connections.removeChild(connection, undoManager);
             return true;
         }
         return false;
     }
 
-    bool removeConnection(const AudioProcessorGraph::Connection &connection, bool defaults, bool custom) {
+    bool removeConnection(const AudioProcessorGraph::Connection &connection, UndoManager* undoManager, bool defaults, bool custom) {
         const ValueTree &connectionState = getConnectionMatching(connection);
-        return removeConnection(connectionState, defaults, custom);
+        return removeConnection(connectionState, undoManager, defaults, custom);
     }
 
     // make a snapshot of all the information needed to capture AudioGraph connections and UI positions
