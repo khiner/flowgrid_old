@@ -30,6 +30,8 @@ public:
 
     int getNumAvailableSlots() const { return project.maxSlotForTrack(parent); }
 
+    int getNumVisibleSlots() const { return Project::NUM_VISIBLE_TRACK_PROCESSOR_SLOTS + (isMasterTrack() ? 1 : 0); }
+
     int getSlotOffset() const { return isMasterTrack() ? project.getMasterViewSlotOffset() : project.getGridViewSlotOffset(); }
 
     void mouseDown(const MouseEvent &e) override {
@@ -47,7 +49,7 @@ public:
                 processor->setBounds(processorBounds);
             }
         }
-        if (getNumAvailableSlots() < getSlotOffset() + Project::NUM_VISIBLE_TRACK_PROCESSOR_SLOTS + 1) {
+        if (getNumAvailableSlots() < getSlotOffset() + getNumVisibleSlots() + 1) {
             auto processorBounds = isMasterTrack() ? r.removeFromLeft(getCellSize()) : r.removeFromTop(getCellSize());
             if (auto *processor = findProcessorAtSlot(Project::MIXER_CHANNEL_SLOT)) {
                 processor->setBounds(processorBounds);
@@ -58,7 +60,7 @@ public:
     void paint(Graphics &g) override {
         auto r = getLocalBounds();
         g.setColour(findColour(ResizableWindow::backgroundColourId).brighter(0.15));
-        for (int i = 0; i < Project::NUM_VISIBLE_TRACK_PROCESSOR_SLOTS; i++) {
+        for (int i = 0; i < getNumVisibleSlots(); i++) {
             auto cellBounds = isMasterTrack() ? r.removeFromLeft(getCellSize()) : r.removeFromTop(getCellSize());
             g.drawRect(cellBounds);
             if (getSlotOffset() + i == getNumAvailableSlots()) {
@@ -220,7 +222,7 @@ private:
     }
 
     int getCellSize() const {
-        return (isMasterTrack() ? getWidth() : getHeight()) / (Project::NUM_VISIBLE_TRACK_PROCESSOR_SLOTS + (isMasterTrack() ? 1 : 0));
+        return (isMasterTrack() ? getWidth() : getHeight()) / getNumVisibleSlots();
     }
 
     int findSlotAt(const Point<int> relativePosition) {

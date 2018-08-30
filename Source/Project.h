@@ -291,7 +291,7 @@ public:
         for (const auto& track : tracks) {
             for (auto child : track) {
                 if (child.hasType(IDs::PROCESSOR)) {
-                    child.setProperty(IDs::processorSlot, slotForNodeIdSnapshot.at(int(child[IDs::nodeId])), nullptr);
+                    setProcessorSlot(child, slotForNodeIdSnapshot.at(int(child[IDs::nodeId])), nullptr);
                 }
             }
         }
@@ -436,10 +436,10 @@ public:
                 slot = insertIndex <= 0 ? 0 : int(track.getChild(insertIndex - 1)[IDs::processorSlot]) + 1;
             }
         } else {
-            processor.setProperty(IDs::processorSlot, slot, nullptr);
+            setProcessorSlot(processor, slot, nullptr);
             insertIndex = getParentIndexForProcessor(track, processor, nullptr);
         }
-        processor.setProperty(IDs::processorSlot, slot, nullptr);
+        setProcessorSlot(processor, slot, nullptr);
 
         track.addChild(processor, insertIndex, undoManager);
         makeSlotsValid(track, undoManager);
@@ -448,8 +448,24 @@ public:
         return processor;
     }
 
-    int maxSlotForTrack(const ValueTree& track) {
+    int maxSlotForTrack(const ValueTree& track) const {
         return track.hasProperty(IDs::isMasterTrack) ? getNumMasterProcessorSlots() : getNumProcessorSlots();
+    }
+
+    void setProcessorSlot(ValueTree& processor, int newSlot, UndoManager* undoManager) {
+        if (!processor.isValid())
+            return;
+
+        const auto& track = processor.getParent();
+        if (newSlot != MIXER_CHANNEL_SLOT && newSlot > maxSlotForTrack(track)) {
+            if (track.hasProperty(IDs::isMasterTrack)) {
+                addMasterProcessorSlot();
+            } else {
+                addProcessorRow();
+            }
+            newSlot = maxSlotForTrack(track);
+        }
+        processor.setProperty(IDs::processorSlot, newSlot, undoManager);
     }
 
     void makeSlotsValid(const ValueTree& parent, UndoManager* undoManager) {
@@ -470,7 +486,7 @@ public:
         for (ValueTree child : parent) {
             if (child.hasType(IDs::PROCESSOR)) {
                 int newSlot = *(iterator++);
-                child.setProperty(IDs::processorSlot, newSlot, undoManager);
+                setProcessorSlot(child, newSlot, undoManager);
             }
         }
     }
@@ -488,10 +504,10 @@ public:
                         int currentIndex = parent.indexOf(processorState);
                         int currentOtherIndex = parent.indexOf(otherProcessorState);
                         if (currentIndex < currentOtherIndex) {
-                            otherProcessorState.setProperty(IDs::processorSlot, otherSlot - 1, undoManager);
+                            setProcessorSlot(otherProcessorState, otherSlot - 1, undoManager);
                             return currentIndex + 2;
                         } else {
-                            otherProcessorState.setProperty(IDs::processorSlot, otherSlot + 1, undoManager);
+                            setProcessorSlot(otherProcessorState, otherSlot + 1, undoManager);
                             return currentIndex - 1;
                         }
                     } else {
