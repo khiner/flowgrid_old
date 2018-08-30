@@ -425,12 +425,8 @@ public:
             } else {
                 // Insert new effect processors _right before_ the first MixerChannel processor.
                 const ValueTree &mixerChannelProcessor = getMixerChannelProcessorForTrack(track);
-                insertIndex = mixerChannelProcessor.isValid() ? track.indexOf(mixerChannelProcessor) : track.getNumChildren() - 1;
-                if (mixerChannelProcessor.isValid()) {
-                    slot = track.getNumChildren() > 1 ? int(track.getChild(track.getNumChildren() - 2)[IDs::processorSlot]) + 1 : 0;
-                } else {
-                    slot = track.getNumChildren() > 0 ? int(track.getChild(track.getNumChildren() - 1)[IDs::processorSlot]) + 1 : 0;
-                }
+                insertIndex = mixerChannelProcessor.isValid() ? track.indexOf(mixerChannelProcessor) : track.getNumChildren();
+                slot = insertIndex <= 0 ? 0 : int(track.getChild(insertIndex - 1)[IDs::processorSlot]) + 1;
             }
         } else {
             processor.setProperty(IDs::processorSlot, slot, nullptr);
