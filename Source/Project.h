@@ -579,6 +579,9 @@ public:
         const ValueTree& newState = Utilities::loadValueTree(file, true);
         if (!newState.isValid() || !newState.hasType(IDs::PROJECT))
             return Result::fail(TRANS("Not a valid project file"));
+
+        viewState.copyPropertiesFrom(newState.getChildWithName(IDs::VIEW_STATE), nullptr);
+
         const String& inputDeviceName = newState.getChildWithName(IDs::INPUT)[IDs::deviceName];
         const String& outputDeviceName = newState.getChildWithName(IDs::OUTPUT)[IDs::deviceName];
 
@@ -602,7 +605,6 @@ public:
         Utilities::moveAllChildren(newState.getChildWithName(IDs::TRACKS), tracks, nullptr);
         Utilities::moveAllChildren(newState.getChildWithName(IDs::CONNECTIONS), connections, nullptr);
 
-        viewState.copyPropertiesFrom(newState.getChildWithName(IDs::VIEW_STATE), nullptr);
         undoManager.clearUndoHistory();
         return Result::ok();
     }
