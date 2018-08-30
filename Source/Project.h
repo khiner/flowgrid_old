@@ -168,9 +168,16 @@ public:
     int getGridViewTrackOffset() const { return viewState[IDs::gridViewTrackOffset]; }
     int getGridViewSlotOffset() const { return viewState[IDs::gridViewSlotOffset]; }
     int getMasterViewSlotOffset() const { return viewState[IDs::masterViewSlotOffset]; }
-
     int getViewIndexForTrack(const ValueTree& track) {
         return track.getParent().indexOf(track) - getGridViewTrackOffset();
+    }
+
+    void addProcessorRow() {
+        viewState.setProperty(IDs::numProcessorSlots, int(viewState[IDs::numProcessorSlots]) + 1, &undoManager);
+    }
+
+    void addMasterProcessorSlot() {
+        viewState.setProperty(IDs::numMasterProcessorSlots, int(viewState[IDs::numMasterProcessorSlots]) + 1, &undoManager);
     }
 
     bool isInShiftMode() const { return numShiftsHeld >= 1; }
@@ -328,8 +335,8 @@ public:
 
     void createDefaultProject() {
         viewState.setProperty(IDs::controlMode, noteControlMode, nullptr);
-        viewState.setProperty(IDs::numProcessorSlots, 7, nullptr);
-        viewState.setProperty(IDs::numMasterProcessorSlots, 8, nullptr);
+        viewState.setProperty(IDs::numProcessorSlots, 6, nullptr);
+        viewState.setProperty(IDs::numMasterProcessorSlots, 7, nullptr);
         viewState.setProperty(IDs::gridViewTrackOffset, 0, nullptr);
         viewState.setProperty(IDs::gridViewSlotOffset, 0, nullptr);
         viewState.setProperty(IDs::masterViewSlotOffset, 0, nullptr);
@@ -417,7 +424,7 @@ public:
         int insertIndex;
         if (description.name == MixerChannelProcessor::name()) {
             insertIndex = -1;
-            slot = maxSlotForTrack(track);
+            slot = MIXER_CHANNEL_SLOT;
         } else if (slot == -1) {
             if (description.numInputChannels == 0) {
                 insertIndex = 0;
@@ -442,7 +449,7 @@ public:
     }
 
     int maxSlotForTrack(const ValueTree& track) {
-        return NUM_AVAILABLE_PROCESSOR_SLOTS - (track.hasProperty(IDs::isMasterTrack) ? 0 : 1);
+        return track.hasProperty(IDs::isMasterTrack) ? getNumMasterProcessorSlots() : getNumProcessorSlots();
     }
 
     void makeSlotsValid(const ValueTree& parent, UndoManager* undoManager) {
@@ -652,8 +659,9 @@ public:
     
     const static int NUM_VISIBLE_TRACKS = 8;
     const static int NUM_VISIBLE_PROCESSOR_SLOTS = 10;
-    // first row is reserved for audio input, last row for audio output. second-to-last is horizontal master track.
-    const static int NUM_AVAILABLE_PROCESSOR_SLOTS = NUM_VISIBLE_PROCESSOR_SLOTS - 3;
+    // first row is reserved for audio input, last row for audio output. second-to-last is horizontal master track
+    const static int NUM_VISIBLE_TRACK_PROCESSOR_SLOTS = NUM_VISIBLE_PROCESSOR_SLOTS - 3;
+    const static int MIXER_CHANNEL_SLOT = INT_MAX;
 
     const String sessionControlMode = "session", noteControlMode = "note";
 

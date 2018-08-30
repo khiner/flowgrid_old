@@ -25,7 +25,7 @@ public:
     void setTrackWidth(int trackWidth) { this->trackWidth = trackWidth; }
 
     void resized() override {
-        auto r = getLocalBounds().withHeight(getHeight() * Project::NUM_AVAILABLE_PROCESSOR_SLOTS / (Project::NUM_AVAILABLE_PROCESSOR_SLOTS + 1));
+        auto r = getLocalBounds().withHeight(getHeight() * Project::NUM_VISIBLE_TRACK_PROCESSOR_SLOTS / (Project::NUM_VISIBLE_TRACK_PROCESSOR_SLOTS + 1));
 
         Component* offsetTrack {};
 

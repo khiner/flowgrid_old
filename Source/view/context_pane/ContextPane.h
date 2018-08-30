@@ -84,25 +84,28 @@ private:
         auto trackViewOffset = project.getGridViewTrackOffset();
         auto slotViewOffset = project.getGridViewSlotOffset();
         auto masterViewSlotOffset = project.getMasterViewSlotOffset();
-        auto numSlots = project.getNumProcessorSlots();
+        auto numMasterTrackSlots = project.getNumMasterProcessorSlots() + 1; // +1 for mixerchannel
 
         const auto& masterTrack = project.getMasterTrack();
-        for (auto processorSlot = 0; processorSlot < masterTrackGridCells.size(); processorSlot++) {
-            auto *cell = masterTrackGridCells.getUnchecked(processorSlot);
+        for (auto processorCellIndex = 0; processorCellIndex < masterTrackGridCells.size(); processorCellIndex++) {
+            auto processorSlot = processorCellIndex == masterTrackGridCells.size() - 1 ? Project::MIXER_CHANNEL_SLOT : processorCellIndex;
+            auto *cell = masterTrackGridCells.getUnchecked(processorCellIndex);
             const auto &processor = masterTrack.getChildWithProperty(IDs::processorSlot, processorSlot);
 
-            cell->setTrackAndProcessor(masterTrack, processor, processorSlot >= masterViewSlotOffset && processorSlot < masterViewSlotOffset + 8, project.isTrackSelected(masterTrack));
-            auto rectangle = cell->getRectangle().getBoundingBox().withX((trackViewOffset + processorSlot) * (cell->getWidth() + 4) + 2);
+            cell->setTrackAndProcessor(masterTrack, processor, processorCellIndex >= masterViewSlotOffset && processorCellIndex < masterViewSlotOffset + numMasterTrackSlots, project.isTrackSelected(masterTrack));
+            auto rectangle = cell->getRectangle().getBoundingBox().withX((trackViewOffset + processorCellIndex) * (cell->getWidth() + 4) + 2);
             cell->setRectangle(rectangle);
         }
 
+        auto numSlots = project.getNumProcessorSlots() + 1; // +1 for mixerchannel
         for (auto trackIndex = 0; trackIndex < gridCells.size(); trackIndex++) {
             auto* trackGridCells = gridCells.getUnchecked(trackIndex);
             const auto& track = project.getTrack(trackIndex);
-            for (auto processorSlot = 0; processorSlot < trackGridCells->size(); processorSlot++) {
-                auto *cell = trackGridCells->getUnchecked(processorSlot);
+            for (auto processorCellIndex = 0; processorCellIndex < trackGridCells->size(); processorCellIndex++) {
+                auto processorSlot = processorCellIndex == trackGridCells->size() - 1 ? Project::MIXER_CHANNEL_SLOT : processorCellIndex;
+                auto *cell = trackGridCells->getUnchecked(processorCellIndex);
                 const auto& processor = track.getChildWithProperty(IDs::processorSlot, processorSlot);
-                cell->setTrackAndProcessor(track, processor, trackIndex >= trackViewOffset && trackIndex < trackViewOffset + 8 && processorSlot >= slotViewOffset && processorSlot < slotViewOffset + numSlots, project.isTrackSelected(track));
+                cell->setTrackAndProcessor(track, processor, trackIndex >= trackViewOffset && trackIndex < trackViewOffset + 8 && processorCellIndex >= slotViewOffset && processorCellIndex < slotViewOffset + numSlots, project.isTrackSelected(track));
             }
         }
     }
@@ -110,13 +113,13 @@ private:
     void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override {
         if (child.hasType(IDs::TRACK)) {
             if (child.hasProperty(IDs::isMasterTrack)) {
-                int numProcessorSlots = project.getNumMasterProcessorSlots();
+                int numProcessorSlots = project.getNumMasterProcessorSlots() + 1; // + 1 for mixerchannel
                 for (int processorSlot = 0; processorSlot < numProcessorSlots; processorSlot++) {
                     masterTrackGridCells.add(new GridCell(this));
                 }
             } else {
                 auto *newGridCellColumn = new OwnedArray<GridCell>();
-                int numProcessorSlots = project.getNumProcessorSlots();
+                int numProcessorSlots = project.getNumProcessorSlots() + 1; // + 1 for mixerchannel
                 for (int processorSlot = 0; processorSlot < numProcessorSlots; processorSlot++) {
                     newGridCellColumn->add(new GridCell(this));
                 }

@@ -28,7 +28,9 @@ public:
 
     bool isMasterTrack() const { return parent.hasProperty(IDs::isMasterTrack); }
 
-    int getNumAvailableSlots() const { return Project::NUM_AVAILABLE_PROCESSOR_SLOTS + (isMasterTrack() ? 1 : 0); }
+    int getNumAvailableSlots() const { return project.maxSlotForTrack(parent); }
+
+    int getSlotOffset() const { return isMasterTrack() ? project.getMasterViewSlotOffset() : project.getGridViewSlotOffset(); }
 
     void mouseDown(const MouseEvent &e) override {
         setSelected(true);
@@ -39,18 +41,15 @@ public:
 
     void resized() override {
         auto r = getLocalBounds();
-        int totalSize = isMasterTrack() ? getWidth() : getHeight();
-
-        int mixerChannelSize = int(totalSize * MIXER_CHANNEL_SLOT_RATIO);
-        for (int slot = 0; slot < getNumAvailableSlots(); slot++) {
-            cellSizes[slot] = (slot != getNumAvailableSlots() - 1)
-                              ? (totalSize - mixerChannelSize) / (getNumAvailableSlots() - 1)
-                              : mixerChannelSize;
-        }
-
-        for (int slot = 0; slot < getNumAvailableSlots(); slot++) {
-            auto processorBounds = isMasterTrack() ? r.removeFromLeft(getCellSize()) : r.removeFromTop(cellSizes[slot]);
+        for (int slot = getSlotOffset(); slot < getNumAvailableSlots(); slot++) {
+            auto processorBounds = isMasterTrack() ? r.removeFromLeft(getCellSize()) : r.removeFromTop(getCellSize());
             if (auto *processor = findProcessorAtSlot(slot)) {
+                processor->setBounds(processorBounds);
+            }
+        }
+        if (getNumAvailableSlots() < getSlotOffset() + Project::NUM_VISIBLE_TRACK_PROCESSOR_SLOTS + 1) {
+            auto processorBounds = isMasterTrack() ? r.removeFromLeft(getCellSize()) : r.removeFromTop(getCellSize());
+            if (auto *processor = findProcessorAtSlot(Project::MIXER_CHANNEL_SLOT)) {
                 processor->setBounds(processorBounds);
             }
         }
@@ -59,14 +58,16 @@ public:
     void paint(Graphics &g) override {
         auto r = getLocalBounds();
         g.setColour(findColour(ResizableWindow::backgroundColourId).brighter(0.15));
-        for (int i = 0; i < getNumAvailableSlots(); i++)
-            g.drawRect(isMasterTrack() ? r.removeFromLeft(getCellSize()) : r.removeFromTop(cellSizes[i]));
+        for (int i = 0; i < Project::NUM_VISIBLE_TRACK_PROCESSOR_SLOTS; i++) {
+            auto cellBounds = isMasterTrack() ? r.removeFromLeft(getCellSize()) : r.removeFromTop(getCellSize());
+            g.drawRect(cellBounds);
+            if (getSlotOffset() + i == getNumAvailableSlots()) {
+                g.setColour(findColour(ResizableWindow::backgroundColourId).brighter(0.1));
+                g.fillRect(cellBounds);
+            }
+        }
         if (!project.getMixerChannelProcessorForTrack(parent).isValid()) {
-            auto r = getLocalBounds().reduced(1);
-            g.setColour(findColour(ResizableWindow::backgroundColourId).brighter(0.05));
-            g.fillRect(isMasterTrack()
-                       ? r.removeFromRight(getCellSize())
-                       : r.removeFromBottom(cellSizes[getNumAvailableSlots() - 1]));
+
         }
     }
 
@@ -173,8 +174,6 @@ private:
     GraphEditorProcessor *currentlyMovingProcessor {};
     GraphEditorProcessor* mostRecentlySelectedProcessor {};
 
-    int cellSizes[Project::NUM_AVAILABLE_PROCESSOR_SLOTS];
-
     void valueTreePropertyChanged(ValueTree &v, const Identifier &i) override {
         if (isSuitableType(v)) {
             if (i == IDs::processorSlot)
@@ -204,29 +203,31 @@ private:
     void showPopupMenu(const Point<int> &mousePos) {
         int slot = findSlotAt(mousePos);
         menu = std::make_unique<PopupMenu>();
-        if (slot != project.maxSlotForTrack(parent)) {
-            project.addPluginsToMenu(*menu, parent);
-        } else {
+        if (slot == Project::MIXER_CHANNEL_SLOT) {
             menu->addItem(ADD_MIXER_CHANNEL_MENU_ID, "Add mixer channel");
+        } else {
+            project.addPluginsToMenu(*menu, parent);
         }
         menu->showMenuAsync({}, ModalCallbackFunction::create([this, slot](int r) {
-            if (slot != project.maxSlotForTrack(parent)) {
+            if (slot == Project::MIXER_CHANNEL_SLOT) {
+                getCommandManager().invokeDirectly(CommandIDs::addMixerChannel, false);
+            } else if (r == ADD_MIXER_CHANNEL_MENU_ID) {
                 if (auto *description = project.getChosenType(r)) {
                     project.createAndAddProcessor(*description, parent, &project.getUndoManager(), slot);
                 }
-            } else if (r == ADD_MIXER_CHANNEL_MENU_ID) {
-                getCommandManager().invokeDirectly(CommandIDs::addMixerChannel, false);
             }
         }));
     }
 
     int getCellSize() const {
-        return (isMasterTrack() ? getWidth() : getHeight()) / getNumAvailableSlots();
+        return (isMasterTrack() ? getWidth() : getHeight()) / (Project::NUM_VISIBLE_TRACK_PROCESSOR_SLOTS + (isMasterTrack() ? 1 : 0));
     }
 
     int findSlotAt(const Point<int> relativePosition) {
         int slot = isMasterTrack() ? relativePosition.x / getCellSize() : relativePosition.y / getCellSize();
-        // master track has one more available slot than other tracks.
-        return jlimit(0, getNumAvailableSlots() - 1, slot);
+        if (slot >= getNumAvailableSlots())
+            return Project::MIXER_CHANNEL_SLOT;
+        else
+            return jlimit(0, getNumAvailableSlots() - 1, slot);
     }
 };
