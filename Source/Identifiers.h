@@ -56,6 +56,7 @@ namespace IDs
     DECLARE_ID(gridViewTrackOffset)
     DECLARE_ID(gridViewSlotOffset)
     DECLARE_ID(numProcessorSlots)
+    DECLARE_ID(numMasterProcessorSlots)
     DECLARE_ID(masterViewSlotOffset)
 
     #undef DECLARE_ID

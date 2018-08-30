@@ -109,18 +109,18 @@ private:
     
     void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override {
         if (child.hasType(IDs::TRACK)) {
-            if (!child.hasProperty(IDs::isMasterTrack)) {
+            if (child.hasProperty(IDs::isMasterTrack)) {
+                int numProcessorSlots = project.getNumMasterProcessorSlots();
+                for (int processorSlot = 0; processorSlot < numProcessorSlots; processorSlot++) {
+                    masterTrackGridCells.add(new GridCell(this));
+                }
+            } else {
                 auto *newGridCellColumn = new OwnedArray<GridCell>();
                 int numProcessorSlots = project.getNumProcessorSlots();
                 for (int processorSlot = 0; processorSlot < numProcessorSlots; processorSlot++) {
                     newGridCellColumn->add(new GridCell(this));
                 }
                 gridCells.add(newGridCellColumn);
-            } else {
-                int maxMasterTrackProcessorSlot = project.getMaxMasterTrackProcessorSlot();
-                for (int processorSlot = 0; processorSlot < jmax(8, maxMasterTrackProcessorSlot); processorSlot++) {
-                    masterTrackGridCells.add(new GridCell(this));
-                }
             }
             resized();
         } else if (child.hasType(IDs::PROCESSOR)) {
@@ -130,10 +130,10 @@ private:
 
     void valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int index) override {
         if (child.hasType(IDs::TRACK)) {
-            if (!child.hasProperty(IDs::isMasterTrack)) {
-                gridCells.remove(index);
-            } else {
+            if (child.hasProperty(IDs::isMasterTrack)) {
                 masterTrackGridCells.clear();
+            } else {
+                gridCells.remove(index);
             }
             resized();
             updateGridCellColours();

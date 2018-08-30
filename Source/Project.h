@@ -164,18 +164,9 @@ public:
     }
 
     int getNumProcessorSlots() const { return viewState[IDs::numProcessorSlots]; }
-
-    int getMaxMasterTrackProcessorSlot() const {
-        int maxProcessorSlot = 0;
-        for (const auto& processor : getMasterTrack()) {
-            maxProcessorSlot = jmax(int(processor[IDs::processorSlot]), maxProcessorSlot);
-        }
-        return maxProcessorSlot;
-    }
-
+    int getNumMasterProcessorSlots() const { return viewState[IDs::numMasterProcessorSlots]; }
     int getGridViewTrackOffset() const { return viewState[IDs::gridViewTrackOffset]; }
     int getGridViewSlotOffset() const { return viewState[IDs::gridViewSlotOffset]; }
-
     int getMasterViewSlotOffset() const { return viewState[IDs::masterViewSlotOffset]; }
 
     int getViewIndexForTrack(const ValueTree& track) {
@@ -338,6 +329,7 @@ public:
     void createDefaultProject() {
         viewState.setProperty(IDs::controlMode, noteControlMode, nullptr);
         viewState.setProperty(IDs::numProcessorSlots, 7, nullptr);
+        viewState.setProperty(IDs::numMasterProcessorSlots, 8, nullptr);
         viewState.setProperty(IDs::gridViewTrackOffset, 0, nullptr);
         viewState.setProperty(IDs::gridViewSlotOffset, 0, nullptr);
         viewState.setProperty(IDs::masterViewSlotOffset, 0, nullptr);
