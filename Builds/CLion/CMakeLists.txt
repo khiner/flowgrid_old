@@ -55,8 +55,7 @@ add_executable (APP
     "../../Source/view/graph_editor/GraphEditor.h"
     "../../Source/view/graph_editor/GraphEditorConnector.h"
     "../../Source/view/graph_editor/GraphEditorConnectors.h"
-    "../../Source/view/graph_editor/GraphEditorInput.h"
-    "../../Source/view/graph_editor/GraphEditorPanel.h"
+        "../../Source/view/graph_editor/GraphEditorPanel.h"
     "../../Source/view/graph_editor/GraphEditorPin.h"
     "../../Source/view/graph_editor/GraphEditorProcessor.h"
     "../../Source/view/graph_editor/GraphEditorProcessorContainer.h"
@@ -1355,7 +1354,6 @@ set_source_files_properties ("../../Source/view/graph_editor/ConnectorDragListen
 set_source_files_properties ("../../Source/view/graph_editor/GraphEditor.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/view/graph_editor/GraphEditorConnector.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/view/graph_editor/GraphEditorConnectors.h" PROPERTIES HEADER_FILE_ONLY TRUE)
-set_source_files_properties ("../../Source/view/graph_editor/GraphEditorInput.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/view/graph_editor/GraphEditorPanel.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/view/graph_editor/GraphEditorPin.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/view/graph_editor/GraphEditorProcessor.h" PROPERTIES HEADER_FILE_ONLY TRUE)

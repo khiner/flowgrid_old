@@ -69,20 +69,26 @@ public:
 
     void resized() override {
         auto r = getLocalBounds();
+        processors->setBounds(r);
         const auto &nameLabelBounds = isMasterTrack() ? r.removeFromLeft(LABEL_HEIGHT) : r.removeFromTop(LABEL_HEIGHT);
-        nameLabel.setBounds(nameLabelBounds);
         if (isMasterTrack()) {
             const auto& labelBoundsFloat = nameLabelBounds.toFloat();
             masterTrackName.setBoundingBox(Parallelogram<float>(labelBoundsFloat.getBottomLeft(), labelBoundsFloat.getTopLeft(), labelBoundsFloat.getBottomRight()));
             masterTrackName.setFontHeight(3 * LABEL_HEIGHT / 4);
         }
-        processors->setBounds(r);
+        nameLabel.setBounds(nameLabelBounds.withY(project.getProcessorHeight() * processors->getSlotOffset()));
+        nameLabel.toFront(false);
     }
 
     void paint(Graphics &g) override {
         if (isSelected() || processors->anySelected()) {
             g.fillAll(getColour().withAlpha(0.10f).withMultipliedBrightness(1.5f));
         }
+    }
+
+    void slotOffsetChanged() {
+        resized();
+        processors->slotOffsetChanged();
     }
 
     GraphEditorProcessor *getProcessorForNodeId(const AudioProcessorGraph::NodeID nodeId) const override {

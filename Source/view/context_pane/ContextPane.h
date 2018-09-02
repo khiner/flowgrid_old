@@ -97,7 +97,7 @@ private:
             cell->setRectangle(rectangle);
         }
 
-        auto numSlots = project.getNumProcessorSlots() + 1; // +1 for mixerchannel
+        auto numSlots = project.getNumTrackProcessorSlots() + 1; // +1 for mixerchannel
         for (auto trackIndex = 0; trackIndex < gridCells.size(); trackIndex++) {
             auto* trackGridCells = gridCells.getUnchecked(trackIndex);
             const auto& track = project.getTrack(trackIndex);
@@ -119,7 +119,7 @@ private:
                 }
             } else {
                 auto *newGridCellColumn = new OwnedArray<GridCell>();
-                int numProcessorSlots = project.getNumProcessorSlots() + 1; // + 1 for mixerchannel
+                int numProcessorSlots = project.getNumTrackProcessorSlots() + 1; // + 1 for mixerchannel
                 for (int processorSlot = 0; processorSlot < numProcessorSlots; processorSlot++) {
                     newGridCellColumn->add(new GridCell(this));
                 }

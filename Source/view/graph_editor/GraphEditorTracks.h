@@ -22,18 +22,16 @@ public:
 
     int getTrackViewXOffset() const { return trackViewXOffset; }
 
-    void setTrackWidth(int trackWidth) { this->trackWidth = trackWidth; }
-
     void resized() override {
-        auto r = getLocalBounds().withHeight(getHeight() * Project::NUM_VISIBLE_TRACK_PROCESSOR_SLOTS / (Project::NUM_VISIBLE_TRACK_PROCESSOR_SLOTS + 1));
-
+        auto r = getLocalBounds();
+        auto trackBounds = r.removeFromTop(project.getProcessorHeight() * (project.getNumTrackProcessorSlots() + 1) + GraphEditorTrack::LABEL_HEIGHT);
         Component* offsetTrack {};
 
-        r.removeFromLeft(GraphEditorTrack::LABEL_HEIGHT);
+        trackBounds.removeFromLeft(GraphEditorTrack::LABEL_HEIGHT);
         for (auto *track : objects) {
             if (track->isMasterTrack())
                 continue;
-            track->setBounds(r.removeFromLeft(trackWidth));
+            track->setBounds(trackBounds.removeFromLeft(project.getTrackWidth()));
             if (track->getTrackViewIndex() == 0)
                 offsetTrack = track;
         }
@@ -42,7 +40,13 @@ public:
             trackViewXOffset = offsetTrack->getX();
 
         if (auto* masterTrack = findMasterTrack()) {
-            masterTrack->setBounds(trackViewXOffset - GraphEditorTrack::LABEL_HEIGHT, r.getBottom(), GraphEditorTrack::LABEL_HEIGHT + trackWidth * Project::NUM_VISIBLE_TRACKS, getHeight() - r.getHeight());
+            masterTrack->setBounds(r.removeFromTop(project.getProcessorHeight()).withX(trackViewXOffset - GraphEditorTrack::LABEL_HEIGHT).withWidth(GraphEditorTrack::LABEL_HEIGHT + project.getTrackWidth() * Project::NUM_VISIBLE_TRACKS));
+        }
+    }
+
+    void slotOffsetChanged() {
+        for (auto* track : objects) {
+            track->slotOffsetChanged();
         }
     }
 
@@ -178,6 +182,10 @@ public:
             } else if (isSuitableType(v.getParent())) {
                 deselectAllTracksExcept(v.getParent());
             }
+        } else if (v.hasType(IDs::PROCESSOR) && i == IDs::processorSlot) {
+            resized();
+        } else if (i == IDs::gridViewTrackOffset) {
+            resized();
         }
     }
 
@@ -210,7 +218,6 @@ public:
     }
 
 private:
-    int trackWidth {0};
     int trackViewXOffset {0};
 
     void deselectAllTracksExcept(const ValueTree& except) {
