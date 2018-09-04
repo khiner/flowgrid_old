@@ -682,7 +682,7 @@ public:
     const static int NUM_VISIBLE_PROCESSOR_SLOTS = 10;
     // first row is reserved for audio input, last row for audio output. second-to-last is horizontal master track
     const static int NUM_VISIBLE_TRACK_PROCESSOR_SLOTS = NUM_VISIBLE_PROCESSOR_SLOTS - 3;
-    const static int MIXER_CHANNEL_SLOT = INT_MAX;
+    const static int MIXER_CHANNEL_SLOT = INT_MAX - 1;
 
     const String sessionControlMode = "session", noteControlMode = "note";
 
