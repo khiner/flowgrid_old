@@ -341,6 +341,7 @@ private:
 
         int lowestSlot = INT_MAX;
         NodeID upperRightMostProcessorNodeId = NA_NODE_ID;
+        NodeID selectedNodeId = getNodeIdForState(selectedProcessor);
         for (int i = project.getNumTracks() - 1; i >= 0; i--) {
             const auto& track = project.getTrack(i);
             if (track.getNumChildren() == 0)
@@ -350,8 +351,8 @@ private:
             auto firstProcessorNodeId = getNodeIdForState(firstProcessor);
             int slot = firstProcessor[IDs::processorSlot];
             if (slot < lowestSlot &&
-                areProcessorsConnected(firstProcessorNodeId, getNodeIdForState(selectedProcessor), all) &&
-                !project.hasIncomingConnections(firstProcessorNodeId, connectionType)) {
+                !project.hasIncomingConnections(firstProcessorNodeId, connectionType) &&
+                project.areProcessorsConnected(firstProcessorNodeId, selectedNodeId)) {
 
                 lowestSlot = firstProcessor[IDs::processorSlot];
                 upperRightMostProcessorNodeId = firstProcessorNodeId;
@@ -364,20 +365,6 @@ private:
                 addDefaultConnection({{externalSourceNodeId, channel}, {upperRightMostProcessorNodeId, channel}}, nullptr);
             }
         }
-    }
-
-    bool areProcessorsConnected(NodeID upstreamNodeId, NodeID downstreamNodeId, ConnectionType connectionType) const {
-        if (upstreamNodeId == downstreamNodeId)
-            return true;
-
-        auto outgoingConnections = project.getConnectionsForNode(upstreamNodeId, connectionType, false, true);
-        for (const auto& outgoingConnection : outgoingConnections) {
-            auto otherDownstreamNodeId = getNodeIdForState(outgoingConnection.getChildWithName(IDs::DESTINATION));
-            if (downstreamNodeId == otherDownstreamNodeId ||
-                areProcessorsConnected(otherDownstreamNodeId, downstreamNodeId, connectionType))
-                return true;
-        }
-        return false;
     }
 
     inline const Array<int>& getDefaultConnectionChannels(ConnectionType connectionType) const {

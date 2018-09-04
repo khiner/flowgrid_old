@@ -212,7 +212,7 @@ public:
             if (directionIsAcceptable && typeIsAcceptable)
                 nodeConnections.add(connection);
         }
-
+        
         return nodeConnections;
     }
 
@@ -230,6 +230,26 @@ public:
         return {};
     }
 
+    bool areProcessorsConnected(AudioProcessorGraph::NodeID upstreamNodeId, AudioProcessorGraph::NodeID downstreamNodeId) const {
+        if (upstreamNodeId == downstreamNodeId)
+            return true;
+
+        Array<AudioProcessorGraph::NodeID> exploredDownstreamNodes;
+        for (const auto& connection : connections) {
+            if (getNodeIdForState(connection.getChildWithName(IDs::SOURCE)) == upstreamNodeId) {
+                auto otherDownstreamNodeId = getNodeIdForState(connection.getChildWithName(IDs::DESTINATION));
+                if (!exploredDownstreamNodes.contains(otherDownstreamNodeId)) {
+                    if (otherDownstreamNodeId == downstreamNodeId)
+                        return true;
+                    else if (areProcessorsConnected(otherDownstreamNodeId, downstreamNodeId))
+                        return true;
+                    exploredDownstreamNodes.add(otherDownstreamNodeId);
+                }
+            }
+        }
+        return false;
+    }
+    
     bool hasIncomingConnections(AudioProcessorGraph::NodeID nodeId, ConnectionType connectionType) const {
         return !getConnectionsForNode(nodeId, connectionType, true, false).isEmpty();
     }
