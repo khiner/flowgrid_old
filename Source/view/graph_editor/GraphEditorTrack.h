@@ -71,13 +71,14 @@ public:
         auto r = getLocalBounds();
         processors->setBounds(r);
         const auto &nameLabelBounds = isMasterTrack() ? r.removeFromLeft(LABEL_HEIGHT) : r.removeFromTop(LABEL_HEIGHT);
+        nameLabel.setBounds(nameLabelBounds.withY(project.getProcessorHeight() * processors->getSlotOffset()));
+        nameLabel.toFront(false);
         if (isMasterTrack()) {
             const auto& labelBoundsFloat = nameLabelBounds.toFloat();
             masterTrackName.setBoundingBox(Parallelogram<float>(labelBoundsFloat.getBottomLeft(), labelBoundsFloat.getTopLeft(), labelBoundsFloat.getBottomRight()));
             masterTrackName.setFontHeight(3 * LABEL_HEIGHT / 4);
+            masterTrackName.toFront(false);
         }
-        nameLabel.setBounds(nameLabelBounds.withY(project.getProcessorHeight() * processors->getSlotOffset()));
-        nameLabel.toFront(false);
     }
 
     void paint(Graphics &g) override {

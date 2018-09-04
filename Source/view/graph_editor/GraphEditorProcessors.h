@@ -238,8 +238,7 @@ private:
     }
 
     int findSlotAt(const Point<int> relativePosition) {
-        int slot = isMasterTrack() ? relativePosition.x / getCellSize() : relativePosition.y / getCellSize();
-        slot += getSlotOffset();
+        int slot = isMasterTrack() ? (relativePosition.x - 32) / getCellSize() : (relativePosition.y - 32) / getCellSize();
         if (slot >= getNumAvailableSlots())
             return Project::MIXER_CHANNEL_SLOT;
         else

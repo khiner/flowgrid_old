@@ -922,7 +922,7 @@ private:
             }
             if (tree.hasType(IDs::PROCESSOR)) {
                 int processorSlot = tree[IDs::processorSlot];
-                updateViewSlotOffsetToInclude(processorSlot);
+                updateViewSlotOffsetToInclude(processorSlot, track.hasProperty(IDs::isMasterTrack));
             }
         }
     }
@@ -942,14 +942,25 @@ private:
             viewState.setProperty(IDs::gridViewTrackOffset, getNumNonMasterTracks() - NUM_VISIBLE_TRACKS, nullptr);
     }
 
-    void updateViewSlotOffsetToInclude(int processorSlot) {
+    void updateViewSlotOffsetToInclude(int processorSlot, bool isMasterTrack) {
+        if (isMasterTrack) {
+            auto viewSlotOffset = getMasterViewSlotOffset();
+            if (processorSlot == MIXER_CHANNEL_SLOT)
+                processorSlot = getNumMasterProcessorSlots();
+            if (processorSlot > viewSlotOffset + NUM_VISIBLE_TRACKS)
+                viewState.setProperty(IDs::masterViewSlotOffset, processorSlot - NUM_VISIBLE_TRACKS, nullptr);
+            else if (processorSlot < viewSlotOffset)
+                viewState.setProperty(IDs::masterViewSlotOffset, processorSlot, nullptr);
+            processorSlot = getNumTrackProcessorSlots() + 1;
+        }
+
         auto viewSlotOffset = getGridViewSlotOffset();
-        if (processorSlot >= viewSlotOffset + NUM_VISIBLE_TRACK_PROCESSOR_SLOTS - 1)
-            viewState.setProperty(IDs::gridViewSlotOffset, processorSlot - NUM_VISIBLE_TRACK_PROCESSOR_SLOTS + 2, nullptr);
+        if (processorSlot == MIXER_CHANNEL_SLOT)
+            processorSlot = getNumTrackProcessorSlots();
+        if (processorSlot > viewSlotOffset + NUM_VISIBLE_TRACK_PROCESSOR_SLOTS)
+            viewState.setProperty(IDs::gridViewSlotOffset, processorSlot - NUM_VISIBLE_TRACK_PROCESSOR_SLOTS, nullptr);
         else if (processorSlot < viewSlotOffset)
             viewState.setProperty(IDs::gridViewSlotOffset, processorSlot, nullptr);
-//        else if (getNumNonMasterTracks() - viewSlotOffset < NUM_VISIBLE_TRACK_PROCESSOR_SLOTS && getNumNonMasterTracks() >= NUM_VISIBLE_TRACK_PROCESSOR_SLOTS)
-//            viewState.setProperty(IDs::masterViewSlotOffset, getNumNonMasterTracks() - NUM_VISIBLE_TRACK_PROCESSOR_SLOTS, nullptr);
     }
 
     static ValueTree findFirstItemWithPropertyRecursive(const ValueTree &parent, const Identifier &i, const var &value) {

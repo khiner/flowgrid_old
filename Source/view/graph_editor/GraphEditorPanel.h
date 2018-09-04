@@ -248,6 +248,7 @@ private:
         } else if (i == IDs::gridViewSlotOffset) {
             parentViewport.setViewPosition(parentViewport.getViewPositionX(), project.getGridViewSlotOffset() * getProcessorHeight());
             tracks->slotOffsetChanged();
+            connectors->updateConnectors();
         }
     }
 
