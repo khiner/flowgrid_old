@@ -85,7 +85,7 @@ public:
             return;
         auto processor = getProcessorStateForNodeId(nodeId);
         if (processor.isValid()) {
-            if (currentlyDraggingTrackAndSlot != trackAndSlot && trackAndSlot.y < project.maxSlotForTrack(project.getTrack(trackAndSlot.x))) {
+            if (currentlyDraggingTrackAndSlot != trackAndSlot && trackAndSlot.y <= project.maxSlotForTrack(project.getTrack(trackAndSlot.x))) {
                 currentlyDraggingTrackAndSlot = trackAndSlot;
 
                 moveProcessor(processor, trackAndSlot.x, trackAndSlot.y);
@@ -163,7 +163,7 @@ public:
 
     bool addConnection(const Connection& c) override {
         if (canConnectUi(c)) {
-            disconnectDefaultOutgoing(c.source.nodeID, c.source.isMIDI() ? midi : audio);
+            disconnectDefaultOutgoing(c.source.nodeID, c.source.isMIDI() ? midi : audio, getDragDependentUndoManager());
             project.addConnection(c, getDragDependentUndoManager(), false);
             return true;
         }
@@ -183,9 +183,9 @@ public:
         return removed;
     }
 
-    bool addDefaultConnection(const Connection& c) {
+    bool addDefaultConnection(const Connection& c, UndoManager* undoManager) {
         if (canConnectUi(c)) {
-            project.addConnection(c, getDragDependentUndoManager());
+            project.addConnection(c, undoManager);
             return true;
         }
         return false;
@@ -210,34 +210,19 @@ public:
     }
 
     bool disconnectNode(NodeID nodeId) override {
-        return doDisconnectNode(nodeId, all, true, true, true, true);
+        return doDisconnectNode(nodeId, all, getDragDependentUndoManager(), true, true, true, true);
     }
 
     bool disconnectDefaults(NodeID nodeId) {
-        return doDisconnectNode(nodeId, all, true, false, true, true);
+        return doDisconnectNode(nodeId, all, getDragDependentUndoManager(), true, false, true, true);
     }
 
-    bool disconnectDefaultOutgoing(NodeID nodeId, ConnectionType connectionType) {
-        return doDisconnectNode(nodeId, connectionType, true, false, false, true);
-    }
-
-    bool disconnectDefaultIncoming(NodeID nodeId, ConnectionType connectionType) {
-        return doDisconnectNode(nodeId, connectionType, true, false, true, false);
+    bool disconnectDefaultOutgoing(NodeID nodeId, ConnectionType connectionType, UndoManager* undoManager) {
+        return doDisconnectNode(nodeId, connectionType, undoManager, true, false, false, true);
     }
 
     bool disconnectCustom(NodeID nodeId) {
-        return doDisconnectNode(nodeId, all, false, true, true, true);
-    }
-
-    bool removeNode(NodeID nodeId) override  {
-        auto processor = getProcessorStateForNodeId(nodeId);
-        if (processor.isValid()) {
-            disconnectCustom(nodeId);
-            processor.getParent().removeChild(processor, &undoManager);
-            updateAllDefaultConnections();
-            return true;
-        }
-        return false;
+        return doDisconnectNode(nodeId, all, getDragDependentUndoManager(), false, true, true, true);
     }
 
     UndoManager &undoManager;
@@ -258,6 +243,7 @@ private:
     Array<int> defaultMidiConnectionChannels {midiChannelIndex};
 
     bool isMoving { false };
+    bool isDeleting { false };
 
     ValueTree lastSelectedProcessor {};
 
@@ -267,11 +253,12 @@ private:
         return currentlyDraggingNodeId == NA_NODE_ID ? &undoManager : nullptr;
     }
 
-    bool doDisconnectNode(NodeID nodeId, ConnectionType connectionType, bool defaults, bool custom, bool incoming, bool outgoing) {
+    bool doDisconnectNode(NodeID nodeId, ConnectionType connectionType, UndoManager* undoManager,
+                          bool defaults, bool custom, bool incoming, bool outgoing) {
         const auto connections = project.getConnectionsForNode(nodeId, connectionType, incoming, outgoing);
         bool anyRemoved = false;
         for (const auto &connection : connections) {
-            if (project.removeConnection(connection, getDragDependentUndoManager(), defaults, custom))
+            if (project.removeConnection(connection, undoManager, defaults, custom))
                 anyRemoved = true;
         }
 
@@ -333,13 +320,13 @@ private:
 
     void resetDefaultExternalInputs(const ValueTree &selectedProcessor) {
         auto audioInputNodeId = getNodeIdForState(project.getAudioInputProcessorState());
-        disconnectDefaultOutgoing(audioInputNodeId, audio);
+        disconnectDefaultOutgoing(audioInputNodeId, audio, nullptr);
         if (selectedProcessor.isValid())
             addDefaultExternalInputConnections(selectedProcessor, audioInputNodeId, audio);
         for (const auto& midiInputProcessor : project.getInput()) {
             if (midiInputProcessor.getProperty(IDs::name) == MidiInputProcessor::name()) {
                 auto nodeId = getNodeIdForState(midiInputProcessor);
-                disconnectDefaultOutgoing(nodeId, midi);
+                disconnectDefaultOutgoing(nodeId, midi, nullptr);
                 if (selectedProcessor.isValid())
                     addDefaultExternalInputConnections(selectedProcessor, nodeId, midi);
             }
@@ -374,7 +361,7 @@ private:
         if (upperRightMostProcessorNodeId != NA_NODE_ID) {
             const auto &defaultConnectionChannels = getDefaultConnectionChannels(connectionType);
             for (auto channel : defaultConnectionChannels) {
-                addDefaultConnection({{externalSourceNodeId, channel}, {upperRightMostProcessorNodeId, channel}});
+                addDefaultConnection({{externalSourceNodeId, channel}, {upperRightMostProcessorNodeId, channel}}, nullptr);
             }
         }
     }
@@ -456,15 +443,6 @@ private:
         return isProcessorAProducer(processor, connectionType) && isProcessorAnEffect(otherProcessor, connectionType);
     }
 
-    const ValueTree getFirstMasterTrackProcessorWithInputs(ConnectionType connectionType, const ValueTree& excluding={}) const {
-        for (const auto& processor : project.getMasterTrack()) {
-            if (processor.hasType(IDs::PROCESSOR) && processor != excluding && isProcessorAnEffect(processor, connectionType)) {
-                return processor;
-            }
-        }
-        return {};
-    }
-
     void recursivelyInitializeState(const ValueTree &state) {
         if (state.hasType(IDs::PROCESSOR)) {
             addProcessor(state);
@@ -481,7 +459,7 @@ private:
                 updateDefaultConnectionsForProcessor(processor, false, makeInvalidDefaultsIntoCustom);
             }
         }
-        resetDefaultExternalInputs(project.getSelectedProcessor());
+        resetDefaultExternalInputs(lastSelectedProcessor);
     }
     
     void updateDefaultConnectionsForProcessor(const ValueTree &processor, bool updateExternalInputs, bool makeInvalidDefaultsIntoCustom=false) {
@@ -493,7 +471,7 @@ private:
             }
             auto outgoingCustomConnections = project.getConnectionsForNode(nodeId, connectionType, false, true, true, false);
             if (!outgoingCustomConnections.isEmpty()) {
-                disconnectDefaultOutgoing(nodeId, connectionType);
+                disconnectDefaultOutgoing(nodeId, connectionType, getDragDependentUndoManager());
                 return;
             }
             auto outgoingDefaultConnections = project.getConnectionsForNode(nodeId, connectionType, false, true, false, true);
@@ -519,13 +497,13 @@ private:
             if (!anyCustomAdded) {
                 if (processor[IDs::allowDefaultConnections] && processorToConnectTo[IDs::allowDefaultConnections]) {
                     for (auto channel : defaultChannels) {
-                        addDefaultConnection({{nodeId, channel}, {nodeIdToConnectTo, channel}});
+                        addDefaultConnection({{nodeId, channel}, {nodeIdToConnectTo, channel}}, getDragDependentUndoManager());
                     }
                 }
             }
         }
         if (updateExternalInputs) {
-            resetDefaultExternalInputs(project.getSelectedProcessor());
+            resetDefaultExternalInputs(lastSelectedProcessor);
         }
     }
     
@@ -537,7 +515,8 @@ private:
                 }
             } else if (i == IDs::selected && tree[IDs::selected] && tree != lastSelectedProcessor) {
                 lastSelectedProcessor = tree;
-                resetDefaultExternalInputs(tree);
+                if (!isDeleting)
+                    resetDefaultExternalInputs(tree);
             } else if (i == IDs::allowDefaultConnections) {
                 updateDefaultConnectionsForProcessor(tree, true);
             }
@@ -656,12 +635,15 @@ private:
     };
 
     void processorWillBeDestroyed(const ValueTree& processor) override {
+        isDeleting = true;
+        resetDefaultExternalInputs({});
         ValueTree(processor).removeProperty(IDs::processorInitialized, nullptr);
         disconnectNode(getNodeIdForState(processor));
     };
 
     void processorHasBeenDestroyed(const ValueTree& processor) override {
         updateAllDefaultConnections();
+        isDeleting = false;
     };
 
     void updateIoChannelEnabled(const ValueTree& parent, const ValueTree& channel, bool enabled) {

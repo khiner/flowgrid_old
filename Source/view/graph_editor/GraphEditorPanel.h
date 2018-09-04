@@ -24,7 +24,7 @@ public:
     // Call this method when the parent viewport size has changed or when the number of tracks has changed.
     void resize() {
         project.setProcessorHeight(getProcessorHeight());
-        setSize(getTrackWidth() * jmax(Project::NUM_VISIBLE_TRACKS, project.getNumNonMasterTracks()) + GraphEditorTrack::LABEL_HEIGHT * 2,
+        setSize(getTrackWidth() * jmax(Project::NUM_VISIBLE_TRACKS, project.getNumNonMasterTracks(), project.getNumMasterProcessorSlots()) + GraphEditorTrack::LABEL_HEIGHT * 2,
                 getProcessorHeight() * (jmax(Project::NUM_VISIBLE_TRACK_PROCESSOR_SLOTS, project.getNumTrackProcessorSlots() + 1) + 3) + GraphEditorTrack::LABEL_HEIGHT);
         project.setTrackWidth(getTrackWidth());
     }
@@ -242,7 +242,9 @@ private:
 
     void valueTreePropertyChanged(ValueTree& tree, const Identifier& i) override {
         if (tree.hasType(IDs::PROCESSOR) && i == IDs::processorSlot) {
-            resized();
+            updateComponents();
+        } else if (i == IDs::numMasterProcessorSlots || i == IDs::numProcessorSlots) {
+            resize();
         } else if (i == IDs::gridViewTrackOffset) {
             resized();
         } else if (i == IDs::gridViewSlotOffset) {
@@ -269,7 +271,7 @@ private:
             } else if (child[IDs::name] == "Audio Output") {
                 addAndMakeVisible(*(audioOutputProcessor = std::make_unique<GraphEditorProcessor>(child, *this, graph, true)));
             }
-            resize();
+            updateComponents();
         } else if (child.hasType(IDs::CONNECTION)) {
             connectors->updateConnectors();
         }
@@ -281,13 +283,10 @@ private:
         } else if (child.hasType(IDs::PROCESSOR)) {
             if (child[IDs::name] == MidiInputProcessor::name()) {
                 midiInputProcessors.removeObject(findMidiInputProcessorForNodeId(ProcessorGraph::getNodeIdForState(child)));
-                resized();
             } else if (child[IDs::name] == MidiOutputProcessor::name()) {
                 midiOutputProcessors.removeObject(findMidiOutputProcessorForNodeId(ProcessorGraph::getNodeIdForState(child)));
-                resized();
-            } else {
-                updateComponents();
             }
+            updateComponents();
         } else if (child.hasType(IDs::CONNECTION)) {
             connectors->updateConnectors();
         }

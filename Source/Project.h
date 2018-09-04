@@ -946,8 +946,8 @@ private:
             auto viewSlotOffset = getMasterViewSlotOffset();
             if (processorSlot == MIXER_CHANNEL_SLOT)
                 processorSlot = getNumMasterProcessorSlots();
-            if (processorSlot > viewSlotOffset + NUM_VISIBLE_TRACKS)
-                viewState.setProperty(IDs::masterViewSlotOffset, processorSlot - NUM_VISIBLE_TRACKS, nullptr);
+            if (processorSlot >= viewSlotOffset + NUM_VISIBLE_TRACKS)
+                viewState.setProperty(IDs::masterViewSlotOffset, processorSlot - NUM_VISIBLE_TRACKS + 1, nullptr);
             else if (processorSlot < viewSlotOffset)
                 viewState.setProperty(IDs::masterViewSlotOffset, processorSlot, nullptr);
             processorSlot = getNumTrackProcessorSlots() + 1;

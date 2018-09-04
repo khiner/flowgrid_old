@@ -224,7 +224,7 @@ public:
                 ([this](int r) {
                     switch (r) {
                         case DELETE_MENU_ID:
-                            graph.removeNode(getNodeId());
+                            getCommandManager().invokeDirectly(CommandIDs::deleteSelected, false);
                             break;
                         case TOGGLE_BYPASS_MENU_ID:
                             state.setProperty(IDs::bypassed, !state.getProperty(IDs::bypassed), &graph.undoManager);

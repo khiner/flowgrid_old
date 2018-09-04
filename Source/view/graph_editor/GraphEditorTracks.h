@@ -40,7 +40,11 @@ public:
             trackViewXOffset = offsetTrack->getX();
 
         if (auto* masterTrack = findMasterTrack()) {
-            masterTrack->setBounds(r.removeFromTop(project.getProcessorHeight()).withX(trackViewXOffset - GraphEditorTrack::LABEL_HEIGHT).withWidth(GraphEditorTrack::LABEL_HEIGHT + project.getTrackWidth() * Project::NUM_VISIBLE_TRACKS));
+            masterTrack->setBounds(
+                    r.removeFromTop(project.getProcessorHeight())
+                     .withX(trackViewXOffset - GraphEditorTrack::LABEL_HEIGHT)
+                     .withWidth(GraphEditorTrack::LABEL_HEIGHT + project.getTrackWidth() * (project.getNumMasterProcessorSlots() + 1))
+            );
         }
     }
 
@@ -228,14 +232,6 @@ private:
                 else
                     track.sendPropertyChangeMessage(IDs::selected);
             }
-        }
-    }
-
-    static void deselectAllItemsExcept(const ValueTree& parent, const ValueTree& except) {
-        for (auto child : parent) {
-            if (child[IDs::selected] && child != except)
-                child.setProperty(IDs::selected, false, nullptr);
-            deselectAllItemsExcept(child, except);
         }
     }
 };
