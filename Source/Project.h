@@ -297,7 +297,7 @@ public:
         for (const auto& track : tracks) {
             for (auto child : track) {
                 if (child.hasType(IDs::PROCESSOR)) {
-                    setProcessorSlot(child, slotForNodeIdSnapshot.at(int(child[IDs::nodeId])), nullptr);
+                    setProcessorSlot(track, child, slotForNodeIdSnapshot.at(int(child[IDs::nodeId])), nullptr);
                 }
             }
         }
@@ -442,10 +442,10 @@ public:
                 slot = insertIndex <= 0 ? 0 : int(track.getChild(insertIndex - 1)[IDs::processorSlot]) + 1;
             }
         } else {
-            setProcessorSlot(processor, slot, nullptr);
+            setProcessorSlot(track, processor, slot, nullptr);
             insertIndex = getParentIndexForProcessor(track, processor, nullptr);
         }
-        setProcessorSlot(processor, slot, nullptr);
+        setProcessorSlot(track, processor, slot, nullptr);
 
         track.addChild(processor, insertIndex, undoManager);
         makeSlotsValid(track, undoManager);
@@ -458,11 +458,10 @@ public:
         return track.hasProperty(IDs::isMasterTrack) ? getNumMasterProcessorSlots() - 1 : getNumTrackProcessorSlots() - 1;
     }
 
-    void setProcessorSlot(ValueTree& processor, int newSlot, UndoManager* undoManager) {
+    void setProcessorSlot(const ValueTree& track, ValueTree& processor, int newSlot, UndoManager* undoManager) {
         if (!processor.isValid())
             return;
 
-        const auto& track = processor.getParent();
         if (newSlot != MIXER_CHANNEL_SLOT && newSlot > maxSlotForTrack(track)) {
             if (track.hasProperty(IDs::isMasterTrack)) {
                 addMasterProcessorSlot();
@@ -492,7 +491,7 @@ public:
         for (ValueTree child : parent) {
             if (child.hasType(IDs::PROCESSOR)) {
                 int newSlot = *(iterator++);
-                setProcessorSlot(child, newSlot, undoManager);
+                setProcessorSlot(parent, child, newSlot, undoManager);
             }
         }
     }
@@ -510,10 +509,10 @@ public:
                         int currentIndex = parent.indexOf(processorState);
                         int currentOtherIndex = parent.indexOf(otherProcessorState);
                         if (currentIndex < currentOtherIndex) {
-                            setProcessorSlot(otherProcessorState, otherSlot - 1, undoManager);
+                            setProcessorSlot(parent, otherProcessorState, otherSlot - 1, undoManager);
                             return currentIndex + 2;
                         } else {
-                            setProcessorSlot(otherProcessorState, otherSlot + 1, undoManager);
+                            setProcessorSlot(parent, otherProcessorState, otherSlot + 1, undoManager);
                             return currentIndex - 1;
                         }
                     } else {

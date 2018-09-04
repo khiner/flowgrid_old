@@ -120,7 +120,7 @@ public:
         if (fromSlot == toSlot && processorState.getParent() == toTrack)
             return;
 
-        project.setProcessorSlot(processorState, toSlot, getDragDependentUndoManager());
+        project.setProcessorSlot(processorState.getParent(), processorState, toSlot, getDragDependentUndoManager());
 
         const int insertIndex = project.getParentIndexForProcessor(toTrack, processorState, getDragDependentUndoManager());
         Helpers::moveSingleItem(processorState, toTrack, insertIndex, getDragDependentUndoManager());
