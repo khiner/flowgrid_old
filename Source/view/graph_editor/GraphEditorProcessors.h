@@ -225,7 +225,7 @@ private:
         menu->showMenuAsync({}, ModalCallbackFunction::create([this, slot](int r) {
             if (slot == Project::MIXER_CHANNEL_SLOT) {
                 getCommandManager().invokeDirectly(CommandIDs::addMixerChannel, false);
-            } else if (r == ADD_MIXER_CHANNEL_MENU_ID) {
+            } else {
                 if (auto *description = project.getChosenType(r)) {
                     project.createAndAddProcessor(*description, parent, &project.getUndoManager(), slot);
                 }
