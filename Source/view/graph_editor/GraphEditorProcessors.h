@@ -64,7 +64,9 @@ public:
         auto r = getLocalBounds();
         auto slotOffset = getSlotOffset();
         g.setColour(findColour(ResizableWindow::backgroundColourId).brighter(0.15));
-        for (int slot = 0; slot < getNumAvailableSlots() + 1; slot++) {
+        bool hasMixerChannel = project.getMixerChannelProcessorForTrack(parent).isValid();
+        int numAvailableSlots = getNumAvailableSlots();
+        for (int slot = 0; slot <= numAvailableSlots; slot++) {
             if (slot == slotOffset) {
                 if (isMasterTrack())
                     r.removeFromLeft(32); // todo constant
@@ -73,7 +75,7 @@ public:
             }
             auto cellBounds = isMasterTrack() ? r.removeFromLeft(getCellSize()) : r.removeFromTop(getCellSize());
             g.drawRect(cellBounds);
-            if (slot == getNumAvailableSlots()) {
+            if (slot == numAvailableSlots && !hasMixerChannel) {
                 g.setColour(findColour(ResizableWindow::backgroundColourId).brighter(0.1));
                 g.fillRect(cellBounds);
             }
