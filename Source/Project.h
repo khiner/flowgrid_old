@@ -64,6 +64,8 @@ public:
 
     ValueTree& getState() { return state; }
 
+    ValueTree& getViewState() { return viewState; }
+
     ValueTree& getConnections() { return connections; }
 
     ValueTree& getInput() { return input; }

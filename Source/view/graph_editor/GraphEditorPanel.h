@@ -24,9 +24,9 @@ public:
     // Call this method when the parent viewport size has changed or when the number of tracks has changed.
     void resize() {
         project.setProcessorHeight(getProcessorHeight());
-        setSize(getTrackWidth() * jmax(Project::NUM_VISIBLE_TRACKS, project.getNumNonMasterTracks(), (project.getNumMasterProcessorSlots() - 1)) + GraphEditorTrack::LABEL_HEIGHT * 2,
-                getProcessorHeight() * (jmax(Project::NUM_VISIBLE_TRACK_PROCESSOR_SLOTS, project.getNumTrackProcessorSlots()) + 3) + GraphEditorTrack::LABEL_HEIGHT);
         project.setTrackWidth(getTrackWidth());
+        setSize(getTrackWidth() * jmax(Project::NUM_VISIBLE_TRACKS, project.getNumNonMasterTracks(), project.getNumMasterProcessorSlots()) + GraphEditorTrack::LABEL_HEIGHT * 2,
+                getProcessorHeight() * (jmax(Project::NUM_VISIBLE_TRACK_PROCESSOR_SLOTS, project.getNumTrackProcessorSlots()) + 3) + GraphEditorTrack::LABEL_HEIGHT);
     }
 
     void resized() override {
@@ -37,7 +37,6 @@ public:
         auto top = r.removeFromTop(processorHeight);
 
         tracks->setBounds(r.removeFromTop(processorHeight * (project.getNumTrackProcessorSlots() + 1) + GraphEditorTrack::LABEL_HEIGHT));
-        parentViewport.setViewPosition(tracks->getTrackViewXOffset() - GraphEditorTrack::LABEL_HEIGHT, parentViewport.getViewPositionY());
 
         auto ioProcessorWidth = parentViewport.getWidth() - GraphEditorTrack::LABEL_HEIGHT * 2;
         top.setX(tracks->getTrackViewXOffset());
@@ -240,17 +239,32 @@ private:
         return nullptr;
     }
 
+    void updateViewPosition() {
+        auto masterSlotOffset = project.getMasterViewSlotOffset();
+        auto trackSlotOffset = project.getGridViewTrackOffset();
+        parentViewport.setViewPosition(
+                jmax(masterSlotOffset, trackSlotOffset) * getTrackWidth(),
+                project.getGridViewSlotOffset() * getProcessorHeight()
+        );
+    }
+
     void valueTreePropertyChanged(ValueTree& tree, const Identifier& i) override {
         if (tree.hasType(IDs::PROCESSOR) && i == IDs::processorSlot) {
             updateComponents();
         } else if (i == IDs::numMasterProcessorSlots || i == IDs::numProcessorSlots) {
             resize();
         } else if (i == IDs::gridViewTrackOffset) {
+            updateViewPosition();
+            tracks->masterSlotOffsetChanged();
             resized();
         } else if (i == IDs::gridViewSlotOffset) {
-            parentViewport.setViewPosition(parentViewport.getViewPositionX(), project.getGridViewSlotOffset() * getProcessorHeight());
+            updateViewPosition();
             tracks->slotOffsetChanged();
             connectors->updateConnectors();
+        } else if (i == IDs::masterViewSlotOffset) {
+            updateViewPosition();
+            tracks->masterSlotOffsetChanged();
+            resized();
         }
     }
 

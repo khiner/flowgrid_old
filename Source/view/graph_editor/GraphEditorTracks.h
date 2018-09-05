@@ -25,9 +25,9 @@ public:
     void resized() override {
         auto r = getLocalBounds();
         auto trackBounds = r.removeFromTop(project.getProcessorHeight() * project.getNumTrackProcessorSlots() + GraphEditorTrack::LABEL_HEIGHT);
-        Component* offsetTrack {};
+        trackBounds.removeFromLeft(jmax(0, project.getMasterViewSlotOffset() - project.getGridViewTrackOffset()) * project.getTrackWidth() + GraphEditorTrack::LABEL_HEIGHT);
 
-        trackBounds.removeFromLeft(GraphEditorTrack::LABEL_HEIGHT);
+        Component* offsetTrack {};
         for (auto *track : objects) {
             if (track->isMasterTrack())
                 continue;
@@ -42,7 +42,7 @@ public:
         if (auto* masterTrack = findMasterTrack()) {
             masterTrack->setBounds(
                     r.removeFromTop(project.getProcessorHeight())
-                     .withX(trackViewXOffset - GraphEditorTrack::LABEL_HEIGHT)
+                     .withX(trackViewXOffset - GraphEditorTrack::LABEL_HEIGHT - project.getMasterViewSlotOffset() * project.getTrackWidth())
                      .withWidth(GraphEditorTrack::LABEL_HEIGHT + project.getTrackWidth() * project.getNumMasterProcessorSlots())
             );
         }
@@ -51,6 +51,13 @@ public:
     void slotOffsetChanged() {
         for (auto* track : objects) {
             track->slotOffsetChanged();
+        }
+    }
+
+    void masterSlotOffsetChanged() {
+        resized();
+        if (auto* masterTrack = findMasterTrack()) {
+            masterTrack->slotOffsetChanged();
         }
     }
 

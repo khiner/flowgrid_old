@@ -70,8 +70,12 @@ public:
     void resized() override {
         auto r = getLocalBounds();
         processors->setBounds(r);
-        const auto &nameLabelBounds = isMasterTrack() ? r.removeFromLeft(LABEL_HEIGHT) : r.removeFromTop(LABEL_HEIGHT);
-        nameLabel.setBounds(nameLabelBounds.withY(project.getProcessorHeight() * processors->getSlotOffset()));
+        const auto &nameLabelBounds = isMasterTrack()
+                                      ? r.removeFromLeft(LABEL_HEIGHT)
+                                         .withX(project.getTrackWidth() * processors->getSlotOffset())
+                                      : r.removeFromTop(LABEL_HEIGHT)
+                                         .withY(project.getProcessorHeight() * processors->getSlotOffset());
+        nameLabel.setBounds(nameLabelBounds);
         nameLabel.toFront(false);
         if (isMasterTrack()) {
             const auto& labelBoundsFloat = nameLabelBounds.toFloat();

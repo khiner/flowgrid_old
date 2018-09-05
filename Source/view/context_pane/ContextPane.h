@@ -23,16 +23,24 @@ public:
 
         auto r = getLocalBounds();
 
+        auto trackViewOffset = project.getGridViewTrackOffset();
+        auto masterViewSlotOffset = project.getMasterViewSlotOffset();
+
+        auto masterRowBounds = r.removeFromBottom(cellHeight);
+        masterRowBounds.removeFromLeft(jmax(0, trackViewOffset - masterViewSlotOffset) * cellWidth);
+
+        auto tracksBounds = r;
+        tracksBounds.removeFromLeft(jmax(0, masterViewSlotOffset - trackViewOffset) * cellWidth);
+
         if (!masterTrackGridCells.isEmpty()) {
-            auto bottom = r.removeFromBottom(cellHeight);
             for (auto* processorGridCell : masterTrackGridCells) {
-                processorGridCell->setRectangle(bottom.removeFromLeft(cellWidth).reduced(2).toFloat());
+                processorGridCell->setRectangle(masterRowBounds.removeFromLeft(cellWidth).reduced(2).toFloat());
             }
         }
 
         if (!gridCells.isEmpty()) {
             for (auto *trackGridCells : gridCells) {
-                auto column = r.removeFromLeft(cellWidth);
+                auto column = tracksBounds.removeFromLeft(cellWidth);
                 for (int i = trackGridCells->size() - 1; i >= 0; i--) {
                     trackGridCells->getUnchecked(i)->setRectangle(column.removeFromBottom(cellHeight).reduced(2).toFloat());
                 }
@@ -85,20 +93,17 @@ private:
         auto slotViewOffset = project.getGridViewSlotOffset();
         auto masterViewSlotOffset = project.getMasterViewSlotOffset();
         auto numTrackSlots = project.getNumTrackProcessorSlots();
-        auto numMasterTrackSlots = project.getNumMasterProcessorSlots();
-
         const auto& masterTrack = project.getMasterTrack();
+
         for (auto processorCellIndex = 0; processorCellIndex < masterTrackGridCells.size(); processorCellIndex++) {
             auto processorSlot = processorCellIndex == masterTrackGridCells.size() - 1 ? Project::MIXER_CHANNEL_SLOT : processorCellIndex;
             auto *cell = masterTrackGridCells.getUnchecked(processorCellIndex);
             const auto &processor = masterTrack.getChildWithProperty(IDs::processorSlot, processorSlot);
 
             bool inView = processorCellIndex >= masterViewSlotOffset &&
-                          processorCellIndex < masterViewSlotOffset + numMasterTrackSlots &&
+                          processorCellIndex < masterViewSlotOffset + Project::NUM_VISIBLE_TRACKS &&
                           slotViewOffset + Project::NUM_VISIBLE_TRACK_PROCESSOR_SLOTS >= numTrackSlots;
             cell->setTrackAndProcessor(masterTrack, processor, inView, project.isTrackSelected(masterTrack));
-            auto rectangle = cell->getRectangle().getBoundingBox().withX((trackViewOffset + processorCellIndex) * (cell->getWidth() + 4) + 2);
-            cell->setRectangle(rectangle);
         }
 
         for (auto trackIndex = 0; trackIndex < gridCells.size(); trackIndex++) {
@@ -120,10 +125,7 @@ private:
     void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override {
         if (child.hasType(IDs::TRACK)) {
             if (child.hasProperty(IDs::isMasterTrack)) {
-                int numProcessorSlots = project.getNumMasterProcessorSlots();
-                for (int processorSlot = 0; processorSlot < numProcessorSlots; processorSlot++) {
-                    masterTrackGridCells.add(new GridCell(this));
-                }
+                return valueTreePropertyChanged(project.getViewState(), IDs::numMasterProcessorSlots);
             } else {
                 auto *newGridCellColumn = new OwnedArray<GridCell>();
                 int numProcessorSlots = project.getNumTrackProcessorSlots();
@@ -172,7 +174,18 @@ private:
                 }
                 resized();
                 updateGridCellColours();
-            } else if (i == IDs::gridViewTrackOffset || i == IDs::gridViewSlotOffset || i == IDs::masterViewSlotOffset) {
+            } else if (i == IDs::numMasterProcessorSlots) {
+                int numProcessorSlots = tree[IDs::numMasterProcessorSlots];
+                while (masterTrackGridCells.size() < numProcessorSlots) {
+                    masterTrackGridCells.add(new GridCell(this));
+                }
+                masterTrackGridCells.removeLast(masterTrackGridCells.size() - numProcessorSlots, true);
+                resized();
+                updateGridCellColours();
+            } else if (i == IDs::gridViewTrackOffset || i == IDs::masterViewSlotOffset) {
+                resized();
+                updateGridCellColours();
+            } else if (i == IDs::gridViewSlotOffset) {
                 updateGridCellColours();
             }
         } else if ((tree.hasType(IDs::TRACK) || tree.hasType(IDs::PROCESSOR)) && i == IDs::selected && tree[IDs::selected]) {
