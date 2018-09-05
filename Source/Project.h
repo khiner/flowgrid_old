@@ -361,8 +361,8 @@ public:
 
     void createDefaultProject() {
         viewState.setProperty(IDs::controlMode, noteControlMode, nullptr);
-        viewState.setProperty(IDs::numProcessorSlots, 6, nullptr);
-        viewState.setProperty(IDs::numMasterProcessorSlots, 7, nullptr);
+        viewState.setProperty(IDs::numProcessorSlots, 7, nullptr);
+        viewState.setProperty(IDs::numMasterProcessorSlots, 8, nullptr);
         viewState.setProperty(IDs::gridViewTrackOffset, 0, nullptr);
         viewState.setProperty(IDs::gridViewSlotOffset, 0, nullptr);
         viewState.setProperty(IDs::masterViewSlotOffset, 0, nullptr);
@@ -474,21 +474,21 @@ public:
         return processor;
     }
 
-    int maxSlotForTrack(const ValueTree& track) const {
-        return track.hasProperty(IDs::isMasterTrack) ? getNumMasterProcessorSlots() - 1 : getNumTrackProcessorSlots() - 1;
+    int numAvailableSlotsForTrack(const ValueTree &track) const {
+        return track.hasProperty(IDs::isMasterTrack) ? getNumMasterProcessorSlots() : getNumTrackProcessorSlots();
     }
 
     void setProcessorSlot(const ValueTree& track, ValueTree& processor, int newSlot, UndoManager* undoManager) {
         if (!processor.isValid())
             return;
 
-        if (newSlot != MIXER_CHANNEL_SLOT && newSlot > maxSlotForTrack(track)) {
+        if (newSlot != MIXER_CHANNEL_SLOT && newSlot >= numAvailableSlotsForTrack(track) - 1) {
             if (track.hasProperty(IDs::isMasterTrack)) {
                 addMasterProcessorSlot();
             } else {
                 addProcessorRow();
             }
-            newSlot = maxSlotForTrack(track);
+            newSlot = numAvailableSlotsForTrack(track) - 2;
         }
         processor.setProperty(IDs::processorSlot, newSlot, undoManager);
     }
@@ -965,12 +965,12 @@ private:
         if (isMasterTrack) {
             auto viewSlotOffset = getMasterViewSlotOffset();
             if (processorSlot == MIXER_CHANNEL_SLOT)
-                processorSlot = getNumMasterProcessorSlots();
+                processorSlot = getNumMasterProcessorSlots() - 1;
             if (processorSlot >= viewSlotOffset + NUM_VISIBLE_TRACKS)
                 viewState.setProperty(IDs::masterViewSlotOffset, processorSlot - NUM_VISIBLE_TRACKS + 1, nullptr);
             else if (processorSlot < viewSlotOffset)
                 viewState.setProperty(IDs::masterViewSlotOffset, processorSlot, nullptr);
-            processorSlot = getNumTrackProcessorSlots() + 1;
+            processorSlot = getNumTrackProcessorSlots();
         }
 
         auto viewSlotOffset = getGridViewSlotOffset();

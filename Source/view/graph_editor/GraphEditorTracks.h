@@ -24,7 +24,7 @@ public:
 
     void resized() override {
         auto r = getLocalBounds();
-        auto trackBounds = r.removeFromTop(project.getProcessorHeight() * (project.getNumTrackProcessorSlots() + 1) + GraphEditorTrack::LABEL_HEIGHT);
+        auto trackBounds = r.removeFromTop(project.getProcessorHeight() * project.getNumTrackProcessorSlots() + GraphEditorTrack::LABEL_HEIGHT);
         Component* offsetTrack {};
 
         trackBounds.removeFromLeft(GraphEditorTrack::LABEL_HEIGHT);
@@ -43,7 +43,7 @@ public:
             masterTrack->setBounds(
                     r.removeFromTop(project.getProcessorHeight())
                      .withX(trackViewXOffset - GraphEditorTrack::LABEL_HEIGHT)
-                     .withWidth(GraphEditorTrack::LABEL_HEIGHT + project.getTrackWidth() * (project.getNumMasterProcessorSlots() + 1))
+                     .withWidth(GraphEditorTrack::LABEL_HEIGHT + project.getTrackWidth() * project.getNumMasterProcessorSlots())
             );
         }
     }

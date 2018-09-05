@@ -28,7 +28,7 @@ public:
 
     bool isMasterTrack() const { return parent.hasProperty(IDs::isMasterTrack); }
 
-    int getNumAvailableSlots() const { return project.maxSlotForTrack(parent) + 1; }
+    int getNumAvailableSlots() const { return project.numAvailableSlotsForTrack(parent); }
 
     int getSlotOffset() const { return isMasterTrack() ? project.getMasterViewSlotOffset() : project.getGridViewSlotOffset(); }
 
@@ -42,7 +42,7 @@ public:
     void resized() override {
         auto r = getLocalBounds();
         auto slotOffset = getSlotOffset();
-        for (int slot = 0; slot < getNumAvailableSlots(); slot++) {
+        for (int slot = 0; slot < getNumAvailableSlots() - 1; slot++) {
             if (slot == slotOffset) {
                 if (isMasterTrack())
                     r.removeFromLeft(32); // todo constant
@@ -236,7 +236,7 @@ private:
     }
 
     int getCellSize() const {
-        return isMasterTrack() ? ((getWidth() - 32) / (getNumAvailableSlots() + 1)) : project.getProcessorHeight(); // +1 for mixer
+        return isMasterTrack() ? ((getWidth() - 32) / getNumAvailableSlots()) : project.getProcessorHeight(); // +1 for mixer
     }
 
     int findSlotAt(const Point<int> relativePosition) {

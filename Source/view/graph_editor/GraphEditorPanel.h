@@ -24,8 +24,8 @@ public:
     // Call this method when the parent viewport size has changed or when the number of tracks has changed.
     void resize() {
         project.setProcessorHeight(getProcessorHeight());
-        setSize(getTrackWidth() * jmax(Project::NUM_VISIBLE_TRACKS, project.getNumNonMasterTracks(), project.getNumMasterProcessorSlots()) + GraphEditorTrack::LABEL_HEIGHT * 2,
-                getProcessorHeight() * (jmax(Project::NUM_VISIBLE_TRACK_PROCESSOR_SLOTS, project.getNumTrackProcessorSlots() + 1) + 3) + GraphEditorTrack::LABEL_HEIGHT);
+        setSize(getTrackWidth() * jmax(Project::NUM_VISIBLE_TRACKS, project.getNumNonMasterTracks(), (project.getNumMasterProcessorSlots() - 1)) + GraphEditorTrack::LABEL_HEIGHT * 2,
+                getProcessorHeight() * (jmax(Project::NUM_VISIBLE_TRACK_PROCESSOR_SLOTS, project.getNumTrackProcessorSlots()) + 3) + GraphEditorTrack::LABEL_HEIGHT);
         project.setTrackWidth(getTrackWidth());
     }
 
@@ -36,7 +36,7 @@ public:
         auto processorHeight = getProcessorHeight();
         auto top = r.removeFromTop(processorHeight);
 
-        tracks->setBounds(r.removeFromTop(processorHeight * (project.getNumTrackProcessorSlots() + 2) + GraphEditorTrack::LABEL_HEIGHT));
+        tracks->setBounds(r.removeFromTop(processorHeight * (project.getNumTrackProcessorSlots() + 1) + GraphEditorTrack::LABEL_HEIGHT));
         parentViewport.setViewPosition(tracks->getTrackViewXOffset() - GraphEditorTrack::LABEL_HEIGHT, parentViewport.getViewPositionY());
 
         auto ioProcessorWidth = parentViewport.getWidth() - GraphEditorTrack::LABEL_HEIGHT * 2;

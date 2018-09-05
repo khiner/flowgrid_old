@@ -84,7 +84,7 @@ private:
         auto trackViewOffset = project.getGridViewTrackOffset();
         auto slotViewOffset = project.getGridViewSlotOffset();
         auto masterViewSlotOffset = project.getMasterViewSlotOffset();
-        auto numMasterTrackSlots = project.getNumMasterProcessorSlots() + 1; // +1 for mixerchannel
+        auto numMasterTrackSlots = project.getNumMasterProcessorSlots();
 
         const auto& masterTrack = project.getMasterTrack();
         for (auto processorCellIndex = 0; processorCellIndex < masterTrackGridCells.size(); processorCellIndex++) {
@@ -97,7 +97,7 @@ private:
             cell->setRectangle(rectangle);
         }
 
-        auto numSlots = project.getNumTrackProcessorSlots() + 1; // +1 for mixerchannel
+        auto numSlots = project.getNumTrackProcessorSlots();
         for (auto trackIndex = 0; trackIndex < gridCells.size(); trackIndex++) {
             auto* trackGridCells = gridCells.getUnchecked(trackIndex);
             const auto& track = project.getTrack(trackIndex);
@@ -113,13 +113,13 @@ private:
     void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override {
         if (child.hasType(IDs::TRACK)) {
             if (child.hasProperty(IDs::isMasterTrack)) {
-                int numProcessorSlots = project.getNumMasterProcessorSlots() + 1; // + 1 for mixerchannel
+                int numProcessorSlots = project.getNumMasterProcessorSlots();
                 for (int processorSlot = 0; processorSlot < numProcessorSlots; processorSlot++) {
                     masterTrackGridCells.add(new GridCell(this));
                 }
             } else {
                 auto *newGridCellColumn = new OwnedArray<GridCell>();
-                int numProcessorSlots = project.getNumTrackProcessorSlots() + 1; // + 1 for mixerchannel
+                int numProcessorSlots = project.getNumTrackProcessorSlots();
                 for (int processorSlot = 0; processorSlot < numProcessorSlots; processorSlot++) {
                     newGridCellColumn->add(new GridCell(this));
                 }
