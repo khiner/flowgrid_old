@@ -84,6 +84,7 @@ private:
         auto trackViewOffset = project.getGridViewTrackOffset();
         auto slotViewOffset = project.getGridViewSlotOffset();
         auto masterViewSlotOffset = project.getMasterViewSlotOffset();
+        auto numTrackSlots = project.getNumTrackProcessorSlots();
         auto numMasterTrackSlots = project.getNumMasterProcessorSlots();
 
         const auto& masterTrack = project.getMasterTrack();
@@ -92,12 +93,14 @@ private:
             auto *cell = masterTrackGridCells.getUnchecked(processorCellIndex);
             const auto &processor = masterTrack.getChildWithProperty(IDs::processorSlot, processorSlot);
 
-            cell->setTrackAndProcessor(masterTrack, processor, processorCellIndex >= masterViewSlotOffset && processorCellIndex < masterViewSlotOffset + numMasterTrackSlots, project.isTrackSelected(masterTrack));
+            bool inView = processorCellIndex >= masterViewSlotOffset &&
+                          processorCellIndex < masterViewSlotOffset + numMasterTrackSlots &&
+                          slotViewOffset + Project::NUM_VISIBLE_TRACK_PROCESSOR_SLOTS >= numTrackSlots;
+            cell->setTrackAndProcessor(masterTrack, processor, inView, project.isTrackSelected(masterTrack));
             auto rectangle = cell->getRectangle().getBoundingBox().withX((trackViewOffset + processorCellIndex) * (cell->getWidth() + 4) + 2);
             cell->setRectangle(rectangle);
         }
 
-        auto numSlots = project.getNumTrackProcessorSlots();
         for (auto trackIndex = 0; trackIndex < gridCells.size(); trackIndex++) {
             auto* trackGridCells = gridCells.getUnchecked(trackIndex);
             const auto& track = project.getTrack(trackIndex);
@@ -105,7 +108,11 @@ private:
                 auto processorSlot = processorCellIndex == trackGridCells->size() - 1 ? Project::MIXER_CHANNEL_SLOT : processorCellIndex;
                 auto *cell = trackGridCells->getUnchecked(processorCellIndex);
                 const auto& processor = track.getChildWithProperty(IDs::processorSlot, processorSlot);
-                cell->setTrackAndProcessor(track, processor, trackIndex >= trackViewOffset && trackIndex < trackViewOffset + 8 && processorCellIndex >= slotViewOffset && processorCellIndex < slotViewOffset + numSlots, project.isTrackSelected(track));
+                bool inView = trackIndex >= trackViewOffset &&
+                              trackIndex < trackViewOffset + Project::NUM_VISIBLE_TRACKS &&
+                              processorCellIndex >= slotViewOffset &&
+                              processorCellIndex <= slotViewOffset + Project::NUM_VISIBLE_TRACK_PROCESSOR_SLOTS;
+                cell->setTrackAndProcessor(track, processor, inView, project.isTrackSelected(track));
             }
         }
     }
@@ -147,7 +154,25 @@ private:
 
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {
         if (tree.hasType(IDs::VIEW_STATE)) {
-            if (i == IDs::gridViewTrackOffset || i == IDs::gridViewSlotOffset || i == IDs::masterViewSlotOffset) {
+            if (i == IDs::numProcessorSlots) {
+                if (gridCells.isEmpty())
+                    return;
+                int numProcessorSlots = tree[IDs::numProcessorSlots];
+                while (gridCells.getFirst()->size() < numProcessorSlots) {
+                    for (auto trackIndex = 0; trackIndex < gridCells.size(); trackIndex++) {
+                        auto *trackGridCells = gridCells.getUnchecked(trackIndex);
+                        trackGridCells->add(new GridCell(this));
+                    }
+                }
+                while (gridCells.getFirst()->size() > numProcessorSlots) {
+                    for (auto trackIndex = 0; trackIndex < gridCells.size(); trackIndex++) {
+                        auto *trackGridCells = gridCells.getUnchecked(trackIndex);
+                        trackGridCells->removeLast(1, true);
+                    }
+                }
+                resized();
+                updateGridCellColours();
+            } else if (i == IDs::gridViewTrackOffset || i == IDs::gridViewSlotOffset || i == IDs::masterViewSlotOffset) {
                 updateGridCellColours();
             }
         } else if ((tree.hasType(IDs::TRACK) || tree.hasType(IDs::PROCESSOR)) && i == IDs::selected && tree[IDs::selected]) {
