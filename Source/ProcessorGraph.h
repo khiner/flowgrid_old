@@ -245,7 +245,7 @@ private:
     bool isMoving { false };
     bool isDeleting { false };
 
-    ValueTree lastSelectedProcessor {};
+    ValueTree selectedProcessor {};
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ProcessorGraph)
 
@@ -446,7 +446,7 @@ private:
                 updateDefaultConnectionsForProcessor(processor, false, makeInvalidDefaultsIntoCustom);
             }
         }
-        resetDefaultExternalInputs(lastSelectedProcessor);
+        resetDefaultExternalInputs(selectedProcessor);
     }
     
     void updateDefaultConnectionsForProcessor(const ValueTree &processor, bool updateExternalInputs, bool makeInvalidDefaultsIntoCustom=false) {
@@ -490,7 +490,7 @@ private:
             }
         }
         if (updateExternalInputs) {
-            resetDefaultExternalInputs(lastSelectedProcessor);
+            resetDefaultExternalInputs(selectedProcessor);
         }
     }
     
@@ -500,8 +500,8 @@ private:
                 if (auto node = getNodeForState(tree)) {
                     node->setBypassed(tree[IDs::bypassed]);
                 }
-            } else if (i == IDs::selected && tree[IDs::selected] && tree != lastSelectedProcessor) {
-                lastSelectedProcessor = tree;
+            } else if (i == IDs::selected && tree[IDs::selected] && tree != selectedProcessor) {
+                selectedProcessor = tree;
                 if (!isDeleting)
                     resetDefaultExternalInputs(tree);
             } else if (i == IDs::allowDefaultConnections) {
@@ -523,7 +523,7 @@ private:
                     mutableProcessor.setProperty(IDs::processorInitialized, true, nullptr);
 
                 if (child[IDs::selected]) {
-                    lastSelectedProcessor = child;
+                    selectedProcessor = child;
                     child.sendPropertyChangeMessage(IDs::selected);
                 }
             }
@@ -568,8 +568,8 @@ private:
                     activePluginWindows.remove(i);
                 }
             }
-            if (child == lastSelectedProcessor)
-                lastSelectedProcessor = {};
+            if (child == selectedProcessor && !isMoving)
+                selectedProcessor = {};
         } else if (child.hasType(IDs::CONNECTION)) {
             if (currentlyDraggingNodeId == NA_NODE_ID) {
                 const ValueTree &sourceState = child.getChildWithName(IDs::SOURCE);
