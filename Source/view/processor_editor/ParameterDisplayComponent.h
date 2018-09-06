@@ -3,6 +3,7 @@
 #include "JuceHeader.h"
 #include "processors/StatefulAudioProcessorWrapper.h"
 #include "processors/MixerChannelProcessor.h"
+#include "DraggableValueLabel.h"
 
 class ParameterDisplayComponent : public Component, public StatefulAudioProcessorWrapper::Parameter::Listener {
 public:
@@ -17,12 +18,8 @@ public:
     }
 
     void setParameter(StatefulAudioProcessorWrapper::Parameter *parameterWrapper) {
-        if (this->parameterWrapper == parameterWrapper)
+        if (this->parameterWrapper == parameterWrapper && parameterComponent)
             return;
-
-        for (auto *child : getChildren()) {
-            child->setVisible(false);
-        }
 
         detachParameterComponent();
 
@@ -37,11 +34,15 @@ public:
 
         parameterName.setText(parameter->getName(128), dontSendNotification);
         parameterName.setJustificationType(Justification::centred);
-        parameterName.setVisible(true);
+        addAndMakeVisible(parameterName);
 
-        parameterLabel.setText(parameter->getLabel(), dontSendNotification);
-        parameterLabel.setVisible(!parameter->getLabel().isEmpty());
-        parameterLabel.setJustificationType(Justification::centred);
+        if (!parameter->getLabel().isEmpty()) {
+            parameterLabel.setText(parameter->getLabel(), dontSendNotification);
+            parameterLabel.setJustificationType(Justification::centred);
+            addAndMakeVisible(parameterLabel);
+        } else {
+            removeChildComponent(&parameterLabel);
+        }
 
         if (parameter->isBoolean()) {
             // The AU, AUv3 and VST (only via a .vstxml file) SDKs support
@@ -86,9 +87,8 @@ public:
             parameterWrapper->attachSlider(slider);
             parameterWrapper->attachLabel(&valueLabel);
 
-            if (parameterWrapper->range.getRange().getStart() == -1 && parameterWrapper->range.getRange().getEnd() == 1) {
+            if (parameterWrapper->range.getRange().getStart() == -1 && parameterWrapper->range.getRange().getEnd() == 1)
                 slider->getProperties().set("fromCentre", true);
-            }
 
             parameterComponent.reset(slider);
         }
@@ -96,8 +96,9 @@ public:
         if (getSlider() || getLevelMeter()) {
             valueLabel.setJustificationType(Justification::centred);
             valueLabel.setEditable(true, true);
-            valueLabel.setVisible(true);
+            addAndMakeVisible(valueLabel);
         }
+
         addAndMakeVisible(parameterComponent.get());
         resized();
     }
@@ -105,8 +106,29 @@ public:
     void resized() override {
         if (parameterComponent == nullptr)
             return;
-        auto area = getLocalBounds().reduced(1);
-        parameterName.setBounds(area.removeFromTop(20));
+
+        auto area = getLocalBounds().reduced(2);
+        parameterName.setBounds(area.removeFromTop(16));
+
+        if (tooSmallForCurrentParameterComponent()) {
+            if (getDraggableValueLabel() == nullptr) {
+                detachParameterComponent();
+                removeChildComponent(parameterComponent.get());
+                removeChildComponent(&parameterLabel);
+                removeChildComponent(&valueLabel);
+                auto *draggableValueLabel = new DraggableValueLabel();
+                parameterWrapper->attachSlider(draggableValueLabel);
+                parameterComponent.reset(draggableValueLabel);
+                addAndMakeVisible(parameterComponent.get());
+            }
+            parameterComponent->setBounds(area);
+            return;
+        } else if (getDraggableValueLabel()) {
+            detachParameterComponent();
+            setParameter(parameterWrapper);
+            return;
+        }
+
         auto bottom = area.removeFromBottom(20);
 
         if (parameterLabel.isVisible())
@@ -134,11 +156,12 @@ public:
             detachParameterComponent();
     }
 
-    Slider* getSlider() { return dynamic_cast<Slider *>(parameterComponent.get()); }
-    Button* getButton() { return dynamic_cast<Button *>(parameterComponent.get()); }
-    ComboBox* getCombobox() { return dynamic_cast<ComboBox *>(parameterComponent.get()); }
-    SwitchParameterComponent* getSwitch() { return dynamic_cast<SwitchParameterComponent *>(parameterComponent.get()); }
-    LevelMeter* getLevelMeter() { return dynamic_cast<LevelMeter *>(parameterComponent.get()); }
+    Slider* getSlider() const { return dynamic_cast<Slider *>(parameterComponent.get()); }
+    DraggableValueLabel* getDraggableValueLabel() const { return dynamic_cast<DraggableValueLabel *>(parameterComponent.get()); }
+    Button* getButton() const { return dynamic_cast<Button *>(parameterComponent.get()); }
+    ComboBox* getCombobox() const { return dynamic_cast<ComboBox *>(parameterComponent.get()); }
+    SwitchParameterComponent* getSwitch() const { return dynamic_cast<SwitchParameterComponent *>(parameterComponent.get()); }
+    LevelMeter* getLevelMeter() const { return dynamic_cast<LevelMeter *>(parameterComponent.get()); }
 
 private:
     Label parameterName, parameterLabel, valueLabel;
@@ -164,6 +187,11 @@ private:
             parameterWrapper->detachLabel(&valueLabel);
         }
         parameterComponent = nullptr;
+    }
+
+    bool tooSmallForCurrentParameterComponent() const {
+        auto r = getLocalBounds();
+        return r.getHeight() < 80 || (r.getWidth() < 64 && getSlider() && !getDraggableValueLabel());
     }
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ParameterDisplayComponent)
