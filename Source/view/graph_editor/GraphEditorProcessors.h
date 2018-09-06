@@ -101,7 +101,9 @@ public:
     }
 
     GraphEditorProcessor *createNewObject(const ValueTree &v) override {
-        GraphEditorProcessor *processor = currentlyMovingProcessor != nullptr ? currentlyMovingProcessor : new GraphEditorProcessor(v, connectorDragListener, graph);
+        GraphEditorProcessor *processor = currentlyMovingProcessor != nullptr
+                                          ? currentlyMovingProcessor
+                                          : new GraphEditorProcessor(project, v, connectorDragListener, graph);
         addAndMakeVisible(processor);
         return processor;
     }
@@ -185,7 +187,6 @@ private:
     Project &project;
     ConnectorDragListener &connectorDragListener;
     ProcessorGraph &graph;
-    std::unique_ptr<PopupMenu> menu;
     GraphEditorProcessor *currentlyMovingProcessor {};
     GraphEditorProcessor* mostRecentlySelectedProcessor {};
 
@@ -217,14 +218,14 @@ private:
 
     void showPopupMenu(const Point<int> &mousePos) {
         int slot = findSlotAt(mousePos);
-        menu = std::make_unique<PopupMenu>();
+        PopupMenu menu;
         if (slot == Project::MIXER_CHANNEL_SLOT) {
-            menu->addItem(ADD_MIXER_CHANNEL_MENU_ID, "Add mixer channel");
+            menu.addItem(ADD_MIXER_CHANNEL_MENU_ID, "Add mixer channel");
         } else {
-            project.addPluginsToMenu(*menu, parent);
+            project.addPluginsToMenu(menu, parent);
         }
 
-        menu->showMenuAsync({}, ModalCallbackFunction::create([this, slot](int r) {
+        menu.showMenuAsync({}, ModalCallbackFunction::create([this, slot](int r) {
             if (slot == Project::MIXER_CHANNEL_SLOT) {
                 getCommandManager().invokeDirectly(CommandIDs::addMixerChannel, false);
             } else {

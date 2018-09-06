@@ -10,8 +10,8 @@
 
 class GraphEditorProcessor : public Component, public ValueTree::Listener {
 public:
-    GraphEditorProcessor(const ValueTree& state, ConnectorDragListener &connectorDragListener, ProcessorGraph& graph, bool showChannelLabels=false)
-            : state(state), connectorDragListener(connectorDragListener), graph(graph), showChannelLabels(showChannelLabels) {
+    GraphEditorProcessor(Project& project, const ValueTree& state, ConnectorDragListener &connectorDragListener, ProcessorGraph& graph, bool showChannelLabels=false)
+            : project(project), state(state), connectorDragListener(connectorDragListener), graph(graph), showChannelLabels(showChannelLabels) {
         this->state.addListener(this);
         valueTreePropertyChanged(this->state, IDs::name);
         if (this->state.hasProperty(IDs::deviceName))
@@ -188,29 +188,42 @@ public:
     }
 
     void showPopupMenu() {
-        menu = std::make_unique<PopupMenu>();
+        PopupMenu menu;
+
+        auto slot = getSlot();
+        if (slot != Project::MIXER_CHANNEL_SLOT) {
+            PopupMenu processorSelectorSubmenu;
+            project.addPluginsToMenu(processorSelectorSubmenu, state.getParent());
+            menu.addSubMenu("Insert new processor", processorSelectorSubmenu);
+            menu.addSeparator();
+        }
 
         if (isIoProcessor()) {
-            menu->addItem(CONFIGURE_AUDIO_MIDI_MENU_ID, "Configure audio/MIDI IO");
+            menu.addItem(CONFIGURE_AUDIO_MIDI_MENU_ID, "Configure audio/MIDI IO");
         } else {
-            menu->addItem(DELETE_MENU_ID, "Delete this processor");
-            menu->addItem(TOGGLE_BYPASS_MENU_ID, "Toggle Bypass");
+            menu.addItem(DELETE_MENU_ID, "Delete this processor");
+            menu.addItem(TOGGLE_BYPASS_MENU_ID, "Toggle Bypass");
         }
-        menu->addSeparator();
+
+        menu.addSeparator();
         // todo single, stateful, menu item for enable/disable default connections
-        menu->addItem(ENABLE_DEFAULTS_MENU_ID, "Enable default connections");
-        menu->addItem(DISABLE_DEFAULTS_MENU_ID, "Disable default connections");
-        menu->addItem(DISCONNECT_ALL_MENU_ID, "Disconnect all");
-        menu->addItem(DISCONNECT_CUSTOM_MENU_ID, "Disconnect all custom");
+        menu.addItem(ENABLE_DEFAULTS_MENU_ID, "Enable default connections");
+        menu.addItem(DISABLE_DEFAULTS_MENU_ID, "Disable default connections");
+        menu.addItem(DISCONNECT_ALL_MENU_ID, "Disconnect all");
+        menu.addItem(DISCONNECT_CUSTOM_MENU_ID, "Disconnect all custom");
 
         if (getProcessor()->hasEditor()) {
-            menu->addSeparator();
-            menu->addItem(SHOW_PLUGIN_GUI_MENU_ID, "Show plugin GUI");
-            menu->addItem(SHOW_ALL_PROGRAMS_MENU_ID, "Show all programs");
+            menu.addSeparator();
+            menu.addItem(SHOW_PLUGIN_GUI_MENU_ID, "Show plugin GUI");
+            menu.addItem(SHOW_ALL_PROGRAMS_MENU_ID, "Show all programs");
         }
 
-        menu->showMenuAsync({}, ModalCallbackFunction::create
-                ([this](int r) {
+        menu.showMenuAsync({}, ModalCallbackFunction::create
+                ([this, slot](int r) {
+                    if (auto *description = project.getChosenType(r)) {
+                        project.createAndAddProcessor(*description, state.getParent(), &project.getUndoManager(), slot);
+                        return;
+                    }
                     switch (r) {
                         case DELETE_MENU_ID:
                             getCommandManager().invokeDirectly(CommandIDs::deleteSelected, false);
@@ -258,9 +271,10 @@ public:
             return first->getName().compare(second->getName());
         }
     };
-    ValueTree state;
 
 private:
+    Project &project;
+    ValueTree state;
     DrawableText nameLabel;
     std::unique_ptr<ParametersPanel> parametersPanel;
     ConnectorDragListener &connectorDragListener;
@@ -270,7 +284,6 @@ private:
     int pinSize = 16;
     float largeFontHeight = 18.0f;
     float smallFontHeight = 15.0f;
-    std::unique_ptr<PopupMenu> menu;
 
     static constexpr int
             DELETE_MENU_ID = 1, TOGGLE_BYPASS_MENU_ID = 2, ENABLE_DEFAULTS_MENU_ID = 3, DISCONNECT_ALL_MENU_ID = 4,

@@ -275,20 +275,20 @@ private:
             resize();
         } else if (child.hasType(IDs::PROCESSOR)) {
             if (child[IDs::name] == MidiInputProcessor::name()) {
-                auto *midiInputProcessor = new GraphEditorProcessor(child, *this, graph);
+                auto *midiInputProcessor = new GraphEditorProcessor(project, child, *this, graph);
                 addAndMakeVisible(midiInputProcessor);
                 midiInputProcessors.addSorted(processorComparator, midiInputProcessor);
                 resized();
             } else if (child[IDs::name] == MidiOutputProcessor::name()) {
-                auto *midiOutputProcessor = new GraphEditorProcessor(child, *this, graph);
+                auto *midiOutputProcessor = new GraphEditorProcessor(project, child, *this, graph);
                 addAndMakeVisible(midiOutputProcessor);
                 midiOutputProcessors.addSorted(processorComparator, midiOutputProcessor);
                 resized();
             } else if (child[IDs::name] == "Audio Input") {
-                addAndMakeVisible(*(audioInputProcessor = std::make_unique<GraphEditorProcessor>(child, *this, graph, true)));
+                addAndMakeVisible(*(audioInputProcessor = std::make_unique<GraphEditorProcessor>(project, child, *this, graph, true)));
                 resized();
             } else if (child[IDs::name] == "Audio Output") {
-                addAndMakeVisible(*(audioOutputProcessor = std::make_unique<GraphEditorProcessor>(child, *this, graph, true)));
+                addAndMakeVisible(*(audioOutputProcessor = std::make_unique<GraphEditorProcessor>(project, child, *this, graph, true)));
                 resized();
             } else {
                 updateComponents();
