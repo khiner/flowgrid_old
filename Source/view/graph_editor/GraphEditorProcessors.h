@@ -42,6 +42,8 @@ public:
     void resized() override {
         auto r = getLocalBounds();
         auto slotOffset = getSlotOffset();
+        auto nonMixerCellSize = getNonMixerCellSize(), mixerCellSize = getMixerCellSize();
+
         for (int slot = 0; slot < getNumAvailableSlots() - 1; slot++) {
             if (slot == slotOffset) {
                 if (isMasterTrack())
@@ -49,13 +51,13 @@ public:
                 else
                     r.removeFromTop(32); // todo constant
             }
-            auto processorBounds = isMasterTrack() ? r.removeFromLeft(getCellSize()) : r.removeFromTop(getCellSize());
+            auto processorBounds = isMasterTrack() ? r.removeFromLeft(nonMixerCellSize) : r.removeFromTop(nonMixerCellSize);
             if (auto *processor = findProcessorAtSlot(slot)) {
                 processor->setBounds(processorBounds);
             }
         }
         if (auto *processor = findProcessorAtSlot(Project::MIXER_CHANNEL_SLOT)) {
-            auto processorBounds = isMasterTrack() ? r.removeFromLeft(getCellSize()) : r.removeFromTop(getCellSize());
+            auto processorBounds = isMasterTrack() ? r.removeFromLeft(mixerCellSize) : r.removeFromTop(mixerCellSize);
             processor->setBounds(processorBounds);
         }
     }
@@ -63,26 +65,28 @@ public:
     void paint(Graphics &g) override {
         auto r = getLocalBounds();
         auto slotOffset = getSlotOffset();
-        bool hasMixerChannel = project.getMixerChannelProcessorForTrack(parent).isValid();
         int numAvailableSlots = getNumAvailableSlots();
-        for (int slot = 0; slot <= numAvailableSlots; slot++) {
+        auto nonMixerCellSize = getNonMixerCellSize(), mixerCellSize = getMixerCellSize();
+
+        for (int slot = 0; slot < numAvailableSlots; slot++) {
+            bool isMixerChannel = (slot == numAvailableSlots - 1);
             if (slot == slotOffset) {
                 if (isMasterTrack())
                     r.removeFromLeft(32); // todo constant
                 else
                     r.removeFromTop(32); // todo constant
             }
-            auto cellBounds = isMasterTrack() ? r.removeFromLeft(getCellSize()) : r.removeFromTop(getCellSize());
+
+            auto cellSize = isMixerChannel ? mixerCellSize : nonMixerCellSize;
+            auto cellBounds = isMasterTrack() ? r.removeFromLeft(cellSize) : r.removeFromTop(cellSize);
             static const Colour& baseColour = findColour(TextEditor::backgroundColourId);
             Colour bgColour = baseColour.brighter(0.13);
             if (project.isProcessorSlotInView(parent, slot)) {
-                bgColour = bgColour.brighter(0.2);
+                bgColour = bgColour.brighter(0.3);
                 if (project.isTrackSelected(parent))
                     bgColour = bgColour.brighter(0.2);
             }
 
-            if (slot == numAvailableSlots - 1 && !hasMixerChannel)
-                bgColour = bgColour.darker(0.3);
             g.setColour(bgColour);
             g.fillRect(cellBounds.reduced(1));
         }
@@ -178,8 +182,6 @@ public:
 private:
     static constexpr int ADD_MIXER_CHANNEL_MENU_ID = 1;
 
-    static constexpr float MIXER_CHANNEL_SLOT_RATIO = 0.2f;
-
     Project &project;
     ConnectorDragListener &connectorDragListener;
     ProcessorGraph &graph;
@@ -233,13 +235,18 @@ private:
         }));
     }
 
-    int getCellSize() const {
-        return isMasterTrack() ? ((getWidth() - 32) / getNumAvailableSlots()) : project.getProcessorHeight(); // +1 for mixer
+    int getNonMixerCellSize() const {
+        return isMasterTrack() ? project.getTrackWidth() : project.getProcessorHeight();
+    }
+
+    int getMixerCellSize() const {
+        return isMasterTrack() ? project.getTrackWidth() : (project.getProcessorHeight() * 2);
     }
 
     int findSlotAt(const Point<int> relativePosition) {
-        int slot = isMasterTrack() ? (relativePosition.x - 32) / getCellSize() : (relativePosition.y - 32) / getCellSize();
-        if (slot >= getNumAvailableSlots())
+        int slot = isMasterTrack() ? (relativePosition.x - 32) / getNonMixerCellSize() : (relativePosition.y - 32) /
+                getNonMixerCellSize();
+        if (slot >= getNumAvailableSlots() - 1)
             return Project::MIXER_CHANNEL_SLOT;
         else
             return jlimit(0, getNumAvailableSlots() - 1, slot);

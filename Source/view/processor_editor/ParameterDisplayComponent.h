@@ -105,9 +105,9 @@ public:
     void resized() override {
         if (parameterComponent == nullptr)
             return;
-        auto area = getLocalBounds().reduced(2);
-        parameterName.setBounds(area.removeFromTop(area.getHeight() / 5));
-        auto bottom = area.removeFromBottom(area.getHeight() / 5);
+        auto area = getLocalBounds().reduced(1);
+        parameterName.setBounds(area.removeFromTop(20));
+        auto bottom = area.removeFromBottom(20);
 
         if (parameterLabel.isVisible())
             parameterLabel.setBounds(getSlider() || getLevelMeter() ? bottom.removeFromRight(bottom.getWidth() / 3) : bottom);

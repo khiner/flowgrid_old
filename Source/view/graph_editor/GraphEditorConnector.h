@@ -162,7 +162,7 @@ struct GraphEditorConnector : public Component, public SettableTooltipClient {
         PathStrokeType wideStroke(8.0f);
         wideStroke.createStrokedPath(hitPath, linePath);
 
-        PathStrokeType stroke(2.5f);
+        PathStrokeType stroke(3.0f);
         stroke.createStrokedPath(linePath, linePath);
 
         auto arrowW = 5.0f;

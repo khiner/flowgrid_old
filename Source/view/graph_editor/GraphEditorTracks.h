@@ -22,7 +22,7 @@ public:
 
     void resized() override {
         auto r = getLocalBounds();
-        auto trackBounds = r.removeFromTop(project.getProcessorHeight() * project.getNumTrackProcessorSlots() + GraphEditorTrack::LABEL_HEIGHT);
+        auto trackBounds = r.removeFromTop(project.getProcessorHeight() * (project.getNumTrackProcessorSlots() + 1) + GraphEditorTrack::LABEL_HEIGHT);
         trackBounds.removeFromLeft(jmax(0, project.getMasterViewSlotOffset() - project.getGridViewTrackOffset()) * project.getTrackWidth() + GraphEditorTrack::LABEL_HEIGHT);
 
         for (auto *track : objects) {
