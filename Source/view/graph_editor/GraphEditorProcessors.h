@@ -30,7 +30,7 @@ public:
 
     int getNumAvailableSlots() const { return project.numAvailableSlotsForTrack(parent); }
 
-    int getSlotOffset() const { return isMasterTrack() ? project.getMasterViewSlotOffset() : project.getGridViewSlotOffset(); }
+    int getSlotOffset() const { return project.getSlotOffsetForTrack(parent); }
 
     void mouseDown(const MouseEvent &e) override {
         setSelected(true);
@@ -63,7 +63,6 @@ public:
     void paint(Graphics &g) override {
         auto r = getLocalBounds();
         auto slotOffset = getSlotOffset();
-        g.setColour(findColour(ResizableWindow::backgroundColourId).brighter(0.15));
         bool hasMixerChannel = project.getMixerChannelProcessorForTrack(parent).isValid();
         int numAvailableSlots = getNumAvailableSlots();
         for (int slot = 0; slot <= numAvailableSlots; slot++) {
@@ -74,7 +73,10 @@ public:
                     r.removeFromTop(32); // todo constant
             }
             auto cellBounds = isMasterTrack() ? r.removeFromLeft(getCellSize()) : r.removeFromTop(getCellSize());
-            g.drawRect(cellBounds);
+            static const Colour& baseColour = findColour(TextEditor::backgroundColourId);
+            Colour bgColour = project.isProcessorSlotInView(parent, slot) ? baseColour.brighter(0.2) : baseColour.brighter(0.14);
+            g.setColour(bgColour);
+            g.fillRect(cellBounds.reduced(1));
             if (slot == numAvailableSlots && !hasMixerChannel) {
                 g.setColour(findColour(ResizableWindow::backgroundColourId).brighter(0.1));
                 g.fillRect(cellBounds);
@@ -151,14 +153,6 @@ public:
 
     void setCurrentlyMovingProcessor(GraphEditorProcessor *currentlyMovingProcessor) {
         this->currentlyMovingProcessor = currentlyMovingProcessor;
-    }
-
-    bool anySelected() const {
-        for (auto *processor : objects) {
-            if (processor->isSelected())
-                return true;
-        }
-        return false;
     }
 
     void setSelected(bool selected, ValueTree::Listener *listenerToExclude=nullptr) {

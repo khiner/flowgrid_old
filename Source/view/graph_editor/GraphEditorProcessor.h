@@ -48,33 +48,23 @@ public:
         return ProcessorGraph::getNodeIdForState(state);
     }
 
-    inline int getSlot() const {
-        return state[IDs::processorSlot];
+    inline const Colour getTrackColour() const {
+        return Colour::fromString(state.getParent()[IDs::colour].toString());
     }
 
-    inline int getNumInputChannels() const {
-        return state.getChildWithName(IDs::INPUT_CHANNELS).getNumChildren();
-    }
+    inline int getSlot() const { return state[IDs::processorSlot]; }
 
-    inline int getNumOutputChannels() const {
-        return state.getChildWithName(IDs::OUTPUT_CHANNELS).getNumChildren();
-    }
+    inline int getNumInputChannels() const { return state.getChildWithName(IDs::INPUT_CHANNELS).getNumChildren(); }
 
-    inline bool acceptsMidi() const {
-        return state[IDs::acceptsMidi];
-    }
+    inline int getNumOutputChannels() const { return state.getChildWithName(IDs::OUTPUT_CHANNELS).getNumChildren(); }
 
-    inline bool producesMidi() const {
-        return state[IDs::producesMidi];
-    }
+    inline bool acceptsMidi() const { return state[IDs::acceptsMidi]; }
 
-    inline bool isIoProcessor() const {
-        return InternalPluginFormat::isIoProcessorName(state[IDs::name]);
-    }
+    inline bool producesMidi() const { return state[IDs::producesMidi]; }
 
-    inline bool isSelected() {
-        return state[IDs::selected];
-    }
+    inline bool isIoProcessor() const { return InternalPluginFormat::isIoProcessorName(state[IDs::name]); }
+
+    inline bool isSelected() { return state[IDs::selected]; }
 
     inline void setSelected(bool selected, ValueTree::Listener *listenerToExclude=nullptr) {
         if (isSelected() && selected && listenerToExclude == nullptr)
@@ -86,12 +76,11 @@ public:
     void paint(Graphics &g) override {
         bool selected = isSelected();
         if (selected) {
-            g.setColour(Colours::white.withAlpha(0.15f));
+            g.setColour(getTrackColour().withAlpha(0.6f));
             g.fillRect(getLocalBounds());
         }
 
         auto boxColour = findColour(TextEditor::backgroundColourId);
-
         if (state[IDs::bypassed])
             boxColour = boxColour.brighter();
         else if (selected)

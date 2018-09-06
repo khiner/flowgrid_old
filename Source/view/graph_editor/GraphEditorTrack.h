@@ -85,12 +85,6 @@ public:
         }
     }
 
-    void paint(Graphics &g) override {
-        if (isSelected() || processors->anySelected()) {
-            g.fillAll(getColour().withAlpha(0.10f).withMultipliedBrightness(1.5f));
-        }
-    }
-
     void slotOffsetChanged() {
         resized();
         processors->slotOffsetChanged();

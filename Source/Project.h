@@ -476,8 +476,29 @@ public:
         return processor;
     }
 
-    int numAvailableSlotsForTrack(const ValueTree &track) const {
+    int numAvailableSlotsForTrack(const ValueTree& track) const {
         return track.hasProperty(IDs::isMasterTrack) ? getNumMasterProcessorSlots() : getNumTrackProcessorSlots();
+    }
+
+    int getSlotOffsetForTrack(const ValueTree& track) const {
+        return track.hasProperty(IDs::isMasterTrack) ? getMasterViewSlotOffset() : getGridViewSlotOffset();
+    }
+
+    int getNumVisibleProcessorSlotsForTrack(const ValueTree& track) const {
+        return track.hasProperty(IDs::isMasterTrack) ? NUM_VISIBLE_TRACKS : NUM_VISIBLE_TRACK_PROCESSOR_SLOTS;
+    }
+
+    bool isProcessorSlotInView(const ValueTree& track, int correctedSlot) {
+        bool inView = correctedSlot >= getSlotOffsetForTrack(track) &&
+                      correctedSlot < getSlotOffsetForTrack(track) + getNumVisibleProcessorSlotsForTrack(track);
+        if (track.hasProperty(IDs::isMasterTrack))
+            inView = inView && getGridViewSlotOffset() + getNumVisibleProcessorSlotsForTrack(track) >= getNumTrackProcessorSlots();
+        else {
+            auto trackIndex = tracks.indexOf(track);
+            auto trackViewOffset = getGridViewTrackOffset();
+            inView = inView && trackIndex >= trackViewOffset && trackIndex < trackViewOffset + NUM_VISIBLE_TRACKS;
+        }
+        return inView;
     }
 
     void setProcessorSlot(const ValueTree& track, ValueTree& processor, int newSlot, UndoManager* undoManager) {

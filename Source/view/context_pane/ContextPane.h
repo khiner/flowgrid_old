@@ -61,9 +61,7 @@ private:
             const static Colour baseColour = findColour(TextEditor::backgroundColourId);
 
             Colour colour;
-            if (selected && inView && !processor.isValid())
-                colour = Colour::fromString(track[IDs::colour].toString()).brighter();
-            else if (selected && inView && processor.isValid())
+            if (selected && inView && processor.isValid())
                 colour = Colour::fromString(track[IDs::colour].toString()).darker();
             else if (inView && processor.isValid())
                 colour = baseColour.darker(0.2f);
@@ -89,20 +87,12 @@ private:
         if (gridCells.isEmpty())
             return;
 
-        auto trackViewOffset = project.getGridViewTrackOffset();
-        auto slotViewOffset = project.getGridViewSlotOffset();
-        auto masterViewSlotOffset = project.getMasterViewSlotOffset();
-        auto numTrackSlots = project.getNumTrackProcessorSlots();
         const auto& masterTrack = project.getMasterTrack();
-
         for (auto processorCellIndex = 0; processorCellIndex < masterTrackGridCells.size(); processorCellIndex++) {
             auto processorSlot = processorCellIndex == masterTrackGridCells.size() - 1 ? Project::MIXER_CHANNEL_SLOT : processorCellIndex;
             auto *cell = masterTrackGridCells.getUnchecked(processorCellIndex);
             const auto &processor = masterTrack.getChildWithProperty(IDs::processorSlot, processorSlot);
-
-            bool inView = processorCellIndex >= masterViewSlotOffset &&
-                          processorCellIndex < masterViewSlotOffset + Project::NUM_VISIBLE_TRACKS &&
-                          slotViewOffset + Project::NUM_VISIBLE_TRACK_PROCESSOR_SLOTS >= numTrackSlots;
+            bool inView = project.isProcessorSlotInView(masterTrack, processorCellIndex);
             cell->setTrackAndProcessor(masterTrack, processor, inView, processor[IDs::selected]);
         }
 
@@ -113,10 +103,7 @@ private:
                 auto processorSlot = processorCellIndex == trackGridCells->size() - 1 ? Project::MIXER_CHANNEL_SLOT : processorCellIndex;
                 auto *cell = trackGridCells->getUnchecked(processorCellIndex);
                 const auto& processor = track.getChildWithProperty(IDs::processorSlot, processorSlot);
-                bool inView = trackIndex >= trackViewOffset &&
-                              trackIndex < trackViewOffset + Project::NUM_VISIBLE_TRACKS &&
-                              processorCellIndex >= slotViewOffset &&
-                              processorCellIndex <= slotViewOffset + Project::NUM_VISIBLE_TRACK_PROCESSOR_SLOTS;
+                bool inView = project.isProcessorSlotInView(track, processorCellIndex);
                 cell->setTrackAndProcessor(track, processor, inView, processor[IDs::selected]);
             }
         }
