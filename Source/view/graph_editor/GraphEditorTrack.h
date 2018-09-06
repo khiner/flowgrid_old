@@ -30,7 +30,7 @@ public:
 
     void mouseDown(const MouseEvent &e) override {
         if (e.eventComponent == &nameLabel) {
-            if (e.mods.isRightButtonDown()) {
+            if (e.mods.isPopupMenu()) {
                 auto *colourSelector = new ColourSelector();
                 colourSelector->setName("background");
                 colourSelector->setCurrentColour(findColour(TextButton::buttonColourId));
