@@ -27,6 +27,7 @@ public:
         project.setTrackWidth(getTrackWidth());
         setSize(getTrackWidth() * jmax(Project::NUM_VISIBLE_TRACKS, project.getNumNonMasterTracks(), project.getNumMasterProcessorSlots()) + GraphEditorTrack::LABEL_HEIGHT * 2,
                 getProcessorHeight() * (jmax(Project::NUM_VISIBLE_TRACK_PROCESSOR_SLOTS, project.getNumTrackProcessorSlots()) + 3) + GraphEditorTrack::LABEL_HEIGHT);
+        updateViewPosition();
     }
 
     void resized() override {
@@ -39,11 +40,12 @@ public:
         tracks->setBounds(r.removeFromTop(processorHeight * (project.getNumTrackProcessorSlots() + 1) + GraphEditorTrack::LABEL_HEIGHT));
 
         auto ioProcessorWidth = parentViewport.getWidth() - GraphEditorTrack::LABEL_HEIGHT * 2;
-        top.setX(tracks->getTrackViewXOffset());
+        int trackXOffset = parentViewport.getViewPositionX() + GraphEditorTrack::LABEL_HEIGHT;
+        top.setX(trackXOffset);
         top.setWidth(ioProcessorWidth);
 
         auto bottom = r.removeFromTop(processorHeight);
-        bottom.setX(tracks->getTrackViewXOffset());
+        bottom.setX(trackXOffset);
         bottom.setWidth(ioProcessorWidth);
 
         int midiInputProcessorWidthInChannels = midiInputProcessors.size() * 2;
@@ -51,10 +53,10 @@ public:
                                      ? float(audioInputProcessor->getNumOutputChannels()) / float(audioInputProcessor->getNumOutputChannels() + midiInputProcessorWidthInChannels)
                                      : 0;
         if (audioInputProcessor != nullptr) {
-            audioInputProcessor->setBounds(top.removeFromLeft(int(getWidth() * audioInputWidthRatio)));
+            audioInputProcessor->setBounds(top.removeFromLeft(int(ioProcessorWidth * audioInputWidthRatio)));
         }
         for (auto *midiInputProcessor : midiInputProcessors) {
-            midiInputProcessor->setBounds(top.removeFromLeft(int(getWidth() * (1 - audioInputWidthRatio) / midiInputProcessors.size())));
+            midiInputProcessor->setBounds(top.removeFromLeft(int(ioProcessorWidth * (1 - audioInputWidthRatio) / midiInputProcessors.size())));
         }
 
         int midiOutputProcessorWidthInChannels = midiOutputProcessors.size() * 2;
@@ -62,9 +64,9 @@ public:
                 ? float(audioOutputProcessor->getNumInputChannels()) / float(audioOutputProcessor->getNumInputChannels() + midiOutputProcessorWidthInChannels)
                 : 0;
         if (audioOutputProcessor != nullptr) {
-            audioOutputProcessor->setBounds(bottom.removeFromLeft(int(getWidth() * audioOutputWidthRatio)));
+            audioOutputProcessor->setBounds(bottom.removeFromLeft(int(ioProcessorWidth * audioOutputWidthRatio)));
             for (auto *midiOutputProcessor : midiOutputProcessors) {
-                midiOutputProcessor->setBounds(bottom.removeFromLeft(int(getWidth() * (1 - audioOutputWidthRatio) / midiOutputProcessors.size())));
+                midiOutputProcessor->setBounds(bottom.removeFromLeft(int(ioProcessorWidth * (1 - audioOutputWidthRatio) / midiOutputProcessors.size())));
             }
         }
         updateComponents();
@@ -276,16 +278,21 @@ private:
                 auto *midiInputProcessor = new GraphEditorProcessor(child, *this, graph);
                 addAndMakeVisible(midiInputProcessor);
                 midiInputProcessors.addSorted(processorComparator, midiInputProcessor);
+                resized();
             } else if (child[IDs::name] == MidiOutputProcessor::name()) {
                 auto *midiOutputProcessor = new GraphEditorProcessor(child, *this, graph);
                 addAndMakeVisible(midiOutputProcessor);
                 midiOutputProcessors.addSorted(processorComparator, midiOutputProcessor);
+                resized();
             } else if (child[IDs::name] == "Audio Input") {
                 addAndMakeVisible(*(audioInputProcessor = std::make_unique<GraphEditorProcessor>(child, *this, graph, true)));
+                resized();
             } else if (child[IDs::name] == "Audio Output") {
                 addAndMakeVisible(*(audioOutputProcessor = std::make_unique<GraphEditorProcessor>(child, *this, graph, true)));
+                resized();
+            } else {
+                updateComponents();
             }
-            updateComponents();
         } else if (child.hasType(IDs::CONNECTION)) {
             connectors->updateConnectors();
         }

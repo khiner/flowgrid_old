@@ -20,29 +20,21 @@ public:
         freeObjects();
     }
 
-    int getTrackViewXOffset() const { return trackViewXOffset; }
-
     void resized() override {
         auto r = getLocalBounds();
         auto trackBounds = r.removeFromTop(project.getProcessorHeight() * project.getNumTrackProcessorSlots() + GraphEditorTrack::LABEL_HEIGHT);
         trackBounds.removeFromLeft(jmax(0, project.getMasterViewSlotOffset() - project.getGridViewTrackOffset()) * project.getTrackWidth() + GraphEditorTrack::LABEL_HEIGHT);
 
-        Component* offsetTrack {};
         for (auto *track : objects) {
             if (track->isMasterTrack())
                 continue;
             track->setBounds(trackBounds.removeFromLeft(project.getTrackWidth()));
-            if (track->getTrackViewIndex() == 0)
-                offsetTrack = track;
         }
-
-        if (offsetTrack != nullptr)
-            trackViewXOffset = offsetTrack->getX();
 
         if (auto* masterTrack = findMasterTrack()) {
             masterTrack->setBounds(
                     r.removeFromTop(project.getProcessorHeight())
-                     .withX(trackViewXOffset - GraphEditorTrack::LABEL_HEIGHT - project.getMasterViewSlotOffset() * project.getTrackWidth())
+                     .withX(project.getTrackWidth() * jmax(0, project.getGridViewTrackOffset() - project.getMasterViewSlotOffset()))
                      .withWidth(GraphEditorTrack::LABEL_HEIGHT + project.getTrackWidth() * project.getNumMasterProcessorSlots())
             );
         }
@@ -229,8 +221,6 @@ public:
     }
 
 private:
-    int trackViewXOffset {0};
-
     void deselectAllTracksExcept(const ValueTree& except) {
         for (auto track : parent) {
             if (track != except) {
