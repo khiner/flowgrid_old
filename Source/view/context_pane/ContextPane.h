@@ -52,25 +52,26 @@ private:
     class GridCell : public DrawableRectangle {
     public:
         explicit GridCell(Component* parent) {
-            setTrackAndProcessor({}, {}, true, false);
+            setTrackAndProcessor({}, {}, true, false, false);
             setCornerSize({3, 3});
             parent->addAndMakeVisible(this);
         }
         
-        void setTrackAndProcessor(const ValueTree &track, const ValueTree &processor, bool inView, bool selected) {
+        void setTrackAndProcessor(const ValueTree &track, const ValueTree &processor,
+                                  bool inView, bool trackSelected, bool processorSelected) {
             const static Colour baseColour = findColour(TextEditor::backgroundColourId);
 
             Colour colour;
-            if (selected && inView && processor.isValid())
+            if (processorSelected && inView)
                 colour = Colour::fromString(track[IDs::colour].toString()).darker();
             else if (inView && processor.isValid())
-                colour = baseColour.darker(0.2f);
+                colour = baseColour.darker(0.2);
             else if (!inView && processor.isValid())
-                colour = baseColour.darker(0.05f);
+                colour = baseColour;
             else if (inView)
-                colour = baseColour.brighter(0.6f);
+                colour = baseColour.brighter(trackSelected ? 0.9f : 0.55f);
             else
-                colour = baseColour.brighter(0.2f);
+                colour = baseColour.brighter(0.2);
 
             setFill(colour);
         }
@@ -88,23 +89,25 @@ private:
             return;
 
         const auto& masterTrack = project.getMasterTrack();
+        bool trackSelected = project.isTrackSelected(masterTrack);
         for (auto processorCellIndex = 0; processorCellIndex < masterTrackGridCells.size(); processorCellIndex++) {
             auto processorSlot = processorCellIndex == masterTrackGridCells.size() - 1 ? Project::MIXER_CHANNEL_SLOT : processorCellIndex;
             auto *cell = masterTrackGridCells.getUnchecked(processorCellIndex);
             const auto &processor = masterTrack.getChildWithProperty(IDs::processorSlot, processorSlot);
             bool inView = project.isProcessorSlotInView(masterTrack, processorCellIndex);
-            cell->setTrackAndProcessor(masterTrack, processor, inView, processor[IDs::selected]);
+            cell->setTrackAndProcessor(masterTrack, processor, inView, trackSelected, processor[IDs::selected]);
         }
 
         for (auto trackIndex = 0; trackIndex < gridCells.size(); trackIndex++) {
             auto* trackGridCells = gridCells.getUnchecked(trackIndex);
             const auto& track = project.getTrack(trackIndex);
+            trackSelected = project.isTrackSelected(track);
             for (auto processorCellIndex = 0; processorCellIndex < trackGridCells->size(); processorCellIndex++) {
                 auto processorSlot = processorCellIndex == trackGridCells->size() - 1 ? Project::MIXER_CHANNEL_SLOT : processorCellIndex;
                 auto *cell = trackGridCells->getUnchecked(processorCellIndex);
                 const auto& processor = track.getChildWithProperty(IDs::processorSlot, processorSlot);
                 bool inView = project.isProcessorSlotInView(track, processorCellIndex);
-                cell->setTrackAndProcessor(track, processor, inView, processor[IDs::selected]);
+                cell->setTrackAndProcessor(track, processor, inView, trackSelected, processor[IDs::selected]);
             }
         }
     }
