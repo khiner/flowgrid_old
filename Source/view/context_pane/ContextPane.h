@@ -103,7 +103,7 @@ private:
             bool inView = processorCellIndex >= masterViewSlotOffset &&
                           processorCellIndex < masterViewSlotOffset + Project::NUM_VISIBLE_TRACKS &&
                           slotViewOffset + Project::NUM_VISIBLE_TRACK_PROCESSOR_SLOTS >= numTrackSlots;
-            cell->setTrackAndProcessor(masterTrack, processor, inView, project.isTrackSelected(masterTrack));
+            cell->setTrackAndProcessor(masterTrack, processor, inView, processor[IDs::selected]);
         }
 
         for (auto trackIndex = 0; trackIndex < gridCells.size(); trackIndex++) {
@@ -117,7 +117,7 @@ private:
                               trackIndex < trackViewOffset + Project::NUM_VISIBLE_TRACKS &&
                               processorCellIndex >= slotViewOffset &&
                               processorCellIndex <= slotViewOffset + Project::NUM_VISIBLE_TRACK_PROCESSOR_SLOTS;
-                cell->setTrackAndProcessor(track, processor, inView, project.isTrackSelected(track));
+                cell->setTrackAndProcessor(track, processor, inView, processor[IDs::selected]);
             }
         }
     }
