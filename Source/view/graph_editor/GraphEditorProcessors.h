@@ -81,12 +81,10 @@ public:
                     bgColour = bgColour.brighter(0.2);
             }
 
+            if (slot == numAvailableSlots - 1 && !hasMixerChannel)
+                bgColour = bgColour.darker(0.3);
             g.setColour(bgColour);
             g.fillRect(cellBounds.reduced(1));
-            if (slot == numAvailableSlots && !hasMixerChannel) {
-                g.setColour(baseColour.brighter(0.1));
-                g.fillRect(cellBounds);
-            }
         }
     }
 

@@ -86,7 +86,7 @@ public:
         auto processor = getProcessorStateForNodeId(nodeId);
         if (processor.isValid()) {
             if (currentlyDraggingTrackAndSlot != trackAndSlot &&
-                trackAndSlot.y < project.numAvailableSlotsForTrack(project.getTrack(trackAndSlot.x))) {
+                trackAndSlot.y < project.numAvailableSlotsForTrack(project.getTrack(trackAndSlot.x)) - 1) {
                 currentlyDraggingTrackAndSlot = trackAndSlot;
 
                 moveProcessor(processor, trackAndSlot.x, trackAndSlot.y);
