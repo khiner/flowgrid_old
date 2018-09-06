@@ -170,7 +170,7 @@ public:
     int getGridViewTrackOffset() const { return viewState[IDs::gridViewTrackOffset]; }
     int getGridViewSlotOffset() const { return viewState[IDs::gridViewSlotOffset]; }
     int getMasterViewSlotOffset() const { return viewState[IDs::masterViewSlotOffset]; }
-    int getViewIndexForTrack(const ValueTree& track) {
+    int getViewIndexForTrack(const ValueTree& track) const {
         return track.getParent().indexOf(track) - getGridViewTrackOffset();
     }
 
@@ -845,47 +845,79 @@ private:
 
     ValueTree findItemToSelectWithLeftRightDelta(int delta) const {
         const auto& selectedTrack = getSelectedTrack();
-        if (selectedTrack.isValid()) {
-            auto siblingToSelect = selectedTrack.getSibling(delta);
-            if (siblingToSelect.isValid()) {
-                // Track is considered selected when one of its processors is. The track itself may not be selected.
-                if (selectedTrack[IDs::selected] || selectedTrack.getNumChildren() == 0)
-                    return siblingToSelect;
-                else
-                    return siblingToSelect.getChild(0);
+        if (!selectedTrack.isValid())
+            return {};
+        const auto& selectedProcessor = findSelectedProcessorForTrack(selectedTrack);
+
+        if (selectedTrack.hasProperty(IDs::isMasterTrack)) {
+            const auto& siblingProcessorToSelect = selectedProcessor.getSibling(delta);
+            if (delta > 0) {
+                if (selectedTrack[IDs::selected]) {
+                    return selectedProcessor; // re-selecting the processor will deselect the parent.
+                }
+            } else if (delta < 0) {
+                if (!siblingProcessorToSelect.isValid() && !selectedTrack[IDs::selected])
+                    return selectedTrack;
+            }
+            return siblingProcessorToSelect;
+        } else {
+            auto siblingTrackToSelect = selectedTrack.getSibling(delta);
+            if (siblingTrackToSelect.isValid() && !siblingTrackToSelect.hasProperty(IDs::isMasterTrack)) {
+                if (selectedTrack[IDs::selected] || selectedTrack.getNumChildren() == 0) {
+                    return siblingTrackToSelect;
+                } else {
+                    if (selectedProcessor.isValid()) {
+                        int selectedProcessorSlot = selectedProcessor[IDs::processorSlot];
+                        const auto& processorToSelect = findFirstProcessorToLeftOfSlot(siblingTrackToSelect,
+                                                                                       selectedProcessorSlot);
+                        if (processorToSelect.isValid())
+                            return processorToSelect;
+                        else
+                            return siblingTrackToSelect;
+                    }
+                }
             }
         }
+
         return {};
     }
 
     ValueTree findItemToSelectWithUpDownDelta(int delta) const {
-        auto selectedProcessor = getSelectedProcessor();
-        if (selectedProcessor.isValid()) {
-            auto siblingToSelect = selectedProcessor.getSibling(delta);
-            auto track = selectedProcessor.getParent();
+        const auto& selectedProcessor = getSelectedProcessor();
+        if (!selectedProcessor.isValid())
+            return {};
+        const auto& selectedTrack = selectedProcessor.getParent();
+        int selectedProcessorSlot = selectedProcessor[IDs::processorSlot];
+
+        if (selectedTrack.hasProperty(IDs::isMasterTrack)) {
+            if (delta < 0) {
+                auto trackToSelect = getTrackWithViewIndex(selectedProcessorSlot - getMasterViewSlotOffset());
+                if (!trackToSelect.isValid() || trackToSelect.hasProperty(IDs::isMasterTrack))
+                    trackToSelect = getTrack(getNumNonMasterTracks() - 1);
+                if (trackToSelect.getNumChildren() > 0)
+                    return trackToSelect.getChild(trackToSelect.getNumChildren() - 1);
+                else
+                    return trackToSelect;
+            }
+        } else {
+            const auto& siblingProcessorToSelect = selectedProcessor.getSibling(delta);
             if (delta > 0) {
-                // Track is considered selected when one of its processors is. The track itself may not be selected.
-                if (track[IDs::selected]) {
-                    // reselecting the processor will deselect the parent.
-                    return selectedProcessor;
-                } else if (!siblingToSelect.isValid() && !track.hasProperty(IDs::isMasterTrack)) {
-                    return getMasterTrack();
+                if (selectedTrack[IDs::selected]) {
+                    return selectedProcessor; // re-selecting the processor will deselect the parent.
+                } else if (!siblingProcessorToSelect.isValid()) {
+                    auto masterProcessorSlotToSelect = getViewIndexForTrack(selectedTrack) + getMasterViewSlotOffset();
+                    const auto& masterTrack = getMasterTrack();
+                    return findFirstProcessorToLeftOfSlot(masterTrack, masterProcessorSlotToSelect);
                 }
             } else if (delta < 0) {
-                if (track[IDs::selected] && track.hasProperty(IDs::isMasterTrack)) {
-                    const auto& lastVisibleTrack = getTrackWithViewIndex(NUM_VISIBLE_TRACKS - 1);
-                    const auto& trackToSelect = lastVisibleTrack.isValid() ? lastVisibleTrack : track.getSibling(-1);
-                    if (trackToSelect.getNumChildren() > 0)
-                        return trackToSelect.getChild(trackToSelect.getNumChildren() - 1);
-                    else if (trackToSelect.isValid())
-                        return trackToSelect;
-                } else if (!siblingToSelect.isValid() && !track[IDs::selected]) {
-                    return track;
-                }
+                if (!siblingProcessorToSelect.isValid() && !selectedTrack[IDs::selected])
+                    return selectedTrack;
             }
-            if (siblingToSelect.isValid())
-                return siblingToSelect;
+
+            if (siblingProcessorToSelect.isValid())
+                return siblingProcessorToSelect;
         }
+
         return {};
     }
 
@@ -903,6 +935,15 @@ private:
         for (const auto &selectedItem : allSelectedItems) {
             deleteItem(selectedItem, &undoManager);
         }
+    }
+
+    ValueTree findFirstProcessorToLeftOfSlot(const ValueTree &track, int slot) const {
+        for (int processorIndex = track.getNumChildren() - 1; processorIndex >= 0; processorIndex--) {
+            const auto& processor = track.getChild(processorIndex);
+            if (slot >= int(processor[IDs::processorSlot]))
+                return processor;
+        }
+        return {};
     }
 
     void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override {
