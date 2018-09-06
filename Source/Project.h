@@ -887,8 +887,7 @@ private:
         if (!selectedProcessor.isValid())
             return {};
         const auto& selectedTrack = selectedProcessor.getParent();
-        int selectedProcessorSlot = selectedProcessor[IDs::processorSlot];
-
+        int selectedProcessorSlot = getCorrectedProcessorSlot(selectedProcessor);
         if (selectedTrack.hasProperty(IDs::isMasterTrack)) {
             if (delta < 0) {
                 auto trackToSelect = getTrackWithViewIndex(selectedProcessorSlot - getMasterViewSlotOffset());
@@ -937,10 +936,16 @@ private:
         }
     }
 
+    int getCorrectedProcessorSlot(const ValueTree& processor) const {
+        jassert(processor.isValid());
+        int processorSlot = processor[IDs::processorSlot];
+        return processorSlot == MIXER_CHANNEL_SLOT ? numAvailableSlotsForTrack(processor.getParent()) - 1 : processorSlot;
+    }
+
     ValueTree findFirstProcessorToLeftOfSlot(const ValueTree &track, int slot) const {
         for (int processorIndex = track.getNumChildren() - 1; processorIndex >= 0; processorIndex--) {
             const auto& processor = track.getChild(processorIndex);
-            if (slot >= int(processor[IDs::processorSlot]))
+            if (slot >= getCorrectedProcessorSlot(processor))
                 return processor;
         }
         return {};
@@ -983,8 +988,7 @@ private:
                 updateViewTrackOffsetToInclude(trackIndex);
             }
             if (tree.hasType(IDs::PROCESSOR)) {
-                int processorSlot = tree[IDs::processorSlot];
-                updateViewSlotOffsetToInclude(processorSlot, track.hasProperty(IDs::isMasterTrack));
+                updateViewSlotOffsetToInclude(getCorrectedProcessorSlot(tree), track.hasProperty(IDs::isMasterTrack));
             }
         }
     }
@@ -1007,8 +1011,6 @@ private:
     void updateViewSlotOffsetToInclude(int processorSlot, bool isMasterTrack) {
         if (isMasterTrack) {
             auto viewSlotOffset = getMasterViewSlotOffset();
-            if (processorSlot == MIXER_CHANNEL_SLOT)
-                processorSlot = getNumMasterProcessorSlots() - 1;
             if (processorSlot >= viewSlotOffset + NUM_VISIBLE_TRACKS)
                 viewState.setProperty(IDs::masterViewSlotOffset, processorSlot - NUM_VISIBLE_TRACKS + 1, nullptr);
             else if (processorSlot < viewSlotOffset)
@@ -1017,8 +1019,6 @@ private:
         }
 
         auto viewSlotOffset = getGridViewSlotOffset();
-        if (processorSlot == MIXER_CHANNEL_SLOT)
-            processorSlot = getNumTrackProcessorSlots();
         if (processorSlot > viewSlotOffset + NUM_VISIBLE_TRACK_PROCESSOR_SLOTS)
             viewState.setProperty(IDs::gridViewSlotOffset, processorSlot - NUM_VISIBLE_TRACK_PROCESSOR_SLOTS, nullptr);
         else if (processorSlot < viewSlotOffset)
