@@ -9,7 +9,6 @@ class ParameterDisplayComponent : public Component, public StatefulAudioProcesso
 public:
     ParameterDisplayComponent() {
         addChildComponent(parameterName);
-        addChildComponent(parameterLabel);
         addChildComponent(valueLabel);
     }
 
@@ -35,14 +34,6 @@ public:
         parameterName.setText(parameter->getName(128), dontSendNotification);
         parameterName.setJustificationType(Justification::centred);
         addAndMakeVisible(parameterName);
-
-        if (!parameter->getLabel().isEmpty()) {
-            parameterLabel.setText(parameter->getLabel(), dontSendNotification);
-            parameterLabel.setJustificationType(Justification::centred);
-            addAndMakeVisible(parameterLabel);
-        } else {
-            removeChildComponent(&parameterLabel);
-        }
 
         if (parameter->isBoolean()) {
             // The AU, AUv3 and VST (only via a .vstxml file) SDKs support
@@ -114,7 +105,6 @@ public:
             if (getDraggableValueLabel() == nullptr) {
                 detachParameterComponent();
                 removeChildComponent(parameterComponent.get());
-                removeChildComponent(&parameterLabel);
                 removeChildComponent(&valueLabel);
                 auto *draggableValueLabel = new DraggableValueLabel();
                 parameterWrapper->attachSlider(draggableValueLabel);
@@ -131,8 +121,6 @@ public:
 
         auto bottom = area.removeFromBottom(20);
 
-        if (parameterLabel.isVisible())
-            parameterLabel.setBounds(getSlider() || getLevelMeter() ? bottom.removeFromRight(bottom.getWidth() / 3) : bottom);
         if (getSlider() || getLevelMeter()) {
             valueLabel.setBounds(bottom);
         }
@@ -164,7 +152,7 @@ public:
     LevelMeter* getLevelMeter() const { return dynamic_cast<LevelMeter *>(parameterComponent.get()); }
 
 private:
-    Label parameterName, parameterLabel, valueLabel;
+    Label parameterName, valueLabel;
     std::unique_ptr<Component> parameterComponent{};
     StatefulAudioProcessorWrapper::Parameter *parameterWrapper{};
 

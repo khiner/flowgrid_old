@@ -27,8 +27,16 @@ public:
                                                 parameter->getLabel(), parameter->getCategory()),
                   sourceParameter(parameter),
                   defaultValue(parameter->getDefaultValue()), value(parameter->getDefaultValue()),
-                  valueToTextFunction([this](float value) { return sourceParameter->getCurrentValueAsText(); }),
-                  textToValueFunction([this](const String &text) { return sourceParameter->getValueForText(text); }),
+                  valueToTextFunction([this](float value) {
+                      return sourceParameter->getCurrentValueAsText() +
+                             (sourceParameter->getLabel().isEmpty() ? "" : " " + sourceParameter->getLabel());
+                  }),
+                  textToValueFunction([this](const String &text) {
+                      const String& trimmedText = sourceParameter->getLabel().isEmpty()
+                                                  ? text
+                                                  : text.upToFirstOccurrenceOf(sourceParameter->getLabel(), false, true).trim();
+                      return range.snapToLegalValue(sourceParameter->getValueForText(trimmedText));
+                  }),
                   processorWrapper(processorWrapper) {
             if (auto *p = dynamic_cast<AudioParameterFloat *>(sourceParameter)) {
                 range = p->range;
