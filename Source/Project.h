@@ -484,15 +484,11 @@ public:
         return track.hasProperty(IDs::isMasterTrack) ? getMasterViewSlotOffset() : getGridViewSlotOffset();
     }
 
-    int getNumVisibleProcessorSlotsForTrack(const ValueTree& track) const {
-        return track.hasProperty(IDs::isMasterTrack) ? NUM_VISIBLE_TRACKS : NUM_VISIBLE_TRACK_PROCESSOR_SLOTS;
-    }
-
     bool isProcessorSlotInView(const ValueTree& track, int correctedSlot) {
         bool inView = correctedSlot >= getSlotOffsetForTrack(track) &&
-                      correctedSlot < getSlotOffsetForTrack(track) + getNumVisibleProcessorSlotsForTrack(track);
+                      correctedSlot < getSlotOffsetForTrack(track) + NUM_VISIBLE_TRACKS;
         if (track.hasProperty(IDs::isMasterTrack))
-            inView = inView && getGridViewSlotOffset() + getNumVisibleProcessorSlotsForTrack(track) >= getNumTrackProcessorSlots();
+            inView = inView && getGridViewSlotOffset() + NUM_VISIBLE_TRACKS > getNumTrackProcessorSlots();
         else {
             auto trackIndex = tracks.indexOf(track);
             auto trackViewOffset = getGridViewTrackOffset();
@@ -1040,8 +1036,8 @@ private:
         }
 
         auto viewSlotOffset = getGridViewSlotOffset();
-        if (processorSlot > viewSlotOffset + NUM_VISIBLE_TRACK_PROCESSOR_SLOTS)
-            viewState.setProperty(IDs::gridViewSlotOffset, processorSlot - NUM_VISIBLE_TRACK_PROCESSOR_SLOTS, nullptr);
+        if (processorSlot >= viewSlotOffset + NUM_VISIBLE_TRACKS)
+            viewState.setProperty(IDs::gridViewSlotOffset, processorSlot - NUM_VISIBLE_TRACKS + 1, nullptr);
         else if (processorSlot < viewSlotOffset)
             viewState.setProperty(IDs::gridViewSlotOffset, processorSlot, nullptr);
     }

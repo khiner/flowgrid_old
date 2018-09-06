@@ -26,7 +26,7 @@ public:
         project.setProcessorHeight(getProcessorHeight());
         project.setTrackWidth(getTrackWidth());
         setSize(getTrackWidth() * jmax(Project::NUM_VISIBLE_TRACKS, project.getNumNonMasterTracks(), project.getNumMasterProcessorSlots()) + GraphEditorTrack::LABEL_HEIGHT * 2,
-                getProcessorHeight() * (jmax(Project::NUM_VISIBLE_TRACK_PROCESSOR_SLOTS, project.getNumTrackProcessorSlots()) + 3) + GraphEditorTrack::LABEL_HEIGHT);
+                getProcessorHeight() * (jmax(Project::NUM_VISIBLE_TRACKS, project.getNumTrackProcessorSlots() + 1) + 2) + GraphEditorTrack::LABEL_HEIGHT);
         updateViewPosition();
     }
 

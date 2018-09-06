@@ -74,11 +74,17 @@ public:
             }
             auto cellBounds = isMasterTrack() ? r.removeFromLeft(getCellSize()) : r.removeFromTop(getCellSize());
             static const Colour& baseColour = findColour(TextEditor::backgroundColourId);
-            Colour bgColour = project.isProcessorSlotInView(parent, slot) ? baseColour.brighter(0.2) : baseColour.brighter(0.14);
+            Colour bgColour = baseColour.brighter(0.13);
+            if (project.isProcessorSlotInView(parent, slot)) {
+                bgColour = bgColour.brighter(0.2);
+                if (project.isTrackSelected(parent))
+                    bgColour = bgColour.brighter(0.2);
+            }
+
             g.setColour(bgColour);
             g.fillRect(cellBounds.reduced(1));
             if (slot == numAvailableSlots && !hasMixerChannel) {
-                g.setColour(findColour(ResizableWindow::backgroundColourId).brighter(0.1));
+                g.setColour(baseColour.brighter(0.1));
                 g.fillRect(cellBounds);
             }
         }
