@@ -44,7 +44,7 @@ public:
     void resized() override {
         auto r = getLocalBounds();
         auto slotOffset = getSlotOffset();
-        auto nonMixerCellSize = getNonMixerCellSize(), mixerCellSize = getMixerCellSize();
+        auto nonMixerCellSize = getNonMixerCellSize();
 
         for (int slot = 0; slot < processorSlotRectangles.size(); slot++) {
             bool isMixerChannel = slot == processorSlotRectangles.size() - 1;
@@ -54,7 +54,7 @@ public:
                 else
                     r.removeFromTop(Project::TRACK_LABEL_HEIGHT);
             }
-            auto cellSize = isMixerChannel ? mixerCellSize : nonMixerCellSize;
+            auto cellSize = isMixerChannel ? nonMixerCellSize * 2 : nonMixerCellSize;
             auto processorBounds = isMasterTrack() ? r.removeFromLeft(cellSize) : r.removeFromTop(cellSize);
             processorSlotRectangles.getUnchecked(slot)->setRectangle(processorBounds.reduced(1).toFloat());
             if (auto *processor = findProcessorAtSlot(slot)) {
@@ -131,6 +131,7 @@ public:
     }
 
     int findSlotAt(const MouseEvent &e) {
+
         const MouseEvent &relative = e.getEventRelativeTo(this);
         return findSlotAt(relative.getPosition());
     }
@@ -257,14 +258,9 @@ private:
         return isMasterTrack() ? project.getTrackWidth() : project.getProcessorHeight();
     }
 
-    int getMixerCellSize() const {
-        return isMasterTrack() ? project.getTrackWidth() : (project.getProcessorHeight() * 2);
-    }
-
-    // todo use processorslotrectangles
     int findSlotAt(const Point<int> relativePosition) const {
-        int slot = isMasterTrack() ? (relativePosition.x - 32) / getNonMixerCellSize() : (relativePosition.y - 32) /
-                getNonMixerCellSize();
+        int length = isMasterTrack() ? relativePosition.x : relativePosition.y;
+        int slot = (length - Project::TRACK_LABEL_HEIGHT) / getNonMixerCellSize();
         return jlimit(0, getNumAvailableSlots() - 1, slot);
     }
 };
