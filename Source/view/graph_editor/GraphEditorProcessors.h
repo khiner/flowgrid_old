@@ -21,6 +21,7 @@ public:
                 mostRecentlySelectedProcessor = object;
         }
         viewState.addListener(this);
+        valueTreePropertyChanged(viewState, isMasterTrack() ? IDs::numMasterProcessorSlots : IDs::numProcessorSlots);
     }
 
     ~GraphEditorProcessors() override {
@@ -45,51 +46,33 @@ public:
         auto slotOffset = getSlotOffset();
         auto nonMixerCellSize = getNonMixerCellSize(), mixerCellSize = getMixerCellSize();
 
-        for (int slot = 0; slot < getNumAvailableSlots() - 1; slot++) {
+        for (int slot = 0; slot < processorSlotRectangles.size(); slot++) {
+            bool isMixerChannel = slot == processorSlotRectangles.size() - 1;
             if (slot == slotOffset) {
                 if (isMasterTrack())
                     r.removeFromLeft(Project::TRACK_LABEL_HEIGHT);
                 else
                     r.removeFromTop(Project::TRACK_LABEL_HEIGHT);
             }
-            auto processorBounds = isMasterTrack() ? r.removeFromLeft(nonMixerCellSize) : r.removeFromTop(nonMixerCellSize);
-            if (auto *processor = findProcessorAtSlot(slot)) {
+            auto cellSize = isMixerChannel ? mixerCellSize : nonMixerCellSize;
+            auto processorBounds = isMasterTrack() ? r.removeFromLeft(cellSize) : r.removeFromTop(cellSize);
+            processorSlotRectangles.getUnchecked(slot)->setRectangle(processorBounds.reduced(1).toFloat());
+            if (auto *processor = findProcessorAtSlot(isMixerChannel ? Project::MIXER_CHANNEL_SLOT : slot)) {
                 processor->setBounds(processorBounds);
             }
         }
-        if (auto *processor = findProcessorAtSlot(Project::MIXER_CHANNEL_SLOT)) {
-            auto processorBounds = isMasterTrack() ? r.removeFromLeft(mixerCellSize) : r.removeFromTop(mixerCellSize);
-            processor->setBounds(processorBounds);
-        }
     }
 
-    void paint(Graphics &g) override {
-        auto r = getLocalBounds();
-        auto slotOffset = getSlotOffset();
-        int numAvailableSlots = getNumAvailableSlots();
-        auto nonMixerCellSize = getNonMixerCellSize(), mixerCellSize = getMixerCellSize();
-
-        for (int slot = 0; slot < numAvailableSlots; slot++) {
-            bool isMixerChannel = (slot == numAvailableSlots - 1);
-            if (slot == slotOffset) {
-                if (isMasterTrack())
-                    r.removeFromLeft(Project::TRACK_LABEL_HEIGHT);
-                else
-                    r.removeFromTop(Project::TRACK_LABEL_HEIGHT);
-            }
-
-            auto cellSize = isMixerChannel ? mixerCellSize : nonMixerCellSize;
-            auto cellBounds = isMasterTrack() ? r.removeFromLeft(cellSize) : r.removeFromTop(cellSize);
-            static const Colour& baseColour = findColour(TextEditor::backgroundColourId);
-            Colour bgColour = baseColour.brighter(0.13);
+    void updateProcessorSlotColours() {
+        for (int slot = 0; slot < processorSlotRectangles.size(); slot++) {
+            static const auto& baseColour = findColour(TextEditor::backgroundColourId);
+            auto fillColour = baseColour.brighter(0.13);
             if (project.isProcessorSlotInView(parent, slot)) {
-                bgColour = bgColour.brighter(0.3);
+                fillColour = fillColour.brighter(0.3);
                 if (project.isTrackSelected(parent))
-                    bgColour = bgColour.brighter(0.2);
+                    fillColour = fillColour.brighter(0.2);
             }
-
-            g.setColour(bgColour);
-            g.fillRect(cellBounds.reduced(1));
+            processorSlotRectangles.getUnchecked(slot)->setFill(fillColour);
         }
     }
 
@@ -188,6 +171,7 @@ private:
     ProcessorGraph &graph;
     GraphEditorProcessor *currentlyMovingProcessor {};
     GraphEditorProcessor* mostRecentlySelectedProcessor {};
+    OwnedArray<DrawableRectangle> processorSlotRectangles;
 
     void valueTreePropertyChanged(ValueTree &v, const Identifier &i) override {
         if (isSuitableType(v)) {
@@ -200,9 +184,24 @@ private:
                     else
                         processor->setSelected(false);
                 }
+                updateProcessorSlotColours();
             }
+        } else if ((v.hasType(IDs::TRACK) && i == IDs::selected) || i == IDs::gridViewTrackOffset) {
+            updateProcessorSlotColours();
         } else if (i == IDs::gridViewSlotOffset || (i == IDs::masterViewSlotOffset && isMasterTrack())) {
             resized();
+            updateProcessorSlotColours();
+        } else if (i == IDs::numProcessorSlots || (i == IDs::numMasterProcessorSlots && isMasterTrack())) {
+            auto numSlots = getNumAvailableSlots();
+            while (processorSlotRectangles.size() < numSlots) {
+                auto* rect = new DrawableRectangle();
+                processorSlotRectangles.add(rect);
+                addAndMakeVisible(rect);
+                rect->toBack();
+            }
+            processorSlotRectangles.removeLast(processorSlotRectangles.size() - numSlots, true);
+            resized();
+            updateProcessorSlotColours();
         }
 
         Utilities::ValueTreeObjectList<GraphEditorProcessor>::valueTreePropertyChanged(v, i);
