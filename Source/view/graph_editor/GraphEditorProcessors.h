@@ -65,12 +65,18 @@ public:
 
     void updateProcessorSlotColours() {
         for (int slot = 0; slot < processorSlotRectangles.size(); slot++) {
+            bool isMixerChannel = slot == processorSlotRectangles.size() - 1;
+
             static const auto& baseColour = findColour(TextEditor::backgroundColourId);
             auto fillColour = baseColour.brighter(0.13);
             if (project.isProcessorSlotInView(parent, slot)) {
                 fillColour = fillColour.brighter(0.3);
                 if (project.isTrackSelected(parent))
                     fillColour = fillColour.brighter(0.2);
+                if (auto *processor = findProcessorAtSlot(isMixerChannel ? Project::MIXER_CHANNEL_SLOT : slot)) {
+                    if (processor->isSelected())
+                        fillColour = processor->getTrackColour();
+                }
             }
             processorSlotRectangles.getUnchecked(slot)->setFill(fillColour);
         }
@@ -197,6 +203,7 @@ private:
                 auto* rect = new DrawableRectangle();
                 processorSlotRectangles.add(rect);
                 addAndMakeVisible(rect);
+                rect->setCornerSize({3, 3});
                 rect->toBack();
             }
             processorSlotRectangles.removeLast(processorSlotRectangles.size() - numSlots, true);

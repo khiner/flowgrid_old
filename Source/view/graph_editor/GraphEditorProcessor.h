@@ -75,10 +75,6 @@ public:
 
     void paint(Graphics &g) override {
         bool selected = isSelected();
-        if (selected) {
-            g.setColour(getTrackColour().withAlpha(0.6f));
-            g.fillRect(getLocalBounds());
-        }
 
         auto boxColour = findColour(TextEditor::backgroundColourId);
         if (state[IDs::bypassed])
