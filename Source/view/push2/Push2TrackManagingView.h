@@ -30,7 +30,7 @@ public:
     }
 
     void belowScreenButtonPressed(int buttonIndex) override {
-        auto track = project.getTrack(buttonIndex);
+        auto track = project.getTrackWithViewIndex(buttonIndex);
         if (track.isValid() && !track.hasProperty(IDs::isMasterTrack)) {
             track.setProperty(IDs::selected, true, nullptr);
         }
@@ -78,7 +78,6 @@ protected:
                 int trackIndex = project.getViewIndexForTrack(tree);
                 if (trackIndex < 0 || trackIndex >= trackLabels.size())
                     return;
-                jassert(trackIndex < trackLabels.size()); // TODO left/right buttons
                 if (i == IDs::name && !tree.hasProperty(IDs::isMasterTrack)) {
                     trackLabels.getUnchecked(trackIndex)->setText(tree[IDs::name], dontSendNotification);
                 }

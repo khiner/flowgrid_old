@@ -504,6 +504,7 @@ private:
                 MidiInput *midiInput = MidiInput::openDevice(MidiInput::getDevices().indexOf(push2MidiDeviceName, true), &push2MidiCommunicator);
                 MidiOutput *midiOutput = MidiOutput::openDevice(MidiOutput::getDevices().indexOf(push2MidiDeviceName, true));
                 push2MidiCommunicator.setMidiInputAndOutput(midiInput, midiOutput);
+                push2Component->setVisible(true); // refreshes button lights
             } else if (push2MidiCommunicator.isInitialized() && !MidiInput::getDevices().contains(push2MidiDeviceName, true)) {
                 push2MidiCommunicator.setMidiInputAndOutput(nullptr, nullptr);
             }
