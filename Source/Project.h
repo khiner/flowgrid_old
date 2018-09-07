@@ -488,11 +488,11 @@ public:
         bool inView = correctedSlot >= getSlotOffsetForTrack(track) &&
                       correctedSlot < getSlotOffsetForTrack(track) + NUM_VISIBLE_TRACKS;
         if (track.hasProperty(IDs::isMasterTrack))
-            inView = inView && getGridViewSlotOffset() + NUM_VISIBLE_TRACKS > getNumTrackProcessorSlots();
+            inView &= getGridViewSlotOffset() + NUM_VISIBLE_TRACKS > getNumTrackProcessorSlots();
         else {
             auto trackIndex = tracks.indexOf(track);
             auto trackViewOffset = getGridViewTrackOffset();
-            inView = inView && trackIndex >= trackViewOffset && trackIndex < trackViewOffset + NUM_VISIBLE_TRACKS;
+            inView &= trackIndex >= trackViewOffset && trackIndex < trackViewOffset + NUM_VISIBLE_TRACKS;
         }
         return inView;
     }

@@ -227,13 +227,13 @@ private:
     }
 
     void pageProcessorsLeft() {
-        processorLabelOffset -= 7;
+        processorLabelOffset -= NUM_COLUMNS - 1;
         updateProcessorButtons();
         updatePageButtonVisibility();
     }
 
     void pageProcessorsRight() {
-        processorLabelOffset += 7;
+        processorLabelOffset += NUM_COLUMNS - 1;
         updateProcessorButtons();
         updatePageButtonVisibility();
     }
@@ -244,7 +244,7 @@ private:
 
     bool canPageProcessorsRight() const {
         const auto& selectedTrack = project.getSelectedTrack();
-        return selectedTrack.getNumChildren() > processorLabelOffset + (canPageProcessorsLeft() ? 6 : 7);
+        return selectedTrack.getNumChildren() > processorLabelOffset + (canPageProcessorsLeft() ? NUM_COLUMNS - 1 : NUM_COLUMNS);
     }
 
     void selectProcessor(int processorIndex) {
