@@ -83,7 +83,6 @@ public:
             audioOutputProcessor->update();
         for (auto* midiInputProcessor : midiInputProcessors) midiInputProcessor->update();
         for (auto* midiOutputProcessor : midiOutputProcessors) midiOutputProcessor->update();
-        tracks->updateProcessors();
         connectors->updateConnectors();
     }
 

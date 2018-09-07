@@ -66,11 +66,11 @@ public:
         delete track;
     }
 
-    void newObjectAdded(GraphEditorTrack *track) override { getParentComponent()->resized(); }
+    void newObjectAdded(GraphEditorTrack *track) override { resized(); }
 
-    void objectRemoved(GraphEditorTrack *) override { getParentComponent()->resized(); }
+    void objectRemoved(GraphEditorTrack *) override { resized(); }
 
-    void objectOrderChanged() override { getParentComponent()->resized(); }
+    void objectOrderChanged() override { resized(); }
 
     GraphEditorProcessor *getProcessorForNodeId(AudioProcessorGraph::NodeID nodeId) const override {
         for (auto *track : objects) {
@@ -98,13 +98,6 @@ public:
         return nullptr;
     }
 
-    void updateProcessors() {
-        resized();
-        for (auto *track : objects) {
-            track->update();
-        }
-    }
-    
     Point<int> trackAndSlotAt(const MouseEvent &e) {
         for (auto* track : objects) {
             if (track->contains(e.getEventRelativeTo(track).getPosition()))

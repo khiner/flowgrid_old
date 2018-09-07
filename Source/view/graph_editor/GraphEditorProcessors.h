@@ -136,12 +136,6 @@ public:
         const MouseEvent &relative = e.getEventRelativeTo(this);
         return findSlotAt(relative.getPosition());
     }
-    
-    void update() {
-        for (auto *processor : objects) {
-            processor->update();
-        }
-    }
 
     GraphEditorProcessor *getCurrentlyMovingProcessor() const {
         return currentlyMovingProcessor;
@@ -181,9 +175,10 @@ private:
 
     void valueTreePropertyChanged(ValueTree &v, const Identifier &i) override {
         if (isSuitableType(v)) {
-            if (i == IDs::processorSlot)
+            if (i == IDs::processorSlot) {
                 resized();
-            else if (i == IDs::selected && v[IDs::selected]) {
+                updateProcessorSlotColours();
+            } else if (i == IDs::selected && v[IDs::selected]) {
                 for (auto* processor : objects) {
                     if (processor->getState() == v)
                         mostRecentlySelectedProcessor = processor;
@@ -212,6 +207,21 @@ private:
         }
 
         Utilities::ValueTreeObjectList<GraphEditorProcessor>::valueTreePropertyChanged(v, i);
+    }
+
+    void valueTreeChildAdded(ValueTree &parent, ValueTree &tree) override {
+        ValueTreeObjectList::valueTreeChildAdded(parent, tree);
+        if (this->parent == parent && isSuitableType(tree)) {
+            resized();
+            updateProcessorSlotColours();
+        }
+    }
+
+    void valueTreeChildRemoved(ValueTree &exParent, ValueTree &tree, int index) override {
+        ValueTreeObjectList::valueTreeChildRemoved(exParent, tree, index);
+        if (parent == exParent && isSuitableType(tree)) {
+            updateProcessorSlotColours();
+        }
     }
 
     GraphEditorProcessor* findProcessorAtSlot(int slot) const {

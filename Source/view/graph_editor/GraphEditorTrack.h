@@ -104,10 +104,6 @@ public:
         return processors.findSlotAt(e);
     }
 
-    void update() {
-        processors.update();
-    }
-
     void setCurrentlyMovingProcessor(GraphEditorProcessor *currentlyMovingProcessor) {
         processors.setCurrentlyMovingProcessor(currentlyMovingProcessor);
     }
