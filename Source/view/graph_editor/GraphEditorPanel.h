@@ -257,15 +257,12 @@ private:
             resize();
         } else if (i == IDs::gridViewTrackOffset) {
             updateViewPosition();
-            tracks->masterSlotOffsetChanged();
             resized();
         } else if (i == IDs::gridViewSlotOffset) {
             updateViewPosition();
-            tracks->slotOffsetChanged();
             connectors->updateConnectors();
         } else if (i == IDs::masterViewSlotOffset) {
             updateViewPosition();
-            tracks->masterSlotOffsetChanged();
             resized();
         }
     }

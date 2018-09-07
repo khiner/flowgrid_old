@@ -14,9 +14,11 @@ public:
     explicit GraphEditorTracks(Project& project, const ValueTree &state, ConnectorDragListener &connectorDragListener, ProcessorGraph& graph)
             : Utilities::ValueTreeObjectList<GraphEditorTrack>(state), project(project), connectorDragListener(connectorDragListener), graph(graph) {
         rebuildObjects();
+        project.getViewState().addListener(this);
     }
 
     ~GraphEditorTracks() override {
+        project.getViewState().removeListener(this);
         freeObjects();
     }
 
@@ -40,25 +42,11 @@ public:
         }
     }
 
-    void slotOffsetChanged() {
-        for (auto* track : objects) {
-            track->slotOffsetChanged();
-        }
-    }
-
-    void masterSlotOffsetChanged() {
-        resized();
-        if (auto* masterTrack = findMasterTrack()) {
-            masterTrack->slotOffsetChanged();
-        }
-    }
-
     GraphEditorTrack* findMasterTrack() const {
         for (auto *track : objects) {
             if (track->isMasterTrack())
                 return track;
         }
-
         return nullptr;
     }
 
@@ -187,8 +175,10 @@ public:
             }
         } else if (v.hasType(IDs::PROCESSOR) && i == IDs::processorSlot) {
             resized();
-        } else if (i == IDs::gridViewTrackOffset) {
+        } else if (i == IDs::numMasterProcessorSlots || i == IDs::numProcessorSlots) {
+        } else if (i == IDs::gridViewTrackOffset || i == IDs::masterViewSlotOffset) {
             resized();
+        } else if (i == IDs::gridViewSlotOffset) {
         }
     }
 

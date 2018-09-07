@@ -7,11 +7,13 @@
 
 class GraphEditorTrack : public Component, public Utilities::ValueTreePropertyChangeListener, public GraphEditorProcessorContainer, private ChangeListener {
 public:
-    explicit GraphEditorTrack(Project& project, ValueTree v, ConnectorDragListener &connectorDragListener, ProcessorGraph& graph)
-            : project(project), state(std::move(v)), connectorDragListener(connectorDragListener), graph(graph) {
+    explicit GraphEditorTrack(Project& project, const ValueTree& v, ConnectorDragListener &connectorDragListener, ProcessorGraph& graph)
+            : project(project), state(v), viewState(project.getViewState()), connectorDragListener(connectorDragListener), graph(graph),
+              processors(project, v, connectorDragListener, graph) {
         nameLabel.setJustificationType(Justification::centred);
         nameLabel.setColour(Label::backgroundColourId, getColour());
         addAndMakeVisible(nameLabel);
+        addAndMakeVisible(processors);
         if (!isMasterTrack()) {
             nameLabel.setText(getTrackName(), dontSendNotification);
             nameLabel.setEditable(false, true);
@@ -23,9 +25,9 @@ public:
             addAndMakeVisible(masterTrackName);
         }
         nameLabel.addMouseListener(this, false);
-        
-        addAndMakeVisible(*(processors = std::make_unique<GraphEditorProcessors>(project, state, connectorDragListener, graph)));
+
         state.addListener(this);
+        viewState.addListener(this);
     }
 
     void mouseDown(const MouseEvent &e) override {
@@ -69,12 +71,12 @@ public:
 
     void resized() override {
         auto r = getLocalBounds();
-        processors->setBounds(r);
+        processors.setBounds(r);
         const auto &nameLabelBounds = isMasterTrack()
                                       ? r.removeFromLeft(Project::TRACK_LABEL_HEIGHT)
-                                         .withX(project.getTrackWidth() * processors->getSlotOffset())
+                                         .withX(project.getTrackWidth() * processors.getSlotOffset())
                                       : r.removeFromTop(Project::TRACK_LABEL_HEIGHT)
-                                         .withY(project.getProcessorHeight() * processors->getSlotOffset());
+                                         .withY(project.getProcessorHeight() * processors.getSlotOffset());
         nameLabel.setBounds(nameLabelBounds);
         nameLabel.toFront(false);
         if (isMasterTrack()) {
@@ -85,46 +87,41 @@ public:
         }
     }
 
-    void slotOffsetChanged() {
-        resized();
-        processors->slotOffsetChanged();
-    }
-
     GraphEditorProcessor *getProcessorForNodeId(const AudioProcessorGraph::NodeID nodeId) const override {
-        if (auto *currentlyMovingProcessor = processors->getCurrentlyMovingProcessor()) {
+        if (auto *currentlyMovingProcessor = processors.getCurrentlyMovingProcessor()) {
             if (currentlyMovingProcessor->getNodeId() == nodeId) {
                 return currentlyMovingProcessor;
             }
         }
-        return processors->getProcessorForNodeId(nodeId);
+        return processors.getProcessorForNodeId(nodeId);
     }
 
     GraphEditorPin *findPinAt(const MouseEvent &e) const {
-        return processors->findPinAt(e);
+        return processors.findPinAt(e);
     }
 
     int findSlotAt(const MouseEvent &e) {
-        return processors->findSlotAt(e);
+        return processors.findSlotAt(e);
     }
 
     void update() {
         repaint();
-        processors->update();
+        processors.update();
     }
 
     void setCurrentlyMovingProcessor(GraphEditorProcessor *currentlyMovingProcessor) {
-        processors->setCurrentlyMovingProcessor(currentlyMovingProcessor);
+        processors.setCurrentlyMovingProcessor(currentlyMovingProcessor);
     }
 
 private:
     Project& project;
-    ValueTree state;
+    ValueTree state, viewState;
 
     Label nameLabel;
     DrawableText masterTrackName;
-    std::unique_ptr<GraphEditorProcessors> processors;
     ConnectorDragListener &connectorDragListener;
     ProcessorGraph &graph;
+    GraphEditorProcessors processors;
 
     void valueTreePropertyChanged(ValueTree &v, const Identifier &i) override {
         if (v.hasType(IDs::PROCESSOR) && i == IDs::selected) {
@@ -133,6 +130,8 @@ private:
                 nameLabel.setColour(Label::backgroundColourId, getColour());
             }
             repaint();
+        } else if (i == IDs::gridViewSlotOffset || ((i == IDs::gridViewTrackOffset || i == IDs::masterViewSlotOffset) && isMasterTrack())) {
+            resized();
         }
 
         if (v != state)
@@ -143,7 +142,7 @@ private:
             nameLabel.setColour(Label::backgroundColourId, getColour());
             repaint();
         } else if (i == IDs::selected) {
-            processors->setSelected(v[IDs::selected], this);
+            processors.setSelected(v[IDs::selected], this);
             nameLabel.setColour(Label::backgroundColourId, isSelected() ? getColour().brighter(0.25) : getColour());
             repaint();
         }

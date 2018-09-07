@@ -12,14 +12,15 @@ class GraphEditorProcessors : public Component,
                               public Utilities::ValueTreeObjectList<GraphEditorProcessor>,
                               public GraphEditorProcessorContainer {
 public:
-    explicit GraphEditorProcessors(Project& project, ValueTree& state, ConnectorDragListener &connectorDragListener, ProcessorGraph& graph)
+    explicit GraphEditorProcessors(Project& project, const ValueTree& state, ConnectorDragListener &connectorDragListener, ProcessorGraph& graph)
             : Utilities::ValueTreeObjectList<GraphEditorProcessor>(state),
-              project(project), connectorDragListener(connectorDragListener), graph(graph) {
+              viewState(project.getViewState()), project(project), connectorDragListener(connectorDragListener), graph(graph) {
         rebuildObjects();
         for (auto* object : objects) {
             if (object->isSelected())
                 mostRecentlySelectedProcessor = object;
         }
+        viewState.addListener(this);
     }
 
     ~GraphEditorProcessors() override {
@@ -92,10 +93,6 @@ public:
         }
     }
 
-    void slotOffsetChanged() {
-        resized();
-    }
-
     bool isSuitableType(const ValueTree &v) const override {
         return v.hasType(IDs::PROCESSOR);
     }
@@ -137,7 +134,7 @@ public:
         return nullptr;
     }
 
-    GraphEditorPin *findPinAt(const MouseEvent &e) {
+    GraphEditorPin *findPinAt(const MouseEvent &e) const {
         for (auto *processor : objects) {
             if (auto* pin = processor->findPinAt(e)) {
                 return pin;
@@ -184,6 +181,8 @@ public:
 private:
     static constexpr int ADD_MIXER_CHANNEL_MENU_ID = 1;
 
+    ValueTree viewState;
+
     Project &project;
     ConnectorDragListener &connectorDragListener;
     ProcessorGraph &graph;
@@ -202,6 +201,8 @@ private:
                         processor->setSelected(false);
                 }
             }
+        } else if (i == IDs::gridViewSlotOffset || (i == IDs::masterViewSlotOffset && isMasterTrack())) {
+            resized();
         }
 
         Utilities::ValueTreeObjectList<GraphEditorProcessor>::valueTreePropertyChanged(v, i);
@@ -244,7 +245,7 @@ private:
         return isMasterTrack() ? project.getTrackWidth() : (project.getProcessorHeight() * 2);
     }
 
-    int findSlotAt(const Point<int> relativePosition) {
+    int findSlotAt(const Point<int> relativePosition) const {
         int slot = isMasterTrack() ? (relativePosition.x - 32) / getNonMixerCellSize() : (relativePosition.y - 32) /
                 getNonMixerCellSize();
         if (slot >= getNumAvailableSlots() - 1)
