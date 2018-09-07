@@ -13,7 +13,7 @@ class Project : public FileBasedDocument, public ProjectChangeBroadcaster, publi
                 private ChangeListener, private ValueTree::Listener {
 public:
     Project(UndoManager &undoManager, ProcessorManager& processorManager, AudioDeviceManager& deviceManager)
-            : FileBasedDocument(getFilenameSuffix(), getFilenameWildcard(), "Load a project", "Save a project"),
+            : FileBasedDocument(getFilenameSuffix(), "*" + getFilenameSuffix(), "Load a project", "Save project"),
               undoManager(undoManager), processorManager(processorManager), deviceManager(deviceManager) {
         state = ValueTree(IDs::PROJECT);
         state.setProperty(IDs::name, "My First Project", nullptr);
@@ -714,13 +714,10 @@ public:
         getApplicationProperties().getUserSettings()->setValue("recentProjectFiles", recentFiles.toString());
     }
 
-    static const char* getFilenameSuffix() { return ".smp"; }
-    static const char* getFilenameWildcard() { return "*.smp"; }
-    
+    static const String getFilenameSuffix() { return ".smp"; }
+
     const static int NUM_VISIBLE_TRACKS = 8;
     const static int NUM_VISIBLE_PROCESSOR_SLOTS = 10;
-    // first row is reserved for audio input, last row for audio output. second-to-last is horizontal master track
-    const static int NUM_VISIBLE_TRACK_PROCESSOR_SLOTS = NUM_VISIBLE_PROCESSOR_SLOTS - 3;
     const static int MIXER_CHANNEL_SLOT = INT_MAX - 1;
 
     static constexpr int TRACK_LABEL_HEIGHT = 32;
