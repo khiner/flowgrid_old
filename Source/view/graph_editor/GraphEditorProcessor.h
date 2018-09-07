@@ -186,8 +186,7 @@ public:
     void showPopupMenu() {
         PopupMenu menu;
 
-        auto slot = getSlot();
-        if (slot != Project::MIXER_CHANNEL_SLOT) {
+        if (!project.isMixerChannelProcessor(state)) {
             PopupMenu processorSelectorSubmenu;
             project.addPluginsToMenu(processorSelectorSubmenu, state.getParent());
             menu.addSubMenu("Insert new processor", processorSelectorSubmenu);
@@ -215,7 +214,9 @@ public:
         }
 
         menu.showMenuAsync({}, ModalCallbackFunction::create
-                ([this, slot](int r) {
+                ([this](int r) {
+                    auto slot = getSlot();
+
                     if (auto *description = project.getChosenType(r)) {
                         project.createAndAddProcessor(*description, state.getParent(), &project.getUndoManager(), slot);
                         return;

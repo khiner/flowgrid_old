@@ -30,7 +30,7 @@ public:
 
     bool isMasterTrack() const { return parent.hasProperty(IDs::isMasterTrack); }
 
-    int getNumAvailableSlots() const { return project.numAvailableSlotsForTrack(parent); }
+    int getNumAvailableSlots() const { return project.getNumAvailableSlotsForTrack(parent); }
 
     int getSlotOffset() const { return project.getSlotOffsetForTrack(parent); }
 
@@ -57,7 +57,7 @@ public:
             auto cellSize = isMixerChannel ? mixerCellSize : nonMixerCellSize;
             auto processorBounds = isMasterTrack() ? r.removeFromLeft(cellSize) : r.removeFromTop(cellSize);
             processorSlotRectangles.getUnchecked(slot)->setRectangle(processorBounds.reduced(1).toFloat());
-            if (auto *processor = findProcessorAtSlot(isMixerChannel ? Project::MIXER_CHANNEL_SLOT : slot)) {
+            if (auto *processor = findProcessorAtSlot(slot)) {
                 processor->setBounds(processorBounds);
             }
         }
@@ -65,15 +65,13 @@ public:
 
     void updateProcessorSlotColours() {
         for (int slot = 0; slot < processorSlotRectangles.size(); slot++) {
-            bool isMixerChannel = slot == processorSlotRectangles.size() - 1;
-
             static const auto& baseColour = findColour(TextEditor::backgroundColourId);
             auto fillColour = baseColour.brighter(0.13);
             if (project.isProcessorSlotInView(parent, slot)) {
                 fillColour = fillColour.brighter(0.3);
                 if (project.isTrackSelected(parent))
                     fillColour = fillColour.brighter(0.2);
-                if (auto *processor = findProcessorAtSlot(isMixerChannel ? Project::MIXER_CHANNEL_SLOT : slot)) {
+                if (auto *processor = findProcessorAtSlot(slot)) {
                     if (processor->isSelected())
                         fillColour = processor->getTrackColour();
                 }
@@ -236,14 +234,16 @@ private:
     void showPopupMenu(const Point<int> &mousePos) {
         int slot = findSlotAt(mousePos);
         PopupMenu menu;
-        if (slot == Project::MIXER_CHANNEL_SLOT) {
+        bool isMixerChannel = slot == project.getMixerChannelSlotForTrack(parent);
+
+        if (isMixerChannel) {
             menu.addItem(ADD_MIXER_CHANNEL_MENU_ID, "Add mixer channel");
         } else {
             project.addPluginsToMenu(menu, parent);
         }
 
-        menu.showMenuAsync({}, ModalCallbackFunction::create([this, slot](int r) {
-            if (slot == Project::MIXER_CHANNEL_SLOT) {
+        menu.showMenuAsync({}, ModalCallbackFunction::create([this, slot, isMixerChannel](int r) {
+            if (isMixerChannel) {
                 getCommandManager().invokeDirectly(CommandIDs::addMixerChannel, false);
             } else {
                 if (auto *description = project.getChosenType(r)) {
@@ -261,12 +261,10 @@ private:
         return isMasterTrack() ? project.getTrackWidth() : (project.getProcessorHeight() * 2);
     }
 
+    // todo use processorslotrectangles
     int findSlotAt(const Point<int> relativePosition) const {
         int slot = isMasterTrack() ? (relativePosition.x - 32) / getNonMixerCellSize() : (relativePosition.y - 32) /
                 getNonMixerCellSize();
-        if (slot >= getNumAvailableSlots() - 1)
-            return Project::MIXER_CHANNEL_SLOT;
-        else
-            return jlimit(0, getNumAvailableSlots() - 1, slot);
+        return jlimit(0, getNumAvailableSlots() - 1, slot);
     }
 };

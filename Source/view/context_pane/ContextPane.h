@@ -90,11 +90,10 @@ private:
 
         const auto& masterTrack = project.getMasterTrack();
         bool trackSelected = project.isTrackSelected(masterTrack);
-        for (auto processorCellIndex = 0; processorCellIndex < masterTrackGridCells.size(); processorCellIndex++) {
-            auto processorSlot = processorCellIndex == masterTrackGridCells.size() - 1 ? Project::MIXER_CHANNEL_SLOT : processorCellIndex;
-            auto *cell = masterTrackGridCells.getUnchecked(processorCellIndex);
+        for (auto processorSlot = 0; processorSlot < masterTrackGridCells.size(); processorSlot++) {
+            auto *cell = masterTrackGridCells.getUnchecked(processorSlot);
             const auto &processor = masterTrack.getChildWithProperty(IDs::processorSlot, processorSlot);
-            bool inView = project.isProcessorSlotInView(masterTrack, processorCellIndex);
+            bool inView = project.isProcessorSlotInView(masterTrack, processorSlot);
             cell->setTrackAndProcessor(masterTrack, processor, inView, trackSelected, processor[IDs::selected]);
         }
 
@@ -102,11 +101,10 @@ private:
             auto* trackGridCells = gridCells.getUnchecked(trackIndex);
             const auto& track = project.getTrack(trackIndex);
             trackSelected = project.isTrackSelected(track);
-            for (auto processorCellIndex = 0; processorCellIndex < trackGridCells->size(); processorCellIndex++) {
-                auto processorSlot = processorCellIndex == trackGridCells->size() - 1 ? Project::MIXER_CHANNEL_SLOT : processorCellIndex;
-                auto *cell = trackGridCells->getUnchecked(processorCellIndex);
+            for (auto processorSlot = 0; processorSlot < trackGridCells->size(); processorSlot++) {
+                auto *cell = trackGridCells->getUnchecked(processorSlot);
                 const auto& processor = track.getChildWithProperty(IDs::processorSlot, processorSlot);
-                bool inView = project.isProcessorSlotInView(track, processorCellIndex);
+                bool inView = project.isProcessorSlotInView(track, processorSlot);
                 cell->setTrackAndProcessor(track, processor, inView, trackSelected, processor[IDs::selected]);
             }
         }

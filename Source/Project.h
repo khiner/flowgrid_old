@@ -176,10 +176,23 @@ public:
 
     void addProcessorRow() {
         viewState.setProperty(IDs::numProcessorSlots, int(viewState[IDs::numProcessorSlots]) + 1, &undoManager);
+        for (const auto& track : tracks) {
+            if (track.hasProperty(IDs::isMasterTrack))
+                continue;
+            auto mixerChannelProcessor = getMixerChannelProcessorForTrack(track);
+            if (mixerChannelProcessor.isValid()) {
+                setProcessorSlot(track, mixerChannelProcessor, getMixerChannelSlotForTrack(track), &undoManager);
+            }
+        }
     }
 
     void addMasterProcessorSlot() {
         viewState.setProperty(IDs::numMasterProcessorSlots, int(viewState[IDs::numMasterProcessorSlots]) + 1, &undoManager);
+        const auto& masterTrack = getMasterTrack();
+        auto mixerChannelProcessor = getMixerChannelProcessorForTrack(masterTrack);
+        if (mixerChannelProcessor.isValid()) {
+            setProcessorSlot(masterTrack, mixerChannelProcessor, getMixerChannelSlotForTrack(masterTrack), &undoManager);
+        }
     }
 
     bool isInShiftMode() const { return numShiftsHeld >= 1; }
@@ -450,9 +463,9 @@ public:
         processor.setProperty(IDs::selected, true, nullptr);
 
         int insertIndex;
-        if (description.name == MixerChannelProcessor::name()) {
+        if (isMixerChannelProcessor(processor)) {
             insertIndex = -1;
-            slot = MIXER_CHANNEL_SLOT;
+            slot = getMixerChannelSlotForTrack(track);
         } else if (slot == -1) {
             if (description.numInputChannels == 0) {
                 insertIndex = 0;
@@ -476,12 +489,20 @@ public:
         return processor;
     }
 
-    int numAvailableSlotsForTrack(const ValueTree& track) const {
+    int getNumAvailableSlotsForTrack(const ValueTree &track) const {
         return track.hasProperty(IDs::isMasterTrack) ? getNumMasterProcessorSlots() : getNumTrackProcessorSlots();
     }
 
     int getSlotOffsetForTrack(const ValueTree& track) const {
         return track.hasProperty(IDs::isMasterTrack) ? getMasterViewSlotOffset() : getGridViewSlotOffset();
+    }
+
+    int getMixerChannelSlotForTrack(const ValueTree& track) const {
+        return getNumAvailableSlotsForTrack(track) - 1;
+    }
+
+    bool isMixerChannelProcessor(const ValueTree& processor) const {
+        return processor[IDs::name] == MixerChannelProcessor::name();
     }
 
     bool isProcessorSlotInView(const ValueTree& track, int correctedSlot) {
@@ -501,13 +522,13 @@ public:
         if (!processor.isValid())
             return;
 
-        if (newSlot != MIXER_CHANNEL_SLOT && newSlot >= numAvailableSlotsForTrack(track) - 1) {
+        if (newSlot >= getMixerChannelSlotForTrack(track) && !isMixerChannelProcessor(processor)) {
             if (track.hasProperty(IDs::isMasterTrack)) {
                 addMasterProcessorSlot();
             } else {
                 addProcessorRow();
             }
-            newSlot = numAvailableSlotsForTrack(track) - 2;
+            newSlot = getMixerChannelSlotForTrack(track) - 1;
         }
         processor.setProperty(IDs::processorSlot, newSlot, undoManager);
     }
@@ -718,7 +739,6 @@ public:
 
     const static int NUM_VISIBLE_TRACKS = 8;
     const static int NUM_VISIBLE_PROCESSOR_SLOTS = 10;
-    const static int MIXER_CHANNEL_SLOT = INT_MAX - 1;
 
     static constexpr int TRACK_LABEL_HEIGHT = 32;
 
@@ -883,7 +903,7 @@ private:
                     return siblingTrackToSelect;
                 } else {
                     if (selectedProcessor.isValid()) {
-                        int selectedProcessorSlot = getCorrectedProcessorSlot(selectedProcessor);
+                        int selectedProcessorSlot = selectedProcessor[IDs::processorSlot];
                         const auto& processorToSelect = findProcessorNearestToSlot(siblingTrackToSelect,
                                                                                    selectedProcessorSlot);
                         if (processorToSelect.isValid())
@@ -903,7 +923,7 @@ private:
         if (!selectedProcessor.isValid())
             return {};
         const auto& selectedTrack = selectedProcessor.getParent();
-        int selectedProcessorSlot = getCorrectedProcessorSlot(selectedProcessor);
+        int selectedProcessorSlot = selectedProcessor[IDs::processorSlot];
         if (selectedTrack.hasProperty(IDs::isMasterTrack)) {
             if (delta < 0) {
                 auto trackToSelect = getTrackWithViewIndex(selectedProcessorSlot - getMasterViewSlotOffset());
@@ -952,17 +972,11 @@ private:
         }
     }
 
-    int getCorrectedProcessorSlot(const ValueTree& processor) const {
-        jassert(processor.isValid());
-        int processorSlot = processor[IDs::processorSlot];
-        return processorSlot == MIXER_CHANNEL_SLOT ? numAvailableSlotsForTrack(processor.getParent()) - 1 : processorSlot;
-    }
-
     ValueTree findProcessorNearestToSlot(const ValueTree &track, int slot) const {
         int nearestSlot = INT_MAX;
         ValueTree nearestProcessor;
         for (const auto& processor : track) {
-            auto otherSlot = getCorrectedProcessorSlot(processor);
+            int otherSlot = processor[IDs::processorSlot];
             if (abs(slot - otherSlot) < abs(slot - nearestSlot)) {
                 nearestSlot = otherSlot;
                 nearestProcessor = processor;
@@ -1010,7 +1024,7 @@ private:
                 updateViewTrackOffsetToInclude(trackIndex);
             }
             if (tree.hasType(IDs::PROCESSOR)) {
-                updateViewSlotOffsetToInclude(getCorrectedProcessorSlot(tree), track.hasProperty(IDs::isMasterTrack));
+                updateViewSlotOffsetToInclude(tree[IDs::processorSlot], track.hasProperty(IDs::isMasterTrack));
             }
         }
     }
