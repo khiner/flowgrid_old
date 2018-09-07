@@ -10,9 +10,11 @@ public:
     explicit Push2ProcessorView(Project &project, Push2MidiCommunicator &push2MidiCommunicator)
             : Push2TrackManagingView(project, push2MidiCommunicator),
               escapeProcessorFocusButton("Back", 0.5, Colours::white),
-              parameterPageLeftButton("Page left", 0.5, Colours::white),
-              parameterPageRightButton("Page right", 0.0, Colours::white) {
-
+              parameterPageLeftButton("Page parameters left", 0.5, Colours::white),
+              parameterPageRightButton("Page parameters right", 0.0, Colours::white),
+              processorPageLeftButton("Page processors left", 0.5, Colours::white),
+              processorPageRightButton("Page processors right", 0.0, Colours::white) {
+        
         for (int i = 0; i < NUM_COLUMNS; i++) {
             addChildComponent(processorLabels.add(new Push2Label(i, true, push2MidiCommunicator)));
         }
@@ -20,6 +22,8 @@ public:
         addChildComponent(escapeProcessorFocusButton);
         addChildComponent(parameterPageLeftButton);
         addChildComponent(parameterPageRightButton);
+        addChildComponent(processorPageLeftButton);
+        addChildComponent(processorPageRightButton);
 
         addAndMakeVisible((parametersPanel = std::make_unique<ParametersPanel>(1)).get());
     }
@@ -33,6 +37,9 @@ public:
         escapeProcessorFocusButton.setBounds(top.removeFromLeft(labelWidth).withSizeKeepingCentre(top.getHeight(), top.getHeight()));
         parameterPageRightButton.setBounds(top.removeFromRight(labelWidth).withSizeKeepingCentre(top.getHeight(), top.getHeight()));
         parameterPageLeftButton.setBounds(top.removeFromRight(labelWidth).withSizeKeepingCentre(top.getHeight(), top.getHeight()));
+        processorPageLeftButton.setBounds(escapeProcessorFocusButton.getBounds());
+        processorPageRightButton.setBounds(parameterPageRightButton.getBounds());
+
         auto bottom = r.removeFromBottom(HEADER_FOOTER_HEIGHT);
         parametersPanel->setBounds(r);
         
@@ -51,7 +58,22 @@ public:
     
     void processorSelected(StatefulAudioProcessorWrapper *const processorWrapper) {
         parametersPanel->setProcessor(processorWrapper);
-        updateEnabledPush2Buttons();
+        if (processorWrapper == nullptr) {
+            updateEnabledPush2Buttons();
+            return;
+        }
+        auto processorIndex = processorWrapper->state.getParent().indexOf(processorWrapper->state);
+        bool hasPaged = false;
+        while ((getButtonIndexForProcessorIndex(processorIndex)) <= 0 && canPageProcessorsLeft()) {
+            pageProcessorsLeft();
+            hasPaged = true;
+        }
+        while ((getButtonIndexForProcessorIndex(processorIndex)) >= processorLabels.size() - 1 && canPageProcessorsRight()) {
+            pageProcessorsRight();
+            hasPaged = true;
+        }
+        if (!hasPaged)
+            updateEnabledPush2Buttons();
     }
 
     void aboveScreenButtonPressed(int buttonIndex) override {
@@ -59,14 +81,20 @@ public:
             if (buttonIndex == 0)
                 focusOnProcessor(false);
             else if (buttonIndex == NUM_COLUMNS - 2)
-                pageLeft();
+                pageParametersLeft();
             else if (buttonIndex == NUM_COLUMNS - 1)
-                pageRight();
+                pageParametersRight();
         } else {
-            if (processorLabels.getUnchecked(buttonIndex)->isSelected())
-                focusOnProcessor(true);
-            else
-                selectProcessor(buttonIndex);
+            if (buttonIndex == 0 && canPageProcessorsLeft())
+                pageProcessorsLeft();
+            else if (buttonIndex == NUM_COLUMNS - 1 && canPageProcessorsRight())
+                pageProcessorsRight();
+            else {
+                if (processorLabels.getUnchecked(buttonIndex)->isSelected())
+                    focusOnProcessor(true);
+                else
+                    selectProcessor(getProcessorIndexForButtonIndex(buttonIndex));
+            }
         }
     }
 
@@ -86,9 +114,19 @@ public:
 private:
     std::unique_ptr<ParametersPanel> parametersPanel;
     OwnedArray<Push2Label> processorLabels;
-    ArrowButton escapeProcessorFocusButton, parameterPageLeftButton, parameterPageRightButton;
+    ArrowButton escapeProcessorFocusButton, parameterPageLeftButton, parameterPageRightButton,
+                processorPageLeftButton, processorPageRightButton;
 
+    int processorLabelOffset = 0;
     bool processorHasFocus { false };
+
+    int getProcessorIndexForButtonIndex(int buttonIndex) {
+        return buttonIndex + processorLabelOffset - (canPageProcessorsLeft() ? 1 : 0);
+    }
+
+    int getButtonIndexForProcessorIndex(int processorIndex) {
+        return processorIndex - processorLabelOffset + (canPageProcessorsLeft() ? 1 : 0);
+    }
 
     void focusOnProcessor(bool focus) {
         processorHasFocus = focus;
@@ -96,14 +134,20 @@ private:
     }
 
     void updatePageButtonVisibility() {
+        const auto& selectedTrack = project.getSelectedTrack();
+        Colour trackColour = getColourForTrack(selectedTrack);
+
         if (processorHasFocus) { // TODO reset when processor changes
+            processorPageLeftButton.setVisible(false);
+            processorPageRightButton.setVisible(false);
+
             for (auto *label : processorLabels)
                 label->setVisible(false);
 
             // TODO use Push2Label to unite these two sets of updates into one automagically
-            push2.setAboveScreenButtonEnabled(0, true); // back button
-            push2.setAboveScreenButtonEnabled(NUM_COLUMNS - 2, parametersPanel->canPageLeft());
-            push2.setAboveScreenButtonEnabled(NUM_COLUMNS - 1, parametersPanel->canPageRight());
+            push2.setAboveScreenButtonColour(0, trackColour); // back button
+            push2.setAboveScreenButtonColour(NUM_COLUMNS - 2, parametersPanel->canPageLeft() ? trackColour : Colours::black);
+            push2.setAboveScreenButtonColour(NUM_COLUMNS - 1, parametersPanel->canPageRight() ? trackColour : Colours::black);
 
             escapeProcessorFocusButton.setVisible(true);
             parameterPageLeftButton.setVisible(parametersPanel->canPageLeft());
@@ -112,26 +156,36 @@ private:
             escapeProcessorFocusButton.setVisible(false);
             parameterPageLeftButton.setVisible(false);
             parameterPageRightButton.setVisible(false);
+
+            processorPageLeftButton.setVisible(canPageProcessorsLeft());
+            processorPageRightButton.setVisible(canPageProcessorsRight());
+            if (canPageProcessorsLeft())
+                push2.setAboveScreenButtonColour(0, trackColour);
+            if (canPageProcessorsRight())
+                push2.setAboveScreenButtonColour(NUM_COLUMNS - 1, trackColour);
         }
     }
 
     void updateProcessorButtons() {
-        auto selectedTrack = project.getSelectedTrack();
+        const auto& selectedTrack = project.getSelectedTrack();
         if (processorHasFocus || !selectedTrack.isValid()) { // TODO reset when processor changes
             for (auto* label : processorLabels)
                 label->setVisible(false);
         } else {
-            for (int i = 0; i < processorLabels.size(); i++) {
-                auto *label = processorLabels.getUnchecked(i);
-                // TODO left/right buttons
-                if (i < selectedTrack.getNumChildren()) {
-                    const auto &processor = selectedTrack.getChild(i);
+            for (int buttonIndex = 0; buttonIndex < processorLabels.size(); buttonIndex++) {
+                auto *label = processorLabels.getUnchecked(buttonIndex);
+                auto processorIndex = getProcessorIndexForButtonIndex(buttonIndex);
+                if ((buttonIndex == 0 && canPageProcessorsLeft()) ||
+                    (buttonIndex == NUM_COLUMNS - 1 && canPageProcessorsRight())) {
+                    label->setVisible(false);
+                } else if (processorIndex < selectedTrack.getNumChildren()) {
+                    const auto &processor = selectedTrack.getChild(processorIndex);
                     if (processor.hasType(IDs::PROCESSOR)) {
                         label->setVisible(true);
                         label->setText(processor[IDs::name], dontSendNotification);
                         label->setSelected(processor[IDs::selected]);
                     }
-                } else if (i == 0 && selectedTrack.getNumChildren() == 0) {
+                } else if (buttonIndex == 0 && selectedTrack.getNumChildren() == 0) {
                     label->setVisible(true);
                     label->setText("No processors", dontSendNotification);
                     label->setSelected(false);
@@ -143,27 +197,54 @@ private:
         }
     }
 
+    Colour getColourForTrack(const ValueTree& track) {
+        return track.isValid() ? Colour::fromString(track[IDs::colour].toString()) : Colours::black;
+    }
+
     void updateColours() {
         const auto& selectedTrack = project.getSelectedTrack();
         if (selectedTrack.isValid()) {
-            const auto& colour = Colour::fromString(selectedTrack[IDs::colour].toString());
+            const auto& colour = getColourForTrack(selectedTrack);
             for (auto *processorLabel : processorLabels) {
                 processorLabel->setMainColour(colour);
             }
             escapeProcessorFocusButton.setColour(colour);
             parameterPageLeftButton.setColour(colour);
             parameterPageRightButton.setColour(colour);
+            processorPageLeftButton.setColour(colour);
+            processorPageRightButton.setColour(colour);
         }
     }
 
-    void pageLeft() {
+    void pageParametersLeft() {
         parametersPanel->pageLeft();
         updatePageButtonVisibility();
     }
 
-    void pageRight() {
+    void pageParametersRight() {
         parametersPanel->pageRight();
         updatePageButtonVisibility();
+    }
+
+    void pageProcessorsLeft() {
+        processorLabelOffset -= 7;
+        updateProcessorButtons();
+        updatePageButtonVisibility();
+    }
+
+    void pageProcessorsRight() {
+        processorLabelOffset += 7;
+        updateProcessorButtons();
+        updatePageButtonVisibility();
+    }
+
+    bool canPageProcessorsLeft() const {
+        return processorLabelOffset > 0;
+    }
+
+    bool canPageProcessorsRight() const {
+        const auto& selectedTrack = project.getSelectedTrack();
+        return selectedTrack.getNumChildren() > processorLabelOffset + (canPageProcessorsLeft() ? 6 : 7);
     }
 
     void selectProcessor(int processorIndex) {
@@ -178,9 +259,11 @@ private:
 
         if (tree.hasType(IDs::PROCESSOR)) {
             int processorIndex = tree.getParent().indexOf(tree);
-            jassert(processorIndex < processorLabels.size()); // TODO left/right buttons
             if (i == IDs::name) {
-                processorLabels.getUnchecked(processorIndex)->setText(tree[IDs::name], dontSendNotification);
+                auto buttonIndex = getButtonIndexForProcessorIndex(processorIndex);
+                if (auto* processorLabel = processorLabels[buttonIndex]) {
+                    processorLabel->setText(tree[IDs::name], dontSendNotification);
+                }
             }
         }
     }
