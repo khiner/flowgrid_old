@@ -47,9 +47,9 @@ public:
         for (int slot = 0; slot < getNumAvailableSlots() - 1; slot++) {
             if (slot == slotOffset) {
                 if (isMasterTrack())
-                    r.removeFromLeft(32); // todo constant
+                    r.removeFromLeft(Project::TRACK_LABEL_HEIGHT);
                 else
-                    r.removeFromTop(32); // todo constant
+                    r.removeFromTop(Project::TRACK_LABEL_HEIGHT);
             }
             auto processorBounds = isMasterTrack() ? r.removeFromLeft(nonMixerCellSize) : r.removeFromTop(nonMixerCellSize);
             if (auto *processor = findProcessorAtSlot(slot)) {
@@ -72,9 +72,9 @@ public:
             bool isMixerChannel = (slot == numAvailableSlots - 1);
             if (slot == slotOffset) {
                 if (isMasterTrack())
-                    r.removeFromLeft(32); // todo constant
+                    r.removeFromLeft(Project::TRACK_LABEL_HEIGHT);
                 else
-                    r.removeFromTop(32); // todo constant
+                    r.removeFromTop(Project::TRACK_LABEL_HEIGHT);
             }
 
             auto cellSize = isMixerChannel ? mixerCellSize : nonMixerCellSize;

@@ -723,6 +723,8 @@ public:
     const static int NUM_VISIBLE_TRACK_PROCESSOR_SLOTS = NUM_VISIBLE_PROCESSOR_SLOTS - 3;
     const static int MIXER_CHANNEL_SLOT = INT_MAX - 1;
 
+    static constexpr int TRACK_LABEL_HEIGHT = 32;
+
     const String sessionControlMode = "session", noteControlMode = "note";
 
 private:

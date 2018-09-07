@@ -22,8 +22,8 @@ public:
 
     void resized() override {
         auto r = getLocalBounds();
-        auto trackBounds = r.removeFromTop(project.getProcessorHeight() * (project.getNumTrackProcessorSlots() + 1) + GraphEditorTrack::LABEL_HEIGHT);
-        trackBounds.removeFromLeft(jmax(0, project.getMasterViewSlotOffset() - project.getGridViewTrackOffset()) * project.getTrackWidth() + GraphEditorTrack::LABEL_HEIGHT);
+        auto trackBounds = r.removeFromTop(project.getProcessorHeight() * (project.getNumTrackProcessorSlots() + 1) + Project::TRACK_LABEL_HEIGHT);
+        trackBounds.removeFromLeft(jmax(0, project.getMasterViewSlotOffset() - project.getGridViewTrackOffset()) * project.getTrackWidth() + Project::TRACK_LABEL_HEIGHT);
 
         for (auto *track : objects) {
             if (track->isMasterTrack())
@@ -35,7 +35,7 @@ public:
             masterTrack->setBounds(
                     r.removeFromTop(project.getProcessorHeight())
                      .withX(project.getTrackWidth() * jmax(0, project.getGridViewTrackOffset() - project.getMasterViewSlotOffset()))
-                     .withWidth(GraphEditorTrack::LABEL_HEIGHT + project.getTrackWidth() * project.getNumMasterProcessorSlots())
+                     .withWidth(Project::TRACK_LABEL_HEIGHT + project.getTrackWidth() * project.getNumMasterProcessorSlots())
             );
         }
     }

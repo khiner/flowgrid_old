@@ -71,16 +71,16 @@ public:
         auto r = getLocalBounds();
         processors->setBounds(r);
         const auto &nameLabelBounds = isMasterTrack()
-                                      ? r.removeFromLeft(LABEL_HEIGHT)
+                                      ? r.removeFromLeft(Project::TRACK_LABEL_HEIGHT)
                                          .withX(project.getTrackWidth() * processors->getSlotOffset())
-                                      : r.removeFromTop(LABEL_HEIGHT)
+                                      : r.removeFromTop(Project::TRACK_LABEL_HEIGHT)
                                          .withY(project.getProcessorHeight() * processors->getSlotOffset());
         nameLabel.setBounds(nameLabelBounds);
         nameLabel.toFront(false);
         if (isMasterTrack()) {
             const auto& labelBoundsFloat = nameLabelBounds.toFloat();
             masterTrackName.setBoundingBox(Parallelogram<float>(labelBoundsFloat.getBottomLeft(), labelBoundsFloat.getTopLeft(), labelBoundsFloat.getBottomRight()));
-            masterTrackName.setFontHeight(3 * LABEL_HEIGHT / 4);
+            masterTrackName.setFontHeight(3 * Project::TRACK_LABEL_HEIGHT / 4);
             masterTrackName.toFront(false);
         }
     }
@@ -116,7 +116,6 @@ public:
         processors->setCurrentlyMovingProcessor(currentlyMovingProcessor);
     }
 
-    static constexpr int LABEL_HEIGHT = 32;
 private:
     Project& project;
     ValueTree state;
