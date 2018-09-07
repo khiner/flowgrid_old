@@ -319,24 +319,25 @@ private:
         topologyChanged();
     }
 
-    void resetDefaultExternalInputs(const ValueTree &selectedProcessor) {
+    void resetDefaultExternalInputs(const ValueTree &selectedProcessor, UndoManager* undoManager) {
         auto audioInputNodeId = getNodeIdForState(project.getAudioInputProcessorState());
-        disconnectDefaultOutgoing(audioInputNodeId, audio, nullptr);
+        disconnectDefaultOutgoing(audioInputNodeId, audio, undoManager);
         if (selectedProcessor.isValid())
-            addDefaultExternalInputConnections(selectedProcessor, audioInputNodeId, audio);
+            addDefaultExternalInputConnections(selectedProcessor, audioInputNodeId, audio, undoManager);
         for (const auto& midiInputProcessor : project.getInput()) {
             if (midiInputProcessor.getProperty(IDs::name) == MidiInputProcessor::name()) {
                 auto nodeId = getNodeIdForState(midiInputProcessor);
-                disconnectDefaultOutgoing(nodeId, midi, nullptr);
+                disconnectDefaultOutgoing(nodeId, midi, undoManager);
                 if (selectedProcessor.isValid())
-                    addDefaultExternalInputConnections(selectedProcessor, nodeId, midi);
+                    addDefaultExternalInputConnections(selectedProcessor, nodeId, midi, undoManager);
             }
         }
     }
 
     // Find the upper-right-most processor that flows into the selected processor
     void addDefaultExternalInputConnections(const ValueTree &selectedProcessor,
-                                            NodeID externalSourceNodeId, ConnectionType connectionType) {
+                                            NodeID externalSourceNodeId, ConnectionType connectionType,
+                                            UndoManager* undoManager) {
         if (project.getNumTracks() == 0)
             return;
 
@@ -363,7 +364,7 @@ private:
         if (upperRightMostProcessorNodeId != NA_NODE_ID) {
             const auto &defaultConnectionChannels = getDefaultConnectionChannels(connectionType);
             for (auto channel : defaultConnectionChannels) {
-                addDefaultConnection({{externalSourceNodeId, channel}, {upperRightMostProcessorNodeId, channel}}, nullptr);
+                addDefaultConnection({{externalSourceNodeId, channel}, {upperRightMostProcessorNodeId, channel}}, undoManager);
             }
         }
     }
@@ -447,7 +448,7 @@ private:
                 updateDefaultConnectionsForProcessor(processor, false, makeInvalidDefaultsIntoCustom);
             }
         }
-        resetDefaultExternalInputs(selectedProcessor);
+        resetDefaultExternalInputs(selectedProcessor, getDragDependentUndoManager());
     }
     
     void updateDefaultConnectionsForProcessor(const ValueTree &processor, bool updateExternalInputs, bool makeInvalidDefaultsIntoCustom=false) {
@@ -491,7 +492,7 @@ private:
             }
         }
         if (updateExternalInputs) {
-            resetDefaultExternalInputs(selectedProcessor);
+            resetDefaultExternalInputs(selectedProcessor, getDragDependentUndoManager());
         }
     }
     
@@ -504,7 +505,7 @@ private:
             } else if (i == IDs::selected && tree[IDs::selected] && tree != selectedProcessor) {
                 selectedProcessor = tree;
                 if (!isDeleting)
-                    resetDefaultExternalInputs(tree);
+                    resetDefaultExternalInputs(tree, nullptr);
             } else if (i == IDs::allowDefaultConnections) {
                 updateDefaultConnectionsForProcessor(tree, true);
             }
@@ -624,7 +625,7 @@ private:
 
     void processorWillBeDestroyed(const ValueTree& processor) override {
         isDeleting = true;
-        resetDefaultExternalInputs({});
+        resetDefaultExternalInputs({}, getDragDependentUndoManager());
         ValueTree(processor).removeProperty(IDs::processorInitialized, nullptr);
         disconnectNode(getNodeIdForState(processor));
     };
