@@ -105,7 +105,6 @@ public:
     }
 
     void update() {
-        repaint();
         processors.update();
     }
 
@@ -129,7 +128,6 @@ private:
                 state.setPropertyExcludingListener(this, IDs::selected, false, nullptr);
                 nameLabel.setColour(Label::backgroundColourId, getColour());
             }
-            repaint();
         } else if (i == IDs::gridViewSlotOffset || ((i == IDs::gridViewTrackOffset || i == IDs::masterViewSlotOffset) && isMasterTrack())) {
             resized();
         }
@@ -140,11 +138,9 @@ private:
             nameLabel.setText(v[IDs::name].toString(), dontSendNotification);
         } else if (i == IDs::colour) {
             nameLabel.setColour(Label::backgroundColourId, getColour());
-            repaint();
         } else if (i == IDs::selected) {
             processors.setSelected(v[IDs::selected], this);
             nameLabel.setColour(Label::backgroundColourId, isSelected() ? getColour().brighter(0.25) : getColour());
-            repaint();
         }
     }
 
