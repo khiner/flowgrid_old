@@ -884,9 +884,9 @@ private:
                     return siblingTrackToSelect;
                 } else {
                     if (selectedProcessor.isValid()) {
-                        int selectedProcessorSlot = selectedProcessor[IDs::processorSlot];
-                        const auto& processorToSelect = findFirstProcessorToLeftOfSlot(siblingTrackToSelect,
-                                                                                       selectedProcessorSlot);
+                        int selectedProcessorSlot = getCorrectedProcessorSlot(selectedProcessor);
+                        const auto& processorToSelect = findProcessorNearestToSlot(siblingTrackToSelect,
+                                                                                   selectedProcessorSlot);
                         if (processorToSelect.isValid())
                             return processorToSelect;
                         else
@@ -923,7 +923,7 @@ private:
                 } else if (!siblingProcessorToSelect.isValid()) {
                     auto masterProcessorSlotToSelect = getViewIndexForTrack(selectedTrack) + getMasterViewSlotOffset();
                     const auto& masterTrack = getMasterTrack();
-                    return findFirstProcessorToLeftOfSlot(masterTrack, masterProcessorSlotToSelect);
+                    return findProcessorNearestToSlot(masterTrack, masterProcessorSlotToSelect);
                 }
             } else if (delta < 0) {
                 if (!siblingProcessorToSelect.isValid() && !selectedTrack[IDs::selected])
@@ -959,13 +959,19 @@ private:
         return processorSlot == MIXER_CHANNEL_SLOT ? numAvailableSlotsForTrack(processor.getParent()) - 1 : processorSlot;
     }
 
-    ValueTree findFirstProcessorToLeftOfSlot(const ValueTree &track, int slot) const {
-        for (int processorIndex = track.getNumChildren() - 1; processorIndex >= 0; processorIndex--) {
-            const auto& processor = track.getChild(processorIndex);
-            if (slot >= getCorrectedProcessorSlot(processor))
-                return processor;
+    ValueTree findProcessorNearestToSlot(const ValueTree &track, int slot) const {
+        int nearestSlot = INT_MAX;
+        ValueTree nearestProcessor;
+        for (const auto& processor : track) {
+            auto otherSlot = getCorrectedProcessorSlot(processor);
+            if (abs(slot - otherSlot) < abs(slot - nearestSlot)) {
+                nearestSlot = otherSlot;
+                nearestProcessor = processor;
+            }
+            if (otherSlot > slot)
+                break; // processors are ordered by slot.
         }
-        return {};
+        return nearestProcessor;
     }
 
     void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override {
