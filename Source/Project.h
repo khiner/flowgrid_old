@@ -363,43 +363,43 @@ public:
 
     void duplicateSelectedItems() {
         Array<ValueTree> allSelectedItems = findAllItemsWithPropertyRecursive(state, IDs::selected, true);
-        for (const auto &selectedItem : allSelectedItems) {
+        for (auto &selectedItem : allSelectedItems) {
             duplicateItem(selectedItem, &undoManager);
         }
     }
 
-    void duplicateItem(const ValueTree &v, UndoManager* undoManager) {
-        if (!v.isValid())
+    void duplicateItem(ValueTree &item, UndoManager* undoManager) {
+        if (!item.isValid())
             return;
-        if (v.getParent().isValid()) {
-            if (v.hasType(IDs::TRACK)) {
+        if (item.getParent().isValid()) {
+            if (item.hasType(IDs::TRACK)) {
                 // todo: track dupe
-            } else if (v.hasType(IDs::PROCESSOR) && !isMixerChannelProcessor(v)) {
-                auto track = v.getParent();
-                auto copy = v.createCopy();
+            } else if (item.hasType(IDs::PROCESSOR) && !isMixerChannelProcessor(item)) {
+                saveProcessorStateInformationToState(item);
+                auto track = item.getParent();
+                auto copy = item.createCopy();
                 copy.removeProperty(IDs::nodeId, nullptr);
-                setProcessorSlot(track, copy, int(v[IDs::processorSlot]) + 1, nullptr);
-                // todo: internal plugin state
-                track.addChild(copy, track.indexOf(v), undoManager);
+                setProcessorSlot(track, copy, int(item[IDs::processorSlot]) + 1, nullptr);
+                track.addChild(copy, track.indexOf(item), undoManager);
                 makeSlotsValid(track, undoManager);
                 sendProcessorCreatedMessage(copy);
             }
         }
     }
 
-    void deleteItem(const ValueTree &v, UndoManager* undoManager) {
-        if (!v.isValid())
+    void deleteItem(const ValueTree &item, UndoManager* undoManager) {
+        if (!item.isValid())
             return;
-        if (v.getParent().isValid()) {
-            if (v.hasType(IDs::TRACK)) {
-                while (v.getNumChildren() > 0)
-                    deleteItem(v.getChild(v.getNumChildren() - 1), undoManager);
-            } else if (v.hasType(IDs::PROCESSOR)) {
-                sendProcessorWillBeDestroyedMessage(v);
+        if (item.getParent().isValid()) {
+            if (item.hasType(IDs::TRACK)) {
+                while (item.getNumChildren() > 0)
+                    deleteItem(item.getChild(item.getNumChildren() - 1), undoManager);
+            } else if (item.hasType(IDs::PROCESSOR)) {
+                sendProcessorWillBeDestroyedMessage(item);
             }
-            v.getParent().removeChild(v, undoManager);
-            if (v.hasType(IDs::PROCESSOR)) {
-                sendProcessorHasBeenDestroyedMessage(v);
+            item.getParent().removeChild(item, undoManager);
+            if (item.hasType(IDs::PROCESSOR)) {
+                sendProcessorHasBeenDestroyedMessage(item);
             }
         }
     }
@@ -734,21 +734,23 @@ public:
     Result saveDocument(const File &file) override {
         for (const auto& track : tracks) {
             for (auto processorState : track) {
-                if (processorState.hasType(IDs::PROCESSOR)) {
-                    if (auto* processorWrapper = getProcessorWrapperForState(processorState)) {
-                        MemoryBlock memoryBlock;
-                        if (auto* processor = processorWrapper->processor) {
-                            processor->getStateInformation(memoryBlock);
-                            processorState.setProperty(IDs::state, memoryBlock.toBase64Encoding(), nullptr);
-                        }
-                    }
-                }
+                saveProcessorStateInformationToState(processorState);
             }
         }
         if (Utilities::saveValueTree(state, file, true))
             return Result::ok();
 
         return Result::fail(TRANS("Could not save the project file"));
+    }
+
+    void saveProcessorStateInformationToState(ValueTree &processorState) const {
+        if (auto* processorWrapper = getProcessorWrapperForState(processorState)) {
+            MemoryBlock memoryBlock;
+            if (auto* processor = processorWrapper->processor) {
+                processor->getStateInformation(memoryBlock);
+                processorState.setProperty(IDs::state, memoryBlock.toBase64Encoding(), nullptr);
+            }
+        }
     }
 
     File getLastDocumentOpened() override {
