@@ -98,6 +98,8 @@ public:
                 return push2Listener->undoButtonPressed();
             case delete_:
                 return push2Listener->deleteButtonPressed();
+            case duplicate:
+                return push2Listener->duplicateButtonPressed();
             case addTrack:
                 return push2Listener->addTrackButtonPressed();
             case addDevice:

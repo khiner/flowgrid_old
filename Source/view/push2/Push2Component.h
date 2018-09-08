@@ -92,6 +92,10 @@ public:
     void deleteButtonPressed() override {
         getCommandManager().invokeDirectly(CommandIDs::deleteSelected, false);
     }
+
+    void duplicateButtonPressed() override {
+        getCommandManager().invokeDirectly(CommandIDs::duplicateSelected, false);
+    }
     
     void addDeviceButtonPressed() override {
         selectChild(&processorSelector);
@@ -152,7 +156,8 @@ public:
         } else {
             for (auto buttonId : {Push2::addTrack, Push2::delete_, Push2::addDevice,
                                   Push2::mix, Push2::master, Push2::undo, Push2::note, Push2::session,
-                                  Push2::shift, Push2::left, Push2::right, Push2::up, Push2::down}) {
+                                  Push2::shift, Push2::left, Push2::right, Push2::up, Push2::down,
+                                  Push2::duplicate}) {
                 push2.disableWhiteLedButton(buttonId);
             }
         }
@@ -186,9 +191,11 @@ private:
         if (selectedTrack.isValid()) {
             push2.activateWhiteLedButton(Push2MidiCommunicator::delete_);
             push2.enableWhiteLedButton(Push2MidiCommunicator::addDevice);
+            push2.activateWhiteLedButton(Push2::duplicate);
         } else {
             push2.disableWhiteLedButton(Push2MidiCommunicator::delete_);
             push2.disableWhiteLedButton(Push2MidiCommunicator::addDevice);
+            push2.disableWhiteLedButton(Push2::duplicate);
         }
 
         if (!project.getMasterTrack().isValid())

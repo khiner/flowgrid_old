@@ -35,6 +35,7 @@ public:
     void encoderRotated(int encoderIndex, float changeAmount) override {}
     void undoButtonPressed() override {}
     void addTrackButtonPressed() override {}
+    void duplicateButtonPressed() override {}
     void deleteButtonPressed() override {}
     void addDeviceButtonPressed() override {}
     void mixButtonPressed() override {}

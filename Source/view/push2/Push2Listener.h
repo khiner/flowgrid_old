@@ -13,6 +13,7 @@ public:
     virtual void encoderRotated(int encoderIndex, float changeAmount) = 0;
     virtual void undoButtonPressed() = 0;
     virtual void addTrackButtonPressed() = 0;
+    virtual void duplicateButtonPressed() = 0;
     virtual void deleteButtonPressed() = 0;
     virtual void masterButtonPressed() = 0;
     virtual void addDeviceButtonPressed() = 0;

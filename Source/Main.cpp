@@ -110,6 +110,8 @@ public:
             menu.addCommandItem(&getCommandManager(), CommandIDs::undo);
             menu.addCommandItem(&getCommandManager(), CommandIDs::redo);
             menu.addSeparator();
+            menu.addCommandItem(&getCommandManager(), CommandIDs::duplicateSelected);
+            menu.addSeparator();
             menu.addCommandItem(&getCommandManager(), CommandIDs::deleteSelected);
         } else if (topLevelMenuIndex == 2) { // Create menu
             menu.addCommandItem(&getCommandManager(), CommandIDs::insertTrack);
@@ -177,6 +179,7 @@ public:
                 CommandIDs::undo,
                 CommandIDs::redo,
                 CommandIDs::deleteSelected,
+                CommandIDs::duplicateSelected,
                 CommandIDs::insertTrack,
                 CommandIDs::insertTrackWithoutMixer,
                 CommandIDs::createMasterTrack,
@@ -243,6 +246,10 @@ public:
                 result.addDefaultKeypress('m', ModifierKeys::commandModifier);
                 result.setActive(project.getSelectedTrack().isValid() && !project.getMixerChannelProcessorForSelectedTrack().isValid());
                 break;
+            case CommandIDs::duplicateSelected:
+                result.setInfo("Duplicate selected item(s)", String(), category, 0);
+                result.addDefaultKeypress('d', ModifierKeys::commandModifier);
+                break;
             case CommandIDs::deleteSelected:
                 result.setInfo("Delete selected item(s)", String(), category, 0);
                 result.addDefaultKeypress(KeyPress::deleteKey, ModifierKeys::noModifiers);
@@ -308,6 +315,9 @@ public:
                 break;
             case CommandIDs::redo:
                 project.getUndoManager().redo();
+                break;
+            case CommandIDs::duplicateSelected:
+                project.duplicateSelectedItems();
                 break;
             case CommandIDs::deleteSelected:
                 project.deleteSelectedItems();

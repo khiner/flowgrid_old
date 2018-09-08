@@ -354,7 +354,38 @@ public:
 
     bool canNavigateRight() const { return findItemToSelectWithLeftRightDelta(1).isValid(); }
 
-    void deleteSelectedItems() { deleteAllSelectedItems(state); }
+    void deleteSelectedItems() {
+        Array<ValueTree> allSelectedItems = findAllItemsWithPropertyRecursive(state, IDs::selected, true);
+        for (const auto &selectedItem : allSelectedItems) {
+            deleteItem(selectedItem, &undoManager);
+        }
+    }
+
+    void duplicateSelectedItems() {
+        Array<ValueTree> allSelectedItems = findAllItemsWithPropertyRecursive(state, IDs::selected, true);
+        for (const auto &selectedItem : allSelectedItems) {
+            duplicateItem(selectedItem, &undoManager);
+        }
+    }
+
+    void duplicateItem(const ValueTree &v, UndoManager* undoManager) {
+        if (!v.isValid())
+            return;
+        if (v.getParent().isValid()) {
+            if (v.hasType(IDs::TRACK)) {
+                // todo: track dupe
+            } else if (v.hasType(IDs::PROCESSOR) && !isMixerChannelProcessor(v)) {
+                auto track = v.getParent();
+                auto copy = v.createCopy();
+                copy.removeProperty(IDs::nodeId, nullptr);
+                setProcessorSlot(track, copy, int(v[IDs::processorSlot]) + 1, nullptr);
+                // todo: internal plugin state
+                track.addChild(copy, track.indexOf(v), undoManager);
+                makeSlotsValid(track, undoManager);
+                sendProcessorCreatedMessage(copy);
+            }
+        }
+    }
 
     void deleteItem(const ValueTree &v, UndoManager* undoManager) {
         if (!v.isValid())
@@ -363,8 +394,7 @@ public:
             if (v.hasType(IDs::TRACK)) {
                 while (v.getNumChildren() > 0)
                     deleteItem(v.getChild(v.getNumChildren() - 1), undoManager);
-            }
-            if (v.hasType(IDs::PROCESSOR)) {
+            } else if (v.hasType(IDs::PROCESSOR)) {
                 sendProcessorWillBeDestroyedMessage(v);
             }
             v.getParent().removeChild(v, undoManager);
@@ -962,13 +992,6 @@ private:
                 item.setProperty(IDs::selected, true, nullptr);
             else
                 item.sendPropertyChangeMessage(IDs::selected);
-        }
-    }
-
-    void deleteAllSelectedItems(const ValueTree &parent) {
-        Array<ValueTree> allSelectedItems = findAllItemsWithPropertyRecursive(parent, IDs::selected, true);
-        for (const auto &selectedItem : allSelectedItems) {
-            deleteItem(selectedItem, &undoManager);
         }
     }
 

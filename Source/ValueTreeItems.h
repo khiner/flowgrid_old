@@ -43,7 +43,7 @@ public:
         changeListeners.remove(listener);
     }
 
-    virtual void sendProcessorCreatedMessage(ValueTree item) {
+    virtual void sendProcessorCreatedMessage(const ValueTree& item) {
         if (MessageManager::getInstance()->isThisTheMessageThread()) {
             changeListeners.call(&ProjectChangeListener::processorCreated, item);
         } else {
