@@ -20,6 +20,9 @@ public:
 
         int cellWidth = 20;
         int cellHeight = 20;
+        int newWidth = cellWidth * jmax(project.getNumNonMasterTracks(), project.getNumMasterProcessorSlots());
+        int newHeight = cellHeight * (project.getNumTrackProcessorSlots() + 2);
+        setSize(newWidth, newHeight);
 
         auto r = getLocalBounds();
 

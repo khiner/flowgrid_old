@@ -14,25 +14,30 @@ public:
     SelectionEditor(Project& project, ProcessorGraph &audioGraphBuilder)
             : project(project), audioGraphBuilder(audioGraphBuilder), contextPane(project) {
         project.getState().addListener(this);
-        addAndMakeVisible(contextPane);
+        addAndMakeVisible(contextPaneViewport);
         addChildComponent((processorEditor = std::make_unique<ProcessorEditor>()).get());
         addAndMakeVisible(addProcessorButton);
-
+        contextPaneViewport.setViewedComponent(&contextPane, false);
         addProcessorButton.addListener(this);
-
-        setSize(800, 600);
     }
 
     ~SelectionEditor() override {
         project.getState().removeListener(this);
     }
 
+    void paint(Graphics& g) override { // divider lines
+        g.setColour(findColour(TextEditor::backgroundColourId));
+        g.drawLine(1, 0, 1, getHeight(), 2);
+        g.drawLine(0, contextPaneViewport.getY(), getWidth(), contextPaneViewport.getY(), 2);
+    }
+
     void resized() override {
-        auto r(getLocalBounds().reduced(4));
-        auto buttons(r.removeFromTop(22));
+        auto r = getLocalBounds().reduced(4);
+        auto buttons = r.removeFromTop(22);
+        buttons.removeFromLeft(4);
         addProcessorButton.setBounds(buttons.removeFromLeft(120));
 
-        contextPane.setBounds(r.removeFromBottom(400).reduced(4));
+        contextPaneViewport.setBounds(r.removeFromBottom(250).reduced(1));
         if (processorEditor != nullptr) {
             r.removeFromTop(8);
             processorEditor->setBounds(r.reduced(4));
@@ -71,6 +76,7 @@ private:
     Project &project;
     ProcessorGraph &audioGraphBuilder;
 
+    Viewport contextPaneViewport;
     ContextPane contextPane;
     std::unique_ptr<PopupMenu> addProcessorMenu;
 
