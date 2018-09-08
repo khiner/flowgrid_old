@@ -36,6 +36,7 @@ public:
 
         node->properties.set(getOpenProp(type), true);
 
+        setAlwaysOnTop(true);
         setVisible(true);
         if (keyboardComponent != nullptr)
             keyboardComponent->grabKeyboardFocus();

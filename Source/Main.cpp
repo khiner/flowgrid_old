@@ -508,6 +508,7 @@ private:
             push2Window->setBackgroundColour(Colours::black);
             push2Window->setBounds(100, 100, Push2Display::WIDTH, Push2Display::HEIGHT + mainWindow->getTitleBarHeight());
             push2Window->setResizable(false, false);
+            push2Window->setAlwaysOnTop(true);
         }
     }
 
