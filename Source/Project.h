@@ -372,17 +372,21 @@ public:
         if (!item.isValid())
             return;
         if (item.getParent().isValid()) {
-            if (item.hasType(IDs::TRACK)) {
-                // todo: track dupe
+            if (item.hasType(IDs::TRACK) && !item.hasProperty(IDs::isMasterTrack)) {
+                auto copiedTrack = createAndAddTrack(undoManager, false, item, true);
+                for (auto processor : item) {
+                    saveProcessorStateInformationToState(processor);
+                    auto copiedProcessor = processor.createCopy();
+                    copiedProcessor.removeProperty(IDs::nodeId, nullptr);
+                    addProcessorToTrack(copiedTrack, copiedProcessor, item.indexOf(processor), undoManager);
+                }
             } else if (item.hasType(IDs::PROCESSOR) && !isMixerChannelProcessor(item)) {
                 saveProcessorStateInformationToState(item);
                 auto track = item.getParent();
-                auto copy = item.createCopy();
-                copy.removeProperty(IDs::nodeId, nullptr);
-                setProcessorSlot(track, copy, int(item[IDs::processorSlot]) + 1, nullptr);
-                track.addChild(copy, track.indexOf(item), undoManager);
-                makeSlotsValid(track, undoManager);
-                sendProcessorCreatedMessage(copy);
+                auto copiedProcessor = item.createCopy();
+                copiedProcessor.removeProperty(IDs::nodeId, nullptr);
+                setProcessorSlot(track, copiedProcessor, int(item[IDs::processorSlot]) + 1, nullptr);
+                addProcessorToTrack(track, copiedProcessor, track.indexOf(item), undoManager);
             }
         }
     }
@@ -436,7 +440,7 @@ public:
         return masterTrack;
     }
 
-    ValueTree createAndAddTrack(UndoManager* undoManager, bool addMixer=true, ValueTree nextToTrack={}) {
+    ValueTree createAndAddTrack(UndoManager* undoManager, bool addMixer=true, ValueTree nextToTrack={}, bool forceImmediatelyToRight=false) {
         int numTracks = getNumNonMasterTracks();
         const auto& selectedTrack = getSelectedTrack();
 
@@ -446,7 +450,7 @@ public:
                 // or to the right of the first track with a mixer if the new track has a mixer.
                 nextToTrack = selectedTrack;
 
-                if (addMixer) {
+                if (addMixer && !forceImmediatelyToRight) {
                     while (nextToTrack.isValid() && !getMixerChannelProcessorForTrack(nextToTrack).isValid())
                         nextToTrack = nextToTrack.getSibling(1);
                 }
@@ -459,7 +463,7 @@ public:
         track.setProperty(IDs::uuid, Uuid().toString(), nullptr);
         track.setProperty(IDs::name, (nextToTrack.isValid() && !addMixer) ? makeTrackNameUnique(nextToTrack[IDs::name]) : ("Track " + String(numTracks + 1)), nullptr);
         track.setProperty(IDs::colour, (nextToTrack.isValid() && !addMixer) ? nextToTrack[IDs::colour].toString() : Colour::fromHSV((1.0f / 8.0f) * numTracks, 0.65f, 0.65f, 1.0f).toString(), nullptr);
-        tracks.addChild(track, nextToTrack.isValid() ? nextToTrack.getParent().indexOf(nextToTrack) + (addMixer ? 1 : 0): numTracks, undoManager);
+        tracks.addChild(track, nextToTrack.isValid() ? nextToTrack.getParent().indexOf(nextToTrack) + (addMixer || forceImmediatelyToRight ? 1 : 0): numTracks, undoManager);
 
         track.setProperty(IDs::selected, true, undoManager);
 
@@ -511,12 +515,15 @@ public:
             insertIndex = getParentIndexForProcessor(track, processor, nullptr);
         }
         setProcessorSlot(track, processor, slot, nullptr);
+        addProcessorToTrack(track, processor, insertIndex, undoManager);
 
+        return processor;
+    }
+
+    void addProcessorToTrack(ValueTree &track, const ValueTree &processor, int insertIndex, UndoManager *undoManager) {
         track.addChild(processor, insertIndex, undoManager);
         makeSlotsValid(track, undoManager);
         sendProcessorCreatedMessage(processor);
-
-        return processor;
     }
 
     int getNumAvailableSlotsForTrack(const ValueTree &track) const {
