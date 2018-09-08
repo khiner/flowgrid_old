@@ -22,6 +22,7 @@ public:
         Process::makeForegroundProcess();
 
         project.addChangeListener(this);
+        project.getState().addListener(this);
 
         deviceChangeMonitor = std::make_unique<DeviceChangeMonitor>(deviceManager);
 
@@ -65,6 +66,8 @@ public:
         push2Window = nullptr;
         deviceChangeMonitor = nullptr;
         deviceManager.removeAudioCallback(&player);
+        project.removeChangeListener(this);
+        project.getState().removeListener(this);
         setMacMainMenu(nullptr);
     }
 
@@ -249,11 +252,13 @@ public:
             case CommandIDs::duplicateSelected:
                 result.setInfo("Duplicate selected item(s)", String(), category, 0);
                 result.addDefaultKeypress('d', ModifierKeys::commandModifier);
+                result.setActive(project.canDuplicateSelected());
                 break;
             case CommandIDs::deleteSelected:
                 result.setInfo("Delete selected item(s)", String(), category, 0);
                 result.addDefaultKeypress(KeyPress::deleteKey, ModifierKeys::noModifiers);
                 result.addDefaultKeypress(KeyPress::backspaceKey, ModifierKeys::noModifiers);
+                result.setActive(project.getSelectedTrack().isValid());
                 break;
             case CommandIDs::showPush2MirrorWindow:
                 result.setInfo("Open a window mirroring a Push 2 display", String(), category, 0);

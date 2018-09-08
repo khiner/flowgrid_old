@@ -191,12 +191,15 @@ private:
         if (selectedTrack.isValid()) {
             push2.activateWhiteLedButton(Push2MidiCommunicator::delete_);
             push2.enableWhiteLedButton(Push2MidiCommunicator::addDevice);
-            push2.activateWhiteLedButton(Push2::duplicate);
         } else {
             push2.disableWhiteLedButton(Push2MidiCommunicator::delete_);
             push2.disableWhiteLedButton(Push2MidiCommunicator::addDevice);
-            push2.disableWhiteLedButton(Push2::duplicate);
         }
+
+        if (project.canDuplicateSelected())
+            push2.activateWhiteLedButton(Push2::duplicate);
+        else
+            push2.disableWhiteLedButton(Push2::duplicate);
 
         if (!project.getMasterTrack().isValid())
             push2.disableWhiteLedButton(Push2MidiCommunicator::master);

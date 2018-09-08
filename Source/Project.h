@@ -354,6 +354,14 @@ public:
 
     bool canNavigateRight() const { return findItemToSelectWithLeftRightDelta(1).isValid(); }
 
+    bool canDuplicateSelected() const {
+        const auto& selectedTrack = getSelectedTrack();
+        if (selectedTrack[IDs::selected] && !selectedTrack.hasProperty(IDs::isMasterTrack))
+            return true;
+        const auto& selectedProcessor = getSelectedProcessor();
+        return selectedProcessor.isValid() && !isMixerChannelProcessor(selectedProcessor);
+    }
+
     void deleteSelectedItems() {
         Array<ValueTree> allSelectedItems = findAllItemsWithPropertyRecursive(state, IDs::selected, true);
         for (const auto &selectedItem : allSelectedItems) {
