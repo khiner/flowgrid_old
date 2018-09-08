@@ -70,7 +70,10 @@ public:
 
     void objectRemoved(GraphEditorTrack *) override { resized(); }
 
-    void objectOrderChanged() override { resized(); }
+    void objectOrderChanged() override {
+        resized();
+        connectorDragListener.update();
+    }
 
     GraphEditorProcessor *getProcessorForNodeId(AudioProcessorGraph::NodeID nodeId) const override {
         for (auto *track : objects) {

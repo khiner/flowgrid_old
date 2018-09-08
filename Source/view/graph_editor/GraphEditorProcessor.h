@@ -111,8 +111,8 @@ public:
     }
 
     void resized() override {
-        auto boxBoundsFloat = getBoxBounds().reduced(4).toFloat();
         if (auto *processor = getProcessor()) {
+            auto boxBoundsFloat = getBoxBounds().reduced(4).toFloat();
             for (auto *pin : pins) {
                 const bool isInput = pin->isInput();
                 auto channelIndex = pin->getChannel();
@@ -143,6 +143,8 @@ public:
             if (parametersPanel != nullptr) {
                 parametersPanel->setBounds(boxBoundsFloat.toNearestInt());
             }
+            repaint();
+            connectorDragListener.update();
         }
     }
 
@@ -161,11 +163,6 @@ public:
             return pin;
         }
         return nullptr;
-    }
-
-    void update() {
-        resized();
-        repaint();
     }
 
     AudioProcessorGraph::Node::Ptr getNode() const {
@@ -344,7 +341,7 @@ private:
             nameLabel.setText(getName());
         }
 
-        update();
+        resized();
     }
 
     void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override {
@@ -359,9 +356,6 @@ private:
                 channelLabel.setJustification(Justification::centred);
                 addAndMakeVisible(channelLabel);
             }
-            if (auto* component = dynamic_cast<Component *>(&connectorDragListener)) {
-                component->resized();
-            }
         }
     }
 
@@ -371,9 +365,6 @@ private:
             if (showChannelLabels)
                 removeChildComponent(&pinToRemove->channelLabel);
             pins.removeObject(pinToRemove);
-            if (auto* component = dynamic_cast<Component *>(&connectorDragListener)) {
-                component->resized();
-            }
         }
     }
 

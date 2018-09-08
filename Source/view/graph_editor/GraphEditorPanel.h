@@ -25,9 +25,14 @@ public:
     void resize() {
         project.setProcessorHeight(getProcessorHeight());
         project.setTrackWidth(getTrackWidth());
-        setSize(getTrackWidth() * jmax(Project::NUM_VISIBLE_TRACKS, project.getNumNonMasterTracks(), project.getNumMasterProcessorSlots()) + Project::TRACK_LABEL_HEIGHT * 2,
-                getProcessorHeight() * (jmax(Project::NUM_VISIBLE_TRACKS, project.getNumTrackProcessorSlots() + 1) + 3) + Project::TRACK_LABEL_HEIGHT);
+        int newWidth = getTrackWidth() * jmax(Project::NUM_VISIBLE_TRACKS, project.getNumNonMasterTracks(), project.getNumMasterProcessorSlots()) + Project::TRACK_LABEL_HEIGHT * 2;
+        int newHeight = getProcessorHeight() * (jmax(Project::NUM_VISIBLE_TRACKS, project.getNumTrackProcessorSlots() + 1) + 3) + Project::TRACK_LABEL_HEIGHT;
+        setSize(newWidth, newHeight);
         updateViewPosition();
+        if (newWidth == getWidth() && newHeight == getHeight()) {
+            tracks->resized();
+            connectors->updateConnectors();
+        }
     }
 
     void resized() override {
@@ -69,20 +74,10 @@ public:
                 midiOutputProcessor->setBounds(bottom.removeFromLeft(int(ioProcessorWidth * (1 - audioOutputWidthRatio) / midiOutputProcessors.size())));
             }
         }
-        updateComponents();
+        connectors->updateConnectors();
     }
 
     void update() override {
-        updateComponents();
-    }
-
-    void updateComponents() {
-        if (audioInputProcessor != nullptr)
-            audioInputProcessor->update();
-        if (audioOutputProcessor != nullptr)
-            audioOutputProcessor->update();
-        for (auto* midiInputProcessor : midiInputProcessors) midiInputProcessor->update();
-        for (auto* midiOutputProcessor : midiOutputProcessors) midiOutputProcessor->update();
         connectors->updateConnectors();
     }
 
@@ -251,7 +246,7 @@ private:
 
     void valueTreePropertyChanged(ValueTree& tree, const Identifier& i) override {
         if (tree.hasType(IDs::PROCESSOR) && i == IDs::processorSlot) {
-            updateComponents();
+            connectors->updateConnectors();
         } else if (i == IDs::numMasterProcessorSlots || i == IDs::numProcessorSlots) {
             resize();
         } else if (i == IDs::gridViewTrackOffset) {
@@ -286,11 +281,11 @@ private:
             } else if (child[IDs::name] == "Audio Output") {
                 addAndMakeVisible(*(audioOutputProcessor = std::make_unique<GraphEditorProcessor>(project, child, *this, graph, true)));
                 resized();
-            } else {
-                updateComponents();
             }
         } else if (child.hasType(IDs::CONNECTION)) {
             connectors->updateConnectors();
+        } else if (child.hasType(IDs::CHANNEL)) {
+            resized();
         }
     }
 
@@ -303,15 +298,17 @@ private:
             } else if (child[IDs::name] == MidiOutputProcessor::name()) {
                 midiOutputProcessors.removeObject(findMidiOutputProcessorForNodeId(ProcessorGraph::getNodeIdForState(child)));
             }
-            updateComponents();
+            connectors->updateConnectors();
         } else if (child.hasType(IDs::CONNECTION)) {
             connectors->updateConnectors();
+        } else if (child.hasType(IDs::CHANNEL)) {
+            resized();
         }
     }
 
     void valueTreeChildOrderChanged(ValueTree& parent, int oldIndex, int newIndex) override {
-        if (parent.hasType(IDs::TRACKS) || parent.hasType(IDs::TRACK)) {
-            updateComponents();
+        if (parent.hasType(IDs::TRACKS)) {
+            connectors->updateConnectors();
         }
     }
 

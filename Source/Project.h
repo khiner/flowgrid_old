@@ -384,8 +384,8 @@ public:
                 saveProcessorStateInformationToState(item);
                 auto track = item.getParent();
                 auto copiedProcessor = item.createCopy();
-                copiedProcessor.removeProperty(IDs::nodeId, nullptr);
                 setProcessorSlot(track, copiedProcessor, int(item[IDs::processorSlot]) + 1, nullptr);
+                copiedProcessor.removeProperty(IDs::nodeId, nullptr);
                 addProcessorToTrack(track, copiedProcessor, track.indexOf(item), undoManager);
             }
         }
