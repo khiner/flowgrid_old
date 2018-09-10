@@ -1043,8 +1043,6 @@ private:
         }
     }
 
-    void valueTreeChildOrderChanged(ValueTree &tree, int, int) override {}
-
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {
         if (i == IDs::deviceName && (tree == input || tree == output)) {
             AudioDeviceManager::AudioDeviceSetup config;
@@ -1068,6 +1066,8 @@ private:
             }
         }
     }
+
+    void valueTreeChildOrderChanged(ValueTree &tree, int, int) override {}
 
     void valueTreeParentChanged(ValueTree &) override {}
 

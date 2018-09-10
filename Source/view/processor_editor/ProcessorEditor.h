@@ -9,7 +9,7 @@
 
 class ProcessorEditor : public Component {
 public:
-    explicit ProcessorEditor(int maxRows=2) :
+    explicit ProcessorEditor(int maxRows=1) :
             pageLeftButton("Page left", 0.5, findColour(ResizableWindow::backgroundColourId).brighter(0.75)),
             pageRightButton("Page right", 0.0, findColour(ResizableWindow::backgroundColourId).brighter(0.75)) {
         addAndMakeVisible(titleLabel);
@@ -37,14 +37,13 @@ public:
 
     void paint(Graphics& g) override {
         auto r = getLocalBounds();
-        auto top = r.removeFromTop(40);
         g.setColour(findColour(TextEditor::backgroundColourId));
-        g.fillRect(top);
+        g.fillRect(r.removeFromTop(38));
     }
 
     void resized() override {
         auto r = getLocalBounds();
-        auto top = r.removeFromTop(40);
+        auto top = r.removeFromTop(38);
         top.removeFromLeft(8);
         titleLabel.setBoundingBox(top.removeFromLeft(200).reduced(2).toFloat());
 

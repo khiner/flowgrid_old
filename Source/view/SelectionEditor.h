@@ -9,16 +9,16 @@
 class SelectionEditor : public Component,
                         public DragAndDropContainer,
                         private Button::Listener,
-                        private Utilities::ValueTreePropertyChangeListener {
+                        private ValueTree::Listener {
 public:
     SelectionEditor(Project& project, ProcessorGraph &audioGraphBuilder)
             : project(project), audioGraphBuilder(audioGraphBuilder), contextPane(project) {
         project.getState().addListener(this);
         addAndMakeVisible(contextPaneViewport);
-        addChildComponent((processorEditor = std::make_unique<ProcessorEditor>()).get());
         addAndMakeVisible(addProcessorButton);
         contextPaneViewport.setViewedComponent(&contextPane, false);
         addProcessorButton.addListener(this);
+        // todo viewport for processor editors
     }
 
     ~SelectionEditor() override {
@@ -36,11 +36,11 @@ public:
         auto buttons = r.removeFromTop(22);
         buttons.removeFromLeft(4);
         addProcessorButton.setBounds(buttons.removeFromLeft(120));
-
         contextPaneViewport.setBounds(r.removeFromBottom(250).reduced(1));
-        if (processorEditor != nullptr) {
-            r.removeFromTop(8);
-            processorEditor->setBounds(r.reduced(4));
+        for (auto* editor : processorEditors) {
+            if (editor->isVisible()) {
+                editor->setBounds(r.removeFromTop(160).reduced(4));
+            }
         }
     }
 
@@ -58,20 +58,10 @@ public:
         }
     }
 
-    void valueTreeChildRemoved(ValueTree &exParent, ValueTree &tree, int) override {
-        if (tree.hasType(IDs::TRACK) || tree.hasType(IDs::PROCESSOR)) {
-            if (!project.getSelectedTrack().isValid()) {
-                addProcessorButton.setVisible(false);
-                processorEditor->setVisible(false);
-                processorEditor->setProcessor(nullptr);
-            }
-        }
-    }
-
 private:
     TextButton addProcessorButton{"Add Processor"};
 
-    std::unique_ptr<ProcessorEditor> processorEditor {};
+    OwnedArray<ProcessorEditor> processorEditors;
 
     Project &project;
     ProcessorGraph &audioGraphBuilder;
@@ -80,22 +70,74 @@ private:
     ContextPane contextPane;
     std::unique_ptr<PopupMenu> addProcessorMenu;
 
+    void refreshProcessors(const ValueTree& singleProcessorToRefresh={}) {
+        const ValueTree &selectedTrack = project.getSelectedTrack();
+        if (!selectedTrack.isValid()) {
+            for (auto* editor : processorEditors) {
+                editor->setVisible(false);
+                editor->setProcessor(nullptr);
+            }
+        } else if (singleProcessorToRefresh.isValid()) {
+            assignProcessorToEditor(singleProcessorToRefresh);
+        } else {
+            for (int processorSlot = 0; processorSlot < processorEditors.size(); processorSlot++) {
+                const auto &processor = selectedTrack.getChildWithProperty(IDs::processorSlot, processorSlot);
+                assignProcessorToEditor(processor, processorSlot);
+            }
+        }
+        resized();
+    }
+
+    void assignProcessorToEditor(const ValueTree &processor, int processorSlot=-1) const {
+        auto* processorEditor = processorEditors.getUnchecked(processorSlot != -1 ? processorSlot : int(processor[IDs::processorSlot]));
+        if (processor.isValid()) {
+            if (auto *processorWrapper = audioGraphBuilder.getProcessorWrapperForState(processor)) {
+                processorEditor->setProcessor(processorWrapper);
+                processorEditor->setVisible(true);
+            }
+        } else {
+            processorEditor->setVisible(false);
+            processorEditor->setProcessor(nullptr);
+        }
+    }
+
+    void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override {
+        if (child.hasProperty(IDs::PROCESSOR) && project.getSelectedTrack() == parent) {
+            assignProcessorToEditor(child);
+            resized();
+        }
+    }
+
+    void valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int) override {
+        if (child.hasType(IDs::TRACK) || child.hasType(IDs::PROCESSOR)) {
+            refreshProcessors(); // todo can improve efficiency by only removing this processor editor
+        }
+    }
+
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {
         if (i == IDs::selected && tree[IDs::selected]) {
             addProcessorButton.setVisible(tree.hasType(IDs::PROCESSOR) || tree.hasType(IDs::TRACK));
 
             const auto& selectedProcessor = tree.hasType(IDs::PROCESSOR) ? tree : project.findSelectedProcessorForTrack(tree);
-            if (auto *processorWrapper = audioGraphBuilder.getProcessorWrapperForState(selectedProcessor)) {
-                processorEditor->setProcessor(processorWrapper);
-                processorEditor->setVisible(true);
-            } else {
-                processorEditor->setVisible(false);
-                processorEditor->setProcessor(nullptr);
+            refreshProcessors();
+        } else if (i == IDs::numProcessorSlots || i == IDs::numMasterProcessorSlots) {
+            int numProcessorSlots = jmax(int(tree[IDs::numProcessorSlots]), int(tree[IDs::numMasterProcessorSlots]));
+            while (processorEditors.size() < numProcessorSlots) {
+                auto* processorEditor = new ProcessorEditor();
+                addChildComponent(processorEditor);
+                processorEditors.add(processorEditor);
             }
-
-            resized();
+            processorEditors.removeLast(processorEditors.size() - numProcessorSlots);
+        } else if (i == IDs::processorSlot) {
+            refreshProcessors();
         }
     }
+
+    void valueTreeChildOrderChanged(ValueTree &tree, int, int) override {}
+
+    void valueTreeParentChanged(ValueTree &) override {}
+
+    void valueTreeRedirected(ValueTree &) override {}
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SelectionEditor)
 };

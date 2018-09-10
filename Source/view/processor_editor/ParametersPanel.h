@@ -80,7 +80,6 @@ public:
 
     void paint(Graphics& g) override {
         auto r = getLocalBounds();
-        r.setHeight(getTotalParameterHeight());
         g.setColour(backgroundColour);
         g.fillRect(r);
         g.setColour(outlineColour);
@@ -112,11 +111,6 @@ public:
 
     int getParameterHeight() {
         return maxRows == 1 ? getLocalBounds().getHeight() : getParameterWidth() * 7 / 5;
-    }
-
-    int getTotalParameterHeight() {
-        int numRows = parameters.isEmpty() ? 1 : jmin(maxRows, int(ceil(float(parameters.size()) / float(numColumns))));
-        return numRows * getParameterHeight();
     }
 
 private:
