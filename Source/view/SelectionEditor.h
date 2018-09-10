@@ -14,11 +14,13 @@ public:
     SelectionEditor(Project& project, ProcessorGraph &audioGraphBuilder)
             : project(project), audioGraphBuilder(audioGraphBuilder), contextPane(project) {
         project.getState().addListener(this);
-        addAndMakeVisible(contextPaneViewport);
         addAndMakeVisible(addProcessorButton);
-        contextPaneViewport.setViewedComponent(&contextPane, false);
+        addAndMakeVisible(processorEditorsViewport);
+        addAndMakeVisible(contextPaneViewport);
         addProcessorButton.addListener(this);
-        // todo viewport for processor editors
+        processorEditorsViewport.setViewedComponent(&processorEditorsComponent, false);
+        processorEditorsViewport.setScrollBarsShown(true, false);
+        contextPaneViewport.setViewedComponent(&contextPane, false);
     }
 
     ~SelectionEditor() override {
@@ -37,10 +39,13 @@ public:
         buttons.removeFromLeft(4);
         addProcessorButton.setBounds(buttons.removeFromLeft(120));
         contextPaneViewport.setBounds(r.removeFromBottom(250).reduced(1));
+        processorEditorsViewport.setBounds(r);
+        r.removeFromRight(8);
+        processorEditorsComponent.setBounds(0, 0, r.getWidth(), PROCESSOR_EDITOR_HEIGHT * project.getSelectedTrack().getNumChildren());
+        r = processorEditorsComponent.getBounds();
         for (auto* editor : processorEditors) {
-            if (editor->isVisible()) {
-                editor->setBounds(r.removeFromTop(160).reduced(4));
-            }
+            if (editor->isVisible())
+                editor->setBounds(r.removeFromTop(PROCESSOR_EDITOR_HEIGHT).reduced(4));
         }
     }
 
@@ -59,15 +64,17 @@ public:
     }
 
 private:
-    TextButton addProcessorButton{"Add Processor"};
+    static const int PROCESSOR_EDITOR_HEIGHT = 160;
 
-    OwnedArray<ProcessorEditor> processorEditors;
+    TextButton addProcessorButton{"Add Processor"};
 
     Project &project;
     ProcessorGraph &audioGraphBuilder;
 
-    Viewport contextPaneViewport;
+    Viewport contextPaneViewport, processorEditorsViewport;
     ContextPane contextPane;
+    OwnedArray<ProcessorEditor> processorEditors;
+    Component processorEditorsComponent;
     std::unique_ptr<PopupMenu> addProcessorMenu;
 
     void refreshProcessors(const ValueTree& singleProcessorToRefresh={}) {
@@ -124,7 +131,7 @@ private:
             int numProcessorSlots = jmax(int(tree[IDs::numProcessorSlots]), int(tree[IDs::numMasterProcessorSlots]));
             while (processorEditors.size() < numProcessorSlots) {
                 auto* processorEditor = new ProcessorEditor();
-                addChildComponent(processorEditor);
+                processorEditorsComponent.addChildComponent(processorEditor);
                 processorEditors.add(processorEditor);
             }
             processorEditors.removeLast(processorEditors.size() - numProcessorSlots);
