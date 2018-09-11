@@ -954,8 +954,8 @@ private:
         const auto& selectedTrack = getSelectedTrack();
         if (!selectedTrack.isValid())
             return {};
-        const auto& selectedProcessor = findSelectedProcessorForTrack(selectedTrack);
 
+        const auto& selectedProcessor = findSelectedProcessorForTrack(selectedTrack);
         if (selectedTrack.hasProperty(IDs::isMasterTrack)) {
             const auto& siblingProcessorToSelect = selectedProcessor.getSibling(delta);
             if (delta > 0) {
@@ -972,16 +972,10 @@ private:
             if (siblingTrackToSelect.isValid() && !siblingTrackToSelect.hasProperty(IDs::isMasterTrack)) {
                 if (selectedTrack[IDs::selected] || selectedTrack.getNumChildren() == 0) {
                     return siblingTrackToSelect;
-                } else {
-                    if (selectedProcessor.isValid()) {
-                        int selectedProcessorSlot = selectedProcessor[IDs::processorSlot];
-                        const auto& processorToSelect = findProcessorNearestToSlot(siblingTrackToSelect,
-                                                                                   selectedProcessorSlot);
-                        if (processorToSelect.isValid())
-                            return processorToSelect;
-                        else
-                            return siblingTrackToSelect;
-                    }
+                } else if (selectedProcessor.isValid()) {
+                    int selectedProcessorSlot = selectedProcessor[IDs::processorSlot];
+                    const auto& processorToSelect = findProcessorNearestToSlot(siblingTrackToSelect, selectedProcessorSlot);
+                    return processorToSelect.isValid() ? processorToSelect : siblingTrackToSelect;
                 }
             }
         }
@@ -996,33 +990,30 @@ private:
         const auto& selectedTrack = selectedProcessor.getParent();
         int selectedProcessorSlot = selectedProcessor[IDs::processorSlot];
         if (selectedTrack.hasProperty(IDs::isMasterTrack)) {
-                if (delta < 0) {
-                    auto trackToSelect = getTrackWithViewIndex(selectedProcessorSlot - getMasterViewSlotOffset());
-                    if (!trackToSelect.isValid() || trackToSelect.hasProperty(IDs::isMasterTrack))
-                        trackToSelect = getTrack(getNumNonMasterTracks() - 1);
-                    if (trackToSelect.getNumChildren() > 0)
-                        return trackToSelect.getChild(trackToSelect.getNumChildren() - 1);
-                    else
-                        return trackToSelect;
-                }
-            } else {
-                const auto& siblingProcessorToSelect = selectedProcessor.getSibling(delta);
-                if (delta > 0) {
-                    if (selectedTrack[IDs::selected]) {
-                        return selectedProcessor; // re-selecting the processor will deselect the parent.
-                    } else if (!siblingProcessorToSelect.isValid()) {
-                        auto masterProcessorSlotToSelect = getViewIndexForTrack(selectedTrack) + getMasterViewSlotOffset();
-                        const auto& masterTrack = getMasterTrack();
-                        return findProcessorNearestToSlot(masterTrack, masterProcessorSlotToSelect);
-                    }
-                } else if (delta < 0) {
-                    if (!siblingProcessorToSelect.isValid() && !selectedTrack[IDs::selected])
-                        return selectedTrack;
-                }
-
-                if (siblingProcessorToSelect.isValid())
-                    return siblingProcessorToSelect;
+            if (delta < 0) {
+                auto trackToSelect = getTrackWithViewIndex(selectedProcessorSlot - getMasterViewSlotOffset());
+                if (!trackToSelect.isValid() || trackToSelect.hasProperty(IDs::isMasterTrack))
+                    trackToSelect = getTrack(getNumNonMasterTracks() - 1);
+                return trackToSelect.getNumChildren() > 0 ? trackToSelect.getChild(trackToSelect.getNumChildren() - 1) : trackToSelect;
             }
+        } else {
+            const auto& siblingProcessorToSelect = selectedProcessor.getSibling(delta);
+            if (delta > 0) {
+                if (selectedTrack[IDs::selected]) {
+                    return selectedProcessor; // re-selecting the processor will deselect the parent.
+                } else if (!siblingProcessorToSelect.isValid()) {
+                    auto masterProcessorSlotToSelect = getViewIndexForTrack(selectedTrack) + getMasterViewSlotOffset();
+                    const auto& masterTrack = getMasterTrack();
+                    return findProcessorNearestToSlot(masterTrack, masterProcessorSlotToSelect);
+                }
+            } else if (delta < 0) {
+                if (!siblingProcessorToSelect.isValid() && !selectedTrack[IDs::selected])
+                    return selectedTrack;
+            }
+
+            if (siblingProcessorToSelect.isValid())
+                return siblingProcessorToSelect;
+        }
         return {};
     }
 
@@ -1036,15 +1027,10 @@ private:
         if (siblingTrackToSelect.isValid()) {
             if (selectedTrack[IDs::selected] || selectedTrack.getNumChildren() == 0) {
                 return siblingTrackToSelect;
-            } else {
-                if (selectedProcessor.isValid()) {
-                    int selectedProcessorSlot = selectedProcessor[IDs::processorSlot];
-                    const auto& processorToSelect = findProcessorNearestToSlot(siblingTrackToSelect, selectedProcessorSlot);
-                    if (processorToSelect.isValid())
-                        return processorToSelect;
-                    else
-                        return siblingTrackToSelect;
-                }
+            } else if (selectedProcessor.isValid()) {
+                int selectedProcessorSlot = selectedProcessor[IDs::processorSlot];
+                const auto& processorToSelect = findProcessorNearestToSlot(siblingTrackToSelect, selectedProcessorSlot);
+                return processorToSelect.isValid() ? processorToSelect : siblingTrackToSelect;
             }
         }
 
