@@ -5,6 +5,7 @@
 #include <processors/ProcessorManager.h>
 #include "processor_editor/ProcessorEditor.h"
 #include "view/context_pane/ContextPane.h"
+#include "view/CustomColourIds.h"
 
 class SelectionEditor : public Component,
                         public DragAndDropContainer,
@@ -27,7 +28,9 @@ public:
         project.getState().removeListener(this);
     }
 
-    void paint(Graphics& g) override { // divider lines
+    void paint(Graphics& g) override {
+        g.setColour(backgroundColour);
+        g.fillRect(processorEditorsViewport.getBounds());
         g.setColour(findColour(TextEditor::backgroundColourId));
         g.drawLine(1, 0, 1, getHeight(), 2);
         g.drawLine(0, contextPaneViewport.getY(), getWidth(), contextPaneViewport.getY(), 2);
@@ -76,6 +79,8 @@ private:
     OwnedArray<ProcessorEditor> processorEditors;
     Component processorEditorsComponent;
     std::unique_ptr<PopupMenu> addProcessorMenu;
+
+    Colour backgroundColour = findColour(ResizableWindow::backgroundColourId);
 
     void refreshProcessors(const ValueTree& singleProcessorToRefresh={}) {
         const ValueTree &selectedTrack = project.getSelectedTrack();
@@ -136,6 +141,10 @@ private:
             processorEditors.removeLast(processorEditors.size() - numProcessorSlots);
         } else if (i == IDs::processorSlot) {
             refreshProcessors();
+        } else if (i == IDs::focusedPane) {
+            backgroundColour = findColour(project.isGridPaneFocused() ? ResizableWindow::backgroundColourId
+                                                                      : CustomColourIds::focusedBackgroundColourId);
+            repaint();
         }
     }
 

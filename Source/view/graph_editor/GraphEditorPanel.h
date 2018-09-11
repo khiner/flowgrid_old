@@ -4,6 +4,7 @@
 #include "GraphEditorPin.h"
 #include "GraphEditorTracks.h"
 #include "GraphEditorConnectors.h"
+#include "view/CustomColourIds.h"
 
 class GraphEditorPanel
         : public Component, public ConnectorDragListener, public GraphEditorProcessorContainer,
@@ -75,6 +76,10 @@ public:
             }
         }
         connectors->updateConnectors();
+    }
+
+    void paint(Graphics& g) override {
+        g.fillAll(backgroundColour);
     }
 
     void update() override {
@@ -202,7 +207,9 @@ private:
     int getTrackWidth() { return (parentViewport.getWidth() - Project::TRACK_LABEL_HEIGHT * 2) / Project::NUM_VISIBLE_TRACKS; }
 
     int getProcessorHeight() { return (parentViewport.getHeight() - Project::TRACK_LABEL_HEIGHT) / (Project::NUM_VISIBLE_PROCESSOR_SLOTS + 1); }
-    
+
+    Colour backgroundColour = findColour(ResizableWindow::backgroundColourId);
+
     GraphEditorPin *findPinAt(const MouseEvent &e) const {
         if (auto *pin = audioInputProcessor->findPinAt(e))
             return pin;
@@ -258,6 +265,10 @@ private:
         } else if (i == IDs::masterViewSlotOffset) {
             updateViewPosition();
             resized();
+        } else if (i == IDs::focusedPane) {
+            backgroundColour = findColour(project.isGridPaneFocused() ? CustomColourIds::focusedBackgroundColourId
+                                                                      : ResizableWindow::backgroundColourId);
+            repaint();
         }
     }
 

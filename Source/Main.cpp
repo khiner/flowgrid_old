@@ -2,6 +2,7 @@
 #include "view/push2/Push2Component.h"
 #include "ApplicationPropertiesAndCommandManager.h"
 #include <view/graph_editor/GraphEditor.h>
+#include <view/CustomColourIds.h>
 #include "BasicWindow.h"
 #include "DeviceChangeMonitor.h"
 
@@ -36,6 +37,8 @@ public:
         auto &lookAndFeel = LookAndFeel::getDefaultLookAndFeel();
         lookAndFeel.setDefaultSansSerifTypeface(Typeface::createSystemTypefaceFor(
                 BinaryData::AbletonSansMediumRegular_otf, BinaryData::AbletonSansMediumRegular_otfSize));
+        lookAndFeel.setColour(CustomColourIds::focusedBackgroundColourId,
+                lookAndFeel.findColour(ResizableWindow::backgroundColourId).brighter(0.06));
         lookAndFeel.setColour(Slider::rotarySliderOutlineColourId,
                 lookAndFeel.findColour(Slider::rotarySliderOutlineColourId).brighter(0.06));
 
@@ -194,6 +197,7 @@ public:
                 CommandIDs::navigateDown,
                 CommandIDs::showPluginListEditor,
                 CommandIDs::showAudioMidiSettings,
+                CommandIDs::togglePaneFocus,
 //                CommandIDs::aboutBox,
 //                CommandIDs::allWindowsForward,
         };
@@ -287,6 +291,10 @@ public:
                 result.setInfo("Change the audio device settings", String(), category, 0);
                 result.addDefaultKeypress('a', ModifierKeys::commandModifier);
                 break;
+            case CommandIDs::togglePaneFocus: // keypress only; not in menu
+                result.setInfo("Change the focused pane", String(), category, 0);
+                result.addDefaultKeypress(KeyPress::tabKey, ModifierKeys::noModifiers);
+                break;
 //            case CommandIDs::aboutBox:
 //                result.setInfo ("About...", String(), category, 0);
 //                break;
@@ -360,6 +368,9 @@ public:
             case CommandIDs::showAudioMidiSettings:
                 showAudioMidiSettings();
                 break;
+            case CommandIDs::togglePaneFocus:
+                project.togglePaneFocus();
+                break;
 //            case CommandIDs::aboutBox:
 //                // TODO
 //                break;
@@ -400,6 +411,10 @@ public:
 
         void closeButtonPressed() override {
             tryToQuitApplication();
+        }
+
+        KeyboardFocusTraverser* createFocusTraverser() override {
+            return nullptr;
         }
 
         struct AsyncQuitRetrier : private Timer {

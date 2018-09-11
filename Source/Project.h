@@ -196,14 +196,22 @@ public:
     }
 
     bool isInShiftMode() const { return numShiftsHeld >= 1; }
-
     bool isInNoteMode() const { return viewState[IDs::controlMode] == noteControlMode; }
-
     bool isInSessionMode() const { return viewState[IDs::controlMode] == sessionControlMode; }
+    bool isGridPaneFocused() const { return viewState[IDs::focusedPane] == gridPaneName; }
 
     void setShiftMode(bool shiftMode) { shiftMode ? numShiftsHeld++ : numShiftsHeld--; }
     void setNoteMode() { viewState.setProperty(IDs::controlMode, noteControlMode, nullptr); }
     void setSessionMode() { viewState.setProperty(IDs::controlMode, sessionControlMode, nullptr); }
+    void focusOnGridPane() { viewState.setProperty(IDs::focusedPane, gridPaneName, nullptr); }
+    void focusOnEditorPane() { viewState.setProperty(IDs::focusedPane, editorPaneName, nullptr); }
+
+    void togglePaneFocus() {
+        if (isGridPaneFocused())
+            focusOnEditorPane();
+        else
+            focusOnGridPane();
+    }
 
     void setTrackWidth(int trackWidth) { this->trackWidth = trackWidth; }
     void setProcessorHeight(int processorHeight) { this->processorHeight = processorHeight; }
@@ -418,6 +426,7 @@ public:
 
     void createDefaultProject() {
         viewState.setProperty(IDs::controlMode, noteControlMode, nullptr);
+        viewState.setProperty(IDs::focusedPane, editorPaneName, nullptr);
         viewState.setProperty(IDs::numProcessorSlots, 7, nullptr);
         viewState.setProperty(IDs::numMasterProcessorSlots, 8, nullptr);
         viewState.setProperty(IDs::gridViewTrackOffset, 0, nullptr);
@@ -790,6 +799,7 @@ public:
     static constexpr int TRACK_LABEL_HEIGHT = 32;
 
     const String sessionControlMode = "session", noteControlMode = "note";
+    const String gridPaneName = "grid", editorPaneName = "editor";
 
 private:
     ValueTree state;

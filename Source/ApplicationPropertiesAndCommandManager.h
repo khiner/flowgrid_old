@@ -23,8 +23,9 @@ namespace CommandIDs {
             navigateDown             = 0x40004,
             showPluginListEditor     = 0x50000,
             showAudioMidiSettings    = 0x50001,
-            aboutBox                 = 0x50002,
-            allWindowsForward        = 0x50003;
+            togglePaneFocus          = 0x50002,
+            aboutBox                 = 0x50003,
+            allWindowsForward        = 0x50004;
 }
 
 const String push2MidiDeviceName = "Ableton Push 2 Live Port";
