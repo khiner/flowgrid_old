@@ -22,10 +22,15 @@ public:
         processorEditorsViewport.setViewedComponent(&processorEditorsComponent, false);
         processorEditorsViewport.setScrollBarsShown(true, false);
         contextPaneViewport.setViewedComponent(&contextPane, false);
+        addMouseListener(this, true);
     }
 
     ~SelectionEditor() override {
         project.getState().removeListener(this);
+    }
+
+    void mouseDown(const MouseEvent& event) override {
+        project.focusOnEditorPane();
     }
 
     void paint(Graphics& g) override {

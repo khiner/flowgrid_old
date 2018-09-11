@@ -16,10 +16,16 @@ public:
 
         addAndMakeVisible(*(tracks = std::make_unique<GraphEditorTracks>(project, project.getTracks(), *this, graph)));
         addAndMakeVisible(*(connectors = std::make_unique<GraphEditorConnectors>(project.getConnections(), *this, *this, graph)));
+
+        addMouseListener(this, true);
     }
 
     ~GraphEditorPanel() override {
         draggingConnector = nullptr;
+    }
+
+    void mouseDown(const MouseEvent& event) override {
+        project.focusOnGridPane();
     }
 
     // Call this method when the parent viewport size has changed or when the number of tracks has changed.
