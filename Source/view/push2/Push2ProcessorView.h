@@ -52,12 +52,12 @@ public:
     void trackSelected(const ValueTree &track) override {
         Push2TrackManagingView::trackSelected(track);
         if (track.getNumChildren() == 0) {
-            parametersPanel->setProcessor(nullptr);
+            parametersPanel->setProcessorWrapper(nullptr);
         }
     }
     
     void processorSelected(StatefulAudioProcessorWrapper *const processorWrapper) {
-        parametersPanel->setProcessor(processorWrapper);
+        parametersPanel->setProcessorWrapper(processorWrapper);
         if (processorWrapper == nullptr) {
             updateEnabledPush2Buttons();
             return;

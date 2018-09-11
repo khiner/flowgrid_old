@@ -101,6 +101,7 @@ private:
             if (auto *processorWrapper = audioGraphBuilder.getProcessorWrapperForState(processor)) {
                 processorEditor->setProcessor(processorWrapper);
                 processorEditor->setVisible(true);
+                processorEditor->setSelected(processor[IDs::selected]);
             }
         } else {
             processorEditor->setVisible(false);
@@ -124,8 +125,6 @@ private:
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {
         if (i == IDs::selected && tree[IDs::selected]) {
             addProcessorButton.setVisible(tree.hasType(IDs::PROCESSOR) || tree.hasType(IDs::TRACK));
-
-            const auto& selectedProcessor = tree.hasType(IDs::PROCESSOR) ? tree : project.findSelectedProcessorForTrack(tree);
             refreshProcessors();
         } else if (i == IDs::numProcessorSlots || i == IDs::numMasterProcessorSlots) {
             int numProcessorSlots = jmax(int(tree[IDs::numProcessorSlots]), int(tree[IDs::numMasterProcessorSlots]));

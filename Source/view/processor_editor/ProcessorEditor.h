@@ -19,6 +19,7 @@ public:
 
         parametersPanel->setBackgroundColour(findColour(ResizableWindow::backgroundColourId).brighter(0.1));
         parametersPanel->setOutlineColour(findColour(TextEditor::backgroundColourId));
+        parametersPanel->addMouseListener(this, true);
 
         titleLabel.setColour(findColour(TextEditor::textColourId));
         titleLabel.setJustification(Justification::verticallyCentred);
@@ -33,6 +34,16 @@ public:
             parametersPanel->pageRight();
             updatePageButtonVisibility();
         };
+    }
+
+    void setSelected(bool selected) {
+        parametersPanel->setBackgroundColour(findColour(ResizableWindow::backgroundColourId).brighter(selected ? 0.3 : 0.1));
+    }
+
+    void mouseDown(const MouseEvent& event) override {
+        if (parametersPanel) {
+            parametersPanel->selectProcessor();
+        }
     }
 
     void paint(Graphics& g) override {
@@ -58,7 +69,7 @@ public:
         if (processorWrapper != nullptr) {
             titleLabel.setText(processorWrapper->processor->getName());
         }
-        parametersPanel->setProcessor(processorWrapper);
+        parametersPanel->setProcessorWrapper(processorWrapper);
         parametersPanel->resized();
         updatePageButtonVisibility();
     }

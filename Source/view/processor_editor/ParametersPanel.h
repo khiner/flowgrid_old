@@ -16,7 +16,7 @@ public:
         clearParameters();
     }
 
-    void setProcessor(StatefulAudioProcessorWrapper *processorWrapper) {
+    void setProcessorWrapper(StatefulAudioProcessorWrapper *processorWrapper) {
         if (this->processorWrapper == processorWrapper)
             return;
 
@@ -29,6 +29,12 @@ public:
             }
         }
         updateParameterComponents();
+    }
+
+    void selectProcessor() {
+        if (processorWrapper != nullptr && processorWrapper->state.isValid()) {
+            processorWrapper->state.setProperty(IDs::selected, true, nullptr);
+        }
     }
 
     void addParameter(StatefulAudioProcessorWrapper::Parameter* parameter) {
@@ -72,10 +78,12 @@ public:
     // todo switch to adding new LookAndFeel colour IDs
     void setBackgroundColour(const Colour &backgroundColour) {
         this->backgroundColour = backgroundColour;
+        repaint();
     }
 
     void setOutlineColour(const Colour &outlineColour) {
         this->outlineColour = outlineColour;
+        repaint();
     }
 
     void paint(Graphics& g) override {
