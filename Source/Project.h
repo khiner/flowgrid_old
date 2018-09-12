@@ -26,17 +26,26 @@ public:
             if (!track.isValid())
                 return;
 
-            auto item = slot == -1 ? track : track.getChildWithProperty(IDs::processorSlot, slot);
-            if (!item.isValid())
-                return;
+            if (slot == -1) {
+                track.setProperty(IDs::selected, true, nullptr);
+            } else {
+                auto processor = track.getChildWithProperty(IDs::processorSlot, slot);
+                if (processor.isValid()) {
+                    BigInteger selectedSlotsMask;
+                    selectedSlotsMask.parseString(track.getProperty(IDs::selectedSlotsMask).toString(), 2);
+                    selectedSlotsMask.clear();
+                    selectedSlotsMask.setBit(slot);
+                    track.setProperty(IDs::selectedSlotsMask, selectedSlotsMask.toString(2), nullptr);
 
-            if (!item[IDs::selected])
-                item.setProperty(IDs::selected, true, nullptr);
-            else
-                item.sendPropertyChangeMessage(IDs::selected);
+                    if (!processor[IDs::selected])
+                        processor.setProperty(IDs::selected, true, nullptr);
+                    else
+                        processor.sendPropertyChangeMessage(IDs::selected);
+                }
+            }
         }
 
-        const ValueTree track;
+        ValueTree track;
         const int slot;
     };
 
@@ -116,6 +125,10 @@ public:
 
     ValueTree getMasterTrack() const { return tracks.getChildWithProperty(IDs::isMasterTrack, true); }
 
+    inline const Colour getTrackColour(const ValueTree& track) const {
+        return Colour::fromString(track[IDs::colour].toString());
+    }
+
     inline ValueTree findSelectedProcessorForTrack(const ValueTree &track) const {
         for (const auto& processor : track) {
             if (processor.hasType(IDs::PROCESSOR) && processor[IDs::selected])
@@ -141,6 +154,12 @@ public:
                 return true;
         }
         return false;
+    }
+
+    inline bool isProcessorSlotSelected(const ValueTree& track, int slot) const {
+        BigInteger selectedSlotsMask;
+        selectedSlotsMask.parseString(track[IDs::selectedSlotsMask].toString(), 2);
+        return selectedSlotsMask[slot];
     }
 
     inline ValueTree getSelectedTrack() const {
@@ -1129,8 +1148,8 @@ private:
                 config.outputDeviceName = deviceName;
 
             deviceManager.setAudioDeviceSetup(config, true);
-        } else if ((tree.hasType(IDs::TRACK) || tree.hasType(IDs::PROCESSOR)) && i == IDs::selected && tree[IDs::selected]) {
-            const auto& track = tree.hasType(IDs::TRACK) ? tree : tree.getParent();
+        } else if ((tree.hasType(IDs::TRACK) || tree.hasType(IDs::PROCESSOR)) && i == IDs::selected && tree[i]) {
+            auto track = tree.hasType(IDs::TRACK) ? tree : tree.getParent();
             if (!track.hasProperty(IDs::isMasterTrack)) {
                 auto trackIndex = tracks.indexOf(track);
                 updateViewTrackOffsetToInclude(trackIndex);

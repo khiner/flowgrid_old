@@ -198,7 +198,7 @@ private:
     }
 
     Colour getColourForTrack(const ValueTree& track) {
-        return track.isValid() ? Colour::fromString(track[IDs::colour].toString()) : Colours::black;
+        return track.isValid() ? project.getTrackColour(track) : Colours::black;
     }
 
     void updateColours() {

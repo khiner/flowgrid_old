@@ -7,6 +7,7 @@
 #include "ConnectorDragListener.h"
 #include "ProcessorGraph.h"
 #include "GraphEditorPin.h"
+#include "view/CustomColourIds.h"
 
 class GraphEditorProcessors : public Component,
                               public Utilities::ValueTreeObjectList<GraphEditorProcessor>,
@@ -64,17 +65,15 @@ public:
     }
 
     void updateProcessorSlotColours() {
+        const auto& baseColour = findColour(project.isGridPaneFocused() ? CustomColourIds::focusedBackgroundColourId : ResizableWindow::backgroundColourId);
         for (int slot = 0; slot < processorSlotRectangles.size(); slot++) {
-            static const auto& baseColour = findColour(TextEditor::backgroundColourId);
             auto fillColour = baseColour.brighter(0.13);
             if (project.isProcessorSlotInView(parent, slot)) {
                 fillColour = fillColour.brighter(0.3);
                 if (project.isTrackSelected(parent))
                     fillColour = fillColour.brighter(0.2);
-                if (auto *processor = findProcessorAtSlot(slot)) {
-                    if (processor->isSelected())
-                        fillColour = processor->getTrackColour();
-                }
+                if (project.isProcessorSlotSelected(parent, slot))
+                        fillColour = project.getTrackColour(parent);
             }
             processorSlotRectangles.getUnchecked(slot)->setFill(fillColour);
         }
@@ -160,6 +159,16 @@ public:
         }
     }
 
+    void updateSelectedSlotMask() {
+        BigInteger selectedSlotMask;
+        // todo for multiselection this will need to change.
+//        selectedSlotMask.parseString(parent[IDs::selectedSlotsMask].toString(), 2);
+        for (const auto& processor : parent) {
+            selectedSlotMask.setBit(processor[IDs::processorSlot], processor[IDs::selected]);
+        }
+        parent.setProperty(IDs::selectedSlotsMask, selectedSlotMask.toString(2), nullptr);
+    }
+
 private:
     static constexpr int ADD_MIXER_CHANNEL_MENU_ID = 1;
 
@@ -176,15 +185,17 @@ private:
         if (isSuitableType(v)) {
             if (i == IDs::processorSlot) {
                 resized();
-                updateProcessorSlotColours();
-            } else if (i == IDs::selected && v[IDs::selected]) {
-                for (auto* processor : objects) {
-                    if (processor->getState() == v)
-                        mostRecentlySelectedProcessor = processor;
-                    else
-                        processor->setSelected(false);
+                updateSelectedSlotMask();
+            } else if (i == IDs::selected) {
+                if (v[IDs::selected]) {
+                    for (auto *processor : objects) {
+                        if (processor->getState() == v)
+                            mostRecentlySelectedProcessor = processor;
+                        else
+                            processor->setSelected(false);
+                    }
                 }
-                updateProcessorSlotColours();
+                updateSelectedSlotMask();
             }
         } else if ((v.hasType(IDs::TRACK) && i == IDs::selected) || i == IDs::gridViewTrackOffset) {
             updateProcessorSlotColours();
@@ -203,6 +214,8 @@ private:
             processorSlotRectangles.removeLast(processorSlotRectangles.size() - numSlots, true);
             resized();
             updateProcessorSlotColours();
+        } else if (i == IDs::selectedSlotsMask || i == IDs::focusedPane) {
+            updateProcessorSlotColours();
         }
 
         Utilities::ValueTreeObjectList<GraphEditorProcessor>::valueTreePropertyChanged(v, i);
@@ -212,14 +225,14 @@ private:
         ValueTreeObjectList::valueTreeChildAdded(parent, tree);
         if (this->parent == parent && isSuitableType(tree)) {
             resized();
-            updateProcessorSlotColours();
+            updateSelectedSlotMask();
         }
     }
 
     void valueTreeChildRemoved(ValueTree &exParent, ValueTree &tree, int index) override {
         ValueTreeObjectList::valueTreeChildRemoved(exParent, tree, index);
         if (parent == exParent && isSuitableType(tree)) {
-            updateProcessorSlotColours();
+            updateSelectedSlotMask();
         }
     }
 

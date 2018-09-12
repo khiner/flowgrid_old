@@ -48,10 +48,6 @@ public:
         return ProcessorGraph::getNodeIdForState(state);
     }
 
-    inline const Colour getTrackColour() const {
-        return Colour::fromString(state.getParent()[IDs::colour].toString());
-    }
-
     inline int getSlot() const { return state[IDs::processorSlot]; }
 
     inline int getNumInputChannels() const { return state.getChildWithName(IDs::INPUT_CHANNELS).getNumChildren(); }

@@ -57,7 +57,7 @@ public:
 
     String getTrackName() const { return state[IDs::name].toString(); }
 
-    Colour getColour() const { return Colour::fromString(state[IDs::colour].toString()); }
+    Colour getColour() const { return project.getTrackColour(state); }
 
     void setColour(const Colour& colour) { state.setProperty(IDs::colour, colour.toString(), &graph.undoManager); }
 
