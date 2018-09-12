@@ -26,6 +26,7 @@ namespace IDs
     DECLARE_ID(image)
     DECLARE_ID(selected)
     DECLARE_ID(isMasterTrack)
+    DECLARE_ID(selectedSlotsMask)
 
     DECLARE_ID(PROCESSOR)
     DECLARE_ID(processorInitialized)

@@ -1,3 +1,5 @@
+#include <utility>
+
 #pragma once
 
 #include <unordered_map>
@@ -12,6 +14,32 @@ enum ConnectionType { audio, midi, all };
 class Project : public FileBasedDocument, public ProjectChangeBroadcaster, public StatefulAudioProcessorContainer,
                 private ChangeListener, private ValueTree::Listener {
 public:
+    struct TrackAndSlot {
+        TrackAndSlot() : slot(0) {};
+        TrackAndSlot(ValueTree track, const ValueTree& processor) : track(std::move(track)), slot(processor[IDs::processorSlot]) {}
+        TrackAndSlot(ValueTree track, const int slot) : track(std::move(track)), slot(slot) {}
+        TrackAndSlot(ValueTree track) : track(std::move(track)), slot(-1) {}
+
+        bool isValid() const { return track.isValid(); }
+
+        void select() {
+            if (!track.isValid())
+                return;
+
+            auto item = slot == -1 ? track : track.getChildWithProperty(IDs::processorSlot, slot);
+            if (!item.isValid())
+                return;
+
+            if (!item[IDs::selected])
+                item.setProperty(IDs::selected, true, nullptr);
+            else
+                item.sendPropertyChangeMessage(IDs::selected);
+        }
+
+        const ValueTree track;
+        const int slot;
+    };
+
     Project(UndoManager &undoManager, ProcessorManager& processorManager, AudioDeviceManager& deviceManager)
             : FileBasedDocument(getFilenameSuffix(), "*" + getFilenameSuffix(), "Load a project", "Save project"),
               undoManager(undoManager), processorManager(processorManager), deviceManager(deviceManager) {
@@ -346,13 +374,13 @@ public:
         }
     }
 
-    void navigateUp() { selectItemIfValid(findItemToSelectWithUpDownDelta(-1)); }
+    void navigateUp() { findItemToSelectWithUpDownDelta(-1).select(); }
 
-    void navigateDown() { selectItemIfValid(findItemToSelectWithUpDownDelta(1)); }
+    void navigateDown() { findItemToSelectWithUpDownDelta(1).select(); }
 
-    void navigateLeft() { selectItemIfValid(findItemToSelectWithLeftRightDelta(-1)); }
+    void navigateLeft() { findItemToSelectWithLeftRightDelta(-1).select(); }
 
-    void navigateRight() { selectItemIfValid(findItemToSelectWithLeftRightDelta(1)); }
+    void navigateRight() { findItemToSelectWithLeftRightDelta(1).select(); }
 
     bool canNavigateUp() const { return findItemToSelectWithUpDownDelta(-1).isValid(); }
 
@@ -936,21 +964,21 @@ private:
         }
     }
 
-    ValueTree findItemToSelectWithLeftRightDelta(int delta) const {
+    TrackAndSlot findItemToSelectWithLeftRightDelta(int delta) const {
         if (isGridPaneFocused())
             return findGridItemToSelectWithLeftRightDelta(delta);
         else
             return findSelectionPaneItemToSelectWithLeftRightDelta(delta);
     }
 
-    ValueTree findItemToSelectWithUpDownDelta(int delta) const {
+    TrackAndSlot findItemToSelectWithUpDownDelta(int delta) const {
         if (isGridPaneFocused())
             return findGridItemToSelectWithUpDownDelta(delta);
         else
             return findSelectionPaneItemToSelectWithUpDownDelta(delta);
     }
 
-    ValueTree findGridItemToSelectWithLeftRightDelta(int delta) const {
+    TrackAndSlot findGridItemToSelectWithLeftRightDelta(int delta) const {
         const auto& selectedTrack = getSelectedTrack();
         if (!selectedTrack.isValid())
             return {};
@@ -960,22 +988,23 @@ private:
             const auto& siblingProcessorToSelect = selectedProcessor.getSibling(delta);
             if (delta > 0) {
                 if (selectedTrack[IDs::selected]) {
-                    return selectedProcessor; // re-selecting the processor will deselect the parent.
+                    // re-selecting the processor will deselect the parent.
+                    return {selectedTrack, selectedProcessor};
                 }
             } else if (delta < 0) {
                 if (!siblingProcessorToSelect.isValid() && !selectedTrack[IDs::selected])
-                    return selectedTrack;
+                    return {selectedTrack};
             }
-            return siblingProcessorToSelect;
+            return {selectedTrack, siblingProcessorToSelect};
         } else {
             auto siblingTrackToSelect = selectedTrack.getSibling(delta);
             if (siblingTrackToSelect.isValid() && !siblingTrackToSelect.hasProperty(IDs::isMasterTrack)) {
                 if (selectedTrack[IDs::selected] || selectedTrack.getNumChildren() == 0) {
-                    return siblingTrackToSelect;
+                    return {siblingTrackToSelect};
                 } else if (selectedProcessor.isValid()) {
                     int selectedProcessorSlot = selectedProcessor[IDs::processorSlot];
                     const auto& processorToSelect = findProcessorNearestToSlot(siblingTrackToSelect, selectedProcessorSlot);
-                    return processorToSelect.isValid() ? processorToSelect : siblingTrackToSelect;
+                    return processorToSelect.isValid() ? TrackAndSlot(siblingTrackToSelect, processorToSelect) : TrackAndSlot(siblingTrackToSelect);
                 }
             }
         }
@@ -983,7 +1012,7 @@ private:
         return {};
     }
 
-    ValueTree findGridItemToSelectWithUpDownDelta(int delta) const {
+    TrackAndSlot findGridItemToSelectWithUpDownDelta(int delta) const {
         const auto& selectedProcessor = getSelectedProcessor();
         if (!selectedProcessor.isValid())
                 return {};
@@ -994,30 +1023,32 @@ private:
                 auto trackToSelect = getTrackWithViewIndex(selectedProcessorSlot - getMasterViewSlotOffset());
                 if (!trackToSelect.isValid() || trackToSelect.hasProperty(IDs::isMasterTrack))
                     trackToSelect = getTrack(getNumNonMasterTracks() - 1);
-                return trackToSelect.getNumChildren() > 0 ? trackToSelect.getChild(trackToSelect.getNumChildren() - 1) : trackToSelect;
+                return trackToSelect.getNumChildren() > 0 ? TrackAndSlot(trackToSelect, trackToSelect.getChild(trackToSelect.getNumChildren() - 1)) : TrackAndSlot(trackToSelect);
             }
         } else {
             const auto& siblingProcessorToSelect = selectedProcessor.getSibling(delta);
             if (delta > 0) {
                 if (selectedTrack[IDs::selected]) {
-                    return selectedProcessor; // re-selecting the processor will deselect the parent.
+                    // re-selecting the processor will deselect the parent.
+                    return {selectedTrack, selectedProcessor};
                 } else if (!siblingProcessorToSelect.isValid()) {
                     auto masterProcessorSlotToSelect = getViewIndexForTrack(selectedTrack) + getMasterViewSlotOffset();
                     const auto& masterTrack = getMasterTrack();
-                    return findProcessorNearestToSlot(masterTrack, masterProcessorSlotToSelect);
+                    const ValueTree &nearestProcessor = findProcessorNearestToSlot(masterTrack, masterProcessorSlotToSelect);
+                    return nearestProcessor.isValid() ? TrackAndSlot(masterTrack, nearestProcessor) : TrackAndSlot();
                 }
             } else if (delta < 0) {
                 if (!siblingProcessorToSelect.isValid() && !selectedTrack[IDs::selected])
-                    return selectedTrack;
+                    return {selectedTrack};
             }
 
             if (siblingProcessorToSelect.isValid())
-                return siblingProcessorToSelect;
+                return {selectedTrack, siblingProcessorToSelect};
         }
         return {};
     }
 
-    ValueTree findSelectionPaneItemToSelectWithLeftRightDelta(int delta) const {
+    TrackAndSlot findSelectionPaneItemToSelectWithLeftRightDelta(int delta) const {
         const auto& selectedTrack = getSelectedTrack();
         if (!selectedTrack.isValid())
             return {};
@@ -1026,41 +1057,33 @@ private:
         auto siblingTrackToSelect = selectedTrack.getSibling(delta);
         if (siblingTrackToSelect.isValid()) {
             if (selectedTrack[IDs::selected] || selectedTrack.getNumChildren() == 0) {
-                return siblingTrackToSelect;
+                return {siblingTrackToSelect};
             } else if (selectedProcessor.isValid()) {
                 int selectedProcessorSlot = selectedProcessor[IDs::processorSlot];
                 const auto& processorToSelect = findProcessorNearestToSlot(siblingTrackToSelect, selectedProcessorSlot);
-                return processorToSelect.isValid() ? processorToSelect : siblingTrackToSelect;
+                return processorToSelect.isValid() ? TrackAndSlot(siblingTrackToSelect, processorToSelect) : TrackAndSlot(siblingTrackToSelect);
             }
         }
 
         return {};
     }
 
-    ValueTree findSelectionPaneItemToSelectWithUpDownDelta(int delta) const {
+    TrackAndSlot findSelectionPaneItemToSelectWithUpDownDelta(int delta) const {
         const auto& selectedProcessor = getSelectedProcessor();
         if (!selectedProcessor.isValid())
             return {};
         const auto& selectedTrack = selectedProcessor.getParent();
         const auto& siblingProcessorToSelect = selectedProcessor.getSibling(delta);
         if (delta > 0 && selectedTrack[IDs::selected]) {
-            return selectedProcessor; // re-selecting the processor will deselect the parent.
+            // re-selecting the processor will deselect the parent.
+            return {selectedTrack, selectedProcessor};
         } else if (delta < 0 && !siblingProcessorToSelect.isValid() && !selectedTrack[IDs::selected]) {
-            return selectedTrack;
+            return {selectedTrack};
         }
 
         if (siblingProcessorToSelect.isValid())
-            return siblingProcessorToSelect;
+            return {selectedTrack, siblingProcessorToSelect};
         return {};
-    }
-
-    void selectItemIfValid(ValueTree item) const {
-        if (item.isValid()) {
-            if (!item[IDs::selected])
-                item.setProperty(IDs::selected, true, nullptr);
-            else
-                item.sendPropertyChangeMessage(IDs::selected);
-        }
     }
 
     ValueTree findProcessorNearestToSlot(const ValueTree &track, int slot) const {
