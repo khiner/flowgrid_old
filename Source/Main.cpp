@@ -59,7 +59,6 @@ public:
         deviceManager.addAudioCallback(&player);
 
         project.initialise(processorGraph);
-        project.findFirstSelectedItem().sendPropertyChangeMessage(IDs::selected); // TODO remove?
         processorGraph.removeIllegalConnections();
         undoManager.clearUndoHistory();
     }

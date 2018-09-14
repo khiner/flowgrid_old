@@ -442,14 +442,14 @@ public:
     }
 
     void deleteSelectedItems() {
-        Array<ValueTree> allSelectedItems = findAllItemsWithPropertyRecursive(state, IDs::selected, true);
+        const Array<ValueTree> allSelectedItems = findAllSelectedItems();
         for (const auto &selectedItem : allSelectedItems) {
             deleteItem(selectedItem, &undoManager);
         }
     }
 
     void duplicateSelectedItems() {
-        Array<ValueTree> allSelectedItems = findAllItemsWithPropertyRecursive(state, IDs::selected, true);
+        const Array<ValueTree> allSelectedItems = findAllSelectedItems();
         for (auto &selectedItem : allSelectedItems) {
             duplicateItem(selectedItem, &undoManager);
         }
@@ -709,10 +709,6 @@ public:
 
         // TODO in this and other places, we assume processors are the only type of track child.
         return parent.getNumChildren();
-    }
-
-    ValueTree findFirstSelectedItem() {
-        return findFirstItemWithPropertyRecursive(state, IDs::selected, true);
     }
 
     void addPluginsToMenu(PopupMenu& menu, const ValueTree& track) const {
@@ -1214,27 +1210,19 @@ private:
             viewState.setProperty(IDs::gridViewSlotOffset, processorSlot, nullptr);
     }
 
-    static ValueTree findFirstItemWithPropertyRecursive(const ValueTree &parent, const Identifier &i, const var &value) {
-        for (const auto& child : parent) {
-            if (child[i] == value)
-                return child;
-        }
-        for (const auto& child : parent) {
-            const ValueTree &match = findFirstItemWithPropertyRecursive(child, i, value);
-            if (match.isValid())
-                return match;
-        }
-        return {};
-    };
-
-    static Array<ValueTree> findAllItemsWithPropertyRecursive(const ValueTree &parent, const Identifier &i, const var &value) {
+    Array<ValueTree> findAllSelectedItems() const {
         Array<ValueTree> items;
-        for (const auto& child : parent) {
-            if (child[i] == value)
-                items.add(child);
-            else
-                items.addArray(findAllItemsWithPropertyRecursive(child, i, value));
+        for (auto track : tracks) {
+            if (track[IDs::selected]) {
+                items.add(track);
+            } else {
+              for (auto processor : track) {
+                  if (isProcessorSelected(processor)) {
+                      items.add(processor);
+                  }
+              }
+            }
         }
         return items;
-    };
+    }
 };
