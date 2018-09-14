@@ -32,9 +32,10 @@ public:
     int getSlotOffset() const { return project.getSlotOffsetForTrack(parent); }
 
     void mouseDown(const MouseEvent &e) override {
-        project.selectProcessorSlot(parent, findSlotAt(e));
+        int slot = findSlotAt(e.getEventRelativeTo(this));
+        project.selectProcessorSlot(parent, slot);
         if (e.mods.isPopupMenu() || e.getNumberOfClicks() == 2) {
-            showPopupMenu(e.position.toInt());
+            showPopupMenu(slot);
         }
     }
 
@@ -134,7 +135,11 @@ public:
     }
 
 private:
-    static constexpr int ADD_MIXER_CHANNEL_MENU_ID = 1;
+    static constexpr int
+            DELETE_MENU_ID = 1, TOGGLE_BYPASS_MENU_ID = 2, ENABLE_DEFAULTS_MENU_ID = 3, DISCONNECT_ALL_MENU_ID = 4,
+            DISABLE_DEFAULTS_MENU_ID = 5, DISCONNECT_CUSTOM_MENU_ID = 6,
+            SHOW_PLUGIN_GUI_MENU_ID = 10, SHOW_ALL_PROGRAMS_MENU_ID = 11, CONFIGURE_AUDIO_MIDI_MENU_ID = 12,
+            ADD_MIXER_CHANNEL_MENU_ID = 13;
 
     ValueTree viewState;
 
@@ -193,26 +198,94 @@ private:
         return nullptr;
     }
 
-    void showPopupMenu(const Point<int> &mousePos) {
-        int slot = findSlotAt(mousePos);
+    void showPopupMenu(int slot) {
         PopupMenu menu;
+        auto* processor = findProcessorAtSlot(slot);
         bool isMixerChannel = slot == project.getMixerChannelSlotForTrack(parent);
 
-        if (isMixerChannel) {
-            menu.addItem(ADD_MIXER_CHANNEL_MENU_ID, "Add mixer channel");
-        } else {
-            project.addPluginsToMenu(menu, parent);
-        }
-
-        menu.showMenuAsync({}, ModalCallbackFunction::create([this, slot, isMixerChannel](int r) {
-            if (isMixerChannel) {
-                getCommandManager().invokeDirectly(CommandIDs::addMixerChannel, false);
-            } else {
-                if (auto *description = project.getChosenType(r)) {
-                    project.createAndAddProcessor(*description, parent, &project.getUndoManager(), slot);
-                }
+        if (processor != nullptr) {
+            if (!isMixerChannel) {
+                PopupMenu processorSelectorSubmenu;
+                project.addPluginsToMenu(processorSelectorSubmenu, parent);
+                menu.addSubMenu("Insert new processor", processorSelectorSubmenu);
+                menu.addSeparator();
             }
-        }));
+
+            if (processor->isIoProcessor()) {
+                menu.addItem(CONFIGURE_AUDIO_MIDI_MENU_ID, "Configure audio/MIDI IO");
+            } else {
+                menu.addItem(DELETE_MENU_ID, "Delete this processor");
+                menu.addItem(TOGGLE_BYPASS_MENU_ID, "Toggle Bypass");
+            }
+
+            menu.addSeparator();
+            // todo single, stateful, menu item for enable/disable default connections
+            menu.addItem(ENABLE_DEFAULTS_MENU_ID, "Enable default connections");
+            menu.addItem(DISABLE_DEFAULTS_MENU_ID, "Disable default connections");
+            menu.addItem(DISCONNECT_ALL_MENU_ID, "Disconnect all");
+            menu.addItem(DISCONNECT_CUSTOM_MENU_ID, "Disconnect all custom");
+
+            if (processor->getAudioProcessor()->hasEditor()) {
+                menu.addSeparator();
+                menu.addItem(SHOW_PLUGIN_GUI_MENU_ID, "Show plugin GUI");
+                menu.addItem(SHOW_ALL_PROGRAMS_MENU_ID, "Show all programs");
+            }
+
+            menu.showMenuAsync({}, ModalCallbackFunction::create
+                    ([this, processor, slot](int r) {
+                        if (auto *description = project.getChosenType(r)) {
+                            project.createAndAddProcessor(*description, parent, &project.getUndoManager(), slot);
+                            return;
+                        }
+                        switch (r) {
+                            case DELETE_MENU_ID:
+                                getCommandManager().invokeDirectly(CommandIDs::deleteSelected, false);
+                                break;
+                            case TOGGLE_BYPASS_MENU_ID:
+                                processor->toggleBypass();
+                                break;
+                            case ENABLE_DEFAULTS_MENU_ID:
+                                graph.setDefaultConnectionsAllowed(processor->getNodeId(), true);
+                                break;
+                            case DISCONNECT_ALL_MENU_ID:
+                                graph.disconnectNode(processor->getNodeId());
+                                break;
+                            case DISABLE_DEFAULTS_MENU_ID:
+                                graph.setDefaultConnectionsAllowed(processor->getNodeId(), false);
+                                break;
+                            case DISCONNECT_CUSTOM_MENU_ID:
+                                graph.disconnectCustom(processor->getNodeId());
+                                break;
+                            case SHOW_PLUGIN_GUI_MENU_ID:
+                                processor->showWindow(PluginWindow::Type::normal);
+                                break;
+                            case SHOW_ALL_PROGRAMS_MENU_ID:
+                                processor->showWindow(PluginWindow::Type::programs);
+                                break;
+                            case CONFIGURE_AUDIO_MIDI_MENU_ID:
+                                getCommandManager().invokeDirectly(CommandIDs::showAudioMidiSettings, false);
+                                break;
+                            default:
+                                break;
+                        }
+                    }));
+        } else {
+            if (isMixerChannel) {
+                menu.addItem(ADD_MIXER_CHANNEL_MENU_ID, "Add mixer channel");
+            } else {
+                project.addPluginsToMenu(menu, parent);
+            }
+
+            menu.showMenuAsync({}, ModalCallbackFunction::create([this, slot, isMixerChannel](int r) {
+                if (isMixerChannel) {
+                    getCommandManager().invokeDirectly(CommandIDs::addMixerChannel, false);
+                } else {
+                    if (auto *description = project.getChosenType(r)) {
+                        project.createAndAddProcessor(*description, parent, &project.getUndoManager(), slot);
+                    }
+                }
+            }));
+        }
     }
 
     int getNonMixerCellSize() const {

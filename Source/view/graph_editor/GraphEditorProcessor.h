@@ -69,6 +69,10 @@ public:
             project.selectProcessorSlot(state.getParent(), getSlot(), listenerToExclude);
     }
 
+    void toggleBypass() {
+        state.setProperty(IDs::bypassed, !state[IDs::bypassed], &graph.undoManager);
+    }
+
     void paint(Graphics &g) override {
         bool selected = isSelected();
 
@@ -82,15 +86,10 @@ public:
         g.fillRect(getBoxBounds());
     }
 
-    void mouseDown(const MouseEvent &e) override {
-        if (e.mods.isPopupMenu())
-            showPopupMenu();
-    }
-
     void mouseUp(const MouseEvent &e) override {
         if (e.mouseWasDraggedSinceMouseDown()) {
         } else if (e.getNumberOfClicks() == 2) {
-            if (getProcessor()->hasEditor()) {
+            if (getAudioProcessor()->hasEditor()) {
                 showWindow(PluginWindow::Type::normal);
             }
         }
@@ -105,7 +104,7 @@ public:
     }
 
     void resized() override {
-        if (auto *processor = getProcessor()) {
+        if (auto *processor = getAudioProcessor()) {
             auto boxBoundsFloat = getBoxBounds().reduced(4).toFloat();
             for (auto *pin : pins) {
                 const bool isInput = pin->isInput();
@@ -167,83 +166,11 @@ public:
         return graph.getProcessorWrapperForState(state);
     }
 
-    AudioProcessor *getProcessor() const {
+    AudioProcessor *getAudioProcessor() const {
         if (auto node = getNode())
             return node->getProcessor();
 
         return {};
-    }
-
-    void showPopupMenu() {
-        PopupMenu menu;
-
-        if (!project.isMixerChannelProcessor(state)) {
-            PopupMenu processorSelectorSubmenu;
-            project.addPluginsToMenu(processorSelectorSubmenu, state.getParent());
-            menu.addSubMenu("Insert new processor", processorSelectorSubmenu);
-            menu.addSeparator();
-        }
-
-        if (isIoProcessor()) {
-            menu.addItem(CONFIGURE_AUDIO_MIDI_MENU_ID, "Configure audio/MIDI IO");
-        } else {
-            menu.addItem(DELETE_MENU_ID, "Delete this processor");
-            menu.addItem(TOGGLE_BYPASS_MENU_ID, "Toggle Bypass");
-        }
-
-        menu.addSeparator();
-        // todo single, stateful, menu item for enable/disable default connections
-        menu.addItem(ENABLE_DEFAULTS_MENU_ID, "Enable default connections");
-        menu.addItem(DISABLE_DEFAULTS_MENU_ID, "Disable default connections");
-        menu.addItem(DISCONNECT_ALL_MENU_ID, "Disconnect all");
-        menu.addItem(DISCONNECT_CUSTOM_MENU_ID, "Disconnect all custom");
-
-        if (getProcessor()->hasEditor()) {
-            menu.addSeparator();
-            menu.addItem(SHOW_PLUGIN_GUI_MENU_ID, "Show plugin GUI");
-            menu.addItem(SHOW_ALL_PROGRAMS_MENU_ID, "Show all programs");
-        }
-
-        menu.showMenuAsync({}, ModalCallbackFunction::create
-                ([this](int r) {
-                    auto slot = getSlot();
-
-                    if (auto *description = project.getChosenType(r)) {
-                        project.createAndAddProcessor(*description, state.getParent(), &project.getUndoManager(), slot);
-                        return;
-                    }
-                    switch (r) {
-                        case DELETE_MENU_ID:
-                            getCommandManager().invokeDirectly(CommandIDs::deleteSelected, false);
-                            break;
-                        case TOGGLE_BYPASS_MENU_ID:
-                            state.setProperty(IDs::bypassed, !state.getProperty(IDs::bypassed), &graph.undoManager);
-                            break;
-                        case ENABLE_DEFAULTS_MENU_ID:
-                            graph.setDefaultConnectionsAllowed(getNodeId(), true);
-                            break;
-                        case DISCONNECT_ALL_MENU_ID:
-                            graph.disconnectNode(getNodeId());
-                            break;
-                        case DISABLE_DEFAULTS_MENU_ID:
-                            graph.setDefaultConnectionsAllowed(getNodeId(), false);
-                            break;
-                        case DISCONNECT_CUSTOM_MENU_ID:
-                            graph.disconnectCustom(getNodeId());
-                            break;
-                        case SHOW_PLUGIN_GUI_MENU_ID:
-                            showWindow(PluginWindow::Type::normal);
-                            break;
-                        case SHOW_ALL_PROGRAMS_MENU_ID:
-                            showWindow(PluginWindow::Type::programs);
-                            break;
-                        case CONFIGURE_AUDIO_MIDI_MENU_ID:
-                            getCommandManager().invokeDirectly(CommandIDs::showAudioMidiSettings, false);
-                            break;
-                        default:
-                            break;
-                    }
-                }));
     }
 
     void showWindow(PluginWindow::Type type) {
@@ -272,11 +199,6 @@ private:
     int pinSize = 16;
     float largeFontHeight = 18.0f;
     float smallFontHeight = 15.0f;
-
-    static constexpr int
-            DELETE_MENU_ID = 1, TOGGLE_BYPASS_MENU_ID = 2, ENABLE_DEFAULTS_MENU_ID = 3, DISCONNECT_ALL_MENU_ID = 4,
-            DISABLE_DEFAULTS_MENU_ID = 5, DISCONNECT_CUSTOM_MENU_ID = 6,
-            SHOW_PLUGIN_GUI_MENU_ID = 10, SHOW_ALL_PROGRAMS_MENU_ID = 11, CONFIGURE_AUDIO_MIDI_MENU_ID = 12;
 
     Rectangle<int> getBoxBounds() {
         auto r = getLocalBounds().reduced(1);
