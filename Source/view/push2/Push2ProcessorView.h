@@ -183,7 +183,7 @@ private:
                     if (processor.hasType(IDs::PROCESSOR)) {
                         label->setVisible(true);
                         label->setText(processor[IDs::name], dontSendNotification);
-                        label->setSelected(processor[IDs::selected]);
+                        label->setSelected(project.isProcessorSelected(processor));
                     }
                 } else if (buttonIndex == 0 && selectedTrack.getNumChildren() == 0) {
                     label->setVisible(true);

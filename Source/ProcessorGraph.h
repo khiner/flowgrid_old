@@ -502,13 +502,13 @@ private:
                 if (auto node = getNodeForState(tree)) {
                     node->setBypassed(tree[IDs::bypassed]);
                 }
-            } else if (i == IDs::selected && tree[IDs::selected] && tree != selectedProcessor) {
-                selectedProcessor = tree;
-                if (!isDeleting)
-                    resetDefaultExternalInputs(tree, nullptr);
             } else if (i == IDs::allowDefaultConnections) {
                 updateDefaultConnectionsForProcessor(tree, true);
             }
+        } else if (i == IDs::selectedSlotsMask && tree != selectedProcessor && project.isProcessorSelected(tree)) {
+            selectedProcessor = tree;
+            if (!isDeleting)
+                resetDefaultExternalInputs(tree, nullptr);
         }
     }
 
@@ -523,11 +523,6 @@ private:
                     mutableProcessor.sendPropertyChangeMessage(IDs::processorInitialized);
                 else
                     mutableProcessor.setProperty(IDs::processorInitialized, true, nullptr);
-
-                if (child[IDs::selected]) {
-                    selectedProcessor = child;
-                    child.sendPropertyChangeMessage(IDs::selected);
-                }
             }
         } else if (child.hasType(IDs::CONNECTION)) {
             if (currentlyDraggingNodeId == NA_NODE_ID) {

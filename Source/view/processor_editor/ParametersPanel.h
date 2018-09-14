@@ -31,10 +31,8 @@ public:
         updateParameterComponents();
     }
 
-    void selectProcessor() {
-        if (processorWrapper != nullptr && processorWrapper->state.isValid()) {
-            processorWrapper->state.setProperty(IDs::selected, true, nullptr);
-        }
+    const ValueTree getProcessorState() const {
+        return processorWrapper != nullptr ? processorWrapper->state : ValueTree();
     }
 
     void addParameter(StatefulAudioProcessorWrapper::Parameter* parameter) {

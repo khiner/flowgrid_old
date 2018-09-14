@@ -97,7 +97,7 @@ private:
             auto *cell = masterTrackGridCells.getUnchecked(processorSlot);
             const auto &processor = masterTrack.getChildWithProperty(IDs::processorSlot, processorSlot);
             bool inView = project.isProcessorSlotInView(masterTrack, processorSlot);
-            cell->setTrackAndProcessor(masterTrack, processor, inView, trackSelected, processor[IDs::selected]);
+            cell->setTrackAndProcessor(masterTrack, processor, inView, trackSelected, project.isSlotSelected(masterTrack, processorSlot));
         }
 
         for (auto trackIndex = 0; trackIndex < gridCells.size(); trackIndex++) {
@@ -108,7 +108,7 @@ private:
                 auto *cell = trackGridCells->getUnchecked(processorSlot);
                 const auto& processor = track.getChildWithProperty(IDs::processorSlot, processorSlot);
                 bool inView = project.isProcessorSlotInView(track, processorSlot);
-                cell->setTrackAndProcessor(track, processor, inView, trackSelected, processor[IDs::selected]);
+                cell->setTrackAndProcessor(track, processor, inView, trackSelected, project.isSlotSelected(track, processorSlot));
             }
         }
     }
@@ -179,7 +179,7 @@ private:
             } else if (i == IDs::gridViewSlotOffset) {
                 updateGridCellColours();
             }
-        } else if ((tree.hasType(IDs::TRACK) || tree.hasType(IDs::PROCESSOR)) && i == IDs::selected && tree[IDs::selected]) {
+        } else if (i == IDs::selectedSlotsMask) {
             updateGridCellColours();
         }
     }

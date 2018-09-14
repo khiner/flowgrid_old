@@ -19,7 +19,6 @@ public:
 
         parametersPanel->setBackgroundColour(findColour(ResizableWindow::backgroundColourId).brighter(0.1));
         parametersPanel->setOutlineColour(findColour(TextEditor::backgroundColourId));
-        parametersPanel->addMouseListener(this, true);
 
         titleLabel.setColour(findColour(TextEditor::textColourId));
         titleLabel.setJustification(Justification::verticallyCentred);
@@ -40,10 +39,8 @@ public:
         parametersPanel->setBackgroundColour(findColour(ResizableWindow::backgroundColourId).brighter(selected ? 0.3 : 0.1));
     }
 
-    void mouseDown(const MouseEvent& event) override {
-        if (parametersPanel) {
-            parametersPanel->selectProcessor();
-        }
+    const ValueTree getProcessorState() const {
+        return parametersPanel->getProcessorState();
     }
 
     void paint(Graphics& g) override {

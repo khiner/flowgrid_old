@@ -17,10 +17,6 @@ public:
             : Utilities::ValueTreeObjectList<GraphEditorProcessor>(state),
               viewState(project.getViewState()), project(project), connectorDragListener(connectorDragListener), graph(graph) {
         rebuildObjects();
-        for (auto* object : objects) {
-            if (object->isSelected())
-                mostRecentlySelectedProcessor = object;
-        }
         viewState.addListener(this);
         valueTreePropertyChanged(viewState, isMasterTrack() ? IDs::numMasterProcessorSlots : IDs::numProcessorSlots);
     }
@@ -36,7 +32,7 @@ public:
     int getSlotOffset() const { return project.getSlotOffsetForTrack(parent); }
 
     void mouseDown(const MouseEvent &e) override {
-        setSelected(true);
+        project.selectProcessorSlot(parent, findSlotAt(e));
         if (e.mods.isPopupMenu() || e.getNumberOfClicks() == 2) {
             showPopupMenu(e.position.toInt());
         }
@@ -72,7 +68,7 @@ public:
                 fillColour = fillColour.brighter(0.3);
                 if (project.isTrackSelected(parent))
                     fillColour = fillColour.brighter(0.2);
-                if (project.isProcessorSlotSelected(parent, slot))
+                if (project.isSlotSelected(parent, slot))
                         fillColour = project.getTrackColour(parent);
             }
             processorSlotRectangles.getUnchecked(slot)->setFill(fillColour);
@@ -99,15 +95,9 @@ public:
         }
     }
 
-    void newObjectAdded(GraphEditorProcessor *) override { resized(); }
+    void newObjectAdded(GraphEditorProcessor *processor) override { processor->addMouseListener(this, true); resized(); }
 
-    void objectRemoved(GraphEditorProcessor *object) override {
-        resized();
-        if (object == mostRecentlySelectedProcessor) {
-            mostRecentlySelectedProcessor = nullptr;
-            setSelected(currentlyMovingProcessor == nullptr);
-        }
-    }
+    void objectRemoved(GraphEditorProcessor *object) override { resized(); }
 
     void objectOrderChanged() override { resized(); }
 
@@ -143,32 +133,6 @@ public:
         this->currentlyMovingProcessor = currentlyMovingProcessor;
     }
 
-    void setSelected(bool selected, ValueTree::Listener *listenerToExclude=nullptr) {
-        if (selected) {
-            if (mostRecentlySelectedProcessor != nullptr) {
-                mostRecentlySelectedProcessor->setSelected(true, listenerToExclude);
-            } else if (auto *firstProcessor = objects.getFirst()) {
-                firstProcessor->setSelected(true, listenerToExclude);
-            } else {
-                parent.setPropertyExcludingListener(listenerToExclude, IDs::selected, true, nullptr);
-            }
-        } else {
-            for (auto *processor : objects) {
-                processor->setSelected(false, listenerToExclude);
-            }
-        }
-    }
-
-    void updateSelectedSlotMask() {
-        BigInteger selectedSlotMask;
-        // todo for multiselection this will need to change.
-//        selectedSlotMask.parseString(parent[IDs::selectedSlotsMask].toString(), 2);
-        for (const auto& processor : parent) {
-            selectedSlotMask.setBit(processor[IDs::processorSlot], processor[IDs::selected]);
-        }
-        parent.setProperty(IDs::selectedSlotsMask, selectedSlotMask.toString(2), nullptr);
-    }
-
 private:
     static constexpr int ADD_MIXER_CHANNEL_MENU_ID = 1;
 
@@ -178,24 +142,13 @@ private:
     ConnectorDragListener &connectorDragListener;
     ProcessorGraph &graph;
     GraphEditorProcessor *currentlyMovingProcessor {};
-    GraphEditorProcessor* mostRecentlySelectedProcessor {};
+
     OwnedArray<DrawableRectangle> processorSlotRectangles;
 
     void valueTreePropertyChanged(ValueTree &v, const Identifier &i) override {
         if (isSuitableType(v)) {
             if (i == IDs::processorSlot) {
                 resized();
-                updateSelectedSlotMask();
-            } else if (i == IDs::selected) {
-                if (v[IDs::selected]) {
-                    for (auto *processor : objects) {
-                        if (processor->getState() == v)
-                            mostRecentlySelectedProcessor = processor;
-                        else
-                            processor->setSelected(false);
-                    }
-                }
-                updateSelectedSlotMask();
             }
         } else if ((v.hasType(IDs::TRACK) && i == IDs::selected) || i == IDs::gridViewTrackOffset) {
             updateProcessorSlotColours();
@@ -215,6 +168,9 @@ private:
             resized();
             updateProcessorSlotColours();
         } else if (i == IDs::selectedSlotsMask || i == IDs::focusedPane) {
+            if (i == IDs::selectedSlotsMask) {
+                // todo deselect other slots
+            }
             updateProcessorSlotColours();
         }
 
@@ -225,14 +181,6 @@ private:
         ValueTreeObjectList::valueTreeChildAdded(parent, tree);
         if (this->parent == parent && isSuitableType(tree)) {
             resized();
-            updateSelectedSlotMask();
-        }
-    }
-
-    void valueTreeChildRemoved(ValueTree &exParent, ValueTree &tree, int index) override {
-        ValueTreeObjectList::valueTreeChildRemoved(exParent, tree, index);
-        if (parent == exParent && isSuitableType(tree)) {
-            updateSelectedSlotMask();
         }
     }
 

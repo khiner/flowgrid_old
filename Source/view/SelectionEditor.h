@@ -31,6 +31,9 @@ public:
 
     void mouseDown(const MouseEvent& event) override {
         project.focusOnEditorPane();
+        if (auto* processorEditor = dynamic_cast<ProcessorEditor*>(event.originalComponent)) {
+            project.selectProcessor(processorEditor->getProcessorState());
+        }
     }
 
     void paint(Graphics& g) override {
@@ -111,7 +114,7 @@ private:
             if (auto *processorWrapper = audioGraphBuilder.getProcessorWrapperForState(processor)) {
                 processorEditor->setProcessor(processorWrapper);
                 processorEditor->setVisible(true);
-                processorEditor->setSelected(processor[IDs::selected]);
+                processorEditor->setSelected(project.isProcessorSelected(processor));
             }
         } else {
             processorEditor->setVisible(false);
@@ -133,8 +136,8 @@ private:
     }
 
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {
-        if (i == IDs::selected && tree[IDs::selected]) {
-            addProcessorButton.setVisible(tree.hasType(IDs::PROCESSOR) || tree.hasType(IDs::TRACK));
+        if ((i == IDs::selected) || i == IDs::selectedSlotsMask) {
+            addProcessorButton.setVisible(project.getSelectedTrack().isValid());
             refreshProcessors();
         } else if (i == IDs::numProcessorSlots || i == IDs::numMasterProcessorSlots) {
             int numProcessorSlots = jmax(int(tree[IDs::numProcessorSlots]), int(tree[IDs::numMasterProcessorSlots]));

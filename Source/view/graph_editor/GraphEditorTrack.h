@@ -119,11 +119,9 @@ private:
     GraphEditorProcessors processors;
 
     void valueTreePropertyChanged(ValueTree &v, const Identifier &i) override {
-        if (v.hasType(IDs::PROCESSOR) && i == IDs::selected) {
-            if (v[IDs::selected]) {
-                state.setPropertyExcludingListener(this, IDs::selected, false, nullptr);
-                nameLabel.setColour(Label::backgroundColourId, getColour());
-            }
+        if (i == IDs::selectedSlotsMask && project.trackHasAnySlotSelected(state)) {
+            state.setPropertyExcludingListener(this, IDs::selected, false, nullptr);
+            nameLabel.setColour(Label::backgroundColourId, getColour());
         } else if (i == IDs::gridViewSlotOffset || ((i == IDs::gridViewTrackOffset || i == IDs::masterViewSlotOffset) && isMasterTrack())) {
             resized();
         }
@@ -135,7 +133,6 @@ private:
         } else if (i == IDs::colour) {
             nameLabel.setColour(Label::backgroundColourId, getColour());
         } else if (i == IDs::selected) {
-            processors.setSelected(v[IDs::selected], this);
             nameLabel.setColour(Label::backgroundColourId, isSelected() ? getColour().brighter(0.25) : getColour());
         }
     }

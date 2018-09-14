@@ -556,10 +556,8 @@ private:
     }
 
     void valueTreePropertyChanged(ValueTree& child, const Identifier& i) override {
-        if (child.hasType(IDs::TRACK) || child.hasType(IDs::PROCESSOR)) {
-            if (i == IDs::selected && child[IDs::selected]) {
-                applicationCommandListChanged(); // TODO same - wasteful
-            }
+        if ((child.hasType(IDs::TRACK) && i == IDs::selected && child[i]) || project.isProcessorSelected(child)) {
+            applicationCommandListChanged(); // TODO same - wasteful
         }
     }
 

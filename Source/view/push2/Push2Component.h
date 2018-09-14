@@ -251,9 +251,9 @@ private:
     }
 
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {
-        if (i == IDs::selected && tree[IDs::selected]) {
-            if (tree.hasType(IDs::PROCESSOR)) {
-                if (auto *processorWrapper = graph.getProcessorWrapperForState(tree)) {
+        if ((i == IDs::selected && tree[IDs::selected]) || i == IDs::selectedSlotsMask) {
+            if (i == IDs::selectedSlotsMask) {
+                if (auto *processorWrapper = graph.getProcessorWrapperForState(project.getSelectedProcessor())) {
                     selectProcessorIfNeeded(processorWrapper);
                 }
             }

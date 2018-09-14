@@ -60,13 +60,13 @@ public:
 
     inline bool isIoProcessor() const { return InternalPluginFormat::isIoProcessorName(state[IDs::name]); }
 
-    inline bool isSelected() { return state[IDs::selected]; }
+    inline bool isSelected() { return project.isProcessorSelected(state); }
 
     inline void setSelected(bool selected, ValueTree::Listener *listenerToExclude=nullptr) {
         if (isSelected() && selected && listenerToExclude == nullptr)
-            state.sendPropertyChangeMessage(IDs::selected);
+            state.getParent().sendPropertyChangeMessage(IDs::selectedSlotsMask);
         else
-            state.setPropertyExcludingListener(listenerToExclude, IDs::selected, selected, nullptr);
+            project.selectProcessorSlot(state.getParent(), getSlot(), listenerToExclude);
     }
 
     void paint(Graphics &g) override {
@@ -83,8 +83,6 @@ public:
     }
 
     void mouseDown(const MouseEvent &e) override {
-        if (state.getParent().hasType(IDs::TRACK))
-            setSelected(true);
         if (e.mods.isPopupMenu())
             showPopupMenu();
     }
