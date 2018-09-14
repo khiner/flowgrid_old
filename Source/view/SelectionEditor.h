@@ -18,6 +18,9 @@ public:
         addAndMakeVisible(addProcessorButton);
         addAndMakeVisible(processorEditorsViewport);
         addAndMakeVisible(contextPaneViewport);
+        unfocusOverlay.setFill(findColour(CustomColourIds::unfocusedOverlayColourId));
+        addChildComponent(unfocusOverlay);
+
         addProcessorButton.addListener(this);
         processorEditorsViewport.setViewedComponent(&processorEditorsComponent, false);
         processorEditorsViewport.setScrollBarsShown(true, false);
@@ -37,8 +40,6 @@ public:
     }
 
     void paint(Graphics& g) override {
-        g.setColour(backgroundColour);
-        g.fillRect(processorEditorsViewport.getBounds());
         g.setColour(findColour(TextEditor::backgroundColourId));
         g.drawLine(1, 0, 1, getHeight(), 2);
         g.drawLine(0, contextPaneViewport.getY(), getWidth(), contextPaneViewport.getY(), 2);
@@ -51,6 +52,8 @@ public:
         addProcessorButton.setBounds(buttons.removeFromLeft(120));
         contextPaneViewport.setBounds(r.removeFromBottom(250).reduced(1));
         processorEditorsViewport.setBounds(r);
+        unfocusOverlay.setRectangle(processorEditorsViewport.getBounds().toFloat());
+
         r.removeFromRight(8);
         processorEditorsComponent.setBounds(0, 0, r.getWidth(), PROCESSOR_EDITOR_HEIGHT * project.getSelectedTrack().getNumChildren());
         r = processorEditorsComponent.getBounds();
@@ -86,9 +89,8 @@ private:
     ContextPane contextPane;
     OwnedArray<ProcessorEditor> processorEditors;
     Component processorEditorsComponent;
+    DrawableRectangle unfocusOverlay;
     std::unique_ptr<PopupMenu> addProcessorMenu;
-
-    Colour backgroundColour = findColour(ResizableWindow::backgroundColourId);
 
     void refreshProcessors(const ValueTree& singleProcessorToRefresh={}) {
         const ValueTree &selectedTrack = project.getSelectedTrack();
@@ -150,9 +152,8 @@ private:
         } else if (i == IDs::processorSlot) {
             refreshProcessors();
         } else if (i == IDs::focusedPane) {
-            backgroundColour = findColour(project.isGridPaneFocused() ? ResizableWindow::backgroundColourId
-                                                                      : CustomColourIds::focusedBackgroundColourId);
-            repaint();
+            unfocusOverlay.setVisible(project.isGridPaneFocused());
+            unfocusOverlay.toFront(false);
         }
     }
 

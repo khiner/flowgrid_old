@@ -62,7 +62,7 @@ public:
     }
 
     void updateProcessorSlotColours() {
-        const auto& baseColour = findColour(project.isGridPaneFocused() ? CustomColourIds::focusedBackgroundColourId : ResizableWindow::backgroundColourId);
+        const auto& baseColour = findColour(ResizableWindow::backgroundColourId);
         for (int slot = 0; slot < processorSlotRectangles.size(); slot++) {
             auto fillColour = baseColour.brighter(0.13);
             if (project.isProcessorSlotInView(parent, slot)) {
@@ -172,7 +172,7 @@ private:
             processorSlotRectangles.removeLast(processorSlotRectangles.size() - numSlots, true);
             resized();
             updateProcessorSlotColours();
-        } else if (i == IDs::selectedSlotsMask || i == IDs::focusedPane) {
+        } else if (i == IDs::selectedSlotsMask) {
             updateProcessorSlotColours();
         }
 

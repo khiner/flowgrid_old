@@ -37,8 +37,7 @@ public:
         auto &lookAndFeel = LookAndFeel::getDefaultLookAndFeel();
         lookAndFeel.setDefaultSansSerifTypeface(Typeface::createSystemTypefaceFor(
                 BinaryData::AbletonSansMediumRegular_otf, BinaryData::AbletonSansMediumRegular_otfSize));
-        lookAndFeel.setColour(CustomColourIds::focusedBackgroundColourId,
-                lookAndFeel.findColour(ResizableWindow::backgroundColourId).brighter(0.06));
+        lookAndFeel.setColour(CustomColourIds::unfocusedOverlayColourId, Colours::black.withAlpha(0.15f));
         lookAndFeel.setColour(Slider::rotarySliderOutlineColourId,
                 lookAndFeel.findColour(Slider::rotarySliderOutlineColourId).brighter(0.06));
 

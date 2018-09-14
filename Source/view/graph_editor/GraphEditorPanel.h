@@ -16,7 +16,8 @@ public:
 
         addAndMakeVisible(*(tracks = std::make_unique<GraphEditorTracks>(project, project.getTracks(), *this, graph)));
         addAndMakeVisible(*(connectors = std::make_unique<GraphEditorConnectors>(project.getConnections(), *this, *this, graph)));
-
+        unfocusOverlay.setFill(findColour(CustomColourIds::unfocusedOverlayColourId));
+        addChildComponent(unfocusOverlay);
         addMouseListener(this, true);
     }
 
@@ -44,6 +45,7 @@ public:
 
     void resized() override {
         auto r = getLocalBounds();
+        unfocusOverlay.setRectangle(r.toFloat());
         connectors->setBounds(r);
 
         auto processorHeight = getProcessorHeight();
@@ -82,10 +84,6 @@ public:
             }
         }
         connectors->updateConnectors();
-    }
-
-    void paint(Graphics& g) override {
-        g.fillAll(backgroundColour);
     }
 
     void update() override {
@@ -205,6 +203,8 @@ private:
 
     GraphEditorProcessor::ElementComparator processorComparator;
 
+    DrawableRectangle unfocusOverlay;
+
     // Ideally we wouldn't call up to the parent to manage its view offsets, and the parent would instead manage
     // all of this stuff on its own. However, I don't think that cleanliness is quite worth adding yet another
     // project state listener.
@@ -213,8 +213,6 @@ private:
     int getTrackWidth() { return (parentViewport.getWidth() - Project::TRACK_LABEL_HEIGHT * 2) / Project::NUM_VISIBLE_TRACKS; }
 
     int getProcessorHeight() { return (parentViewport.getHeight() - Project::TRACK_LABEL_HEIGHT) / (Project::NUM_VISIBLE_PROCESSOR_SLOTS + 1); }
-
-    Colour backgroundColour = findColour(ResizableWindow::backgroundColourId);
 
     GraphEditorPin *findPinAt(const MouseEvent &e) const {
         if (auto *pin = audioInputProcessor->findPinAt(e))
@@ -269,9 +267,8 @@ private:
             updateViewPosition();
             connectors->updateConnectors();
         } else if (i == IDs::focusedPane) {
-            backgroundColour = findColour(project.isGridPaneFocused() ? CustomColourIds::focusedBackgroundColourId
-                                                                      : ResizableWindow::backgroundColourId);
-            repaint();
+            unfocusOverlay.setVisible(!project.isGridPaneFocused());
+            unfocusOverlay.toFront(false);
         }
     }
 
