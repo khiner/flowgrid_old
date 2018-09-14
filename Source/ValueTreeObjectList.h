@@ -12,19 +12,15 @@ namespace Utilities {
         }
 
         virtual ~ValueTreeObjectList() {
-            jassert (objects.size() == 0); // must call freeObjects() in the subclass destructor!
+            jassert(objects.size() == 0); // must call freeObjects() in the subclass destructor!
         }
 
         // call in the sub-class when being created
         void rebuildObjects() {
-            jassert (objects.size() == 0); // must only call this method once at construction
+            jassert(objects.size() == 0); // must only call this method once at construction
 
-            for (const auto &v : parent) {
-                if (isSuitableType(v)) {
-                    if (ObjectType *newObject = createNewObject(v)) {
-                        objects.add(newObject);
-                    }
-                }
+            for (auto child : parent) {
+                valueTreeChildAdded(parent, child);
             }
         }
 
@@ -47,17 +43,14 @@ namespace Utilities {
 
         virtual void objectOrderChanged() = 0;
 
-
         void valueTreeChildAdded(ValueTree &, ValueTree &tree) override {
             if (isChildTree(tree)) {
                 const int index = parent.indexOf(tree);
-                (void) index;
-                jassert (index >= 0);
+                jassert(index >= 0);
 
                 if (ObjectType *newObject = createNewObject(tree)) {
                     {
                         const ScopedLockType sl(arrayLock);
-
                         if (index == parent.getNumChildren() - 1)
                             objects.add(newObject);
                         else
@@ -92,7 +85,7 @@ namespace Utilities {
             if (tree == parent) {
                 {
                     const ScopedLockType sl(arrayLock);
-                    sortArray();
+                    objects.sort(*this);
                 }
 
                 objectOrderChanged();
@@ -119,20 +112,16 @@ namespace Utilities {
                 deleteObject(objects.removeAndReturn(objects.size() - 1));
         }
 
-        bool isChildTree(ValueTree &v) const {
-            return isSuitableType(v) && v.getParent() == parent;
+        bool isChildTree(ValueTree &tree) const {
+            return isSuitableType(tree) && tree.getParent() == parent;
         }
 
-        int indexOf(const ValueTree &v) const noexcept {
+        int indexOf(const ValueTree &tree) const noexcept {
             for (int i = 0; i < objects.size(); ++i)
-                if (objects.getUnchecked(i)->getState() == v)
+                if (objects.getUnchecked(i)->getState() == tree)
                     return i;
 
             return -1;
-        }
-
-        void sortArray() {
-            objects.sort(*this);
         }
 
     public:

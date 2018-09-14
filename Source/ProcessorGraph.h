@@ -298,6 +298,12 @@ private:
             if (auto* enabledMidiOutput = deviceManager.getEnabledMidiOutput(deviceName))
                 midiOutputProcessor->setMidiOutput(enabledMidiOutput);
         }
+        ValueTree mutableProcessor = processorState;
+        if (mutableProcessor.hasProperty(IDs::processorInitialized))
+            mutableProcessor.sendPropertyChangeMessage(IDs::processorInitialized);
+        else
+            mutableProcessor.setProperty(IDs::processorInitialized, true, nullptr);
+
     }
 
     void removeProcessor(const ValueTree &processor) {
@@ -518,11 +524,6 @@ private:
                 if (getProcessorWrapperForState(child) == nullptr) {
                     addProcessor(child);
                 }
-                ValueTree mutableProcessor = child;
-                if (child.hasProperty(IDs::processorInitialized))
-                    mutableProcessor.sendPropertyChangeMessage(IDs::processorInitialized);
-                else
-                    mutableProcessor.setProperty(IDs::processorInitialized, true, nullptr);
             }
         } else if (child.hasType(IDs::CONNECTION)) {
             if (currentlyDraggingNodeId == NA_NODE_ID) {

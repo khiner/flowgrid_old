@@ -262,15 +262,12 @@ private:
             connectors->updateConnectors();
         } else if (i == IDs::numMasterProcessorSlots || i == IDs::numProcessorSlots) {
             resize();
-        } else if (i == IDs::gridViewTrackOffset) {
+        } else if (i == IDs::gridViewTrackOffset || i == IDs::masterViewSlotOffset) {
             updateViewPosition();
             resized();
         } else if (i == IDs::gridViewSlotOffset) {
             updateViewPosition();
             connectors->updateConnectors();
-        } else if (i == IDs::masterViewSlotOffset) {
-            updateViewPosition();
-            resized();
         } else if (i == IDs::focusedPane) {
             backgroundColour = findColour(project.isGridPaneFocused() ? CustomColourIds::focusedBackgroundColourId
                                                                       : ResizableWindow::backgroundColourId);
@@ -299,6 +296,7 @@ private:
                 addAndMakeVisible(*(audioOutputProcessor = std::make_unique<GraphEditorProcessor>(project, child, *this, graph, true)));
                 resized();
             }
+            connectors->updateConnectors();
         } else if (child.hasType(IDs::CONNECTION)) {
             connectors->updateConnectors();
         } else if (child.hasType(IDs::CHANNEL)) {

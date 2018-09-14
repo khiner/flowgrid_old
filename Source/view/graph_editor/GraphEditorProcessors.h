@@ -98,7 +98,7 @@ public:
 
     void newObjectAdded(GraphEditorProcessor *processor) override { processor->addMouseListener(this, true); resized(); }
 
-    void objectRemoved(GraphEditorProcessor *object) override { resized(); }
+    void objectRemoved(GraphEditorProcessor *processor) override { processor->removeMouseListener(this); resized(); }
 
     void objectOrderChanged() override { resized(); }
 
@@ -121,7 +121,6 @@ public:
     }
 
     int findSlotAt(const MouseEvent &e) {
-
         const MouseEvent &relative = e.getEventRelativeTo(this);
         return findSlotAt(relative.getPosition());
     }
