@@ -7,9 +7,9 @@
 
 class GraphEditorTrack : public Component, public Utilities::ValueTreePropertyChangeListener, public GraphEditorProcessorContainer, private ChangeListener {
 public:
-    explicit GraphEditorTrack(Project& project, const ValueTree& v, ConnectorDragListener &connectorDragListener, ProcessorGraph& graph)
-            : project(project), state(v), viewState(project.getViewState()), connectorDragListener(connectorDragListener), graph(graph),
-              processors(project, v, connectorDragListener, graph) {
+    explicit GraphEditorTrack(Project& project, const ValueTree& state, ConnectorDragListener &connectorDragListener, ProcessorGraph& graph)
+            : project(project), state(state), viewState(project.getViewState()), connectorDragListener(connectorDragListener), graph(graph),
+              processors(project, state, connectorDragListener, graph) {
         nameLabel.setJustificationType(Justification::centred);
         nameLabel.setColour(Label::backgroundColourId, getColour());
         addAndMakeVisible(nameLabel);
@@ -17,7 +17,7 @@ public:
         if (!isMasterTrack()) {
             nameLabel.setText(getTrackName(), dontSendNotification);
             nameLabel.setEditable(false, true);
-            nameLabel.onTextChange = [this] { state.setProperty(IDs::name, nameLabel.getText(false), &this->graph.undoManager); };
+            nameLabel.onTextChange = [this] { this->state.setProperty(IDs::name, nameLabel.getText(false), &this->graph.undoManager); };
         } else {
             masterTrackName.setText(getTrackName());
             masterTrackName.setColour(findColour(TextEditor::textColourId));
@@ -26,7 +26,7 @@ public:
         }
         nameLabel.addMouseListener(this, false);
 
-        state.addListener(this);
+        this->state.addListener(this);
         viewState.addListener(this);
     }
 
@@ -118,7 +118,7 @@ private:
     ProcessorGraph &graph;
     GraphEditorProcessors processors;
 
-    void valueTreePropertyChanged(ValueTree &v, const Identifier &i) override {
+    void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {
         if (i == IDs::selectedSlotsMask && project.trackHasAnySlotSelected(state)) {
             state.setPropertyExcludingListener(this, IDs::selected, false, nullptr);
             nameLabel.setColour(Label::backgroundColourId, getColour());
@@ -126,10 +126,10 @@ private:
             resized();
         }
 
-        if (v != state)
+        if (tree != state)
             return;
         if (i == IDs::name) {
-            nameLabel.setText(v[IDs::name].toString(), dontSendNotification);
+            nameLabel.setText(tree[IDs::name].toString(), dontSendNotification);
         } else if (i == IDs::colour) {
             nameLabel.setColour(Label::backgroundColourId, getColour());
         } else if (i == IDs::selected) {

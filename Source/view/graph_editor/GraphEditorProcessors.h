@@ -80,10 +80,10 @@ public:
         return v.hasType(IDs::PROCESSOR);
     }
 
-    GraphEditorProcessor *createNewObject(const ValueTree &v) override {
+    GraphEditorProcessor *createNewObject(const ValueTree &tree) override {
         GraphEditorProcessor *processor = currentlyMovingProcessor != nullptr
                                           ? currentlyMovingProcessor
-                                          : new GraphEditorProcessor(project, v, connectorDragListener, graph);
+                                          : new GraphEditorProcessor(project, tree, connectorDragListener, graph);
         addAndMakeVisible(processor);
         return processor;
     }
@@ -150,12 +150,13 @@ private:
 
     OwnedArray<DrawableRectangle> processorSlotRectangles;
 
-    void valueTreePropertyChanged(ValueTree &v, const Identifier &i) override {
-        if (isSuitableType(v)) {
+    void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {
+        if (isSuitableType(tree)) {
             if (i == IDs::processorSlot) {
                 resized();
+                project.selectProcessorSlot(parent, tree[i]);
             }
-        } else if ((v.hasType(IDs::TRACK) && i == IDs::selected) || i == IDs::gridViewTrackOffset) {
+        } else if ((tree.hasType(IDs::TRACK) && i == IDs::selected) || i == IDs::gridViewTrackOffset) {
             updateProcessorSlotColours();
         } else if (i == IDs::gridViewSlotOffset || (i == IDs::masterViewSlotOffset && isMasterTrack())) {
             resized();
@@ -173,19 +174,17 @@ private:
             resized();
             updateProcessorSlotColours();
         } else if (i == IDs::selectedSlotsMask || i == IDs::focusedPane) {
-            if (i == IDs::selectedSlotsMask) {
-                // todo deselect other slots
-            }
             updateProcessorSlotColours();
         }
 
-        Utilities::ValueTreeObjectList<GraphEditorProcessor>::valueTreePropertyChanged(v, i);
+        Utilities::ValueTreeObjectList<GraphEditorProcessor>::valueTreePropertyChanged(tree, i);
     }
 
     void valueTreeChildAdded(ValueTree &parent, ValueTree &tree) override {
         ValueTreeObjectList::valueTreeChildAdded(parent, tree);
         if (this->parent == parent && isSuitableType(tree)) {
             resized();
+            project.selectProcessorSlot(parent, tree[IDs::processorSlot]);
         }
     }
 

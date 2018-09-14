@@ -1183,6 +1183,8 @@ private:
     void valueTreeRedirected(ValueTree &) override {}
 
     void updateViewTrackOffsetToInclude(int trackIndex) {
+        if (trackIndex < 0)
+            return; // invalid
         auto viewTrackOffset = getGridViewTrackOffset();
         if (trackIndex >= viewTrackOffset + NUM_VISIBLE_TRACKS)
             viewState.setProperty(IDs::gridViewTrackOffset, trackIndex - NUM_VISIBLE_TRACKS + 1, nullptr);
@@ -1194,6 +1196,8 @@ private:
     }
 
     void updateViewSlotOffsetToInclude(int processorSlot, bool isMasterTrack) {
+        if (processorSlot < 0)
+            return; // invalid
         if (isMasterTrack) {
             auto viewSlotOffset = getMasterViewSlotOffset();
             if (processorSlot >= viewSlotOffset + NUM_VISIBLE_TRACKS)

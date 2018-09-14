@@ -50,12 +50,12 @@ public:
         return nullptr;
     }
 
-    bool isSuitableType(const ValueTree &v) const override {
-        return v.hasType(IDs::TRACK);
+    bool isSuitableType(const ValueTree &tree) const override {
+        return tree.hasType(IDs::TRACK);
     }
 
-    GraphEditorTrack *createNewObject(const ValueTree &v) override {
-        auto *track = new GraphEditorTrack(project, v, connectorDragListener, graph);
+    GraphEditorTrack *createNewObject(const ValueTree &tree) override {
+        auto *track = new GraphEditorTrack(project, tree, connectorDragListener, graph);
         addAndMakeVisible(track);
         track->addMouseListener(this, true);
         return track;
