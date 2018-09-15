@@ -106,10 +106,10 @@ public:
             project.restoreConnectionsSnapshot();
             currentlyDraggingNodeId = NA_NODE_ID;
             moveProcessor(processor, currentlyDraggingTrackAndSlot.x, currentlyDraggingTrackAndSlot.y);
-            if (project.isInShiftMode()) {
-                project.setShiftMode(false);
+            if (project.isShiftHeld()) {
+                project.setShiftHeld(false);
                 updateAllDefaultConnections(true);
-                project.setShiftMode(true);
+                project.setShiftHeld(true);
             }
         }
         currentlyDraggingNodeId = NA_NODE_ID;

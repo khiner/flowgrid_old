@@ -404,7 +404,7 @@ public:
 
         void modifierKeysChanged(const ModifierKeys& modifiers) override {
             DocumentWindow::modifierKeysChanged(modifiers);
-            owner.project.setShiftMode(modifiers.isShiftDown());
+            owner.project.setShiftHeld(modifiers.isShiftDown());
         }
 
         void closeButtonPressed() override {
@@ -565,7 +565,6 @@ private:
 };
 
 static SoundMachineApplication& getApp() { return *dynamic_cast<SoundMachineApplication*>(JUCEApplication::getInstance()); }
-
 ApplicationProperties& getApplicationProperties() { return getApp().applicationPropertiesAndCommandManager.applicationProperties; }
 ApplicationCommandManager& getCommandManager()    { return getApp().applicationPropertiesAndCommandManager.commandManager; }
 

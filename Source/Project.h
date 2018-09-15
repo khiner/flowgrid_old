@@ -266,12 +266,13 @@ public:
         }
     }
 
-    bool isInShiftMode() const { return numShiftsHeld >= 1; }
+    bool isShiftHeld() const { return shiftHeld || push2ShiftHeld; }
     bool isInNoteMode() const { return viewState[IDs::controlMode] == noteControlMode; }
     bool isInSessionMode() const { return viewState[IDs::controlMode] == sessionControlMode; }
     bool isGridPaneFocused() const { return viewState[IDs::focusedPane] == gridPaneName; }
 
-    void setShiftMode(bool shiftMode) { shiftMode ? numShiftsHeld++ : numShiftsHeld--; }
+    void setShiftHeld(bool shiftHeld) { this->shiftHeld = shiftHeld; }
+    void setPush2ShiftHeld(bool push2ShiftHeld) { this->push2ShiftHeld = push2ShiftHeld; }
     void setNoteMode() { viewState.setProperty(IDs::controlMode, noteControlMode, nullptr); }
     void setSessionMode() { viewState.setProperty(IDs::controlMode, sessionControlMode, nullptr); }
     void focusOnGridPane() { viewState.setProperty(IDs::focusedPane, gridPaneName, nullptr); }
@@ -350,7 +351,7 @@ public:
 
     // checks for duplicate add should be done before! (not done here to avoid redundant checks)
     void addConnection(const AudioProcessorGraph::Connection &connection, UndoManager* undoManager, bool isDefault=true) {
-        if (isDefault && isInShiftMode())
+        if (isDefault && isShiftHeld())
             return; // no default connection stuff while shift is held
         ValueTree connectionState(IDs::CONNECTION);
         ValueTree source(IDs::SOURCE);
@@ -370,7 +371,7 @@ public:
     }
 
     bool removeConnection(const ValueTree& connection, UndoManager* undoManager, bool allowDefaults, bool allowCustom) {
-        if (!connection.isValid() || (!connection[IDs::isCustomConnection] && isInShiftMode()))
+        if (!connection.isValid() || (!connection[IDs::isCustomConnection] && isShiftHeld()))
             return false; // no default connection stuff while shift is held
 
         bool customIsAcceptable = (allowCustom && connection.hasProperty(IDs::isCustomConnection)) ||
@@ -880,9 +881,7 @@ private:
     AudioProcessorGraph* graph {};
     StatefulAudioProcessorContainer* statefulAudioProcessorContainer {};
 
-    // If either keyboard shift OR Push2 shift (or any other object calling `setShiftMode(...)`) has shift down,
-    // we're in shift mode. Keep an inc/dec counter so they don't squash each other.
-    int numShiftsHeld { 0 };
+    bool shiftHeld { false }, push2ShiftHeld { false };
     int trackWidth {0}, processorHeight {0};
 
     void clear() {

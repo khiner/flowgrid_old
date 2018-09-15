@@ -60,13 +60,13 @@ public:
     void shiftPressed() override {
         Push2ComponentBase::shiftPressed();
         changeListenerCallback(&project.getUndoManager());
-        project.setShiftMode(true);
+        project.setPush2ShiftHeld(true);
     }
 
     void shiftReleased() override {
         Push2ComponentBase::shiftReleased();
         changeListenerCallback(&project.getUndoManager());
-        project.setShiftMode(false);
+        project.setPush2ShiftHeld(false);
     }
 
     void masterEncoderRotated(float changeAmount) override {
