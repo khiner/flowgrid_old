@@ -1081,16 +1081,17 @@ private:
         const auto& selectedTrack = getSelectedTrack();
         if (!selectedTrack.isValid())
             return {};
-        const auto& selectedProcessor = findSelectedProcessorForTrack(selectedTrack);
 
         auto siblingTrackToSelect = selectedTrack.getSibling(delta);
         if (siblingTrackToSelect.isValid()) {
             if (selectedTrack[IDs::selected] || selectedTrack.getNumChildren() == 0) {
                 return {siblingTrackToSelect};
-            } else if (selectedProcessor.isValid()) {
-                int selectedProcessorSlot = selectedProcessor[IDs::processorSlot];
-                const auto& processorToSelect = findProcessorNearestToSlot(siblingTrackToSelect, selectedProcessorSlot);
-                return processorToSelect.isValid() ? TrackAndSlot(siblingTrackToSelect, processorToSelect) : TrackAndSlot(siblingTrackToSelect);
+            } else {
+                auto selectedSlot = findSelectedSlotForTrack(selectedTrack);
+                if (selectedSlot != -1) {
+                    const auto& processorToSelect = findProcessorNearestToSlot(siblingTrackToSelect, selectedSlot);
+                    return processorToSelect.isValid() ? TrackAndSlot(siblingTrackToSelect, processorToSelect) : TrackAndSlot(siblingTrackToSelect);
+                }
             }
         }
 
@@ -1098,15 +1099,29 @@ private:
     }
 
     TrackAndSlot findSelectionPaneItemToSelectWithUpDownDelta(int delta) const {
-        const auto& selectedProcessor = getSelectedProcessor();
-        if (!selectedProcessor.isValid())
+        const auto& selectedTrack = getSelectedTrack();
+        if (!selectedTrack.isValid())
             return {};
-        const auto& selectedTrack = selectedProcessor.getParent();
-        const auto& siblingProcessorToSelect = selectedProcessor.getSibling(delta);
+
+        const auto& selectedProcessor = findSelectedProcessorForTrack(selectedTrack);
         if (delta > 0 && selectedTrack[IDs::selected]) {
             // re-selecting the processor will deselect the parent.
             return {selectedTrack, selectedProcessor};
-        } else if (delta < 0 && !siblingProcessorToSelect.isValid() && !selectedTrack[IDs::selected]) {
+        }
+
+        int selectedProcessorSlot = findSelectedSlotForTrack(selectedTrack);
+        auto siblingProcessorToSelect = selectedProcessor.getSibling(delta);
+        if (!siblingProcessorToSelect.isValid()) {
+            for (int slot = selectedProcessorSlot; (delta < 0 ? slot >= 0 : slot < getNumAvailableSlotsForTrack(selectedTrack)); slot += delta) {
+                const auto &processor = selectedTrack.getChildWithProperty(IDs::processorSlot, slot);
+                if (processor.isValid()) {
+                    siblingProcessorToSelect = processor;
+                    break;
+                }
+            }
+        }
+
+        if (delta < 0 && !siblingProcessorToSelect.isValid() && !selectedTrack[IDs::selected]) {
             return {selectedTrack};
         }
 
@@ -1120,6 +1135,8 @@ private:
         ValueTree nearestProcessor;
         for (const auto& processor : track) {
             int otherSlot = processor[IDs::processorSlot];
+            if (otherSlot == slot)
+                return processor;
             if (abs(slot - otherSlot) < abs(slot - nearestSlot)) {
                 nearestSlot = otherSlot;
                 nearestProcessor = processor;
