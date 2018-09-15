@@ -62,11 +62,11 @@ public:
 
     inline bool isSelected() { return project.isProcessorSelected(state); }
 
-    inline void setSelected(bool selected, ValueTree::Listener *listenerToExclude=nullptr) {
-        if (isSelected() && selected && listenerToExclude == nullptr)
+    inline void setSelected(bool selected) {
+        if (isSelected() && selected)
             state.getParent().sendPropertyChangeMessage(IDs::selectedSlotsMask);
         else
-            project.selectProcessorSlot(state.getParent(), getSlot(), listenerToExclude);
+            project.selectProcessorSlot(state.getParent(), getSlot(), true);
     }
 
     void toggleBypass() {

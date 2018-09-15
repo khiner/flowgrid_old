@@ -163,11 +163,7 @@ public:
     GraphEditorProcessor *currentlyDraggingProcessor {};
 
     void valueTreePropertyChanged(ValueTree &tree, const juce::Identifier &i) override {
-        if (isSuitableType(tree) &&
-            ((i == IDs::selected && tree[IDs::selected]) ||
-             (i == IDs::selectedSlotsMask && project.trackHasAnySlotSelected(tree)))) {
-            deselectAllTracksExcept(tree);
-        } else if (i == IDs::gridViewTrackOffset || i == IDs::masterViewSlotOffset) {
+        if (i == IDs::gridViewTrackOffset || i == IDs::masterViewSlotOffset) {
             resized();
         }
     }
@@ -197,18 +193,6 @@ public:
             auto *toTrack = getTrackForState(newParent);
             fromTrack->setCurrentlyMovingProcessor(nullptr);
             toTrack->setCurrentlyMovingProcessor(nullptr);
-        }
-    }
-
-private:
-    void deselectAllTracksExcept(const ValueTree& except) {
-        for (auto track : parent) {
-            if (track != except) {
-                if (track[IDs::selected])
-                    track.setProperty(IDs::selected, false, nullptr);
-                else
-                    track.sendPropertyChangeMessage(IDs::selected);
-            }
         }
     }
 };

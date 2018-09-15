@@ -33,7 +33,11 @@ public:
 
     void mouseDown(const MouseEvent &e) override {
         int slot = findSlotAt(e.getEventRelativeTo(this));
-        project.selectProcessorSlot(parent, slot);
+        bool isSlotSelected = project.isSlotSelected(parent, slot);
+        if (e.mods.isCommandDown() && isSlotSelected)
+            project.deselectProcessorSlot(parent, slot);
+        else
+            project.selectProcessorSlot(parent, slot, !(isSlotSelected || e.mods.isCommandDown()));
         if (e.mods.isPopupMenu() || e.getNumberOfClicks() == 2) {
             showPopupMenu(slot);
         }

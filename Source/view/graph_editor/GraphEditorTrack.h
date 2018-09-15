@@ -42,7 +42,7 @@ public:
 
                 CallOutBox::launchAsynchronously(colourSelector, getScreenBounds(), nullptr);
             } else {
-                setSelected(true);
+                setSelected(!(isSelected() && e.mods.isCommandDown()), !(isSelected() || e.mods.isCommandDown()));
             }
         }
     }
@@ -63,7 +63,9 @@ public:
 
     bool isSelected() const { return state.getProperty(IDs::selected); }
 
-    void setSelected(bool selected) { state.setProperty(IDs::selected, selected, nullptr); }
+    void setSelected(bool selected, bool deselectOthers=true) {
+        project.setTrackSelected(state, selected, deselectOthers, this);
+    }
 
     const Label *getNameLabel() const { return &nameLabel; }
 
@@ -119,27 +121,19 @@ private:
     GraphEditorProcessors processors;
 
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {
-        bool anySlotSelected = project.trackHasAnySlotSelected(state);
-        if (i == IDs::selectedSlotsMask && anySlotSelected) {
-            state.setPropertyExcludingListener(this, IDs::selected, false, nullptr);
-            nameLabel.setColour(Label::backgroundColourId, getColour());
-        } else if (i == IDs::gridViewSlotOffset || ((i == IDs::gridViewTrackOffset || i == IDs::masterViewSlotOffset) && isMasterTrack())) {
+        if (i == IDs::gridViewSlotOffset || ((i == IDs::gridViewTrackOffset || i == IDs::masterViewSlotOffset) && isMasterTrack())) {
             resized();
         }
 
         if (tree != state)
             return;
+
         if (i == IDs::name) {
             nameLabel.setText(tree[IDs::name].toString(), dontSendNotification);
-        } else if (i == IDs::colour) {
-            nameLabel.setColour(Label::backgroundColourId, getColour());
-        } else if (i == IDs::selected) {
-            bool selected = isSelected();
-            nameLabel.setColour(Label::backgroundColourId, selected ? getColour().brighter(0.25) : getColour());
-            if (selected && !anySlotSelected) {
-                auto slotToSelect = state.getNumChildren() > 0 ? int(state.getChild(0)[IDs::processorSlot]) : 0;
-                project.selectProcessorSlot(state, slotToSelect, this);
-            }
+        } else if (i == IDs::colour || i == IDs::selected) {
+            nameLabel.setColour(Label::backgroundColourId, isSelected() ? getColour().brighter(0.25) : getColour());
+        } else if (i == IDs::selectedSlotsMask && project.trackHasAnySlotSelected(state)) {
+            state.setProperty(IDs::selected, false, nullptr);
         }
     }
 

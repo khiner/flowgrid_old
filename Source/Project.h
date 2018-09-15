@@ -155,35 +155,48 @@ public:
                 isSlotSelected(processor.getParent(), processor[IDs::processorSlot]);
     }
 
-    void selectProcessor(const ValueTree& processor) {
-        selectProcessorSlot(processor.getParent(), processor[IDs::processorSlot]);
+    void selectProcessor(const ValueTree& processor, ValueTree::Listener* excludingListener=nullptr) {
+        selectProcessorSlot(processor.getParent(), processor[IDs::processorSlot], excludingListener);
     }
 
-    void selectProcessorSlot(ValueTree track, int slot, ValueTree::Listener* listenerToExclude=nullptr) {
-        for (auto otherTrack : tracks) {
-            if (otherTrack != track)
-                otherTrack.removeProperty(IDs::selectedSlotsMask, nullptr);
-        }
-        BigInteger selectedSlotsMask;
-        const String &currentSelectedSlotsMask = track.getProperty(IDs::selectedSlotsMask).toString();
-        selectedSlotsMask.parseString(currentSelectedSlotsMask, 2);
-        selectedSlotsMask.clear();
-        selectedSlotsMask.setBit(slot);
-        const auto &bitmaskString = selectedSlotsMask.toString(2);
-        if (listenerToExclude == nullptr) {
-            if (bitmaskString != currentSelectedSlotsMask)
-                track.setProperty(IDs::selectedSlotsMask, bitmaskString, nullptr);
-            else
-                track.sendPropertyChangeMessage(IDs::selectedSlotsMask);
-        } else {
-            track.setPropertyExcludingListener(listenerToExclude, IDs::selectedSlotsMask, bitmaskString, nullptr);
-        }
+    void selectProcessorSlot(const ValueTree& track, int slot, bool deselectOthers=true,
+                             ValueTree::Listener* excludingListener=nullptr) {
+        setProcessorSlotSelected(track, slot, true, deselectOthers, excludingListener);
     }
 
-    inline bool isSlotSelected(const ValueTree &track, int slot) const {
+    void deselectProcessorSlot(const ValueTree& track, int slot) {
+        setProcessorSlotSelected(track, slot, false, false);
+    }
+
+    inline bool isSlotSelected(const ValueTree& track, int slot) const {
         BigInteger selectedSlotsMask;
         selectedSlotsMask.parseString(track[IDs::selectedSlotsMask].toString(), 2);
         return selectedSlotsMask[slot];
+    }
+
+    void setTrackSelected(ValueTree& track, bool selected, bool deselectOthers=true,
+                          ValueTree::Listener* excludingListener=nullptr) {
+        track.setProperty(IDs::selected, selected, nullptr);
+        if (selected && deselectOthers) {
+            deselectAllTracksExcept(track);
+            if (!trackHasAnySlotSelected(track)) {
+                auto slotToSelect = track.getNumChildren() > 0 ? int(track.getChild(0)[IDs::processorSlot]) : 0;
+                selectProcessorSlot(track, slotToSelect, true, excludingListener);
+            }
+        } else if (!selected) {
+            track.removeProperty(IDs::selectedSlotsMask, nullptr);
+        }
+    }
+
+    void deselectAllTracksExcept(const ValueTree& except) {
+        for (auto track : tracks) {
+            if (track != except) {
+                if (track[IDs::selected])
+                    track.setProperty(IDs::selected, false, nullptr);
+                else
+                    track.sendPropertyChangeMessage(IDs::selected);
+            }
+        }
     }
 
     inline ValueTree getSelectedTrack() const {
@@ -997,6 +1010,33 @@ private:
                 midiOutputProcessor.setProperty(IDs::deviceName, deviceName, nullptr);
                 output.addChild(midiOutputProcessor, -1, &undoManager);
             }
+        }
+    }
+
+    void setProcessorSlotSelected(ValueTree track, int slot, bool selected, bool deselectOthers=true,
+                                  ValueTree::Listener* excludingListener=nullptr) {
+        if (deselectOthers) {
+            for (auto otherTrack : tracks) {
+                if (otherTrack != track) {
+                    otherTrack.setProperty(IDs::selected, false, nullptr);
+                    otherTrack.removeProperty(IDs::selectedSlotsMask, nullptr);
+                }
+            }
+        }
+        BigInteger selectedSlotsMask;
+        const String &currentSelectedSlotsMask = track.getProperty(IDs::selectedSlotsMask).toString();
+        selectedSlotsMask.parseString(currentSelectedSlotsMask, 2);
+        if (deselectOthers)
+            selectedSlotsMask.clear();
+        selectedSlotsMask.setBit(slot, selected);
+        const auto &bitmaskString = selectedSlotsMask.toString(2);
+        if (excludingListener == nullptr) {
+            if (bitmaskString != currentSelectedSlotsMask)
+                track.setProperty(IDs::selectedSlotsMask, bitmaskString, nullptr);
+            else
+                track.sendPropertyChangeMessage(IDs::selectedSlotsMask);
+        } else {
+            track.setPropertyExcludingListener(excludingListener, IDs::selectedSlotsMask, bitmaskString, nullptr);
         }
     }
 
