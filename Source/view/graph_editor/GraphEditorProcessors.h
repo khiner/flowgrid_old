@@ -37,7 +37,7 @@ public:
         if (e.mods.isCommandDown() && isSlotSelected)
             project.deselectProcessorSlot(parent, slot);
         else
-            project.selectProcessorSlot(parent, slot, !(isSlotSelected || e.mods.isCommandDown()));
+            project.selectProcessorSlot(parent, slot, !e.mods.isCommandDown());
         if (e.mods.isPopupMenu() || e.getNumberOfClicks() == 2) {
             showPopupMenu(slot);
         }

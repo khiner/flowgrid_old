@@ -37,6 +37,13 @@ public:
         const int slot;
     };
 
+    Point<int> trackAndSlotToGridPosition(const TrackAndSlot& trackAndSlot) const {
+        if (trackAndSlot.track.hasProperty(IDs::isMasterTrack))
+            return {getGridViewTrackOffset() + trackAndSlot.slot - getMasterViewSlotOffset(), getNumTrackProcessorSlots()};
+        else
+            return {tracks.indexOf(trackAndSlot.track), trackAndSlot.slot};
+    }
+
     Project(UndoManager &undoManager, ProcessorManager& processorManager, AudioDeviceManager& deviceManager)
             : FileBasedDocument(getFilenameSuffix(), "*" + getFilenameSuffix(), "Load a project", "Save project"),
               undoManager(undoManager), processorManager(processorManager), deviceManager(deviceManager) {
@@ -161,7 +168,22 @@ public:
 
     void selectProcessorSlot(const ValueTree& track, int slot, bool deselectOthers=true,
                              ValueTree::Listener* excludingListener=nullptr) {
-        setProcessorSlotSelected(track, slot, true, deselectOthers, excludingListener);
+        if (initialSelectTrackAndSlot != nullptr) {
+            const auto initialGridPosition = trackAndSlotToGridPosition(*initialSelectTrackAndSlot);
+            const auto gridPosition = trackAndSlotToGridPosition({track, slot});
+            Rectangle<int> selectionRectangle(initialGridPosition, gridPosition);
+            selectionRectangle.setSize(selectionRectangle.getWidth() + 1, selectionRectangle.getHeight() + 1);
+
+            for (const auto& otherTrack : tracks) {
+                for (int otherSlot = 0; otherSlot < getNumAvailableSlotsForTrack(otherTrack); otherSlot++) {
+                    const auto otherGridPosition = trackAndSlotToGridPosition({otherTrack, otherSlot});
+                    setProcessorSlotSelected(otherTrack, otherSlot, selectionRectangle.contains(otherGridPosition),
+                                             false, excludingListener);
+                }
+            }
+        } else {
+            setProcessorSlotSelected(track, slot, true, deselectOthers, excludingListener);
+        }
     }
 
     void deselectProcessorSlot(const ValueTree& track, int slot) {
@@ -284,8 +306,32 @@ public:
     bool isInSessionMode() const { return viewState[IDs::controlMode] == sessionControlMode; }
     bool isGridPaneFocused() const { return viewState[IDs::focusedPane] == gridPaneName; }
 
-    void setShiftHeld(bool shiftHeld) { this->shiftHeld = shiftHeld; }
-    void setPush2ShiftHeld(bool push2ShiftHeld) { this->push2ShiftHeld = push2ShiftHeld; }
+    void setShiftHeld(bool shiftHeld) {
+        if (!isShiftHeld() && shiftHeld)
+            setInitialSelectPosition();
+        this->shiftHeld = shiftHeld;
+        if (!isShiftHeld())
+            initialSelectTrackAndSlot.reset();
+    }
+
+    void setPush2ShiftHeld(bool shiftHeld) {
+        if (!isShiftHeld() && shiftHeld)
+            setInitialSelectPosition();
+        this->push2ShiftHeld = shiftHeld;
+        if (!isShiftHeld())
+            initialSelectTrackAndSlot.reset();
+    }
+
+    void setInitialSelectPosition() {
+        const auto& selectedTrack = getSelectedTrack();
+        if (selectedTrack.isValid()) {
+            auto selectedSlot = findSelectedSlotForTrack(selectedTrack);
+            if (selectedSlot != -1) {
+                initialSelectTrackAndSlot = std::make_unique<TrackAndSlot>(selectedTrack, selectedSlot);
+            }
+        }
+    }
+
     void setNoteMode() { viewState.setProperty(IDs::controlMode, noteControlMode, nullptr); }
     void setSessionMode() { viewState.setProperty(IDs::controlMode, sessionControlMode, nullptr); }
     void focusOnGridPane() { viewState.setProperty(IDs::focusedPane, gridPaneName, nullptr); }
@@ -896,6 +942,7 @@ private:
 
     bool shiftHeld { false }, push2ShiftHeld { false };
     int trackWidth {0}, processorHeight {0};
+    std::unique_ptr<TrackAndSlot> initialSelectTrackAndSlot {};
 
     void clear() {
         input.removeAllChildren(nullptr);

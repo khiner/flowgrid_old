@@ -42,7 +42,7 @@ public:
 
                 CallOutBox::launchAsynchronously(colourSelector, getScreenBounds(), nullptr);
             } else {
-                setSelected(!(isSelected() && e.mods.isCommandDown()), !(isSelected() || e.mods.isCommandDown()));
+                setSelected(!(isSelected() && e.mods.isCommandDown()), !e.mods.isCommandDown());
             }
         }
     }
