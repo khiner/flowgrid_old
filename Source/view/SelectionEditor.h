@@ -154,6 +154,8 @@ private:
         } else if (i == IDs::focusedPane) {
             unfocusOverlay.setVisible(project.isGridPaneFocused());
             unfocusOverlay.toFront(false);
+        } else if (i == IDs::processorInitialized) {
+            refreshProcessors();
         }
     }
 
