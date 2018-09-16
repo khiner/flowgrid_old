@@ -7,14 +7,16 @@
 #include "JuceHeader.h"
 #include "processors/ProcessorManager.h"
 #include "Project.h"
+#include "ConnectionHelper.h"
 #include "StatefulAudioProcessorContainer.h"
 #include "push2/Push2MidiCommunicator.h"
 
 class ProcessorGraph : public AudioProcessorGraph, public StatefulAudioProcessorContainer, private ValueTree::Listener,
                        private ProjectChangeListener, private Timer {
 public:
-    explicit ProcessorGraph(Project &project, UndoManager &undoManager, AudioDeviceManager& deviceManager, Push2MidiCommunicator& push2MidiCommunicator)
-            : undoManager(undoManager), project(project), deviceManager(deviceManager), push2MidiCommunicator(push2MidiCommunicator) {
+    explicit ProcessorGraph(Project &project, ConnectionHelper& connectionHelper, UndoManager &undoManager, AudioDeviceManager& deviceManager, Push2MidiCommunicator& push2MidiCommunicator)
+            : undoManager(undoManager), project(project), connectionHelper(connectionHelper),
+              deviceManager(deviceManager), push2MidiCommunicator(push2MidiCommunicator) {
         enableAllBuses();
 
         project.getState().addListener(this);
@@ -48,7 +50,7 @@ public:
         return getProcessorWrapperForState(gain);
     }
 
-    ResizableWindow* getOrCreateWindowFor(AudioProcessorGraph::Node* node, PluginWindow::Type type) {
+    ResizableWindow* getOrCreateWindowFor(Node* node, PluginWindow::Type type) {
         jassert(node != nullptr);
 
         for (auto* w : activePluginWindows)
@@ -159,21 +161,12 @@ public:
             || (destIsMIDI && ! dest->getProcessor()->acceptsMidi()))
             return false;
 
-        return !project.getConnectionMatching({{source->nodeID, sourceChannel}, {dest->nodeID, destChannel}}).isValid();
+        return !connectionHelper.getConnectionMatching({{source->nodeID, sourceChannel}, {dest->nodeID, destChannel}}).isValid();
     }
 
-    bool addConnection(const Connection& c) override {
-        if (canConnectUi(c)) {
-            disconnectDefaultOutgoing(c.source.nodeID, c.source.isMIDI() ? midi : audio, getDragDependentUndoManager());
-            project.addConnection(c, getDragDependentUndoManager(), false);
-            return true;
-        }
-        return false;
-    }
-    
     bool removeConnection(const Connection& c) override {
-        const ValueTree &connectionState = project.getConnectionMatching(c);
-        bool removed = project.removeConnection(c, getDragDependentUndoManager(), true, true);
+        const ValueTree &connectionState = connectionHelper.getConnectionMatching(c);
+        bool removed = checkedRemoveConnection(c, getDragDependentUndoManager(), true, true);
         if (removed && connectionState.hasProperty(IDs::isCustomConnection)) {
             const auto& sourceState = connectionState.getChildWithName(IDs::SOURCE);
             auto nodeId = getNodeIdForState(sourceState);
@@ -184,24 +177,20 @@ public:
         return removed;
     }
 
+    bool addConnection(const Connection& c) override {
+        return checkedAddConnection(c, false, getDragDependentUndoManager());
+    }
+
     bool addDefaultConnection(const Connection& c, UndoManager* undoManager) {
-        if (canConnectUi(c)) {
-            project.addConnection(c, undoManager);
-            return true;
-        }
-        return false;
+        return checkedAddConnection(c, true, undoManager);
     }
 
     bool addCustomConnection(const Connection& c) {
-        if (canConnectUi(c)) {
-            project.addConnection(c, &undoManager, false);
-            return true;
-        }
-        return false;
+        return checkedAddConnection(c, false, &undoManager);
     }
 
     bool removeDefaultConnection(const Connection& c) {
-        return project.removeConnection(c, getDragDependentUndoManager(), true, false);
+        return checkedRemoveConnection(c, getDragDependentUndoManager(), true, false);
     }
 
     void setDefaultConnectionsAllowed(NodeID nodeId, bool defaultConnectionsAllowed) {
@@ -235,6 +224,7 @@ private:
     std::unordered_map<NodeID, std::unique_ptr<StatefulAudioProcessorWrapper> > processorWrapperForNodeId;
 
     Project &project;
+    ConnectionHelper &connectionHelper;
     AudioDeviceManager &deviceManager;
     Push2MidiCommunicator &push2MidiCommunicator;
     
@@ -254,12 +244,35 @@ private:
         return currentlyDraggingNodeId == NA_NODE_ID ? &undoManager : nullptr;
     }
 
+    bool checkedAddConnection(const Connection &c, bool isDefault, UndoManager* undoManager) {
+        if (isDefault && project.isShiftHeld())
+            return false; // no default connection stuff while shift is held
+        if (canConnectUi(c)) {
+            if (!isDefault)
+                disconnectDefaultOutgoing(c.source.nodeID, c.source.isMIDI() ? midi : audio, getDragDependentUndoManager());
+            connectionHelper.addConnection(c, undoManager, isDefault);
+            return true;
+        }
+        return false;
+    }
+
+    bool checkedRemoveConnection(const ValueTree& connection, UndoManager* undoManager, bool allowDefaults, bool allowCustom) {
+        if (!connection.isValid() || (!connection[IDs::isCustomConnection] && project.isShiftHeld()))
+            return false; // no default connection stuff while shift is held
+        return connectionHelper.removeConnection(connection, undoManager, allowDefaults, allowCustom);
+    }
+
+    bool checkedRemoveConnection(const Connection &connection, UndoManager* undoManager, bool defaults, bool custom) {
+        const ValueTree &connectionState = connectionHelper.getConnectionMatching(connection);
+        return checkedRemoveConnection(connectionState, undoManager, defaults, custom);
+    }
+
     bool doDisconnectNode(NodeID nodeId, ConnectionType connectionType, UndoManager* undoManager,
                           bool defaults, bool custom, bool incoming, bool outgoing) {
-        const auto connections = project.getConnectionsForNode(nodeId, connectionType, incoming, outgoing);
+        const auto connections = connectionHelper.getConnectionsForNode(nodeId, connectionType, incoming, outgoing);
         bool anyRemoved = false;
         for (const auto &connection : connections) {
-            if (project.removeConnection(connection, undoManager, defaults, custom))
+            if (checkedRemoveConnection(connection, undoManager, defaults, custom))
                 anyRemoved = true;
         }
 
@@ -359,8 +372,8 @@ private:
             auto firstProcessorNodeId = getNodeIdForState(firstProcessor);
             int slot = firstProcessor[IDs::processorSlot];
             if (slot < lowestSlot &&
-                !project.hasIncomingConnections(firstProcessorNodeId, connectionType) &&
-                project.areProcessorsConnected(firstProcessorNodeId, selectedNodeId)) {
+                !connectionHelper.nodeHasIncomingConnections(firstProcessorNodeId, connectionType) &&
+                connectionHelper.areProcessorsConnected(firstProcessorNodeId, selectedNodeId)) {
 
                 lowestSlot = firstProcessor[IDs::processorSlot];
                 upperRightMostProcessorNodeId = firstProcessorNodeId;
@@ -464,12 +477,12 @@ private:
                 disconnectDefaults(nodeId);
                 return;
             }
-            auto outgoingCustomConnections = project.getConnectionsForNode(nodeId, connectionType, false, true, true, false);
+            auto outgoingCustomConnections = connectionHelper.getConnectionsForNode(nodeId, connectionType, false, true, true, false);
             if (!outgoingCustomConnections.isEmpty()) {
                 disconnectDefaultOutgoing(nodeId, connectionType, getDragDependentUndoManager());
                 return;
             }
-            auto outgoingDefaultConnections = project.getConnectionsForNode(nodeId, connectionType, false, true, false, true);
+            auto outgoingDefaultConnections = connectionHelper.getConnectionsForNode(nodeId, connectionType, false, true, false, true);
             auto processorToConnectTo = findProcessorToFlowInto(processor.getParent(), processor, connectionType);
             auto nodeIdToConnectTo = getNodeIdForState(processorToConnectTo);
 

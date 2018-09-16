@@ -11,7 +11,7 @@ public:
     SoundMachineApplication() : project(undoManager, processorManager, deviceManager),
                                 push2Colours(project.getState()),
                                 push2MidiCommunicator(project, push2Colours),
-                                processorGraph(project, undoManager, deviceManager, push2MidiCommunicator) {}
+                                processorGraph(project, project.getConnectionHelper(), undoManager, deviceManager, push2MidiCommunicator) {}
 
     const String getApplicationName() override { return ProjectInfo::projectName; }
 

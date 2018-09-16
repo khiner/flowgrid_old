@@ -8,8 +8,7 @@
 #include "processors/ProcessorManager.h"
 #include "Utilities.h"
 #include "StatefulAudioProcessorContainer.h"
-
-enum ConnectionType { audio, midi, all };
+#include "ConnectionHelper.h"
 
 class Project : public FileBasedDocument, public ProjectChangeBroadcaster, public StatefulAudioProcessorContainer,
                 private ChangeListener, private ValueTree::Listener {
@@ -46,7 +45,7 @@ public:
 
     Project(UndoManager &undoManager, ProcessorManager& processorManager, AudioDeviceManager& deviceManager)
             : FileBasedDocument(getFilenameSuffix(), "*" + getFilenameSuffix(), "Load a project", "Save project"),
-              undoManager(undoManager), processorManager(processorManager), deviceManager(deviceManager) {
+              connectionHelper(*this), undoManager(undoManager), processorManager(processorManager), deviceManager(deviceManager) {
         state = ValueTree(IDs::PROJECT);
         state.setProperty(IDs::name, "My First Project", nullptr);
         input = ValueTree(IDs::INPUT);
@@ -56,8 +55,7 @@ public:
         tracks = ValueTree(IDs::TRACKS);
         tracks.setProperty(IDs::name, "Tracks", nullptr);
         state.addChild(tracks, -1, nullptr);
-        connections = ValueTree(IDs::CONNECTIONS);
-        state.addChild(connections, -1, nullptr);
+        state.addChild(connectionHelper.getState(), -1, nullptr);
         viewState = ValueTree(IDs::VIEW_STATE);
         state.addChild(viewState, -1, nullptr);
         undoManager.addChangeListener(this);
@@ -90,6 +88,8 @@ public:
         return nullptr;
     }
 
+    ConnectionHelper& getConnectionHelper() { return connectionHelper; }
+
     UndoManager& getUndoManager() { return undoManager; }
 
     AudioDeviceManager& getDeviceManager() { return deviceManager; }
@@ -98,7 +98,7 @@ public:
 
     ValueTree& getViewState() { return viewState; }
 
-    ValueTree& getConnections() { return connections; }
+    ValueTree& getConnections() { return connectionHelper.getState(); }
 
     ValueTree& getInput() { return input; }
 
@@ -258,13 +258,7 @@ public:
     }
 
     bool isPush2MidiInputProcessorConnected() const {
-        auto push2MidiInputProcessorNodeId = getNodeIdForState(getPush2MidiInputProcessor());
-        for (const auto& connection : connections) {
-            if (getNodeIdForState(connection.getChildWithName(IDs::SOURCE)) == push2MidiInputProcessorNodeId)
-                return true;
-        }
-
-        return false;
+        return connectionHelper.isNodeConnected(getNodeIdForState(getPush2MidiInputProcessor()));
     }
 
     const bool selectedTrackHasMixerChannel() const {
@@ -350,109 +344,9 @@ public:
     int getTrackWidth() { return trackWidth; }
     int getProcessorHeight() { return processorHeight; }
 
-    Array<ValueTree> getConnectionsForNode(AudioProcessorGraph::NodeID nodeId, ConnectionType connectionType,
-                                           bool incoming=true, bool outgoing=true,
-                                           bool includeCustom=true, bool includeDefault=true) const {
-        Array<ValueTree> nodeConnections;
-        for (const auto& connection : connections) {
-            if ((connection[IDs::isCustomConnection] && !includeCustom) || (!connection[IDs::isCustomConnection] && !includeDefault))
-                continue;
-
-            const auto &endpointType = connection.getChildWithProperty(IDs::nodeId, int(nodeId));
-            bool directionIsAcceptable = (incoming && endpointType.hasType(IDs::DESTINATION)) || (outgoing && endpointType.hasType(IDs::SOURCE));
-            bool typeIsAcceptable = connectionType == all || (connectionType == audio && int(endpointType[IDs::channel]) != AudioProcessorGraph::midiChannelIndex) ||
-                                    (connectionType == midi && int(endpointType[IDs::channel]) == AudioProcessorGraph::midiChannelIndex);
-
-            if (directionIsAcceptable && typeIsAcceptable)
-                nodeConnections.add(connection);
-        }
-        
-        return nodeConnections;
-    }
-
-    const ValueTree getConnectionMatching(const AudioProcessorGraph::Connection &connection) const {
-        for (auto connectionState : connections) {
-            auto sourceState = connectionState.getChildWithName(IDs::SOURCE);
-            auto destState = connectionState.getChildWithName(IDs::DESTINATION);
-            if (getNodeIdForState(sourceState) == connection.source.nodeID &&
-                getNodeIdForState(destState) == connection.destination.nodeID &&
-                int(sourceState[IDs::channel]) == connection.source.channelIndex &&
-                int(destState[IDs::channel]) == connection.destination.channelIndex) {
-                return connectionState;
-            }
-        }
-        return {};
-    }
-
-    bool areProcessorsConnected(AudioProcessorGraph::NodeID upstreamNodeId, AudioProcessorGraph::NodeID downstreamNodeId) const {
-        if (upstreamNodeId == downstreamNodeId)
-            return true;
-
-        Array<AudioProcessorGraph::NodeID> exploredDownstreamNodes;
-        for (const auto& connection : connections) {
-            if (getNodeIdForState(connection.getChildWithName(IDs::SOURCE)) == upstreamNodeId) {
-                auto otherDownstreamNodeId = getNodeIdForState(connection.getChildWithName(IDs::DESTINATION));
-                if (!exploredDownstreamNodes.contains(otherDownstreamNodeId)) {
-                    if (otherDownstreamNodeId == downstreamNodeId)
-                        return true;
-                    else if (areProcessorsConnected(otherDownstreamNodeId, downstreamNodeId))
-                        return true;
-                    exploredDownstreamNodes.add(otherDownstreamNodeId);
-                }
-            }
-        }
-        return false;
-    }
-    
-    bool hasIncomingConnections(AudioProcessorGraph::NodeID nodeId, ConnectionType connectionType) const {
-        return !getConnectionsForNode(nodeId, connectionType, true, false).isEmpty();
-    }
-
-    // checks for duplicate add should be done before! (not done here to avoid redundant checks)
-    void addConnection(const AudioProcessorGraph::Connection &connection, UndoManager* undoManager, bool isDefault=true) {
-        if (isDefault && isShiftHeld())
-            return; // no default connection stuff while shift is held
-        ValueTree connectionState(IDs::CONNECTION);
-        ValueTree source(IDs::SOURCE);
-        source.setProperty(IDs::nodeId, int(connection.source.nodeID), nullptr);
-        source.setProperty(IDs::channel, connection.source.channelIndex, nullptr);
-        connectionState.addChild(source, -1, nullptr);
-
-        ValueTree destination(IDs::DESTINATION);
-        destination.setProperty(IDs::nodeId, int(connection.destination.nodeID), nullptr);
-        destination.setProperty(IDs::channel, connection.destination.channelIndex, nullptr);
-        connectionState.addChild(destination, -1, nullptr);
-
-        if (!isDefault) {
-            connectionState.setProperty(IDs::isCustomConnection, true, nullptr);
-        }
-        connections.addChild(connectionState, -1, undoManager);
-    }
-
-    bool removeConnection(const ValueTree& connection, UndoManager* undoManager, bool allowDefaults, bool allowCustom) {
-        if (!connection.isValid() || (!connection[IDs::isCustomConnection] && isShiftHeld()))
-            return false; // no default connection stuff while shift is held
-
-        bool customIsAcceptable = (allowCustom && connection.hasProperty(IDs::isCustomConnection)) ||
-                                  (allowDefaults && !connection.hasProperty(IDs::isCustomConnection));
-        if (customIsAcceptable) {
-            connections.removeChild(connection, undoManager);
-            return true;
-        }
-        return false;
-    }
-
-    bool removeConnection(const AudioProcessorGraph::Connection &connection, UndoManager* undoManager, bool defaults, bool custom) {
-        const ValueTree &connectionState = getConnectionMatching(connection);
-        return removeConnection(connectionState, undoManager, defaults, custom);
-    }
-
     // make a snapshot of all the information needed to capture AudioGraph connections and UI positions
     void makeConnectionsSnapshot() {
-        connectionsSnapshot.clear();
-        for (auto connection : connections) {
-            connectionsSnapshot.add(connection.createCopy());
-        }
+        connectionHelper.makeConnectionsSnapshot();
         slotForNodeIdSnapshot.clear();
         for (auto track : tracks) {
             for (auto child : track) {
@@ -464,10 +358,7 @@ public:
     }
 
     void restoreConnectionsSnapshot() {
-        connections.removeAllChildren(nullptr);
-        for (const auto& connection : connectionsSnapshot) {
-            connections.addChild(connection, -1, nullptr);
-        }
+        connectionHelper.restoreConnectionsSnapshot();
         for (const auto& track : tracks) {
             for (auto child : track) {
                 if (child.hasType(IDs::PROCESSOR)) {
@@ -858,7 +749,7 @@ public:
         Utilities::moveAllChildren(newState.getChildWithName(IDs::INPUT), input, nullptr);
         Utilities::moveAllChildren(newState.getChildWithName(IDs::OUTPUT), output, nullptr);
         Utilities::moveAllChildren(newState.getChildWithName(IDs::TRACKS), tracks, nullptr);
-        Utilities::moveAllChildren(newState.getChildWithName(IDs::CONNECTIONS), connections, nullptr);
+        Utilities::moveAllChildren(newState.getChildWithName(IDs::CONNECTIONS), connectionHelper.getState(), nullptr);
 
         undoManager.clearUndoHistory();
         return Result::ok();
@@ -928,10 +819,10 @@ public:
 
 private:
     ValueTree state;
+    ConnectionHelper connectionHelper;
     UndoManager &undoManager;
-    ValueTree input, output, tracks, connections, viewState;
+    ValueTree input, output, tracks, viewState;
 
-    Array<ValueTree> connectionsSnapshot;
     std::unordered_map<int, int> slotForNodeIdSnapshot;
 
     ProcessorManager &processorManager;
@@ -949,7 +840,7 @@ private:
         output.removeAllChildren(nullptr);
         while (tracks.getNumChildren() > 0)
             deleteItem(tracks.getChild(tracks.getNumChildren() - 1), nullptr);
-        connections.removeAllChildren(nullptr);
+        connectionHelper.clear();
         undoManager.clearUndoHistory();
     }
 
