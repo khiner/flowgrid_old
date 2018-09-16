@@ -8,7 +8,8 @@
 class GraphEditorTrack : public Component, public Utilities::ValueTreePropertyChangeListener, public GraphEditorProcessorContainer, private ChangeListener {
 public:
     explicit GraphEditorTrack(Project& project, const ValueTree& state, ConnectorDragListener &connectorDragListener, ProcessorGraph& graph)
-            : project(project), state(state), viewState(project.getViewState()), connectorDragListener(connectorDragListener), graph(graph),
+            : tracksManager(project.getTracksManager()), state(state),
+              viewState(project.getViewState()), connectorDragListener(connectorDragListener), graph(graph),
               processors(project, state, connectorDragListener, graph) {
         nameLabel.setJustificationType(Justification::centred);
         nameLabel.setColour(Label::backgroundColourId, getColour());
@@ -53,18 +54,18 @@ public:
 
     int getTrackIndex() const { return state.getParent().indexOf(state); }
 
-    int getTrackViewIndex() const { return project.getViewIndexForTrack(state); }
+    int getTrackViewIndex() const { return tracksManager.getViewIndexForTrack(state); }
 
     String getTrackName() const { return state[IDs::name].toString(); }
 
-    Colour getColour() const { return project.getTrackColour(state); }
+    Colour getColour() const { return tracksManager.getTrackColour(state); }
 
     void setColour(const Colour& colour) { state.setProperty(IDs::colour, colour.toString(), &graph.undoManager); }
 
     bool isSelected() const { return state.getProperty(IDs::selected); }
 
     void setSelected(bool selected, bool deselectOthers=true) {
-        project.setTrackSelected(state, selected, deselectOthers, this);
+        tracksManager.setTrackSelected(state, selected, deselectOthers, this);
     }
 
     const Label *getNameLabel() const { return &nameLabel; }
@@ -75,16 +76,16 @@ public:
         auto r = getLocalBounds();
         processors.setBounds(r);
         const auto &nameLabelBounds = isMasterTrack()
-                                      ? r.removeFromLeft(Project::TRACK_LABEL_HEIGHT)
-                                         .withX(project.getTrackWidth() * processors.getSlotOffset())
-                                      : r.removeFromTop(Project::TRACK_LABEL_HEIGHT)
-                                         .withY(project.getProcessorHeight() * processors.getSlotOffset());
+                                      ? r.removeFromLeft(TracksStateManager::TRACK_LABEL_HEIGHT)
+                                         .withX(tracksManager.getTrackWidth() * processors.getSlotOffset())
+                                      : r.removeFromTop(TracksStateManager::TRACK_LABEL_HEIGHT)
+                                         .withY(tracksManager.getProcessorHeight() * processors.getSlotOffset());
         nameLabel.setBounds(nameLabelBounds);
         nameLabel.toFront(false);
         if (isMasterTrack()) {
             const auto& labelBoundsFloat = nameLabelBounds.toFloat();
             masterTrackName.setBoundingBox(Parallelogram<float>(labelBoundsFloat.getBottomLeft(), labelBoundsFloat.getTopLeft(), labelBoundsFloat.getBottomRight()));
-            masterTrackName.setFontHeight(3 * Project::TRACK_LABEL_HEIGHT / 4);
+            masterTrackName.setFontHeight(3 * TracksStateManager::TRACK_LABEL_HEIGHT / 4);
             masterTrackName.toFront(false);
         }
     }
@@ -111,7 +112,8 @@ public:
     }
 
 private:
-    Project& project;
+    TracksStateManager& tracksManager;
+
     ValueTree state, viewState;
 
     Label nameLabel;
@@ -132,7 +134,7 @@ private:
             nameLabel.setText(tree[IDs::name].toString(), dontSendNotification);
         } else if (i == IDs::colour || i == IDs::selected) {
             nameLabel.setColour(Label::backgroundColourId, isSelected() ? getColour().brighter(0.25) : getColour());
-        } else if (i == IDs::selectedSlotsMask && project.trackHasAnySlotSelected(state)) {
+        } else if (i == IDs::selectedSlotsMask && tracksManager.trackHasAnySlotSelected(state)) {
             state.setProperty(IDs::selected, false, nullptr);
         }
     }

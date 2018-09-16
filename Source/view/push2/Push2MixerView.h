@@ -97,8 +97,8 @@ private:
         volumeParametersPanel.clearParameters();
         panParametersPanel.clearParameters();
 
-        if (project.isTrackSelected(project.getMasterTrack())) {
-            const auto& mixerChannel = project.getMixerChannelProcessorForSelectedTrack();
+        if (tracksManager.isTrackSelected(tracksManager.getMasterTrack())) {
+            const auto& mixerChannel = tracksManager.getMixerChannelProcessorForSelectedTrack();
             if (auto* processorWrapper = project.getProcessorWrapperForState(mixerChannel)) {
                 volumeParametersPanel.addParameter(processorWrapper->getParameter(1));
                 panParametersPanel.addParameter(processorWrapper->getParameter(0));
@@ -107,7 +107,7 @@ private:
             for (const auto& track : project.getTracks()) {
                 if (track.hasProperty(IDs::isMasterTrack))
                     continue;
-                const auto &mixerChannel = project.getMixerChannelProcessorForTrack(track);
+                const auto &mixerChannel = tracksManager.getMixerChannelProcessorForTrack(track);
                 if (auto *processorWrapper = project.getProcessorWrapperForState(mixerChannel)) {
                     // TODO use param identifiers instead of indexes
                     volumeParametersPanel.addParameter(processorWrapper->getParameter(1));

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <push2/Push2MidiCommunicator.h>
-#include <Project.h>
+#include "Project.h"
 #include "JuceHeader.h"
 #include "Push2Listener.h"
 #include "Push2Label.h"
@@ -11,7 +11,8 @@ using Push2 = Push2MidiCommunicator;
 class Push2ComponentBase : public Component, public Push2Listener, public Push2Colours::Listener {
 public:
     Push2ComponentBase(Project& project, Push2MidiCommunicator& push2)
-            : project(project), push2(push2) {
+            : project(project), tracksManager(project.getTracksManager()), viewManager(project.getViewStateManager()),
+              push2(push2) {
         push2.getPush2Colours().addListener(this);
     }
 
@@ -58,5 +59,7 @@ protected:
     bool isShiftHeld { false };
 
     Project& project;
+    TracksStateManager& tracksManager;
+    ViewStateManager& viewManager;
     Push2MidiCommunicator& push2;
 };

@@ -8,56 +8,27 @@
 #include "processors/ProcessorManager.h"
 #include "Utilities.h"
 #include "StatefulAudioProcessorContainer.h"
-#include "ConnectionHelper.h"
+#include "state_managers/TracksStateManager.h"
+#include "state_managers/ConnectionsStateManager.h"
+#include "state_managers/ViewStateManager.h"
 
 class Project : public FileBasedDocument, public ProjectChangeBroadcaster, public StatefulAudioProcessorContainer,
                 private ChangeListener, private ValueTree::Listener {
 public:
-    struct TrackAndSlot {
-        TrackAndSlot() : slot(0) {};
-        TrackAndSlot(ValueTree track, const ValueTree& processor) : track(std::move(track)), slot(processor[IDs::processorSlot]) {}
-        TrackAndSlot(ValueTree track, const int slot) : track(std::move(track)), slot(slot) {}
-        TrackAndSlot(ValueTree track) : track(std::move(track)), slot(-1) {}
-
-        bool isValid() const { return track.isValid(); }
-
-        void select(Project* project) {
-            if (!track.isValid())
-                return;
-
-            const auto& selectedTrack = project->getSelectedTrack();
-            if (slot != -1)
-                project->selectProcessorSlot(track, slot);
-            if (slot == -1 || (selectedTrack != track && selectedTrack[IDs::selected]))
-                track.setProperty(IDs::selected, true, nullptr);
-        }
-
-        ValueTree track;
-        const int slot;
-    };
-
-    Point<int> trackAndSlotToGridPosition(const TrackAndSlot& trackAndSlot) const {
-        if (trackAndSlot.track.hasProperty(IDs::isMasterTrack))
-            return {getGridViewTrackOffset() + trackAndSlot.slot - getMasterViewSlotOffset(), getNumTrackProcessorSlots()};
-        else
-            return {tracks.indexOf(trackAndSlot.track), trackAndSlot.slot};
-    }
-
     Project(UndoManager &undoManager, ProcessorManager& processorManager, AudioDeviceManager& deviceManager)
             : FileBasedDocument(getFilenameSuffix(), "*" + getFilenameSuffix(), "Load a project", "Save project"),
-              connectionHelper(*this), undoManager(undoManager), processorManager(processorManager), deviceManager(deviceManager) {
+              processorManager(processorManager),
+              tracksManager(viewManager, *this, *this, processorManager, undoManager), connectionsManager(*this),
+              undoManager(undoManager), deviceManager(deviceManager) {
         state = ValueTree(IDs::PROJECT);
         state.setProperty(IDs::name, "My First Project", nullptr);
         input = ValueTree(IDs::INPUT);
         state.addChild(input, -1, nullptr);
         output = ValueTree(IDs::OUTPUT);
         state.addChild(output, -1, nullptr);
-        tracks = ValueTree(IDs::TRACKS);
-        tracks.setProperty(IDs::name, "Tracks", nullptr);
-        state.addChild(tracks, -1, nullptr);
-        state.addChild(connectionHelper.getState(), -1, nullptr);
-        viewState = ValueTree(IDs::VIEW_STATE);
-        state.addChild(viewState, -1, nullptr);
+        state.addChild(tracksManager.getState(), -1, nullptr);
+        state.addChild(connectionsManager.getState(), -1, nullptr);
+        state.addChild(viewManager.getState(), -1, nullptr);
         undoManager.addChangeListener(this);
         state.addListener(this);
     }
@@ -88,7 +59,11 @@ public:
         return nullptr;
     }
 
-    ConnectionHelper& getConnectionHelper() { return connectionHelper; }
+    TracksStateManager& getTracksManager() { return tracksManager; }
+
+    ConnectionsStateManager& getConnectionHelper() { return connectionsManager; }
+
+    ViewStateManager& getViewStateManager() { return viewManager; }
 
     UndoManager& getUndoManager() { return undoManager; }
 
@@ -96,154 +71,15 @@ public:
 
     ValueTree& getState() { return state; }
 
-    ValueTree& getViewState() { return viewState; }
+    ValueTree& getViewState() { return viewManager.getState(); }
 
-    ValueTree& getConnections() { return connectionHelper.getState(); }
+    ValueTree& getConnections() { return connectionsManager.getState(); }
 
     ValueTree& getInput() { return input; }
 
     ValueTree& getOutput() { return output; }
 
-    ValueTree& getTracks() { return tracks; }
-
-    int getNumTracks() const { return tracks.getNumChildren(); }
-
-    int getNumNonMasterTracks() const {
-        return getMasterTrack().isValid() ? tracks.getNumChildren() - 1 : tracks.getNumChildren();
-    }
-
-    ValueTree getTrack(int trackIndex) const { return tracks.getChild(trackIndex); }
-
-    ValueTree getTrackWithViewIndex(int trackViewIndex) const {
-        return tracks.getChild(trackViewIndex + getGridViewTrackOffset());
-    }
-
-    ValueTree getMasterTrack() const { return tracks.getChildWithProperty(IDs::isMasterTrack, true); }
-
-    inline const Colour getTrackColour(const ValueTree& track) const {
-        return Colour::fromString(track[IDs::colour].toString());
-    }
-
-    inline ValueTree findSelectedProcessorForTrack(const ValueTree &track) const {
-        for (const auto& processor : track) {
-            if (isProcessorSelected(processor))
-                return processor;
-        }
-        return {};
-    }
-
-    inline ValueTree getSelectedProcessor() const {
-        for (const auto& track : tracks) {
-            const auto& selectedProcessor = findSelectedProcessorForTrack(track);
-            if (selectedProcessor.isValid())
-                return selectedProcessor;
-        }
-        return {};
-    }
-
-    inline bool isTrackSelected(const ValueTree& track) const {
-        if (track[IDs::selected])
-            return true;
-        return trackHasAnySlotSelected(track);
-    }
-
-    inline bool trackHasAnySlotSelected(const ValueTree &track) const {
-        return findSelectedSlotForTrack(track) != -1;
-    }
-
-    inline int findSelectedSlotForTrack(const ValueTree& track) const {
-        BigInteger selectedSlotsMask;
-        selectedSlotsMask.parseString(track[IDs::selectedSlotsMask].toString(), 2);
-        return selectedSlotsMask.getHighestBit();
-    }
-
-    inline bool isProcessorSelected(const ValueTree& processor) const {
-        return processor.hasType(IDs::PROCESSOR) &&
-                isSlotSelected(processor.getParent(), processor[IDs::processorSlot]);
-    }
-
-    void selectProcessor(const ValueTree& processor, ValueTree::Listener* excludingListener=nullptr) {
-        selectProcessorSlot(processor.getParent(), processor[IDs::processorSlot], excludingListener);
-    }
-
-    void selectProcessorSlot(const ValueTree& track, int slot, bool deselectOthers=true,
-                             ValueTree::Listener* excludingListener=nullptr) {
-        if (initialSelectTrackAndSlot != nullptr) {
-            const auto initialGridPosition = trackAndSlotToGridPosition(*initialSelectTrackAndSlot);
-            const auto gridPosition = trackAndSlotToGridPosition({track, slot});
-            Rectangle<int> selectionRectangle(initialGridPosition, gridPosition);
-            selectionRectangle.setSize(selectionRectangle.getWidth() + 1, selectionRectangle.getHeight() + 1);
-
-            for (const auto& otherTrack : tracks) {
-                for (int otherSlot = 0; otherSlot < getNumAvailableSlotsForTrack(otherTrack); otherSlot++) {
-                    const auto otherGridPosition = trackAndSlotToGridPosition({otherTrack, otherSlot});
-                    setProcessorSlotSelected(otherTrack, otherSlot, selectionRectangle.contains(otherGridPosition),
-                                             false, excludingListener);
-                }
-            }
-        } else {
-            setProcessorSlotSelected(track, slot, true, deselectOthers, excludingListener);
-        }
-    }
-
-    void deselectProcessorSlot(const ValueTree& track, int slot) {
-        setProcessorSlotSelected(track, slot, false, false);
-    }
-
-    inline bool isSlotSelected(const ValueTree& track, int slot) const {
-        BigInteger selectedSlotsMask;
-        selectedSlotsMask.parseString(track[IDs::selectedSlotsMask].toString(), 2);
-        return selectedSlotsMask[slot];
-    }
-
-    void setTrackSelected(ValueTree& track, bool selected, bool deselectOthers=true,
-                          ValueTree::Listener* excludingListener=nullptr) {
-        track.setProperty(IDs::selected, selected, nullptr);
-        if (selected && deselectOthers) {
-            deselectAllTracksExcept(track);
-            if (!trackHasAnySlotSelected(track)) {
-                auto slotToSelect = track.getNumChildren() > 0 ? int(track.getChild(0)[IDs::processorSlot]) : 0;
-                selectProcessorSlot(track, slotToSelect, true, excludingListener);
-            }
-        } else if (!selected) {
-            track.removeProperty(IDs::selectedSlotsMask, nullptr);
-        }
-    }
-
-    void deselectAllTracksExcept(const ValueTree& except) {
-        for (auto track : tracks) {
-            if (track != except) {
-                if (track[IDs::selected])
-                    track.setProperty(IDs::selected, false, nullptr);
-                else
-                    track.sendPropertyChangeMessage(IDs::selected);
-            }
-        }
-    }
-
-    inline ValueTree getSelectedTrack() const {
-        for (const auto& track : tracks) {
-            if (isTrackSelected(track))
-                return track;
-        }
-        return {};
-    }
-
-    ValueTree findTrackWithUuid(const String& uuid) {
-        for (const auto& track : tracks) {
-            if (track[IDs::uuid] == uuid)
-                return track;
-        }
-        return {};
-    }
-
-    const ValueTree getMixerChannelProcessorForTrack(const ValueTree& track) const {
-        return track.getChildWithProperty(IDs::name, MixerChannelProcessor::name());
-    }
-
-    const ValueTree getMixerChannelProcessorForSelectedTrack() const {
-        return getMixerChannelProcessorForTrack(getSelectedTrack());
-    }
+    ValueTree& getTracks() { return tracksManager.getState(); }
 
     ValueTree getAudioInputProcessorState() const {
         return input.getChildWithProperty(IDs::name, processorManager.getAudioInputDescription().name);
@@ -258,413 +94,65 @@ public:
     }
 
     bool isPush2MidiInputProcessorConnected() const {
-        return connectionHelper.isNodeConnected(getNodeIdForState(getPush2MidiInputProcessor()));
-    }
-
-    const bool selectedTrackHasMixerChannel() const {
-        return getMixerChannelProcessorForSelectedTrack().isValid();
-    }
-
-    int getNumTrackProcessorSlots() const { return viewState[IDs::numProcessorSlots]; }
-    int getNumMasterProcessorSlots() const { return viewState[IDs::numMasterProcessorSlots]; }
-    int getGridViewTrackOffset() const { return viewState[IDs::gridViewTrackOffset]; }
-    int getGridViewSlotOffset() const { return viewState[IDs::gridViewSlotOffset]; }
-    int getMasterViewSlotOffset() const { return viewState[IDs::masterViewSlotOffset]; }
-    int getViewIndexForTrack(const ValueTree& track) const {
-        return track.getParent().indexOf(track) - getGridViewTrackOffset();
-    }
-
-    void addProcessorRow() {
-        viewState.setProperty(IDs::numProcessorSlots, int(viewState[IDs::numProcessorSlots]) + 1, &undoManager);
-        for (const auto& track : tracks) {
-            if (track.hasProperty(IDs::isMasterTrack))
-                continue;
-            auto mixerChannelProcessor = getMixerChannelProcessorForTrack(track);
-            if (mixerChannelProcessor.isValid()) {
-                setProcessorSlot(track, mixerChannelProcessor, getMixerChannelSlotForTrack(track), &undoManager);
-            }
-        }
-    }
-
-    void addMasterProcessorSlot() {
-        viewState.setProperty(IDs::numMasterProcessorSlots, int(viewState[IDs::numMasterProcessorSlots]) + 1, &undoManager);
-        const auto& masterTrack = getMasterTrack();
-        auto mixerChannelProcessor = getMixerChannelProcessorForTrack(masterTrack);
-        if (mixerChannelProcessor.isValid()) {
-            setProcessorSlot(masterTrack, mixerChannelProcessor, getMixerChannelSlotForTrack(masterTrack), &undoManager);
-        }
+        return connectionsManager.isNodeConnected(getNodeIdForState(getPush2MidiInputProcessor()));
     }
 
     bool isShiftHeld() const { return shiftHeld || push2ShiftHeld; }
-    bool isInNoteMode() const { return viewState[IDs::controlMode] == noteControlMode; }
-    bool isInSessionMode() const { return viewState[IDs::controlMode] == sessionControlMode; }
-    bool isGridPaneFocused() const { return viewState[IDs::focusedPane] == gridPaneName; }
 
     void setShiftHeld(bool shiftHeld) {
         if (!isShiftHeld() && shiftHeld)
-            setInitialSelectPosition();
+            tracksManager.setInitialSelectPosition();
         this->shiftHeld = shiftHeld;
         if (!isShiftHeld())
-            initialSelectTrackAndSlot.reset();
+            tracksManager.resetInitialSelectPosition();
     }
 
     void setPush2ShiftHeld(bool shiftHeld) {
         if (!isShiftHeld() && shiftHeld)
-            setInitialSelectPosition();
+            tracksManager.setInitialSelectPosition();
         this->push2ShiftHeld = shiftHeld;
         if (!isShiftHeld())
-            initialSelectTrackAndSlot.reset();
+            tracksManager.resetInitialSelectPosition();
     }
-
-    void setInitialSelectPosition() {
-        const auto& selectedTrack = getSelectedTrack();
-        if (selectedTrack.isValid()) {
-            auto selectedSlot = findSelectedSlotForTrack(selectedTrack);
-            if (selectedSlot != -1) {
-                initialSelectTrackAndSlot = std::make_unique<TrackAndSlot>(selectedTrack, selectedSlot);
-            }
-        }
-    }
-
-    void setNoteMode() { viewState.setProperty(IDs::controlMode, noteControlMode, nullptr); }
-    void setSessionMode() { viewState.setProperty(IDs::controlMode, sessionControlMode, nullptr); }
-    void focusOnGridPane() { viewState.setProperty(IDs::focusedPane, gridPaneName, nullptr); }
-    void focusOnEditorPane() { viewState.setProperty(IDs::focusedPane, editorPaneName, nullptr); }
-
-    void togglePaneFocus() {
-        if (isGridPaneFocused())
-            focusOnEditorPane();
-        else
-            focusOnGridPane();
-    }
-
-    void setTrackWidth(int trackWidth) { this->trackWidth = trackWidth; }
-    void setProcessorHeight(int processorHeight) { this->processorHeight = processorHeight; }
-
-    int getTrackWidth() { return trackWidth; }
-    int getProcessorHeight() { return processorHeight; }
 
     // make a snapshot of all the information needed to capture AudioGraph connections and UI positions
     void makeConnectionsSnapshot() {
-        connectionHelper.makeConnectionsSnapshot();
-        slotForNodeIdSnapshot.clear();
-        for (auto track : tracks) {
-            for (auto child : track) {
-                if (child.hasType(IDs::PROCESSOR)) {
-                    slotForNodeIdSnapshot.insert(std::__1::pair<int, int>(child[IDs::nodeId], child[IDs::processorSlot]));
-                }
-            }
-        }
+        connectionsManager.makeConnectionsSnapshot();
+        tracksManager.makeConnectionsSnapshot();
     }
 
     void restoreConnectionsSnapshot() {
-        connectionHelper.restoreConnectionsSnapshot();
-        for (const auto& track : tracks) {
-            for (auto child : track) {
-                if (child.hasType(IDs::PROCESSOR)) {
-                    setProcessorSlot(track, child, slotForNodeIdSnapshot.at(int(child[IDs::nodeId])), nullptr);
-                }
-            }
-        }
+        connectionsManager.restoreConnectionsSnapshot();
+        tracksManager.restoreConnectionsSnapshot();
     }
 
-    void navigateUp() { findItemToSelectWithUpDownDelta(-1).select(this); }
+    void navigateUp() { tracksManager.findItemToSelectWithUpDownDelta(-1).select(tracksManager); }
 
-    void navigateDown() { findItemToSelectWithUpDownDelta(1).select(this); }
+    void navigateDown() { tracksManager.findItemToSelectWithUpDownDelta(1).select(tracksManager); }
 
-    void navigateLeft() { findItemToSelectWithLeftRightDelta(-1).select(this); }
+    void navigateLeft() { tracksManager.findItemToSelectWithLeftRightDelta(-1).select(tracksManager); }
 
-    void navigateRight() { findItemToSelectWithLeftRightDelta(1).select(this); }
+    void navigateRight() { tracksManager.findItemToSelectWithLeftRightDelta(1).select(tracksManager); }
 
-    bool canNavigateUp() const { return findItemToSelectWithUpDownDelta(-1).isValid(); }
+    bool canNavigateUp() const { return tracksManager.findItemToSelectWithUpDownDelta(-1).isValid(); }
 
-    bool canNavigateDown() const { return findItemToSelectWithUpDownDelta(1).isValid(); }
+    bool canNavigateDown() const { return tracksManager.findItemToSelectWithUpDownDelta(1).isValid(); }
 
-    bool canNavigateLeft() const { return findItemToSelectWithLeftRightDelta(-1).isValid(); }
+    bool canNavigateLeft() const { return tracksManager.findItemToSelectWithLeftRightDelta(-1).isValid(); }
 
-    bool canNavigateRight() const { return findItemToSelectWithLeftRightDelta(1).isValid(); }
-
-    bool canDuplicateSelected() const {
-        const auto& selectedTrack = getSelectedTrack();
-        if (selectedTrack[IDs::selected] && !selectedTrack.hasProperty(IDs::isMasterTrack))
-            return true;
-        const auto& selectedProcessor = getSelectedProcessor();
-        return selectedProcessor.isValid() && !isMixerChannelProcessor(selectedProcessor);
-    }
-
-    void deleteSelectedItems() {
-        const Array<ValueTree> allSelectedItems = findAllSelectedItems();
-        for (const auto &selectedItem : allSelectedItems) {
-            deleteItem(selectedItem, &undoManager);
-        }
-    }
-
-    void duplicateSelectedItems() {
-        const Array<ValueTree> allSelectedItems = findAllSelectedItems();
-        for (auto &selectedItem : allSelectedItems) {
-            duplicateItem(selectedItem, &undoManager);
-        }
-    }
-
-    void duplicateItem(ValueTree &item, UndoManager* undoManager) {
-        if (!item.isValid())
-            return;
-        if (item.getParent().isValid()) {
-            if (item.hasType(IDs::TRACK) && !item.hasProperty(IDs::isMasterTrack)) {
-                auto copiedTrack = createAndAddTrack(undoManager, false, item, true);
-                for (auto processor : item) {
-                    saveProcessorStateInformationToState(processor);
-                    auto copiedProcessor = processor.createCopy();
-                    copiedProcessor.removeProperty(IDs::nodeId, nullptr);
-                    addProcessorToTrack(copiedTrack, copiedProcessor, item.indexOf(processor), undoManager);
-                }
-            } else if (item.hasType(IDs::PROCESSOR) && !isMixerChannelProcessor(item)) {
-                saveProcessorStateInformationToState(item);
-                auto track = item.getParent();
-                auto copiedProcessor = item.createCopy();
-                setProcessorSlot(track, copiedProcessor, int(item[IDs::processorSlot]) + 1, nullptr);
-                copiedProcessor.removeProperty(IDs::nodeId, nullptr);
-                addProcessorToTrack(track, copiedProcessor, track.indexOf(item), undoManager);
-            }
-        }
-    }
-
-    void deleteItem(const ValueTree &item, UndoManager* undoManager) {
-        if (!item.isValid())
-            return;
-        if (item.getParent().isValid()) {
-            if (item.hasType(IDs::TRACK)) {
-                while (item.getNumChildren() > 0)
-                    deleteItem(item.getChild(item.getNumChildren() - 1), undoManager);
-            } else if (item.hasType(IDs::PROCESSOR)) {
-                sendProcessorWillBeDestroyedMessage(item);
-            }
-            item.getParent().removeChild(item, undoManager);
-            if (item.hasType(IDs::PROCESSOR)) {
-                sendProcessorHasBeenDestroyedMessage(item);
-            }
-        }
-    }
+    bool canNavigateRight() const { return tracksManager.findItemToSelectWithLeftRightDelta(1).isValid(); }
 
     void createDefaultProject() {
-        viewState.setProperty(IDs::controlMode, noteControlMode, nullptr);
-        viewState.setProperty(IDs::focusedPane, editorPaneName, nullptr);
-        viewState.setProperty(IDs::numProcessorSlots, 7, nullptr);
-        viewState.setProperty(IDs::numMasterProcessorSlots, 8, nullptr);
-        viewState.setProperty(IDs::gridViewTrackOffset, 0, nullptr);
-        viewState.setProperty(IDs::gridViewSlotOffset, 0, nullptr);
-        viewState.setProperty(IDs::masterViewSlotOffset, 0, nullptr);
-
+        viewManager.initializeDefault();
         createAudioIoProcessors();
-
-        ValueTree track = createAndAddTrack(nullptr);
-        createAndAddProcessor(SineBank::getPluginDescription(), track, nullptr, -1);
-
-        createAndAddMasterTrack(nullptr, true);
-    }
-
-    ValueTree createAndAddMasterTrack(UndoManager* undoManager, bool addMixer=true) {
-        if (getMasterTrack().isValid())
-            return {}; // only one master track allowed!
-
-        ValueTree masterTrack(IDs::TRACK);
-        masterTrack.setProperty(IDs::isMasterTrack, true, nullptr);
-        masterTrack.setProperty(IDs::name, "Master", nullptr);
-        masterTrack.setProperty(IDs::colour, Colours::darkslateblue.toString(), nullptr);
-        tracks.addChild(masterTrack, -1, undoManager);
-
-        if (addMixer)
-            createAndAddProcessor(MixerChannelProcessor::getPluginDescription(), masterTrack, undoManager, -1);
-
-        return masterTrack;
-    }
-
-    ValueTree createAndAddTrack(UndoManager* undoManager, bool addMixer=true, ValueTree nextToTrack={}, bool forceImmediatelyToRight=false) {
-        int numTracks = getNumNonMasterTracks();
-        const auto& selectedTrack = getSelectedTrack();
-
-        if (!nextToTrack.isValid()) {
-            if (selectedTrack.isValid()) {
-                // If a track is selected, insert the new track to the left of it if there's no mixer,
-                // or to the right of the first track with a mixer if the new track has a mixer.
-                nextToTrack = selectedTrack;
-
-                if (addMixer && !forceImmediatelyToRight) {
-                    while (nextToTrack.isValid() && !getMixerChannelProcessorForTrack(nextToTrack).isValid())
-                        nextToTrack = nextToTrack.getSibling(1);
-                }
-            }
-        }
-        if (nextToTrack == getMasterTrack())
-            nextToTrack = {};
-
-        ValueTree track(IDs::TRACK);
-        track.setProperty(IDs::uuid, Uuid().toString(), nullptr);
-        track.setProperty(IDs::name, (nextToTrack.isValid() && !addMixer) ? makeTrackNameUnique(nextToTrack[IDs::name]) : ("Track " + String(numTracks + 1)), nullptr);
-        track.setProperty(IDs::colour, (nextToTrack.isValid() && !addMixer) ? nextToTrack[IDs::colour].toString() : Colour::fromHSV((1.0f / 8.0f) * numTracks, 0.65f, 0.65f, 1.0f).toString(), nullptr);
-        tracks.addChild(track, nextToTrack.isValid() ? nextToTrack.getParent().indexOf(nextToTrack) + (addMixer || forceImmediatelyToRight ? 1 : 0): numTracks, undoManager);
-
-        track.setProperty(IDs::selected, true, undoManager);
-
-        if (addMixer)
-            createAndAddProcessor(MixerChannelProcessor::getPluginDescription(), track, undoManager, -1);
-
-        return track;
-    }
-
-    ValueTree createAndAddProcessor(const PluginDescription& description, UndoManager* undoManager) {
-        if (getSelectedTrack().isValid())
-            return createAndAddProcessor(description, getSelectedTrack(), undoManager, -1);
-        else
-            return ValueTree();
-    }
-
-    ValueTree createAndAddProcessor(const PluginDescription &description, ValueTree track, UndoManager *undoManager, int slot = -1) {
-        if (description.name == MixerChannelProcessor::name() && getMixerChannelProcessorForTrack(track).isValid())
-            return ValueTree(); // only one mixer channel per track
-
-        if (processorManager.isGeneratorOrInstrument(&description) &&
-            processorManager.doesTrackAlreadyHaveGeneratorOrInstrument(track)) {
-            return createAndAddProcessor(description, createAndAddTrack(undoManager, false, track), undoManager, slot);
-        }
-
-        ValueTree processor(IDs::PROCESSOR);
-        processor.setProperty(IDs::id, description.createIdentifierString(), nullptr);
-        processor.setProperty(IDs::name, description.name, nullptr);
-        processor.setProperty(IDs::allowDefaultConnections, true, nullptr);
-
-        int insertIndex;
-        if (isMixerChannelProcessor(processor)) {
-            insertIndex = -1;
-            slot = getMixerChannelSlotForTrack(track);
-        } else if (slot == -1) {
-            if (description.numInputChannels == 0) {
-                insertIndex = 0;
-                slot = 0;
-            } else {
-                // Insert new effect processors _right before_ the first MixerChannel processor.
-                const ValueTree &mixerChannelProcessor = getMixerChannelProcessorForTrack(track);
-                insertIndex = mixerChannelProcessor.isValid() ? track.indexOf(mixerChannelProcessor) : track.getNumChildren();
-                slot = insertIndex <= 0 ? 0 : int(track.getChild(insertIndex - 1)[IDs::processorSlot]) + 1;
-            }
-        } else {
-            setProcessorSlot(track, processor, slot, nullptr);
-            insertIndex = getParentIndexForProcessor(track, processor, nullptr);
-        }
-        setProcessorSlot(track, processor, slot, nullptr);
-        addProcessorToTrack(track, processor, insertIndex, undoManager);
-
-        return processor;
-    }
-
-    void addProcessorToTrack(ValueTree &track, const ValueTree &processor, int insertIndex, UndoManager *undoManager) {
-        track.addChild(processor, insertIndex, undoManager);
-        makeSlotsValid(track, undoManager);
-        sendProcessorCreatedMessage(processor);
-    }
-
-    int getNumAvailableSlotsForTrack(const ValueTree &track) const {
-        return track.hasProperty(IDs::isMasterTrack) ? getNumMasterProcessorSlots() : getNumTrackProcessorSlots();
-    }
-
-    int getSlotOffsetForTrack(const ValueTree& track) const {
-        return track.hasProperty(IDs::isMasterTrack) ? getMasterViewSlotOffset() : getGridViewSlotOffset();
-    }
-
-    int getMixerChannelSlotForTrack(const ValueTree& track) const {
-        return getNumAvailableSlotsForTrack(track) - 1;
-    }
-
-    bool isMixerChannelProcessor(const ValueTree& processor) const {
-        return processor[IDs::name] == MixerChannelProcessor::name();
-    }
-
-    bool isProcessorSlotInView(const ValueTree& track, int correctedSlot) {
-        bool inView = correctedSlot >= getSlotOffsetForTrack(track) &&
-                      correctedSlot < getSlotOffsetForTrack(track) + NUM_VISIBLE_TRACKS;
-        if (track.hasProperty(IDs::isMasterTrack))
-            inView &= getGridViewSlotOffset() + NUM_VISIBLE_TRACKS > getNumTrackProcessorSlots();
-        else {
-            auto trackIndex = tracks.indexOf(track);
-            auto trackViewOffset = getGridViewTrackOffset();
-            inView &= trackIndex >= trackViewOffset && trackIndex < trackViewOffset + NUM_VISIBLE_TRACKS;
-        }
-        return inView;
-    }
-
-    void setProcessorSlot(const ValueTree& track, ValueTree& processor, int newSlot, UndoManager* undoManager) {
-        if (!processor.isValid())
-            return;
-
-        if (newSlot >= getMixerChannelSlotForTrack(track) && !isMixerChannelProcessor(processor)) {
-            if (track.hasProperty(IDs::isMasterTrack)) {
-                addMasterProcessorSlot();
-            } else {
-                addProcessorRow();
-            }
-            newSlot = getMixerChannelSlotForTrack(track) - 1;
-        }
-        processor.setProperty(IDs::processorSlot, newSlot, undoManager);
-    }
-
-    void makeSlotsValid(const ValueTree& parent, UndoManager* undoManager) {
-        std::vector<int> slots;
-        for (const ValueTree& child : parent) {
-            if (child.hasType(IDs::PROCESSOR)) {
-                slots.push_back(int(child[IDs::processorSlot]));
-            }
-        }
-        sort(slots.begin(), slots.end());
-        for (int i = 1; i < slots.size(); i++) {
-            while (slots[i] <= slots[i - 1]) {
-                slots[i] += 1;
-            }
-        }
-
-        auto iterator = slots.begin();
-        for (ValueTree child : parent) {
-            if (child.hasType(IDs::PROCESSOR)) {
-                int newSlot = *(iterator++);
-                setProcessorSlot(parent, child, newSlot, undoManager);
-            }
-        }
-    }
-
-    int getParentIndexForProcessor(const ValueTree &parent, const ValueTree &processorState, UndoManager* undoManager) {
-        auto slot = int(processorState[IDs::processorSlot]);
-        for (ValueTree otherProcessorState : parent) {
-            if (processorState == otherProcessorState)
-                continue;
-            if (otherProcessorState.hasType(IDs::PROCESSOR)) {
-                auto otherSlot = int(otherProcessorState[IDs::processorSlot]);
-                if (otherSlot == slot) {
-                    if (otherProcessorState.getParent() == processorState.getParent()) {
-                        // moving within same parent - need to resolve the "tie" in a way that guarantees the child order changes.
-                        int currentIndex = parent.indexOf(processorState);
-                        int currentOtherIndex = parent.indexOf(otherProcessorState);
-                        if (currentIndex < currentOtherIndex) {
-                            setProcessorSlot(parent, otherProcessorState, otherSlot - 1, undoManager);
-                            return currentIndex + 2;
-                        } else {
-                            setProcessorSlot(parent, otherProcessorState, otherSlot + 1, undoManager);
-                            return currentIndex - 1;
-                        }
-                    } else {
-                        return parent.indexOf(otherProcessorState);
-                    }
-                } else if (otherSlot > slot) {
-                    return parent.indexOf(otherProcessorState);
-                }
-            }
-        }
-
-        // TODO in this and other places, we assume processors are the only type of track child.
-        return parent.getNumChildren();
+        ValueTree track = tracksManager.createAndAddTrack(nullptr);
+        tracksManager.createAndAddProcessor(SineBank::getPluginDescription(), track, nullptr, -1);
+        tracksManager.createAndAddMasterTrack(nullptr, true);
     }
 
     void addPluginsToMenu(PopupMenu& menu, const ValueTree& track) const {
         StringArray disabledPluginIds;
-        if (getMixerChannelProcessorForTrack(track).isValid()) {
+        if (tracksManager.getMixerChannelProcessorForTrack(track).isValid()) {
             disabledPluginIds.add(MixerChannelProcessor::getPluginDescription().fileOrIdentifier);
         }
 
@@ -726,7 +214,7 @@ public:
         if (!newState.isValid() || !newState.hasType(IDs::PROJECT))
             return Result::fail(TRANS("Not a valid project file"));
 
-        viewState.copyPropertiesFrom(newState.getChildWithName(IDs::VIEW_STATE), nullptr);
+        viewManager.getState().copyPropertiesFrom(newState.getChildWithName(IDs::VIEW_STATE), nullptr);
 
         const String& inputDeviceName = newState.getChildWithName(IDs::INPUT)[IDs::deviceName];
         const String& outputDeviceName = newState.getChildWithName(IDs::OUTPUT)[IDs::deviceName];
@@ -748,8 +236,8 @@ public:
 
         Utilities::moveAllChildren(newState.getChildWithName(IDs::INPUT), input, nullptr);
         Utilities::moveAllChildren(newState.getChildWithName(IDs::OUTPUT), output, nullptr);
-        Utilities::moveAllChildren(newState.getChildWithName(IDs::TRACKS), tracks, nullptr);
-        Utilities::moveAllChildren(newState.getChildWithName(IDs::CONNECTIONS), connectionHelper.getState(), nullptr);
+        Utilities::moveAllChildren(newState.getChildWithName(IDs::TRACKS), tracksManager.getState(), nullptr);
+        Utilities::moveAllChildren(newState.getChildWithName(IDs::CONNECTIONS), connectionsManager.getState(), nullptr);
 
         undoManager.clearUndoHistory();
         return Result::ok();
@@ -772,25 +260,11 @@ public:
     }
 
     Result saveDocument(const File &file) override {
-        for (const auto& track : tracks) {
-            for (auto processorState : track) {
-                saveProcessorStateInformationToState(processorState);
-            }
-        }
+        tracksManager.saveProcessorStateInformation();
         if (Utilities::saveValueTree(state, file, true))
             return Result::ok();
 
         return Result::fail(TRANS("Could not save the project file"));
-    }
-
-    void saveProcessorStateInformationToState(ValueTree &processorState) const {
-        if (auto* processorWrapper = getProcessorWrapperForState(processorState)) {
-            MemoryBlock memoryBlock;
-            if (auto* processor = processorWrapper->processor) {
-                processor->getStateInformation(memoryBlock);
-                processorState.setProperty(IDs::state, memoryBlock.toBase64Encoding(), nullptr);
-            }
-        }
     }
 
     File getLastDocumentOpened() override {
@@ -809,38 +283,28 @@ public:
 
     static const String getFilenameSuffix() { return ".smp"; }
 
-    const static int NUM_VISIBLE_TRACKS = 8;
-    const static int NUM_VISIBLE_PROCESSOR_SLOTS = 10;
-
-    static constexpr int TRACK_LABEL_HEIGHT = 32;
-
-    const String sessionControlMode = "session", noteControlMode = "note";
-    const String gridPaneName = "grid", editorPaneName = "editor";
-
 private:
     ValueTree state;
-    ConnectionHelper connectionHelper;
-    UndoManager &undoManager;
-    ValueTree input, output, tracks, viewState;
-
-    std::unordered_map<int, int> slotForNodeIdSnapshot;
-
     ProcessorManager &processorManager;
+    ViewStateManager viewManager;
+    TracksStateManager tracksManager;
+    ConnectionsStateManager connectionsManager;
+
+    UndoManager &undoManager;
+    ValueTree input, output;
+
     AudioDeviceManager& deviceManager;
 
     AudioProcessorGraph* graph {};
     StatefulAudioProcessorContainer* statefulAudioProcessorContainer {};
 
     bool shiftHeld { false }, push2ShiftHeld { false };
-    int trackWidth {0}, processorHeight {0};
-    std::unique_ptr<TrackAndSlot> initialSelectTrackAndSlot {};
 
     void clear() {
         input.removeAllChildren(nullptr);
         output.removeAllChildren(nullptr);
-        while (tracks.getNumChildren() > 0)
-            deleteItem(tracks.getChild(tracks.getNumChildren() - 1), nullptr);
-        connectionHelper.clear();
+        tracksManager.clear();
+        connectionsManager.clear();
         undoManager.clearUndoHistory();
     }
 
@@ -863,25 +327,6 @@ private:
         }
     }
     
-    // NOTE: assumes the track hasn't been added yet!
-    const String makeTrackNameUnique(const String& trackName) {
-        for (auto track : tracks) {
-            String otherTrackName = track[IDs::name];
-            if (otherTrackName == trackName) {
-                if (trackName.contains("-")) {
-                    int i = trackName.getLastCharacters(trackName.length() - trackName.lastIndexOf("-") - 1).getIntValue();
-                    if (i != 0) {
-                        return makeTrackNameUnique(trackName.upToLastOccurrenceOf("-", true, false) + String(i + 1));
-                    }
-                } else {
-                    return makeTrackNameUnique(trackName + "-" + String(1));
-                }
-            }
-        }
-
-        return trackName;
-    }
-
     void changeListenerCallback(ChangeBroadcaster* source) override {
         if (source == &deviceManager) {
             deviceManager.updateEnabledMidiInputsAndOutputs();
@@ -910,7 +355,7 @@ private:
             }
         }
         for (const auto& inputChild : inputChildrenToDelete) {
-            deleteItem(inputChild, &undoManager);
+            tracksManager.deleteItem(inputChild, &undoManager);
         }
         for (const auto& deviceName : MidiInput::getDevices()) {
             if (deviceManager.isMidiInputEnabled(deviceName) &&
@@ -936,7 +381,7 @@ private:
             }
         }
         for (const auto& outputChild : outputChildrenToDelete) {
-            deleteItem(outputChild, &undoManager);
+            tracksManager.deleteItem(outputChild, &undoManager);
         }
         for (const auto& deviceName : MidiOutput::getDevices()) {
             if (deviceManager.isMidiOutputEnabled(deviceName) &&
@@ -949,179 +394,6 @@ private:
                 output.addChild(midiOutputProcessor, -1, &undoManager);
             }
         }
-    }
-
-    void setProcessorSlotSelected(ValueTree track, int slot, bool selected, bool deselectOthers=true,
-                                  ValueTree::Listener* excludingListener=nullptr) {
-        if (deselectOthers) {
-            for (auto otherTrack : tracks) {
-                if (otherTrack != track) {
-                    otherTrack.setProperty(IDs::selected, false, nullptr);
-                    otherTrack.removeProperty(IDs::selectedSlotsMask, nullptr);
-                }
-            }
-        }
-        BigInteger selectedSlotsMask;
-        const String &currentSelectedSlotsMask = track.getProperty(IDs::selectedSlotsMask).toString();
-        selectedSlotsMask.parseString(currentSelectedSlotsMask, 2);
-        if (deselectOthers)
-            selectedSlotsMask.clear();
-        selectedSlotsMask.setBit(slot, selected);
-        const auto &bitmaskString = selectedSlotsMask.toString(2);
-        if (excludingListener == nullptr) {
-            if (bitmaskString != currentSelectedSlotsMask)
-                track.setProperty(IDs::selectedSlotsMask, bitmaskString, nullptr);
-            else
-                track.sendPropertyChangeMessage(IDs::selectedSlotsMask);
-        } else {
-            track.setPropertyExcludingListener(excludingListener, IDs::selectedSlotsMask, bitmaskString, nullptr);
-        }
-    }
-
-    TrackAndSlot findItemToSelectWithLeftRightDelta(int delta) const {
-        if (isGridPaneFocused())
-            return findGridItemToSelectWithLeftRightDelta(delta);
-        else
-            return findSelectionPaneItemToSelectWithLeftRightDelta(delta);
-    }
-
-    TrackAndSlot findItemToSelectWithUpDownDelta(int delta) const {
-        if (isGridPaneFocused())
-            return findGridItemToSelectWithUpDownDelta(delta);
-        else
-            return findSelectionPaneItemToSelectWithUpDownDelta(delta);
-    }
-
-    TrackAndSlot findGridItemToSelectWithLeftRightDelta(int delta) const {
-        const auto& selectedTrack = getSelectedTrack();
-        if (!selectedTrack.isValid())
-            return {};
-
-        auto selectedSlot = findSelectedSlotForTrack(selectedTrack);
-        if (selectedTrack.hasProperty(IDs::isMasterTrack)) {
-            int slotToSelect = selectedSlot + delta;
-            if (delta > 0) {
-                if (selectedTrack[IDs::selected]) {
-                    // re-selecting the processor will deselect the parent.
-                    return {selectedTrack, selectedSlot};
-                }
-            } else if (delta < 0) {
-                if (slotToSelect < 0 && !selectedTrack[IDs::selected])
-                    return {selectedTrack};
-            }
-            return {selectedTrack, jmin(slotToSelect, getNumMasterProcessorSlots() - 1)};
-        } else {
-            auto siblingTrackToSelect = selectedTrack.getSibling(delta);
-            if (siblingTrackToSelect.isValid() && !siblingTrackToSelect.hasProperty(IDs::isMasterTrack)) {
-                return {siblingTrackToSelect, selectedSlot};
-            }
-        }
-
-        return {};
-    }
-
-    TrackAndSlot findGridItemToSelectWithUpDownDelta(int delta) const {
-        const auto& selectedTrack = getSelectedTrack();
-        int selectedProcessorSlot = findSelectedSlotForTrack(selectedTrack);
-        if (selectedTrack.hasProperty(IDs::isMasterTrack)) {
-            if (delta < 0) {
-                auto trackToSelect = getTrackWithViewIndex(selectedProcessorSlot - getMasterViewSlotOffset());
-                if (!trackToSelect.isValid() || trackToSelect.hasProperty(IDs::isMasterTrack))
-                    trackToSelect = getTrack(getNumNonMasterTracks() - 1);
-                return {trackToSelect, getNumTrackProcessorSlots() - 1};
-            } else {
-                return {};
-            }
-        } else {
-            auto slotToSelect = selectedProcessorSlot + delta;
-            if (delta > 0) {
-                if (selectedTrack[IDs::selected]) {
-                    // re-selecting the processor will deselect the parent.
-                    return {selectedTrack, selectedProcessorSlot};
-                } else if (slotToSelect >= getNumTrackProcessorSlots()) {
-                    const auto& masterTrack = getMasterTrack();
-                    if (masterTrack.isValid()) {
-                        auto masterProcessorSlotToSelect = getViewIndexForTrack(selectedTrack) + getMasterViewSlotOffset();
-                        return {masterTrack, jmin(masterProcessorSlotToSelect, getNumMasterProcessorSlots() - 1)};
-                    }
-                }
-            } else if (delta < 0) {
-                if (slotToSelect < 0 && !selectedTrack[IDs::selected])
-                    return {selectedTrack};
-            }
-
-            return {selectedTrack, jmin(slotToSelect, getNumTrackProcessorSlots() - 1)};
-        }
-    }
-
-    TrackAndSlot findSelectionPaneItemToSelectWithLeftRightDelta(int delta) const {
-        const auto& selectedTrack = getSelectedTrack();
-        if (!selectedTrack.isValid())
-            return {};
-
-        auto siblingTrackToSelect = selectedTrack.getSibling(delta);
-        if (siblingTrackToSelect.isValid()) {
-            if (selectedTrack[IDs::selected] || selectedTrack.getNumChildren() == 0) {
-                return {siblingTrackToSelect};
-            } else {
-                auto selectedSlot = findSelectedSlotForTrack(selectedTrack);
-                if (selectedSlot != -1) {
-                    const auto& processorToSelect = findProcessorNearestToSlot(siblingTrackToSelect, selectedSlot);
-                    return processorToSelect.isValid() ? TrackAndSlot(siblingTrackToSelect, processorToSelect) : TrackAndSlot(siblingTrackToSelect);
-                }
-            }
-        }
-
-        return {};
-    }
-
-    TrackAndSlot findSelectionPaneItemToSelectWithUpDownDelta(int delta) const {
-        const auto& selectedTrack = getSelectedTrack();
-        if (!selectedTrack.isValid())
-            return {};
-
-        const auto& selectedProcessor = findSelectedProcessorForTrack(selectedTrack);
-        if (delta > 0 && selectedTrack[IDs::selected]) {
-            // re-selecting the processor will deselect the parent.
-            return {selectedTrack, selectedProcessor};
-        }
-
-        int selectedProcessorSlot = findSelectedSlotForTrack(selectedTrack);
-        auto siblingProcessorToSelect = selectedProcessor.getSibling(delta);
-        if (!siblingProcessorToSelect.isValid()) {
-            for (int slot = selectedProcessorSlot; (delta < 0 ? slot >= 0 : slot < getNumAvailableSlotsForTrack(selectedTrack)); slot += delta) {
-                const auto &processor = selectedTrack.getChildWithProperty(IDs::processorSlot, slot);
-                if (processor.isValid()) {
-                    siblingProcessorToSelect = processor;
-                    break;
-                }
-            }
-        }
-
-        if (delta < 0 && !siblingProcessorToSelect.isValid() && !selectedTrack[IDs::selected]) {
-            return {selectedTrack};
-        }
-
-        if (siblingProcessorToSelect.isValid())
-            return {selectedTrack, siblingProcessorToSelect};
-        return {};
-    }
-
-    ValueTree findProcessorNearestToSlot(const ValueTree &track, int slot) const {
-        int nearestSlot = INT_MAX;
-        ValueTree nearestProcessor;
-        for (const auto& processor : track) {
-            int otherSlot = processor[IDs::processorSlot];
-            if (otherSlot == slot)
-                return processor;
-            if (abs(slot - otherSlot) < abs(slot - nearestSlot)) {
-                nearestSlot = otherSlot;
-                nearestProcessor = processor;
-            }
-            if (otherSlot > slot)
-                break; // processors are ordered by slot.
-        }
-        return nearestProcessor;
     }
 
     void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override {
@@ -1154,15 +426,15 @@ private:
             deviceManager.setAudioDeviceSetup(config, true);
         } else if (tree.hasType(IDs::TRACK) && i == IDs::selected && tree[i]) {
             if (!tree.hasProperty(IDs::isMasterTrack)) {
-                updateViewTrackOffsetToInclude(tracks.indexOf(tree));
+                tracksManager.updateViewTrackOffsetToInclude(tracksManager.indexOf(tree));
             }
         } else if (i == IDs::selectedSlotsMask) {
             if (!tree.hasProperty(IDs::isMasterTrack)) {
-                updateViewTrackOffsetToInclude(tracks.indexOf(tree));
+                tracksManager.updateViewTrackOffsetToInclude(tracksManager.indexOf(tree));
             }
-            auto slot = findSelectedSlotForTrack(tree);
+            auto slot = tracksManager.findSelectedSlotForTrack(tree);
             if (slot != -1)
-                updateViewSlotOffsetToInclude(slot, tree.hasProperty(IDs::isMasterTrack));
+                tracksManager.updateViewSlotOffsetToInclude(slot, tree.hasProperty(IDs::isMasterTrack));
         }
     }
 
@@ -1171,52 +443,4 @@ private:
     void valueTreeParentChanged(ValueTree &) override {}
 
     void valueTreeRedirected(ValueTree &) override {}
-
-    void updateViewTrackOffsetToInclude(int trackIndex) {
-        if (trackIndex < 0)
-            return; // invalid
-        auto viewTrackOffset = getGridViewTrackOffset();
-        if (trackIndex >= viewTrackOffset + NUM_VISIBLE_TRACKS)
-            viewState.setProperty(IDs::gridViewTrackOffset, trackIndex - NUM_VISIBLE_TRACKS + 1, nullptr);
-        else if (trackIndex < viewTrackOffset)
-            viewState.setProperty(IDs::gridViewTrackOffset, trackIndex, nullptr);
-        else if (getNumNonMasterTracks() - viewTrackOffset < NUM_VISIBLE_TRACKS && getNumNonMasterTracks() >= NUM_VISIBLE_TRACKS)
-            // always show last N tracks if available
-            viewState.setProperty(IDs::gridViewTrackOffset, getNumNonMasterTracks() - NUM_VISIBLE_TRACKS, nullptr);
-    }
-
-    void updateViewSlotOffsetToInclude(int processorSlot, bool isMasterTrack) {
-        if (processorSlot < 0)
-            return; // invalid
-        if (isMasterTrack) {
-            auto viewSlotOffset = getMasterViewSlotOffset();
-            if (processorSlot >= viewSlotOffset + NUM_VISIBLE_TRACKS)
-                viewState.setProperty(IDs::masterViewSlotOffset, processorSlot - NUM_VISIBLE_TRACKS + 1, nullptr);
-            else if (processorSlot < viewSlotOffset)
-                viewState.setProperty(IDs::masterViewSlotOffset, processorSlot, nullptr);
-            processorSlot = getNumTrackProcessorSlots();
-        }
-
-        auto viewSlotOffset = getGridViewSlotOffset();
-        if (processorSlot >= viewSlotOffset + NUM_VISIBLE_TRACKS)
-            viewState.setProperty(IDs::gridViewSlotOffset, processorSlot - NUM_VISIBLE_TRACKS + 1, nullptr);
-        else if (processorSlot < viewSlotOffset)
-            viewState.setProperty(IDs::gridViewSlotOffset, processorSlot, nullptr);
-    }
-
-    Array<ValueTree> findAllSelectedItems() const {
-        Array<ValueTree> items;
-        for (auto track : tracks) {
-            if (track[IDs::selected]) {
-                items.add(track);
-            } else {
-              for (auto processor : track) {
-                  if (isProcessorSelected(processor)) {
-                      items.add(processor);
-                  }
-              }
-            }
-        }
-        return items;
-    }
 };

@@ -134,7 +134,7 @@ private:
     }
 
     void updatePageButtonVisibility() {
-        const auto& selectedTrack = project.getSelectedTrack();
+        const auto& selectedTrack = tracksManager.getSelectedTrack();
         Colour trackColour = getColourForTrack(selectedTrack);
 
         if (processorHasFocus) { // TODO reset when processor changes
@@ -167,7 +167,7 @@ private:
     }
 
     void updateProcessorButtons() {
-        const auto& selectedTrack = project.getSelectedTrack();
+        const auto& selectedTrack = tracksManager.getSelectedTrack();
         if (processorHasFocus || !selectedTrack.isValid()) { // TODO reset when processor changes
             for (auto* label : processorLabels)
                 label->setVisible(false);
@@ -183,7 +183,7 @@ private:
                     if (processor.hasType(IDs::PROCESSOR)) {
                         label->setVisible(true);
                         label->setText(processor[IDs::name], dontSendNotification);
-                        label->setSelected(project.isProcessorSelected(processor));
+                        label->setSelected(tracksManager.isProcessorSelected(processor));
                     }
                 } else if (buttonIndex == 0 && selectedTrack.getNumChildren() == 0) {
                     label->setVisible(true);
@@ -198,11 +198,11 @@ private:
     }
 
     Colour getColourForTrack(const ValueTree& track) {
-        return track.isValid() ? project.getTrackColour(track) : Colours::black;
+        return track.isValid() ? tracksManager.getTrackColour(track) : Colours::black;
     }
 
     void updateColours() {
-        const auto& selectedTrack = project.getSelectedTrack();
+        const auto& selectedTrack = tracksManager.getSelectedTrack();
         if (selectedTrack.isValid()) {
             const auto& colour = getColourForTrack(selectedTrack);
             for (auto *processorLabel : processorLabels) {
@@ -243,12 +243,12 @@ private:
     }
 
     bool canPageProcessorsRight() const {
-        const auto& selectedTrack = project.getSelectedTrack();
+        const auto& selectedTrack = tracksManager.getSelectedTrack();
         return selectedTrack.getNumChildren() > processorLabelOffset + (canPageProcessorsLeft() ? NUM_COLUMNS - 1 : NUM_COLUMNS);
     }
 
     void selectProcessor(int processorIndex) {
-        const auto& selectedTrack = project.getSelectedTrack();
+        const auto& selectedTrack = tracksManager.getSelectedTrack();
         if (selectedTrack.isValid() && processorIndex < selectedTrack.getNumChildren()) {
             selectedTrack.getChild(processorIndex).setProperty(IDs::selected, true, nullptr);
         }
@@ -270,8 +270,8 @@ private:
 
     void trackColourChanged(const String &trackUuid, const Colour &colour) override {
         Push2TrackManagingView::trackColourChanged(trackUuid, colour);
-        auto track = project.findTrackWithUuid(trackUuid);
-        if (project.isTrackSelected(track)) {
+        auto track = tracksManager.findTrackWithUuid(trackUuid);
+        if (tracksManager.isTrackSelected(track)) {
             updateColours();
         }
     }

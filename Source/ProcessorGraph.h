@@ -7,16 +7,19 @@
 #include "JuceHeader.h"
 #include "processors/ProcessorManager.h"
 #include "Project.h"
-#include "ConnectionHelper.h"
+#include "state_managers/ConnectionsStateManager.h"
 #include "StatefulAudioProcessorContainer.h"
 #include "push2/Push2MidiCommunicator.h"
 
 class ProcessorGraph : public AudioProcessorGraph, public StatefulAudioProcessorContainer, private ValueTree::Listener,
                        private ProjectChangeListener, private Timer {
 public:
-    explicit ProcessorGraph(Project &project, ConnectionHelper& connectionHelper, UndoManager &undoManager, AudioDeviceManager& deviceManager, Push2MidiCommunicator& push2MidiCommunicator)
-            : undoManager(undoManager), project(project), connectionHelper(connectionHelper),
-              deviceManager(deviceManager), push2MidiCommunicator(push2MidiCommunicator) {
+    explicit ProcessorGraph(Project &project, ConnectionsStateManager& connectionsManager,
+                            UndoManager &undoManager, AudioDeviceManager& deviceManager,
+                            Push2MidiCommunicator& push2MidiCommunicator)
+            : undoManager(undoManager), project(project), tracksManager(project.getTracksManager()),
+              connectionsManager(connectionsManager), deviceManager(deviceManager),
+              push2MidiCommunicator(push2MidiCommunicator) {
         enableAllBuses();
 
         project.getState().addListener(this);
@@ -46,7 +49,7 @@ public:
     }
 
     StatefulAudioProcessorWrapper *getMasterGainProcessor() {
-        const ValueTree &gain = project.getMixerChannelProcessorForTrack(project.getMasterTrack());
+        const ValueTree &gain = tracksManager.getMixerChannelProcessorForTrack(tracksManager.getMasterTrack());
         return getProcessorWrapperForState(gain);
     }
 
@@ -88,7 +91,7 @@ public:
         auto processor = getProcessorStateForNodeId(nodeId);
         if (processor.isValid()) {
             if (currentlyDraggingTrackAndSlot != trackAndSlot &&
-                trackAndSlot.y < project.getMixerChannelSlotForTrack(project.getTrack(trackAndSlot.x))) {
+                trackAndSlot.y < tracksManager.getMixerChannelSlotForTrack(tracksManager.getTrack(trackAndSlot.x))) {
                 currentlyDraggingTrackAndSlot = trackAndSlot;
 
                 moveProcessor(processor, trackAndSlot.x, trackAndSlot.y);
@@ -118,17 +121,17 @@ public:
     }
 
     void moveProcessor(ValueTree &processorState, int toTrackIndex, int toSlot) {
-        const ValueTree &toTrack = project.getTrack(toTrackIndex);
+        const ValueTree &toTrack = tracksManager.getTrack(toTrackIndex);
         int fromSlot = processorState[IDs::processorSlot];
         if (fromSlot == toSlot && processorState.getParent() == toTrack)
             return;
 
-        project.setProcessorSlot(processorState.getParent(), processorState, toSlot, getDragDependentUndoManager());
+        tracksManager.setProcessorSlot(processorState.getParent(), processorState, toSlot, getDragDependentUndoManager());
 
-        const int insertIndex = project.getParentIndexForProcessor(toTrack, processorState, getDragDependentUndoManager());
+        const int insertIndex = tracksManager.getParentIndexForProcessor(toTrack, processorState, getDragDependentUndoManager());
         Helpers::moveSingleItem(processorState, toTrack, insertIndex, getDragDependentUndoManager());
 
-        project.makeSlotsValid(toTrack, getDragDependentUndoManager());
+        tracksManager.makeSlotsValid(toTrack, getDragDependentUndoManager());
         updateAllDefaultConnections();
     }
 
@@ -161,11 +164,11 @@ public:
             || (destIsMIDI && ! dest->getProcessor()->acceptsMidi()))
             return false;
 
-        return !connectionHelper.getConnectionMatching({{source->nodeID, sourceChannel}, {dest->nodeID, destChannel}}).isValid();
+        return !connectionsManager.getConnectionMatching({{source->nodeID, sourceChannel}, {dest->nodeID, destChannel}}).isValid();
     }
 
     bool removeConnection(const Connection& c) override {
-        const ValueTree &connectionState = connectionHelper.getConnectionMatching(c);
+        const ValueTree &connectionState = connectionsManager.getConnectionMatching(c);
         bool removed = checkedRemoveConnection(c, getDragDependentUndoManager(), true, true);
         if (removed && connectionState.hasProperty(IDs::isCustomConnection)) {
             const auto& sourceState = connectionState.getChildWithName(IDs::SOURCE);
@@ -224,7 +227,9 @@ private:
     std::unordered_map<NodeID, std::unique_ptr<StatefulAudioProcessorWrapper> > processorWrapperForNodeId;
 
     Project &project;
-    ConnectionHelper &connectionHelper;
+    TracksStateManager &tracksManager;
+
+    ConnectionsStateManager &connectionsManager;
     AudioDeviceManager &deviceManager;
     Push2MidiCommunicator &push2MidiCommunicator;
     
@@ -250,7 +255,7 @@ private:
         if (canConnectUi(c)) {
             if (!isDefault)
                 disconnectDefaultOutgoing(c.source.nodeID, c.source.isMIDI() ? midi : audio, getDragDependentUndoManager());
-            connectionHelper.addConnection(c, undoManager, isDefault);
+            connectionsManager.addConnection(c, undoManager, isDefault);
             return true;
         }
         return false;
@@ -259,17 +264,17 @@ private:
     bool checkedRemoveConnection(const ValueTree& connection, UndoManager* undoManager, bool allowDefaults, bool allowCustom) {
         if (!connection.isValid() || (!connection[IDs::isCustomConnection] && project.isShiftHeld()))
             return false; // no default connection stuff while shift is held
-        return connectionHelper.removeConnection(connection, undoManager, allowDefaults, allowCustom);
+        return connectionsManager.removeConnection(connection, undoManager, allowDefaults, allowCustom);
     }
 
     bool checkedRemoveConnection(const Connection &connection, UndoManager* undoManager, bool defaults, bool custom) {
-        const ValueTree &connectionState = connectionHelper.getConnectionMatching(connection);
+        const ValueTree &connectionState = connectionsManager.getConnectionMatching(connection);
         return checkedRemoveConnection(connectionState, undoManager, defaults, custom);
     }
 
     bool doDisconnectNode(NodeID nodeId, ConnectionType connectionType, UndoManager* undoManager,
                           bool defaults, bool custom, bool incoming, bool outgoing) {
-        const auto connections = connectionHelper.getConnectionsForNode(nodeId, connectionType, incoming, outgoing);
+        const auto connections = connectionsManager.getConnectionsForNode(nodeId, connectionType, incoming, outgoing);
         bool anyRemoved = false;
         for (const auto &connection : connections) {
             if (checkedRemoveConnection(connection, undoManager, defaults, custom))
@@ -357,14 +362,14 @@ private:
     void addDefaultExternalInputConnections(const ValueTree &selectedProcessor,
                                             NodeID externalSourceNodeId, ConnectionType connectionType,
                                             UndoManager* undoManager) {
-        if (project.getNumTracks() == 0)
+        if (tracksManager.getNumTracks() == 0)
             return;
 
         int lowestSlot = INT_MAX;
         NodeID upperRightMostProcessorNodeId = NA_NODE_ID;
         NodeID selectedNodeId = getNodeIdForState(selectedProcessor);
-        for (int i = project.getNumTracks() - 1; i >= 0; i--) {
-            const auto& track = project.getTrack(i);
+        for (int i = tracksManager.getNumTracks() - 1; i >= 0; i--) {
+            const auto& track = tracksManager.getTrack(i);
             if (track.getNumChildren() == 0)
                 continue;
 
@@ -372,8 +377,8 @@ private:
             auto firstProcessorNodeId = getNodeIdForState(firstProcessor);
             int slot = firstProcessor[IDs::processorSlot];
             if (slot < lowestSlot &&
-                !connectionHelper.nodeHasIncomingConnections(firstProcessorNodeId, connectionType) &&
-                connectionHelper.areProcessorsConnected(firstProcessorNodeId, selectedNodeId)) {
+                !connectionsManager.nodeHasIncomingConnections(firstProcessorNodeId, connectionType) &&
+                connectionsManager.areProcessorsConnected(firstProcessorNodeId, selectedNodeId)) {
 
                 lowestSlot = firstProcessor[IDs::processorSlot];
                 upperRightMostProcessorNodeId = firstProcessorNodeId;
@@ -477,12 +482,12 @@ private:
                 disconnectDefaults(nodeId);
                 return;
             }
-            auto outgoingCustomConnections = connectionHelper.getConnectionsForNode(nodeId, connectionType, false, true, true, false);
+            auto outgoingCustomConnections = connectionsManager.getConnectionsForNode(nodeId, connectionType, false, true, true, false);
             if (!outgoingCustomConnections.isEmpty()) {
                 disconnectDefaultOutgoing(nodeId, connectionType, getDragDependentUndoManager());
                 return;
             }
-            auto outgoingDefaultConnections = connectionHelper.getConnectionsForNode(nodeId, connectionType, false, true, false, true);
+            auto outgoingDefaultConnections = connectionsManager.getConnectionsForNode(nodeId, connectionType, false, true, false, true);
             auto processorToConnectTo = findProcessorToFlowInto(processor.getParent(), processor, connectionType);
             auto nodeIdToConnectTo = getNodeIdForState(processorToConnectTo);
 
@@ -524,7 +529,7 @@ private:
             } else if (i == IDs::allowDefaultConnections) {
                 updateDefaultConnectionsForProcessor(tree, true);
             }
-        } else if (i == IDs::selectedSlotsMask && tree != selectedProcessor && project.isProcessorSelected(tree)) {
+        } else if (i == IDs::selectedSlotsMask && tree != selectedProcessor && tracksManager.isProcessorSelected(tree)) {
             selectedProcessor = tree;
             if (!isDeleting)
                 resetDefaultExternalInputs(tree, nullptr);

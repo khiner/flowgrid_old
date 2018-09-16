@@ -9,6 +9,7 @@
 class SoundMachineApplication : public JUCEApplication, public MenuBarModel, private ChangeListener, private Timer, private ProjectChangeListener, private Utilities::ValueTreePropertyChangeListener {
 public:
     SoundMachineApplication() : project(undoManager, processorManager, deviceManager),
+                                tracksManager(project.getTracksManager()),
                                 push2Colours(project.getState()),
                                 push2MidiCommunicator(project, push2Colours),
                                 processorGraph(project, project.getConnectionHelper(), undoManager, deviceManager, push2MidiCommunicator) {}
@@ -244,23 +245,24 @@ public:
             case CommandIDs::createMasterTrack:
                 result.setInfo("Create master track", String(), category, 0);
                 result.addDefaultKeypress('m', ModifierKeys::commandModifier | ModifierKeys::shiftModifier);
-                result.setActive(!project.getMasterTrack().isValid());
+                result.setActive(!tracksManager.getMasterTrack().isValid());
                 break;
             case CommandIDs::addMixerChannel:
                 result.setInfo("Add mixer channel", String(), category, 0);
                 result.addDefaultKeypress('m', ModifierKeys::commandModifier);
-                result.setActive(project.getSelectedTrack().isValid() && !project.getMixerChannelProcessorForSelectedTrack().isValid());
+                result.setActive(tracksManager.getSelectedTrack().isValid() &&
+                                 !tracksManager.getMixerChannelProcessorForSelectedTrack().isValid());
                 break;
             case CommandIDs::duplicateSelected:
                 result.setInfo("Duplicate selected item(s)", String(), category, 0);
                 result.addDefaultKeypress('d', ModifierKeys::commandModifier);
-                result.setActive(project.canDuplicateSelected());
+                result.setActive(tracksManager.canDuplicateSelected());
                 break;
             case CommandIDs::deleteSelected:
                 result.setInfo("Delete selected item(s)", String(), category, 0);
                 result.addDefaultKeypress(KeyPress::deleteKey, ModifierKeys::noModifiers);
                 result.addDefaultKeypress(KeyPress::backspaceKey, ModifierKeys::noModifiers);
-                result.setActive(project.getSelectedTrack().isValid());
+                result.setActive(tracksManager.getSelectedTrack().isValid());
                 break;
             case CommandIDs::showPush2MirrorWindow:
                 result.setInfo("Open a window mirroring a Push 2 display", String(), category, 0);
@@ -328,22 +330,22 @@ public:
                 project.getUndoManager().redo();
                 break;
             case CommandIDs::duplicateSelected:
-                project.duplicateSelectedItems();
+                tracksManager.duplicateSelectedItems();
                 break;
             case CommandIDs::deleteSelected:
-                project.deleteSelectedItems();
+                tracksManager.deleteSelectedItems();
                 break;
             case CommandIDs::insertTrack:
-                project.createAndAddTrack(&undoManager);
+                tracksManager.createAndAddTrack(&undoManager);
                 break;
             case CommandIDs::insertTrackWithoutMixer:
-                project.createAndAddTrack(&undoManager, false);
+                tracksManager.createAndAddTrack(&undoManager, false);
                 break;
             case CommandIDs::createMasterTrack:
-                project.createAndAddMasterTrack(&undoManager, true);
+                tracksManager.createAndAddMasterTrack(&undoManager, true);
                 break;
             case CommandIDs::addMixerChannel:
-                project.createAndAddProcessor(MixerChannelProcessor::getPluginDescription(), &undoManager);
+                tracksManager.createAndAddProcessor(MixerChannelProcessor::getPluginDescription(), &undoManager);
                 break;
             case CommandIDs::showPush2MirrorWindow:
                 showPush2MirrorWindow();
@@ -367,7 +369,7 @@ public:
                 showAudioMidiSettings();
                 break;
             case CommandIDs::togglePaneFocus:
-                project.togglePaneFocus();
+                project.getViewStateManager().togglePaneFocus();
                 break;
 //            case CommandIDs::aboutBox:
 //                // TODO
@@ -477,6 +479,7 @@ private:
     AudioDeviceManager deviceManager;
 
     Project project;
+    TracksStateManager& tracksManager;
     Push2Colours push2Colours;
     Push2MidiCommunicator push2MidiCommunicator;
     ProcessorGraph processorGraph;
@@ -554,7 +557,7 @@ private:
     }
 
     void valueTreePropertyChanged(ValueTree& child, const Identifier& i) override {
-        if ((child.hasType(IDs::TRACK) && i == IDs::selected && child[i]) || project.isProcessorSelected(child)) {
+        if ((child.hasType(IDs::TRACK) && i == IDs::selected && child[i]) || tracksManager.isProcessorSelected(child)) {
             applicationCommandListChanged(); // TODO same - wasteful
         }
     }

@@ -13,7 +13,9 @@ class SelectionEditor : public Component,
                         private ValueTree::Listener {
 public:
     SelectionEditor(Project& project, ProcessorGraph &audioGraphBuilder)
-            : project(project), audioGraphBuilder(audioGraphBuilder), contextPane(project) {
+            : project(project), tracksManager(project.getTracksManager()),
+              viewManager(project.getViewStateManager()),
+              audioGraphBuilder(audioGraphBuilder), contextPane(project) {
         project.getState().addListener(this);
         addAndMakeVisible(addProcessorButton);
         addAndMakeVisible(processorEditorsViewport);
@@ -33,9 +35,9 @@ public:
     }
 
     void mouseDown(const MouseEvent& event) override {
-        project.focusOnEditorPane();
+        viewManager.focusOnEditorPane();
         if (auto* processorEditor = dynamic_cast<ProcessorEditor*>(event.originalComponent)) {
-            project.selectProcessor(processorEditor->getProcessorState());
+            tracksManager.selectProcessor(processorEditor->getProcessorState());
         }
     }
 
@@ -55,7 +57,7 @@ public:
         unfocusOverlay.setRectangle(processorEditorsViewport.getBounds().toFloat());
 
         r.removeFromRight(8);
-        processorEditorsComponent.setBounds(0, 0, r.getWidth(), PROCESSOR_EDITOR_HEIGHT * project.getSelectedTrack().getNumChildren());
+        processorEditorsComponent.setBounds(0, 0, r.getWidth(), PROCESSOR_EDITOR_HEIGHT * tracksManager.getSelectedTrack().getNumChildren());
         r = processorEditorsComponent.getBounds();
         for (auto* editor : processorEditors) {
             if (editor->isVisible())
@@ -65,12 +67,13 @@ public:
 
     void buttonClicked(Button *b) override {
         if (b == &addProcessorButton) {
-            if (project.getSelectedTrack().isValid()) {
+            const auto& selectedTrack = tracksManager.getSelectedTrack();
+            if (selectedTrack.isValid()) {
                 addProcessorMenu = std::make_unique<PopupMenu>();
-                project.addPluginsToMenu(*addProcessorMenu, project.getSelectedTrack());
+                project.addPluginsToMenu(*addProcessorMenu, selectedTrack);
                 addProcessorMenu->showMenuAsync({}, ModalCallbackFunction::create([this](int r) {
                     if (auto *description = project.getChosenType(r)) {
-                        project.createAndAddProcessor(*description, &project.getUndoManager());
+                        tracksManager.createAndAddProcessor(*description, &project.getUndoManager());
                     }
                 }));
             }
@@ -83,6 +86,8 @@ private:
     TextButton addProcessorButton{"Add Processor"};
 
     Project &project;
+    TracksStateManager &tracksManager;
+    ViewStateManager &viewManager;
     ProcessorGraph &audioGraphBuilder;
 
     Viewport contextPaneViewport, processorEditorsViewport;
@@ -93,7 +98,7 @@ private:
     std::unique_ptr<PopupMenu> addProcessorMenu;
 
     void refreshProcessors(const ValueTree& singleProcessorToRefresh={}) {
-        const ValueTree &selectedTrack = project.getSelectedTrack();
+        const ValueTree &selectedTrack = tracksManager.getSelectedTrack();
         if (!selectedTrack.isValid()) {
             for (auto* editor : processorEditors) {
                 editor->setVisible(false);
@@ -116,7 +121,7 @@ private:
             if (auto *processorWrapper = audioGraphBuilder.getProcessorWrapperForState(processor)) {
                 processorEditor->setProcessor(processorWrapper);
                 processorEditor->setVisible(true);
-                processorEditor->setSelected(project.isProcessorSelected(processor));
+                processorEditor->setSelected(tracksManager.isProcessorSelected(processor));
             }
         } else {
             processorEditor->setVisible(false);
@@ -125,7 +130,7 @@ private:
     }
 
     void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override {
-        if (child.hasProperty(IDs::PROCESSOR) && project.getSelectedTrack() == parent) {
+        if (child.hasProperty(IDs::PROCESSOR) && tracksManager.getSelectedTrack() == parent) {
             assignProcessorToEditor(child);
             resized();
         }
@@ -139,7 +144,7 @@ private:
 
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {
         if ((i == IDs::selected) || i == IDs::selectedSlotsMask) {
-            addProcessorButton.setVisible(project.getSelectedTrack().isValid());
+            addProcessorButton.setVisible(tracksManager.getSelectedTrack().isValid());
             refreshProcessors();
         } else if (i == IDs::numProcessorSlots || i == IDs::numMasterProcessorSlots) {
             int numProcessorSlots = jmax(int(tree[IDs::numProcessorSlots]), int(tree[IDs::numMasterProcessorSlots]));
@@ -152,7 +157,7 @@ private:
         } else if (i == IDs::processorSlot) {
             refreshProcessors();
         } else if (i == IDs::focusedPane) {
-            unfocusOverlay.setVisible(project.isGridPaneFocused());
+            unfocusOverlay.setVisible(viewManager.isGridPaneFocused());
             unfocusOverlay.toFront(false);
         } else if (i == IDs::processorInitialized) {
             refreshProcessors();

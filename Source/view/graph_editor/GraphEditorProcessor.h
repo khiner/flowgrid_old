@@ -10,8 +10,9 @@
 
 class GraphEditorProcessor : public Component, public ValueTree::Listener {
 public:
-    GraphEditorProcessor(Project& project, const ValueTree& state, ConnectorDragListener &connectorDragListener, ProcessorGraph& graph, bool showChannelLabels=false)
-            : project(project), state(state), connectorDragListener(connectorDragListener), graph(graph), showChannelLabels(showChannelLabels) {
+    GraphEditorProcessor(TracksStateManager& tracksManager, const ValueTree& state, ConnectorDragListener &connectorDragListener, ProcessorGraph& graph, bool showChannelLabels=false)
+            : tracksManager(tracksManager), state(state), connectorDragListener(connectorDragListener),
+              graph(graph), showChannelLabels(showChannelLabels) {
         this->state.addListener(this);
         valueTreePropertyChanged(this->state, IDs::name);
         if (this->state.hasProperty(IDs::deviceName))
@@ -60,13 +61,13 @@ public:
 
     inline bool isIoProcessor() const { return InternalPluginFormat::isIoProcessorName(state[IDs::name]); }
 
-    inline bool isSelected() { return project.isProcessorSelected(state); }
+    inline bool isSelected() { return tracksManager.isProcessorSelected(state); }
 
     inline void setSelected(bool selected) {
         if (isSelected() && selected)
             state.getParent().sendPropertyChangeMessage(IDs::selectedSlotsMask);
         else
-            project.selectProcessorSlot(state.getParent(), getSlot(), true);
+            tracksManager.selectProcessorSlot(state.getParent(), getSlot(), true);
     }
 
     void toggleBypass() {
@@ -188,7 +189,7 @@ public:
     };
 
 private:
-    Project &project;
+    TracksStateManager &tracksManager;
     ValueTree state;
     DrawableText nameLabel;
     std::unique_ptr<ParametersPanel> parametersPanel;

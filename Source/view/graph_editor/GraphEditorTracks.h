@@ -12,32 +12,34 @@ class GraphEditorTracks : public Component,
                           public GraphEditorProcessorContainer {
 public:
     explicit GraphEditorTracks(Project& project, const ValueTree &state, ConnectorDragListener &connectorDragListener, ProcessorGraph& graph)
-            : Utilities::ValueTreeObjectList<GraphEditorTrack>(state), project(project), connectorDragListener(connectorDragListener), graph(graph) {
+            : Utilities::ValueTreeObjectList<GraphEditorTrack>(state), project(project),
+              tracksManager(project.getTracksManager()), viewManager(project.getViewStateManager()),
+              connectorDragListener(connectorDragListener), graph(graph) {
         rebuildObjects();
-        project.getViewState().addListener(this);
+        viewManager.getState().addListener(this);
     }
 
     ~GraphEditorTracks() override {
-        project.getViewState().removeListener(this);
+        viewManager.getState().removeListener(this);
         freeObjects();
     }
 
     void resized() override {
         auto r = getLocalBounds();
-        auto trackBounds = r.removeFromTop(project.getProcessorHeight() * (project.getNumTrackProcessorSlots() + 1) + Project::TRACK_LABEL_HEIGHT);
-        trackBounds.removeFromLeft(jmax(0, project.getMasterViewSlotOffset() - project.getGridViewTrackOffset()) * project.getTrackWidth() + Project::TRACK_LABEL_HEIGHT);
+        auto trackBounds = r.removeFromTop(tracksManager.getProcessorHeight() * (viewManager.getNumTrackProcessorSlots() + 1) + TracksStateManager::TRACK_LABEL_HEIGHT);
+        trackBounds.removeFromLeft(jmax(0, viewManager.getMasterViewSlotOffset() - viewManager.getGridViewTrackOffset()) * tracksManager.getTrackWidth() + TracksStateManager::TRACK_LABEL_HEIGHT);
 
         for (auto *track : objects) {
             if (track->isMasterTrack())
                 continue;
-            track->setBounds(trackBounds.removeFromLeft(project.getTrackWidth()));
+            track->setBounds(trackBounds.removeFromLeft(tracksManager.getTrackWidth()));
         }
 
         if (auto* masterTrack = findMasterTrack()) {
             masterTrack->setBounds(
-                    r.removeFromTop(project.getProcessorHeight())
-                     .withX(project.getTrackWidth() * jmax(0, project.getGridViewTrackOffset() - project.getMasterViewSlotOffset()))
-                     .withWidth(Project::TRACK_LABEL_HEIGHT + project.getTrackWidth() * project.getNumMasterProcessorSlots())
+                    r.removeFromTop(tracksManager.getProcessorHeight())
+                     .withX(tracksManager.getTrackWidth() * jmax(0, viewManager.getGridViewTrackOffset() - viewManager.getMasterViewSlotOffset()))
+                     .withWidth(TracksStateManager::TRACK_LABEL_HEIGHT + tracksManager.getTrackWidth() * viewManager.getNumMasterProcessorSlots())
             );
         }
     }
@@ -111,7 +113,7 @@ public:
     
     void mouseDown(const MouseEvent &e) override {
         if (auto* track = dynamic_cast<GraphEditorTrack *>(e.originalComponent->getParentComponent())) {
-            if (e.originalComponent == track->getDragControlComponent() && track->getState() != project.getMasterTrack()) {
+            if (e.originalComponent == track->getDragControlComponent() && track->getState() != tracksManager.getMasterTrack()) {
                 currentlyDraggingTrack = track;
             }
         } else if (auto* processor = dynamic_cast<GraphEditorProcessor *>(e.originalComponent)) {
@@ -157,6 +159,8 @@ public:
     }
 
     Project& project;
+    TracksStateManager& tracksManager;
+    ViewStateManager& viewManager;
     ConnectorDragListener &connectorDragListener;
     ProcessorGraph &graph;
     GraphEditorTrack *currentlyDraggingTrack {};

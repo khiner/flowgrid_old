@@ -8,7 +8,7 @@
 class Push2MidiCommunicator : public MidiCommunicator, private Push2Colours::Listener, private Timer {
 public:
     explicit Push2MidiCommunicator(Project& project, Push2Colours& push2Colours) :
-            project(project), push2Colours(push2Colours) {};
+            project(project), viewManager(project.getViewStateManager()), push2Colours(push2Colours) {};
 
     void initialize() override {
         MidiCommunicator::initialize();
@@ -43,7 +43,7 @@ public:
     void handleIncomingMidiMessage(MidiInput *source, const MidiMessage &message) override {
         // only pass note messages to listeners if we're in a non-control mode.
         // (allow note-off messages through in case switch to control mode happened during note events)
-        if (project.isInNoteMode() || message.isNoteOff()) {
+        if (viewManager.isInNoteMode() || message.isNoteOff()) {
             MidiCommunicator::handleIncomingMidiMessage(source, message);
         }
 
@@ -279,6 +279,7 @@ private:
     static constexpr int BUTTON_HOLD_WAIT_FOR_REPEAT_MS = 500; // how long to wait before starting held button message repeats
 
     Project& project;
+    ViewStateManager& viewManager;
     Push2Colours& push2Colours;
     Push2Listener *push2Listener {};
 

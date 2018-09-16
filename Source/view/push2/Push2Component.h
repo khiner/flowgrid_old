@@ -44,7 +44,7 @@ public:
     }
 
     void handleIncomingMidiMessage(MidiInput *source, const MidiMessage &message) override {
-        if (message.isNoteOff() || (message.isNoteOnOrOff() && project.isInNoteMode())) {
+        if (message.isNoteOff() || (message.isNoteOnOrOff() && viewManager.isInNoteMode())) {
             push2NoteModePadLedManager.handleIncomingMidiMessage(source, message);
         }
     }
@@ -106,7 +106,7 @@ public:
     }
 
     void masterButtonPressed() override {
-        project.getMasterTrack().setProperty(IDs::selected, true, nullptr);
+        tracksManager.getMasterTrack().setProperty(IDs::selected, true, nullptr);
     }
 
     void aboveScreenButtonPressed(int buttonIndex) override {
@@ -135,18 +135,18 @@ public:
         }
     }
 
-    void noteButtonPressed() override { project.setNoteMode(); }
+    void noteButtonPressed() override { viewManager.setNoteMode(); }
 
-    void sessionButtonPressed() override { project.setSessionMode(); }
+    void sessionButtonPressed() override { viewManager.setSessionMode(); }
 
     void updateEnabledPush2Buttons() override {
         if (isVisible()) {
             push2.enableWhiteLedButton(Push2::addTrack);
             push2.enableWhiteLedButton(Push2::mix);
-            if (project.isInNoteMode()) {
+            if (viewManager.isInNoteMode()) {
                 push2.activateWhiteLedButton(Push2::note);
                 push2.enableWhiteLedButton(Push2::session);
-            } else if (project.isInSessionMode()) {
+            } else if (viewManager.isInSessionMode()) {
                 push2.enableWhiteLedButton(Push2::note);
                 push2.activateWhiteLedButton(Push2::session);
             }
@@ -187,7 +187,7 @@ private:
     }
 
     void updatePush2SelectionDependentButtons() {
-        const auto &selectedTrack = project.getSelectedTrack();
+        const auto &selectedTrack = tracksManager.getSelectedTrack();
         if (selectedTrack.isValid()) {
             push2.activateWhiteLedButton(Push2MidiCommunicator::delete_);
             push2.enableWhiteLedButton(Push2MidiCommunicator::addDevice);
@@ -196,14 +196,14 @@ private:
             push2.disableWhiteLedButton(Push2MidiCommunicator::addDevice);
         }
 
-        if (project.canDuplicateSelected())
+        if (tracksManager.canDuplicateSelected())
             push2.activateWhiteLedButton(Push2::duplicate);
         else
             push2.disableWhiteLedButton(Push2::duplicate);
 
-        if (!project.getMasterTrack().isValid())
+        if (!tracksManager.getMasterTrack().isValid())
             push2.disableWhiteLedButton(Push2MidiCommunicator::master);
-        else if (selectedTrack != project.getMasterTrack())
+        else if (selectedTrack != tracksManager.getMasterTrack())
             push2.enableWhiteLedButton(Push2MidiCommunicator::master);
         else
             push2.activateWhiteLedButton(Push2MidiCommunicator::master);
@@ -228,7 +228,7 @@ private:
     }
 
     void updatePush2NoteModePadLedManagerVisibility() {
-        push2NoteModePadLedManager.setVisible(isVisible() && project.isInNoteMode() && project.isPush2MidiInputProcessorConnected());
+        push2NoteModePadLedManager.setVisible(isVisible() && viewManager.isInNoteMode() && project.isPush2MidiInputProcessorConnected());
     }
 
     void selectProcessorIfNeeded(StatefulAudioProcessorWrapper* processorWrapper) {
@@ -253,7 +253,7 @@ private:
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {
         if ((i == IDs::selected && tree[IDs::selected]) || i == IDs::selectedSlotsMask) {
             if (i == IDs::selectedSlotsMask) {
-                if (auto *processorWrapper = graph.getProcessorWrapperForState(project.getSelectedProcessor())) {
+                if (auto *processorWrapper = graph.getProcessorWrapperForState(tracksManager.getSelectedProcessor())) {
                     selectProcessorIfNeeded(processorWrapper);
                 }
             }
@@ -275,7 +275,7 @@ private:
     void valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int) override {
         if (child.hasType(IDs::TRACK) || child.hasType(IDs::PROCESSOR)) {
             updatePush2SelectionDependentButtons();
-            if (!project.getSelectedTrack().isValid()) {
+            if (!tracksManager.getSelectedTrack().isValid()) {
                 selectChild(nullptr);
                 processorView.processorSelected(nullptr);
             }

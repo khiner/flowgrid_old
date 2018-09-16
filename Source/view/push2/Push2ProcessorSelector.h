@@ -7,7 +7,8 @@
 class Push2ProcessorSelector : public Push2ComponentBase {
     class ProcessorSelectorRow : public Component {
     public:
-        explicit ProcessorSelectorRow(Project &project, Push2 &push2, bool top) : project(project) {
+        explicit ProcessorSelectorRow(Project &project, Push2 &push2, bool top)
+                : project(project), tracksManager(project.getTracksManager()) {
             for (int i = 0; i < NUM_COLUMNS; i++) {
                 auto *label = new Push2Label(i, top, push2);
                 addChildComponent(label);
@@ -138,10 +139,11 @@ class Push2ProcessorSelector : public Push2ComponentBase {
     private:
         int currentViewOffset { 0 };
         Project &project;
+        TracksStateManager &tracksManager;
         DrawableRectangle selectionRectangleOverlay;
 
         void updateLabels() {
-            const bool trackHasMixerAlready = project.selectedTrackHasMixerChannel();
+            const bool trackHasMixerAlready = tracksManager.selectedTrackHasMixerChannel();
 
             for (int i = 0; i < labels.size(); i++) {
                 Push2Label *label = labels.getUnchecked(i);
@@ -229,13 +231,13 @@ public:
 
     void aboveScreenButtonPressed(int buttonIndex) override {
         if (const auto* selectedProcessor = selectTopProcessor(buttonIndex)) {
-            project.createAndAddProcessor(*selectedProcessor, &project.getUndoManager());
+            tracksManager.createAndAddProcessor(*selectedProcessor, &project.getUndoManager());
         }
     }
 
     void belowScreenButtonPressed(int buttonIndex) override {
         if (const auto* selectedProcessor = selectBottomProcessor(buttonIndex)) {
-            project.createAndAddProcessor(*selectedProcessor, &project.getUndoManager());
+            tracksManager.createAndAddProcessor(*selectedProcessor, &project.getUndoManager());
         }
     }
 

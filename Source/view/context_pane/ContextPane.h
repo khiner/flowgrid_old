@@ -6,7 +6,9 @@
 
 class ContextPane : public Component, private ValueTree::Listener {
 public:
-    explicit ContextPane(Project &project) : project(project) {
+    explicit ContextPane(Project &project)
+            : project(project), tracksManager(project.getTracksManager()),
+              viewManager(project.getViewStateManager()) {
         project.getState().addListener(this);
     }
 
@@ -20,14 +22,14 @@ public:
 
         int cellWidth = 20;
         int cellHeight = 20;
-        int newWidth = cellWidth * jmax(project.getNumNonMasterTracks(), project.getNumMasterProcessorSlots());
-        int newHeight = cellHeight * (project.getNumTrackProcessorSlots() + 2);
+        int newWidth = cellWidth * jmax(tracksManager.getNumNonMasterTracks(), viewManager.getNumMasterProcessorSlots());
+        int newHeight = cellHeight * (viewManager.getNumTrackProcessorSlots() + 2);
         setSize(newWidth, newHeight);
 
         auto r = getLocalBounds();
 
-        auto trackViewOffset = project.getGridViewTrackOffset();
-        auto masterViewSlotOffset = project.getMasterViewSlotOffset();
+        auto trackViewOffset = viewManager.getGridViewTrackOffset();
+        auto masterViewSlotOffset = viewManager.getMasterViewSlotOffset();
 
         auto masterRowBounds = r.removeFromBottom(cellHeight);
         masterRowBounds.removeFromLeft(jmax(0, trackViewOffset - masterViewSlotOffset) * cellWidth);
@@ -81,6 +83,8 @@ private:
     };
 
     Project &project;
+    TracksStateManager &tracksManager;
+    ViewStateManager &viewManager;
 
     // indexed by [column(track)][row(processorSlot)] rather than the usual [row][column] matrix convention.
     // Just makes more sense in this track-first world!
@@ -91,24 +95,24 @@ private:
         if (gridCells.isEmpty())
             return;
 
-        const auto& masterTrack = project.getMasterTrack();
-        bool trackSelected = project.isTrackSelected(masterTrack);
+        const auto& masterTrack = tracksManager.getMasterTrack();
+        bool trackSelected = tracksManager.isTrackSelected(masterTrack);
         for (auto processorSlot = 0; processorSlot < masterTrackGridCells.size(); processorSlot++) {
             auto *cell = masterTrackGridCells.getUnchecked(processorSlot);
             const auto &processor = masterTrack.getChildWithProperty(IDs::processorSlot, processorSlot);
-            bool inView = project.isProcessorSlotInView(masterTrack, processorSlot);
-            cell->setTrackAndProcessor(masterTrack, processor, inView, trackSelected, project.isSlotSelected(masterTrack, processorSlot));
+            bool inView = tracksManager.isProcessorSlotInView(masterTrack, processorSlot);
+            cell->setTrackAndProcessor(masterTrack, processor, inView, trackSelected, tracksManager.isSlotSelected(masterTrack, processorSlot));
         }
 
         for (auto trackIndex = 0; trackIndex < gridCells.size(); trackIndex++) {
             auto* trackGridCells = gridCells.getUnchecked(trackIndex);
-            const auto& track = project.getTrack(trackIndex);
-            trackSelected = project.isTrackSelected(track);
+            const auto& track = tracksManager.getTrack(trackIndex);
+            trackSelected = tracksManager.isTrackSelected(track);
             for (auto processorSlot = 0; processorSlot < trackGridCells->size(); processorSlot++) {
                 auto *cell = trackGridCells->getUnchecked(processorSlot);
                 const auto& processor = track.getChildWithProperty(IDs::processorSlot, processorSlot);
-                bool inView = project.isProcessorSlotInView(track, processorSlot);
-                cell->setTrackAndProcessor(track, processor, inView, trackSelected, project.isSlotSelected(track, processorSlot));
+                bool inView = tracksManager.isProcessorSlotInView(track, processorSlot);
+                cell->setTrackAndProcessor(track, processor, inView, trackSelected, tracksManager.isSlotSelected(track, processorSlot));
             }
         }
     }
@@ -119,7 +123,7 @@ private:
                 return valueTreePropertyChanged(project.getViewState(), IDs::numMasterProcessorSlots);
             } else {
                 auto *newGridCellColumn = new OwnedArray<GridCell>();
-                int numProcessorSlots = project.getNumTrackProcessorSlots();
+                int numProcessorSlots = viewManager.getNumTrackProcessorSlots();
                 for (int processorSlot = 0; processorSlot < numProcessorSlots; processorSlot++) {
                     newGridCellColumn->add(new GridCell(this));
                 }

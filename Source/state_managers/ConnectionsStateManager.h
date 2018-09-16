@@ -10,9 +10,9 @@ using SAPC = StatefulAudioProcessorContainer;
 
 enum ConnectionType { audio, midi, all };
 
-class ConnectionHelper {
+class ConnectionsStateManager {
 public:
-    explicit ConnectionHelper(StatefulAudioProcessorContainer& audioProcessorContainer)
+    explicit ConnectionsStateManager(StatefulAudioProcessorContainer& audioProcessorContainer)
             : audioProcessorContainer(audioProcessorContainer) {
         connections = ValueTree(IDs::CONNECTIONS);
     }

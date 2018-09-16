@@ -11,7 +11,8 @@ class GraphEditorPanel
           private ValueTree::Listener {
 public:
     GraphEditorPanel(ProcessorGraph &g, Project &project, Viewport &parentViewport)
-            : graph(g), project(project), parentViewport(parentViewport) {
+            : graph(g), tracksManager(project.getTracksManager()),
+              viewManager(project.getViewStateManager()), parentViewport(parentViewport) {
         project.getState().addListener(this);
 
         addAndMakeVisible(*(tracks = std::make_unique<GraphEditorTracks>(project, project.getTracks(), *this, graph)));
@@ -26,15 +27,17 @@ public:
     }
 
     void mouseDown(const MouseEvent& event) override {
-        project.focusOnGridPane();
+        viewManager.focusOnGridPane();
     }
 
     // Call this method when the parent viewport size has changed or when the number of tracks has changed.
     void resize() {
-        project.setProcessorHeight(getProcessorHeight());
-        project.setTrackWidth(getTrackWidth());
-        int newWidth = getTrackWidth() * jmax(Project::NUM_VISIBLE_TRACKS, project.getNumNonMasterTracks(), project.getNumMasterProcessorSlots()) + Project::TRACK_LABEL_HEIGHT * 2;
-        int newHeight = getProcessorHeight() * (jmax(Project::NUM_VISIBLE_TRACKS, project.getNumTrackProcessorSlots() + 1) + 3) + Project::TRACK_LABEL_HEIGHT;
+        tracksManager.setProcessorHeight(getProcessorHeight());
+        tracksManager.setTrackWidth(getTrackWidth());
+        int newWidth = getTrackWidth() * jmax(TracksStateManager::NUM_VISIBLE_TRACKS, tracksManager.getNumNonMasterTracks(),
+                                              viewManager.getNumMasterProcessorSlots()) + TracksStateManager::TRACK_LABEL_HEIGHT * 2;
+        int newHeight = getProcessorHeight() * (jmax(TracksStateManager::NUM_VISIBLE_TRACKS,
+                                                     viewManager.getNumTrackProcessorSlots() + 1) + 3) + TracksStateManager::TRACK_LABEL_HEIGHT;
         setSize(newWidth, newHeight);
         updateViewPosition();
         if (newWidth == getWidth() && newHeight == getHeight()) {
@@ -51,10 +54,10 @@ public:
         auto processorHeight = getProcessorHeight();
         auto top = r.removeFromTop(processorHeight);
 
-        tracks->setBounds(r.removeFromTop(processorHeight * (project.getNumTrackProcessorSlots() + 2) + Project::TRACK_LABEL_HEIGHT));
+        tracks->setBounds(r.removeFromTop(processorHeight * (viewManager.getNumTrackProcessorSlots() + 2) + TracksStateManager::TRACK_LABEL_HEIGHT));
 
-        auto ioProcessorWidth = parentViewport.getWidth() - Project::TRACK_LABEL_HEIGHT * 2;
-        int trackXOffset = parentViewport.getViewPositionX() + Project::TRACK_LABEL_HEIGHT;
+        auto ioProcessorWidth = parentViewport.getWidth() - TracksStateManager::TRACK_LABEL_HEIGHT * 2;
+        int trackXOffset = parentViewport.getViewPositionX() + TracksStateManager::TRACK_LABEL_HEIGHT;
         top.setX(trackXOffset);
         top.setWidth(ioProcessorWidth);
 
@@ -187,9 +190,11 @@ public:
     }
 
     ProcessorGraph &graph;
-    Project &project;
 
 private:
+    TracksStateManager& tracksManager;
+    ViewStateManager& viewManager;
+
     const AudioProcessorGraph::Connection EMPTY_CONNECTION {{0, 0}, {0, 0}};
     std::unique_ptr<GraphEditorConnectors> connectors;
     GraphEditorConnector *draggingConnector {};
@@ -210,9 +215,9 @@ private:
     // project state listener.
     Viewport &parentViewport;
 
-    int getTrackWidth() { return (parentViewport.getWidth() - Project::TRACK_LABEL_HEIGHT * 2) / Project::NUM_VISIBLE_TRACKS; }
+    int getTrackWidth() { return (parentViewport.getWidth() - TracksStateManager::TRACK_LABEL_HEIGHT * 2) / TracksStateManager::NUM_VISIBLE_TRACKS; }
 
-    int getProcessorHeight() { return (parentViewport.getHeight() - Project::TRACK_LABEL_HEIGHT) / (Project::NUM_VISIBLE_PROCESSOR_SLOTS + 1); }
+    int getProcessorHeight() { return (parentViewport.getHeight() - TracksStateManager::TRACK_LABEL_HEIGHT) / (TracksStateManager::NUM_VISIBLE_PROCESSOR_SLOTS + 1); }
 
     GraphEditorPin *findPinAt(const MouseEvent &e) const {
         if (auto *pin = audioInputProcessor->findPinAt(e))
@@ -247,11 +252,11 @@ private:
     }
 
     void updateViewPosition() {
-        auto masterSlotOffset = project.getMasterViewSlotOffset();
-        auto trackSlotOffset = project.getGridViewTrackOffset();
+        auto masterSlotOffset = viewManager.getMasterViewSlotOffset();
+        auto trackSlotOffset = viewManager.getGridViewTrackOffset();
         parentViewport.setViewPosition(
                 jmax(masterSlotOffset, trackSlotOffset) * getTrackWidth(),
-                project.getGridViewSlotOffset() * getProcessorHeight()
+                viewManager.getGridViewSlotOffset() * getProcessorHeight()
         );
     }
 
@@ -267,7 +272,7 @@ private:
             updateViewPosition();
             connectors->updateConnectors();
         } else if (i == IDs::focusedPane) {
-            unfocusOverlay.setVisible(!project.isGridPaneFocused());
+            unfocusOverlay.setVisible(!viewManager.isGridPaneFocused());
             unfocusOverlay.toFront(false);
         }
     }
@@ -277,20 +282,20 @@ private:
             resize();
         } else if (child.hasType(IDs::PROCESSOR)) {
             if (child[IDs::name] == MidiInputProcessor::name()) {
-                auto *midiInputProcessor = new GraphEditorProcessor(project, child, *this, graph);
+                auto *midiInputProcessor = new GraphEditorProcessor(tracksManager, child, *this, graph);
                 addAndMakeVisible(midiInputProcessor);
                 midiInputProcessors.addSorted(processorComparator, midiInputProcessor);
                 resized();
             } else if (child[IDs::name] == MidiOutputProcessor::name()) {
-                auto *midiOutputProcessor = new GraphEditorProcessor(project, child, *this, graph);
+                auto *midiOutputProcessor = new GraphEditorProcessor(tracksManager, child, *this, graph);
                 addAndMakeVisible(midiOutputProcessor);
                 midiOutputProcessors.addSorted(processorComparator, midiOutputProcessor);
                 resized();
             } else if (child[IDs::name] == "Audio Input") {
-                addAndMakeVisible(*(audioInputProcessor = std::make_unique<GraphEditorProcessor>(project, child, *this, graph, true)));
+                addAndMakeVisible(*(audioInputProcessor = std::make_unique<GraphEditorProcessor>(tracksManager, child, *this, graph, true)));
                 resized();
             } else if (child[IDs::name] == "Audio Output") {
-                addAndMakeVisible(*(audioOutputProcessor = std::make_unique<GraphEditorProcessor>(project, child, *this, graph, true)));
+                addAndMakeVisible(*(audioOutputProcessor = std::make_unique<GraphEditorProcessor>(tracksManager, child, *this, graph, true)));
                 resized();
             }
             connectors->updateConnectors();
