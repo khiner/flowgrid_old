@@ -35,9 +35,21 @@ public:
 
     Point<int> trackAndSlotToGridPosition(const TrackAndSlot& trackAndSlot) const {
         if (trackAndSlot.track.hasProperty(IDs::isMasterTrack))
-            return {viewManager.getGridViewTrackOffset() + trackAndSlot.slot - viewManager.getMasterViewSlotOffset(), viewManager.getNumTrackProcessorSlots()};
+            return {trackAndSlot.slot + viewManager.getGridViewTrackOffset() - viewManager.getMasterViewSlotOffset(),
+                    viewManager.getNumTrackProcessorSlots()};
         else
             return {indexOf(trackAndSlot.track), trackAndSlot.slot};
+    }
+
+    const TrackAndSlot gridPositionToTrackAndSlot(const Point<int> gridPosition) const {
+        if (gridPosition.y >= viewManager.getNumTrackProcessorSlots())
+            return {getMasterTrack(),
+                    jmin(gridPosition.x + viewManager.getMasterViewSlotOffset() - viewManager.getGridViewTrackOffset(),
+                         viewManager.getNumMasterProcessorSlots() - 1)};
+        else
+            return {getTrack(jmin(gridPosition.x, getNumNonMasterTracks() - 1)),
+                    jmin(gridPosition.y + viewManager.getGridViewSlotOffset(),
+                         viewManager.getNumTrackProcessorSlots() - 1)};
     }
 
     TracksStateManager(ViewStateManager& viewManager, StatefulAudioProcessorContainer& audioProcessorContainer,
@@ -581,78 +593,23 @@ public:
 
     TrackAndSlot findItemToSelectWithLeftRightDelta(int delta) const {
         if (viewManager.isGridPaneFocused())
-            return findGridItemToSelectWithLeftRightDelta(delta);
+            return findGridItemToSelectWithDelta(delta, 0);
         else
             return findSelectionPaneItemToSelectWithLeftRightDelta(delta);
     }
 
     TrackAndSlot findItemToSelectWithUpDownDelta(int delta) const {
         if (viewManager.isGridPaneFocused())
-            return findGridItemToSelectWithUpDownDelta(delta);
+            return findGridItemToSelectWithDelta(0, delta);
         else
             return findSelectionPaneItemToSelectWithUpDownDelta(delta);
     }
 
-    TrackAndSlot findGridItemToSelectWithLeftRightDelta(int delta) const {
+    TrackAndSlot findGridItemToSelectWithDelta(int xDelta, int yDelta) const {
         const auto& selectedTrack = getSelectedTrack();
-        if (!selectedTrack.isValid())
-            return {};
-
-        auto selectedSlot = findSelectedSlotForTrack(selectedTrack);
-        if (selectedTrack.hasProperty(IDs::isMasterTrack)) {
-            int slotToSelect = selectedSlot + delta;
-            if (delta > 0) {
-                if (selectedTrack[IDs::selected]) {
-                    // re-selecting the processor will deselect the parent.
-                    return {selectedTrack, selectedSlot};
-                }
-            } else if (delta < 0) {
-                if (slotToSelect < 0 && !selectedTrack[IDs::selected])
-                    return {selectedTrack};
-            }
-            return {selectedTrack, jmin(slotToSelect, viewManager.getNumMasterProcessorSlots() - 1)};
-        } else {
-            auto siblingTrackToSelect = selectedTrack.getSibling(delta);
-            if (siblingTrackToSelect.isValid() && !siblingTrackToSelect.hasProperty(IDs::isMasterTrack)) {
-                return {siblingTrackToSelect, selectedSlot};
-            }
-        }
-
-        return {};
-    }
-
-    TrackAndSlot findGridItemToSelectWithUpDownDelta(int delta) const {
-        const auto& selectedTrack = getSelectedTrack();
-        int selectedProcessorSlot = findSelectedSlotForTrack(selectedTrack);
-        if (selectedTrack.hasProperty(IDs::isMasterTrack)) {
-            if (delta < 0) {
-                auto trackToSelect = getTrackWithViewIndex(selectedProcessorSlot - viewManager.getMasterViewSlotOffset());
-                if (!trackToSelect.isValid() || trackToSelect.hasProperty(IDs::isMasterTrack))
-                    trackToSelect = getTrack(getNumNonMasterTracks() - 1);
-                return {trackToSelect, viewManager.getNumTrackProcessorSlots() - 1};
-            } else {
-                return {};
-            }
-        } else {
-            auto slotToSelect = selectedProcessorSlot + delta;
-            if (delta > 0) {
-                if (selectedTrack[IDs::selected]) {
-                    // re-selecting the processor will deselect the parent.
-                    return {selectedTrack, selectedProcessorSlot};
-                } else if (slotToSelect >= viewManager.getNumTrackProcessorSlots()) {
-                    const auto& masterTrack = getMasterTrack();
-                    if (masterTrack.isValid()) {
-                        auto masterProcessorSlotToSelect = getViewIndexForTrack(selectedTrack) + viewManager.getMasterViewSlotOffset();
-                        return {masterTrack, jmin(masterProcessorSlotToSelect, viewManager.getNumMasterProcessorSlots() - 1)};
-                    }
-                }
-            } else if (delta < 0) {
-                if (slotToSelect < 0 && !selectedTrack[IDs::selected])
-                    return {selectedTrack};
-            }
-
-            return {selectedTrack, jmin(slotToSelect, viewManager.getNumTrackProcessorSlots() - 1)};
-        }
+        const auto selectedProcessorSlot = findSelectedSlotForTrack(selectedTrack);
+        const auto gridPosition = trackAndSlotToGridPosition({selectedTrack, selectedProcessorSlot});
+        return gridPositionToTrackAndSlot(gridPosition + Point<int>(xDelta, yDelta));
     }
 
     TrackAndSlot findSelectionPaneItemToSelectWithLeftRightDelta(int delta) const {
