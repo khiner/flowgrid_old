@@ -220,7 +220,7 @@ private:
 
     GraphEditorPin* findPinWithState(const ValueTree& state) {
         for (auto* pin : pins) {
-            if (pin->state == state)
+            if (pin->getState() == state)
                 return pin;
         }
         return nullptr;

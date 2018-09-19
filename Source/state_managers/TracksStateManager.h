@@ -711,7 +711,7 @@ public:
     }
 
     ValueTree findProcessorNearestToSlot(const ValueTree &track, int slot) const {
-        int nearestSlot = INT_MAX;
+        auto nearestSlot = INT_MAX;
         ValueTree nearestProcessor;
         for (const auto& processor : track) {
             int otherSlot = processor[IDs::processorSlot];
@@ -741,8 +741,9 @@ public:
     }
 
     void clear() {
-        while (tracks.getNumChildren() > 0)
+        while (tracks.getNumChildren() > 0) {
             deleteItem(tracks.getChild(tracks.getNumChildren() - 1), nullptr);
+        }
     }
 
     // NOTE: assumes the track hasn't been added yet!
@@ -796,17 +797,14 @@ public:
             viewManager.setGridViewSlotOffset(processorSlot);
     }
 
-    static constexpr int NUM_VISIBLE_TRACKS = 8;
-    static constexpr int NUM_VISIBLE_PROCESSOR_SLOTS = 10;
-
     void setTrackWidth(int trackWidth) { this->trackWidth = trackWidth; }
     void setProcessorHeight(int processorHeight) { this->processorHeight = processorHeight; }
 
     int getTrackWidth() { return trackWidth; }
     int getProcessorHeight() { return processorHeight; }
 
+    static constexpr int NUM_VISIBLE_TRACKS = 8, NUM_VISIBLE_PROCESSOR_SLOTS = 10;
     static constexpr int TRACK_LABEL_HEIGHT = 32;
-    int trackWidth {0}, processorHeight {0};
 private:
     ValueTree tracks;
     ViewStateManager& viewManager;
@@ -817,6 +815,7 @@ private:
 
     std::unordered_map<int, int> slotForNodeIdSnapshot;
     std::unique_ptr<TrackAndSlot> selectionStartTrackAndSlot {};
+    int trackWidth {0}, processorHeight {0};
 
     void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override {
         if (child.hasType(IDs::PROCESSOR)) {

@@ -189,9 +189,8 @@ public:
         else return tracks->getProcessorForNodeId(nodeId);
     }
 
-    ProcessorGraph &graph;
-
 private:
+    ProcessorGraph &graph;
     TracksStateManager& tracksManager;
     ViewStateManager& viewManager;
 

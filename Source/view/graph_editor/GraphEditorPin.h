@@ -1,3 +1,5 @@
+#include <utility>
+
 #pragma once
 
 #include "JuceHeader.h"
@@ -7,16 +9,14 @@
 #include "ProcessorGraph.h"
 
 struct GraphEditorPin : public Component, public SettableTooltipClient, private Utilities::ValueTreePropertyChangeListener {
-    GraphEditorPin(const ValueTree& state, ConnectorDragListener &connectorDragListener)
-            : state(state), connectorDragListener(connectorDragListener) {
+    GraphEditorPin(ValueTree state, ConnectorDragListener &connectorDragListener)
+            : state(std::move(state)), connectorDragListener(connectorDragListener) {
         setSize(16, 16);
         valueTreePropertyChanged(this->state, IDs::name);
         this->state.addListener(this);
     }
 
-    ~GraphEditorPin() override {
-        state.removeListener(this);
-    }
+    const ValueTree& getState() { return state; }
 
     int getChannel() {
         return getName().contains("MIDI") ? AudioProcessorGraph::midiChannelIndex : state.getParent().indexOf(state);
@@ -62,10 +62,10 @@ struct GraphEditorPin : public Component, public SettableTooltipClient, private 
         connectorDragListener.endDraggingConnector(e);
     }
 
-    ValueTree state;
     DrawableText channelLabel;
-    
 private:
+    ValueTree state;
+
     int busIdx = 0;
     ConnectorDragListener &connectorDragListener;
 

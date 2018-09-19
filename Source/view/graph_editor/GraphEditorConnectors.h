@@ -62,6 +62,7 @@ public:
         }
     }
 
+private:
     ConnectorDragListener &connectorDragListener;
     GraphEditorProcessorContainer &graphEditorProcessorContainer;
     ProcessorGraph &graph;

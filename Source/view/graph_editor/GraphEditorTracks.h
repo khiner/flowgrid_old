@@ -8,7 +8,7 @@
 #include "ConnectorDragListener.h"
 
 class GraphEditorTracks : public Component,
-                          public Utilities::ValueTreeObjectList<GraphEditorTrack>,
+                          private Utilities::ValueTreeObjectList<GraphEditorTrack>,
                           public GraphEditorProcessorContainer {
 public:
     explicit GraphEditorTracks(Project& project, const ValueTree &state, ConnectorDragListener &connectorDragListener, ProcessorGraph& graph)
@@ -158,6 +158,7 @@ public:
         currentlyDraggingProcessor = nullptr;
     }
 
+private:
     Project& project;
     TracksStateManager& tracksManager;
     ViewStateManager& viewManager;
