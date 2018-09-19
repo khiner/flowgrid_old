@@ -617,17 +617,17 @@ public:
         if (!selectedTrack.isValid())
             return {};
 
-        auto siblingTrackToSelect = selectedTrack.getSibling(delta);
-        if (siblingTrackToSelect.isValid()) {
-            if (selectedTrack[IDs::selected] || selectedTrack.getNumChildren() == 0) {
-                return {siblingTrackToSelect};
-            } else {
-                auto selectedSlot = findSelectedSlotForTrack(selectedTrack);
-                if (selectedSlot != -1) {
-                    const auto& processorToSelect = findProcessorNearestToSlot(siblingTrackToSelect, selectedSlot);
-                    return processorToSelect.isValid() ? TrackAndSlot(siblingTrackToSelect, processorToSelect) : TrackAndSlot(siblingTrackToSelect);
-                }
-            }
+        const auto& siblingTrackToSelect = selectedTrack.getSibling(delta);
+        if (!siblingTrackToSelect.isValid())
+            return {};
+
+        if (selectedTrack[IDs::selected] || selectedTrack.getNumChildren() == 0)
+            return {siblingTrackToSelect};
+
+        auto selectedSlot = findSelectedSlotForTrack(selectedTrack);
+        if (selectedSlot != -1) {
+            const auto& processorToSelect = findProcessorNearestToSlot(siblingTrackToSelect, selectedSlot);
+            return processorToSelect.isValid() ? TrackAndSlot(siblingTrackToSelect, processorToSelect) : TrackAndSlot(siblingTrackToSelect);
         }
 
         return {};
@@ -639,32 +639,23 @@ public:
             return {};
 
         const auto& selectedProcessor = findSelectedProcessorForTrack(selectedTrack);
-        if (delta > 0 && selectedTrack[IDs::selected]) {
-            // re-selecting the processor will deselect the parent.
-            return {selectedTrack, selectedProcessor};
-        }
+        if (delta > 0 && selectedTrack[IDs::selected])
+            return {selectedTrack, selectedProcessor}; // re-selecting the processor will deselect the parent.
 
-        int selectedProcessorSlot = findSelectedSlotForTrack(selectedTrack);
-        auto siblingProcessorToSelect = selectedProcessor.getSibling(delta);
-        if (!siblingProcessorToSelect.isValid()) {
-            for (int slot = selectedProcessorSlot;
-                 (delta < 0 ? slot >= 0 : slot < viewManager.getNumAvailableSlotsForTrack(selectedTrack));
-                 slot += delta) {
-                const auto &processor = selectedTrack.getChildWithProperty(IDs::processorSlot, slot);
-                if (processor.isValid()) {
-                    siblingProcessorToSelect = processor;
-                    break;
-                }
-            }
-        }
-
-        if (delta < 0 && !siblingProcessorToSelect.isValid() && !selectedTrack[IDs::selected]) {
-            return {selectedTrack};
-        }
-
+        auto selectedProcessorSlot = findSelectedSlotForTrack(selectedTrack);
+        const auto& siblingProcessorToSelect = selectedProcessor.getSibling(delta);
         if (siblingProcessorToSelect.isValid())
             return {selectedTrack, siblingProcessorToSelect};
-        return {};
+
+        for (int slot = selectedProcessorSlot;
+             (delta < 0 ? slot >= 0 : slot < viewManager.getNumAvailableSlotsForTrack(selectedTrack));
+             slot += delta) {
+            const auto& processor = selectedTrack.getChildWithProperty(IDs::processorSlot, slot);
+            if (processor.isValid())
+                return {selectedTrack, processor};
+        }
+
+        return delta < 0 && !selectedTrack[IDs::selected] ? TrackAndSlot(selectedTrack) : TrackAndSlot();
     }
 
     ValueTree findProcessorNearestToSlot(const ValueTree &track, int slot) const {
