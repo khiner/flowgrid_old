@@ -53,6 +53,51 @@ public:
         return track.hasProperty(IDs::isMasterTrack) ? getMasterViewSlotOffset() : getGridViewSlotOffset();
     }
 
+    bool isProcessorSlotInView(const ValueTree& track, int correctedSlot) {
+        bool inView = correctedSlot >= getSlotOffsetForTrack(track) &&
+                      correctedSlot < getSlotOffsetForTrack(track) + NUM_VISIBLE_TRACKS;
+        if (track.hasProperty(IDs::isMasterTrack))
+            inView &= getGridViewSlotOffset() + NUM_VISIBLE_TRACKS > getNumTrackProcessorSlots();
+        else {
+            auto trackIndex = track.getParent().indexOf(track);
+            auto trackViewOffset = getGridViewTrackOffset();
+            inView &= trackIndex >= trackViewOffset && trackIndex < trackViewOffset + NUM_VISIBLE_TRACKS;
+        }
+        return inView;
+    }
+
+    void updateViewTrackOffsetToInclude(int trackIndex, int numNonMasterTracks) {
+        if (trackIndex < 0)
+            return; // invalid
+        auto viewTrackOffset = getGridViewTrackOffset();
+        if (trackIndex >= viewTrackOffset + NUM_VISIBLE_TRACKS)
+            setGridViewTrackOffset(trackIndex - NUM_VISIBLE_TRACKS + 1);
+        else if (trackIndex < viewTrackOffset)
+            setGridViewTrackOffset(trackIndex);
+        else if (numNonMasterTracks - viewTrackOffset < NUM_VISIBLE_TRACKS && numNonMasterTracks >= NUM_VISIBLE_TRACKS)
+            // always show last N tracks if available
+            setGridViewTrackOffset(numNonMasterTracks - NUM_VISIBLE_TRACKS);
+    }
+
+    void updateViewSlotOffsetToInclude(int processorSlot, bool isMasterTrack) {
+        if (processorSlot < 0)
+            return; // invalid
+        if (isMasterTrack) {
+            auto viewSlotOffset = getMasterViewSlotOffset();
+            if (processorSlot >= viewSlotOffset + NUM_VISIBLE_TRACKS)
+                setMasterViewSlotOffset(processorSlot - NUM_VISIBLE_TRACKS + 1);
+            else if (processorSlot < viewSlotOffset)
+                setMasterViewSlotOffset(processorSlot);
+            processorSlot = getNumTrackProcessorSlots();
+        }
+
+        auto viewSlotOffset = getGridViewSlotOffset();
+        if (processorSlot >= viewSlotOffset + NUM_VISIBLE_TRACKS)
+            setGridViewSlotOffset(processorSlot - NUM_VISIBLE_TRACKS + 1);
+        else if (processorSlot < viewSlotOffset)
+            setGridViewSlotOffset(processorSlot);
+    }
+
     int getNumTrackProcessorSlots() const { return viewState[IDs::numProcessorSlots]; }
     int getNumMasterProcessorSlots() const { return viewState[IDs::numMasterProcessorSlots]; }
     int getGridViewTrackOffset() const { return viewState[IDs::gridViewTrackOffset]; }
@@ -77,6 +122,8 @@ public:
 
     const String sessionControlMode = "session", noteControlMode = "note";
     const String gridPaneName = "grid", editorPaneName = "editor";
+
+    static constexpr int NUM_VISIBLE_TRACKS = 8, NUM_VISIBLE_PROCESSOR_SLOTS = 10;
 private:
     ValueTree viewState;
 };

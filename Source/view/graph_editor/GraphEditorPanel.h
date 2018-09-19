@@ -34,9 +34,9 @@ public:
     void resize() {
         tracksManager.setProcessorHeight(getProcessorHeight());
         tracksManager.setTrackWidth(getTrackWidth());
-        int newWidth = getTrackWidth() * jmax(TracksStateManager::NUM_VISIBLE_TRACKS, tracksManager.getNumNonMasterTracks(),
+        int newWidth = getTrackWidth() * jmax(ViewStateManager::NUM_VISIBLE_TRACKS, tracksManager.getNumNonMasterTracks(),
                                               viewManager.getNumMasterProcessorSlots()) + TracksStateManager::TRACK_LABEL_HEIGHT * 2;
-        int newHeight = getProcessorHeight() * (jmax(TracksStateManager::NUM_VISIBLE_TRACKS,
+        int newHeight = getProcessorHeight() * (jmax(ViewStateManager::NUM_VISIBLE_TRACKS,
                                                      viewManager.getNumTrackProcessorSlots() + 1) + 3) + TracksStateManager::TRACK_LABEL_HEIGHT;
         setSize(newWidth, newHeight);
         updateViewPosition();
@@ -214,9 +214,9 @@ private:
     // project state listener.
     Viewport &parentViewport;
 
-    int getTrackWidth() { return (parentViewport.getWidth() - TracksStateManager::TRACK_LABEL_HEIGHT * 2) / TracksStateManager::NUM_VISIBLE_TRACKS; }
+    int getTrackWidth() { return (parentViewport.getWidth() - TracksStateManager::TRACK_LABEL_HEIGHT * 2) / ViewStateManager::NUM_VISIBLE_TRACKS; }
 
-    int getProcessorHeight() { return (parentViewport.getHeight() - TracksStateManager::TRACK_LABEL_HEIGHT) / (TracksStateManager::NUM_VISIBLE_PROCESSOR_SLOTS + 1); }
+    int getProcessorHeight() { return (parentViewport.getHeight() - TracksStateManager::TRACK_LABEL_HEIGHT) / (ViewStateManager::NUM_VISIBLE_PROCESSOR_SLOTS + 1); }
 
     GraphEditorPin *findPinAt(const MouseEvent &e) const {
         if (auto *pin = audioInputProcessor->findPinAt(e))

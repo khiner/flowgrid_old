@@ -15,8 +15,8 @@ class GraphEditorProcessors : public Component,
 public:
     explicit GraphEditorProcessors(Project& project, const ValueTree& state, ConnectorDragListener &connectorDragListener, ProcessorGraph& graph)
             : Utilities::ValueTreeObjectList<GraphEditorProcessor>(state),
-              viewState(project.getViewState()), project(project), tracksManager(project.getTracksManager()),
-              connectorDragListener(connectorDragListener), graph(graph) {
+              project(project), tracksManager(project.getTracksManager()), viewStateManager(project.getViewStateManager()),
+              viewState(viewStateManager.getState()), connectorDragListener(connectorDragListener), graph(graph) {
         rebuildObjects();
         viewState.addListener(this);
         valueTreePropertyChanged(viewState, isMasterTrack() ? IDs::numMasterProcessorSlots : IDs::numProcessorSlots);
@@ -70,7 +70,7 @@ public:
         const auto& baseColour = findColour(ResizableWindow::backgroundColourId);
         for (int slot = 0; slot < processorSlotRectangles.size(); slot++) {
             auto fillColour = baseColour.brighter(0.13);
-            if (tracksManager.isProcessorSlotInView(parent, slot)) {
+            if (viewStateManager.isProcessorSlotInView(parent, slot)) {
                 fillColour = fillColour.brighter(0.3);
                 if (tracksManager.isTrackSelected(parent))
                     fillColour = fillColour.brighter(0.2);
@@ -88,7 +88,7 @@ public:
     GraphEditorProcessor *createNewObject(const ValueTree &tree) override {
         GraphEditorProcessor *processor = currentlyMovingProcessor != nullptr
                                           ? currentlyMovingProcessor
-                                          : new GraphEditorProcessor(project.getTracksManager(), tree, connectorDragListener, graph);
+                                          : new GraphEditorProcessor(tracksManager, tree, connectorDragListener, graph);
         addAndMakeVisible(processor);
         return processor;
     }
@@ -145,10 +145,10 @@ private:
             SHOW_PLUGIN_GUI_MENU_ID = 10, SHOW_ALL_PROGRAMS_MENU_ID = 11, CONFIGURE_AUDIO_MIDI_MENU_ID = 12,
             ADD_MIXER_CHANNEL_MENU_ID = 13;
 
-    ValueTree viewState;
-
     Project &project;
     TracksStateManager &tracksManager;
+    ViewStateManager &viewStateManager;
+    ValueTree viewState;
 
     ConnectorDragListener &connectorDragListener;
     ProcessorGraph &graph;

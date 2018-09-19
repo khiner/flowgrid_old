@@ -190,19 +190,6 @@ public:
                isSlotSelected(processor.getParent(), processor[IDs::processorSlot]);
     }
 
-    bool isProcessorSlotInView(const ValueTree& track, int correctedSlot) {
-        bool inView = correctedSlot >= viewManager.getSlotOffsetForTrack(track) &&
-                      correctedSlot < viewManager.getSlotOffsetForTrack(track) + NUM_VISIBLE_TRACKS;
-        if (track.hasProperty(IDs::isMasterTrack))
-            inView &= viewManager.getGridViewSlotOffset() + NUM_VISIBLE_TRACKS > viewManager.getNumTrackProcessorSlots();
-        else {
-            auto trackIndex = indexOf(track);
-            auto trackViewOffset = viewManager.getGridViewTrackOffset();
-            inView &= trackIndex >= trackViewOffset && trackIndex < trackViewOffset + NUM_VISIBLE_TRACKS;
-        }
-        return inView;
-    }
-
     void deselectAllTracksExcept(const ValueTree& except) {
         for (auto track : tracks) {
             if (track != except) {
@@ -713,45 +700,12 @@ public:
         return trackName;
     }
 
-    void updateViewTrackOffsetToInclude(int trackIndex) {
-        if (trackIndex < 0)
-            return; // invalid
-        auto viewTrackOffset = viewManager.getGridViewTrackOffset();
-        if (trackIndex >= viewTrackOffset + NUM_VISIBLE_TRACKS)
-            viewManager.setGridViewTrackOffset(trackIndex - NUM_VISIBLE_TRACKS + 1);
-        else if (trackIndex < viewTrackOffset)
-            viewManager.setGridViewTrackOffset(trackIndex);
-        else if (getNumNonMasterTracks() - viewTrackOffset < NUM_VISIBLE_TRACKS && getNumNonMasterTracks() >= NUM_VISIBLE_TRACKS)
-            // always show last N tracks if available
-            viewManager.setGridViewTrackOffset(getNumNonMasterTracks() - NUM_VISIBLE_TRACKS);
-    }
-
-    void updateViewSlotOffsetToInclude(int processorSlot, bool isMasterTrack) {
-        if (processorSlot < 0)
-            return; // invalid
-        if (isMasterTrack) {
-            auto viewSlotOffset = viewManager.getMasterViewSlotOffset();
-            if (processorSlot >= viewSlotOffset + NUM_VISIBLE_TRACKS)
-                viewManager.setMasterViewSlotOffset(processorSlot - NUM_VISIBLE_TRACKS + 1);
-            else if (processorSlot < viewSlotOffset)
-                viewManager.setMasterViewSlotOffset(processorSlot);
-            processorSlot = viewManager.getNumTrackProcessorSlots();
-        }
-
-        auto viewSlotOffset = viewManager.getGridViewSlotOffset();
-        if (processorSlot >= viewSlotOffset + NUM_VISIBLE_TRACKS)
-            viewManager.setGridViewSlotOffset(processorSlot - NUM_VISIBLE_TRACKS + 1);
-        else if (processorSlot < viewSlotOffset)
-            viewManager.setGridViewSlotOffset(processorSlot);
-    }
-
     void setTrackWidth(int trackWidth) { this->trackWidth = trackWidth; }
     void setProcessorHeight(int processorHeight) { this->processorHeight = processorHeight; }
 
     int getTrackWidth() { return trackWidth; }
     int getProcessorHeight() { return processorHeight; }
 
-    static constexpr int NUM_VISIBLE_TRACKS = 8, NUM_VISIBLE_PROCESSOR_SLOTS = 10;
     static constexpr int TRACK_LABEL_HEIGHT = 32;
 private:
     ValueTree tracks;
@@ -775,13 +729,13 @@ private:
 
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {
         if (tree.hasType(IDs::TRACK) && i == IDs::selected && tree[i] && !tree.hasProperty(IDs::isMasterTrack)) {
-            updateViewTrackOffsetToInclude(indexOf(tree));
+            viewManager.updateViewTrackOffsetToInclude(indexOf(tree), getNumNonMasterTracks());
         } else if (i == IDs::selectedSlotsMask) {
             if (!tree.hasProperty(IDs::isMasterTrack))
-                updateViewTrackOffsetToInclude(indexOf(tree));
+                viewManager.updateViewTrackOffsetToInclude(indexOf(tree), getNumNonMasterTracks());
             auto slot = findSelectedSlotForTrack(tree);
             if (slot != -1)
-                updateViewSlotOffsetToInclude(slot, tree.hasProperty(IDs::isMasterTrack));
+                viewManager.updateViewSlotOffsetToInclude(slot, tree.hasProperty(IDs::isMasterTrack));
             if (trackHasAnySlotSelected(tree) && selectionStartTrackAndSlot == nullptr)
                 tree.setProperty(IDs::selected, false, nullptr);
         } else if (i == IDs::processorSlot) {
