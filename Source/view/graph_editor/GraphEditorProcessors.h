@@ -157,11 +157,8 @@ private:
     OwnedArray<DrawableRectangle> processorSlotRectangles;
 
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {
-        if (isSuitableType(tree)) {
-            if (i == IDs::processorSlot) {
-                resized();
-                tracksManager.selectProcessorSlot(parent, tree[i]);
-            }
+        if (isSuitableType(tree) && i == IDs::processorSlot) {
+            resized();
         } else if ((tree.hasType(IDs::TRACK) && i == IDs::selected) || i == IDs::gridViewTrackOffset) {
             updateProcessorSlotColours();
         } else if (i == IDs::gridViewSlotOffset || (i == IDs::masterViewSlotOffset && isMasterTrack())) {
@@ -190,15 +187,13 @@ private:
         ValueTreeObjectList::valueTreeChildAdded(parent, tree);
         if (this->parent == parent && isSuitableType(tree)) {
             resized();
-            tracksManager.selectProcessorSlot(parent, tree[IDs::processorSlot]);
         }
     }
 
     GraphEditorProcessor* findProcessorAtSlot(int slot) const {
         for (auto* processor : objects) {
-            if (processor->getSlot() == slot) {
+            if (processor->getSlot() == slot)
                 return processor;
-            }
         }
         return nullptr;
     }

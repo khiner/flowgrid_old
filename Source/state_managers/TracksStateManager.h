@@ -8,7 +8,7 @@
 #include "state_managers/ViewStateManager.h"
 #include "processors/ProcessorManager.h"
 
-class TracksStateManager {
+class TracksStateManager : private ValueTree::Listener {
 public:
     struct TrackAndSlot {
         TrackAndSlot() : slot(0) {};
@@ -47,6 +47,7 @@ public:
               projectChangeBroadcaster(projectChangeBroadcaster), processorManager(processorManager),
               undoManager(undoManager) {
         tracks = ValueTree(IDs::TRACKS);
+        tracks.addListener(this);
         tracks.setProperty(IDs::name, "Tracks", nullptr);
     }
 
@@ -223,7 +224,7 @@ public:
     }
 
     void selectProcessor(const ValueTree& processor, ValueTree::Listener* excludingListener=nullptr) {
-        selectProcessorSlot(processor.getParent(), processor[IDs::processorSlot], excludingListener);
+        selectProcessorSlot(processor.getParent(), processor[IDs::processorSlot], true, excludingListener);
     }
 
     void setTrackSelected(ValueTree& track, bool selected, bool deselectOthers=true,
@@ -816,4 +817,32 @@ private:
 
     std::unordered_map<int, int> slotForNodeIdSnapshot;
     std::unique_ptr<TrackAndSlot> selectionStartTrackAndSlot {};
+
+    void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override {
+        if (child.hasType(IDs::PROCESSOR)) {
+            selectProcessor(child);
+        }
+    }
+
+    void valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int) override {}
+
+    void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {
+        if (tree.hasType(IDs::TRACK) && i == IDs::selected && tree[i] && !tree.hasProperty(IDs::isMasterTrack)) {
+            updateViewTrackOffsetToInclude(indexOf(tree));
+        } else if (i == IDs::selectedSlotsMask) {
+            if (!tree.hasProperty(IDs::isMasterTrack))
+                updateViewTrackOffsetToInclude(indexOf(tree));
+            auto slot = findSelectedSlotForTrack(tree);
+            if (slot != -1)
+                updateViewSlotOffsetToInclude(slot, tree.hasProperty(IDs::isMasterTrack));
+            if (trackHasAnySlotSelected(tree) && selectionStartTrackAndSlot == nullptr)
+                tree.setProperty(IDs::selected, false, nullptr);
+        } else if (i == IDs::processorSlot) {
+            selectProcessor(tree);
+        }
+    }
+
+    void valueTreeChildOrderChanged(ValueTree &tree, int, int) override {}
+    void valueTreeParentChanged(ValueTree &) override {}
+    void valueTreeRedirected(ValueTree &) override {}
 };

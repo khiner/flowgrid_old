@@ -424,26 +424,10 @@ private:
                 config.outputDeviceName = deviceName;
 
             deviceManager.setAudioDeviceSetup(config, true);
-        } else if (tree.hasType(IDs::TRACK) && i == IDs::selected && tree[i]) {
-            if (!tree.hasProperty(IDs::isMasterTrack)) {
-                tracksManager.updateViewTrackOffsetToInclude(tracksManager.indexOf(tree));
-            }
-        } else if (i == IDs::selectedSlotsMask) {
-            if (!tree.hasProperty(IDs::isMasterTrack)) {
-                tracksManager.updateViewTrackOffsetToInclude(tracksManager.indexOf(tree));
-            }
-            auto slot = tracksManager.findSelectedSlotForTrack(tree);
-            if (slot != -1)
-                tracksManager.updateViewSlotOffsetToInclude(slot, tree.hasProperty(IDs::isMasterTrack));
-            if (tracksManager.trackHasAnySlotSelected(tree) && !isShiftHeld()) {
-                tree.setProperty(IDs::selected, false, nullptr);
-            }
         }
     }
 
     void valueTreeChildOrderChanged(ValueTree &tree, int, int) override {}
-
     void valueTreeParentChanged(ValueTree &) override {}
-
     void valueTreeRedirected(ValueTree &) override {}
 };
