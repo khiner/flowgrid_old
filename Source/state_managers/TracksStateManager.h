@@ -229,34 +229,48 @@ public:
     void setTrackSelected(ValueTree& track, bool selected, bool deselectOthers=true,
                           ValueTree::Listener* excludingListener=nullptr) {
         track.setProperty(IDs::selected, selected, nullptr);
-        if (selected && deselectOthers) {
-            deselectAllTracksExcept(track);
-            if (!trackHasAnySlotSelected(track)) {
-                auto slotToSelect = track.getNumChildren() > 0 ? int(track.getChild(0)[IDs::processorSlot]) : 0;
-                selectProcessorSlot(track, slotToSelect, true, excludingListener);
+        if (selectionStartTrackAndSlot != nullptr) { // shift+select
+            selectRectangle(track, -1, excludingListener);
+        } else {
+            if (selected && deselectOthers) {
+                deselectAllTracksExcept(track);
+                if (!trackHasAnySlotSelected(track)) {
+                    auto slotToSelect = track.getNumChildren() > 0 ? int(track.getChild(0)[IDs::processorSlot]) : 0;
+                    selectProcessorSlot(track, slotToSelect, true, excludingListener);
+                }
+            } else if (!selected) {
+                track.removeProperty(IDs::selectedSlotsMask, nullptr);
             }
-        } else if (!selected) {
-            track.removeProperty(IDs::selectedSlotsMask, nullptr);
         }
     }
 
     void selectProcessorSlot(const ValueTree& track, int slot, bool deselectOthers=true,
                              ValueTree::Listener* excludingListener=nullptr) {
-        if (initialSelectTrackAndSlot != nullptr) {
-            const auto initialGridPosition = trackAndSlotToGridPosition(*initialSelectTrackAndSlot);
-            const auto gridPosition = trackAndSlotToGridPosition({track, slot});
-            Rectangle<int> selectionRectangle(initialGridPosition, gridPosition);
-            selectionRectangle.setSize(selectionRectangle.getWidth() + 1, selectionRectangle.getHeight() + 1);
-
-            for (const auto& otherTrack : tracks) {
-                for (int otherSlot = 0; otherSlot < viewManager.getNumAvailableSlotsForTrack(otherTrack); otherSlot++) {
-                    const auto otherGridPosition = trackAndSlotToGridPosition({otherTrack, otherSlot});
-                    setProcessorSlotSelected(otherTrack, otherSlot, selectionRectangle.contains(otherGridPosition),
-                                             false, excludingListener);
-                }
-            }
+        if (selectionStartTrackAndSlot != nullptr) { // shift+select
+            selectRectangle(track, slot, excludingListener);
         } else {
             setProcessorSlotSelected(track, slot, true, deselectOthers, excludingListener);
+        }
+    }
+
+    void selectRectangle(const ValueTree &track, int slot, ValueTree::Listener *excludingListener) {
+        const auto trackIndex = indexOf(track);
+        const auto selectionStartTrackIndex = indexOf(selectionStartTrackAndSlot->track);
+        const auto gridPosition = trackAndSlotToGridPosition({track, slot});
+        Rectangle<int> selectionRectangle(trackAndSlotToGridPosition(*selectionStartTrackAndSlot), gridPosition);
+        selectionRectangle.setSize(selectionRectangle.getWidth() + 1, selectionRectangle.getHeight() + 1);
+
+        for (int otherTrackIndex = 0; otherTrackIndex < getNumTracks(); otherTrackIndex++) {
+            auto otherTrack = getTrack(otherTrackIndex);
+            bool trackSelected = (slot == -1 || selectionStartTrackAndSlot->slot == -1) &&
+                                 ((selectionStartTrackIndex <= otherTrackIndex && otherTrackIndex <= trackIndex) ||
+                                  (trackIndex <= otherTrackIndex && otherTrackIndex <= selectionStartTrackIndex));
+            otherTrack.setProperty(IDs::selected, trackSelected, nullptr);
+            for (int otherSlot = 0; otherSlot < viewManager.getNumAvailableSlotsForTrack(otherTrack); otherSlot++) {
+                const auto otherGridPosition = trackAndSlotToGridPosition({otherTrack, otherSlot});
+                setProcessorSlotSelected(otherTrack, otherSlot, selectionRectangle.contains(otherGridPosition),
+                                         false, excludingListener);
+            }
         }
     }
 
@@ -712,18 +726,17 @@ public:
         return nearestProcessor;
     }
 
-    void setInitialSelectPosition() {
+    void startRectangleSelection() {
         const auto& selectedTrack = getSelectedTrack();
         if (selectedTrack.isValid()) {
-            auto selectedSlot = findSelectedSlotForTrack(selectedTrack);
-            if (selectedSlot != -1) {
-                initialSelectTrackAndSlot = std::make_unique<TrackAndSlot>(selectedTrack, selectedSlot);
-            }
+            selectionStartTrackAndSlot = selectedTrack[IDs::selected]
+                             ? std::make_unique<TrackAndSlot>(selectedTrack)
+                             : std::make_unique<TrackAndSlot>(selectedTrack, findSelectedSlotForTrack(selectedTrack));
         }
     }
 
-    void resetInitialSelectPosition() {
-        initialSelectTrackAndSlot.reset();
+    void endRectangleSelection() {
+        selectionStartTrackAndSlot.reset();
     }
 
     void clear() {
@@ -802,5 +815,5 @@ private:
     UndoManager &undoManager;
 
     std::unordered_map<int, int> slotForNodeIdSnapshot;
-    std::unique_ptr<TrackAndSlot> initialSelectTrackAndSlot {};
+    std::unique_ptr<TrackAndSlot> selectionStartTrackAndSlot {};
 };

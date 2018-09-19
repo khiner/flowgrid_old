@@ -134,8 +134,6 @@ private:
             nameLabel.setText(tree[IDs::name].toString(), dontSendNotification);
         } else if (i == IDs::colour || i == IDs::selected) {
             nameLabel.setColour(Label::backgroundColourId, isSelected() ? getColour().brighter(0.25) : getColour());
-        } else if (i == IDs::selectedSlotsMask && tracksManager.trackHasAnySlotSelected(state)) {
-            state.setProperty(IDs::selected, false, nullptr);
         }
     }
 

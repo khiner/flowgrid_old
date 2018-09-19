@@ -101,18 +101,18 @@ public:
 
     void setShiftHeld(bool shiftHeld) {
         if (!isShiftHeld() && shiftHeld)
-            tracksManager.setInitialSelectPosition();
+            tracksManager.startRectangleSelection();
         this->shiftHeld = shiftHeld;
         if (!isShiftHeld())
-            tracksManager.resetInitialSelectPosition();
+            tracksManager.endRectangleSelection();
     }
 
     void setPush2ShiftHeld(bool shiftHeld) {
         if (!isShiftHeld() && shiftHeld)
-            tracksManager.setInitialSelectPosition();
+            tracksManager.startRectangleSelection();
         this->push2ShiftHeld = shiftHeld;
         if (!isShiftHeld())
-            tracksManager.resetInitialSelectPosition();
+            tracksManager.endRectangleSelection();
     }
 
     // make a snapshot of all the information needed to capture AudioGraph connections and UI positions
@@ -435,6 +435,9 @@ private:
             auto slot = tracksManager.findSelectedSlotForTrack(tree);
             if (slot != -1)
                 tracksManager.updateViewSlotOffsetToInclude(slot, tree.hasProperty(IDs::isMasterTrack));
+            if (tracksManager.trackHasAnySlotSelected(tree) && !isShiftHeld()) {
+                tree.setProperty(IDs::selected, false, nullptr);
+            }
         }
     }
 
