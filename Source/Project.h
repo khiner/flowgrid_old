@@ -355,7 +355,7 @@ private:
             }
         }
         for (const auto& inputChild : inputChildrenToDelete) {
-            tracksManager.deleteItem(inputChild, &undoManager);
+            tracksManager.deleteTrackOrProcessor(inputChild, &undoManager);
         }
         for (const auto& deviceName : MidiInput::getDevices()) {
             if (deviceManager.isMidiInputEnabled(deviceName) &&
@@ -381,7 +381,7 @@ private:
             }
         }
         for (const auto& outputChild : outputChildrenToDelete) {
-            tracksManager.deleteItem(outputChild, &undoManager);
+            tracksManager.deleteTrackOrProcessor(outputChild, &undoManager);
         }
         for (const auto& deviceName : MidiOutput::getDevices()) {
             if (deviceManager.isMidiOutputEnabled(deviceName) &&

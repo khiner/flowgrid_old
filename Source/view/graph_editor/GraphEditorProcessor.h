@@ -63,13 +63,6 @@ public:
 
     inline bool isSelected() { return tracksManager.isProcessorSelected(state); }
 
-    inline void setSelected(bool selected) {
-        if (isSelected() && selected)
-            state.getParent().sendPropertyChangeMessage(IDs::selectedSlotsMask);
-        else
-            tracksManager.selectProcessorSlot(state.getParent(), getSlot(), true);
-    }
-
     void toggleBypass() {
         state.setProperty(IDs::bypassed, !state[IDs::bypassed], &graph.undoManager);
     }
@@ -230,7 +223,7 @@ private:
         if (v.hasType(IDs::PARAM)) {
             if (!isSelected()) {
                 // If we're looking at something else, change the focus so we know what's changing.
-                setSelected(true);
+                tracksManager.selectProcessor(state);
             }
         }
         if (v != state)

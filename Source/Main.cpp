@@ -270,18 +270,22 @@ public:
             case CommandIDs::navigateLeft:
                 result.setInfo("Select whatever is to the left of the current selection", String(), category, 0);
                 result.addDefaultKeypress(KeyPress::leftKey, ModifierKeys::noModifiers);
+                result.addDefaultKeypress(KeyPress::leftKey, ModifierKeys::shiftModifier);
                 break;
             case CommandIDs::navigateRight:
                 result.setInfo("Select whatever is to the right of the current selection", String(), category, 0);
                 result.addDefaultKeypress(KeyPress::rightKey, ModifierKeys::noModifiers);
+                result.addDefaultKeypress(KeyPress::rightKey, ModifierKeys::shiftModifier);
                 break;
             case CommandIDs::navigateUp:
                 result.setInfo("Select whatever is above the current selection", String(), category, 0);
                 result.addDefaultKeypress(KeyPress::upKey, ModifierKeys::noModifiers);
+                result.addDefaultKeypress(KeyPress::upKey, ModifierKeys::shiftModifier);
                 break;
             case CommandIDs::navigateDown:
                 result.setInfo("Select whatever is below the current selection", String(), category, 0);
                 result.addDefaultKeypress(KeyPress::downKey, ModifierKeys::noModifiers);
+                result.addDefaultKeypress(KeyPress::downKey, ModifierKeys::shiftModifier);
                 break;
             case CommandIDs::showPluginListEditor:
                 result.setInfo("Edit the list of available plugins", String(), category, 0);
