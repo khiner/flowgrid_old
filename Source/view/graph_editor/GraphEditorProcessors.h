@@ -35,10 +35,12 @@ public:
     void mouseDown(const MouseEvent &e) override {
         int slot = findSlotAt(e.getEventRelativeTo(this));
         bool isSlotSelected = tracksManager.isSlotSelected(parent, slot);
-        if (e.mods.isCommandDown() && isSlotSelected)
+        if (e.mods.isCommandDown() && isSlotSelected) {
             tracksManager.deselectProcessorSlot(parent, slot);
-        else
+        } else {
+            tracksManager.deselectTrack(parent);
             tracksManager.selectProcessorSlot(parent, slot, !e.mods.isCommandDown());
+        }
         if (e.mods.isPopupMenu() || e.getNumberOfClicks() == 2) {
             showPopupMenu(slot);
         }

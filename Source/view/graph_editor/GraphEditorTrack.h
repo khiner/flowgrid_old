@@ -65,7 +65,7 @@ public:
     bool isSelected() const { return state.getProperty(IDs::selected); }
 
     void setSelected(bool selected, bool deselectOthers=true) {
-        tracksManager.setTrackSelected(state, selected, deselectOthers, this);
+        tracksManager.setTrackSelected(state, selected, deselectOthers);
     }
 
     const Label *getNameLabel() const { return &nameLabel; }

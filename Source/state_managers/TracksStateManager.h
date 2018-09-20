@@ -222,21 +222,20 @@ public:
         }
     }
 
-    void selectProcessor(const ValueTree& processor, ValueTree::Listener* excludingListener=nullptr) {
-        selectProcessorSlot(processor.getParent(), processor[IDs::processorSlot], true, excludingListener);
+    void selectProcessor(const ValueTree& processor) {
+        selectProcessorSlot(processor.getParent(), processor[IDs::processorSlot], true);
     }
 
-    void setTrackSelected(ValueTree& track, bool selected, bool deselectOthers=true,
-                          ValueTree::Listener* excludingListener=nullptr) {
+    void setTrackSelected(ValueTree& track, bool selected, bool deselectOthers=true) {
         track.setProperty(IDs::selected, selected, nullptr);
         if (selectionStartTrackAndSlot != nullptr) { // shift+select
-            selectRectangle(track, -1, excludingListener);
+            selectRectangle(track, -1);
         } else {
             if (selected && deselectOthers) {
                 deselectAllTracksExcept(track);
                 if (!trackHasAnySlotSelected(track)) {
                     auto slotToSelect = track.getNumChildren() > 0 ? int(track.getChild(0)[IDs::processorSlot]) : 0;
-                    selectProcessorSlot(track, slotToSelect, true, excludingListener);
+                    selectProcessorSlot(track, slotToSelect, true);
                 }
             } else if (!selected) {
                 track.removeProperty(IDs::selectedSlotsMask, nullptr);
@@ -244,16 +243,15 @@ public:
         }
     }
 
-    void selectProcessorSlot(const ValueTree& track, int slot, bool deselectOthers=true,
-                             ValueTree::Listener* excludingListener=nullptr) {
+    void selectProcessorSlot(const ValueTree& track, int slot, bool deselectOthers=true) {
         if (selectionStartTrackAndSlot != nullptr) { // shift+select
-            selectRectangle(track, slot, excludingListener);
+            selectRectangle(track, slot);
         } else {
-            setProcessorSlotSelected(track, slot, true, deselectOthers, excludingListener);
+            setProcessorSlotSelected(track, slot, true, deselectOthers);
         }
     }
 
-    void selectRectangle(const ValueTree &track, int slot, ValueTree::Listener *excludingListener) {
+    void selectRectangle(const ValueTree &track, int slot) {
         const auto trackIndex = indexOf(track);
         const auto selectionStartTrackIndex = indexOf(selectionStartTrackAndSlot->track);
         const auto gridPosition = trackAndSlotToGridPosition({track, slot});
@@ -268,14 +266,12 @@ public:
             otherTrack.setProperty(IDs::selected, trackSelected, nullptr);
             for (int otherSlot = 0; otherSlot < viewManager.getNumAvailableSlotsForTrack(otherTrack); otherSlot++) {
                 const auto otherGridPosition = trackAndSlotToGridPosition({otherTrack, otherSlot});
-                setProcessorSlotSelected(otherTrack, otherSlot, selectionRectangle.contains(otherGridPosition),
-                                         false, excludingListener);
+                setProcessorSlotSelected(otherTrack, otherSlot, selectionRectangle.contains(otherGridPosition), false);
             }
         }
     }
 
-    void setProcessorSlotSelected(ValueTree track, int slot, bool selected, bool deselectOthers=true,
-                                  ValueTree::Listener* excludingListener=nullptr) {
+    void setProcessorSlotSelected(ValueTree track, int slot, bool selected, bool deselectOthers=true) {
         if (deselectOthers) {
             for (auto otherTrack : tracks) {
                 if (otherTrack != track) {
@@ -291,14 +287,10 @@ public:
             selectedSlotsMask.clear();
         selectedSlotsMask.setBit(slot, selected);
         const auto &bitmaskString = selectedSlotsMask.toString(2);
-        if (excludingListener == nullptr) {
-            if (bitmaskString != currentSelectedSlotsMask)
-                track.setProperty(IDs::selectedSlotsMask, bitmaskString, nullptr);
-            else
-                track.sendPropertyChangeMessage(IDs::selectedSlotsMask);
-        } else {
-            track.setPropertyExcludingListener(excludingListener, IDs::selectedSlotsMask, bitmaskString, nullptr);
-        }
+        if (bitmaskString != currentSelectedSlotsMask)
+            track.setProperty(IDs::selectedSlotsMask, bitmaskString, nullptr);
+        else
+            track.sendPropertyChangeMessage(IDs::selectedSlotsMask);
     }
 
     void setProcessorSlot(const ValueTree& track, ValueTree& processor, int newSlot, UndoManager* undoManager) {
@@ -535,6 +527,10 @@ public:
         }
     }
 
+    void deselectTrack(ValueTree& track) {
+        track.setProperty(IDs::selected, false, nullptr);
+    }
+
     void deselectProcessorSlot(const ValueTree& track, int slot) {
         setProcessorSlotSelected(track, slot, false, false);
     }
@@ -736,8 +732,6 @@ private:
             auto slot = findSelectedSlotForTrack(tree);
             if (slot != -1)
                 viewManager.updateViewSlotOffsetToInclude(slot, tree.hasProperty(IDs::isMasterTrack));
-            if (trackHasAnySlotSelected(tree) && selectionStartTrackAndSlot == nullptr)
-                tree.setProperty(IDs::selected, false, nullptr);
         } else if (i == IDs::processorSlot) {
             selectProcessor(tree);
         }
