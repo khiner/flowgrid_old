@@ -37,12 +37,19 @@ public:
         bool isSlotSelected = tracksManager.isSlotSelected(parent, slot);
         if (e.mods.isCommandDown() && isSlotSelected) {
             tracksManager.deselectProcessorSlot(parent, slot);
-        } else {
+        } else if (!isSlotSelected) {
             tracksManager.deselectTrack(parent);
             tracksManager.selectProcessorSlot(parent, slot, !e.mods.isCommandDown());
         }
         if (e.mods.isPopupMenu() || e.getNumberOfClicks() == 2) {
             showPopupMenu(slot);
+        }
+    }
+
+    void mouseUp(const MouseEvent &e) override {
+        if (e.mouseWasClicked() && !e.mods.isCommandDown()) {
+            tracksManager.deselectTrack(parent);
+            tracksManager.selectProcessorSlot(parent, findSlotAt(e.getEventRelativeTo(this)), true);
         }
     }
 
