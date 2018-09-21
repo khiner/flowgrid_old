@@ -94,10 +94,11 @@ public:
                 trackAndSlot.y < tracksManager.getMixerChannelSlotForTrack(tracksManager.getTrack(trackAndSlot.x))) {
                 currentlyDraggingTrackAndSlot = trackAndSlot;
 
-                moveProcessor(processor, trackAndSlot.x, trackAndSlot.y);
-                if (currentlyDraggingTrackAndSlot == initialDraggingTrackAndSlot) {
+                tracksManager.moveProcessor(processor, trackAndSlot.x, trackAndSlot.y, getDragDependentUndoManager());
+                if (currentlyDraggingTrackAndSlot == initialDraggingTrackAndSlot)
                     project.restoreConnectionsSnapshot();
-                }
+                else
+                    updateAllDefaultConnections();
             }
         }
     }
@@ -107,39 +108,25 @@ public:
             // update the audio graph to match the current preview UI graph.
             auto processor = getProcessorStateForNodeId(nodeId);
             jassert(processor.isValid());
-            moveProcessor(processor, initialDraggingTrackAndSlot.x, initialDraggingTrackAndSlot.y);
+            tracksManager.moveProcessor(processor, initialDraggingTrackAndSlot.x, initialDraggingTrackAndSlot.y, getDragDependentUndoManager());
             project.restoreConnectionsSnapshot();
             currentlyDraggingNodeId = NA_NODE_ID;
-            moveProcessor(processor, currentlyDraggingTrackAndSlot.x, currentlyDraggingTrackAndSlot.y);
+            tracksManager.moveProcessor(processor, currentlyDraggingTrackAndSlot.x, currentlyDraggingTrackAndSlot.y, getDragDependentUndoManager());
             if (project.isShiftHeld()) {
                 project.setShiftHeld(false);
                 updateAllDefaultConnections(true);
                 project.setShiftHeld(true);
+            } else {
+                updateAllDefaultConnections();
             }
         }
         currentlyDraggingNodeId = NA_NODE_ID;
     }
 
-    void moveProcessor(ValueTree &processorState, int toTrackIndex, int toSlot) {
-        const ValueTree &toTrack = tracksManager.getTrack(toTrackIndex);
-        int fromSlot = processorState[IDs::processorSlot];
-        if (fromSlot == toSlot && processorState.getParent() == toTrack)
-            return;
-
-        tracksManager.setProcessorSlot(processorState.getParent(), processorState, toSlot, getDragDependentUndoManager());
-
-        const int insertIndex = tracksManager.getParentIndexForProcessor(toTrack, processorState, getDragDependentUndoManager());
-        Helpers::moveSingleItem(processorState, toTrack, insertIndex, getDragDependentUndoManager());
-
-        tracksManager.makeSlotsValid(toTrack, getDragDependentUndoManager());
-        updateAllDefaultConnections();
-    }
-
     bool canConnectUi(const Connection& c) const {
         if (auto* source = getNodeForId(c.source.nodeID))
             if (auto* dest = getNodeForId(c.destination.nodeID))
-                return canConnectUi(source, c.source.channelIndex,
-                                   dest, c.destination.channelIndex);
+                return canConnectUi(source, c.source.channelIndex, dest, c.destination.channelIndex);
 
         return false;
     }

@@ -417,6 +417,20 @@ public:
         }
     }
 
+    void moveProcessor(ValueTree &processorState, int toTrackIndex, int toSlot, UndoManager *undoManager) {
+        const auto &toTrack = getTrack(toTrackIndex);
+        int fromSlot = processorState[IDs::processorSlot];
+        if (fromSlot == toSlot && processorState.getParent() == toTrack)
+            return;
+
+        setProcessorSlot(processorState.getParent(), processorState, toSlot, undoManager);
+
+        const int insertIndex = getParentIndexForProcessor(toTrack, processorState, undoManager);
+        Helpers::moveSingleItem(processorState, toTrack, insertIndex, undoManager);
+
+        makeSlotsValid(toTrack, undoManager);
+    }
+
     void deleteTrackOrProcessor(const ValueTree &item, UndoManager *undoManager) {
         if (!item.isValid())
             return;
