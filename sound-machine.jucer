@@ -4,7 +4,7 @@
               bundleIdentifier="com.odangludo.soundmachine" includeBinaryInAppConfig="1"
               jucerVersion="5.4.5" companyWebsite="www.karlhiner.com" companyName="odangludo"
               displaySplashScreen="1" reportAppUsage="1" splashScreenColour="Dark"
-              cppLanguageStandard="14" companyCopyright="odangludo" companyEmail="karl.hiner@gmail.com">
+              cppLanguageStandard="17" companyCopyright="odangludo" companyEmail="karl.hiner@gmail.com">
   <MAINGROUP id="zuLs1h" name="sound-machine">
     <GROUP id="{BC4520A3-39AA-03FD-C1B7-F20D01C20117}" name="Resources">
       <FILE id="mPg19c" name="AbletonSansBold-Regular.otf" compile="0" resource="1"
