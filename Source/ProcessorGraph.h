@@ -57,7 +57,7 @@ public:
         jassert(node != nullptr);
 
         for (auto* w : activePluginWindows)
-            if (w->node == node && w->type == type)
+            if (w->node->nodeID == node->nodeID && w->type == type)
                 return w;
 
         if (auto* processor = node->getProcessor())
@@ -211,7 +211,7 @@ private:
     Point<int> currentlyDraggingTrackAndSlot;
     Point<int> initialDraggingTrackAndSlot;
 
-    std::unordered_map<NodeID, std::unique_ptr<StatefulAudioProcessorWrapper> > processorWrapperForNodeId;
+    std::map<NodeID, std::unique_ptr<StatefulAudioProcessorWrapper> > processorWrapperForNodeId;
 
     Project &project;
     TracksStateManager &tracksManager;
@@ -273,8 +273,8 @@ private:
 
     void addProcessor(const ValueTree &processorState) {
         static String errorMessage = "Could not create processor";
-        PluginDescription *desc = project.getTypeForIdentifier(processorState[IDs::id]);
-        auto *processor = project.getFormatManager().createPluginInstance(*desc, getSampleRate(), getBlockSize(), errorMessage);
+        auto description = project.getTypeForIdentifier(processorState[IDs::id]);
+        auto processor = project.getFormatManager().createPluginInstance(*description, getSampleRate(), getBlockSize(), errorMessage);
         if (processorState.hasProperty(IDs::state)) {
             MemoryBlock memoryBlock;
             memoryBlock.fromBase64Encoding(processorState[IDs::state].toString());
@@ -282,15 +282,15 @@ private:
         }
 
         const Node::Ptr &newNode = processorState.hasProperty(IDs::nodeId) ?
-                                   addNode(processor, getNodeIdForState(processorState)) :
-                                   addNode(processor);
+                                   addNode(std::move(processor), getNodeIdForState(processorState)) :
+                                   addNode(std::move(processor));
         processorWrapperForNodeId[newNode->nodeID] = std::make_unique<StatefulAudioProcessorWrapper>
-                (processor, newNode->nodeID, processorState, undoManager, project.getDeviceManager());
+                (dynamic_cast<AudioPluginInstance *>(newNode->getProcessor()), newNode->nodeID, processorState, undoManager, project.getDeviceManager());
         if (processorWrapperForNodeId.size() == 1)
             // Added the first processor. Start the timer that flushes new processor state to their value trees.
             startTimerHz(10);
 
-        if (auto *midiInputProcessor = dynamic_cast<MidiInputProcessor *>(processor)) {
+        if (auto midiInputProcessor = dynamic_cast<MidiInputProcessor *>(newNode->getProcessor())) {
             const String &deviceName = processorState.getProperty(IDs::deviceName);
             midiInputProcessor->setDeviceName(deviceName);
             if (deviceName.containsIgnoreCase(push2MidiDeviceName)) {
@@ -298,7 +298,7 @@ private:
             } else {
                 deviceManager.addMidiInputCallback(deviceName, &midiInputProcessor->getMidiMessageCollector());
             }
-        } else if (auto *midiOutputProcessor = dynamic_cast<MidiOutputProcessor *>(processor)) {
+        } else if (auto *midiOutputProcessor = dynamic_cast<MidiOutputProcessor *>(newNode->getProcessor())) {
             const String &deviceName = processorState.getProperty(IDs::deviceName);
             if (auto* enabledMidiOutput = deviceManager.getEnabledMidiOutput(deviceName))
                 midiOutputProcessor->setMidiOutput(enabledMidiOutput);

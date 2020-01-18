@@ -121,9 +121,9 @@ public:
         auto connection = draggingConnector->getConnection();
 
         if (auto *pin = findPinAt(e)) {
-            if (connection.source.nodeID == 0 && !pin->isInput())
+            if (connection.source.nodeID.uid == 0 && !pin->isInput())
                 connection.source = pin->getPin();
-            else if (connection.destination.nodeID == 0 && pin->isInput())
+            else if (connection.destination.nodeID.uid == 0 && pin->isInput())
                 connection.destination = pin->getPin();
 
             if (graph.canConnect(connection) || graph.isConnected(connection)) {
@@ -132,7 +132,7 @@ public:
             }
         }
 
-        if (draggingConnector->getConnection().source.nodeID == 0)
+        if (draggingConnector->getConnection().source.nodeID.uid == 0)
             draggingConnector->dragStart(pos);
         else
             draggingConnector->dragEnd(pos);
@@ -145,7 +145,7 @@ public:
         auto newConnection = EMPTY_CONNECTION;
         if (auto *pin = findPinAt(e)) {
             newConnection = draggingConnector->getConnection();
-            if (newConnection.source.nodeID == 0) {
+            if (newConnection.source.nodeID.uid == 0) {
                 if (pin->isInput())
                     newConnection = EMPTY_CONNECTION;
                 else
@@ -194,7 +194,7 @@ private:
     TracksStateManager& tracksManager;
     ViewStateManager& viewManager;
 
-    const AudioProcessorGraph::Connection EMPTY_CONNECTION {{0, 0}, {0, 0}};
+    const AudioProcessorGraph::Connection EMPTY_CONNECTION {{ProcessorGraph::NodeID(0), 0}, {ProcessorGraph::NodeID(0), 0}};
     std::unique_ptr<GraphEditorConnectors> connectors;
     GraphEditorConnector *draggingConnector {};
     std::unique_ptr<GraphEditorTracks> tracks;

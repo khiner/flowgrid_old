@@ -187,7 +187,7 @@ public:
         return processorManager.getChosenType(menuId);
     }
 
-    PluginDescription *getTypeForIdentifier(const String &identifier) const {
+    std::unique_ptr<PluginDescription> getTypeForIdentifier(const String &identifier) const {
         return processorManager.getDescriptionForIdentifier(identifier);
     }
 

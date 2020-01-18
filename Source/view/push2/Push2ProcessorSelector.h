@@ -52,7 +52,7 @@ class Push2ProcessorSelector : public Push2ComponentBase {
             if (index + currentViewOffset >= currentTree->subFolders.size()) {
                 index -= currentTree->subFolders.size();
                 if (index + currentViewOffset < currentTree->plugins.size() && labels[index]->isEnabled()) {
-                    return currentTree->plugins.getUnchecked(index + currentViewOffset);
+                    return &currentTree->plugins.getReference(index + currentViewOffset);
                 }
             }
 
@@ -162,7 +162,7 @@ class Push2ProcessorSelector : public Push2ComponentBase {
                     label->setText(subFolder->folder, dontSendNotification);
                     label->setUnderlined(true);
                 } else if (i + currentViewOffset < getTotalNumberOfTreeItems()) {
-                    const PluginDescription *plugin = currentTree->plugins.getUnchecked(i + currentViewOffset - currentTree->subFolders.size());
+                    const PluginDescription *plugin = &currentTree->plugins.getReference(i + currentViewOffset - currentTree->subFolders.size());
                     label->setText(plugin->name, dontSendNotification);
                     label->setEnabled(!trackHasMixerAlready || plugin->name != MixerChannelProcessor::name());
                     label->setUnderlined(false);
@@ -184,15 +184,15 @@ public:
 
         rootTree = KnownPluginList::PluginTree();
 
-        KnownPluginList::PluginTree *internalPluginTree = project.getUserCreatablePluginListInternal().createTree(project.getPluginSortMethod());
+        auto internalPluginTree = project.getUserCreatablePluginListInternal().createTree(project.getPluginSortMethod());
         internalPluginTree->folder = "Internal";
-        KnownPluginList::PluginTree *externalPluginTree = project.getPluginListExternal().createTree(project.getPluginSortMethod());
+        auto externalPluginTree = project.getPluginListExternal().createTree(project.getPluginSortMethod());
         externalPluginTree->folder = "External";
         internalPluginTree->parent = &rootTree;
         externalPluginTree->parent = &rootTree;
 
-        rootTree.subFolders.add(internalPluginTree);
-        rootTree.subFolders.add(externalPluginTree);
+        rootTree.subFolders.add(std::move(internalPluginTree));
+        rootTree.subFolders.add(std::move(externalPluginTree));
 
         setCurrentTree(topProcessorSelector.get(), &rootTree);
         selectProcessorRow(topProcessorSelector.get());

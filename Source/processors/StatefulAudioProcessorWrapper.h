@@ -421,7 +421,7 @@ public:
 
     StatefulAudioProcessorWrapper(AudioPluginInstance *processor, AudioProcessorGraph::NodeID nodeId, ValueTree state, UndoManager &undoManager, AudioDeviceManager& deviceManager) :
             processor(processor), state(std::move(state)), undoManager(undoManager), deviceManager(deviceManager) {
-        this->state.setProperty(IDs::nodeId, int(nodeId), nullptr);
+        this->state.setProperty(IDs::nodeId, int(nodeId.uid), nullptr);
         processor->enableAllBuses();
         if (auto* ioProcessor = dynamic_cast<AudioProcessorGraph::AudioGraphIOProcessor*> (processor)) {
             if (ioProcessor->isInput()) {

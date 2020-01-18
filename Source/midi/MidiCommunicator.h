@@ -6,9 +6,9 @@ class MidiCommunicator : public MidiInputCallback {
 public:
     explicit MidiCommunicator() = default;
 
-    void setMidiInputAndOutput(MidiInput *midiInput, MidiOutput *midiOutput) {
-        this->midiInput.reset(midiInput);
-        this->midiOutput.reset(midiOutput);
+    void setMidiInputAndOutput(std::unique_ptr<MidiInput> midiInput, std::unique_ptr<MidiOutput> midiOutput) {
+        this->midiInput = std::move(midiInput);
+        this->midiOutput = std::move(midiOutput);
         if (midiInput != nullptr && midiOutput != nullptr) {
             initialized = true;
             initialize();

@@ -389,7 +389,7 @@ public:
 
     void duplicateSelectedItems() {
         const Array<ValueTree> allSelectedItems = findAllSelectedItems();
-        for (auto &selectedItem : allSelectedItems) {
+        for (auto selectedItem : allSelectedItems) {
             duplicateItem(selectedItem, &undoManager);
         }
     }

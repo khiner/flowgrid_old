@@ -30,30 +30,31 @@ public:
     String getNameOfPluginFromIdentifier(const String& fileOrIdentifier) override { return fileOrIdentifier; }
     bool pluginNeedsRescanning(const PluginDescription&) override { return false; }
     StringArray searchPathsForPlugins(const FileSearchPath&, bool, bool) override { return {}; }
+    bool isTrivialToScan() const override { return true; }
 
     const static bool isIoProcessorName(const String& name) {
         return name == "Audio Output" || name == "Audio Input" || name == MidiInputProcessor::name() || name == MidiOutputProcessor::name();
     }
 private:
     void createPluginInstance(const PluginDescription& desc, double initialSampleRate, int initialBufferSize,
-                               void* userData, void (*callback) (void*, AudioPluginInstance*, const String&)) override {
-        auto* p = createInstance(desc.name);
-        callback(userData, p, p == nullptr ? NEEDS_TRANS("Invalid internal filter name") : String());
+                               PluginCreationCallback callback) override {
+        auto p = createInstance(desc.name);
+        callback(std::move(p), p == nullptr ? NEEDS_TRANS("Invalid internal filter name") : String());
     }
 
-    AudioPluginInstance* createInstance(const String& name) {
-        if (name == audioOutDesc.name) return new AudioProcessorGraph::AudioGraphIOProcessor(AudioProcessorGraph::AudioGraphIOProcessor::audioOutputNode);
-        if (name == audioInDesc.name) return new AudioProcessorGraph::AudioGraphIOProcessor(AudioProcessorGraph::AudioGraphIOProcessor::audioInputNode);
-        if (name == MidiInputProcessor::name()) return new MidiInputProcessor();
-        if (name == MidiKeyboardProcessor::name()) return new MidiKeyboardProcessor();
-        if (name == MidiOutputProcessor::name()) return new MidiOutputProcessor();
-        if (name == Arpeggiator::name()) return new Arpeggiator();
-        if (name == BalanceProcessor::name()) return new BalanceProcessor();
-        if (name == GainProcessor::name()) return new GainProcessor();
-        if (name == MixerChannelProcessor::name()) return new MixerChannelProcessor();
-        if (name == ParameterTypesTestProcessor::name()) return new ParameterTypesTestProcessor();
-        if (name == SineBank::name()) return new SineBank();
-        if (name == SineSynth::name()) return new SineSynth();
+    std::unique_ptr<AudioPluginInstance> createInstance(const String& name) {
+        if (name == audioOutDesc.name) return std::make_unique<AudioProcessorGraph::AudioGraphIOProcessor>(AudioProcessorGraph::AudioGraphIOProcessor::audioOutputNode);
+        if (name == audioInDesc.name) return std::make_unique<AudioProcessorGraph::AudioGraphIOProcessor>(AudioProcessorGraph::AudioGraphIOProcessor::audioInputNode);
+        if (name == MidiInputProcessor::name()) return std::make_unique<MidiInputProcessor>();
+        if (name == MidiKeyboardProcessor::name()) return std::make_unique<MidiKeyboardProcessor>();
+        if (name == MidiOutputProcessor::name()) return std::make_unique<MidiOutputProcessor>();
+        if (name == Arpeggiator::name()) return std::make_unique<Arpeggiator>();
+        if (name == BalanceProcessor::name()) return std::make_unique<BalanceProcessor>();
+        if (name == GainProcessor::name()) return std::make_unique<GainProcessor>();
+        if (name == MixerChannelProcessor::name()) return std::make_unique<MixerChannelProcessor>();
+        if (name == ParameterTypesTestProcessor::name()) return std::make_unique<ParameterTypesTestProcessor>();
+        if (name == SineBank::name()) return std::make_unique<SineBank>();
+        if (name == SineSynth::name()) return std::make_unique<SineSynth>();
         return nullptr;
     }
 

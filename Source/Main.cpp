@@ -537,9 +537,9 @@ private:
             applicationCommandListChanged(); // TODO wasteful to refresh *all* items. is there a way to just change what we need?
         } else if (source == &deviceManager) {
             if (!push2MidiCommunicator.isInitialized() && MidiInput::getDevices().contains(push2MidiDeviceName, true)) {
-                MidiInput *midiInput = MidiInput::openDevice(MidiInput::getDevices().indexOf(push2MidiDeviceName, true), &push2MidiCommunicator);
-                MidiOutput *midiOutput = MidiOutput::openDevice(MidiOutput::getDevices().indexOf(push2MidiDeviceName, true));
-                push2MidiCommunicator.setMidiInputAndOutput(midiInput, midiOutput);
+                auto midiInput = MidiInput::openDevice(MidiInput::getDevices().indexOf(push2MidiDeviceName, true), &push2MidiCommunicator);
+                auto midiOutput = MidiOutput::openDevice(MidiOutput::getDevices().indexOf(push2MidiDeviceName, true));
+                push2MidiCommunicator.setMidiInputAndOutput(std::move(midiInput), std::move(midiOutput));
                 push2Component->setVisible(true); // refreshes button lights
             } else if (push2MidiCommunicator.isInitialized() && !MidiInput::getDevices().contains(push2MidiDeviceName, true)) {
                 push2MidiCommunicator.setMidiInputAndOutput(nullptr, nullptr);

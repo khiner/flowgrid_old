@@ -32,9 +32,9 @@ public:
         return new PluginListComponent(formatManager, knownPluginListExternal, deadMansPedalFile, getApplicationProperties().getUserSettings(), true);
     }
 
-    PluginDescription *getDescriptionForIdentifier(const String &identifier) {
-        PluginDescription *description = knownPluginListInternal.getTypeForIdentifierString(identifier);
-        return description != nullptr ? description : knownPluginListExternal.getTypeForIdentifierString(identifier);
+    std::unique_ptr<PluginDescription> getDescriptionForIdentifier(const String &identifier) {
+        auto description = knownPluginListInternal.getTypeForIdentifierString(identifier);
+        return description != nullptr ? std::move(description) : knownPluginListExternal.getTypeForIdentifierString(identifier);
     }
 
     PluginDescription &getAudioInputDescription() {
@@ -66,7 +66,7 @@ public:
     }
 
     const PluginDescription* getChosenType(const int menuId) const {
-        PluginDescription *description = userCreatablePluginListInternal.getType(userCreatablePluginListInternal.getIndexChosenByMenu(menuId));
+        auto* description = userCreatablePluginListInternal.getType(userCreatablePluginListInternal.getIndexChosenByMenu(menuId));
         return description != nullptr ? description : knownPluginListExternal.getType(knownPluginListExternal.getIndexChosenByMenu(menuId - userCreatablePluginListInternal.getNumTypes()));
     }
 
@@ -77,8 +77,8 @@ public:
     bool doesTrackAlreadyHaveGeneratorOrInstrument(const ValueTree& track) {
         for (auto child : track) {
             if (child.hasType(IDs::PROCESSOR)) {
-                if (auto* existingDescription = getDescriptionForIdentifier(child.getProperty(IDs::id))) {
-                    if (isGeneratorOrInstrument(existingDescription)) {
+                if (auto existingDescription = getDescriptionForIdentifier(child.getProperty(IDs::id))) {
+                    if (isGeneratorOrInstrument(existingDescription.get())) {
                         return true;
                     }
                 }

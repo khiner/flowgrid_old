@@ -130,7 +130,7 @@ struct GraphEditorConnector : public Component, public SettableTooltipClient {
             getDistancesFromEnds(getPosition().toFloat() + e.position, distanceFromStart, distanceFromEnd);
             const bool isNearerSource = (distanceFromStart < distanceFromEnd);
 
-            AudioProcessorGraph::NodeAndChannel dummy{0, 0};
+            AudioProcessorGraph::NodeAndChannel dummy{ProcessorGraph::NodeID(0), 0};
 
             connectorDragListener.beginConnectorDrag(isNearerSource ? dummy : connection.source,
                                                      isNearerSource ? connection.destination : dummy,
@@ -199,7 +199,10 @@ private:
     Path linePath, hitPath;
     bool dragging = false;
 
-    AudioProcessorGraph::Connection connection{{0, 0}, {0, 0}};
+    AudioProcessorGraph::Connection connection{
+        {ProcessorGraph::NodeID(0), 0},
+        {ProcessorGraph::NodeID(0), 0}
+    };
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (GraphEditorConnector)
 };

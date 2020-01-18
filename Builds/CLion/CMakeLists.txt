@@ -90,15 +90,15 @@ add_executable (APP
     "../../modules/JUCE/modules/juce_audio_basics/buffers/juce_AudioSampleBuffer.h"
     "../../modules/JUCE/modules/juce_audio_basics/buffers/juce_FloatVectorOperations.cpp"
     "../../modules/JUCE/modules/juce_audio_basics/buffers/juce_FloatVectorOperations.h"
-    "../../modules/JUCE/modules/juce_audio_basics/effects/juce_CatmullRomInterpolator.cpp"
-    "../../modules/JUCE/modules/juce_audio_basics/effects/juce_CatmullRomInterpolator.h"
-    "../../modules/JUCE/modules/juce_audio_basics/effects/juce_Decibels.h"
-    "../../modules/JUCE/modules/juce_audio_basics/effects/juce_IIRFilter.cpp"
-    "../../modules/JUCE/modules/juce_audio_basics/effects/juce_IIRFilter.h"
-    "../../modules/JUCE/modules/juce_audio_basics/effects/juce_LagrangeInterpolator.cpp"
-    "../../modules/JUCE/modules/juce_audio_basics/effects/juce_LagrangeInterpolator.h"
-    "../../modules/JUCE/modules/juce_audio_basics/effects/juce_LinearSmoothedValue.h"
-    "../../modules/JUCE/modules/juce_audio_basics/effects/juce_Reverb.h"
+    "../../modules/JUCE/modules/juce_audio_basics/utilities/juce_CatmullRomInterpolator.cpp"
+    "../../modules/JUCE/modules/juce_audio_basics/utilities/juce_CatmullRomInterpolator.h"
+    "../../modules/JUCE/modules/juce_audio_basics/utilities/juce_Decibels.h"
+    "../../modules/JUCE/modules/juce_audio_basics/utilities/juce_IIRFilter.cpp"
+    "../../modules/JUCE/modules/juce_audio_basics/utilities/juce_IIRFilter.h"
+    "../../modules/JUCE/modules/juce_audio_basics/utilities/juce_LagrangeInterpolator.cpp"
+    "../../modules/JUCE/modules/juce_audio_basics/utilities/juce_LagrangeInterpolator.h"
+    "../../modules/JUCE/modules/juce_audio_basics/utilities/juce_SmoothedValue.h"
+    "../../modules/JUCE/modules/juce_audio_basics/utilities/juce_Reverb.h"
     "../../modules/JUCE/modules/juce_audio_basics/midi/juce_MidiBuffer.cpp"
     "../../modules/JUCE/modules/juce_audio_basics/midi/juce_MidiBuffer.h"
     "../../modules/JUCE/modules/juce_audio_basics/midi/juce_MidiFile.cpp"
@@ -160,11 +160,10 @@ add_executable (APP
     "../../modules/JUCE/modules/juce_audio_devices/audio_io/juce_AudioIODeviceType.cpp"
     "../../modules/JUCE/modules/juce_audio_devices/audio_io/juce_AudioIODeviceType.h"
     "../../modules/JUCE/modules/juce_audio_devices/audio_io/juce_SystemAudioVolume.h"
-    "../../modules/JUCE/modules/juce_audio_devices/midi_io/juce_MidiInput.h"
+    "../../modules/JUCE/modules/juce_audio_devices/midi_io/juce_MidiDevices.h"
+    "../../modules/JUCE/modules/juce_audio_devices/midi_io/juce_MidiDevices.cpp"
     "../../modules/JUCE/modules/juce_audio_devices/midi_io/juce_MidiMessageCollector.cpp"
     "../../modules/JUCE/modules/juce_audio_devices/midi_io/juce_MidiMessageCollector.h"
-    "../../modules/JUCE/modules/juce_audio_devices/midi_io/juce_MidiOutput.cpp"
-    "../../modules/JUCE/modules/juce_audio_devices/midi_io/juce_MidiOutput.h"
     "../../modules/JUCE/modules/juce_audio_devices/native/juce_android_Audio.cpp"
     "../../modules/JUCE/modules/juce_audio_devices/native/juce_android_Midi.cpp"
     "../../modules/JUCE/modules/juce_audio_devices/native/juce_android_Oboe.cpp"
@@ -360,7 +359,6 @@ add_executable (APP
     "../../modules/JUCE/modules/juce_audio_processors/format_types/juce_VST3PluginFormat.cpp"
     "../../modules/JUCE/modules/juce_audio_processors/format_types/juce_VST3PluginFormat.h"
     "../../modules/JUCE/modules/juce_audio_processors/format_types/juce_VSTCommon.h"
-    "../../modules/JUCE/modules/juce_audio_processors/format_types/juce_VSTInterface.h"
     "../../modules/JUCE/modules/juce_audio_processors/format_types/juce_VSTMidiEventList.h"
     "../../modules/JUCE/modules/juce_audio_processors/format_types/juce_VSTPluginFormat.cpp"
     "../../modules/JUCE/modules/juce_audio_processors/format_types/juce_VSTPluginFormat.h"
@@ -388,7 +386,6 @@ add_executable (APP
     "../../modules/JUCE/modules/juce_audio_processors/utilities/juce_AudioParameterChoice.h"
     "../../modules/JUCE/modules/juce_audio_processors/utilities/juce_AudioParameterFloat.h"
     "../../modules/JUCE/modules/juce_audio_processors/utilities/juce_AudioParameterInt.h"
-    "../../modules/JUCE/modules/juce_audio_processors/utilities/juce_AudioProcessorParameters.cpp"
     "../../modules/JUCE/modules/juce_audio_processors/utilities/juce_AudioProcessorParameterWithID.h"
     "../../modules/JUCE/modules/juce_audio_processors/utilities/juce_AudioProcessorValueTreeState.cpp"
     "../../modules/JUCE/modules/juce_audio_processors/utilities/juce_AudioProcessorValueTreeState.h"
@@ -993,8 +990,8 @@ add_executable (APP
     "../../modules/JUCE/modules/juce_gui_basics/components/juce_Component.h"
     "../../modules/JUCE/modules/juce_gui_basics/components/juce_ComponentListener.cpp"
     "../../modules/JUCE/modules/juce_gui_basics/components/juce_ComponentListener.h"
-    "../../modules/JUCE/modules/juce_gui_basics/components/juce_Desktop.cpp"
-    "../../modules/JUCE/modules/juce_gui_basics/components/juce_Desktop.h"
+    "../../modules/JUCE/modules/juce_gui_basics/desktop/juce_Desktop.cpp"
+    "../../modules/JUCE/modules/juce_gui_basics/desktop/juce_Desktop.h"
     "../../modules/JUCE/modules/juce_gui_basics/components/juce_ModalComponentManager.cpp"
     "../../modules/JUCE/modules/juce_gui_basics/components/juce_ModalComponentManager.h"
     "../../modules/JUCE/modules/juce_gui_basics/drawables/juce_Drawable.cpp"
@@ -1068,7 +1065,6 @@ add_executable (APP
     "../../modules/JUCE/modules/juce_gui_basics/layout/juce_Grid.h"
     "../../modules/JUCE/modules/juce_gui_basics/layout/juce_GridItem.cpp"
     "../../modules/JUCE/modules/juce_gui_basics/layout/juce_GridItem.h"
-    "../../modules/JUCE/modules/juce_gui_basics/layout/juce_GridUnitTests.cpp"
     "../../modules/JUCE/modules/juce_gui_basics/layout/juce_GroupComponent.cpp"
     "../../modules/JUCE/modules/juce_gui_basics/layout/juce_GroupComponent.h"
     "../../modules/JUCE/modules/juce_gui_basics/layout/juce_MultiDocumentPanel.cpp"
@@ -1389,15 +1385,15 @@ set_source_files_properties ("../../modules/JUCE/modules/juce_audio_basics/buffe
 set_source_files_properties ("../../modules/JUCE/modules/juce_audio_basics/buffers/juce_AudioSampleBuffer.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../modules/JUCE/modules/juce_audio_basics/buffers/juce_FloatVectorOperations.cpp" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../modules/JUCE/modules/juce_audio_basics/buffers/juce_FloatVectorOperations.h" PROPERTIES HEADER_FILE_ONLY TRUE)
-set_source_files_properties ("../../modules/JUCE/modules/juce_audio_basics/effects/juce_CatmullRomInterpolator.cpp" PROPERTIES HEADER_FILE_ONLY TRUE)
-set_source_files_properties ("../../modules/JUCE/modules/juce_audio_basics/effects/juce_CatmullRomInterpolator.h" PROPERTIES HEADER_FILE_ONLY TRUE)
-set_source_files_properties ("../../modules/JUCE/modules/juce_audio_basics/effects/juce_Decibels.h" PROPERTIES HEADER_FILE_ONLY TRUE)
-set_source_files_properties ("../../modules/JUCE/modules/juce_audio_basics/effects/juce_IIRFilter.cpp" PROPERTIES HEADER_FILE_ONLY TRUE)
-set_source_files_properties ("../../modules/JUCE/modules/juce_audio_basics/effects/juce_IIRFilter.h" PROPERTIES HEADER_FILE_ONLY TRUE)
-set_source_files_properties ("../../modules/JUCE/modules/juce_audio_basics/effects/juce_LagrangeInterpolator.cpp" PROPERTIES HEADER_FILE_ONLY TRUE)
-set_source_files_properties ("../../modules/JUCE/modules/juce_audio_basics/effects/juce_LagrangeInterpolator.h" PROPERTIES HEADER_FILE_ONLY TRUE)
-set_source_files_properties ("../../modules/JUCE/modules/juce_audio_basics/effects/juce_LinearSmoothedValue.h" PROPERTIES HEADER_FILE_ONLY TRUE)
-set_source_files_properties ("../../modules/JUCE/modules/juce_audio_basics/effects/juce_Reverb.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../modules/JUCE/modules/juce_audio_basics/utilities/juce_CatmullRomInterpolator.cpp" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../modules/JUCE/modules/juce_audio_basics/utilities/juce_CatmullRomInterpolator.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../modules/JUCE/modules/juce_audio_basics/utilities/juce_Decibels.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../modules/JUCE/modules/juce_audio_basics/utilities/juce_IIRFilter.cpp" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../modules/JUCE/modules/juce_audio_basics/utilities/juce_IIRFilter.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../modules/JUCE/modules/juce_audio_basics/utilities/juce_LagrangeInterpolator.cpp" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../modules/JUCE/modules/juce_audio_basics/utilities/juce_LagrangeInterpolator.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../modules/JUCE/modules/juce_audio_basics/utilities/juce_SmoothedValue.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../modules/JUCE/modules/juce_audio_basics/utilities/juce_Reverb.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../modules/JUCE/modules/juce_audio_basics/midi/juce_MidiBuffer.cpp" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../modules/JUCE/modules/juce_audio_basics/midi/juce_MidiBuffer.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../modules/JUCE/modules/juce_audio_basics/midi/juce_MidiFile.cpp" PROPERTIES HEADER_FILE_ONLY TRUE)
@@ -1459,11 +1455,10 @@ set_source_files_properties ("../../modules/JUCE/modules/juce_audio_devices/audi
 set_source_files_properties ("../../modules/JUCE/modules/juce_audio_devices/audio_io/juce_AudioIODeviceType.cpp" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../modules/JUCE/modules/juce_audio_devices/audio_io/juce_AudioIODeviceType.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../modules/JUCE/modules/juce_audio_devices/audio_io/juce_SystemAudioVolume.h" PROPERTIES HEADER_FILE_ONLY TRUE)
-set_source_files_properties ("../../modules/JUCE/modules/juce_audio_devices/midi_io/juce_MidiInput.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../modules/JUCE/modules/juce_audio_devices/midi_io/juce_MidiDevices.cpp" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../modules/JUCE/modules/juce_audio_devices/midi_io/juce_MidiDevices.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../modules/JUCE/modules/juce_audio_devices/midi_io/juce_MidiMessageCollector.cpp" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../modules/JUCE/modules/juce_audio_devices/midi_io/juce_MidiMessageCollector.h" PROPERTIES HEADER_FILE_ONLY TRUE)
-set_source_files_properties ("../../modules/JUCE/modules/juce_audio_devices/midi_io/juce_MidiOutput.cpp" PROPERTIES HEADER_FILE_ONLY TRUE)
-set_source_files_properties ("../../modules/JUCE/modules/juce_audio_devices/midi_io/juce_MidiOutput.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../modules/JUCE/modules/juce_audio_devices/native/juce_android_Audio.cpp" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../modules/JUCE/modules/juce_audio_devices/native/juce_android_Midi.cpp" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../modules/JUCE/modules/juce_audio_devices/native/juce_android_Oboe.cpp" PROPERTIES HEADER_FILE_ONLY TRUE)
@@ -2292,8 +2287,8 @@ set_source_files_properties ("../../modules/JUCE/modules/juce_gui_basics/compone
 set_source_files_properties ("../../modules/JUCE/modules/juce_gui_basics/components/juce_Component.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../modules/JUCE/modules/juce_gui_basics/components/juce_ComponentListener.cpp" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../modules/JUCE/modules/juce_gui_basics/components/juce_ComponentListener.h" PROPERTIES HEADER_FILE_ONLY TRUE)
-set_source_files_properties ("../../modules/JUCE/modules/juce_gui_basics/components/juce_Desktop.cpp" PROPERTIES HEADER_FILE_ONLY TRUE)
-set_source_files_properties ("../../modules/JUCE/modules/juce_gui_basics/components/juce_Desktop.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../modules/JUCE/modules/juce_gui_basics/desktop/juce_Desktop.cpp" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../modules/JUCE/modules/juce_gui_basics/desktop/juce_Desktop.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../modules/JUCE/modules/juce_gui_basics/components/juce_ModalComponentManager.cpp" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../modules/JUCE/modules/juce_gui_basics/components/juce_ModalComponentManager.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../modules/JUCE/modules/juce_gui_basics/drawables/juce_Drawable.cpp" PROPERTIES HEADER_FILE_ONLY TRUE)
@@ -2613,6 +2608,7 @@ if (CMAKE_BUILD_TYPE STREQUAL Debug)
 execute_process (COMMAND uname -m OUTPUT_VARIABLE JUCE_ARCH_LABEL OUTPUT_STRIP_TRAILING_WHITESPACE)
 
 target_include_directories (APP PRIVATE
+    "/Users/khiner/SDKs/VST_SDK/VST2_SDK"
     "/Users/khiner/SDKs/VST_SDK/VST3_SDK"
     "../../JuceLibraryCode"
     "../../modules/JUCE/modules"

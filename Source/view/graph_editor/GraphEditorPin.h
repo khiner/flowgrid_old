@@ -1,4 +1,5 @@
 #include <utility>
+#include <juce_audio_utils/juce_audio_utils.h>
 
 #pragma once
 
@@ -49,7 +50,7 @@ struct GraphEditorPin : public Component, public SettableTooltipClient, private 
     }
 
     void mouseDown(const MouseEvent &e) override {
-        AudioProcessorGraph::NodeAndChannel dummy{0, 0};
+        AudioProcessorGraph::NodeAndChannel dummy{ProcessorGraph::NodeID(0), 0};
         AudioProcessorGraph::NodeAndChannel pin = getPin();
         connectorDragListener.beginConnectorDrag(isInput() ? dummy : pin, isInput() ? pin : dummy, e);
     }

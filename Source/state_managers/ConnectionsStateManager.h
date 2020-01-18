@@ -36,7 +36,7 @@ public:
             if ((connection[IDs::isCustomConnection] && !includeCustom) || (!connection[IDs::isCustomConnection] && !includeDefault))
                 continue;
 
-            const auto &endpointType = connection.getChildWithProperty(IDs::nodeId, int(nodeId));
+            const auto &endpointType = connection.getChildWithProperty(IDs::nodeId, int(nodeId.uid));
             bool directionIsAcceptable = (incoming && endpointType.hasType(IDs::DESTINATION)) || (outgoing && endpointType.hasType(IDs::SOURCE));
             bool typeIsAcceptable = connectionType == all || (connectionType == audio && int(endpointType[IDs::channel]) != AudioProcessorGraph::midiChannelIndex) ||
                                     (connectionType == midi && int(endpointType[IDs::channel]) == AudioProcessorGraph::midiChannelIndex);
@@ -90,12 +90,12 @@ public:
     void addConnection(const AudioProcessorGraph::Connection &connection, UndoManager* undoManager, bool isDefault=true) {
         ValueTree connectionState(IDs::CONNECTION);
         ValueTree source(IDs::SOURCE);
-        source.setProperty(IDs::nodeId, int(connection.source.nodeID), nullptr);
+        source.setProperty(IDs::nodeId, int(connection.source.nodeID.uid), nullptr);
         source.setProperty(IDs::channel, connection.source.channelIndex, nullptr);
         connectionState.addChild(source, -1, nullptr);
 
         ValueTree destination(IDs::DESTINATION);
-        destination.setProperty(IDs::nodeId, int(connection.destination.nodeID), nullptr);
+        destination.setProperty(IDs::nodeId, int(connection.destination.nodeID.uid), nullptr);
         destination.setProperty(IDs::channel, connection.destination.channelIndex, nullptr);
         connectionState.addChild(destination, -1, nullptr);
 
