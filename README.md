@@ -196,6 +196,10 @@ Clone the repo (including the submodules for JUCE and libusb):
 Although this project is built using the JUCE framework, I use Intellij's CLion editor and don't often update the Projucer project to reflect the current development state.
 Thus, the only way of building and modifying I would recommend is to import the project located in the `Builds` directory into CLion.
 
+### App settings file
+
+General application state, like the application window size and position, or the last opened project directory, are stored (on Macs) in the file `~/Library/Preferences/com.odandludo.soundmachine.plist`.
+
 ## License
 
 This software is distributed under the [MIT License](./LICENSE).
