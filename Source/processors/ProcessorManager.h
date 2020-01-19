@@ -66,6 +66,7 @@ public:
     }
 
     const PluginDescription* getChosenType(const int menuId) const {
+        // TODO use `getTypes()[i]` instead (`getType` is deprecated)
         auto* description = userCreatablePluginListInternal.getType(userCreatablePluginListInternal.getIndexChosenByMenu(menuId));
         return description != nullptr ? description : knownPluginListExternal.getType(knownPluginListExternal.getIndexChosenByMenu(menuId - userCreatablePluginListInternal.getNumTypes()));
     }
@@ -75,7 +76,7 @@ public:
     }
 
     bool doesTrackAlreadyHaveGeneratorOrInstrument(const ValueTree& track) {
-        for (auto child : track) {
+        for (const auto& child : track) {
             if (child.hasType(IDs::PROCESSOR)) {
                 if (auto existingDescription = getDescriptionForIdentifier(child.getProperty(IDs::id))) {
                     if (isGeneratorOrInstrument(existingDescription.get())) {

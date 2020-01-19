@@ -285,11 +285,11 @@ private:
                 project.addPluginsToMenu(menu, parent);
             }
 
-            menu.showMenuAsync({}, ModalCallbackFunction::create([this, slot, isMixerChannel](int r) {
+            menu.showMenuAsync({}, ModalCallbackFunction::create([this, slot, isMixerChannel](int result) {
                 if (isMixerChannel) {
                     getCommandManager().invokeDirectly(CommandIDs::addMixerChannel, false);
                 } else {
-                    if (auto *description = project.getChosenType(r)) {
+                    if (auto *description = project.getChosenType(result)) {
                         tracksManager.createAndAddProcessor(*description, parent, &project.getUndoManager(), slot);
                     }
                 }

@@ -346,7 +346,7 @@ private:
 
     void syncInputDevicesWithDeviceManager() {
         Array<ValueTree> inputChildrenToDelete;
-        for (auto inputChild : input) {
+        for (const auto& inputChild : input) {
             if (inputChild.hasProperty(IDs::deviceName)) {
                 const String &deviceName = inputChild[IDs::deviceName];
                 if (!MidiInput::getDevices().contains(deviceName) || !deviceManager.isMidiInputEnabled(deviceName)) {

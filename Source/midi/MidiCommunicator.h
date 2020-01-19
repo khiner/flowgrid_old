@@ -9,7 +9,7 @@ public:
     void setMidiInputAndOutput(std::unique_ptr<MidiInput> midiInput, std::unique_ptr<MidiOutput> midiOutput) {
         this->midiInput = std::move(midiInput);
         this->midiOutput = std::move(midiOutput);
-        if (midiInput != nullptr && midiOutput != nullptr) {
+        if (this->midiInput != nullptr && this->midiOutput != nullptr) {
             initialized = true;
             initialize();
         } else {
