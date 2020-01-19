@@ -2,9 +2,13 @@
 
 ![](docs/quick-demo.gif)
 
-This is an ongoing project to try and make a _flexible_, _fast_ and _fun_ music production and performance tool that I will actually use.
+Inspired by [Tim Exile's Flow Machine](https://youtu.be/SLguU77xuQA), I am aiming to build something that;
+* is the most fun jam box (for me) that I can make for the Push 2 and a Mac
+* provides a hierarchically composable playing interface, with access to high-level musical control features, as well as low-level audio processor details
+* exposes as much control as possible over processes meaningful to the audio output (e.g. providing modular controls to program events like track or processor creation and deletion)
+* is an intuitive and quick functional test bed for instrument ideas
 
-_*Big caveat right up front:* This tool isn't what I want it to be yet. There's still a ton to do!_
+_This tool isn't quite there yet - there's still a lot to do!_
 
 ## What is this?
 
