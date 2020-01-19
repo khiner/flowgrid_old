@@ -2,8 +2,9 @@
 
 ![](docs/quick-demo.gif)
 
-Inspired by [Tim Exile's Flow Machine](https://youtu.be/SLguU77xuQA), I am aiming to build something that;
+Inspired by [Tim Exile's Flow Machine](https://youtu.be/SLguU77xuQA), I am aiming to build something that:
 * is the most fun jam box (for me) that I can make for the Push 2 and a Mac
+* acts as a central routing and processing interface to external gear (MIDI, audio, CV etc)
 * provides a hierarchically composable playing interface, with access to high-level musical control features, as well as low-level audio processor details
 * exposes as much control as possible over processes meaningful to the audio output (e.g. providing modular controls to program events like track or processor creation and deletion)
 * is an intuitive and quick functional test bed for instrument ideas
@@ -187,7 +188,7 @@ Sound-machine is currently lacking in the internal processor department, as the 
 * Midi Keyboard
   - A MIDI generator processor that shows an onscreen keyboard window that can be controlled with a mouse or with a computer keyboard.
 
-## How do I get set up?
+## Development
 
 ### Cloning the repository
 
@@ -195,10 +196,30 @@ Clone the repo (including the submodules for JUCE and libusb):
 
 `git clone --recurse-submodules https://github.com/khiner/sound-machine.git`
 
-### Building
+### Building and Loading
 
-Although this project is built using the JUCE framework, I use Intellij's CLion editor and don't often update the Projucer project to reflect the current development state.
-Thus, the only way of building and modifying I would recommend is to import the project located in the `Builds` directory into CLion.
+This project is built using the JUCE framework. I use Intellij's CLion editor, and occasionally rebuild the Projucer project to reflect the current development state. However, this project should always be in a state where it can easily be rebuilt with the Projucer.
+
+#### Loading in CLion
+
+In CLion, import the project located in the `Builds` directory. (You should be able to do this at any time without rebuilding with Projucer.)
+
+#### Building with Projucer
+
+As mentioned above, this is done occasionally, only to keep the project current with the latest JUCE framework and ecosystem. All development is done in CLion.
+
+* Open the Projucer application (tested with Projucer v5.4.5)
+* Click "Open Existing Project"
+* Select `sound-machine.jucer` at the root of this repo
+* Make sure the File Exporter is up-to-date with the current state of the project
+  - Select "File Exporter" in the left pane
+  - Right-click the top-level `Source` directory
+  - Select "Delete" in the right-click dropdown
+  - Click the "+" button in the lower-right of the "File Exporter" pane
+  - Select "Add Existing Files..." in the dropdown
+  - Select the `Source` directory at the root of this repo
+* Under "Selected exporter" dropdown, select CLion
+* Hit the CLion logo to build the project and open CLion
 
 ### App settings file
 
