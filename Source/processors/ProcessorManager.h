@@ -67,8 +67,13 @@ public:
 
     const PluginDescription* getChosenType(const int menuId) const {
         // TODO use `getTypes()[i]` instead (`getType` is deprecated)
-        auto* description = userCreatablePluginListInternal.getType(userCreatablePluginListInternal.getIndexChosenByMenu(menuId));
-        return description != nullptr ? description : knownPluginListExternal.getType(knownPluginListExternal.getIndexChosenByMenu(menuId - userCreatablePluginListInternal.getNumTypes()));
+        int internalPluginListIndex = userCreatablePluginListInternal.getIndexChosenByMenu(menuId);
+        if (internalPluginListIndex != -1) {
+            return userCreatablePluginListInternal.getType(internalPluginListIndex);
+        } else {
+            int externalPluginListIndex = knownPluginListExternal.getIndexChosenByMenu(menuId - userCreatablePluginListInternal.getNumTypes());
+            return knownPluginListExternal.getType(externalPluginListIndex);
+        }
     }
 
     bool isGeneratorOrInstrument(const PluginDescription *description) {
