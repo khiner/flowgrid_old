@@ -26,11 +26,18 @@ For example, to see the verified functionality for release `0.0.1`, check out th
   - Enabling a connected midi device (both input and output), closing the app, disconnecting the enabled device,
     restarting the app, and then reconnecting the device after startup, should restore the enabled preference and
     make the device appear in the graph again
-  - Disabling the device while it is connected to a processor removes the connections (TODO broken)
+  - Disabling a device while it is connected to a processor removes its connections
+  - Undo/Redo works appropriately for device enablement/disablement
+    * Undo after disabling device re-enables it (adds it to graph, etc)
+    * Undo after enabling device disables it (removes it from graph, etc)
+    * Undos/redos around automatic device removal as a result of disconnecting devices all works appropriately
+      (IO processors show back up in the graph, but are greyed-out and don't do any processing.
+      When devices are plugged back in, the grey-out is removed and they begin processing again, but this is not
+      an undoable event.) (TODO this is mostly there, but need to add greying-out)
 
 ## Push 2 MIDI behavior
 
-* When midi output pin of "Push 2 Live Port" input device is connected to any receiving midi pin:
+* When midi output pin of "Push 2 Live Port" input device is connected to any destination midi pin:
   - Push 2 enters note-mode and pads light up
   - Playing pads sends note data appropriately to destination processor
   - Only pads from Push 2 are sent to destination processor
@@ -38,3 +45,5 @@ For example, to see the verified functionality for release `0.0.1`, check out th
   - Holding down a pad, then switching "Session" button on Push 2, disables note pads (entering session mode),
     but then releasing the pad still allows note-off messages to reach destination
   - Pressing a pad in session-mode does not send note data to destination processor
+* When midi output pin of "Push 2 Live Port" input device is disconnected from its destination
+  - Push 2 enters session-mode and pad lights turn off
