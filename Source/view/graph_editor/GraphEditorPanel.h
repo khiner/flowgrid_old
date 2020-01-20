@@ -313,8 +313,10 @@ private:
         } else if (child.hasType(IDs::PROCESSOR)) {
             if (child[IDs::name] == MidiInputProcessor::name()) {
                 midiInputProcessors.removeObject(findMidiInputProcessorForNodeId(ProcessorGraph::getNodeIdForState(child)));
+                resized();
             } else if (child[IDs::name] == MidiOutputProcessor::name()) {
                 midiOutputProcessors.removeObject(findMidiOutputProcessorForNodeId(ProcessorGraph::getNodeIdForState(child)));
+                resized();
             }
             connectors->updateConnectors();
         } else if (child.hasType(IDs::CONNECTION)) {
