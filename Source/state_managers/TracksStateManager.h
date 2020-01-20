@@ -635,10 +635,10 @@ private:
         }
     }
 
-    void selectAllTrackSlots(const ValueTree& track) {
-        for (int slot = 0; slot < viewManager.getNumAvailableSlotsForTrack(track); slot++) {
-            setProcessorSlotSelected(track, slot, true, false);
-        }
+    void selectAllTrackSlots(ValueTree& track) {
+        BigInteger selectedSlotsMask;
+        selectedSlotsMask.setRange(0, viewManager.getNumAvailableSlotsForTrack(track), true);
+        track.setProperty(IDs::selectedSlotsMask, selectedSlotsMask.toString(2), nullptr);
     }
 
     TrackAndSlot findSelectionPaneItemToSelectWithLeftRightDelta(int delta) const {
