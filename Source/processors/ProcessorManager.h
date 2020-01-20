@@ -70,10 +70,12 @@ public:
         int internalPluginListIndex = userCreatablePluginListInternal.getIndexChosenByMenu(menuId);
         if (internalPluginListIndex != -1) {
             return userCreatablePluginListInternal.getType(internalPluginListIndex);
-        } else {
-            int externalPluginListIndex = knownPluginListExternal.getIndexChosenByMenu(menuId - userCreatablePluginListInternal.getNumTypes());
+        }
+        int externalPluginListIndex = knownPluginListExternal.getIndexChosenByMenu(menuId - userCreatablePluginListInternal.getNumTypes());
+        if (externalPluginListIndex != -1) {
             return knownPluginListExternal.getType(externalPluginListIndex);
         }
+        return nullptr;
     }
 
     bool isGeneratorOrInstrument(const PluginDescription *description) {
