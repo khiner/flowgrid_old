@@ -15,6 +15,7 @@ class Push2Component :
         public Timer,
         public Push2ComponentBase,
         private ChangeListener,
+        private ProjectChangeListener,
         private Utilities::ValueTreePropertyChangeListener {
 public:
     explicit Push2Component(Project &project, Push2MidiCommunicator &push2MidiCommunicator, ProcessorGraph &audioGraphBuilder)
@@ -27,8 +28,10 @@ public:
         addChildComponent(processorSelector);
         addChildComponent(mixerView);
 
-        project.getState().addListener(this);
-        project.getUndoManager().addChangeListener(this);
+        this->project.getState().addListener(this);
+        this->project.addProjectChangeListener(this);
+        this->project.getUndoManager().addChangeListener(this);
+
         setBounds(0, 0, Push2Display::WIDTH, Push2Display::HEIGHT);
         const auto &r = getLocalBounds();
         mixerView.setBounds(r);
@@ -250,6 +253,17 @@ private:
             currentlyViewingChild->setVisible(true);
     }
 
+    void processorCreated(const ValueTree& processor) override {
+        updatePush2SelectionDependentButtons();
+    };
+
+    void processorWillBeDestroyed(const ValueTree& processor) override {
+    };
+
+    void processorHasBeenDestroyed(const ValueTree& processor) override {
+        updatePush2SelectionDependentButtons();
+    };
+
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {
         if ((i == IDs::selected && tree[IDs::selected]) || i == IDs::selectedSlotsMask) {
             if (i == IDs::selectedSlotsMask) {
@@ -265,7 +279,7 @@ private:
     }
 
     void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override {
-        if (child.hasType(IDs::TRACK) || child.hasType(IDs::PROCESSOR)) {
+        if (child.hasType(IDs::TRACK)) {
             updatePush2SelectionDependentButtons();
         } else if (child.hasType(IDs::CONNECTION)) {
             updatePush2NoteModePadLedManagerVisibility();
@@ -273,7 +287,7 @@ private:
     }
 
     void valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int) override {
-        if (child.hasType(IDs::TRACK) || child.hasType(IDs::PROCESSOR)) {
+        if (child.hasType(IDs::TRACK)) {
             updatePush2SelectionDependentButtons();
             if (!tracksManager.getSelectedTrack().isValid()) {
                 selectChild(nullptr);

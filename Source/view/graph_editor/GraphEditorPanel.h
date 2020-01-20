@@ -280,6 +280,8 @@ private:
         if (child.hasType(IDs::TRACK)) {
             resize();
         } else if (child.hasType(IDs::PROCESSOR)) {
+            // TODO this should use the project-listener methods (only ProcessorGraph should listen to this directly),
+            //  but currently this is an order-dependent snowflake
             if (child[IDs::name] == MidiInputProcessor::name()) {
                 auto *midiInputProcessor = new GraphEditorProcessor(tracksManager, child, *this, graph);
                 addAndMakeVisible(midiInputProcessor);

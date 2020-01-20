@@ -596,6 +596,7 @@ private:
     void addProcessorToTrack(ValueTree &track, const ValueTree &processor, int insertIndex, UndoManager *undoManager) {
         track.addChild(processor, insertIndex, undoManager);
         makeSlotsValid(track, undoManager);
+        selectProcessor(processor);
         projectChangeBroadcaster.sendProcessorCreatedMessage(processor);
     }
 
@@ -747,12 +748,6 @@ private:
         }
 
         return trackName;
-    }
-
-    void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override {
-        if (child.hasType(IDs::PROCESSOR)) {
-            selectProcessor(child);
-        }
     }
 
     void valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int) override {}

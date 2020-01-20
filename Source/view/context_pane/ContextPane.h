@@ -4,12 +4,16 @@
 #include "JuceHeader.h"
 #include "Project.h"
 
-class ContextPane : public Component, private ValueTree::Listener {
+class ContextPane :
+        public Component,
+        private ValueTree::Listener,
+        private ProjectChangeListener {
 public:
     explicit ContextPane(Project &project)
             : project(project), tracksManager(project.getTracksManager()),
               viewManager(project.getViewStateManager()) {
-        project.getState().addListener(this);
+        this->project.getState().addListener(this);
+        this->project.addProjectChangeListener(this);
     }
 
     ~ContextPane() override {
@@ -116,7 +120,18 @@ private:
             }
         }
     }
-    
+
+    void processorCreated(const ValueTree& processor) override {
+        updateGridCellColours();
+    };
+
+    void processorWillBeDestroyed(const ValueTree& processor) override {
+    };
+
+    void processorHasBeenDestroyed(const ValueTree& processor) override {
+        updateGridCellColours();
+    };
+
     void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override {
         if (child.hasType(IDs::TRACK)) {
             if (child.hasProperty(IDs::isMasterTrack)) {
@@ -130,8 +145,6 @@ private:
                 gridCells.add(newGridCellColumn);
             }
             resized();
-        } else if (child.hasType(IDs::PROCESSOR)) {
-            updateGridCellColours();
         }
     }
 
@@ -143,8 +156,6 @@ private:
                 gridCells.remove(index);
             }
             resized();
-            updateGridCellColours();
-        } else if (child.hasType(IDs::PROCESSOR)) {
             updateGridCellColours();
         }
     }

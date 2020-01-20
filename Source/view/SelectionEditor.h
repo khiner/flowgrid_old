@@ -10,13 +10,16 @@
 class SelectionEditor : public Component,
                         public DragAndDropContainer,
                         private Button::Listener,
-                        private ValueTree::Listener {
+                        private ValueTree::Listener,
+                        private ProjectChangeListener {
 public:
     SelectionEditor(Project& project, ProcessorGraph &audioGraphBuilder)
             : project(project), tracksManager(project.getTracksManager()),
               viewManager(project.getViewStateManager()),
               audioGraphBuilder(audioGraphBuilder), contextPane(project) {
-        project.getState().addListener(this);
+        this->project.getState().addListener(this);
+        this->project.addProjectChangeListener(this);
+
         addAndMakeVisible(addProcessorButton);
         addAndMakeVisible(processorEditorsViewport);
         addAndMakeVisible(contextPaneViewport);
@@ -129,16 +132,21 @@ private:
         }
     }
 
-    void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override {
-        if (child.hasProperty(IDs::PROCESSOR) && tracksManager.getSelectedTrack() == parent) {
-            assignProcessorToEditor(child);
-            resized();
-        }
-    }
+    void processorCreated(const ValueTree& processor) override {
+        assignProcessorToEditor(processor);
+        resized();
+    };
+
+    void processorWillBeDestroyed(const ValueTree& processor) override {
+    };
+
+    void processorHasBeenDestroyed(const ValueTree& processor) override {
+        refreshProcessors();
+    };
 
     void valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int) override {
-        if (child.hasType(IDs::TRACK) || child.hasType(IDs::PROCESSOR)) {
-            refreshProcessors(); // todo can improve efficiency by only removing this processor editor
+        if (child.hasType(IDs::TRACK)) {
+            refreshProcessors();
         }
     }
 
