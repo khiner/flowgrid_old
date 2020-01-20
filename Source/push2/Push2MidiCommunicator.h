@@ -48,38 +48,38 @@ public:
         }
 
         MessageManager::callAsync([this, source, message]() {
-        if (push2Listener == nullptr)
-            return;
-
-        if (message.isController()) {
-            const auto ccNumber = message.getControllerNumber();
-
-            if (isEncoderCcNumber(ccNumber)) {
-                float changeAmount = encoderCcMessageToRotationChange(message);
-                if (ccNumber == masterKnob) {
-                    return push2Listener->masterEncoderRotated(changeAmount / 2.0f);
-                } else if (isAboveScreenEncoderCcNumber(ccNumber)) {
-                    return push2Listener->encoderRotated(ccNumber - ccNumberForTopKnobIndex(0), changeAmount / 2.0f);
-                }
+            if (push2Listener == nullptr)
                 return;
-            }
 
-            if (isButtonPressControlMessage(message)) {
-                static const Array<int> repeatableButtonCcNumbers { undo, up, down, left, right };
-                if (repeatableButtonCcNumbers.contains(ccNumber)) {
-                    buttonHoldStopped();
-                    currentlyHeldRepeatableButtonCcNumber = ccNumber;
-                    startTimer(BUTTON_HOLD_WAIT_FOR_REPEAT_MS);
+            if (message.isController()) {
+                const auto ccNumber = message.getControllerNumber();
+
+                if (isEncoderCcNumber(ccNumber)) {
+                    float changeAmount = encoderCcMessageToRotationChange(message);
+                    if (ccNumber == masterKnob) {
+                        return push2Listener->masterEncoderRotated(changeAmount / 2.0f);
+                    } else if (isAboveScreenEncoderCcNumber(ccNumber)) {
+                        return push2Listener->encoderRotated(ccNumber - ccNumberForTopKnobIndex(0), changeAmount / 2.0f);
+                    }
+                    return;
                 }
-                return handleButtonPressMidiCcNumber(ccNumber);
+
+                if (isButtonPressControlMessage(message)) {
+                    static const Array<int> repeatableButtonCcNumbers { undo, up, down, left, right };
+                    if (repeatableButtonCcNumbers.contains(ccNumber)) {
+                        buttonHoldStopped();
+                        currentlyHeldRepeatableButtonCcNumber = ccNumber;
+                        startTimer(BUTTON_HOLD_WAIT_FOR_REPEAT_MS);
+                    }
+                    return handleButtonPressMidiCcNumber(ccNumber);
+                }
+                else if (isButtonReleaseControlMessage(message)) {
+                    buttonHoldStopped();
+                    return handleButtonReleaseMidiCcNumber(ccNumber);
+                }
+            } else {
+                push2Listener->handleIncomingMidiMessage(source, message);
             }
-            else if (isButtonReleaseControlMessage(message)) {
-                buttonHoldStopped();
-                return handleButtonReleaseMidiCcNumber(ccNumber);
-            }
-        } else {
-            push2Listener->handleIncomingMidiMessage(source, message);
-        }
         });
     }
 
