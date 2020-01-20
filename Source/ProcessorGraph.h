@@ -516,8 +516,8 @@ private:
             } else if (i == IDs::allowDefaultConnections) {
                 updateDefaultConnectionsForProcessor(tree, true);
             }
-        } else if (i == IDs::selectedSlotsMask && tree != selectedProcessor && tracksManager.isProcessorSelected(tree)) {
-            selectedProcessor = tree;
+        } else if (i == IDs::selectedSlotsMask) {
+            selectedProcessor = tracksManager.getSelectedProcessor();
             if (!isDeleting)
                 resetDefaultExternalInputs(tree, nullptr);
         }
