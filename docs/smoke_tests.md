@@ -7,7 +7,7 @@ It is an evolving set of cases representing a subset of application behavior ver
 
 For example, to see the verified functionality for release `0.0.1`, check out the `0.0.1` tag and view the contents of this file.
 
-## Audio and MIDI IO
+## Audio and MIDI IO device settings
 
 * Loading application for the first time (no `<VALUE name="audioDeviceState">` tag in `~/Library/Preferences/sound-machine.settings`)
   - Default system audio input and output channels should be present
@@ -26,4 +26,15 @@ For example, to see the verified functionality for release `0.0.1`, check out th
   - Enabling a connected midi device (both input and output), closing the app, disconnecting the enabled device,
     restarting the app, and then reconnecting the device after startup, should restore the enabled preference and
     make the device appear in the graph again
+  - Disabling the device while it is connected to a processor removes the connections (TODO broken)
 
+## Push 2 MIDI behavior
+
+* When midi output pin of "Push 2 Live Port" input device is connected to any receiving midi pin:
+  - Push 2 enters note-mode and pads light up
+  - Playing pads sends note data appropriately to destination processor
+  - Only pads from Push 2 are sent to destination processor
+    (ontrols such as turning a knob or pushing a non-pad control button are _not_ sent along)
+  - Holding down a pad, then switching "Session" button on Push 2, disables note pads (entering session mode),
+    but then releasing the pad still allows note-off messages to reach destination
+  - Pressing a pad in session-mode does not send note data to destination processor

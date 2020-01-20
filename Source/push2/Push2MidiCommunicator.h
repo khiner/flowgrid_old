@@ -41,9 +41,9 @@ public:
     }
 
     void handleIncomingMidiMessage(MidiInput *source, const MidiMessage &message) override {
-        // only pass note messages to listeners if we're in a non-control mode.
-        // (allow note-off messages through in case switch to control mode happened during note events)
-        if (viewManager.isInNoteMode() || message.isNoteOff()) {
+        // Only pass non-sysex note messages to listeners if we're in a non-control mode.
+        // (Allow note-off messages through in case switch to control mode happened during note events.)
+        if (message.isNoteOnOrOff() && isPadNoteNumber(message.getNoteNumber()) && (viewManager.isInNoteMode() || message.isNoteOff())) {
             MidiCommunicator::handleIncomingMidiMessage(source, message);
         }
 
@@ -144,6 +144,8 @@ public:
 
     static const int upArrowDirection = 0, downArrowDirection = 1, leftArrowDirection = 2, rightArrowDirection = 3;
 
+    static const int lowestPadNoteNumber = 36, highestPadNoteNumber = 99;
+
     // From https://github.com/Ableton/push-interface/blob/master/doc/AbletonPush2MIDIDisplayInterface.asc#Encoders:
     //
     // The value 0xxxxxx or 1yyyyyy gives the amount of accumulated movement since the last message. The faster you move, the higher the value.
@@ -224,6 +226,10 @@ public:
         return message.getControllerValue() == 0;
     }
 
+    static bool isPadNoteNumber(int noteNumber) {
+        return noteNumber >= lowestPadNoteNumber && noteNumber <= highestPadNoteNumber;
+    }
+
     void setAboveScreenButtonColour(int buttonIndex, const Colour &colour) {
         setButtonColour(topDisplayButton1 + buttonIndex, colour);
     }
@@ -264,13 +270,19 @@ public:
         sendMessageChecked(MidiMessage::controllerEvent(NO_ANIMATION_LED_CHANNEL, buttonCcNumber, colourIndex));
     }
 
-    void disablePad(int midiNote) {
-        sendMessageChecked(MidiMessage::noteOn(NO_ANIMATION_LED_CHANNEL, midiNote, uint8(0)));
+    void disablePad(int noteNumber) {
+        if (!isPadNoteNumber(noteNumber))
+            return;
+
+        sendMessageChecked(MidiMessage::noteOn(NO_ANIMATION_LED_CHANNEL, noteNumber, uint8(0)));
     }
 
-    void setPadColour(int midiNote, const Colour &colour) {
+    void setPadColour(int noteNumber, const Colour &colour) {
+        if (!isPadNoteNumber(noteNumber))
+            return;
+
         auto colourIndex = push2Colours.findIndexForColourAddingIfNeeded(colour);
-        sendMessageChecked(MidiMessage::noteOn(NO_ANIMATION_LED_CHANNEL, midiNote, colourIndex));
+        sendMessageChecked(MidiMessage::noteOn(NO_ANIMATION_LED_CHANNEL, noteNumber, colourIndex));
     }
 
 private:
