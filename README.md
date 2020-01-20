@@ -221,9 +221,11 @@ As mentioned above, this is done occasionally, only to keep the project current 
 * Under "Selected exporter" dropdown, select CLion
 * Hit the CLion logo to build the project and open CLion
 
-### App settings file
+### App settings files
 
-General application state, like the application window size and position, or the last opened project directory, are stored (on Macs) in the file `~/Library/Preferences/com.odandludo.soundmachine.plist`.
+Persistent application-specific settings, like scanned plugin info, and MIDI/audio IO device settings, are stored in `~/Library/Preferences/sound-machine.settings`. This file will be recreated with default settings if it is deleted.
+
+OS-type app state, like the application window size and position, and the last opened project directory, is stored (on Macs) in the file `~/Library/Preferences/com.odandludo.soundmachine.plist`.
 
 ## License
 
