@@ -28,8 +28,6 @@ public:
 
         deviceChangeMonitor = std::make_unique<DeviceChangeMonitor>(deviceManager);
 
-        deviceManager.addChangeListener(this);
-
         setMacMainMenu(this);
         getCommandManager().registerAllCommandsForTarget(this);
         undoManager.addChangeListener(this);
@@ -44,10 +42,12 @@ public:
 
         pluginListComponent = std::unique_ptr<PluginListComponent>(processorManager.makePluginListComponent());
 
-        mainWindow = std::make_unique<MainWindow>(*this, "Sound Machine", new GraphEditor(processorGraph, project));
-
-        std::unique_ptr<XmlElement> savedAudioState(getApplicationProperties().getUserSettings()->getXmlValue("audioDeviceState"));
+        auto savedAudioState = getApplicationProperties().getUserSettings()->getXmlValue("audioDeviceState");
         deviceManager.initialise(256, 256, savedAudioState.get(), true);
+
+        deviceManager.addChangeListener(this);
+
+        mainWindow = std::make_unique<MainWindow>(*this, "Sound Machine", new GraphEditor(processorGraph, project));
         mainWindow->setBoundsRelative(0.02, 0.02, 0.96, 0.96);
 
         push2Component = std::make_unique<Push2Component>(project, push2MidiCommunicator, processorGraph);
@@ -541,6 +541,9 @@ private:
                 auto midiOutput = MidiOutput::openDevice(MidiOutput::getDevices().indexOf(push2MidiDeviceName, true));
                 push2MidiCommunicator.setMidiInputAndOutput(std::move(midiInput), std::move(midiOutput));
                 push2Component->setVisible(true); // refreshes button lights
+
+                // Always enable Push 2 as a midi input device when it's connected (even if it's been disabled, for simplicity)
+                deviceManager.setMidiInputEnabled(push2MidiDeviceName, true);
             } else if (push2MidiCommunicator.isInitialized() && !MidiInput::getDevices().contains(push2MidiDeviceName, true)) {
                 push2MidiCommunicator.setMidiInputAndOutput(nullptr, nullptr);
             }
