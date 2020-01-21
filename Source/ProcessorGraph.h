@@ -519,7 +519,7 @@ private:
         } else if (i == IDs::selectedSlotsMask) {
             selectedProcessor = tracksManager.getSelectedProcessor();
             if (!isDeleting)
-                resetDefaultExternalInputs(tree, nullptr);
+                resetDefaultExternalInputs(selectedProcessor, nullptr);
         }
     }
 
