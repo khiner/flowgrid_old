@@ -193,26 +193,26 @@ public:
     }
 
     void setTrackSelected(ValueTree& track, bool selected, bool deselectOthers=true) {
+        // take care of this track
+        if (selected != bool(track[IDs::selected])) {
+            track.setProperty(IDs::selected, selected, nullptr);
+        } else {
+            // we want to send out a change even no matter what
+            track.sendPropertyChangeMessage(IDs::selected);
+        }
+        // take care of other tracks
         selectionEndTrackAndSlot = std::make_unique<TrackAndSlot>(track);
-        track.setProperty(IDs::selected, selected, nullptr);
         if (selectionStartTrackAndSlot != nullptr) { // shift+select
             selectRectangle(track, -1);
         } else {
             if (selected && deselectOthers) {
                 for (auto otherTrack : tracks) {
                     if (otherTrack != track) {
-                        deselectTrack(otherTrack);
+                        setTrackSelected(otherTrack, false, false);
                     }
                 }
             }
         }
-    }
-
-    void deselectTrack(ValueTree& track) {
-        if (track[IDs::selected])
-            track.setProperty(IDs::selected, false, nullptr);
-        else
-            track.sendPropertyChangeMessage(IDs::selected);
     }
 
     void selectProcessor(const ValueTree& processor) {
@@ -578,7 +578,7 @@ private:
         if (deselectOthers) {
             for (auto otherTrack : tracks) {
                 if (otherTrack != track) {
-                    otherTrack.setProperty(IDs::selected, false, nullptr);
+                    setTrackSelected(otherTrack, false, false);
                 }
             }
         }
