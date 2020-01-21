@@ -241,12 +241,12 @@ private:
             }
 
             menu.showMenuAsync({}, ModalCallbackFunction::create
-                    ([this, processor, slot](int r) {
-                        if (auto *description = project.getChosenType(r)) {
+                    ([this, processor, slot](int result) {
+                        if (auto *description = project.getChosenType(result)) {
                             tracksManager.createAndAddProcessor(*description, parent, &project.getUndoManager(), slot);
                             return;
                         }
-                        switch (r) {
+                        switch (result) {
                             case DELETE_MENU_ID:
                                 getCommandManager().invokeDirectly(CommandIDs::deleteSelected, false);
                                 break;
@@ -278,7 +278,7 @@ private:
                                 break;
                         }
                     }));
-        } else {
+        } else { // no processor in this slot
             if (isMixerChannel) {
                 menu.addItem(ADD_MIXER_CHANNEL_MENU_ID, "Add mixer channel");
             } else {
@@ -287,7 +287,9 @@ private:
 
             menu.showMenuAsync({}, ModalCallbackFunction::create([this, slot, isMixerChannel](int result) {
                 if (isMixerChannel) {
-                    getCommandManager().invokeDirectly(CommandIDs::addMixerChannel, false);
+                    if (result == ADD_MIXER_CHANNEL_MENU_ID) {
+                        getCommandManager().invokeDirectly(CommandIDs::addMixerChannel, false);
+                    }
                 } else {
                     if (auto *description = project.getChosenType(result)) {
                         tracksManager.createAndAddProcessor(*description, parent, &project.getUndoManager(), slot);
