@@ -384,36 +384,35 @@ private:
         return connectionType == audio ? defaultAudioConnectionChannels : defaultMidiConnectionChannels;
     }
 
-    const ValueTree findProcessorToFlowInto(const ValueTree &parent, const ValueTree &processor,
-                                            ConnectionType connectionType, const ValueTree &excluding = {}) {
+    const ValueTree findProcessorToFlowInto(const ValueTree &track, const ValueTree &processor, ConnectionType connectionType) {
         if (!processor.hasType(IDs::PROCESSOR) || !isProcessorAProducer(processor, connectionType))
             return {};
 
         // If a non-effect (another producer) is under this processor in the same track, and no effect processors
-        // to the right have a lower slot, choose to block this producer's output by the other producer,
+        // to the right have a lower slot, block this producer's output by the other producer,
         // effectively replacing it.
-        ValueTree fallbackBlockingProcessor;
+        ValueTree blockingProcessor;
 
         int siblingDelta = 0;
-        ValueTree otherParent;
-        while ((otherParent = parent.getSibling(siblingDelta++)).isValid()) {
-            for (const auto &otherProcessor : otherParent) {
-                if (otherProcessor == processor || otherProcessor == excluding) continue;
-                bool isBelow = int(otherProcessor[IDs::processorSlot]) > int(processor[IDs::processorSlot]) ||
-                               (parent != otherParent && TracksStateManager::isMasterTrack(otherParent));
-                if (!isBelow) continue;
-                if (canProcessorDefaultConnectTo(parent, processor, otherParent, otherProcessor, connectionType) &&
-                    (!fallbackBlockingProcessor.isValid() || int(otherProcessor[IDs::processorSlot]) <= int(fallbackBlockingProcessor[IDs::processorSlot]))) {
+        ValueTree otherTrack;
+        while ((otherTrack = track.getSibling(siblingDelta++)).isValid()) {
+            for (const auto &otherProcessor : otherTrack) {
+                if (otherProcessor == processor) continue;
+                bool isOtherProcessorBelow = int(otherProcessor[IDs::processorSlot]) > int(processor[IDs::processorSlot]) ||
+                                             (track != otherTrack && TracksStateManager::isMasterTrack(otherTrack));
+                if (!isOtherProcessorBelow) continue;
+                if (canProcessorDefaultConnectTo(processor, otherProcessor, connectionType) &&
+                    (!blockingProcessor.isValid() || int(otherProcessor[IDs::processorSlot]) <= int(blockingProcessor[IDs::processorSlot]))) {
                     return otherProcessor;
-                } else if (parent == otherParent) {
-                    fallbackBlockingProcessor = otherProcessor;
+                } else if (track == otherTrack) {
+                    blockingProcessor = otherProcessor;
                     break;
                 }
             }
         }
 
-        if (fallbackBlockingProcessor.isValid())
-            return fallbackBlockingProcessor;
+        if (blockingProcessor.isValid())
+            return blockingProcessor;
 
         return project.getAudioOutputProcessorState();
     }
@@ -434,9 +433,7 @@ private:
         return false;
     }
 
-    inline bool canProcessorDefaultConnectTo(const ValueTree &parent, const ValueTree &processor,
-                                                ValueTree &otherParent, const ValueTree &otherProcessor,
-                                                ConnectionType connectionType) const {
+    inline bool canProcessorDefaultConnectTo(const ValueTree &processor, const ValueTree &otherProcessor, ConnectionType connectionType) const {
         if (!otherProcessor.hasType(IDs::PROCESSOR) || processor == otherProcessor)
             return false;
 
@@ -454,8 +451,8 @@ private:
     }
     
     void updateAllDefaultConnections(bool makeInvalidDefaultsIntoCustom=false) {
-        for (auto track : project.getTracks()) {
-            for (auto processor : track) {
+        for (const auto& track : project.getTracks()) {
+            for (const auto& processor : track) {
                 updateDefaultConnectionsForProcessor(processor, false, makeInvalidDefaultsIntoCustom);
             }
         }
