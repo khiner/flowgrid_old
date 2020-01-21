@@ -134,7 +134,7 @@ private:
 
     void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override {
         if (child.hasType(IDs::TRACK)) {
-            if (child.hasProperty(IDs::isMasterTrack)) {
+            if (TracksStateManager::isMasterTrack(child)) {
                 return valueTreePropertyChanged(project.getViewState(), IDs::numMasterProcessorSlots);
             } else {
                 auto *newGridCellColumn = new OwnedArray<GridCell>();
@@ -150,7 +150,7 @@ private:
 
     void valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int index) override {
         if (child.hasType(IDs::TRACK)) {
-            if (child.hasProperty(IDs::isMasterTrack)) {
+            if (TracksStateManager::isMasterTrack(child)) {
                 masterTrackGridCells.clear();
             } else {
                 gridCells.remove(index);

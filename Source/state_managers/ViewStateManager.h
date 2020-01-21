@@ -2,14 +2,19 @@
 
 #include "JuceHeader.h"
 #include "Identifiers.h"
+#include "StateManager.h"
 
-class ViewStateManager {
+class ViewStateManager : public StateManager {
 public:
     ViewStateManager() {
         viewState = ValueTree(IDs::VIEW_STATE);
     };
 
-    ValueTree& getState() { return viewState; }
+    ValueTree& getState() override { return viewState; }
+
+    void loadFromState(const ValueTree& state) override {
+        viewState.copyPropertiesFrom(state, nullptr);
+    }
 
     void initializeDefault() {
         viewState.setProperty(IDs::controlMode, noteControlMode, nullptr);
@@ -45,6 +50,7 @@ public:
         return getNumAvailableSlotsForTrack(track) - 1;
     }
 
+    // TODO cleanup - shouldn't access IDs::isMasterTrack directly outside of TracksStateManager
     int getNumAvailableSlotsForTrack(const ValueTree &track) const {
         return track.hasProperty(IDs::isMasterTrack) ? getNumMasterProcessorSlots() : getNumTrackProcessorSlots();
     }

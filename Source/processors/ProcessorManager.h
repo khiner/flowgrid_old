@@ -78,7 +78,7 @@ public:
         return nullptr;
     }
 
-    bool isGeneratorOrInstrument(const PluginDescription *description) {
+    static bool isGeneratorOrInstrument(const PluginDescription *description) {
         return description->isInstrument || description->category.equalsIgnoreCase("generator") || description->category.equalsIgnoreCase("synth");
     }
 

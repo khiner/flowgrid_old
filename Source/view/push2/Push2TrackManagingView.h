@@ -31,7 +31,7 @@ public:
 
     void belowScreenButtonPressed(int buttonIndex) override {
         auto track = tracksManager.getTrackWithViewIndex(buttonIndex);
-        if (track.isValid() && !track.hasProperty(IDs::isMasterTrack)) {
+        if (track.isValid() && !TracksStateManager::isMasterTrack(track)) {
             tracksManager.setTrackSelected(track, true);
         }
     }
@@ -78,7 +78,7 @@ protected:
                 int trackIndex = tracksManager.getViewIndexForTrack(tree);
                 if (trackIndex < 0 || trackIndex >= trackLabels.size())
                     return;
-                if (i == IDs::name && !tree.hasProperty(IDs::isMasterTrack)) {
+                if (i == IDs::name && !TracksStateManager::isMasterTrack(tree)) {
                     trackLabels.getUnchecked(trackIndex)->setText(tree[IDs::name], dontSendNotification);
                 }
             } else if (i == IDs::selected && tree[IDs::selected]) {
@@ -102,7 +102,7 @@ protected:
 protected:
     void trackColourChanged(const String &trackUuid, const Colour &colour) override {
         auto track = tracksManager.findTrackWithUuid(trackUuid);
-        if (!track.hasProperty(IDs::isMasterTrack)) {
+        if (!TracksStateManager::isMasterTrack(track)) {
             if (auto *trackLabel = trackLabels[tracksManager.getViewIndexForTrack(track)]) {
                 trackLabel->setMainColour(colour);
             }

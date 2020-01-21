@@ -214,16 +214,18 @@ public:
         if (!newState.isValid() || !newState.hasType(IDs::PROJECT))
             return Result::fail(TRANS("Not a valid project file"));
 
-        viewManager.getState().copyPropertiesFrom(newState.getChildWithName(IDs::VIEW_STATE), nullptr);
+        viewManager.loadFromState(newState.getChildWithName(IDs::VIEW_STATE));
 
         const String& inputDeviceName = newState.getChildWithName(IDs::INPUT)[IDs::deviceName];
         const String& outputDeviceName = newState.getChildWithName(IDs::OUTPUT)[IDs::deviceName];
 
+        // TODO this should be replaced with the greyed-out IO processor behavior (keeping connections)
         static const String& failureMessage = TRANS("Could not open an Audio IO device used by this project.  "
                                                     "All connections with the missing device will be gone.  "
                                                     "If you want this project to look like it did when you saved it, "
                                                     "the best thing to do is to reconnect the missing device and "
                                                     "reload this project (without saving first!).");
+
         if (isDeviceWithNamePresent(inputDeviceName))
             input.copyPropertiesFrom(newState.getChildWithName(IDs::INPUT), nullptr);
         else
@@ -236,8 +238,8 @@ public:
 
         Utilities::moveAllChildren(newState.getChildWithName(IDs::INPUT), input, nullptr);
         Utilities::moveAllChildren(newState.getChildWithName(IDs::OUTPUT), output, nullptr);
-        Utilities::moveAllChildren(newState.getChildWithName(IDs::TRACKS), tracksManager.getState(), nullptr);
-        Utilities::moveAllChildren(newState.getChildWithName(IDs::CONNECTIONS), connectionsManager.getState(), nullptr);
+        tracksManager.loadFromState(newState.getChildWithName(IDs::TRACKS));
+        connectionsManager.loadFromState(newState.getChildWithName(IDs::CONNECTIONS));
 
         undoManager.clearUndoHistory();
         return Result::ok();

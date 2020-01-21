@@ -554,12 +554,12 @@ private:
     }
 
     void processorCreated(const ValueTree& child) override {
-        if (child.hasProperty(IDs::isMasterTrack) || child[IDs::name] == MixerChannelProcessor::name())
+        if (TracksStateManager::isMasterTrack(child) || child[IDs::name] == MixerChannelProcessor::name())
             applicationCommandListChanged(); // TODO same - wasteful
     }
 
     void processorHasBeenDestroyed(const ValueTree &child) override {
-        if (child.hasProperty(IDs::isMasterTrack) || child[IDs::name] == MixerChannelProcessor::name())
+        if (TracksStateManager::isMasterTrack(child) || child[IDs::name] == MixerChannelProcessor::name())
             applicationCommandListChanged(); // TODO same - wasteful
     }
 

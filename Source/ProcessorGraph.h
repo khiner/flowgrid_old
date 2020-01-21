@@ -400,7 +400,7 @@ private:
             for (const auto &otherProcessor : otherParent) {
                 if (otherProcessor == processor || otherProcessor == excluding) continue;
                 bool isBelow = int(otherProcessor[IDs::processorSlot]) > int(processor[IDs::processorSlot]) ||
-                               (otherParent.hasProperty(IDs::isMasterTrack) && parent != otherParent);
+                               (parent != otherParent && TracksStateManager::isMasterTrack(otherParent));
                 if (!isBelow) continue;
                 if (canProcessorDefaultConnectTo(parent, processor, otherParent, otherProcessor, connectionType) &&
                     (!fallbackBlockingProcessor.isValid() || int(otherProcessor[IDs::processorSlot]) <= int(fallbackBlockingProcessor[IDs::processorSlot]))) {

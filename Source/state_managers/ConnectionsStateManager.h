@@ -10,14 +10,18 @@ using SAPC = StatefulAudioProcessorContainer;
 
 enum ConnectionType { audio, midi, all };
 
-class ConnectionsStateManager {
+class ConnectionsStateManager : public StateManager {
 public:
     explicit ConnectionsStateManager(StatefulAudioProcessorContainer& audioProcessorContainer)
             : audioProcessorContainer(audioProcessorContainer) {
         connections = ValueTree(IDs::CONNECTIONS);
     }
 
-    ValueTree& getState() { return connections; }
+    ValueTree& getState() override { return connections; }
+
+    void loadFromState(const ValueTree& state) override {
+        Utilities::moveAllChildren(state, getState(), nullptr);
+    }
 
     bool isNodeConnected(AudioProcessorGraph::NodeID nodeId) const {
         for (const auto& connection : connections) {

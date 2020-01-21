@@ -105,7 +105,7 @@ private:
             }
         } else {
             for (const auto& track : project.getTracks()) {
-                if (track.hasProperty(IDs::isMasterTrack))
+                if (TracksStateManager::isMasterTrack(track))
                     continue;
                 const auto &mixerChannel = tracksManager.getMixerChannelProcessorForTrack(track);
                 if (auto *processorWrapper = project.getProcessorWrapperForState(mixerChannel)) {

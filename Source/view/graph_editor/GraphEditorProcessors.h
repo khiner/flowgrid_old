@@ -26,7 +26,7 @@ public:
         freeObjects();
     }
 
-    bool isMasterTrack() const { return parent.hasProperty(IDs::isMasterTrack); }
+    bool isMasterTrack() const { return TracksStateManager::isMasterTrack(parent); }
 
     int getNumAvailableSlots() const { return tracksManager.getNumAvailableSlotsForTrack(parent); }
 

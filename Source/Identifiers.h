@@ -18,12 +18,10 @@ namespace IDs
 
     DECLARE_ID(PROJECT)
     DECLARE_ID(uuid)
-    DECLARE_ID(mediaId)
 
     DECLARE_ID(TRACK)
     DECLARE_ID(colour)
     DECLARE_ID(name)
-    DECLARE_ID(image)
     DECLARE_ID(selected)
     DECLARE_ID(isMasterTrack)
     DECLARE_ID(selectedSlotsMask)

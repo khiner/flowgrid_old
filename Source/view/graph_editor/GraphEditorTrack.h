@@ -50,7 +50,7 @@ public:
 
     const ValueTree& getState() const { return state; }
 
-    bool isMasterTrack() const { return state.hasProperty(IDs::isMasterTrack); }
+    bool isMasterTrack() const { return TracksStateManager::isMasterTrack(state); }
 
     int getTrackIndex() const { return state.getParent().indexOf(state); }
 

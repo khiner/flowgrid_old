@@ -7,8 +7,11 @@
 #include "ValueTreeItems.h"
 #include "state_managers/ViewStateManager.h"
 #include "processors/ProcessorManager.h"
+#include "StateManager.h"
 
-class TracksStateManager : private ValueTree::Listener {
+class TracksStateManager :
+        public StateManager,
+        private ValueTree::Listener {
 public:
     struct TrackAndSlot {
         TrackAndSlot() : slot(0) {};
@@ -44,7 +47,36 @@ public:
         tracks.setProperty(IDs::name, "Tracks", nullptr);
     }
 
-    ValueTree& getState() { return tracks; }
+    void loadFromState(const ValueTree& state) override {
+        Utilities::moveAllChildren(state, getState(), nullptr);
+
+        // Re-save all non-string value types,
+        // since type information is not saved in XML
+        // Also, re-set some vars just to trigger the event (like selected slot mask)
+        for (auto track : tracks) {
+            if (track.hasProperty(IDs::isMasterTrack)) {
+                resetVarToBool(track, IDs::isMasterTrack, this);
+            }
+            if (track.hasProperty(IDs::selectedSlotsMask)) {
+                resetVarToString(track, IDs::selectedSlotsMask, this);
+            }
+            resetVarToBool(track, IDs::selected, this);
+            for (auto processor : track) {
+                if (processor.hasType(IDs::PROCESSOR)) {
+                    resetVarToInt(processor, IDs::processorSlot, this);
+                    resetVarToInt(processor, IDs::nodeId, this);
+                    resetVarToInt(processor, IDs::processorInitialized, this);
+                    resetVarToBool(processor, IDs::bypassed, this);
+                    resetVarToBool(processor, IDs::acceptsMidi, this);
+                    resetVarToBool(processor, IDs::producesMidi, this);
+                    resetVarToBool(processor, IDs::allowDefaultConnections, this);
+                }
+            }
+        }
+    }
+
+    ValueTree& getState() override { return tracks; }
+
     int getNumTracks() const { return tracks.getNumChildren(); }
     int indexOf(const ValueTree& track) const { return tracks.indexOf(track); }
 
@@ -97,6 +129,10 @@ public:
                 return track;
         }
         return {};
+    }
+
+    static inline bool isMasterTrack(const ValueTree& track) {
+        return track.hasProperty(IDs::isMasterTrack);
     }
 
     inline bool isTrackSelected(const ValueTree& track) const {
@@ -211,7 +247,7 @@ public:
             return;
 
         if (newSlot >= getMixerChannelSlotForTrack(track) && !isMixerChannelProcessor(processor)) {
-            if (track.hasProperty(IDs::isMasterTrack)) {
+            if (isMasterTrack(track)) {
                 addMasterProcessorSlot();
             } else {
                 addProcessorRow();
@@ -283,7 +319,7 @@ public:
         if (description.name == MixerChannelProcessor::name() && getMixerChannelProcessorForTrack(track).isValid())
             return {}; // only one mixer channel per track
 
-        if (processorManager.isGeneratorOrInstrument(&description) &&
+        if (ProcessorManager::isGeneratorOrInstrument(&description) &&
             processorManager.doesTrackAlreadyHaveGeneratorOrInstrument(track)) {
             return createAndAddProcessor(description, createAndAddTrack(undoManager, false, track), undoManager, slot);
         }
@@ -374,7 +410,7 @@ public:
 
     bool canDuplicateSelected() const {
         const auto& selectedTrack = getSelectedTrack();
-        if (selectedTrack[IDs::selected] && !selectedTrack.hasProperty(IDs::isMasterTrack))
+        if (selectedTrack[IDs::selected] && !isMasterTrack(selectedTrack))
             return true;
         const auto& selectedProcessor = getSelectedProcessor();
         return selectedProcessor.isValid() && !isMixerChannelProcessor(selectedProcessor);
@@ -398,7 +434,7 @@ public:
         if (!item.isValid())
             return;
         if (item.getParent().isValid()) {
-            if (item.hasType(IDs::TRACK) && !item.hasProperty(IDs::isMasterTrack)) {
+            if (item.hasType(IDs::TRACK) && !isMasterTrack(item)) {
                 auto copiedTrack = createAndAddTrack(undoManager, false, item, true);
                 for (auto processor : item) {
                     saveProcessorStateInformationToState(processor);
@@ -532,7 +568,7 @@ private:
     int trackWidth {0}, processorHeight {0};
 
     Point<int> trackAndSlotToGridPosition(const TrackAndSlot& trackAndSlot) const {
-        if (trackAndSlot.track.hasProperty(IDs::isMasterTrack))
+        if (isMasterTrack(trackAndSlot.track))
             return {trackAndSlot.slot + viewManager.getGridViewTrackOffset() - viewManager.getMasterViewSlotOffset(),
                     viewManager.getNumTrackProcessorSlots()};
         else
@@ -603,7 +639,7 @@ private:
     void addProcessorRow() {
         viewManager.addProcessorRow(&undoManager);
         for (const auto& track : tracks) {
-            if (track.hasProperty(IDs::isMasterTrack))
+            if (isMasterTrack(track))
                 continue;
             auto mixerChannelProcessor = getMixerChannelProcessorForTrack(track);
             if (mixerChannelProcessor.isValid()) {
@@ -754,15 +790,15 @@ private:
 
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {
         if (tree.hasType(IDs::TRACK) && i == IDs::selected && tree[i]) {
-            if (!tree.hasProperty(IDs::isMasterTrack))
+            if (!isMasterTrack(tree))
                 viewManager.updateViewTrackOffsetToInclude(indexOf(tree), getNumNonMasterTracks());
             selectAllTrackSlots(tree);
         } else if (i == IDs::selectedSlotsMask) {
-            if (!tree.hasProperty(IDs::isMasterTrack))
+            if (!isMasterTrack(tree))
                 viewManager.updateViewTrackOffsetToInclude(indexOf(tree), getNumNonMasterTracks());
             auto slot = findSelectedSlotForTrack(tree);
             if (slot != -1)
-                viewManager.updateViewSlotOffsetToInclude(slot, tree.hasProperty(IDs::isMasterTrack));
+                viewManager.updateViewSlotOffsetToInclude(slot, isMasterTrack(tree));
         } else if (i == IDs::processorSlot) {
             selectProcessor(tree);
         }
