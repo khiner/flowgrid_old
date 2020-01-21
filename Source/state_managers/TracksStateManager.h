@@ -192,17 +192,6 @@ public:
                isSlotSelected(processor.getParent(), processor[IDs::processorSlot]);
     }
 
-    void deselectAllTracksExcept(const ValueTree& except) {
-        for (auto track : tracks) {
-            if (track != except) {
-                if (track[IDs::selected])
-                    track.setProperty(IDs::selected, false, nullptr);
-                else
-                    track.sendPropertyChangeMessage(IDs::selected);
-            }
-        }
-    }
-
     void setTrackSelected(ValueTree& track, bool selected, bool deselectOthers=true) {
         selectionEndTrackAndSlot = std::make_unique<TrackAndSlot>(track);
         track.setProperty(IDs::selected, selected, nullptr);
@@ -210,19 +199,20 @@ public:
             selectRectangle(track, -1);
         } else {
             if (selected && deselectOthers) {
-                deselectAllTracksExcept(track);
-                if (!trackHasAnySlotSelected(track)) {
-                    auto slotToSelect = track.getNumChildren() > 0 ? int(track.getChild(0)[IDs::processorSlot]) : 0;
-                    selectProcessorSlot(track, slotToSelect, true);
+                for (auto otherTrack : tracks) {
+                    if (otherTrack != track) {
+                        deselectTrack(otherTrack);
+                    }
                 }
-            } else if (!selected) {
-                track.removeProperty(IDs::selectedSlotsMask, nullptr);
             }
         }
     }
 
     void deselectTrack(ValueTree& track) {
-        track.setProperty(IDs::selected, false, nullptr);
+        if (track[IDs::selected])
+            track.setProperty(IDs::selected, false, nullptr);
+        else
+            track.sendPropertyChangeMessage(IDs::selected);
     }
 
     void selectProcessor(const ValueTree& processor) {
@@ -589,7 +579,6 @@ private:
             for (auto otherTrack : tracks) {
                 if (otherTrack != track) {
                     otherTrack.setProperty(IDs::selected, false, nullptr);
-                    otherTrack.removeProperty(IDs::selectedSlotsMask, nullptr);
                 }
             }
         }
@@ -674,6 +663,10 @@ private:
         BigInteger selectedSlotsMask;
         selectedSlotsMask.setRange(0, viewManager.getNumAvailableSlotsForTrack(track), true);
         track.setProperty(IDs::selectedSlotsMask, selectedSlotsMask.toString(2), nullptr);
+    }
+
+    void deselectAllTrackSlots(ValueTree& track) {
+        track.removeProperty(IDs::selectedSlotsMask, nullptr);
     }
 
     TrackAndSlot findSelectionPaneItemToSelectWithLeftRightDelta(int delta) const {
@@ -787,10 +780,14 @@ private:
     void valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int) override {}
 
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {
-        if (tree.hasType(IDs::TRACK) && i == IDs::selected && tree[i]) {
-            if (!isMasterTrack(tree))
-                viewManager.updateViewTrackOffsetToInclude(indexOf(tree), getNumNonMasterTracks());
-            selectAllTrackSlots(tree);
+        if (tree.hasType(IDs::TRACK) && i == IDs::selected) {
+            if (tree[i]) {
+                if (!isMasterTrack(tree))
+                    viewManager.updateViewTrackOffsetToInclude(indexOf(tree), getNumNonMasterTracks());
+                selectAllTrackSlots(tree);
+            } else {
+                deselectAllTrackSlots(tree);
+            }
         } else if (i == IDs::selectedSlotsMask) {
             if (!isMasterTrack(tree))
                 viewManager.updateViewTrackOffsetToInclude(indexOf(tree), getNumNonMasterTracks());
