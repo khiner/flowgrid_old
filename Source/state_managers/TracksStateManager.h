@@ -575,23 +575,15 @@ private:
     }
 
     void setProcessorSlotSelected(ValueTree track, int slot, bool selected, bool deselectOthers=true) {
+        const auto currentSlotMask = getSlotMask(track);
         if (deselectOthers) {
-            for (auto otherTrack : tracks) {
-                if (otherTrack != track) {
-                    setTrackSelected(otherTrack, false, false);
-                }
+            for (auto anyTrack : tracks) { // also deselect this track!
+                setTrackSelected(anyTrack, false, false);
             }
         }
-        BigInteger selectedSlotsMask = getSlotMask(track);
-        const auto& previousSlotsMask = selectedSlotsMask.toString(2);
-        if (deselectOthers)
-            selectedSlotsMask.clear();
-        selectedSlotsMask.setBit(slot, selected);
-        const auto& newSlotsMask = selectedSlotsMask.toString(2);
-        if (newSlotsMask != previousSlotsMask)
-            track.setProperty(IDs::selectedSlotsMask, newSlotsMask, nullptr);
-        else
-            track.sendPropertyChangeMessage(IDs::selectedSlotsMask);
+        auto newSlotMask = deselectOthers ? BigInteger() : currentSlotMask;
+        newSlotMask.setBit(slot, selected);
+        track.setProperty(IDs::selectedSlotsMask, newSlotMask.toString(2), nullptr);
     }
 
     void selectRectangle(const ValueTree &track, int slot) {
