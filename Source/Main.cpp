@@ -30,7 +30,6 @@ public:
 
         setMacMainMenu(this);
         getCommandManager().registerAllCommandsForTarget(this);
-        undoManager.addChangeListener(this);
         startTimer(500);
 
         auto &lookAndFeel = LookAndFeel::getDefaultLookAndFeel();
@@ -151,7 +150,6 @@ public:
 
                 if (project.saveIfNeededAndUserAgrees() == FileBasedDocument::savedOk) {
                     project.loadFrom(recentFiles.getFile(menuItemID - 100), true);
-                    menuItemsChanged();
                 }
             }
         } else if (topLevelMenuIndex == 1) { // Edit menu
@@ -534,7 +532,8 @@ private:
     }
 
     void changeListenerCallback(ChangeBroadcaster* source) override {
-        if (source == &undoManager) {
+        if (source == &project) {
+            mainWindow->setName(project.getDocumentTitle());
             applicationCommandListChanged(); // TODO wasteful to refresh *all* items. is there a way to just change what we need?
         } else if (source == &deviceManager) {
             if (!push2MidiCommunicator.isInitialized() && MidiInput::getDevices().contains(push2MidiDeviceName, true)) {

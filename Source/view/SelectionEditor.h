@@ -34,6 +34,7 @@ public:
     }
 
     ~SelectionEditor() override {
+        tracksManager.removeProcessorLifecycleListener(this);
         project.getState().removeListener(this);
     }
 

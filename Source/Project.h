@@ -240,8 +240,9 @@ public:
         Utilities::moveAllChildren(newState.getChildWithName(IDs::OUTPUT), output, nullptr);
         tracksManager.loadFromState(newState.getChildWithName(IDs::TRACKS));
         connectionsManager.loadFromState(newState.getChildWithName(IDs::CONNECTIONS));
-
         undoManager.clearUndoHistory();
+        sendChangeMessage();
+
         return Result::ok();
     }
 
