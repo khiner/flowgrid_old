@@ -182,7 +182,7 @@ private:
         }
     }
 
-    void valueTreeChildWillBeMovedToNewParent(ValueTree child, const ValueTree& oldParent, int oldIndex, const ValueTree& newParent, int newIndex) override {
+    void valueTreeChildWillBeMovedToNewParent(ValueTree child, ValueTree& oldParent, int oldIndex, ValueTree& newParent, int newIndex) override {
         if (child.hasType(IDs::PROCESSOR)) {
             auto *fromTrack = getTrackForState(oldParent);
             auto *toTrack = getTrackForState(newParent);
@@ -192,7 +192,7 @@ private:
         }
     }
 
-    void valueTreeChildHasMovedToNewParent(ValueTree child, const ValueTree& oldParent, int oldIndex, const ValueTree& newParent, int newIndex) override {
+    void valueTreeChildHasMovedToNewParent(ValueTree child, ValueTree& oldParent, int oldIndex, ValueTree& newParent, int newIndex) override {
         if (child.hasType(IDs::PROCESSOR)) {
             auto *fromTrack = getTrackForState(oldParent);
             auto *toTrack = getTrackForState(newParent);

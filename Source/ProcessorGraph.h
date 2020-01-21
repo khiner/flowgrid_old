@@ -590,12 +590,12 @@ private:
 
     void valueTreeRedirected(ValueTree& treeWhichHasBeenChanged) override {}
 
-    void valueTreeChildWillBeMovedToNewParent(ValueTree child, const ValueTree& oldParent, int oldIndex, const ValueTree& newParent, int newIndex) override {
+    void valueTreeChildWillBeMovedToNewParent(ValueTree child, ValueTree& oldParent, int oldIndex, ValueTree& newParent, int newIndex) override {
         if (child.hasType(IDs::PROCESSOR))
             isMoving = true;
     }
 
-    void valueTreeChildHasMovedToNewParent(ValueTree child, const ValueTree& oldParent, int oldIndex, const ValueTree& newParent, int newIndex) override {
+    void valueTreeChildHasMovedToNewParent(ValueTree child, ValueTree& oldParent, int oldIndex, ValueTree& newParent, int newIndex) override {
         if (child.hasType(IDs::PROCESSOR))
             isMoving = false;
     }

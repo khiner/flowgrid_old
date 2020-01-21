@@ -789,6 +789,13 @@ private:
         }
     }
 
+    void valueTreeChildHasMovedToNewParent(ValueTree child, ValueTree& oldParent, int oldIndex, ValueTree& newParent, int newIndex) override {
+        if (child.hasType(IDs::PROCESSOR)) {
+            deselectProcessorSlot(oldParent, child[IDs::processorSlot]);
+            selectProcessor(child);
+        }
+    }
+
     void valueTreeChildOrderChanged(ValueTree &tree, int, int) override {}
     void valueTreeParentChanged(ValueTree &) override {}
     void valueTreeRedirected(ValueTree &) override {}
