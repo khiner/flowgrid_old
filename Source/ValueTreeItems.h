@@ -77,10 +77,3 @@ private:
 
     JUCE_DECLARE_NON_COPYABLE (ProcessorLifecycleBroadcaster)
 };
-
-namespace Helpers {
-    inline void moveSingleItem(ValueTree &item, ValueTree newParent, int insertIndex, UndoManager *undoManager) {
-        newParent.moveChildFromParent(item.getParent(), item.getParent().indexOf(item), insertIndex, undoManager);
-    }
-}
-

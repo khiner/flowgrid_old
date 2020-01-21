@@ -454,7 +454,7 @@ public:
     }
 
     void moveProcessor(ValueTree &processorState, int toTrackIndex, int toSlot, UndoManager *undoManager) {
-        const auto &toTrack = getTrack(toTrackIndex);
+        auto toTrack = getTrack(toTrackIndex);
         int fromSlot = processorState[IDs::processorSlot];
         if (fromSlot == toSlot && processorState.getParent() == toTrack)
             return;
@@ -462,7 +462,7 @@ public:
         setProcessorSlot(processorState.getParent(), processorState, toSlot, undoManager);
 
         const int insertIndex = getParentIndexForProcessor(toTrack, processorState, undoManager);
-        Helpers::moveSingleItem(processorState, toTrack, insertIndex, undoManager);
+        toTrack.moveChildFromParent(processorState.getParent(), processorState.getParent().indexOf(processorState), insertIndex, undoManager);
 
         makeSlotsValid(toTrack, undoManager);
     }
