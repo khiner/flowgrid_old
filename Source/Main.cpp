@@ -219,6 +219,7 @@ public:
             case CommandIDs::save:
                 result.setInfo("Save", "Saves the current project", category, 0);
                 result.defaultKeypresses.add(KeyPress('s', ModifierKeys::commandModifier, 0));
+                result.setActive(project.hasChangedSinceSaved());
                 break;
             case CommandIDs::saveAs:
                 result.setInfo("Save As...", "Saves a copy of the current project", category, 0);
