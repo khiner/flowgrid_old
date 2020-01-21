@@ -288,10 +288,10 @@ public:
         track.setProperty(IDs::colour, (nextToTrack.isValid() && !addMixer) ? nextToTrack[IDs::colour].toString() : Colour::fromHSV((1.0f / 8.0f) * numTracks, 0.65f, 0.65f, 1.0f).toString(), nullptr);
         tracks.addChild(track, nextToTrack.isValid() ? nextToTrack.getParent().indexOf(nextToTrack) + (addMixer || forceImmediatelyToRight ? 1 : 0): numTracks, undoManager);
 
-        track.setProperty(IDs::selected, true, undoManager);
-
         if (addMixer)
             createAndAddProcessor(MixerChannelProcessor::getPluginDescription(), track, undoManager, -1);
+
+        track.setProperty(IDs::selected, true, undoManager);
 
         return track;
     }
