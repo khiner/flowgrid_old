@@ -15,7 +15,4 @@ public:
     static void resetVarToBool(ValueTree& tree, const Identifier& id, ValueTree::Listener* listenerToExclude) {
         tree.setPropertyExcludingListener(listenerToExclude, id, bool(tree.getProperty(id)), nullptr);
     };
-    static void resetVarToString(ValueTree& tree, const Identifier& id, ValueTree::Listener* listenerToExclude) {
-        tree.setPropertyExcludingListener(listenerToExclude, id, tree.getProperty(id).toString(), nullptr);
-    };
 };

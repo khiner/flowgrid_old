@@ -57,7 +57,7 @@ public:
                 resetVarToBool(track, IDs::isMasterTrack, this);
             }
             if (track.hasProperty(IDs::selectedSlotsMask)) {
-                resetVarToString(track, IDs::selectedSlotsMask, this);
+                track.sendPropertyChangeMessage(IDs::selectedSlotsMask);
             }
             resetVarToBool(track, IDs::selected, this);
             for (auto processor : track) {
