@@ -388,11 +388,6 @@ private:
         if (!processor.hasType(IDs::PROCESSOR) || !isProcessorAProducer(processor, connectionType))
             return {};
 
-        // If a non-effect (another producer) is under this processor in the same track, and no effect processors
-        // to the right have a lower slot, block this producer's output by the other producer,
-        // effectively replacing it.
-        ValueTree blockingProcessor;
-
         int siblingDelta = 0;
         ValueTree otherTrack;
         while ((otherTrack = track.getSibling(siblingDelta++)).isValid()) {
@@ -401,18 +396,15 @@ private:
                 bool isOtherProcessorBelow = int(otherProcessor[IDs::processorSlot]) > int(processor[IDs::processorSlot]) ||
                                              (track != otherTrack && TracksStateManager::isMasterTrack(otherTrack));
                 if (!isOtherProcessorBelow) continue;
-                if (canProcessorDefaultConnectTo(processor, otherProcessor, connectionType) &&
-                    (!blockingProcessor.isValid() || int(otherProcessor[IDs::processorSlot]) <= int(blockingProcessor[IDs::processorSlot]))) {
+                if (canProcessorDefaultConnectTo(processor, otherProcessor, connectionType) ||
+                    // If a non-effect (another producer) is under this processor in the same track, and no effect processors
+                    // to the right have a lower slot, block this producer's output by the other producer,
+                    // effectively replacing it.
+                    track == otherTrack) {
                     return otherProcessor;
-                } else if (track == otherTrack) {
-                    blockingProcessor = otherProcessor;
-                    break;
                 }
             }
         }
-
-        if (blockingProcessor.isValid())
-            return blockingProcessor;
 
         return project.getAudioOutputProcessorState();
     }
