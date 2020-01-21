@@ -7,13 +7,13 @@
 class ContextPane :
         public Component,
         private ValueTree::Listener,
-        private ProjectChangeListener {
+        private ProcessorLifecycleListener {
 public:
     explicit ContextPane(Project &project)
             : project(project), tracksManager(project.getTracksManager()),
               viewManager(project.getViewStateManager()) {
         this->project.getState().addListener(this);
-        this->project.addProjectChangeListener(this);
+        this->project.addProcessorLifecycleListener(this);
     }
 
     ~ContextPane() override {
@@ -123,9 +123,6 @@ private:
 
     void processorCreated(const ValueTree& processor) override {
         updateGridCellColours();
-    };
-
-    void processorWillBeDestroyed(const ValueTree& processor) override {
     };
 
     void processorHasBeenDestroyed(const ValueTree& processor) override {

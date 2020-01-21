@@ -12,7 +12,7 @@
 #include "state_managers/ConnectionsStateManager.h"
 #include "state_managers/ViewStateManager.h"
 
-class Project : public FileBasedDocument, public ProjectChangeBroadcaster, public StatefulAudioProcessorContainer,
+class Project : public FileBasedDocument, public ProcessorLifecycleBroadcaster, public StatefulAudioProcessorContainer,
                 private ChangeListener, private ValueTree::Listener {
 public:
     Project(UndoManager &undoManager, ProcessorManager& processorManager, AudioDeviceManager& deviceManager)

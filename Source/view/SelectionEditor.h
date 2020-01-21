@@ -11,14 +11,14 @@ class SelectionEditor : public Component,
                         public DragAndDropContainer,
                         private Button::Listener,
                         private ValueTree::Listener,
-                        private ProjectChangeListener {
+                        private ProcessorLifecycleListener {
 public:
     SelectionEditor(Project& project, ProcessorGraph &audioGraphBuilder)
             : project(project), tracksManager(project.getTracksManager()),
               viewManager(project.getViewStateManager()),
               audioGraphBuilder(audioGraphBuilder), contextPane(project) {
         this->project.getState().addListener(this);
-        this->project.addProjectChangeListener(this);
+        this->project.addProcessorLifecycleListener(this);
 
         addAndMakeVisible(addProcessorButton);
         addAndMakeVisible(processorEditorsViewport);
@@ -135,9 +135,6 @@ private:
     void processorCreated(const ValueTree& processor) override {
         assignProcessorToEditor(processor);
         resized();
-    };
-
-    void processorWillBeDestroyed(const ValueTree& processor) override {
     };
 
     void processorHasBeenDestroyed(const ValueTree& processor) override {

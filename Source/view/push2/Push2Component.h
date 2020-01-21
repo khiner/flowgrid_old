@@ -15,7 +15,7 @@ class Push2Component :
         public Timer,
         public Push2ComponentBase,
         private ChangeListener,
-        private ProjectChangeListener,
+        private ProcessorLifecycleListener,
         private Utilities::ValueTreePropertyChangeListener {
 public:
     explicit Push2Component(Project &project, Push2MidiCommunicator &push2MidiCommunicator, ProcessorGraph &audioGraphBuilder)
@@ -29,7 +29,7 @@ public:
         addChildComponent(mixerView);
 
         this->project.getState().addListener(this);
-        this->project.addProjectChangeListener(this);
+        this->project.addProcessorLifecycleListener(this);
         this->project.getUndoManager().addChangeListener(this);
 
         setBounds(0, 0, Push2Display::WIDTH, Push2Display::HEIGHT);
@@ -255,9 +255,6 @@ private:
 
     void processorCreated(const ValueTree& processor) override {
         updatePush2SelectionDependentButtons();
-    };
-
-    void processorWillBeDestroyed(const ValueTree& processor) override {
     };
 
     void processorHasBeenDestroyed(const ValueTree& processor) override {

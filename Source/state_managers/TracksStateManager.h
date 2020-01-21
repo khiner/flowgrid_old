@@ -37,10 +37,10 @@ public:
     };
 
     TracksStateManager(ViewStateManager& viewManager, StatefulAudioProcessorContainer& audioProcessorContainer,
-                 ProjectChangeBroadcaster& projectChangeBroadcaster, ProcessorManager& processorManager,
-                 UndoManager& undoManager)
+                       ProcessorLifecycleBroadcaster& processorLifecycleBroadcaster, ProcessorManager& processorManager,
+                       UndoManager& undoManager)
             : viewManager(viewManager), audioProcessorContainer(audioProcessorContainer),
-              projectChangeBroadcaster(projectChangeBroadcaster), processorManager(processorManager),
+              processorLifecycleBroadcaster(processorLifecycleBroadcaster), processorManager(processorManager),
               undoManager(undoManager) {
         tracks = ValueTree(IDs::TRACKS);
         tracks.addListener(this);
@@ -475,11 +475,11 @@ public:
                 while (item.getNumChildren() > 0)
                     deleteTrackOrProcessor(item.getChild(item.getNumChildren() - 1), undoManager);
             } else if (item.hasType(IDs::PROCESSOR)) {
-                projectChangeBroadcaster.sendProcessorWillBeDestroyedMessage(item);
+                processorLifecycleBroadcaster.sendProcessorWillBeDestroyedMessage(item);
             }
             item.getParent().removeChild(item, undoManager);
             if (item.hasType(IDs::PROCESSOR)) {
-                projectChangeBroadcaster.sendProcessorHasBeenDestroyedMessage(item);
+                processorLifecycleBroadcaster.sendProcessorHasBeenDestroyedMessage(item);
             }
         }
     }
@@ -558,7 +558,7 @@ private:
     ValueTree tracks;
     ViewStateManager& viewManager;
     StatefulAudioProcessorContainer& audioProcessorContainer;
-    ProjectChangeBroadcaster& projectChangeBroadcaster;
+    ProcessorLifecycleBroadcaster& processorLifecycleBroadcaster;
     ProcessorManager &processorManager;
     UndoManager &undoManager;
 
@@ -633,7 +633,7 @@ private:
         track.addChild(processor, insertIndex, undoManager);
         makeSlotsValid(track, undoManager);
         selectProcessor(processor);
-        projectChangeBroadcaster.sendProcessorCreatedMessage(processor);
+        processorLifecycleBroadcaster.sendProcessorCreatedMessage(processor);
     }
 
     void addProcessorRow() {

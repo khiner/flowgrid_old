@@ -6,7 +6,7 @@
 #include "BasicWindow.h"
 #include "DeviceChangeMonitor.h"
 
-class SoundMachineApplication : public JUCEApplication, public MenuBarModel, private ChangeListener, private Timer, private ProjectChangeListener, private Utilities::ValueTreePropertyChangeListener {
+class SoundMachineApplication : public JUCEApplication, public MenuBarModel, private ChangeListener, private Timer, private ProcessorLifecycleListener, private Utilities::ValueTreePropertyChangeListener {
 public:
     SoundMachineApplication() : project(undoManager, processorManager, deviceManager),
                                 tracksManager(project.getTracksManager()),

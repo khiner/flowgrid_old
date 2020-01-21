@@ -6,20 +6,20 @@
 
 class ValueTreeItem;
 
-class ProjectChangeListener {
+class ProcessorLifecycleListener {
 public:
     virtual void processorCreated(const ValueTree&) {};
     virtual void processorWillBeDestroyed(const ValueTree &) {};
     virtual void processorHasBeenDestroyed(const ValueTree &) {};
-    virtual ~ProjectChangeListener() = default;
+    virtual ~ProcessorLifecycleListener() = default;
 };
 
 // Adapted from JUCE::ChangeBroadcaster to support messaging specific changes to the project.
-class ProjectChangeBroadcaster {
+class ProcessorLifecycleBroadcaster {
 public:
-    ProjectChangeBroadcaster() = default;
+    ProcessorLifecycleBroadcaster() = default;
 
-    virtual ~ProjectChangeBroadcaster() = default;
+    virtual ~ProcessorLifecycleBroadcaster() = default;
 
     /*
      * Only the ProcessorGraph should directly respond to childAdded events for processors!
@@ -32,50 +32,50 @@ public:
     /** Registers a listener to receive change callbacks from this broadcaster.
         Trying to add a listener that's already on the list will have no effect.
     */
-    void addProjectChangeListener(ProjectChangeListener *listener) {
+    void addProcessorLifecycleListener(ProcessorLifecycleListener *listener) {
         // Listeners can only be safely added when the event thread is locked
         // You can  use a MessageManagerLock if you need to call this from another thread.
         jassert(MessageManager::getInstance()->currentThreadHasLockedMessageManager());
 
-        changeListeners.add(listener);
+        listeners.add(listener);
     }
 
     /** Unregisters a listener from the list.
         If the listener isn't on the list, this won't have any effect.
     */
-    void removeProjectChangeListener(ProjectChangeListener *listener) {
+    void removeProcessorLifecycleListener(ProcessorLifecycleListener *listener) {
         // Listeners can only be safely removed when the event thread is locked
         // You can  use a MessageManagerLock if you need to call this from another thread.
         jassert(MessageManager::getInstance()->currentThreadHasLockedMessageManager());
 
-        changeListeners.remove(listener);
+        listeners.remove(listener);
     }
 
     virtual void sendProcessorCreatedMessage(const ValueTree& item) {
         if (MessageManager::getInstance()->isThisTheMessageThread()) {
-            changeListeners.call(&ProjectChangeListener::processorCreated, item);
+            listeners.call(&ProcessorLifecycleListener::processorCreated, item);
         } else {
             MessageManager::callAsync([this, item] {
-                changeListeners.call(&ProjectChangeListener::processorCreated, item);
+                listeners.call(&ProcessorLifecycleListener::processorCreated, item);
             });
         }
     }
 
     // The following four methods _cannot_ be called async!
     // They assume ordering of "willBeThinged -> thing -> hasThinged".
-    virtual void sendProcessorWillBeDestroyedMessage(ValueTree item) {
+    virtual void sendProcessorWillBeDestroyedMessage(const ValueTree& item) {
         jassert(MessageManager::getInstance()->isThisTheMessageThread());
-        changeListeners.call(&ProjectChangeListener::processorWillBeDestroyed, item);
+        listeners.call(&ProcessorLifecycleListener::processorWillBeDestroyed, item);
     }
 
-    virtual void sendProcessorHasBeenDestroyedMessage(ValueTree item) {
+    virtual void sendProcessorHasBeenDestroyedMessage(const ValueTree& item) {
         jassert(MessageManager::getInstance()->isThisTheMessageThread());
-        changeListeners.call(&ProjectChangeListener::processorHasBeenDestroyed, item);
+        listeners.call(&ProcessorLifecycleListener::processorHasBeenDestroyed, item);
     }
 private:
-    ListenerList <ProjectChangeListener> changeListeners;
+    ListenerList <ProcessorLifecycleListener> listeners;
 
-    JUCE_DECLARE_NON_COPYABLE (ProjectChangeBroadcaster)
+    JUCE_DECLARE_NON_COPYABLE (ProcessorLifecycleBroadcaster)
 };
 
 namespace Helpers {

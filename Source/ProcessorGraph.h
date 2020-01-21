@@ -12,7 +12,7 @@
 #include "push2/Push2MidiCommunicator.h"
 
 class ProcessorGraph : public AudioProcessorGraph, public StatefulAudioProcessorContainer, private ValueTree::Listener,
-                       private ProjectChangeListener, private Timer {
+                       private ProcessorLifecycleListener, private Timer {
 public:
     explicit ProcessorGraph(Project &project, ConnectionsStateManager& connectionsManager,
                             UndoManager &undoManager, AudioDeviceManager& deviceManager,
@@ -23,13 +23,13 @@ public:
         enableAllBuses();
 
         project.getState().addListener(this);
-        this->project.addProjectChangeListener(this);
+        this->project.addProcessorLifecycleListener(this);
         project.setStatefulAudioProcessorContainer(this);
     }
 
     ~ProcessorGraph() override {
         project.setStatefulAudioProcessorContainer(nullptr);
-        this->project.removeProjectChangeListener(this);
+        this->project.removeProcessorLifecycleListener(this);
         project.getState().removeListener(this);
     }
 
@@ -612,7 +612,7 @@ private:
     }
 
     /*
-     * The following ProjectChanged methods take care of things that could be done
+     * The following ProcessorLifecycle methods take care of things that could be done
      * inside of the ValueTreeChanged methods above. They are here because they
      * create further undoable actions as side-effects and we must avoid recursive
      * undoable actions.
