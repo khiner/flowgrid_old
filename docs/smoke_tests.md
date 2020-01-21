@@ -7,6 +7,35 @@ It is an evolving set of cases representing a subset of application behavior ver
 
 For example, to see the verified functionality for release `0.0.1`, check out the `0.0.1` tag and view the contents of this file.
 
+## Saving and loading projects
+
+* Open the app and selecting File->New loads the default project
+  - The main window title is "Untitled"
+  - The File->Save menu item is disabled, but 'Save As ...' is enabled
+  - Make an undoable change (say moving a processor or changing a param value)
+  - The File->Save menu item is enabled now
+  - Undo
+  - The File->Save menu item is disabled, but 'Save As ...' is enabled
+  - Closing the app should not prompt to save changes
+* In another new project, make an undoable change
+  - Closing the app prompts with _Do you want to save changes to "Untitled"?_
+  - Clicking 'Cancel' cancels
+  - Closing the app again and selecting 'Discard changes' closes the app
+  - Do the same in a new project, but select 'Save' in the prompt
+    * Save file browser opens in the most recently navigated directory (the project directory)
+    * Save the project with any (unique) name, and project should close
+  - Starting the app again loads the saved project
+  - Make another undoable change, and select File->Open Recent Project
+    * Recent project list shows the loaded project file path as the topmost list item
+    * Selecting the project opens the _Do you want to save changes_ prompt
+    * Select 'Save' in the prompt, and the project re-loads with the change (it should look the exact same)
+  - Make another undoable change, and select File->Open
+    * _Do you want to save changes_ prompt appears
+    * Select 'Discard changes', and the project file selector shows
+    * Select the same project, and it loads
+  - Dragging and dropping a project file into the main app window prompts to save changes if there are any,
+    and loads the dragged project
+
 ## Audio and MIDI IO device settings
 
 * Loading application for the first time (no `<VALUE name="audioDeviceState">` tag in `~/Library/Preferences/sound-machine.settings`)
