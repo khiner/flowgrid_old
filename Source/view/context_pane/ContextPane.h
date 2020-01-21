@@ -13,7 +13,7 @@ public:
             : project(project), tracksManager(project.getTracksManager()),
               viewManager(project.getViewStateManager()) {
         this->project.getState().addListener(this);
-        this->project.addProcessorLifecycleListener(this);
+        tracksManager.addProcessorLifecycleListener(this);
     }
 
     ~ContextPane() override {

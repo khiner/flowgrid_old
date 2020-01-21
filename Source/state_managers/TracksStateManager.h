@@ -11,6 +11,7 @@
 
 class TracksStateManager :
         public StateManager,
+        public ProcessorLifecycleBroadcaster,
         private ValueTree::Listener {
 public:
     struct TrackAndSlot {
@@ -37,11 +38,9 @@ public:
     };
 
     TracksStateManager(ViewStateManager& viewManager, StatefulAudioProcessorContainer& audioProcessorContainer,
-                       ProcessorLifecycleBroadcaster& processorLifecycleBroadcaster, ProcessorManager& processorManager,
-                       UndoManager& undoManager)
+                       ProcessorManager& processorManager, UndoManager& undoManager)
             : viewManager(viewManager), audioProcessorContainer(audioProcessorContainer),
-              processorLifecycleBroadcaster(processorLifecycleBroadcaster), processorManager(processorManager),
-              undoManager(undoManager) {
+              processorManager(processorManager), undoManager(undoManager) {
         tracks = ValueTree(IDs::TRACKS);
         tracks.addListener(this);
         tracks.setProperty(IDs::name, "Tracks", nullptr);
@@ -475,11 +474,11 @@ public:
                 while (item.getNumChildren() > 0)
                     deleteTrackOrProcessor(item.getChild(item.getNumChildren() - 1), undoManager);
             } else if (item.hasType(IDs::PROCESSOR)) {
-                processorLifecycleBroadcaster.sendProcessorWillBeDestroyedMessage(item);
+                sendProcessorWillBeDestroyedMessage(item);
             }
             item.getParent().removeChild(item, undoManager);
             if (item.hasType(IDs::PROCESSOR)) {
-                processorLifecycleBroadcaster.sendProcessorHasBeenDestroyedMessage(item);
+                sendProcessorHasBeenDestroyedMessage(item);
             }
         }
     }
@@ -558,7 +557,6 @@ private:
     ValueTree tracks;
     ViewStateManager& viewManager;
     StatefulAudioProcessorContainer& audioProcessorContainer;
-    ProcessorLifecycleBroadcaster& processorLifecycleBroadcaster;
     ProcessorManager &processorManager;
     UndoManager &undoManager;
 
@@ -633,7 +631,7 @@ private:
         track.addChild(processor, insertIndex, undoManager);
         makeSlotsValid(track, undoManager);
         selectProcessor(processor);
-        processorLifecycleBroadcaster.sendProcessorCreatedMessage(processor);
+        sendProcessorCreatedMessage(processor);
     }
 
     void addProcessorRow() {

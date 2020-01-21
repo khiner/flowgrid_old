@@ -12,13 +12,13 @@
 #include "state_managers/ConnectionsStateManager.h"
 #include "state_managers/ViewStateManager.h"
 
-class Project : public FileBasedDocument, public ProcessorLifecycleBroadcaster, public StatefulAudioProcessorContainer,
+class Project : public FileBasedDocument, public StatefulAudioProcessorContainer,
                 private ChangeListener, private ValueTree::Listener {
 public:
     Project(UndoManager &undoManager, ProcessorManager& processorManager, AudioDeviceManager& deviceManager)
             : FileBasedDocument(getFilenameSuffix(), "*" + getFilenameSuffix(), "Load a project", "Save project"),
               processorManager(processorManager),
-              tracksManager(viewManager, *this, *this, processorManager, undoManager), connectionsManager(*this),
+              tracksManager(viewManager, *this, processorManager, undoManager), connectionsManager(*this),
               undoManager(undoManager), deviceManager(deviceManager) {
         state = ValueTree(IDs::PROJECT);
         state.setProperty(IDs::name, "My First Project", nullptr);

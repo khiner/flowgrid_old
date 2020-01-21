@@ -29,8 +29,8 @@ public:
         addChildComponent(mixerView);
 
         this->project.getState().addListener(this);
-        this->project.addProcessorLifecycleListener(this);
         this->project.getUndoManager().addChangeListener(this);
+        tracksManager.addProcessorLifecycleListener(this);
 
         setBounds(0, 0, Push2Display::WIDTH, Push2Display::HEIGHT);
         const auto &r = getLocalBounds();

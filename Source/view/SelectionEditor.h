@@ -18,7 +18,7 @@ public:
               viewManager(project.getViewStateManager()),
               audioGraphBuilder(audioGraphBuilder), contextPane(project) {
         this->project.getState().addListener(this);
-        this->project.addProcessorLifecycleListener(this);
+        tracksManager.addProcessorLifecycleListener(this);
 
         addAndMakeVisible(addProcessorButton);
         addAndMakeVisible(processorEditorsViewport);

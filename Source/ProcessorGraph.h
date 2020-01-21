@@ -23,13 +23,13 @@ public:
         enableAllBuses();
 
         project.getState().addListener(this);
-        this->project.addProcessorLifecycleListener(this);
         project.setStatefulAudioProcessorContainer(this);
+        tracksManager.addProcessorLifecycleListener(this);
     }
 
     ~ProcessorGraph() override {
         project.setStatefulAudioProcessorContainer(nullptr);
-        this->project.removeProcessorLifecycleListener(this);
+        tracksManager.removeProcessorLifecycleListener(this);
         project.getState().removeListener(this);
     }
 
