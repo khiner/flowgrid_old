@@ -726,11 +726,11 @@ private:
 
     Array<ValueTree> findAllSelectedItems() const {
         Array<ValueTree> items;
-        for (auto track : tracks) {
+        for (const auto& track : tracks) {
             if (track[IDs::selected]) {
                 items.add(track);
             } else {
-                for (auto processor : track) {
+                for (const auto& processor : track) {
                     if (isProcessorSelected(processor)) {
                         items.add(processor);
                     }
@@ -752,7 +752,7 @@ private:
 
     // NOTE: assumes the track hasn't been added yet!
     const String makeTrackNameUnique(const String& trackName) {
-        for (auto track : tracks) {
+        for (const auto& track : tracks) {
             String otherTrackName = track[IDs::name];
             if (otherTrackName == trackName) {
                 if (trackName.contains("-")) {
@@ -768,8 +768,6 @@ private:
 
         return trackName;
     }
-
-    void valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int) override {}
 
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {
         if (tree.hasType(IDs::TRACK) && i == IDs::selected) {
