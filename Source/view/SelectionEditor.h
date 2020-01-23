@@ -142,11 +142,8 @@ private:
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {
         if (i == IDs::focusedTrackIndex) {
             addProcessorButton.setVisible(tracksManager.getFocusedTrack().isValid());
-        } else if (i == IDs::focusedProcessorSlot) {
+        } else if (i == IDs::focusedProcessorSlot || i == IDs::processorInitialized) {
             refreshProcessors(); // TODO wasteful - make method to just update selected/focused
-        } else if (i == IDs::processorInitialized) {
-            assignProcessorToEditor(tree);
-            resized();
         } else if (i == IDs::numProcessorSlots || i == IDs::numMasterProcessorSlots) {
             int numProcessorSlots = jmax(int(tree[IDs::numProcessorSlots]), int(tree[IDs::numMasterProcessorSlots]));
             while (processorEditors.size() < numProcessorSlots) {
@@ -160,8 +157,6 @@ private:
         } else if (i == IDs::focusedPane) {
             unfocusOverlay.setVisible(viewManager.isGridPaneFocused());
             unfocusOverlay.toFront(false);
-        } else if (i == IDs::processorInitialized) {
-            refreshProcessors();
         }
     }
 
