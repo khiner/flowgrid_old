@@ -76,3 +76,70 @@ For example, to see the verified functionality for release `0.0.1`, check out th
   - Pressing a pad in session-mode does not send note data to destination processor
 * When midi output pin of "Push 2 Live Port" input device is disconnected from its destination
   - Push 2 enters session-mode and pad lights turn off
+
+
+## Selection behavior
+
+### Single-select
+
+For an empty track:
+  * Selecting an empty processor slot:
+    - Colors the slot with the track color
+    - Highlights the rest of the slots in the track to be brighter
+    - Similarly updates the cell colors in the lower-right grid context pane
+    - Updates Push 2 view:
+      * Bottom-row track label for the track of the selected empty slot is highlighted with track color
+      * Bottom-row track buttons are track colors, with the selected track button white
+      * Top row says "No processors" in track color
+    - Only shows "Add processor" button in right-pane editor
+  * Selecting the empty track label
+    - Removes selection from all other tracks
+    - Brightens the track label color
+    - Selects all the track slots
+    - Has the same Push 2/right-pane behavior as above
+
+For a track with processors:
+  * Selecting an empty processor slot has the same behavior as the empty track case above, except:
+    - Push 2 view shows track processor names in the right order with no processor labels highlighted
+      (with no white top-row Push 2 buttons - all are track's color),
+      and all processor editors in the right-pane editor are the same deselected color
+    - Any default external input connections into a previously selected effect processor are removed
+      (TODO should reconsider this - say you're recording vocals and you select an empty slot in the same track above
+      the vocal processor. You're probably trying to add another preprocessor effect.)
+  * Selecting a slot with a processor:
+    - Sets only the selected processor slot with the track color
+    - Highlights the rest of the slots in the track to be brighter
+    - Similarly updates the cell colors in the lower-right grid context pane
+    - Updates Push 2 view:
+      * Bottom-row track label for the track of the selected processor is highlighted with track color
+      * Bottom-row track buttons are track colors, with the selected track button white
+      * Top row shows ordered processor labels for all processors in the track, with selected processor label highlighted
+      * Top row Push 2 buttons are all track's color, with the button above the selected processor white
+      * Shows a param under each Push 2 knob, with label, control view and value
+      * Push 2 knobs control params appropriately
+    - Highlights the processor in the right-pane editor
+    - Selecting a processor that either can receive default input from external audio/midi,
+      OR is connected to such an upstream processor in the graph, connects the topmost processor in the chain to the
+      appropriate external input
+  * Selecting the track label:
+    - Behaves the same as the empty track case, plus:
+    - Focuses the topmost processor (or focuses on an empty slot in the track if it has no processors)
+
+### Multi-select
+
+* For all multiselect cases:
+  - The last-clicked track/slot is the one that becomes _focused_
+    (Push 2/right-pane editor/default-connection establishment all work the same as above)
+  - Mouse-down on one of multiple selected tracks/processors (beginning a drag) changes the _focus_,
+    but doesn't change track/slot _selection_
+
+* Selecting a track or processor, then holding shift, and selecting another track or processor:
+  - Selects all tracks/slots in a rectangle beginning with the first selection and ending with the second selection
+  - Continuing to hold shift and selecting a different cell updates the end selection point
+  - Releasing and re-holding shift keeps the start-selection point (TODO not the case right now!)
+
+* Holding Command while selecting:
+  - Adds individual tracks/slots to the selection group if they are not already selected
+  - Removes tracks/slots from the selection group if they are already selected
+  - Deselecting a track/processor does _not_ change the current focus - only the selection group
+    (even when deselecting the last selected item)
