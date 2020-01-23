@@ -165,16 +165,6 @@ public:
         return findProcessorAtSlot(track, trackAndSlot.y);
     }
 
-    inline BigInteger getSlotMask(const ValueTree& track) const {
-        BigInteger selectedSlotsMask;
-        selectedSlotsMask.parseString(track[IDs::selectedSlotsMask].toString(), 2);
-        return selectedSlotsMask;
-    }
-
-    inline bool isSlotSelected(const ValueTree& track, int slot) const {
-        return getSlotMask(track)[slot];
-    }
-
     inline bool isProcessorSelected(const ValueTree& processor) const {
         return processor.hasType(IDs::PROCESSOR) &&
                isSlotSelected(processor.getParent(), processor[IDs::processorSlot]);
@@ -217,14 +207,8 @@ public:
         return track.getChildWithProperty(IDs::processorSlot, slot);
     }
 
-    void selectProcessorSlot(const ValueTree& track, int slot, bool deselectOthers=true) {
-        selectionEndTrackAndSlot = std::make_unique<TrackAndSlot>(track, slot);
-        if (selectionStartTrackAndSlot != nullptr) { // shift+select
-            selectRectangle(track, slot);
-        } else {
-            setProcessorSlotSelected(track, slot, true, deselectOthers);
-        }
-        focusOnProcessorSlot(track, slot);
+    bool isSlotSelected(const ValueTree& track, int slot) const {
+        return getSlotMask(track)[slot];
     }
 
     // Focuses on whatever is in this slot (including nothing).
@@ -236,6 +220,16 @@ public:
             slot = firstProcessor.isValid() ? int(firstProcessor[IDs::processorSlot]) : 0;
         }
         viewManager.focusOnProcessorSlot(track, slot);
+    }
+
+    void selectProcessorSlot(const ValueTree& track, int slot, bool deselectOthers=true) {
+        selectionEndTrackAndSlot = std::make_unique<TrackAndSlot>(track, slot);
+        if (selectionStartTrackAndSlot != nullptr) { // shift+select
+            selectRectangle(track, slot);
+        } else {
+            setProcessorSlotSelected(track, slot, true, deselectOthers);
+        }
+        focusOnProcessorSlot(track, slot);
     }
 
     void deselectProcessorSlot(const ValueTree& track, int slot) {
@@ -587,18 +581,6 @@ private:
                          viewManager.getNumTrackProcessorSlots() - 1)};
     }
 
-    void setProcessorSlotSelected(ValueTree track, int slot, bool selected, bool deselectOthers=true) {
-        const auto currentSlotMask = getSlotMask(track);
-        if (deselectOthers) {
-            for (auto anyTrack : tracks) { // also deselect this track!
-                setTrackSelected(anyTrack, false, false);
-            }
-        }
-        auto newSlotMask = deselectOthers ? BigInteger() : currentSlotMask;
-        newSlotMask.setBit(slot, selected);
-        track.setProperty(IDs::selectedSlotsMask, newSlotMask.toString(2), nullptr);
-    }
-
     void selectRectangle(const ValueTree &track, int slot) {
         const auto trackIndex = indexOf(track);
         const auto selectionStartTrackIndex = indexOf(selectionStartTrackAndSlot->track);
@@ -664,6 +646,24 @@ private:
             Point<int> focusedTrackAndSlot = viewManager.getFocusedTrackAndSlot();
             return {getTrack(focusedTrackAndSlot.x), focusedTrackAndSlot.y};
         }
+    }
+
+    BigInteger getSlotMask(const ValueTree& track) const {
+        BigInteger selectedSlotsMask;
+        selectedSlotsMask.parseString(track[IDs::selectedSlotsMask].toString(), 2);
+        return selectedSlotsMask;
+    }
+
+    void setProcessorSlotSelected(ValueTree track, int slot, bool selected, bool deselectOthers=true) {
+        const auto currentSlotMask = getSlotMask(track);
+        if (deselectOthers) {
+            for (auto anyTrack : tracks) { // also deselect this track!
+                setTrackSelected(anyTrack, false, false);
+            }
+        }
+        auto newSlotMask = deselectOthers ? BigInteger() : currentSlotMask;
+        newSlotMask.setBit(slot, selected);
+        track.setProperty(IDs::selectedSlotsMask, newSlotMask.toString(2), nullptr);
     }
 
     void selectAllTrackSlots(ValueTree& track) {
