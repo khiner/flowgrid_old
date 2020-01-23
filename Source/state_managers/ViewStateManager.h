@@ -17,10 +17,13 @@ public:
     }
 
     void initializeDefault() {
-        viewState.setProperty(IDs::controlMode, noteControlMode, nullptr);
-        viewState.setProperty(IDs::focusedPane, editorPaneName, nullptr);
-        viewState.setProperty(IDs::numProcessorSlots, 7, nullptr);
-        viewState.setProperty(IDs::numMasterProcessorSlots, 8, nullptr);
+        setNoteMode();
+        focusOnEditorPane();
+        focusOnProcessor({}, -1);
+        // - 3 to make room for: Input row, Output row, master track.
+        viewState.setProperty(IDs::numProcessorSlots, NUM_VISIBLE_PROCESSOR_SLOTS - 3, nullptr);
+        // the number of processors in the master track aligns with the number of tracks
+        viewState.setProperty(IDs::numMasterProcessorSlots, NUM_VISIBLE_TRACKS, nullptr);
         setGridViewTrackOffset(0);
         setGridViewSlotOffset(0);
         setMasterViewSlotOffset(0);
@@ -104,6 +107,12 @@ public:
             setGridViewSlotOffset(processorSlot);
     }
 
+    Point<int> getFocusedTrackAndSlot() const {
+        int trackIndex = viewState.hasProperty(IDs::focusedTrackIndex) ? int(viewState[IDs::focusedTrackIndex]) : 0;
+        int processorSlot = viewState.hasProperty(IDs::focusedProcessorSlot) ? int(viewState[IDs::focusedProcessorSlot]) : -1;
+        return {trackIndex, processorSlot};
+    }
+
     int getNumTrackProcessorSlots() const { return viewState[IDs::numProcessorSlots]; }
     int getNumMasterProcessorSlots() const { return viewState[IDs::numMasterProcessorSlots]; }
     int getGridViewTrackOffset() const { return viewState[IDs::gridViewTrackOffset]; }
@@ -118,6 +127,18 @@ public:
     void setSessionMode() { viewState.setProperty(IDs::controlMode, sessionControlMode, nullptr); }
     void focusOnGridPane() { viewState.setProperty(IDs::focusedPane, gridPaneName, nullptr); }
     void focusOnEditorPane() { viewState.setProperty(IDs::focusedPane, editorPaneName, nullptr); }
+
+    void focusOnProcessor(const ValueTree& track, const int processorSlot) {
+        const int trackIndex = track.isValid() ? track.getParent().indexOf(track) : 0;
+        viewState.setProperty(IDs::focusedTrackIndex, trackIndex, nullptr);
+        // Always send the change message since this can be called already after the node is added to the graph,
+        // but before the processor has completely initialized.
+        if (int(viewState[IDs::focusedProcessorSlot]) != processorSlot) {
+            viewState.setProperty(IDs::focusedProcessorSlot, processorSlot, nullptr);
+        } else {
+            viewState.sendPropertyChangeMessage(IDs::focusedProcessorSlot);
+        }
+    }
 
     void togglePaneFocus() {
         if (isGridPaneFocused())

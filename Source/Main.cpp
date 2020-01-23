@@ -250,8 +250,8 @@ public:
             case CommandIDs::addMixerChannel:
                 result.setInfo("Add mixer channel", String(), category, 0);
                 result.addDefaultKeypress('m', ModifierKeys::commandModifier);
-                result.setActive(tracksManager.getSelectedTrack().isValid() &&
-                                 !tracksManager.getMixerChannelProcessorForSelectedTrack().isValid());
+                result.setActive(tracksManager.getFocusedTrack().isValid() &&
+                                 !tracksManager.getMixerChannelProcessorForFocusedTrack().isValid());
                 break;
             case CommandIDs::duplicateSelected:
                 result.setInfo("Duplicate selected item(s)", String(), category, 0);
@@ -262,7 +262,7 @@ public:
                 result.setInfo("Delete selected item(s)", String(), category, 0);
                 result.addDefaultKeypress(KeyPress::deleteKey, ModifierKeys::noModifiers);
                 result.addDefaultKeypress(KeyPress::backspaceKey, ModifierKeys::noModifiers);
-                result.setActive(tracksManager.getSelectedTrack().isValid());
+                result.setActive(tracksManager.getFocusedTrack().isValid());
                 break;
             case CommandIDs::showPush2MirrorWindow:
                 result.setInfo("Open a window mirroring a Push 2 display", String(), category, 0);
@@ -565,7 +565,7 @@ private:
     }
 
     void valueTreePropertyChanged(ValueTree& child, const Identifier& i) override {
-        if ((child.hasType(IDs::TRACK) && i == IDs::selected && child[i]) || tracksManager.isProcessorSelected(child)) {
+        if ((child.hasType(IDs::TRACK) && i == IDs::selected) || i == IDs::focusedProcessorSlot) {
             applicationCommandListChanged(); // TODO same - wasteful
         }
     }

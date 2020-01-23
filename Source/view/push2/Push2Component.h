@@ -190,8 +190,8 @@ private:
     }
 
     void updatePush2SelectionDependentButtons() {
-        const auto &selectedTrack = tracksManager.getSelectedTrack();
-        if (selectedTrack.isValid()) {
+        const auto &focusedTrack = tracksManager.getFocusedTrack();
+        if (focusedTrack.isValid()) {
             push2.activateWhiteLedButton(Push2MidiCommunicator::delete_);
             push2.enableWhiteLedButton(Push2MidiCommunicator::addDevice);
         } else {
@@ -206,11 +206,11 @@ private:
 
         if (!tracksManager.getMasterTrack().isValid())
             push2.disableWhiteLedButton(Push2MidiCommunicator::master);
-        else if (selectedTrack != tracksManager.getMasterTrack())
+        else if (focusedTrack != tracksManager.getMasterTrack())
             push2.enableWhiteLedButton(Push2MidiCommunicator::master);
         else
             push2.activateWhiteLedButton(Push2MidiCommunicator::master);
-        push2NoteModePadLedManager.trackSelected(selectedTrack);
+        push2NoteModePadLedManager.trackSelected(focusedTrack);
 
         for (int direction : { Push2::upArrowDirection, Push2::downArrowDirection, Push2::leftArrowDirection, Push2::rightArrowDirection }) {
             if (isVisible() && currentlyViewingChild != &processorSelector && canNavigateInDirection(direction))
@@ -262,11 +262,10 @@ private:
     };
 
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {
-        if ((i == IDs::selected && tree[IDs::selected]) || i == IDs::selectedSlotsMask) {
-            if (i == IDs::selectedSlotsMask) {
-                if (auto *processorWrapper = graph.getProcessorWrapperForState(tracksManager.getSelectedProcessor())) {
-                    selectProcessorIfNeeded(processorWrapper);
-                }
+        if ((i == IDs::selected && tree[IDs::selected]) || i == IDs::focusedProcessorSlot) {
+            if (i == IDs::focusedProcessorSlot) {
+                auto *processorWrapper = graph.getProcessorWrapperForState(tracksManager.getFocusedProcessor());
+                selectProcessorIfNeeded(processorWrapper);
             }
             updatePush2SelectionDependentButtons();
         } else if (i == IDs::controlMode) {
@@ -286,7 +285,7 @@ private:
     void valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int) override {
         if (child.hasType(IDs::TRACK)) {
             updatePush2SelectionDependentButtons();
-            if (!tracksManager.getSelectedTrack().isValid()) {
+            if (!tracksManager.getFocusedTrack().isValid()) {
                 selectChild(nullptr);
                 processorView.processorSelected(nullptr);
             }

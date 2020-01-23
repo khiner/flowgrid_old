@@ -37,7 +37,7 @@ public:
     }
 
     void updateEnabledPush2Buttons() override {
-        auto selectedTrack = tracksManager.getSelectedTrack();
+        auto focusedTrack = tracksManager.getFocusedTrack();
         for (auto* label : trackLabels) {
             label->setVisible(false);
         }
@@ -51,7 +51,7 @@ public:
             label->setVisible(true);
             label->setMainColour(tracksManager.getTrackColour(track));
             label->setText(track[IDs::name], dontSendNotification);
-            label->setSelected(track == selectedTrack);
+            label->setSelected(track == focusedTrack);
         }
     }
 

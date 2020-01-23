@@ -61,7 +61,8 @@ public:
         unfocusOverlay.setRectangle(processorEditorsViewport.getBounds().toFloat());
 
         r.removeFromRight(8);
-        processorEditorsComponent.setBounds(0, 0, r.getWidth(), PROCESSOR_EDITOR_HEIGHT * tracksManager.getSelectedTrack().getNumChildren());
+        processorEditorsComponent.setBounds(0, 0, r.getWidth(), PROCESSOR_EDITOR_HEIGHT *
+                tracksManager.getFocusedTrack().getNumChildren());
         r = processorEditorsComponent.getBounds();
         for (auto* editor : processorEditors) {
             if (editor->isVisible())
@@ -71,10 +72,10 @@ public:
 
     void buttonClicked(Button *b) override {
         if (b == &addProcessorButton) {
-            const auto& selectedTrack = tracksManager.getSelectedTrack();
-            if (selectedTrack.isValid()) {
+            const auto& focusedTrack = tracksManager.getFocusedTrack();
+            if (focusedTrack.isValid()) {
                 addProcessorMenu = std::make_unique<PopupMenu>();
-                project.addPluginsToMenu(*addProcessorMenu, selectedTrack);
+                project.addPluginsToMenu(*addProcessorMenu, focusedTrack);
                 addProcessorMenu->showMenuAsync({}, ModalCallbackFunction::create([this](int r) {
                     if (auto *description = project.getChosenType(r)) {
                         tracksManager.createAndAddProcessor(*description, &project.getUndoManager());
@@ -102,8 +103,8 @@ private:
     std::unique_ptr<PopupMenu> addProcessorMenu;
 
     void refreshProcessors(const ValueTree& singleProcessorToRefresh={}) {
-        const ValueTree &selectedTrack = tracksManager.getSelectedTrack();
-        if (!selectedTrack.isValid()) {
+        const ValueTree &focusedTrack = tracksManager.getFocusedTrack();
+        if (!focusedTrack.isValid()) {
             for (auto* editor : processorEditors) {
                 editor->setVisible(false);
                 editor->setProcessor(nullptr);
@@ -112,7 +113,7 @@ private:
             assignProcessorToEditor(singleProcessorToRefresh);
         } else {
             for (int processorSlot = 0; processorSlot < processorEditors.size(); processorSlot++) {
-                const auto &processor = TracksStateManager::findProcessorAtSlot(selectedTrack, processorSlot);
+                const auto &processor = TracksStateManager::findProcessorAtSlot(focusedTrack, processorSlot);
                 assignProcessorToEditor(processor, processorSlot);
             }
         }
@@ -126,6 +127,7 @@ private:
                 processorEditor->setProcessor(processorWrapper);
                 processorEditor->setVisible(true);
                 processorEditor->setSelected(tracksManager.isProcessorSelected(processor));
+                processorEditor->setFocused(tracksManager.isProcessorFocused(processor));
             }
         } else {
             processorEditor->setVisible(false);
@@ -149,8 +151,8 @@ private:
     }
 
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {
-        if (i == IDs::selected || i == IDs::selectedSlotsMask) {
-            addProcessorButton.setVisible(tracksManager.getSelectedTrack().isValid());
+        if (i == IDs::selected || i == IDs::selectedSlotsMask || i == IDs::focusedTrackIndex) {
+            addProcessorButton.setVisible(tracksManager.getFocusedTrack().isValid());
             refreshProcessors();
         } else if (i == IDs::numProcessorSlots || i == IDs::numMasterProcessorSlots) {
             int numProcessorSlots = jmax(int(tree[IDs::numProcessorSlots]), int(tree[IDs::numMasterProcessorSlots]));

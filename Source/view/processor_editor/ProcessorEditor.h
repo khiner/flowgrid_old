@@ -37,6 +37,10 @@ public:
         parametersPanel->setBackgroundColour(findColour(ResizableWindow::backgroundColourId).brighter(selected ? 0.3 : 0.1));
     }
 
+    void setFocused(bool focused) {
+        parametersPanel->setBackgroundColour(findColour(ResizableWindow::backgroundColourId).brighter(focused ? 0.6 : 0.1));
+    }
+
     const ValueTree getProcessorState() const {
         return parametersPanel->getProcessorState();
     }
@@ -60,7 +64,7 @@ public:
         parametersPanel->setBounds(r);
     }
 
-    void setProcessor(StatefulAudioProcessorWrapper *const processorWrapper) {
+    void setProcessor(StatefulAudioProcessorWrapper *processorWrapper) {
         if (processorWrapper != nullptr) {
             titleLabel.setText(processorWrapper->processor->getName());
         }

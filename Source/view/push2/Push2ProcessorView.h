@@ -56,13 +56,13 @@ public:
         }
     }
     
-    void processorSelected(StatefulAudioProcessorWrapper *const processorWrapper) {
+    void processorSelected(StatefulAudioProcessorWrapper *processorWrapper) {
         parametersPanel->setProcessorWrapper(processorWrapper);
         if (processorWrapper == nullptr) {
             updateEnabledPush2Buttons();
             return;
         }
-        auto processorIndex = processorWrapper->state.getParent().indexOf(processorWrapper->state);
+        const auto processorIndex = processorWrapper->state.getParent().indexOf(processorWrapper->state);
         bool hasPaged = false;
         while ((getButtonIndexForProcessorIndex(processorIndex)) <= 0 && canPageProcessorsLeft()) {
             pageProcessorsLeft();
@@ -134,8 +134,8 @@ private:
     }
 
     void updatePageButtonVisibility() {
-        const auto& selectedTrack = tracksManager.getSelectedTrack();
-        Colour trackColour = getColourForTrack(selectedTrack);
+        const auto& focusedTrack = tracksManager.getFocusedTrack();
+        Colour trackColour = getColourForTrack(focusedTrack);
 
         if (processorHasFocus) { // TODO reset when processor changes
             processorPageLeftButton.setVisible(false);
@@ -167,8 +167,8 @@ private:
     }
 
     void updateProcessorButtons() {
-        const auto& selectedTrack = tracksManager.getSelectedTrack();
-        if (processorHasFocus || !selectedTrack.isValid()) { // TODO reset when processor changes
+        const auto& focusedTrack = tracksManager.getFocusedTrack();
+        if (processorHasFocus || !focusedTrack.isValid()) { // TODO reset when processor changes
             for (auto* label : processorLabels)
                 label->setVisible(false);
         } else {
@@ -178,14 +178,14 @@ private:
                 if ((buttonIndex == 0 && canPageProcessorsLeft()) ||
                     (buttonIndex == NUM_COLUMNS - 1 && canPageProcessorsRight())) {
                     label->setVisible(false);
-                } else if (processorIndex < selectedTrack.getNumChildren()) {
-                    const auto &processor = selectedTrack.getChild(processorIndex);
+                } else if (processorIndex < focusedTrack.getNumChildren()) {
+                    const auto &processor = focusedTrack.getChild(processorIndex);
                     if (processor.hasType(IDs::PROCESSOR)) {
                         label->setVisible(true);
                         label->setText(processor[IDs::name], dontSendNotification);
-                        label->setSelected(tracksManager.isProcessorSelected(processor));
+                        label->setSelected(tracksManager.isProcessorFocused(processor));
                     }
-                } else if (buttonIndex == 0 && selectedTrack.getNumChildren() == 0) {
+                } else if (buttonIndex == 0 && focusedTrack.getNumChildren() == 0) {
                     label->setVisible(true);
                     label->setText("No processors", dontSendNotification);
                     label->setSelected(false);
@@ -202,9 +202,9 @@ private:
     }
 
     void updateColours() {
-        const auto& selectedTrack = tracksManager.getSelectedTrack();
-        if (selectedTrack.isValid()) {
-            const auto& colour = getColourForTrack(selectedTrack);
+        const auto& focusedTrack = tracksManager.getFocusedTrack();
+        if (focusedTrack.isValid()) {
+            const auto& colour = getColourForTrack(focusedTrack);
             for (auto *processorLabel : processorLabels) {
                 processorLabel->setMainColour(colour);
             }
@@ -243,14 +243,14 @@ private:
     }
 
     bool canPageProcessorsRight() const {
-        const auto& selectedTrack = tracksManager.getSelectedTrack();
-        return selectedTrack.getNumChildren() > processorLabelOffset + (canPageProcessorsLeft() ? NUM_COLUMNS - 1 : NUM_COLUMNS);
+        const auto& focusedTrack = tracksManager.getFocusedTrack();
+        return focusedTrack.getNumChildren() > processorLabelOffset + (canPageProcessorsLeft() ? NUM_COLUMNS - 1 : NUM_COLUMNS);
     }
 
     void selectProcessor(int processorIndex) {
-        const auto& selectedTrack = tracksManager.getSelectedTrack();
-        if (selectedTrack.isValid() && processorIndex < selectedTrack.getNumChildren()) {
-            tracksManager.selectProcessor(selectedTrack.getChild(processorIndex));
+        const auto& focusedTrack = tracksManager.getFocusedTrack();
+        if (focusedTrack.isValid() && processorIndex < focusedTrack.getNumChildren()) {
+            tracksManager.selectProcessor(focusedTrack.getChild(processorIndex));
         }
     }
 

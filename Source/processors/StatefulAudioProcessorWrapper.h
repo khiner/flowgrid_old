@@ -440,9 +440,9 @@ public:
         automatableParameters.clear(false);
     }
 
-    int getNumParameters() { return parameters.size(); }
+    int getNumParameters() const { return parameters.size(); }
 
-    int getNumAutomatableParameters() { return automatableParameters.size(); }
+    int getNumAutomatableParameters() const { return automatableParameters.size(); }
 
     Parameter *getParameter(int parameterIndex) { return parameters[parameterIndex]; }
 

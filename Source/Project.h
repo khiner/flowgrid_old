@@ -146,8 +146,9 @@ public:
         viewManager.initializeDefault();
         createAudioIoProcessors();
         ValueTree track = tracksManager.createAndAddTrack(nullptr);
-        tracksManager.createAndAddProcessor(SineBank::getPluginDescription(), track, nullptr, -1);
+        ValueTree processor = tracksManager.createAndAddProcessor(SineBank::getPluginDescription(), track, nullptr, -1);
         tracksManager.createAndAddMasterTrack(nullptr, true);
+        tracksManager.selectProcessor(processor);
     }
 
     void addPluginsToMenu(PopupMenu& menu, const ValueTree& track) const {
@@ -240,6 +241,7 @@ public:
         Utilities::moveAllChildren(newState.getChildWithName(IDs::OUTPUT), output, nullptr);
         tracksManager.loadFromState(newState.getChildWithName(IDs::TRACKS));
         connectionsManager.loadFromState(newState.getChildWithName(IDs::CONNECTIONS));
+        tracksManager.selectProcessor(tracksManager.getFocusedProcessor());
         undoManager.clearUndoHistory();
         sendChangeMessage();
 
@@ -375,7 +377,7 @@ private:
 
     void syncOutputDevicesWithDeviceManager() {
         Array<ValueTree> outputChildrenToDelete;
-        for (auto outputChild : output) {
+        for (const auto& outputChild : output) {
             if (outputChild.hasProperty(IDs::deviceName)) {
                 const String &deviceName = outputChild[IDs::deviceName];
                 if (!MidiOutput::getDevices().contains(deviceName) || !deviceManager.isMidiOutputEnabled(deviceName)) {

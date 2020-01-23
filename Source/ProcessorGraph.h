@@ -17,9 +17,9 @@ public:
     explicit ProcessorGraph(Project &project, ConnectionsStateManager& connectionsManager,
                             UndoManager &undoManager, AudioDeviceManager& deviceManager,
                             Push2MidiCommunicator& push2MidiCommunicator)
-            : undoManager(undoManager), project(project), tracksManager(project.getTracksManager()),
-              connectionsManager(connectionsManager), deviceManager(deviceManager),
-              push2MidiCommunicator(push2MidiCommunicator) {
+            : undoManager(undoManager), project(project), viewManager(project.getViewStateManager()),
+            tracksManager(project.getTracksManager()), connectionsManager(connectionsManager),
+            deviceManager(deviceManager), push2MidiCommunicator(push2MidiCommunicator) {
         enableAllBuses();
 
         project.getState().addListener(this);
@@ -215,6 +215,7 @@ private:
 
     Project &project;
     TracksStateManager &tracksManager;
+    ViewStateManager &viewManager;
 
     ConnectionsStateManager &connectionsManager;
     AudioDeviceManager &deviceManager;
@@ -227,8 +228,6 @@ private:
 
     bool isMoving { false };
     bool isDeleting { false };
-
-    ValueTree selectedProcessor {};
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ProcessorGraph)
 
@@ -314,6 +313,8 @@ private:
     void removeProcessor(const ValueTree &processor) {
         auto* processorWrapper = getProcessorWrapperForState(processor);
         jassert(processorWrapper);
+        const NodeID nodeId = getNodeIdForState(processor);
+
         // disconnect should have already been called before delete! (to avoid nested undo actions)
         if (processor[IDs::name] == MidiInputProcessor::name()) {
             if (auto *midiInputProcessor = dynamic_cast<MidiInputProcessor *>(processorWrapper->processor)) {
@@ -325,28 +326,29 @@ private:
                 }
             }
         }
-        processorWrapperForNodeId.erase(getNodeIdForState(processor));
-        nodes.removeObject(getNodeForId(getNodeIdForState(processor)));
+        processorWrapperForNodeId.erase(nodeId);
+        nodes.removeObject(getNodeForId(nodeId));
         topologyChanged();
     }
 
-    void resetDefaultExternalInputs(const ValueTree &selectedProcessor, UndoManager* undoManager) {
+    void resetDefaultExternalInputs(UndoManager* undoManager, bool addDefaultConnections=true) {
+        ValueTree focusedProcessor = addDefaultConnections ? tracksManager.getFocusedProcessor() : ValueTree();
         auto audioInputNodeId = getNodeIdForState(project.getAudioInputProcessorState());
         disconnectDefaultOutgoing(audioInputNodeId, audio, undoManager);
-        if (selectedProcessor.isValid())
-            addDefaultExternalInputConnections(selectedProcessor, audioInputNodeId, audio, undoManager);
+        if (focusedProcessor.isValid())
+            addDefaultExternalInputConnections(focusedProcessor, audioInputNodeId, audio, undoManager);
         for (const auto& midiInputProcessor : project.getInput()) {
             if (midiInputProcessor.getProperty(IDs::name) == MidiInputProcessor::name()) {
                 auto nodeId = getNodeIdForState(midiInputProcessor);
                 disconnectDefaultOutgoing(nodeId, midi, undoManager);
-                if (selectedProcessor.isValid())
-                    addDefaultExternalInputConnections(selectedProcessor, nodeId, midi, undoManager);
+                if (focusedProcessor.isValid())
+                    addDefaultExternalInputConnections(focusedProcessor, nodeId, midi, undoManager);
             }
         }
     }
 
     // Find the upper-right-most processor that flows into the selected processor
-    void addDefaultExternalInputConnections(const ValueTree &selectedProcessor,
+    void addDefaultExternalInputConnections(const ValueTree &focusedProcessor,
                                             NodeID externalSourceNodeId, ConnectionType connectionType,
                                             UndoManager* undoManager) {
         if (tracksManager.getNumTracks() == 0)
@@ -354,7 +356,7 @@ private:
 
         int lowestSlot = INT_MAX;
         NodeID upperRightMostProcessorNodeId = {};
-        NodeID selectedNodeId = getNodeIdForState(selectedProcessor);
+        NodeID focusedNodeId = getNodeIdForState(focusedProcessor);
         for (int i = tracksManager.getNumTracks() - 1; i >= 0; i--) {
             const auto& track = tracksManager.getTrack(i);
             if (track.getNumChildren() == 0)
@@ -365,7 +367,7 @@ private:
             int slot = firstProcessor[IDs::processorSlot];
             if (slot < lowestSlot &&
                 !connectionsManager.nodeHasIncomingConnections(firstProcessorNodeId, connectionType) &&
-                connectionsManager.areProcessorsConnected(firstProcessorNodeId, selectedNodeId)) {
+                connectionsManager.areProcessorsConnected(firstProcessorNodeId, focusedNodeId)) {
 
                 lowestSlot = firstProcessor[IDs::processorSlot];
                 upperRightMostProcessorNodeId = firstProcessorNodeId;
@@ -448,7 +450,7 @@ private:
                 updateDefaultConnectionsForProcessor(processor, false, makeInvalidDefaultsIntoCustom);
             }
         }
-        resetDefaultExternalInputs(selectedProcessor, getDragDependentUndoManager());
+        resetDefaultExternalInputs(getDragDependentUndoManager());
     }
     
     void updateDefaultConnectionsForProcessor(const ValueTree &processor, bool updateExternalInputs, bool makeInvalidDefaultsIntoCustom=false) {
@@ -492,7 +494,7 @@ private:
             }
         }
         if (updateExternalInputs) {
-            resetDefaultExternalInputs(selectedProcessor, getDragDependentUndoManager());
+            resetDefaultExternalInputs(getDragDependentUndoManager());
         }
     }
     
@@ -506,9 +508,8 @@ private:
                 updateDefaultConnectionsForProcessor(tree, true);
             }
         } else if (i == IDs::selectedSlotsMask) {
-            selectedProcessor = tracksManager.getSelectedProcessor();
             if (!isDeleting)
-                resetDefaultExternalInputs(selectedProcessor, nullptr);
+                resetDefaultExternalInputs(nullptr);
         }
     }
 
@@ -560,8 +561,6 @@ private:
                     activePluginWindows.remove(i);
                 }
             }
-            if (child == selectedProcessor && !isMoving)
-                selectedProcessor = {};
         } else if (child.hasType(IDs::CONNECTION)) {
             if (!currentlyDraggingNodeId.isValid()) {
                 const ValueTree &sourceState = child.getChildWithName(IDs::SOURCE);
@@ -615,7 +614,7 @@ private:
 
     void processorWillBeDestroyed(const ValueTree& processor) override {
         isDeleting = true;
-        resetDefaultExternalInputs({}, getDragDependentUndoManager());
+        resetDefaultExternalInputs(getDragDependentUndoManager(), false);
         ValueTree(processor).removeProperty(IDs::processorInitialized, nullptr);
         disconnectNode(getNodeIdForState(processor));
     };

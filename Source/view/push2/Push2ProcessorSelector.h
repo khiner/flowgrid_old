@@ -143,7 +143,7 @@ class Push2ProcessorSelector : public Push2ComponentBase {
         DrawableRectangle selectionRectangleOverlay;
 
         void updateLabels() {
-            const bool trackHasMixerAlready = tracksManager.selectedTrackHasMixerChannel();
+            const bool trackHasMixerAlready = tracksManager.focusedTrackHasMixerChannel();
 
             for (int i = 0; i < labels.size(); i++) {
                 Push2Label *label = labels.getUnchecked(i);
