@@ -29,7 +29,6 @@ public:
         deviceChangeMonitor = std::make_unique<DeviceChangeMonitor>(deviceManager);
 
         setMacMainMenu(this);
-        getCommandManager().registerAllCommandsForTarget(this);
         startTimer(500);
 
         auto &lookAndFeel = LookAndFeel::getDefaultLookAndFeel();
@@ -50,7 +49,6 @@ public:
         mainWindow->setBoundsRelative(0.02, 0.02, 0.96, 0.96);
 
         push2Component = std::make_unique<Push2Component>(project, push2MidiCommunicator, processorGraph);
-        push2Component->setVisible(true);
 
         push2MidiCommunicator.setPush2Listener(push2Component.get());
 
@@ -60,6 +58,9 @@ public:
         project.initialise(processorGraph);
         processorGraph.removeIllegalConnections();
         undoManager.clearUndoHistory();
+
+        getCommandManager().registerAllCommandsForTarget(this);
+        push2Component->setVisible(true);
     }
 
     void shutdown() override {

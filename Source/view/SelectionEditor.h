@@ -112,7 +112,7 @@ private:
             assignProcessorToEditor(singleProcessorToRefresh);
         } else {
             for (int processorSlot = 0; processorSlot < processorEditors.size(); processorSlot++) {
-                const auto &processor = selectedTrack.getChildWithProperty(IDs::processorSlot, processorSlot);
+                const auto &processor = TracksStateManager::findProcessorAtSlot(selectedTrack, processorSlot);
                 assignProcessorToEditor(processor, processorSlot);
             }
         }
@@ -149,7 +149,7 @@ private:
     }
 
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {
-        if ((i == IDs::selected) || i == IDs::selectedSlotsMask) {
+        if (i == IDs::selected || i == IDs::selectedSlotsMask) {
             addProcessorButton.setVisible(tracksManager.getSelectedTrack().isValid());
             refreshProcessors();
         } else if (i == IDs::numProcessorSlots || i == IDs::numMasterProcessorSlots) {

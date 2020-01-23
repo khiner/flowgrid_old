@@ -53,11 +53,12 @@ namespace IDs
     DECLARE_ID(VIEW_STATE)
     DECLARE_ID(controlMode)
     DECLARE_ID(focusedPane)
-    DECLARE_ID(gridViewTrackOffset)
+    DECLARE_ID(focusedProcessorNodeId)
     DECLARE_ID(gridViewSlotOffset)
-    DECLARE_ID(numProcessorSlots)
-    DECLARE_ID(numMasterProcessorSlots)
+    DECLARE_ID(gridViewTrackOffset)
     DECLARE_ID(masterViewSlotOffset)
+    DECLARE_ID(numMasterProcessorSlots)
+    DECLARE_ID(numProcessorSlots)
 
     #undef DECLARE_ID
 }

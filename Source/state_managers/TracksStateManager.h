@@ -219,6 +219,10 @@ public:
         selectProcessorSlot(processor.getParent(), processor[IDs::processorSlot], true);
     }
 
+    static ValueTree findProcessorAtSlot(const ValueTree& track, int slot) {
+        return track.getChildWithProperty(IDs::processorSlot, slot);
+    }
+
     void selectProcessorSlot(const ValueTree& track, int slot, bool deselectOthers=true) {
         selectionEndTrackAndSlot = std::make_unique<TrackAndSlot>(track, slot);
         if (selectionStartTrackAndSlot != nullptr) // shift+select
@@ -785,7 +789,7 @@ private:
             if (slot != -1)
                 viewManager.updateViewSlotOffsetToInclude(slot, isMasterTrack(tree));
         } else if (i == IDs::processorSlot) {
-            selectProcessor(tree);
+            selectProcessor(tree); // TODO we probably won't want to continue selecting any processor whose slot changes
         }
     }
 

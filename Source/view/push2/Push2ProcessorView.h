@@ -250,7 +250,7 @@ private:
     void selectProcessor(int processorIndex) {
         const auto& selectedTrack = tracksManager.getSelectedTrack();
         if (selectedTrack.isValid() && processorIndex < selectedTrack.getNumChildren()) {
-            selectedTrack.getChild(processorIndex).setProperty(IDs::selected, true, nullptr);
+            tracksManager.selectProcessor(selectedTrack.getChild(processorIndex));
         }
     }
 
