@@ -56,7 +56,7 @@ public:
         }
     }
     
-    void processorSelected(StatefulAudioProcessorWrapper *processorWrapper) {
+    void processorFocused(StatefulAudioProcessorWrapper *processorWrapper) {
         parametersPanel->setProcessorWrapper(processorWrapper);
         if (processorWrapper == nullptr) {
             updateEnabledPush2Buttons();

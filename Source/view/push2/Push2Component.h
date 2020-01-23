@@ -101,11 +101,11 @@ public:
     }
     
     void addDeviceButtonPressed() override {
-        selectChild(&processorSelector);
+        showChild(&processorSelector);
     }
 
     void mixButtonPressed() override {
-        selectChild(&mixerView);
+        showChild(&mixerView);
     }
 
     void masterButtonPressed() override {
@@ -234,14 +234,14 @@ private:
         push2NoteModePadLedManager.setVisible(isVisible() && viewManager.isInNoteMode() && project.isPush2MidiInputProcessorConnected());
     }
 
-    void selectProcessorIfNeeded(StatefulAudioProcessorWrapper* processorWrapper) {
+    void focusProcessorIfNeeded(StatefulAudioProcessorWrapper* processorWrapper) {
         if (currentlyViewingChild != &mixerView || !dynamic_cast<MixerChannelProcessor *>(processorWrapper->processor)) {
-            processorView.processorSelected(processorWrapper);
-            selectChild(&processorView);
+            processorView.processorFocused(processorWrapper);
+            showChild(&processorView);
         }
     }
 
-    void selectChild(Push2ComponentBase* child) {
+    void showChild(Push2ComponentBase* child) {
         if (currentlyViewingChild == child)
             return;
 
@@ -265,7 +265,7 @@ private:
         if ((i == IDs::selected && tree[IDs::selected]) || i == IDs::focusedProcessorSlot) {
             if (i == IDs::focusedProcessorSlot) {
                 auto *processorWrapper = graph.getProcessorWrapperForState(tracksManager.getFocusedProcessor());
-                selectProcessorIfNeeded(processorWrapper);
+                focusProcessorIfNeeded(processorWrapper);
             }
             updatePush2SelectionDependentButtons();
         } else if (i == IDs::controlMode) {
@@ -286,8 +286,8 @@ private:
         if (child.hasType(IDs::TRACK)) {
             updatePush2SelectionDependentButtons();
             if (!tracksManager.getFocusedTrack().isValid()) {
-                selectChild(nullptr);
-                processorView.processorSelected(nullptr);
+                showChild(nullptr);
+                processorView.processorFocused(nullptr);
             }
         } else if (child.hasType(IDs::CONNECTION)) {
             updatePush2NoteModePadLedManagerVisibility();
