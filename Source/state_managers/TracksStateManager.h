@@ -144,6 +144,8 @@ public:
         return getSlotMask(track).getHighestBit();
     }
 
+    // TODO many (if not all) of the usages of this method should be replaced
+    // with checking for track _focus_
     inline bool trackHasAnySlotSelected(const ValueTree &track) const {
         return findSelectedSlotForTrack(track) != -1;
     }
