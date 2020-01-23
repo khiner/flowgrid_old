@@ -45,7 +45,7 @@ public:
 
     AudioProcessorGraph::NodeID getNodeId() const {
         if (!state.isValid())
-            return ProcessorGraph::NA_NODE_ID;
+            return {};
         return ProcessorGraph::getNodeIdForState(state);
     }
 

@@ -5,8 +5,6 @@
 
 class StatefulAudioProcessorContainer {
 public:
-    const static AudioProcessorGraph::NodeID NA_NODE_ID;
-
     virtual ~StatefulAudioProcessorContainer() = default;
 
     virtual StatefulAudioProcessorWrapper *getProcessorWrapperForNodeId(AudioProcessorGraph::NodeID nodeId) const = 0;
@@ -23,9 +21,7 @@ public:
     }
 
     static inline const AudioProcessorGraph::NodeID getNodeIdForState(const ValueTree &processorState) {
-        return processorState.isValid() ? AudioProcessorGraph::NodeID(int(processorState[IDs::nodeId])) : NA_NODE_ID;
+        return processorState.isValid() ? AudioProcessorGraph::NodeID(int(processorState[IDs::nodeId])) : AudioProcessorGraph::NodeID{};
     }
 };
 
-// TODO this is bad
-const AudioProcessorGraph::NodeID StatefulAudioProcessorContainer::NA_NODE_ID = AudioProcessorGraph::NodeID{0};
