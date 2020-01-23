@@ -38,7 +38,11 @@ public:
         if (e.mods.isCommandDown() && isSlotSelected) {
             tracksManager.deselectProcessorSlot(parent, slot);
         } else if (!isSlotSelected) {
+            // selects and focuses
             tracksManager.selectProcessorSlot(parent, slot, !e.mods.isCommandDown());
+        } else {
+            // mouse-down on something already selected focuses
+            tracksManager.focusOnProcessorSlot(parent, slot);
         }
         if (e.mods.isPopupMenu() || e.getNumberOfClicks() == 2) {
             showPopupMenu(slot);

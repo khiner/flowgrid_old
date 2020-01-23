@@ -19,7 +19,7 @@ public:
     void initializeDefault() {
         setNoteMode();
         focusOnEditorPane();
-        focusOnProcessor({}, -1);
+        focusOnProcessorSlot({}, -1);
         // - 3 to make room for: Input row, Output row, master track.
         viewState.setProperty(IDs::numProcessorSlots, NUM_VISIBLE_PROCESSOR_SLOTS - 3, nullptr);
         // the number of processors in the master track aligns with the number of tracks
@@ -128,7 +128,7 @@ public:
     void focusOnGridPane() { viewState.setProperty(IDs::focusedPane, gridPaneName, nullptr); }
     void focusOnEditorPane() { viewState.setProperty(IDs::focusedPane, editorPaneName, nullptr); }
 
-    void focusOnProcessor(const ValueTree& track, const int processorSlot) {
+    void focusOnProcessorSlot(const ValueTree& track, const int processorSlot) {
         const int trackIndex = track.isValid() ? track.getParent().indexOf(track) : 0;
         viewState.setProperty(IDs::focusedTrackIndex, trackIndex, nullptr);
         // Always send the change message since this can be called already after the node is added to the graph,

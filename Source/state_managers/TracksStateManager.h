@@ -222,11 +222,18 @@ public:
         } else {
             setProcessorSlotSelected(track, slot, true, deselectOthers);
         }
-        // Directly selecting a processor slot focuses on whatever is there (including nothing).
-        // slot == -1 corresponds to selecting a track, and the state-listener takes care of focusing in that case.
-        if (slot >= 0) {
-            viewManager.focusOnProcessor(track, slot);
+        focusOnProcessorSlot(track, slot);
+    }
+
+    // Focuses on whatever is in this slot (including nothing).
+    // A slot of -1 means to focus on the track, which actually focuses on
+    // its first processor, if present, or its first slot (which is empty).
+    void focusOnProcessorSlot(const ValueTree& track, int slot) {
+        if (slot == -1) {
+            const ValueTree &firstProcessor = track.getChild(0);
+            slot = firstProcessor.isValid() ? int(firstProcessor[IDs::processorSlot]) : 0;
         }
+        viewManager.focusOnProcessorSlot(track, slot);
     }
 
     void deselectProcessorSlot(const ValueTree& track, int slot) {
@@ -786,8 +793,7 @@ private:
                 if (!isMasterTrack(tree))
                     viewManager.updateViewTrackOffsetToInclude(indexOf(tree), getNumNonMasterTracks());
                 selectAllTrackSlots(tree);
-                const ValueTree &firstProcessor = tree.getChild(0);
-                viewManager.focusOnProcessor(tree, firstProcessor.isValid() ? int(firstProcessor[IDs::processorSlot]) : 0);
+                focusOnProcessorSlot(tree, -1);
             } else {
                 deselectAllTrackSlots(tree);
             }
