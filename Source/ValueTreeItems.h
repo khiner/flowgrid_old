@@ -22,12 +22,8 @@ public:
     virtual ~ProcessorLifecycleBroadcaster() = default;
 
     /*
-     * Only the ProcessorGraph should directly respond to childAdded events for processors!
-     * Everyone else should use these application-level listener methods.
-     * This is because state listeners respond in an undetermined order,
-     * and we want to guarantee that nothing tries to interact with new processors
-     * until they're created in the audio graph.
-    */
+     * These processor lifecycle methods are here to avoid recursive undoable actions in the ProcessorGraph.
+     */
 
     /** Registers a listener to receive change callbacks from this broadcaster.
         Trying to add a listener that's already on the list will have no effect.

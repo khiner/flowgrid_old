@@ -26,9 +26,14 @@ public:
             addAndMakeVisible(masterTrackName);
         }
         nameLabel.addMouseListener(this, false);
-
         this->state.addListener(this);
         viewState.addListener(this);
+    }
+
+    ~GraphEditorTrack() override {
+        nameLabel.removeMouseListener(this);
+        viewState.removeListener(this);
+        this->state.removeListener(this);
     }
 
     void mouseDown(const MouseEvent &e) override {

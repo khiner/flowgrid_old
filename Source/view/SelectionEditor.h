@@ -10,15 +10,13 @@
 class SelectionEditor : public Component,
                         public DragAndDropContainer,
                         private Button::Listener,
-                        private ValueTree::Listener,
-                        private ProcessorLifecycleListener {
+                        private ValueTree::Listener {
 public:
     SelectionEditor(Project& project, ProcessorGraph &audioGraphBuilder)
             : project(project), tracksManager(project.getTracksManager()),
               viewManager(project.getViewStateManager()),
               audioGraphBuilder(audioGraphBuilder), contextPane(project) {
         this->project.getState().addListener(this);
-        tracksManager.addProcessorLifecycleListener(this);
 
         addAndMakeVisible(addProcessorButton);
         addAndMakeVisible(processorEditorsViewport);
@@ -34,7 +32,7 @@ public:
     }
 
     ~SelectionEditor() override {
-        tracksManager.removeProcessorLifecycleListener(this);
+        removeMouseListener(this);
         project.getState().removeListener(this);
     }
 
@@ -135,25 +133,20 @@ private:
         }
     }
 
-    void processorCreated(const ValueTree& processor) override {
-        assignProcessorToEditor(processor);
-        resized();
-    };
-
-    void processorHasBeenDestroyed(const ValueTree& processor) override {
-        refreshProcessors();
-    };
-
     void valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int) override {
-        if (child.hasType(IDs::TRACK)) {
+        if (child.hasType(IDs::TRACK) || child.hasType(IDs::PROCESSOR)) {
             refreshProcessors();
         }
     }
 
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {
-        if (i == IDs::selected || i == IDs::selectedSlotsMask || i == IDs::focusedTrackIndex) {
+        if (i == IDs::focusedTrackIndex) {
             addProcessorButton.setVisible(tracksManager.getFocusedTrack().isValid());
-            refreshProcessors();
+        } else if (i == IDs::focusedProcessorSlot) {
+            refreshProcessors(); // TODO wasteful - make method to just update selected/focused
+        } else if (i == IDs::processorInitialized) {
+            assignProcessorToEditor(tree);
+            resized();
         } else if (i == IDs::numProcessorSlots || i == IDs::numMasterProcessorSlots) {
             int numProcessorSlots = jmax(int(tree[IDs::numProcessorSlots]), int(tree[IDs::numMasterProcessorSlots]));
             while (processorEditors.size() < numProcessorSlots) {

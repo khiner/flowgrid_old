@@ -6,14 +6,12 @@
 
 class ContextPane :
         public Component,
-        private ValueTree::Listener,
-        private ProcessorLifecycleListener {
+        private ValueTree::Listener {
 public:
     explicit ContextPane(Project &project)
             : project(project), tracksManager(project.getTracksManager()),
               viewManager(project.getViewStateManager()) {
         this->project.getState().addListener(this);
-        tracksManager.addProcessorLifecycleListener(this);
     }
 
     ~ContextPane() override {
@@ -121,14 +119,6 @@ private:
         }
     }
 
-    void processorCreated(const ValueTree& processor) override {
-        updateGridCellColours();
-    };
-
-    void processorHasBeenDestroyed(const ValueTree& processor) override {
-        updateGridCellColours();
-    };
-
     void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override {
         if (child.hasType(IDs::TRACK)) {
             if (TracksStateManager::isMasterTrack(child)) {
@@ -142,6 +132,8 @@ private:
                 gridCells.add(newGridCellColumn);
             }
             resized();
+        } else if (child.hasType(IDs::PROCESSOR)) {
+            updateGridCellColours();
         }
     }
 
@@ -153,6 +145,8 @@ private:
                 gridCells.remove(index);
             }
             resized();
+            updateGridCellColours();
+        } else if (child.hasType(IDs::PROCESSOR)) {
             updateGridCellColours();
         }
     }

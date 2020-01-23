@@ -15,7 +15,6 @@ class Push2Component :
         public Timer,
         public Push2ComponentBase,
         private ChangeListener,
-        private ProcessorLifecycleListener,
         private Utilities::ValueTreePropertyChangeListener {
 public:
     explicit Push2Component(Project &project, Push2MidiCommunicator &push2MidiCommunicator, ProcessorGraph &audioGraphBuilder)
@@ -30,7 +29,6 @@ public:
 
         this->project.getState().addListener(this);
         this->project.getUndoManager().addChangeListener(this);
-        tracksManager.addProcessorLifecycleListener(this);
 
         setBounds(0, 0, Push2Display::WIDTH, Push2Display::HEIGHT);
         const auto &r = getLocalBounds();
@@ -234,9 +232,10 @@ private:
         push2NoteModePadLedManager.setVisible(isVisible() && viewManager.isInNoteMode() && project.isPush2MidiInputProcessorConnected());
     }
 
-    void focusProcessorIfNeeded(StatefulAudioProcessorWrapper* processorWrapper) {
-        if (currentlyViewingChild != &mixerView || !dynamic_cast<MixerChannelProcessor *>(processorWrapper->processor)) {
-            processorView.processorFocused(processorWrapper);
+    void updateFocusedProcessor() {
+        auto *focusedProcessorWrapper = graph.getProcessorWrapperForState(tracksManager.getFocusedProcessor());
+        if (currentlyViewingChild != &mixerView || !dynamic_cast<MixerChannelProcessor *>(focusedProcessorWrapper->processor)) {
+            processorView.processorFocused(focusedProcessorWrapper);
             showChild(&processorView);
         }
     }
@@ -253,21 +252,11 @@ private:
             currentlyViewingChild->setVisible(true);
     }
 
-    void processorCreated(const ValueTree& processor) override {
-        updatePush2SelectionDependentButtons();
-    };
-
-    void processorHasBeenDestroyed(const ValueTree& processor) override {
-        updatePush2SelectionDependentButtons();
-    };
-
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {
-        if ((i == IDs::selected && tree[IDs::selected]) || i == IDs::focusedProcessorSlot) {
-            if (i == IDs::focusedProcessorSlot) {
-                auto *processorWrapper = graph.getProcessorWrapperForState(tracksManager.getFocusedProcessor());
-                focusProcessorIfNeeded(processorWrapper);
-            }
+        if (i == IDs::focusedTrackIndex) {
             updatePush2SelectionDependentButtons();
+        } else if (i == IDs::focusedProcessorSlot || i == IDs::processorInitialized) {
+            updateFocusedProcessor();
         } else if (i == IDs::controlMode) {
             updateEnabledPush2Buttons();
             updatePush2NoteModePadLedManagerVisibility();
@@ -289,6 +278,9 @@ private:
                 showChild(nullptr);
                 processorView.processorFocused(nullptr);
             }
+        } else if (child.hasType(IDs::PROCESSOR)) {
+            updateFocusedProcessor();
+            updatePush2SelectionDependentButtons();
         } else if (child.hasType(IDs::CONNECTION)) {
             updatePush2NoteModePadLedManagerVisibility();
         }

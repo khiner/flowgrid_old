@@ -23,6 +23,7 @@ public:
     }
 
     ~GraphEditorPanel() override {
+        removeMouseListener(this);
         draggingConnector = nullptr;
     }
 
