@@ -23,6 +23,7 @@ public:
         enableAllBuses();
 
         project.getState().addListener(this);
+        viewManager.getState().addListener(this);
         project.setStatefulAudioProcessorContainer(this);
         tracksManager.addProcessorLifecycleListener(this);
     }
@@ -507,7 +508,7 @@ private:
             } else if (i == IDs::allowDefaultConnections) {
                 updateDefaultConnectionsForProcessor(tree, true);
             }
-        } else if (i == IDs::selectedSlotsMask) {
+        } else if (i == IDs::focusedProcessorSlot) {
             if (!isDeleting)
                 resetDefaultExternalInputs(nullptr);
         }
