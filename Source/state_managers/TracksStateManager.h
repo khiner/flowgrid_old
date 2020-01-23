@@ -56,9 +56,7 @@ public:
             if (track.hasProperty(IDs::isMasterTrack)) {
                 resetVarToBool(track, IDs::isMasterTrack, this);
             }
-            if (track.hasProperty(IDs::selectedSlotsMask)) {
-                track.sendPropertyChangeMessage(IDs::selectedSlotsMask);
-            }
+            track.sendPropertyChangeMessage(IDs::selectedSlotsMask);
             resetVarToBool(track, IDs::selected, this);
             for (auto processor : track) {
                 if (processor.hasType(IDs::PROCESSOR)) {
@@ -260,6 +258,8 @@ public:
         masterTrack.setProperty(IDs::isMasterTrack, true, nullptr);
         masterTrack.setProperty(IDs::name, "Master", nullptr);
         masterTrack.setProperty(IDs::colour, Colours::darkslateblue.toString(), nullptr);
+        deselectAllTrackSlots(masterTrack);
+
         tracks.addChild(masterTrack, -1, undoManager);
 
         if (addMixer)
@@ -291,6 +291,7 @@ public:
         track.setProperty(IDs::uuid, Uuid().toString(), nullptr);
         track.setProperty(IDs::name, (nextToTrack.isValid() && !addMixer) ? makeTrackNameUnique(nextToTrack[IDs::name]) : ("Track " + String(numTracks + 1)), nullptr);
         track.setProperty(IDs::colour, (nextToTrack.isValid() && !addMixer) ? nextToTrack[IDs::colour].toString() : Colour::fromHSV((1.0f / 8.0f) * numTracks, 0.65f, 0.65f, 1.0f).toString(), nullptr);
+
         tracks.addChild(track, nextToTrack.isValid() ? nextToTrack.getParent().indexOf(nextToTrack) + (addMixer || forceImmediatelyToRight ? 1 : 0): numTracks, undoManager);
 
         if (addMixer)
@@ -673,7 +674,8 @@ private:
     }
 
     void deselectAllTrackSlots(ValueTree& track) {
-        track.removeProperty(IDs::selectedSlotsMask, nullptr);
+        BigInteger selectedSlotsMask;
+        track.setProperty(IDs::selectedSlotsMask, selectedSlotsMask.toString(2), nullptr);
     }
 
     TrackAndSlot findSelectionPaneItemToSelectWithLeftRightDelta(int delta) const {
