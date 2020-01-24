@@ -415,8 +415,8 @@ public:
 
     void makeConnectionsSnapshot() {
         slotForNodeIdSnapshot.clear();
-        for (auto track : tracks) {
-            for (auto child : track) {
+        for (const auto& track : tracks) {
+            for (const auto& child : track) {
                 if (child.hasType(IDs::PROCESSOR)) {
                     slotForNodeIdSnapshot.insert(std::__1::pair<int, int>(child[IDs::nodeId], child[IDs::processorSlot]));
                 }
