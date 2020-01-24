@@ -12,7 +12,7 @@ public:
               viewState(project.getViewState()), connectorDragListener(connectorDragListener), graph(graph),
               processors(project, state, connectorDragListener, graph) {
         nameLabel.setJustificationType(Justification::centred);
-        nameLabel.setColour(Label::backgroundColourId, getColour());
+        updateLabelColour();
         addAndMakeVisible(nameLabel);
         addAndMakeVisible(processors);
         if (!isMasterTrack()) {
@@ -63,7 +63,10 @@ public:
 
     String getTrackName() const { return state[IDs::name].toString(); }
 
-    Colour getColour() const { return tracksManager.getTrackColour(state); }
+    Colour getColour() const {
+        const Colour &trackColour = tracksManager.getTrackColour(state);
+        return isSelected() ? trackColour.brighter(0.25) : trackColour;
+    }
 
     void setColour(const Colour& colour) { state.setProperty(IDs::colour, colour.toString(), &graph.undoManager); }
 
@@ -127,6 +130,10 @@ private:
     ProcessorGraph &graph;
     GraphEditorProcessors processors;
 
+    void updateLabelColour() {
+        nameLabel.setColour(Label::backgroundColourId, getColour());
+    }
+
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {
         if (i == IDs::gridViewSlotOffset || ((i == IDs::gridViewTrackOffset || i == IDs::masterViewSlotOffset) && isMasterTrack())) {
             resized();
@@ -138,7 +145,7 @@ private:
         if (i == IDs::name) {
             nameLabel.setText(tree[IDs::name].toString(), dontSendNotification);
         } else if (i == IDs::colour || i == IDs::selected) {
-            nameLabel.setColour(Label::backgroundColourId, isSelected() ? getColour().brighter(0.25) : getColour());
+            updateLabelColour();
         }
     }
 
