@@ -122,7 +122,6 @@ public:
             }
         } else if (auto* processor = dynamic_cast<GraphEditorProcessor *>(e.originalComponent)) {
             if (!e.mods.isRightButtonDown()) {
-                tracksManager.setCurrentlyDraggingProcessor(processor->getState());
                 graph.beginDraggingProcessor(processor->getState());
             }
         }
@@ -148,16 +147,15 @@ public:
         } else if (e.originalComponent == getProcessorForState(tracksManager.getCurrentlyDraggingProcessor()) && !e.mods.isRightButtonDown()) {
             const Point<int> &trackAndSlot = trackAndSlotAt(e);
             if (trackAndSlot.x != -1 && trackAndSlot.y != -1) {
-                graph.setProcessorPosition(tracksManager.getCurrentlyDraggingProcessor(), trackAndSlot);
+                graph.dragProcessorToPosition(trackAndSlot);
             }
         }
     }
 
     void mouseUp(const MouseEvent &e) override {
-        if (tracksManager.getCurrentlyDraggingProcessor().isValid())
-            graph.endDraggingProcessor(tracksManager.getCurrentlyDraggingProcessor());
         tracksManager.setCurrentlyDraggingTrack({});
-        tracksManager.setCurrentlyDraggingProcessor({});
+        if (tracksManager.getCurrentlyDraggingProcessor().isValid())
+            graph.endDraggingProcessor();
     }
 
 private:

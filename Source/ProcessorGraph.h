@@ -74,25 +74,22 @@ public:
     }
 
     void beginDraggingProcessor(const ValueTree& processor) {
-        if (auto* processorWrapper = getProcessorWrapperForState(processor)) {
-            if (processorWrapper->processor->getName() == MixerChannelProcessor::name())
-                // mixer channel processors are special processors.
-                // they could be dragged and reconnected like any old processor, but please don't :)
-                return;
-            currentlyDraggingProcessor = processor;
-            currentlyDraggingTrackAndSlot = {tracksManager.indexOf(processor.getParent()), processor[IDs::processorSlot]};
-            initialDraggingTrackAndSlot = currentlyDraggingTrackAndSlot;
-            project.makeConnectionsSnapshot();
-        }
+        if (processor[IDs::name] == MixerChannelProcessor::name())
+            // mixer channel processors are special processors.
+            // they could be dragged and reconnected like any old processor, but please don't :)
+            return;
+        tracksManager.setCurrentlyDraggingProcessor(processor);
+        currentlyDraggingTrackAndSlot = {tracksManager.indexOf(processor.getParent()), processor[IDs::processorSlot]};
+        initialDraggingTrackAndSlot = currentlyDraggingTrackAndSlot;
+        project.makeConnectionsSnapshot();
     }
 
-    void setProcessorPosition(ValueTree& processor, const Point<int> &trackAndSlot) {
-        if (processor.isValid()) {
-            if (currentlyDraggingTrackAndSlot != trackAndSlot &&
-                trackAndSlot.y < tracksManager.getMixerChannelSlotForTrack(tracksManager.getTrack(trackAndSlot.x))) {
-                currentlyDraggingTrackAndSlot = trackAndSlot;
+    void dragProcessorToPosition(const Point<int> &trackAndSlot) {
+        if (currentlyDraggingTrackAndSlot != trackAndSlot &&
+            trackAndSlot.y < tracksManager.getMixerChannelSlotForTrack(tracksManager.getTrack(trackAndSlot.x))) {
+            currentlyDraggingTrackAndSlot = trackAndSlot;
 
-                tracksManager.moveProcessor(processor, trackAndSlot.x, trackAndSlot.y, getDragDependentUndoManager());
+            if (tracksManager.moveProcessor(trackAndSlot.x, trackAndSlot.y, getDragDependentUndoManager())) {
                 if (currentlyDraggingTrackAndSlot == initialDraggingTrackAndSlot)
                     project.restoreConnectionsSnapshot();
                 else
@@ -101,14 +98,13 @@ public:
         }
     }
 
-    void endDraggingProcessor(ValueTree& processor) {
-        if (currentlyDraggingProcessor.isValid() && currentlyDraggingTrackAndSlot != initialDraggingTrackAndSlot) {
+    void endDraggingProcessor() {
+        if (tracksManager.getCurrentlyDraggingProcessor().isValid() && currentlyDraggingTrackAndSlot != initialDraggingTrackAndSlot) {
             // update the audio graph to match the current preview UI graph.
-            jassert(processor.isValid());
-            tracksManager.moveProcessor(processor, initialDraggingTrackAndSlot.x, initialDraggingTrackAndSlot.y, getDragDependentUndoManager());
+            tracksManager.moveProcessor(initialDraggingTrackAndSlot.x, initialDraggingTrackAndSlot.y, nullptr);
             project.restoreConnectionsSnapshot();
-            currentlyDraggingProcessor = {};
-            tracksManager.moveProcessor(processor, currentlyDraggingTrackAndSlot.x, currentlyDraggingTrackAndSlot.y, getDragDependentUndoManager());
+            tracksManager.moveProcessor(currentlyDraggingTrackAndSlot.x, currentlyDraggingTrackAndSlot.y, &undoManager);
+            tracksManager.setCurrentlyDraggingProcessor({});
             if (project.isShiftHeld()) {
                 project.setShiftHeld(false);
                 updateAllDefaultConnections(true);
@@ -117,7 +113,6 @@ public:
                 updateAllDefaultConnections();
             }
         }
-        currentlyDraggingProcessor = {};
     }
 
     bool canConnectUi(const Connection& c) const {
@@ -204,7 +199,6 @@ public:
 
     UndoManager &undoManager;
 private:
-    ValueTree currentlyDraggingProcessor = {};
     Point<int> currentlyDraggingTrackAndSlot;
     Point<int> initialDraggingTrackAndSlot;
 
@@ -229,7 +223,7 @@ private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ProcessorGraph)
 
     inline UndoManager* getDragDependentUndoManager() {
-        return !currentlyDraggingProcessor.isValid() ? &undoManager : nullptr;
+        return !tracksManager.getCurrentlyDraggingProcessor().isValid() ? &undoManager : nullptr;
     }
 
     bool checkedAddConnection(const Connection &c, bool isDefault, UndoManager* undoManager) {
@@ -551,13 +545,13 @@ private:
 
     void valueTreeChildAdded(ValueTree& parent, ValueTree& child) override {
         if (child.hasType(IDs::PROCESSOR)) {
-            if (!currentlyDraggingProcessor.isValid()) {
+            if (!tracksManager.getCurrentlyDraggingProcessor().isValid()) {
                 if (getProcessorWrapperForState(child) == nullptr) {
                     addProcessor(child);
                 }
             }
         } else if (child.hasType(IDs::CONNECTION)) {
-            if (!currentlyDraggingProcessor.isValid()) {
+            if (!tracksManager.getCurrentlyDraggingProcessor().isValid()) {
                 const ValueTree &sourceState = child.getChildWithName(IDs::SOURCE);
                 const ValueTree &destState = child.getChildWithName(IDs::DESTINATION);
 
@@ -587,7 +581,7 @@ private:
 
     void valueTreeChildRemoved(ValueTree& parent, ValueTree& child, int indexFromWhichChildWasRemoved) override {
         if (child.hasType(IDs::PROCESSOR)) {
-            if (!currentlyDraggingProcessor.isValid()) {
+            if (!tracksManager.getCurrentlyDraggingProcessor().isValid()) {
                 if (!isMoving) {
                     removeProcessor(child);
                 }
@@ -598,7 +592,7 @@ private:
                 }
             }
         } else if (child.hasType(IDs::CONNECTION)) {
-            if (!currentlyDraggingProcessor.isValid()) {
+            if (!tracksManager.getCurrentlyDraggingProcessor().isValid()) {
                 const ValueTree &sourceState = child.getChildWithName(IDs::SOURCE);
                 const ValueTree &destState = child.getChildWithName(IDs::DESTINATION);
 

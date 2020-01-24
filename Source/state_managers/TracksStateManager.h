@@ -398,18 +398,23 @@ public:
         return currentlyDraggingProcessor;
     }
 
-    void moveProcessor(ValueTree &processorState, int toTrackIndex, int toSlot, UndoManager *undoManager) {
+    bool moveProcessor(int toTrackIndex, int toSlot, UndoManager *undoManager) {
+        ValueTree& processor = currentlyDraggingProcessor;
+        if (!processor.isValid())
+            return false;
         auto toTrack = getTrack(toTrackIndex);
-        int fromSlot = processorState[IDs::processorSlot];
-        if (fromSlot == toSlot && processorState.getParent() == toTrack)
-            return;
+        int fromSlot = processor[IDs::processorSlot];
+        if (fromSlot == toSlot && processor.getParent() == toTrack)
+            return false;
 
-        setProcessorSlot(processorState.getParent(), processorState, toSlot, undoManager);
+        setProcessorSlot(processor.getParent(), processor, toSlot, undoManager);
 
-        const int insertIndex = getParentIndexForProcessor(toTrack, processorState, undoManager);
-        toTrack.moveChildFromParent(processorState.getParent(), processorState.getParent().indexOf(processorState), insertIndex, undoManager);
+        const int insertIndex = getParentIndexForProcessor(toTrack, processor, undoManager);
+        toTrack.moveChildFromParent(processor.getParent(), processor.getParent().indexOf(processor), insertIndex, undoManager);
 
         makeSlotsValid(toTrack, undoManager);
+
+        return true;
     }
 
     void deleteTrackOrProcessor(const ValueTree &item, UndoManager *undoManager) {
