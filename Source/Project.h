@@ -145,9 +145,9 @@ public:
     void createDefaultProject() {
         viewManager.initializeDefault();
         createAudioIoProcessors();
-        ValueTree track = tracksManager.createAndAddTrack(nullptr);
-        ValueTree processor = tracksManager.createAndAddProcessor(SineBank::getPluginDescription(), track, nullptr, -1);
-        tracksManager.createAndAddMasterTrack(nullptr, true);
+        tracksManager.createAndAddTrack();
+        ValueTree processor = tracksManager.createAndAddProcessor(SineBank::getPluginDescription());
+        tracksManager.createAndAddMasterTrack();
         tracksManager.selectProcessor(processor);
     }
 
@@ -196,7 +196,6 @@ public:
     void newDocument() {
         clear();
         setFile({});
-        
         createDefaultProject();
         undoManager.clearUndoHistory();
     }

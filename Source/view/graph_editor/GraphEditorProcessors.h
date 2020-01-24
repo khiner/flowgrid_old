@@ -246,7 +246,7 @@ private:
             menu.showMenuAsync({}, ModalCallbackFunction::create
                     ([this, processor, slot](int result) {
                         if (auto *description = project.getChosenType(result)) {
-                            tracksManager.createAndAddProcessor(*description, parent, &project.getUndoManager(), slot);
+                            tracksManager.createAndAddProcessor(*description, slot);
                             return;
                         }
                         switch (result) {
@@ -295,7 +295,7 @@ private:
                     }
                 } else {
                     if (auto *description = project.getChosenType(result)) {
-                        tracksManager.createAndAddProcessor(*description, parent, &project.getUndoManager(), slot);
+                        tracksManager.createAndAddProcessor(*description, slot);
                     }
                 }
             }));

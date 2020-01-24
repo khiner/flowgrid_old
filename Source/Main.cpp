@@ -340,16 +340,16 @@ public:
                 tracksManager.deleteSelectedItems();
                 break;
             case CommandIDs::insertTrack:
-                tracksManager.createAndAddTrack(&undoManager);
+                tracksManager.createAndAddTrack(true);
                 break;
             case CommandIDs::insertTrackWithoutMixer:
-                tracksManager.createAndAddTrack(&undoManager, false);
+                tracksManager.createAndAddTrack(false);
                 break;
             case CommandIDs::createMasterTrack:
-                tracksManager.createAndAddMasterTrack(&undoManager, true);
+                tracksManager.createAndAddMasterTrack();
                 break;
             case CommandIDs::addMixerChannel:
-                tracksManager.createAndAddProcessor(MixerChannelProcessor::getPluginDescription(), &undoManager);
+                tracksManager.createAndAddProcessor(MixerChannelProcessor::getPluginDescription());
                 break;
             case CommandIDs::showPush2MirrorWindow:
                 showPush2MirrorWindow();

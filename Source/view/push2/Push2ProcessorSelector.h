@@ -231,13 +231,13 @@ public:
 
     void aboveScreenButtonPressed(int buttonIndex) override {
         if (const auto* selectedProcessor = selectTopProcessor(buttonIndex)) {
-            tracksManager.createAndAddProcessor(*selectedProcessor, &project.getUndoManager());
+            tracksManager.createAndAddProcessor(*selectedProcessor);
         }
     }
 
     void belowScreenButtonPressed(int buttonIndex) override {
         if (const auto* selectedProcessor = selectBottomProcessor(buttonIndex)) {
-            tracksManager.createAndAddProcessor(*selectedProcessor, &project.getUndoManager());
+            tracksManager.createAndAddProcessor(*selectedProcessor);
         }
     }
 
