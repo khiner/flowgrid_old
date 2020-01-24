@@ -100,7 +100,7 @@ private:
     DrawableRectangle unfocusOverlay;
     std::unique_ptr<PopupMenu> addProcessorMenu;
 
-    void refreshProcessors(const ValueTree& singleProcessorToRefresh={}) {
+    void refreshProcessors(const ValueTree& singleProcessorToRefresh={}, bool onlyUpdateFocusState=false) {
         const ValueTree &focusedTrack = tracksManager.getFocusedTrack();
         if (!focusedTrack.isValid()) {
             for (auto* editor : processorEditors) {
@@ -112,18 +112,20 @@ private:
         } else {
             for (int processorSlot = 0; processorSlot < processorEditors.size(); processorSlot++) {
                 const auto &processor = TracksStateManager::findProcessorAtSlot(focusedTrack, processorSlot);
-                assignProcessorToEditor(processor, processorSlot);
+                assignProcessorToEditor(processor, processorSlot, onlyUpdateFocusState);
             }
         }
         resized();
     }
 
-    void assignProcessorToEditor(const ValueTree &processor, int processorSlot=-1) const {
+    void assignProcessorToEditor(const ValueTree &processor, int processorSlot=-1, bool onlyUpdateFocusState=false) const {
         auto* processorEditor = processorEditors.getUnchecked(processorSlot != -1 ? processorSlot : int(processor[IDs::processorSlot]));
         if (processor.isValid()) {
             if (auto *processorWrapper = audioGraphBuilder.getProcessorWrapperForState(processor)) {
-                processorEditor->setProcessor(processorWrapper);
-                processorEditor->setVisible(true);
+                if (!onlyUpdateFocusState) {
+                    processorEditor->setProcessor(processorWrapper);
+                    processorEditor->setVisible(true);
+                }
                 processorEditor->setSelected(tracksManager.isProcessorSelected(processor));
                 processorEditor->setFocused(tracksManager.isProcessorFocused(processor));
             }
@@ -142,8 +144,11 @@ private:
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {
         if (i == IDs::focusedTrackIndex) {
             addProcessorButton.setVisible(tracksManager.getFocusedTrack().isValid());
-        } else if (i == IDs::focusedProcessorSlot || i == IDs::processorInitialized) {
-            refreshProcessors(); // TODO wasteful - make method to just update selected/focused
+            refreshProcessors();
+        } else if (i == IDs::processorInitialized) {
+            refreshProcessors(); // TODO only the new processor
+        } else if (i == IDs::focusedProcessorSlot) {
+            refreshProcessors({}, true);
         } else if (i == IDs::numProcessorSlots || i == IDs::numMasterProcessorSlots) {
             int numProcessorSlots = jmax(int(tree[IDs::numProcessorSlots]), int(tree[IDs::numMasterProcessorSlots]));
             while (processorEditors.size() < numProcessorSlots) {
