@@ -382,6 +382,22 @@ public:
         }
     }
 
+    void setCurrentlyDraggingTrack(const ValueTree& currentlyDraggingTrack) {
+        this->currentlyDraggingTrack = currentlyDraggingTrack;
+    }
+
+    const ValueTree& getCurrentlyDraggingTrack() const {
+        return currentlyDraggingTrack;
+    }
+
+    void setCurrentlyDraggingProcessor(const ValueTree& currentlyDraggingProcessor) {
+        this->currentlyDraggingProcessor = currentlyDraggingProcessor;
+    }
+
+    const ValueTree& getCurrentlyDraggingProcessor() const {
+        return currentlyDraggingProcessor;
+    }
+
     void moveProcessor(ValueTree &processorState, int toTrackIndex, int toSlot, UndoManager *undoManager) {
         auto toTrack = getTrack(toTrackIndex);
         int fromSlot = processorState[IDs::processorSlot];
@@ -494,6 +510,8 @@ private:
     std::unordered_map<int, int> slotForNodeIdSnapshot;
     std::unique_ptr<TrackAndSlot> selectionStartTrackAndSlot {};
     std::unique_ptr<TrackAndSlot> selectionEndTrackAndSlot {};
+    ValueTree currentlyDraggingTrack, currentlyDraggingProcessor;
+
     int trackWidth {0}, processorHeight {0};
 
     ValueTree doCreateAndAddMasterTrack() {

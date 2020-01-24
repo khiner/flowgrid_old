@@ -86,6 +86,10 @@ public:
         return nullptr;
     }
 
+    GraphEditorProcessor *getProcessorForState(const ValueTree& state) const {
+        return getProcessorForNodeId(ProcessorGraph::getNodeIdForState(state));
+    }
+
     GraphEditorTrack *getTrackForState(const ValueTree& state) const {
         for (auto *track : objects) {
             if (track->getState() == state)
@@ -114,11 +118,11 @@ public:
     void mouseDown(const MouseEvent &e) override {
         if (auto* track = dynamic_cast<GraphEditorTrack *>(e.originalComponent->getParentComponent())) {
             if (e.originalComponent == track->getDragControlComponent() && track->getState() != tracksManager.getMasterTrack()) {
-                currentlyDraggingTrack = track;
+                tracksManager.setCurrentlyDraggingTrack(track->getState());
             }
         } else if (auto* processor = dynamic_cast<GraphEditorProcessor *>(e.originalComponent)) {
             if (!e.mods.isRightButtonDown()) {
-                currentlyDraggingProcessor = processor;
+                tracksManager.setCurrentlyDraggingProcessor(processor->getState());
                 auto *processorTrack = dynamic_cast<GraphEditorTrack *>(processor->getParentComponent()->getParentComponent());
                 const Point<int> trackAndSlot{processorTrack->getTrackIndex(), processor->getSlot()};
                 graph.beginDraggingNode(processor->getNodeId(), trackAndSlot);
@@ -127,11 +131,11 @@ public:
     }
 
     void mouseDrag(const MouseEvent &e) override {
-        if (e.originalComponent->getParentComponent() == currentlyDraggingTrack) {
+        if (e.originalComponent->getParentComponent() == getTrackForState(tracksManager.getCurrentlyDraggingTrack())) {
             auto pos = e.getEventRelativeTo(this).getPosition();
-            int currentIndex = parent.indexOf(currentlyDraggingTrack->getState());
+            int currentIndex = parent.indexOf(tracksManager.getCurrentlyDraggingTrack());
             for (auto* track : objects) {
-                if (track == currentlyDraggingTrack)
+                if (track->getState() == tracksManager.getCurrentlyDraggingTrack())
                     continue;
                 if (pos.x < track->getX() + track->getWidth() / 2) {
                     int newIndex = jlimit(0, objects.size() - 1, objects.indexOf(track));
@@ -143,19 +147,19 @@ public:
                     }
                 }
             }
-        } else if (e.originalComponent == currentlyDraggingProcessor && !e.mods.isRightButtonDown()) {
+        } else if (e.originalComponent == getProcessorForState(tracksManager.getCurrentlyDraggingProcessor()) && !e.mods.isRightButtonDown()) {
             const Point<int> &trackAndSlot = trackAndSlotAt(e);
             if (trackAndSlot.x != -1 && trackAndSlot.y != -1) {
-                graph.setNodePosition(currentlyDraggingProcessor->getNodeId(), trackAndSlot);
+                graph.setNodePosition(ProcessorGraph::getNodeIdForState(tracksManager.getCurrentlyDraggingProcessor()), trackAndSlot);
             }
         }
     }
 
     void mouseUp(const MouseEvent &e) override {
-        if (currentlyDraggingProcessor != nullptr)
-            graph.endDraggingNode(currentlyDraggingProcessor->getNodeId());
-        currentlyDraggingTrack = nullptr;
-        currentlyDraggingProcessor = nullptr;
+        if (tracksManager.getCurrentlyDraggingProcessor().isValid())
+            graph.endDraggingNode(ProcessorGraph::getNodeIdForState(tracksManager.getCurrentlyDraggingProcessor()));
+        tracksManager.setCurrentlyDraggingTrack({});
+        tracksManager.setCurrentlyDraggingProcessor({});
     }
 
 private:
@@ -164,8 +168,6 @@ private:
     ViewStateManager& viewManager;
     ConnectorDragListener &connectorDragListener;
     ProcessorGraph &graph;
-    GraphEditorTrack *currentlyDraggingTrack {};
-    GraphEditorProcessor *currentlyDraggingProcessor {};
 
     void valueTreePropertyChanged(ValueTree &tree, const juce::Identifier &i) override {
         if (i == IDs::gridViewTrackOffset || i == IDs::masterViewSlotOffset) {
