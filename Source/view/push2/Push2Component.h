@@ -107,7 +107,7 @@ public:
     }
 
     void masterButtonPressed() override {
-        tracksManager.getMasterTrack().setProperty(IDs::selected, true, nullptr);
+        tracksManager.selectMasterTrack();
     }
 
     void aboveScreenButtonPressed(int buttonIndex) override {

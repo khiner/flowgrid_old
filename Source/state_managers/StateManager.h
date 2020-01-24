@@ -15,4 +15,8 @@ public:
     static void resetVarToBool(ValueTree& tree, const Identifier& id, ValueTree::Listener* listenerToExclude) {
         tree.setPropertyExcludingListener(listenerToExclude, id, bool(tree.getProperty(id)), nullptr);
     };
+
+    static void resetVarAllowingNoopUndo(ValueTree& tree, const Identifier& id, UndoManager *undoManager) {
+        tree.setProperty(id, tree.getProperty(id), undoManager, true);
+    }
 };

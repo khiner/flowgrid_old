@@ -174,17 +174,18 @@ public:
         return processor.hasType(IDs::PROCESSOR) && processor.getParent() == track && trackAndSlot.y == int(processor[IDs::processorSlot]);
     }
 
-    void setTrackSelected(ValueTree& track, bool selected, bool deselectOthers=true) {
+    void setTrackSelected(ValueTree track, bool selected, bool deselectOthers=true, bool allowRectangleSelect=true) {
         // take care of this track
-        if (selected != bool(track[IDs::selected])) {
-            track.setProperty(IDs::selected, selected, nullptr);
+        track.setProperty(IDs::selected, selected, nullptr);
+        if (selected) {
+            selectAllTrackSlots(track);
+            focusOnProcessorSlot(track, -1);
         } else {
-            // we want to send out a change even no matter what
-            track.sendPropertyChangeMessage(IDs::selected);
+            deselectAllTrackSlots(track);
         }
         // take care of other tracks
         selectionEndTrackAndSlot = std::make_unique<TrackAndSlot>(track);
-        if (selectionStartTrackAndSlot != nullptr) { // shift+select
+        if (allowRectangleSelect && selectionStartTrackAndSlot != nullptr) { // shift+select
             selectRectangle(track, -1);
         } else {
             if (selected && deselectOthers) {
@@ -195,6 +196,10 @@ public:
                 }
             }
         }
+    }
+
+    void selectMasterTrack() {
+        setTrackSelected(getMasterTrack(), true);
     }
 
     void selectProcessor(const ValueTree& processor) {
@@ -258,7 +263,7 @@ public:
         masterTrack.setProperty(IDs::isMasterTrack, true, nullptr);
         masterTrack.setProperty(IDs::name, "Master", nullptr);
         masterTrack.setProperty(IDs::colour, Colours::darkslateblue.toString(), nullptr);
-        deselectAllTrackSlots(masterTrack);
+        setTrackSelected(masterTrack, false, false);
 
         tracks.addChild(masterTrack, -1, undoManager);
 
@@ -297,7 +302,7 @@ public:
         if (addMixer)
             createAndAddProcessor(MixerChannelProcessor::getPluginDescription(), track, undoManager, -1);
 
-        track.setProperty(IDs::selected, true, undoManager);
+        setTrackSelected(track, true);
 
         return track;
     }
@@ -413,6 +418,8 @@ public:
     }
 
     void deleteSelectedItems() {
+        prepareForSelectionAwareUndoableAction(&undoManager);
+
         const Array<ValueTree> allSelectedItems = findAllSelectedItems();
         for (const auto &selectedItem : allSelectedItems) {
             deleteTrackOrProcessor(selectedItem, &undoManager);
@@ -594,7 +601,7 @@ private:
             bool trackSelected = (slot == -1 || selectionStartTrackAndSlot->slot == -1) &&
                                  ((selectionStartTrackIndex <= otherTrackIndex && otherTrackIndex <= trackIndex) ||
                                   (trackIndex <= otherTrackIndex && otherTrackIndex <= selectionStartTrackIndex));
-            otherTrack.setProperty(IDs::selected, trackSelected, nullptr);
+            setTrackSelected(otherTrack, trackSelected, false, false);
             if (!trackSelected) {
                 for (int otherSlot = 0; otherSlot < viewManager.getNumAvailableSlotsForTrack(otherTrack); otherSlot++) {
                     const auto otherGridPosition = trackAndSlotToGridPosition({otherTrack, otherSlot});
@@ -603,7 +610,7 @@ private:
             }
         }
         if (slot == -1) {
-            getTrack(trackIndex).sendPropertyChangeMessage(IDs::selected);
+            viewManager.focusOnTrackIndex(trackIndex);
         }
     }
 
@@ -676,6 +683,20 @@ private:
     void deselectAllTrackSlots(ValueTree& track) {
         BigInteger selectedSlotsMask;
         track.setProperty(IDs::selectedSlotsMask, selectedSlotsMask.toString(2), nullptr);
+    }
+
+    // Selection & focus events are usually not considered undoable.
+    // However, when performing multi-select-aware actions (like deleting multiple selected items),
+    // we want an undo/redo to restore what the selection state looked like at the time (for consistency,
+    // as well as doing things like re-focusing a processor after undoing a delete)
+    // This is accomplished by re-setting all selection/focus properties, passing a flag to allow
+    // no-ops into the undo-manager (otherwise re-saving the current state wouldn't be undoable).
+    void prepareForSelectionAwareUndoableAction(UndoManager *undoManager) {
+        for (auto track : tracks) {
+            resetVarAllowingNoopUndo(track, IDs::selected, undoManager);
+            resetVarAllowingNoopUndo(track, IDs::selectedSlotsMask, undoManager);
+        }
+        viewManager.prepareForSelectionAwareUndoableAction(undoManager);
     }
 
     TrackAndSlot findSelectionPaneItemToSelectWithLeftRightDelta(int delta) const {
@@ -796,10 +817,6 @@ private:
             if (tree[i]) {
                 if (!isMasterTrack(tree))
                     viewManager.updateViewTrackOffsetToInclude(indexOf(tree), getNumNonMasterTracks());
-                selectAllTrackSlots(tree);
-                focusOnProcessorSlot(tree, -1);
-            } else {
-                deselectAllTrackSlots(tree);
             }
         } else if (i == IDs::selectedSlotsMask) {
             if (!isMasterTrack(tree))

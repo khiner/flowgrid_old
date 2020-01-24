@@ -128,16 +128,16 @@ public:
     void focusOnGridPane() { viewState.setProperty(IDs::focusedPane, gridPaneName, nullptr); }
     void focusOnEditorPane() { viewState.setProperty(IDs::focusedPane, editorPaneName, nullptr); }
 
+    void focusOnTrackIndex(const int trackIndex) {
+        viewState.setProperty(IDs::focusedTrackIndex, trackIndex, nullptr);
+    }
+
     void focusOnProcessorSlot(const ValueTree& track, const int processorSlot) {
         const int trackIndex = track.isValid() ? track.getParent().indexOf(track) : 0;
-        viewState.setProperty(IDs::focusedTrackIndex, trackIndex, nullptr);
+        focusOnTrackIndex(trackIndex);
         // Always send the change message since this can be called already after the node is added to the graph,
         // but before the processor has completely initialized.
-        if (int(viewState[IDs::focusedProcessorSlot]) != processorSlot) {
-            viewState.setProperty(IDs::focusedProcessorSlot, processorSlot, nullptr);
-        } else {
-            viewState.sendPropertyChangeMessage(IDs::focusedProcessorSlot);
-        }
+        viewState.setProperty(IDs::focusedProcessorSlot, processorSlot, nullptr);
     }
 
     void togglePaneFocus() {
@@ -145,6 +145,11 @@ public:
             focusOnEditorPane();
         else
             focusOnGridPane();
+    }
+
+    void prepareForSelectionAwareUndoableAction(UndoManager *undoManager) {
+        resetVarAllowingNoopUndo(viewState, IDs::focusedTrackIndex, undoManager);
+        resetVarAllowingNoopUndo(viewState, IDs::focusedProcessorSlot, undoManager);
     }
 
     const String sessionControlMode = "session", noteControlMode = "note";
