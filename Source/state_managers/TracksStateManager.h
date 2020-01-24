@@ -841,19 +841,6 @@ private:
             auto slot = findSelectedSlotForTrack(tree);
             if (slot != -1)
                 viewManager.updateViewSlotOffsetToInclude(slot, isMasterTrack(tree));
-        } else if (i == IDs::processorSlot) {
-            selectProcessor(tree); // TODO we probably won't want to continue selecting any processor whose slot changes
         }
     }
-
-    void valueTreeChildHasMovedToNewParent(ValueTree child, ValueTree& oldParent, int oldIndex, ValueTree& newParent, int newIndex) override {
-        if (child.hasType(IDs::PROCESSOR)) {
-            deselectProcessorSlot(oldParent, child[IDs::processorSlot]);
-            selectProcessor(child);
-        }
-    }
-
-    void valueTreeChildOrderChanged(ValueTree &tree, int, int) override {}
-    void valueTreeParentChanged(ValueTree &) override {}
-    void valueTreeRedirected(ValueTree &) override {}
 };

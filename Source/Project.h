@@ -149,6 +149,7 @@ public:
         ValueTree processor = tracksManager.createAndAddProcessor(SineBank::getPluginDescription());
         tracksManager.createAndAddMasterTrack();
         tracksManager.selectProcessor(processor);
+        undoManager.clearUndoHistory();
     }
 
     void addPluginsToMenu(PopupMenu& menu, const ValueTree& track) const {
@@ -197,7 +198,6 @@ public:
         clear();
         setFile({});
         createDefaultProject();
-        undoManager.clearUndoHistory();
     }
 
     String getDocumentTitle() override {
