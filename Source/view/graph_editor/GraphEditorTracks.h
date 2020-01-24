@@ -123,9 +123,7 @@ public:
         } else if (auto* processor = dynamic_cast<GraphEditorProcessor *>(e.originalComponent)) {
             if (!e.mods.isRightButtonDown()) {
                 tracksManager.setCurrentlyDraggingProcessor(processor->getState());
-                auto *processorTrack = dynamic_cast<GraphEditorTrack *>(processor->getParentComponent()->getParentComponent());
-                const Point<int> trackAndSlot{processorTrack->getTrackIndex(), processor->getSlot()};
-                graph.beginDraggingNode(processor->getNodeId(), trackAndSlot);
+                graph.beginDraggingProcessor(processor->getState());
             }
         }
     }
@@ -150,14 +148,14 @@ public:
         } else if (e.originalComponent == getProcessorForState(tracksManager.getCurrentlyDraggingProcessor()) && !e.mods.isRightButtonDown()) {
             const Point<int> &trackAndSlot = trackAndSlotAt(e);
             if (trackAndSlot.x != -1 && trackAndSlot.y != -1) {
-                graph.setNodePosition(ProcessorGraph::getNodeIdForState(tracksManager.getCurrentlyDraggingProcessor()), trackAndSlot);
+                graph.setProcessorPosition(tracksManager.getCurrentlyDraggingProcessor(), trackAndSlot);
             }
         }
     }
 
     void mouseUp(const MouseEvent &e) override {
         if (tracksManager.getCurrentlyDraggingProcessor().isValid())
-            graph.endDraggingNode(ProcessorGraph::getNodeIdForState(tracksManager.getCurrentlyDraggingProcessor()));
+            graph.endDraggingProcessor(tracksManager.getCurrentlyDraggingProcessor());
         tracksManager.setCurrentlyDraggingTrack({});
         tracksManager.setCurrentlyDraggingProcessor({});
     }

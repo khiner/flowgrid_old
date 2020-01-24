@@ -394,7 +394,7 @@ public:
         this->currentlyDraggingProcessor = currentlyDraggingProcessor;
     }
 
-    const ValueTree& getCurrentlyDraggingProcessor() const {
+    ValueTree& getCurrentlyDraggingProcessor() {
         return currentlyDraggingProcessor;
     }
 
