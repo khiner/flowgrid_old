@@ -147,7 +147,7 @@ public:
             focusOnGridPane();
     }
 
-    void prepareForSelectionAwareUndoableAction(UndoManager *undoManager) {
+    void addFocusStateToUndoStack(UndoManager *undoManager) {
         resetVarAllowingNoopUndo(viewState, IDs::focusedTrackIndex, undoManager);
         resetVarAllowingNoopUndo(viewState, IDs::focusedProcessorSlot, undoManager);
     }

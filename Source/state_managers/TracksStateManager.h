@@ -292,10 +292,12 @@ public:
         if (nextToTrack == getMasterTrack())
             nextToTrack = {};
 
+        bool isSubTrack = nextToTrack.isValid() && !addMixer;
+
         ValueTree track(IDs::TRACK);
         track.setProperty(IDs::uuid, Uuid().toString(), nullptr);
-        track.setProperty(IDs::name, (nextToTrack.isValid() && !addMixer) ? makeTrackNameUnique(nextToTrack[IDs::name]) : ("Track " + String(numTracks + 1)), nullptr);
-        track.setProperty(IDs::colour, (nextToTrack.isValid() && !addMixer) ? nextToTrack[IDs::colour].toString() : Colour::fromHSV((1.0f / 8.0f) * numTracks, 0.65f, 0.65f, 1.0f).toString(), nullptr);
+        track.setProperty(IDs::name, isSubTrack ? makeTrackNameUnique(nextToTrack[IDs::name]) : ("Track " + String(numTracks + 1)), nullptr);
+        track.setProperty(IDs::colour, isSubTrack ? nextToTrack[IDs::colour].toString() : Colour::fromHSV((1.0f / 8.0f) * numTracks, 0.65f, 0.65f, 1.0f).toString(), nullptr);
 
         tracks.addChild(track, nextToTrack.isValid() ? nextToTrack.getParent().indexOf(nextToTrack) + (addMixer || forceImmediatelyToRight ? 1 : 0): numTracks, undoManager);
 
@@ -418,7 +420,7 @@ public:
     }
 
     void deleteSelectedItems() {
-        prepareForSelectionAwareUndoableAction(&undoManager);
+        addSelectionStateToUndoStack(&undoManager);
 
         const Array<ValueTree> allSelectedItems = findAllSelectedItems();
         for (const auto &selectedItem : allSelectedItems) {
@@ -618,6 +620,7 @@ private:
         track.addChild(processor, insertIndex, undoManager);
         makeSlotsValid(track, undoManager);
         selectProcessor(processor);
+        addSelectionStateToUndoStack(undoManager);
         sendProcessorCreatedMessage(processor);
     }
 
@@ -691,12 +694,12 @@ private:
     // as well as doing things like re-focusing a processor after undoing a delete)
     // This is accomplished by re-setting all selection/focus properties, passing a flag to allow
     // no-ops into the undo-manager (otherwise re-saving the current state wouldn't be undoable).
-    void prepareForSelectionAwareUndoableAction(UndoManager *undoManager) {
+    void addSelectionStateToUndoStack(UndoManager *undoManager) {
         for (auto track : tracks) {
             resetVarAllowingNoopUndo(track, IDs::selected, undoManager);
             resetVarAllowingNoopUndo(track, IDs::selectedSlotsMask, undoManager);
         }
-        viewManager.prepareForSelectionAwareUndoableAction(undoManager);
+        viewManager.addFocusStateToUndoStack(undoManager);
     }
 
     TrackAndSlot findSelectionPaneItemToSelectWithLeftRightDelta(int delta) const {
