@@ -398,6 +398,10 @@ public:
         return currentlyDraggingProcessor;
     }
 
+    UndoManager* getUndoManager() {
+        return &undoManager;
+    }
+
     UndoManager* getDragDependentUndoManager() {
         return !currentlyDraggingProcessor.isValid() ? &undoManager : nullptr;
     }

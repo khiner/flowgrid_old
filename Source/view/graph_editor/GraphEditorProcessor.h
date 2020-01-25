@@ -64,7 +64,7 @@ public:
     inline bool isSelected() { return tracksManager.isProcessorSelected(state); }
 
     void toggleBypass() {
-        state.setProperty(IDs::bypassed, !state[IDs::bypassed], &graph.undoManager);
+        state.setProperty(IDs::bypassed, !state[IDs::bypassed], tracksManager.getUndoManager());
     }
 
     void paint(Graphics &g) override {

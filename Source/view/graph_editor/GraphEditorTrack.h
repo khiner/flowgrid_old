@@ -9,7 +9,7 @@ class GraphEditorTrack : public Component, public Utilities::ValueTreePropertyCh
 public:
     explicit GraphEditorTrack(Project& project, const ValueTree& state, ConnectorDragListener &connectorDragListener, ProcessorGraph& graph)
             : tracksManager(project.getTracksManager()), state(state),
-              viewState(project.getViewState()), connectorDragListener(connectorDragListener), graph(graph),
+              viewState(project.getViewState()), connectorDragListener(connectorDragListener),
               processors(project, state, connectorDragListener, graph) {
         nameLabel.setJustificationType(Justification::centred);
         updateLabelColour();
@@ -18,7 +18,7 @@ public:
         if (!isMasterTrack()) {
             nameLabel.setText(getTrackName(), dontSendNotification);
             nameLabel.setEditable(false, true);
-            nameLabel.onTextChange = [this] { this->state.setProperty(IDs::name, nameLabel.getText(false), &this->graph.undoManager); };
+            nameLabel.onTextChange = [this] { this->state.setProperty(IDs::name, nameLabel.getText(false), this->tracksManager.getUndoManager()); };
         } else {
             masterTrackName.setText(getTrackName());
             masterTrackName.setColour(findColour(TextEditor::textColourId));
@@ -68,7 +68,7 @@ public:
         return isSelected() ? trackColour.brighter(0.25) : trackColour;
     }
 
-    void setColour(const Colour& colour) { state.setProperty(IDs::colour, colour.toString(), &graph.undoManager); }
+    void setColour(const Colour& colour) { state.setProperty(IDs::colour, colour.toString(), tracksManager.getUndoManager()); }
 
     bool isSelected() const { return state.getProperty(IDs::selected); }
 
@@ -127,7 +127,6 @@ private:
     Label nameLabel;
     DrawableText masterTrackName;
     ConnectorDragListener &connectorDragListener;
-    ProcessorGraph &graph;
     GraphEditorProcessors processors;
 
     void updateLabelColour() {
