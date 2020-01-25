@@ -392,6 +392,7 @@ public:
 
     void setCurrentlyDraggingProcessor(const ValueTree& currentlyDraggingProcessor) {
         this->currentlyDraggingProcessor = currentlyDraggingProcessor;
+        initialDraggingTrackAndSlot = {indexOf(currentlyDraggingProcessor.getParent()), currentlyDraggingProcessor[IDs::processorSlot]};
     }
 
     bool isCurrentlyDraggingProcessor() {
@@ -402,23 +403,28 @@ public:
         return currentlyDraggingProcessor;
     }
 
+    Point<int> getInitialDraggingTrackAndSlot() const {
+        return initialDraggingTrackAndSlot;
+    }
+
     UndoManager* getDragDependentUndoManager() {
         return !currentlyDraggingProcessor.isValid() ? &undoManager : nullptr;
     }
 
-    bool moveProcessor(int toTrackIndex, int toSlot, UndoManager *undoManager) {
-        ValueTree& processor = currentlyDraggingProcessor;
-        if (!processor.isValid())
+    bool moveProcessor(Point<int> toTrackAndSlot, UndoManager *undoManager) {
+        if (!currentlyDraggingProcessor.isValid())
             return false;
-        auto toTrack = getTrack(toTrackIndex);
-        int fromSlot = processor[IDs::processorSlot];
-        if (fromSlot == toSlot && processor.getParent() == toTrack)
+        auto toTrack = getTrack(toTrackAndSlot.x);
+        const auto& fromTrack = currentlyDraggingProcessor.getParent();
+        int fromSlot = currentlyDraggingProcessor[IDs::processorSlot];
+        int toSlot = toTrackAndSlot.y;
+        if (fromSlot == toSlot && fromTrack == toTrack)
             return false;
 
-        setProcessorSlot(processor.getParent(), processor, toSlot, undoManager);
+        setProcessorSlot(fromTrack, currentlyDraggingProcessor, toSlot, undoManager);
 
-        const int insertIndex = getParentIndexForProcessor(toTrack, processor, undoManager);
-        toTrack.moveChildFromParent(processor.getParent(), processor.getParent().indexOf(processor), insertIndex, undoManager);
+        const int insertIndex = getParentIndexForProcessor(toTrack, currentlyDraggingProcessor, undoManager);
+        toTrack.moveChildFromParent(fromTrack, fromTrack.indexOf(currentlyDraggingProcessor), insertIndex, undoManager);
 
         makeSlotsValid(toTrack, undoManager);
 
@@ -524,6 +530,7 @@ private:
     std::unique_ptr<TrackAndSlot> selectionStartTrackAndSlot {};
     std::unique_ptr<TrackAndSlot> selectionEndTrackAndSlot {};
     ValueTree currentlyDraggingTrack, currentlyDraggingProcessor;
+    Point<int> initialDraggingTrackAndSlot;
 
     int trackWidth {0}, processorHeight {0};
 
