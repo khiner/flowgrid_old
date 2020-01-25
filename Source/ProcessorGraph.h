@@ -99,7 +99,7 @@ public:
     }
 
     void endDraggingProcessor() {
-        if (tracksManager.getCurrentlyDraggingProcessor().isValid() && currentlyDraggingTrackAndSlot != initialDraggingTrackAndSlot) {
+        if (tracksManager.isCurrentlyDraggingProcessor() && currentlyDraggingTrackAndSlot != initialDraggingTrackAndSlot) {
             // update the audio graph to match the current preview UI graph.
             tracksManager.moveProcessor(initialDraggingTrackAndSlot.x, initialDraggingTrackAndSlot.y, nullptr);
             project.restoreConnectionsSnapshot();
@@ -222,8 +222,8 @@ private:
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ProcessorGraph)
 
-    inline UndoManager* getDragDependentUndoManager() {
-        return !tracksManager.getCurrentlyDraggingProcessor().isValid() ? &undoManager : nullptr;
+    UndoManager* getDragDependentUndoManager() {
+        return tracksManager.getDragDependentUndoManager();
     }
 
     bool checkedAddConnection(const Connection &c, bool isDefault, UndoManager* undoManager) {
@@ -545,13 +545,13 @@ private:
 
     void valueTreeChildAdded(ValueTree& parent, ValueTree& child) override {
         if (child.hasType(IDs::PROCESSOR)) {
-            if (!tracksManager.getCurrentlyDraggingProcessor().isValid()) {
+            if (!tracksManager.isCurrentlyDraggingProcessor()) {
                 if (getProcessorWrapperForState(child) == nullptr) {
                     addProcessor(child);
                 }
             }
         } else if (child.hasType(IDs::CONNECTION)) {
-            if (!tracksManager.getCurrentlyDraggingProcessor().isValid()) {
+            if (!tracksManager.isCurrentlyDraggingProcessor()) {
                 const ValueTree &sourceState = child.getChildWithName(IDs::SOURCE);
                 const ValueTree &destState = child.getChildWithName(IDs::DESTINATION);
 
@@ -581,7 +581,7 @@ private:
 
     void valueTreeChildRemoved(ValueTree& parent, ValueTree& child, int indexFromWhichChildWasRemoved) override {
         if (child.hasType(IDs::PROCESSOR)) {
-            if (!tracksManager.getCurrentlyDraggingProcessor().isValid()) {
+            if (!tracksManager.isCurrentlyDraggingProcessor()) {
                 if (!isMoving) {
                     removeProcessor(child);
                 }
@@ -592,7 +592,7 @@ private:
                 }
             }
         } else if (child.hasType(IDs::CONNECTION)) {
-            if (!tracksManager.getCurrentlyDraggingProcessor().isValid()) {
+            if (!tracksManager.isCurrentlyDraggingProcessor()) {
                 const ValueTree &sourceState = child.getChildWithName(IDs::SOURCE);
                 const ValueTree &destState = child.getChildWithName(IDs::DESTINATION);
 

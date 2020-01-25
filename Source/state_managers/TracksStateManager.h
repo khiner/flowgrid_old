@@ -394,8 +394,16 @@ public:
         this->currentlyDraggingProcessor = currentlyDraggingProcessor;
     }
 
+    bool isCurrentlyDraggingProcessor() {
+        return currentlyDraggingProcessor.isValid();
+    }
+
     ValueTree& getCurrentlyDraggingProcessor() {
         return currentlyDraggingProcessor;
+    }
+
+    UndoManager* getDragDependentUndoManager() {
+        return !currentlyDraggingProcessor.isValid() ? &undoManager : nullptr;
     }
 
     bool moveProcessor(int toTrackIndex, int toSlot, UndoManager *undoManager) {

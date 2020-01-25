@@ -154,8 +154,7 @@ public:
 
     void mouseUp(const MouseEvent &e) override {
         tracksManager.setCurrentlyDraggingTrack({});
-        if (tracksManager.getCurrentlyDraggingProcessor().isValid())
-            graph.endDraggingProcessor();
+        graph.endDraggingProcessor();
     }
 
 private:
