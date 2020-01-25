@@ -73,46 +73,6 @@ public:
         return !wasEmpty;
     }
 
-    void beginDraggingProcessor(const ValueTree& processor) {
-        if (processor[IDs::name] == MixerChannelProcessor::name())
-            // mixer channel processors are special processors.
-            // they could be dragged and reconnected like any old processor, but please don't :)
-            return;
-        tracksManager.setCurrentlyDraggingProcessor(processor);
-        project.makeConnectionsSnapshot();
-    }
-
-    void dragProcessorToPosition(const Point<int> &trackAndSlot) {
-        if (tracksManager.getCurrentlyDraggingTrackAndSlot() != trackAndSlot &&
-            trackAndSlot.y < tracksManager.getMixerChannelSlotForTrack(tracksManager.getTrack(trackAndSlot.x))) {
-            tracksManager.setCurrentlyDraggingTrackAndSlot(trackAndSlot);
-
-            if (tracksManager.moveProcessor(trackAndSlot, getDragDependentUndoManager())) {
-                if (tracksManager.getCurrentlyDraggingTrackAndSlot() == tracksManager.getInitialDraggingTrackAndSlot())
-                    project.restoreConnectionsSnapshot();
-                else
-                    updateAllDefaultConnections();
-            }
-        }
-    }
-
-    void endDraggingProcessor() {
-        if (tracksManager.isCurrentlyDraggingProcessor() && tracksManager.getCurrentlyDraggingTrackAndSlot() != tracksManager.getInitialDraggingTrackAndSlot()) {
-            // update the audio graph to match the current preview UI graph.
-            tracksManager.moveProcessor(tracksManager.getInitialDraggingTrackAndSlot(), nullptr);
-            project.restoreConnectionsSnapshot();
-            tracksManager.moveProcessor(tracksManager.getCurrentlyDraggingTrackAndSlot(), &undoManager);
-            tracksManager.setCurrentlyDraggingProcessor({});
-            if (project.isShiftHeld()) {
-                project.setShiftHeld(false);
-                updateAllDefaultConnections(true);
-                project.setShiftHeld(true);
-            } else {
-                updateAllDefaultConnections();
-            }
-        }
-    }
-
     bool canConnectUi(const Connection& c) const {
         if (auto* source = getNodeForId(c.source.nodeID))
             if (auto* dest = getNodeForId(c.destination.nodeID))
@@ -522,7 +482,30 @@ private:
             resetDefaultExternalInputs(getDragDependentUndoManager());
         }
     }
-    
+
+
+    void updateIoChannelEnabled(const ValueTree& parent, const ValueTree& channel, bool enabled) {
+        String processorName = parent.getParent()[IDs::name];
+        bool isInput;
+        if (processorName == "Audio Input" && parent.hasType(IDs::OUTPUT_CHANNELS))
+            isInput = true;
+        else if (processorName == "Audio Output" && parent.hasType(IDs::INPUT_CHANNELS))
+            isInput = false;
+        else
+            return;
+        if (auto* audioDevice = deviceManager.getCurrentAudioDevice()) {
+            AudioDeviceManager::AudioDeviceSetup config;
+            deviceManager.getAudioDeviceSetup(config);
+            auto &channels = isInput ? config.inputChannels : config.outputChannels;
+            const auto &channelNames = isInput ? audioDevice->getInputChannelNames() : audioDevice->getOutputChannelNames();
+            auto channelIndex = channelNames.indexOf(channel[IDs::name].toString());
+            if (channelIndex != -1 && ((enabled && !channels[channelIndex]) || (!enabled && channels[channelIndex]))) {
+                channels.setBit(channelIndex, enabled);
+                deviceManager.setAudioDeviceSetup(config, true);
+            }
+        }
+    }
+
     void valueTreePropertyChanged(ValueTree& tree, const Identifier& i) override {
         if (tree.hasType(IDs::PROCESSOR)) {
             if (i == IDs::bypassed) {
@@ -637,6 +620,32 @@ private:
         updateAllDefaultConnections();
     };
 
+    void processorDragInitiated() override {
+        project.makeConnectionsSnapshot();
+    }
+
+    void processorBeingDragged(bool isBackToInitialPosition) override {
+        if (isBackToInitialPosition)
+            project.restoreConnectionsSnapshot();
+        else
+            updateAllDefaultConnections();
+    }
+
+    // TODO this is a little silly
+    void processorDragAboutToFinalize() override {
+        project.restoreConnectionsSnapshot();
+    }
+
+    void processorDragFinalized() override {
+        if (project.isShiftHeld()) {
+            project.setShiftHeld(false);
+            updateAllDefaultConnections(true);
+            project.setShiftHeld(true);
+        } else {
+            updateAllDefaultConnections();
+        }
+    }
+
     void processorWillBeDestroyed(const ValueTree& processor) override {
         isDeleting = true;
         resetDefaultExternalInputs(getDragDependentUndoManager(), false);
@@ -648,28 +657,6 @@ private:
         updateAllDefaultConnections();
         isDeleting = false;
     };
-
-    void updateIoChannelEnabled(const ValueTree& parent, const ValueTree& channel, bool enabled) {
-        String processorName = parent.getParent()[IDs::name];
-        bool isInput;
-        if (processorName == "Audio Input" && parent.hasType(IDs::OUTPUT_CHANNELS))
-            isInput = true;
-        else if (processorName == "Audio Output" && parent.hasType(IDs::INPUT_CHANNELS))
-            isInput = false;
-        else
-            return;
-        if (auto* audioDevice = deviceManager.getCurrentAudioDevice()) {
-            AudioDeviceManager::AudioDeviceSetup config;
-            deviceManager.getAudioDeviceSetup(config);
-            auto &channels = isInput ? config.inputChannels : config.outputChannels;
-            const auto &channelNames = isInput ? audioDevice->getInputChannelNames() : audioDevice->getOutputChannelNames();
-            auto channelIndex = channelNames.indexOf(channel[IDs::name].toString());
-            if (channelIndex != -1 && ((enabled && !channels[channelIndex]) || (!enabled && channels[channelIndex]))) {
-                channels.setBit(channelIndex, enabled);
-                deviceManager.setAudioDeviceSetup(config, true);
-            }
-        }
-    }
 
     void timerCallback() override {
         bool anythingUpdated = false;

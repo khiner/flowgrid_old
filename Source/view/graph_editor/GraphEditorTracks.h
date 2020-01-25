@@ -122,7 +122,7 @@ public:
             }
         } else if (auto* processor = dynamic_cast<GraphEditorProcessor *>(e.originalComponent)) {
             if (!e.mods.isRightButtonDown()) {
-                graph.beginDraggingProcessor(processor->getState());
+                tracksManager.beginDraggingProcessor(processor->getState());
             }
         }
     }
@@ -147,14 +147,13 @@ public:
         } else if (e.originalComponent == getProcessorForState(tracksManager.getCurrentlyDraggingProcessor()) && !e.mods.isRightButtonDown()) {
             const Point<int> &trackAndSlot = trackAndSlotAt(e);
             if (trackAndSlot.x != -1 && trackAndSlot.y != -1) {
-                graph.dragProcessorToPosition(trackAndSlot);
+                tracksManager.dragProcessorToPosition(trackAndSlot);
             }
         }
     }
 
     void mouseUp(const MouseEvent &e) override {
-        tracksManager.setCurrentlyDraggingTrack({});
-        graph.endDraggingProcessor();
+        tracksManager.endDraggingProcessor();
     }
 
 private:

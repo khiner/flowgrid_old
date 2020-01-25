@@ -390,12 +390,6 @@ public:
         return currentlyDraggingTrack;
     }
 
-    void setCurrentlyDraggingProcessor(const ValueTree& currentlyDraggingProcessor) {
-        this->currentlyDraggingProcessor = currentlyDraggingProcessor;
-        initialDraggingTrackAndSlot = {indexOf(currentlyDraggingProcessor.getParent()), currentlyDraggingProcessor[IDs::processorSlot]};
-        currentlyDraggingTrackAndSlot = initialDraggingTrackAndSlot;
-    }
-
     bool isCurrentlyDraggingProcessor() {
         return currentlyDraggingProcessor.isValid();
     }
@@ -404,20 +398,43 @@ public:
         return currentlyDraggingProcessor;
     }
 
-    Point<int> getInitialDraggingTrackAndSlot() const {
-        return initialDraggingTrackAndSlot;
-    }
-
-    Point<int> getCurrentlyDraggingTrackAndSlot() const {
-        return currentlyDraggingTrackAndSlot;
-    }
-
-    void setCurrentlyDraggingTrackAndSlot(Point<int> currentlyDraggingTrackAndSlot) {
-        this->currentlyDraggingTrackAndSlot = currentlyDraggingTrackAndSlot;
-    }
-
     UndoManager* getDragDependentUndoManager() {
         return !currentlyDraggingProcessor.isValid() ? &undoManager : nullptr;
+    }
+
+    void beginDraggingProcessor(const ValueTree& processor) {
+        if (processor[IDs::name] == MixerChannelProcessor::name())
+            // mixer channel processors are special processors.
+            // they could be dragged and reconnected like any old processor, but please don't :)
+            return;
+        currentlyDraggingProcessor = processor;
+        initialDraggingTrackAndSlot = {indexOf(currentlyDraggingProcessor.getParent()), currentlyDraggingProcessor[IDs::processorSlot]};
+        currentlyDraggingTrackAndSlot = initialDraggingTrackAndSlot;
+        sendProcessorDragInitiatedMessage();
+    }
+
+    void dragProcessorToPosition(const Point<int> &trackAndSlot) {
+        if (currentlyDraggingTrackAndSlot != trackAndSlot &&
+            trackAndSlot.y < getMixerChannelSlotForTrack(getTrack(trackAndSlot.x))) {
+            currentlyDraggingTrackAndSlot = trackAndSlot;
+
+            if (moveProcessor(trackAndSlot, getDragDependentUndoManager())) {
+                sendProcessorBeingDraggedMessage(currentlyDraggingTrackAndSlot == initialDraggingTrackAndSlot);
+            }
+        }
+    }
+
+    void endDraggingProcessor() {
+        currentlyDraggingTrack = {};
+        if (isCurrentlyDraggingProcessor() && currentlyDraggingTrackAndSlot != initialDraggingTrackAndSlot) {
+            // update the audio graph to match the current preview UI graph.
+            moveProcessor(initialDraggingTrackAndSlot, nullptr);
+            sendProcessorDragAboutToFinalizeMessage();
+            moveProcessor(currentlyDraggingTrackAndSlot, &undoManager);
+            currentlyDraggingProcessor = {};
+            sendProcessorDragFinalizedMessage();
+        }
+        currentlyDraggingProcessor = {};
     }
 
     bool moveProcessor(Point<int> toTrackAndSlot, UndoManager *undoManager) {

@@ -11,6 +11,10 @@ public:
     virtual void processorCreated(const ValueTree&) {};
     virtual void processorWillBeDestroyed(const ValueTree &) {};
     virtual void processorHasBeenDestroyed(const ValueTree &) {};
+    virtual void processorDragInitiated() {};
+    virtual void processorBeingDragged(bool isBackToInitialPosition) {};
+    virtual void processorDragAboutToFinalize() {};
+    virtual void processorDragFinalized() {};
     virtual ~ProcessorLifecycleListener() = default;
 };
 
@@ -57,7 +61,7 @@ public:
         }
     }
 
-    // The following four methods _cannot_ be called async!
+    // The following methods _cannot_ be called async!
     // They assume ordering of "willBeThinged -> thing -> hasThinged".
     virtual void sendProcessorWillBeDestroyedMessage(const ValueTree& item) {
         jassert(MessageManager::getInstance()->isThisTheMessageThread());
@@ -67,6 +71,26 @@ public:
     virtual void sendProcessorHasBeenDestroyedMessage(const ValueTree& item) {
         jassert(MessageManager::getInstance()->isThisTheMessageThread());
         listeners.call(&ProcessorLifecycleListener::processorHasBeenDestroyed, item);
+    }
+
+    virtual void sendProcessorDragInitiatedMessage() {
+        jassert(MessageManager::getInstance()->isThisTheMessageThread());
+        listeners.call(&ProcessorLifecycleListener::processorDragInitiated);
+    }
+
+    virtual void sendProcessorBeingDraggedMessage(bool isBackToInitialPosition) {
+        jassert(MessageManager::getInstance()->isThisTheMessageThread());
+        listeners.call(&ProcessorLifecycleListener::processorBeingDragged, isBackToInitialPosition);
+    }
+
+    virtual void sendProcessorDragAboutToFinalizeMessage() {
+        jassert(MessageManager::getInstance()->isThisTheMessageThread());
+        listeners.call(&ProcessorLifecycleListener::processorDragAboutToFinalize);
+    }
+
+    virtual void sendProcessorDragFinalizedMessage() {
+        jassert(MessageManager::getInstance()->isThisTheMessageThread());
+        listeners.call(&ProcessorLifecycleListener::processorDragFinalized);
     }
 private:
     ListenerList <ProcessorLifecycleListener> listeners;
