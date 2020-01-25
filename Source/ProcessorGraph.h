@@ -79,17 +79,16 @@ public:
             // they could be dragged and reconnected like any old processor, but please don't :)
             return;
         tracksManager.setCurrentlyDraggingProcessor(processor);
-        currentlyDraggingTrackAndSlot = tracksManager.getInitialDraggingTrackAndSlot();
         project.makeConnectionsSnapshot();
     }
 
     void dragProcessorToPosition(const Point<int> &trackAndSlot) {
-        if (currentlyDraggingTrackAndSlot != trackAndSlot &&
+        if (tracksManager.getCurrentlyDraggingTrackAndSlot() != trackAndSlot &&
             trackAndSlot.y < tracksManager.getMixerChannelSlotForTrack(tracksManager.getTrack(trackAndSlot.x))) {
-            currentlyDraggingTrackAndSlot = trackAndSlot;
+            tracksManager.setCurrentlyDraggingTrackAndSlot(trackAndSlot);
 
             if (tracksManager.moveProcessor(trackAndSlot, getDragDependentUndoManager())) {
-                if (currentlyDraggingTrackAndSlot == tracksManager.getInitialDraggingTrackAndSlot())
+                if (tracksManager.getCurrentlyDraggingTrackAndSlot() == tracksManager.getInitialDraggingTrackAndSlot())
                     project.restoreConnectionsSnapshot();
                 else
                     updateAllDefaultConnections();
@@ -98,11 +97,11 @@ public:
     }
 
     void endDraggingProcessor() {
-        if (tracksManager.isCurrentlyDraggingProcessor() && currentlyDraggingTrackAndSlot != tracksManager.getInitialDraggingTrackAndSlot()) {
+        if (tracksManager.isCurrentlyDraggingProcessor() && tracksManager.getCurrentlyDraggingTrackAndSlot() != tracksManager.getInitialDraggingTrackAndSlot()) {
             // update the audio graph to match the current preview UI graph.
             tracksManager.moveProcessor(tracksManager.getInitialDraggingTrackAndSlot(), nullptr);
             project.restoreConnectionsSnapshot();
-            tracksManager.moveProcessor(currentlyDraggingTrackAndSlot, &undoManager);
+            tracksManager.moveProcessor(tracksManager.getCurrentlyDraggingTrackAndSlot(), &undoManager);
             tracksManager.setCurrentlyDraggingProcessor({});
             if (project.isShiftHeld()) {
                 project.setShiftHeld(false);
@@ -198,8 +197,6 @@ public:
 
     UndoManager &undoManager;
 private:
-    Point<int> currentlyDraggingTrackAndSlot;
-
     std::map<NodeID, std::unique_ptr<StatefulAudioProcessorWrapper> > processorWrapperForNodeId;
 
     Project &project;

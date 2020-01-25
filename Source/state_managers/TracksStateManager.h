@@ -393,6 +393,7 @@ public:
     void setCurrentlyDraggingProcessor(const ValueTree& currentlyDraggingProcessor) {
         this->currentlyDraggingProcessor = currentlyDraggingProcessor;
         initialDraggingTrackAndSlot = {indexOf(currentlyDraggingProcessor.getParent()), currentlyDraggingProcessor[IDs::processorSlot]};
+        currentlyDraggingTrackAndSlot = initialDraggingTrackAndSlot;
     }
 
     bool isCurrentlyDraggingProcessor() {
@@ -405,6 +406,14 @@ public:
 
     Point<int> getInitialDraggingTrackAndSlot() const {
         return initialDraggingTrackAndSlot;
+    }
+
+    Point<int> getCurrentlyDraggingTrackAndSlot() const {
+        return currentlyDraggingTrackAndSlot;
+    }
+
+    void setCurrentlyDraggingTrackAndSlot(Point<int> currentlyDraggingTrackAndSlot) {
+        this->currentlyDraggingTrackAndSlot = currentlyDraggingTrackAndSlot;
     }
 
     UndoManager* getDragDependentUndoManager() {
@@ -531,6 +540,7 @@ private:
     std::unique_ptr<TrackAndSlot> selectionEndTrackAndSlot {};
     ValueTree currentlyDraggingTrack, currentlyDraggingProcessor;
     Point<int> initialDraggingTrackAndSlot;
+    Point<int> currentlyDraggingTrackAndSlot;
 
     int trackWidth {0}, processorHeight {0};
 
