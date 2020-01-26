@@ -515,7 +515,7 @@ private:
             } else if (i == IDs::allowDefaultConnections) {
                 updateDefaultConnectionsForProcessor(tree, true);
             }
-        } else if (i == IDs::focusedProcessorSlot) { // TODO change to focusedTrackIndex, and remember to reset inputs also when a processor is added to the focused track
+        } else if (i == IDs::focusedTrackIndex) {
             if (!isDeleting)
                 resetDefaultExternalInputs(nullptr);
         }
@@ -559,10 +559,8 @@ private:
 
     void valueTreeChildRemoved(ValueTree& parent, ValueTree& child, int indexFromWhichChildWasRemoved) override {
         if (child.hasType(IDs::PROCESSOR)) {
-            if (!tracksManager.isCurrentlyDraggingProcessor()) {
-                if (!isMoving) {
-                    removeProcessor(child);
-                }
+            if (!isMoving) {
+                removeProcessor(child);
             }
             for (int i = activePluginWindows.size(); --i >= 0;) {
                 if (!nodes.contains(activePluginWindows.getUnchecked(i)->node)) {
@@ -590,12 +588,6 @@ private:
             removeIllegalConnections();
         }
     }
-
-    void valueTreeChildOrderChanged(ValueTree& parent, int oldIndex, int newIndex) override {}
-
-    void valueTreeParentChanged(ValueTree& treeWhoseParentHasChanged) override {}
-
-    void valueTreeRedirected(ValueTree& treeWhichHasBeenChanged) override {}
 
     void valueTreeChildWillBeMovedToNewParent(ValueTree child, ValueTree& oldParent, int oldIndex, ValueTree& newParent, int newIndex) override {
         if (child.hasType(IDs::PROCESSOR))
