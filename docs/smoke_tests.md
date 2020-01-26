@@ -103,9 +103,7 @@ For a track with processors:
     - Push 2 view shows track processor names in the right order with no processor labels highlighted
       (with no white top-row Push 2 buttons - all are track's color),
       and all processor editors in the right-pane editor are the same deselected color
-    - Any default external input connections into a previously selected effect processor are removed
-      (TODO should reconsider this - say you're recording vocals and you select an empty slot in the same track above
-      the vocal processor. You're probably trying to add another preprocessor effect.)
+    - Default external input connections stay the same, since they are determined per-track
   * Selecting a slot with a processor:
     - Sets only the selected processor slot with the track color
     - Highlights the rest of the slots in the track to be brighter

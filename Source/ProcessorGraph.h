@@ -332,32 +332,66 @@ private:
         topologyChanged();
     }
 
+    // Disconnect external audio/midi inputs
+    // If `addDefaultConnections` is true, then for both audio and midi connection types:
+    //   * Find the topmost effect processor (receiving audio/midi) in the focused track
+    //   * Connect external device inputs to its most-upstream connected processor (including itself)
+    // (Note that it is possible for the same focused track to have a default audio-input processor different
+    // from its default midi-input processor.)
     void resetDefaultExternalInputs(UndoManager* undoManager, bool addDefaultConnections=true) {
-        ValueTree focusedProcessor = addDefaultConnections ? tracksManager.getFocusedProcessor() : ValueTree();
         auto audioInputNodeId = getNodeIdForState(project.getAudioInputProcessorState());
         disconnectDefaultOutgoing(audioInputNodeId, audio, undoManager);
-        if (focusedProcessor.isValid())
-            addDefaultExternalInputConnections(focusedProcessor, audioInputNodeId, audio, undoManager);
+
         for (const auto& midiInputProcessor : project.getInput()) {
             if (midiInputProcessor.getProperty(IDs::name) == MidiInputProcessor::name()) {
-                auto nodeId = getNodeIdForState(midiInputProcessor);
+                const auto nodeId = getNodeIdForState(midiInputProcessor);
                 disconnectDefaultOutgoing(nodeId, midi, undoManager);
-                if (focusedProcessor.isValid())
-                    addDefaultExternalInputConnections(focusedProcessor, nodeId, midi, undoManager);
+            }
+        }
+
+        if (addDefaultConnections) {
+            ValueTree processorToReceiveExternalInput = findEffectProcessorToReceiveDefaultExternalInput(audio);
+            if (processorToReceiveExternalInput.isValid())
+                defaultConnect(audioInputNodeId, getNodeIdForState(processorToReceiveExternalInput), audio, undoManager);
+
+            for (const auto& midiInputProcessor : project.getInput()) {
+                if (midiInputProcessor.getProperty(IDs::name) == MidiInputProcessor::name()) {
+                    const auto midiInputNodeId = getNodeIdForState(midiInputProcessor);
+                    processorToReceiveExternalInput = findEffectProcessorToReceiveDefaultExternalInput(midi);
+                    if (processorToReceiveExternalInput.isValid())
+                        defaultConnect(midiInputNodeId, getNodeIdForState(processorToReceiveExternalInput), midi, undoManager);
+                }
             }
         }
     }
 
-    // Find the upper-right-most processor that flows into the selected processor
-    void addDefaultExternalInputConnections(const ValueTree &focusedProcessor,
-                                            NodeID externalSourceNodeId, ConnectionType connectionType,
-                                            UndoManager* undoManager) {
-        if (tracksManager.getNumTracks() == 0)
-            return;
+    ValueTree findEffectProcessorToReceiveDefaultExternalInput(ConnectionType connectionType) {
+        const ValueTree &focusedTrack = tracksManager.getFocusedTrack();
+        const ValueTree &topmostEffectProcessor = findTopmostEffectProcessor(focusedTrack, connectionType);
+        return findMostUpstreamAvailableProcessorConnectedTo(topmostEffectProcessor, connectionType);
+    }
+
+    ValueTree findTopmostEffectProcessor(const ValueTree& track, ConnectionType connectionType) {
+        for (const auto& processor : track) {
+            if (isProcessorAnEffect(processor, connectionType)) {
+                return processor;
+            }
+        }
+        return {};
+    }
+
+    // Find the upper-right-most processor that flows into the given processor
+    // which doesn't already have incoming node connections.
+    ValueTree findMostUpstreamAvailableProcessorConnectedTo(const ValueTree &processor, ConnectionType connectionType) {
+        if (!processor.isValid())
+            return {};
 
         int lowestSlot = INT_MAX;
-        NodeID upperRightMostProcessorNodeId = {};
-        NodeID focusedNodeId = getNodeIdForState(focusedProcessor);
+        ValueTree upperRightMostProcessor;
+        NodeID processorNodeId = getNodeIdForState(processor);
+        if (!connectionsManager.nodeHasIncomingConnections(processorNodeId, connectionType))
+            upperRightMostProcessor = processor;
+
         for (int i = tracksManager.getNumTracks() - 1; i >= 0; i--) {
             const auto& track = tracksManager.getTrack(i);
             if (track.getNumChildren() == 0)
@@ -368,17 +402,22 @@ private:
             int slot = firstProcessor[IDs::processorSlot];
             if (slot < lowestSlot &&
                 !connectionsManager.nodeHasIncomingConnections(firstProcessorNodeId, connectionType) &&
-                connectionsManager.areProcessorsConnected(firstProcessorNodeId, focusedNodeId)) {
+                connectionsManager.areProcessorsConnected(firstProcessorNodeId, processorNodeId)) {
 
-                lowestSlot = firstProcessor[IDs::processorSlot];
-                upperRightMostProcessorNodeId = firstProcessorNodeId;
+                lowestSlot = slot;
+                upperRightMostProcessor = firstProcessor;
             }
         }
+        
+        return upperRightMostProcessor;
+    }
 
-        if (upperRightMostProcessorNodeId.isValid()) {
+    // Connect the given processor to the appropriate default external device input.
+    void defaultConnect(NodeID fromNodeId, NodeID toNodeId, ConnectionType connectionType, UndoManager *undoManager) {
+        if (toNodeId.isValid()) {
             const auto &defaultConnectionChannels = getDefaultConnectionChannels(connectionType);
             for (auto channel : defaultConnectionChannels) {
-                addDefaultConnection({{externalSourceNodeId, channel}, {upperRightMostProcessorNodeId, channel}}, undoManager);
+                addDefaultConnection({{fromNodeId, channel}, {toNodeId, channel}}, undoManager);
             }
         }
     }
@@ -387,7 +426,7 @@ private:
         return connectionType == audio ? defaultAudioConnectionChannels : defaultMidiConnectionChannels;
     }
 
-    const ValueTree findProcessorToFlowInto(const ValueTree &track, const ValueTree &processor, ConnectionType connectionType) {
+    ValueTree findProcessorToFlowInto(const ValueTree &track, const ValueTree &processor, ConnectionType connectionType) {
         if (!processor.hasType(IDs::PROCESSOR) || !isProcessorAProducer(processor, connectionType))
             return {};
 
@@ -412,7 +451,7 @@ private:
         return project.getAudioOutputProcessorState();
     }
 
-    inline bool isProcessorAProducer(const ValueTree &processorState, ConnectionType connectionType) const {
+    bool isProcessorAProducer(const ValueTree &processorState, ConnectionType connectionType) const {
         if (auto *processorWrapper = getProcessorWrapperForState(processorState)) {
             return (connectionType == audio && processorWrapper->processor->getTotalNumOutputChannels() > 0) ||
                    (connectionType == midi && processorWrapper->processor->producesMidi());
@@ -420,7 +459,7 @@ private:
         return false;
     }
 
-    inline bool isProcessorAnEffect(const ValueTree &processorState, ConnectionType connectionType) const {
+    bool isProcessorAnEffect(const ValueTree &processorState, ConnectionType connectionType) const {
         if (auto *processorWrapper = getProcessorWrapperForState(processorState)) {
             return (connectionType == audio && processorWrapper->processor->getTotalNumInputChannels() > 0) ||
                    (connectionType == midi && processorWrapper->processor->acceptsMidi());
@@ -428,7 +467,7 @@ private:
         return false;
     }
 
-    inline bool canProcessorDefaultConnectTo(const ValueTree &processor, const ValueTree &otherProcessor, ConnectionType connectionType) const {
+    bool canProcessorDefaultConnectTo(const ValueTree &processor, const ValueTree &otherProcessor, ConnectionType connectionType) const {
         if (!otherProcessor.hasType(IDs::PROCESSOR) || processor == otherProcessor)
             return false;
 
@@ -508,7 +547,7 @@ private:
             } else if (i == IDs::allowDefaultConnections) {
                 updateDefaultConnectionsForProcessor(tree, true);
             }
-        } else if (i == IDs::focusedProcessorSlot) {
+        } else if (i == IDs::focusedProcessorSlot) { // TODO change to focusedTrackIndex, and remember to reset inputs also when a processor is added to the focused track
             if (!isDeleting)
                 resetDefaultExternalInputs(nullptr);
         }
