@@ -133,11 +133,16 @@ public:
     }
 
     void focusOnProcessorSlot(const ValueTree& track, const int processorSlot) {
-        const int trackIndex = track.isValid() ? track.getParent().indexOf(track) : 0;
+        auto trackIndex = track.isValid() ? track.getParent().indexOf(track) : 0;
+        auto currentlyFocusedTrackAndSlot = getFocusedTrackAndSlot();
         focusOnTrackIndex(trackIndex);
-        // Always send the change message since this can be called already after the node is added to the graph,
-        // but before the processor has completely initialized.
-        viewState.setProperty(IDs::focusedProcessorSlot, processorSlot, nullptr);
+        if (trackIndex != currentlyFocusedTrackAndSlot.x && processorSlot == currentlyFocusedTrackAndSlot.y) {
+            // Different track but same slot selected - still send out the message
+            viewState.sendPropertyChangeMessage(IDs::focusedProcessorSlot);
+        } else {
+            viewState.setProperty(IDs::focusedProcessorSlot, processorSlot, nullptr);
+        }
+
     }
 
     void togglePaneFocus() {
