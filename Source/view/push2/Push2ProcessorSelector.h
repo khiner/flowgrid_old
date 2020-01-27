@@ -231,13 +231,13 @@ public:
 
     void aboveScreenButtonPressed(int buttonIndex) override {
         if (const auto* selectedProcessor = selectTopProcessor(buttonIndex)) {
-            project.createAndAddProcessor(*selectedProcessor);
+            project.createProcessor(*selectedProcessor);
         }
     }
 
     void belowScreenButtonPressed(int buttonIndex) override {
         if (const auto* selectedProcessor = selectBottomProcessor(buttonIndex)) {
-            project.createAndAddProcessor(*selectedProcessor);
+            project.createProcessor(*selectedProcessor);
         }
     }
 

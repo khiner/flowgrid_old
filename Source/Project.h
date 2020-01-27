@@ -2,9 +2,6 @@
 
 #pragma once
 
-#include <unordered_map>
-#include <view/push2/Push2Colours.h>
-#include "ValueTreeItems.h"
 #include "processors/ProcessorManager.h"
 #include "Utilities.h"
 #include "StatefulAudioProcessorContainer.h"
@@ -29,9 +26,9 @@ public:
 
             const auto& focusedTrack = project.getFocusedTrack();
             if (slot != -1)
-                project.selectProcessorSlot(track, slot);
+                project.selectProcessorSlot(track, slot, nullptr);
             if (slot == -1 || (focusedTrack != track && focusedTrack[IDs::selected]))
-                project.setTrackSelected(track, true);
+                project.setTrackSelected(track, true, nullptr, false, false);
         }
 
         ValueTree track;
@@ -69,6 +66,15 @@ public:
         deviceManager.addChangeListener(this);
         changeListenerCallback(&deviceManager);
         undoManager.clearUndoHistory();
+    }
+
+    void undo() {
+        undoManager.undo();
+    }
+
+    void redo() {
+        endRectangleSelection(); // TODO should not need
+        undoManager.redo();
     }
 
     void setStatefulAudioProcessorContainer(StatefulAudioProcessorContainer* statefulAudioProcessorContainer) {
@@ -145,102 +151,50 @@ public:
             endRectangleSelection();
     }
 
+
+    void createAndAddMasterTrack() {
+        prepareForDefaultConnectionAction();
+        tracksManager.doCreateAndAddMasterTrack();
+        afterDefaultConnectionAction();
+    }
+
+    void createTrack(bool addMixer=true) {
+        prepareForDefaultConnectionAction();
+        ValueTree newTrack = tracksManager.doCreateAndAddTrack(&undoManager, addMixer);
+        setTrackSelected(newTrack, true, &undoManager, true, false);
+        // afterDefaultConnectionAction not needed here since all selection and default connections have been
+        // done in setTrackSelected. Just take care of this part:
+        previouslyFocusedTrackIndex = viewManager.getFocusedTrackIndex();
+    }
+
+    // Assumes we're always creating processors to the currently focused track (which is true as of now!)
+    void createProcessor(const PluginDescription& description, int slot= -1) {
+        const auto& focusedTrack = tracksManager.getFocusedTrack();
+        if (focusedTrack.isValid()) {
+            prepareForDefaultConnectionAction();
+            ValueTree processor = tracksManager.doCreateAndAddProcessor(description, focusedTrack, &undoManager, slot);
+            selectProcessor(processor, &undoManager);
+            // TODO should clean this kind of pattern up
+            previouslyFocusedTrackIndex = viewManager.getFocusedTrackIndex();
+        }
+    }
+
     void duplicateSelectedItems() {
+        prepareForDefaultConnectionAction();
         const Array<ValueTree> allSelectedItems = tracksManager.findAllSelectedItems();
         for (auto selectedItem : allSelectedItems) {
             duplicateItem(selectedItem, &undoManager);
         }
-        addSelectionStateToUndoStack();
+        afterDefaultConnectionAction();
     }
 
     void deleteSelectedItems() {
-        addSelectionStateToUndoStack();
-        const Array<ValueTree> allSelectedItems = tracksManager.findAllSelectedItems();
+        prepareForDefaultConnectionAction();
+        const auto allSelectedItems = tracksManager.findAllSelectedItems();
         for (const auto &selectedItem : allSelectedItems) {
             deleteTrackOrProcessor(selectedItem, &undoManager);
         }
-    }
-
-    void deleteTrackOrProcessor(const ValueTree &item, UndoManager *undoManager) {
-        if (!item.isValid())
-            return;
-        if (item.getParent().isValid()) {
-            if (item.hasType(IDs::TRACK)) {
-                while (item.getNumChildren() > 0)
-                    deleteTrackOrProcessor(item.getChild(item.getNumChildren() - 1), undoManager);
-            } else if (item.hasType(IDs::PROCESSOR)) {
-                resetDefaultExternalInputs(getDragDependentUndoManager(), false);
-                ValueTree(item).removeProperty(IDs::processorInitialized, nullptr);
-                connectionsManager.disconnectNode(getNodeIdForState(item), getDragDependentUndoManager());
-            }
-            item.getParent().removeChild(item, undoManager);
-            if (item.hasType(IDs::PROCESSOR)) {
-                updateAllDefaultConnections();
-            }
-        }
-    }
-
-    void clearTracks() {
-        while (tracksManager.getNumTracks() > 0) {
-            deleteTrackOrProcessor(tracksManager.getTrack(tracksManager.getNumTracks() - 1), nullptr);
-        }
-    }
-
-    void duplicateItem(ValueTree &item, UndoManager* undoManager) {
-        if (!item.isValid())
-            return;
-        if (item.getParent().isValid()) {
-            if (item.hasType(IDs::TRACK) && !tracksManager.isMasterTrack(item)) {
-                auto copiedTrack = tracksManager.doCreateAndAddTrack(undoManager, false, item, true);
-                for (auto processor : item) {
-                    tracksManager.saveProcessorStateInformationToState(processor);
-                    auto copiedProcessor = processor.createCopy();
-                    copiedProcessor.removeProperty(IDs::nodeId, nullptr);
-                    addProcessorToTrack(copiedTrack, copiedProcessor, item.indexOf(processor), undoManager);
-                }
-            } else if (item.hasType(IDs::PROCESSOR) && !tracksManager.isMixerChannelProcessor(item)) {
-                tracksManager.saveProcessorStateInformationToState(item);
-                auto track = item.getParent();
-                auto copiedProcessor = item.createCopy();
-                tracksManager.setProcessorSlot(track, copiedProcessor, int(item[IDs::processorSlot]) + 1, nullptr);
-                copiedProcessor.removeProperty(IDs::nodeId, nullptr);
-                addProcessorToTrack(track, copiedProcessor, track.indexOf(item), undoManager);
-            }
-        }
-    }
-
-    ValueTree createAndAddMasterTrack() {
-        ValueTree masterTrack = tracksManager.doCreateAndAddMasterTrack();
-        updateAllDefaultConnections();
-        addSelectionStateToUndoStack();
-        return masterTrack;
-    }
-
-    ValueTree createAndAddTrack(bool addMixer=true) {
-        ValueTree newTrack = tracksManager.doCreateAndAddTrack(&undoManager, addMixer);
-        setTrackSelected(newTrack, true);
-        updateAllDefaultConnections();
-        addSelectionStateToUndoStack();
-        return newTrack;
-    }
-
-    // Assumes we're always creating processors to the currently focused track (which is true as of now!)
-    ValueTree createAndAddProcessor(const PluginDescription& description, int slot=-1) {
-        const auto& focusedTrack = tracksManager.getFocusedTrack();
-        if (focusedTrack.isValid()) {
-            ValueTree newProcessor = tracksManager.doCreateAndAddProcessor(description, focusedTrack, &undoManager, slot);
-            updateAllDefaultConnections();
-            addSelectionStateToUndoStack();
-            return newProcessor;
-        } else {
-            return {};
-        }
-    }
-
-    void addProcessorToTrack(ValueTree &track, const ValueTree &processor, int insertIndex, UndoManager *undoManager) {
-        tracksManager.addProcessorToTrack(track, processor, insertIndex, undoManager);
-        selectProcessor(processor);
-        updateAllDefaultConnections();
+        afterDefaultConnectionAction();
     }
 
     void beginDraggingProcessor(const ValueTree& processor) {
@@ -255,17 +209,12 @@ public:
         makeConnectionsSnapshot();
     }
 
-
-    UndoManager* getDragDependentUndoManager() {
-        return !currentlyDraggingProcessor.isValid() ? &undoManager : nullptr;
-    }
-
     void dragProcessorToPosition(const Point<int> &trackAndSlot) {
         if (currentlyDraggingTrackAndSlot != trackAndSlot &&
             trackAndSlot.y < tracksManager.getMixerChannelSlotForTrack(tracksManager.getTrack(trackAndSlot.x))) {
             currentlyDraggingTrackAndSlot = trackAndSlot;
 
-            if (moveProcessor(trackAndSlot, getDragDependentUndoManager())) {
+            if (moveProcessor(trackAndSlot, nullptr)) {
                 if (currentlyDraggingTrackAndSlot == initialDraggingTrackAndSlot)
                     restoreConnectionsSnapshot();
                 else
@@ -275,22 +224,26 @@ public:
     }
 
     void endDraggingProcessor() {
+        if (!isCurrentlyDraggingProcessor())
+            return;
+
         currentlyDraggingTrack = {};
         if (isCurrentlyDraggingProcessor() && currentlyDraggingTrackAndSlot != initialDraggingTrackAndSlot) {
             // update the audio graph to match the current preview UI graph.
             moveProcessor(initialDraggingTrackAndSlot, nullptr);
             restoreConnectionsSnapshot();
+            // TODO update to use prepare...
             moveProcessor(currentlyDraggingTrackAndSlot, &undoManager);
+            currentlyDraggingProcessor = {};
+            if (isShiftHeld()) {
+                setShiftHeld(false);
+                updateAllDefaultConnections(true);
+                setShiftHeld(true);
+            } else {
+                updateAllDefaultConnections();
+            }
         }
         currentlyDraggingProcessor = {};
-
-        if (isShiftHeld()) {
-            setShiftHeld(false);
-            updateAllDefaultConnections(true);
-            setShiftHeld(true);
-        } else {
-            updateAllDefaultConnections();
-        }
     }
 
     bool moveProcessor(Point<int> toTrackAndSlot, UndoManager *undoManager) {
@@ -332,22 +285,23 @@ public:
     // Focuses on whatever is in this slot (including nothing).
     // A slot of -1 means to focus on the track, which actually focuses on
     // its first processor, if present, or its first slot (which is empty).
-    void focusOnProcessorSlot(const ValueTree& track, int slot) {
+    void focusOnProcessorSlot(const ValueTree& track, int slot, UndoManager *undoManager) {
         if (slot == -1) {
             const ValueTree &firstProcessor = track.getChild(0);
             slot = firstProcessor.isValid() ? int(firstProcessor[IDs::processorSlot]) : 0;
         }
         viewManager.focusOnProcessorSlot(track, slot);
+        resetDefaultExternalInputs(undoManager);
     }
 
-    void selectProcessorSlot(const ValueTree& track, int slot, bool deselectOthers=true) {
+    void selectProcessorSlot(const ValueTree& track, int slot, UndoManager *undoManager, bool deselectOthers=true) {
         selectionEndTrackAndSlot = std::make_unique<TrackAndSlot>(track, slot);
         if (selectionStartTrackAndSlot != nullptr) { // shift+select
             selectRectangle(track, slot);
         } else {
             setProcessorSlotSelected(track, slot, true, deselectOthers);
         }
-        focusOnProcessorSlot(track, slot);
+        focusOnProcessorSlot(track, slot, undoManager);
     }
 
     void deselectProcessorSlot(const ValueTree& track, int slot) {
@@ -355,25 +309,26 @@ public:
     }
 
     void selectMasterTrack() {
-        setTrackSelected(tracksManager.getMasterTrack(), true);
+        setTrackSelected(tracksManager.getMasterTrack(), true, nullptr, false, false);
     }
 
     ValueTree getFocusedTrack() const {
         return tracksManager.getFocusedTrack();
     }
 
-    void selectProcessor(const ValueTree& processor) {
-        selectProcessorSlot(processor.getParent(), processor[IDs::processorSlot], true);
+    void selectProcessor(const ValueTree& processor, UndoManager *undoManager) {
+        selectProcessorSlot(processor.getParent(), processor[IDs::processorSlot], undoManager, true);
     }
 
-    void setTrackSelected(ValueTree track, bool selected, bool deselectOthers=true, bool allowRectangleSelect=true) {
+    void setTrackSelected(ValueTree track, bool selected, UndoManager *undoManager,
+                          bool deselectOthers = true, bool allowRectangleSelect = true) {
         // take care of this track
-        track.setProperty(IDs::selected, selected, nullptr);
+        track.setProperty(IDs::selected, selected, undoManager);
         if (selected) {
-            tracksManager.selectAllTrackSlots(track);
-            focusOnProcessorSlot(track, -1);
+            tracksManager.selectAllTrackSlots(track, undoManager);
+            focusOnProcessorSlot(track, -1, undoManager);
         } else {
-            tracksManager.deselectAllTrackSlots(track);
+            tracksManager.deselectAllTrackSlots(track, undoManager);
         }
         // take care of other tracks
         selectionEndTrackAndSlot = std::make_unique<TrackAndSlot>(track);
@@ -383,11 +338,17 @@ public:
             if (selected && deselectOthers) {
                 for (const auto& otherTrack : tracksManager.getState()) {
                     if (otherTrack != track) {
-                        setTrackSelected(otherTrack, false, false);
+                        setTrackSelected(otherTrack, false, undoManager, false, false);
                     }
                 }
             }
         }
+    }
+
+    void setDefaultConnectionsAllowed(ValueTree processor, bool defaultConnectionsAllowed) {
+        processor.setProperty(IDs::allowDefaultConnections, defaultConnectionsAllowed, &undoManager);
+        updateDefaultConnectionsForProcessor(processor);
+        resetDefaultExternalInputs(&undoManager);
     }
 
     // make a snapshot of all the information needed to capture AudioGraph connections and UI positions
@@ -420,10 +381,11 @@ public:
     void createDefaultProject() {
         viewManager.initializeDefault();
         createAudioIoProcessors();
-        createAndAddTrack();
-        ValueTree processor = createAndAddProcessor(SineBank::getPluginDescription());
-        createAndAddMasterTrack();
-        selectProcessor(processor);
+        ValueTree track = tracksManager.doCreateAndAddTrack(nullptr);
+        ValueTree processor = tracksManager.doCreateAndAddProcessor(SineBank::getPluginDescription(), track, nullptr, 0);
+        tracksManager.doCreateAndAddMasterTrack();
+        selectProcessor(processor, nullptr);
+        updateAllDefaultConnections();
         undoManager.clearUndoHistory();
     }
 
@@ -515,7 +477,7 @@ public:
         Utilities::moveAllChildren(newState.getChildWithName(IDs::OUTPUT), output, nullptr);
         tracksManager.loadFromState(newState.getChildWithName(IDs::TRACKS));
         connectionsManager.loadFromState(newState.getChildWithName(IDs::CONNECTIONS));
-        selectProcessor(tracksManager.getFocusedProcessor());
+        selectProcessor(tracksManager.getFocusedProcessor(), nullptr);
         undoManager.clearUndoHistory();
         sendChangeMessage();
 
@@ -565,24 +527,111 @@ public:
     void updateAllDefaultConnections(bool makeInvalidDefaultsIntoCustom=false) {
         for (const auto& track : getTracks()) {
             for (const auto& processor : track) {
-                updateDefaultConnectionsForProcessor(processor, false, makeInvalidDefaultsIntoCustom);
+                updateDefaultConnectionsForProcessor(processor, makeInvalidDefaultsIntoCustom);
             }
         }
-        resetDefaultExternalInputs(getDragDependentUndoManager());
+        resetDefaultExternalInputs(isCurrentlyDraggingProcessor() ? nullptr : &undoManager);
     }
 
+    bool checkedRemoveConnection(const AudioProcessorGraph::Connection &connection, UndoManager* undoManager, bool defaults, bool custom) {
+        const ValueTree &connectionState = connectionsManager.getConnectionMatching(connection);
+        return checkedRemoveConnection(connectionState, undoManager, defaults, custom);
+    }
+
+    bool doDisconnectNode(AudioProcessorGraph::NodeID nodeId, ConnectionType connectionType, UndoManager* undoManager,
+                          bool defaults, bool custom, bool incoming, bool outgoing) {
+        const auto connections = connectionsManager.getConnectionsForNode(nodeId, connectionType, incoming, outgoing);
+        bool anyRemoved = false;
+        for (const auto &connection : connections) {
+            if (checkedRemoveConnection(connection, undoManager, defaults, custom))
+                anyRemoved = true;
+        }
+
+        return anyRemoved;
+    }
 
     bool removeConnection(const AudioProcessorGraph::Connection& c) {
         const ValueTree &connectionState = connectionsManager.getConnectionMatching(c);
-        bool removed = connectionsManager.checkedRemoveConnection(c, getDragDependentUndoManager(), true, true);
+        bool removed = checkedRemoveConnection(c, &undoManager, true, true);
         if (removed && connectionState.hasProperty(IDs::isCustomConnection)) {
             const auto& sourceState = connectionState.getChildWithName(IDs::SOURCE);
             auto nodeId = StatefulAudioProcessorContainer::getNodeIdForState(sourceState);
             const auto& processor = getProcessorStateForNodeId(nodeId);
-            updateDefaultConnectionsForProcessor(processor, true);
+            updateDefaultConnectionsForProcessor(processor);
+            resetDefaultExternalInputs(&undoManager);
         }
         return removed;
     }
+
+    bool addConnection(const AudioProcessorGraph::Connection& c) {
+        return checkedAddConnection(c, false, &undoManager);
+    }
+
+    bool addDefaultConnection(const AudioProcessorGraph::Connection& c, UndoManager *undoManager) {
+        return checkedAddConnection(c, true, undoManager);
+    }
+
+    bool addCustomConnection(const AudioProcessorGraph::Connection& c, UndoManager *undoManager) {
+        return checkedAddConnection(c, false, undoManager);
+    }
+
+    bool removeDefaultConnection(const AudioProcessorGraph::Connection& c, UndoManager *undoManager) {
+        return checkedRemoveConnection(c, undoManager, true, false);
+    }
+
+    // Connect the given processor to the appropriate default external device input.
+    void defaultConnect(AudioProcessorGraph::NodeID fromNodeId, AudioProcessorGraph::NodeID toNodeId, ConnectionType connectionType, UndoManager *undoManager) {
+        if (toNodeId.isValid()) {
+            const auto &defaultConnectionChannels = connectionsManager.getDefaultConnectionChannels(connectionType);
+            for (auto channel : defaultConnectionChannels) {
+                addDefaultConnection({{fromNodeId, channel}, {toNodeId, channel}}, undoManager);
+            }
+        }
+    }
+
+    // checks for duplicate add should be done before! (not done here to avoid redundant checks)
+    void addConnection(const AudioProcessorGraph::Connection &connection, UndoManager* undoManager, bool isDefault=true) {
+        ValueTree connectionState(IDs::CONNECTION);
+        ValueTree source(IDs::SOURCE);
+        source.setProperty(IDs::nodeId, int(connection.source.nodeID.uid), nullptr);
+        source.setProperty(IDs::channel, connection.source.channelIndex, nullptr);
+        connectionState.addChild(source, -1, nullptr);
+
+        ValueTree destination(IDs::DESTINATION);
+        destination.setProperty(IDs::nodeId, int(connection.destination.nodeID.uid), nullptr);
+        destination.setProperty(IDs::channel, connection.destination.channelIndex, nullptr);
+        connectionState.addChild(destination, -1, nullptr);
+
+        if (!isDefault) {
+            connectionState.setProperty(IDs::isCustomConnection, true, nullptr);
+        }
+        connectionsManager.addConnection(connectionState, undoManager);
+        if (!isDefault) {
+            const auto& processor = getProcessorStateForNodeId(getNodeIdForState(source));
+            updateDefaultConnectionsForProcessor(processor);
+            resetDefaultExternalInputs(undoManager);
+        }
+    }
+
+    bool checkedAddConnection(const AudioProcessorGraph::Connection &c, bool isDefault, UndoManager* undoManager) {
+        if (isDefault && isShiftHeld())
+            return false; // no default connection stuff while shift is held
+        if (connectionsManager.canConnectUi(c)) {
+            if (!isDefault)
+                disconnectDefaultOutgoing(c.source.nodeID, c.source.isMIDI() ? midi : audio, undoManager);
+            addConnection(c, undoManager, isDefault);
+
+            return true;
+        }
+        return false;
+    }
+
+    bool checkedRemoveConnection(const ValueTree& connection, UndoManager* undoManager, bool allowDefaults, bool allowCustom) {
+        if (!connection.isValid() || (!connection[IDs::isCustomConnection] && isShiftHeld()))
+            return false; // no default connection stuff while shift is held
+        return connectionsManager.removeConnection(connection, undoManager, allowDefaults, allowCustom);
+    }
+
 
     ValueTree findProcessorToFlowInto(const ValueTree &track, const ValueTree &processor, ConnectionType connectionType) {
         if (!processor.hasType(IDs::PROCESSOR) || !connectionsManager.isProcessorAProducer(processor, connectionType))
@@ -609,16 +658,17 @@ public:
         return getAudioOutputProcessorState();
     }
 
-    void updateDefaultConnectionsForProcessor(const ValueTree &processor, bool updateExternalInputs, bool makeInvalidDefaultsIntoCustom=false) {
+    void updateDefaultConnectionsForProcessor(const ValueTree &processor, bool makeInvalidDefaultsIntoCustom=false) {
+        UndoManager *undoManager = isCurrentlyDraggingProcessor() ? nullptr : &this->undoManager;
         for (auto connectionType : {audio, midi}) {
             AudioProcessorGraph::NodeID nodeId = StatefulAudioProcessorContainer::getNodeIdForState(processor);
             if (!processor[IDs::allowDefaultConnections]) {
-                connectionsManager.disconnectDefaults(nodeId, getDragDependentUndoManager());
+                doDisconnectNode(nodeId, all, undoManager, true, false, true, true);
                 return;
             }
             auto outgoingCustomConnections = connectionsManager.getConnectionsForNode(nodeId, connectionType, false, true, true, false);
             if (!outgoingCustomConnections.isEmpty()) {
-                connectionsManager.disconnectDefaultOutgoing(nodeId, connectionType, getDragDependentUndoManager());
+                disconnectDefaultOutgoing(nodeId, connectionType, undoManager);
                 return;
             }
             auto outgoingDefaultConnections = connectionsManager.getConnectionsForNode(nodeId, connectionType, false, true, false, true);
@@ -631,11 +681,11 @@ public:
                 AudioProcessorGraph::NodeID nodeIdCurrentlyConnectedTo = StatefulAudioProcessorContainer::getNodeIdForState(connection.getChildWithName(IDs::DESTINATION));
                 if (nodeIdCurrentlyConnectedTo != nodeIdToConnectTo) {
                     for (auto channel : defaultChannels) {
-                        connectionsManager.removeDefaultConnection({{nodeId, channel}, {nodeIdCurrentlyConnectedTo, channel}}, getDragDependentUndoManager());
+                        removeDefaultConnection({{nodeId, channel}, {nodeIdCurrentlyConnectedTo, channel}}, undoManager);
                     }
                     if (makeInvalidDefaultsIntoCustom) {
                         for (auto channel : defaultChannels) {
-                            if (connectionsManager.addCustomConnection({{nodeId, channel}, {nodeIdCurrentlyConnectedTo, channel}}, getDragDependentUndoManager()))
+                            if (addCustomConnection({{nodeId, channel}, {nodeIdCurrentlyConnectedTo, channel}}, undoManager))
                                 anyCustomAdded = true;
                         }
                     }
@@ -644,14 +694,35 @@ public:
             if (!anyCustomAdded) {
                 if (processor[IDs::allowDefaultConnections] && processorToConnectTo[IDs::allowDefaultConnections]) {
                     for (auto channel : defaultChannels) {
-                        connectionsManager.addDefaultConnection({{nodeId, channel}, {nodeIdToConnectTo, channel}}, getDragDependentUndoManager());
+                        addDefaultConnection({{nodeId, channel}, {nodeIdToConnectTo, channel}}, undoManager);
                     }
                 }
             }
         }
-        if (updateExternalInputs) {
-            resetDefaultExternalInputs(getDragDependentUndoManager());
-        }
+    }
+
+    bool disconnectProcessor(const ValueTree& processor) {
+        return disconnectNode(getNodeIdForState(processor), &undoManager);
+    }
+
+    bool disconnectProcessor(const ValueTree& processor, UndoManager *undoManager) {
+        return disconnectNode(getNodeIdForState(processor), undoManager);
+    }
+
+    bool disconnectNode(AudioProcessorGraph::NodeID nodeId) {
+        return disconnectNode(nodeId, &undoManager);
+    }
+
+    bool disconnectNode(AudioProcessorGraph::NodeID nodeId, UndoManager *undoManager) {
+        return doDisconnectNode(nodeId, all, undoManager, true, true, true, true);
+    }
+
+    bool disconnectDefaultOutgoing(AudioProcessorGraph::NodeID nodeId, ConnectionType connectionType, UndoManager* undoManager) {
+        return doDisconnectNode(nodeId, connectionType, undoManager, true, false, false, true);
+    }
+
+    bool disconnectCustom(const ValueTree& processor) {
+        return doDisconnectNode(getNodeIdForState(processor), all, &undoManager, false, true, true, true);
     }
 
     // Disconnect external audio/midi inputs
@@ -660,28 +731,28 @@ public:
     //   * Connect external device inputs to its most-upstream connected processor (including itself)
     // (Note that it is possible for the same focused track to have a default audio-input processor different
     // from its default midi-input processor.)
-    void resetDefaultExternalInputs(UndoManager* undoManager, bool addDefaultConnections=true) {
+    void resetDefaultExternalInputs(UndoManager *undoManager, bool addDefaultConnections=true) {
         auto audioInputNodeId = getNodeIdForState(getAudioInputProcessorState());
-        connectionsManager.disconnectDefaultOutgoing(audioInputNodeId, audio, undoManager);
+        disconnectDefaultOutgoing(audioInputNodeId, audio, undoManager);
 
         for (const auto& midiInputProcessor : getInput()) {
             if (midiInputProcessor.getProperty(IDs::name) == MidiInputProcessor::name()) {
                 const auto nodeId = getNodeIdForState(midiInputProcessor);
-                connectionsManager.disconnectDefaultOutgoing(nodeId, midi, undoManager);
+                disconnectDefaultOutgoing(nodeId, midi, undoManager);
             }
         }
 
         if (addDefaultConnections) {
             ValueTree processorToReceiveExternalInput = findEffectProcessorToReceiveDefaultExternalInput(audio);
             if (processorToReceiveExternalInput.isValid())
-                connectionsManager.defaultConnect(audioInputNodeId, getNodeIdForState(processorToReceiveExternalInput), audio, undoManager);
+                defaultConnect(audioInputNodeId, getNodeIdForState(processorToReceiveExternalInput), audio, undoManager);
 
             for (const auto& midiInputProcessor : getInput()) {
                 if (midiInputProcessor.getProperty(IDs::name) == MidiInputProcessor::name()) {
                     const auto midiInputNodeId = getNodeIdForState(midiInputProcessor);
                     processorToReceiveExternalInput = findEffectProcessorToReceiveDefaultExternalInput(midi);
                     if (processorToReceiveExternalInput.isValid())
-                        connectionsManager.defaultConnect(midiInputNodeId, getNodeIdForState(processorToReceiveExternalInput), midi, undoManager);
+                        defaultConnect(midiInputNodeId, getNodeIdForState(processorToReceiveExternalInput), midi, undoManager);
                 }
             }
         }
@@ -750,19 +821,57 @@ private:
     AudioProcessorGraph* graph {};
     StatefulAudioProcessorContainer* statefulAudioProcessorContainer {};
     std::unique_ptr<TrackAndSlot> selectionStartTrackAndSlot {}, selectionEndTrackAndSlot {};
+    int previouslyFocusedTrackIndex = 0;
 
     bool shiftHeld { false }, push2ShiftHeld { false };
 
     ValueTree currentlyDraggingTrack, currentlyDraggingProcessor;
-    Point<int> initialDraggingTrackAndSlot;
-    Point<int> currentlyDraggingTrackAndSlot;
+    Point<int> initialDraggingTrackAndSlot, currentlyDraggingTrackAndSlot;
+
 
     void clear() {
         input.removeAllChildren(nullptr);
         output.removeAllChildren(nullptr);
-        clearTracks();
+        tracksManager.clear();
         connectionsManager.clear();
         undoManager.clearUndoHistory();
+    }
+
+    void deleteTrackOrProcessor(const ValueTree &item, UndoManager *undoManager) {
+        if (!item.isValid())
+            return;
+        if (item.getParent().isValid()) {
+            if (item.hasType(IDs::TRACK)) {
+                while (item.getNumChildren() > 0)
+                    deleteTrackOrProcessor(item.getChild(item.getNumChildren() - 1), undoManager);
+            } else if (item.hasType(IDs::PROCESSOR)) {
+                ValueTree(item).removeProperty(IDs::processorInitialized, nullptr);
+                disconnectProcessor(item, undoManager);
+            }
+            item.getParent().removeChild(item, undoManager);
+        }
+    }
+
+    void duplicateItem(ValueTree &item, UndoManager* undoManager) {
+        if (!item.isValid() || !item.getParent().isValid())
+            return;
+
+        if (item.hasType(IDs::TRACK) && !tracksManager.isMasterTrack(item)) {
+            auto copiedTrack = tracksManager.doCreateAndAddTrack(undoManager, false, item, true);
+            for (auto processor : item) {
+                tracksManager.saveProcessorStateInformationToState(processor);
+                auto copiedProcessor = processor.createCopy();
+                copiedProcessor.removeProperty(IDs::nodeId, nullptr);
+                tracksManager.addProcessorToTrack(copiedTrack, processor, item.indexOf(processor), undoManager);
+            }
+        } else if (item.hasType(IDs::PROCESSOR) && !tracksManager.isMixerChannelProcessor(item)) {
+            tracksManager.saveProcessorStateInformationToState(item);
+            auto track = item.getParent();
+            auto copiedProcessor = item.createCopy();
+            tracksManager.setProcessorSlot(track, copiedProcessor, int(item[IDs::processorSlot]) + 1, nullptr);
+            copiedProcessor.removeProperty(IDs::nodeId, nullptr);
+            tracksManager.addProcessorToTrack(track, copiedProcessor, item.indexOf(item), undoManager);
+        }
     }
 
     void createAudioIoProcessors() {
@@ -856,8 +965,8 @@ private:
     void setProcessorSlotSelected(ValueTree track, int slot, bool selected, bool deselectOthers=true) {
         const auto currentSlotMask = tracksManager.getSlotMask(track);
         if (deselectOthers) {
-            for (auto anyTrack : tracksManager.getState()) { // also deselect this track!
-                setTrackSelected(anyTrack, false, false);
+            for (const auto& anyTrack : tracksManager.getState()) { // also deselect this track!
+                setTrackSelected(anyTrack, false, nullptr, false, false);
             }
         }
         auto newSlotMask = deselectOthers ? BigInteger() : currentSlotMask;
@@ -877,7 +986,7 @@ private:
             bool trackSelected = (slot == -1 || selectionStartTrackAndSlot->slot == -1) &&
                                  ((selectionStartTrackIndex <= otherTrackIndex && otherTrackIndex <= trackIndex) ||
                                   (trackIndex <= otherTrackIndex && otherTrackIndex <= selectionStartTrackIndex));
-            setTrackSelected(otherTrack, trackSelected, false, false);
+            setTrackSelected(otherTrack, trackSelected, nullptr, false, false);
             if (!trackSelected) {
                 for (int otherSlot = 0; otherSlot < viewManager.getNumAvailableSlotsForTrack(otherTrack); otherSlot++) {
                     const auto otherGridPosition = trackAndSlotToGridPosition({otherTrack, otherSlot});
@@ -885,9 +994,7 @@ private:
                 }
             }
         }
-        if (slot == -1) {
-            viewManager.focusOnTrackIndex(trackIndex);
-        }
+        focusOnProcessorSlot(track, slot, nullptr);
     }
 
     void startRectangleSelection() {
@@ -1009,12 +1116,32 @@ private:
     // as well as doing things like re-focusing a processor after undoing a delete)
     // This is accomplished by re-setting all selection/focus properties, passing a flag to allow
     // no-ops into the undo-manager (otherwise re-saving the current state wouldn't be undoable).
-    void addSelectionStateToUndoStack() {
+    void prepareForDefaultConnectionAction() {
+        int currentlyFocusedTrackIndex = viewManager.getFocusedTrackAndSlot().x;
+        if (currentlyFocusedTrackIndex != previouslyFocusedTrackIndex) {
+            viewManager.focusOnTrackIndex(previouslyFocusedTrackIndex);
+            resetDefaultExternalInputs(nullptr, true);
+
+            viewManager.focusOnTrackIndex(currentlyFocusedTrackIndex);
+            viewManager.addFocusStateToUndoStack(&undoManager);
+            resetDefaultExternalInputs(&undoManager, true);
+        }
+
         for (auto track : tracksManager.getState()) {
-            tracksManager.resetVarAllowingNoopUndo(track, IDs::selected, &undoManager);
-            tracksManager.resetVarAllowingNoopUndo(track, IDs::selectedSlotsMask, &undoManager);
+            TracksStateManager::resetVarAllowingNoopUndo(track, IDs::selected, &undoManager);
+            TracksStateManager::resetVarAllowingNoopUndo(track, IDs::selectedSlotsMask, &undoManager);
+        }
+    }
+
+    void afterDefaultConnectionAction() {
+        for (auto track : tracksManager.getState()) {
+            TracksStateManager::resetVarAllowingNoopUndo(track, IDs::selected, &undoManager);
+            TracksStateManager::resetVarAllowingNoopUndo(track, IDs::selectedSlotsMask, &undoManager);
         }
         viewManager.addFocusStateToUndoStack(&undoManager);
+
+        updateAllDefaultConnections();
+        previouslyFocusedTrackIndex = viewManager.getFocusedTrackIndex();
     }
 
     void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override {

@@ -174,10 +174,10 @@ public:
         }
 
         if (newConnection != EMPTY_CONNECTION)
-            graph.addConnection(newConnection);
+            project.addConnection(newConnection);
 
         if (initialDraggingConnection != EMPTY_CONNECTION) {
-            graph.removeConnection(initialDraggingConnection);
+            project.removeConnection(initialDraggingConnection);
             initialDraggingConnection = EMPTY_CONNECTION;
         }
     }

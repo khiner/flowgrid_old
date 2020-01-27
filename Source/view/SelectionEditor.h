@@ -39,7 +39,7 @@ public:
     void mouseDown(const MouseEvent& event) override {
         viewManager.focusOnEditorPane();
         if (auto* processorEditor = dynamic_cast<ProcessorEditor*>(event.originalComponent)) {
-            project.selectProcessor(processorEditor->getProcessorState());
+            project.selectProcessor(processorEditor->getProcessorState(), nullptr);
         }
     }
 
@@ -76,7 +76,7 @@ public:
                 project.addPluginsToMenu(*addProcessorMenu, focusedTrack);
                 addProcessorMenu->showMenuAsync({}, ModalCallbackFunction::create([this](int r) {
                     if (auto *description = project.getChosenType(r)) {
-                        project.createAndAddProcessor(*description);
+                        project.createProcessor(*description);
                     }
                 }));
             }

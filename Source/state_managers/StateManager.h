@@ -9,6 +9,10 @@ public:
 
     virtual ValueTree& getState() = 0;
 
+    void clear() {
+        getState().removeAllChildren(nullptr);
+    }
+
     static void resetVarToInt(ValueTree& tree, const Identifier& id, ValueTree::Listener* listenerToExclude) {
         tree.setPropertyExcludingListener(listenerToExclude, id, int(tree.getProperty(id)), nullptr);
     };

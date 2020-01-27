@@ -76,20 +76,15 @@ public:
     }
 
     bool removeConnection(const Connection& c) override {
-        project.removeConnection(c);
+        return project.removeConnection(c);
     }
 
     bool addConnection(const Connection& c) override {
-        return connectionsManager.checkedAddConnection(c, false, getDragDependentUndoManager());
+        return project.addConnection(c);
     }
 
     bool disconnectNode(AudioProcessorGraph::NodeID nodeId) override {
-        return connectionsManager.disconnectNode(nodeId, getDragDependentUndoManager());
-    }
-
-    void setDefaultConnectionsAllowed(NodeID nodeId, bool defaultConnectionsAllowed) {
-        auto processor = getProcessorStateForNodeId(nodeId);
-        processor.setProperty(IDs::allowDefaultConnections, defaultConnectionsAllowed, &undoManager);
+        return project.disconnectNode(nodeId);
     }
 
     UndoManager &undoManager;
@@ -107,13 +102,8 @@ private:
     OwnedArray<PluginWindow> activePluginWindows;
 
     bool isMoving { false };
-    bool isDeleting { false };
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ProcessorGraph)
-
-    UndoManager* getDragDependentUndoManager() {
-        return project.getDragDependentUndoManager();
-    }
 
     void addProcessor(const ValueTree &processorState) {
         static String errorMessage = "Could not create processor";
@@ -176,13 +166,13 @@ private:
         topologyChanged();
     }
 
-    void recursivelyInitializeState(const ValueTree &state) {
+    void recursivelyAddProcessors(const ValueTree &state) {
         if (state.hasType(IDs::PROCESSOR)) {
             addProcessor(state);
             return;
         }
         for (const ValueTree& child : state) {
-            recursivelyInitializeState(child);
+            recursivelyAddProcessors(child);
         }
     }
 
@@ -214,12 +204,7 @@ private:
                 if (auto node = getNodeForState(tree)) {
                     node->setBypassed(tree[IDs::bypassed]);
                 }
-            } else if (i == IDs::allowDefaultConnections) {
-                project.updateDefaultConnectionsForProcessor(tree, true);
             }
-        } else if (i == IDs::focusedTrackIndex) {
-            if (!isDeleting)
-                project.resetDefaultExternalInputs(nullptr);
         }
     }
 
@@ -231,7 +216,7 @@ private:
                 }
             }
         } else if (child.hasType(IDs::CONNECTION)) {
-            if (!project.isCurrentlyDraggingProcessor()) {
+            if (!project.isCurrentlyDraggingProcessor()) { // TODO use `...ExcludingListener(graph)` instead
                 const ValueTree &sourceState = child.getChildWithName(IDs::SOURCE);
                 const ValueTree &destState = child.getChildWithName(IDs::DESTINATION);
 
@@ -245,15 +230,12 @@ private:
                         topologyChanged();
                     }
                 }
-                if (child.hasProperty(IDs::isCustomConnection)) {
-                    const auto& processor = getProcessorStateForNodeId(getNodeIdForState(sourceState));
-                    project.updateDefaultConnectionsForProcessor(processor, true);
-                }
             }
         } else if (child.hasType(IDs::TRACK)) {
-            recursivelyInitializeState(child);
+            recursivelyAddProcessors(child);
         } else if (child.hasType(IDs::CHANNEL)) {
             updateIoChannelEnabled(parent, child, true);
+            // TODO shouldn't affect state in state listeners - trace back to specific user actions and do this in the action method
             removeIllegalConnections();
         }
     }
@@ -286,7 +268,7 @@ private:
             }
         } else if (child.hasType(IDs::CHANNEL)) {
             updateIoChannelEnabled(parent, child, false);
-            removeIllegalConnections();
+            removeIllegalConnections(); // TODO shouldn't affect state in state listeners - trace back to specific user actions and do this in the action method
         }
     }
 

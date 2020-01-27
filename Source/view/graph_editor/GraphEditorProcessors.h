@@ -40,10 +40,10 @@ public:
             project.deselectProcessorSlot(parent, slot);
         } else if (!isSlotSelected) {
             // selects and focuses
-            project.selectProcessorSlot(parent, slot, !e.mods.isCommandDown());
+            project.selectProcessorSlot(parent, slot, nullptr, !e.mods.isCommandDown());
         } else {
             // mouse-down on something already selected focuses
-            project.focusOnProcessorSlot(parent, slot);
+            project.focusOnProcessorSlot(parent, slot, nullptr);
         }
         if (e.mods.isPopupMenu() || e.getNumberOfClicks() == 2) {
             showPopupMenu(slot);
@@ -52,8 +52,8 @@ public:
 
     void mouseUp(const MouseEvent &e) override {
         if (e.mouseWasClicked() && !e.mods.isCommandDown()) {
-            project.setTrackSelected(parent, false, false);
-            project.selectProcessorSlot(parent, findSlotAt(e.getEventRelativeTo(this)), true);
+            project.setTrackSelected(parent, false, nullptr, false, false);
+            project.selectProcessorSlot(parent, findSlotAt(e.getEventRelativeTo(this)), nullptr, true);
         }
     }
 
@@ -248,7 +248,7 @@ private:
             menu.showMenuAsync({}, ModalCallbackFunction::create
                     ([this, processor, slot](int result) {
                         if (auto *description = project.getChosenType(result)) {
-                            project.createAndAddProcessor(*description, slot);
+                            project.createProcessor(*description, slot);
                             return;
                         }
                         // TODO remove direct graph dependency and do everything through state managers instead
@@ -260,16 +260,16 @@ private:
                                 processor->toggleBypass();
                                 break;
                             case ENABLE_DEFAULTS_MENU_ID:
-                                graph.setDefaultConnectionsAllowed(processor->getNodeId(), true);
-                                break;
-                            case DISCONNECT_ALL_MENU_ID:
-                                graph.disconnectNode(processor->getNodeId());
+                                project.setDefaultConnectionsAllowed(processor->getState(), true);
                                 break;
                             case DISABLE_DEFAULTS_MENU_ID:
-                                graph.setDefaultConnectionsAllowed(processor->getNodeId(), false);
+                                project.setDefaultConnectionsAllowed(processor->getState(), false);
+                                break;
+                            case DISCONNECT_ALL_MENU_ID:
+                                project.disconnectProcessor(processor->getState());
                                 break;
                             case DISCONNECT_CUSTOM_MENU_ID:
-                                connectionsStateManager.disconnectCustom(processor->getNodeId(), project.getDragDependentUndoManager());
+                                project.disconnectCustom(processor->getState());
                                 break;
                             case SHOW_PLUGIN_GUI_MENU_ID:
                                 processor->showWindow(PluginWindow::Type::normal);
@@ -298,7 +298,7 @@ private:
                     }
                 } else {
                     if (auto *description = project.getChosenType(result)) {
-                        project.createAndAddProcessor(*description, slot);
+                        project.createProcessor(*description, slot);
                     }
                 }
             }));

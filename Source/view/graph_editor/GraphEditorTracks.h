@@ -169,15 +169,6 @@ private:
         }
     }
 
-    void valueTreeChildRemoved(ValueTree &exParent, ValueTree &tree, int index) override {
-        ValueTreeObjectList::valueTreeChildRemoved(exParent, tree, index);
-        if (parent == exParent && isSuitableType(tree)) {
-            auto newSelectedTrackIndex = (index - 1 >= 0) ? index - 1 : index;
-            if (newSelectedTrackIndex < objects.size())
-                objects.getUnchecked(newSelectedTrackIndex)->setSelected(true);
-        }
-    }
-
     void valueTreeChildWillBeMovedToNewParent(ValueTree child, ValueTree& oldParent, int oldIndex, ValueTree& newParent, int newIndex) override {
         if (child.hasType(IDs::PROCESSOR)) {
             auto *fromTrack = getTrackForState(oldParent);

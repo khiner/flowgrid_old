@@ -107,6 +107,8 @@ public:
             setGridViewSlotOffset(processorSlot);
     }
 
+    int getFocusedTrackIndex() const { return viewState[IDs::focusedTrackIndex]; }
+
     Point<int> getFocusedTrackAndSlot() const {
         int trackIndex = viewState.hasProperty(IDs::focusedTrackIndex) ? int(viewState[IDs::focusedTrackIndex]) : 0;
         int processorSlot = viewState.hasProperty(IDs::focusedProcessorSlot) ? int(viewState[IDs::focusedProcessorSlot]) : -1;

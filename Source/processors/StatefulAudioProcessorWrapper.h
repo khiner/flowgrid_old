@@ -178,6 +178,11 @@ public:
                 if ((float) *valueProperty != value) {
                     ScopedValueSetter<bool> svs(ignoreParameterChangedCallbacks, true);
                     state.setProperty(IDs::value, value, undoManager);
+                    // TODO
+//                    if (!processorWrapper->isSelected()) {
+                        // If we're looking at something else, change the focus so we know what's changing.
+//                        processorWrapper->select();
+//                    }
                 }
             } else {
                 state.setProperty(IDs::value, value, nullptr);

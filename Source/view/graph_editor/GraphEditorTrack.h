@@ -73,7 +73,7 @@ public:
     bool isSelected() const { return state.getProperty(IDs::selected); }
 
     void setSelected(bool selected, bool deselectOthers=true) {
-        project.setTrackSelected(state, selected, deselectOthers);
+        project.setTrackSelected(state, selected, nullptr, deselectOthers, false);
     }
 
     const Label *getNameLabel() const { return &nameLabel; }

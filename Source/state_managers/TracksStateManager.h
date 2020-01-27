@@ -149,15 +149,15 @@ public:
         return processor.hasType(IDs::PROCESSOR) && processor.getParent() == track && trackAndSlot.y == int(processor[IDs::processorSlot]);
     }
 
-    void selectAllTrackSlots(ValueTree& track) {
+    void selectAllTrackSlots(ValueTree& track, UndoManager *undoManager) {
         BigInteger selectedSlotsMask;
         selectedSlotsMask.setRange(0, viewManager.getNumAvailableSlotsForTrack(track), true);
-        track.setProperty(IDs::selectedSlotsMask, selectedSlotsMask.toString(2), nullptr);
+        track.setProperty(IDs::selectedSlotsMask, selectedSlotsMask.toString(2), undoManager);
     }
 
-    void deselectAllTrackSlots(ValueTree& track) {
+    void deselectAllTrackSlots(ValueTree& track, UndoManager *undoManager) {
         BigInteger selectedSlotsMask;
-        track.setProperty(IDs::selectedSlotsMask, selectedSlotsMask.toString(2), nullptr);
+        track.setProperty(IDs::selectedSlotsMask, selectedSlotsMask.toString(2), undoManager);
     }
 
     BigInteger getSlotMask(const ValueTree& track) const {
@@ -314,7 +314,7 @@ public:
 
         if (!nextToTrack.isValid()) {
             if (focusedTrack.isValid()) {
-                // If a track is selected, insert the new track to the left of it if there's no mixer,
+                // If a track is focused, insert the new track to the left of it if there's no mixer,
                 // or to the right of the first track with a mixer if the new track has a mixer.
                 nextToTrack = focusedTrack;
 

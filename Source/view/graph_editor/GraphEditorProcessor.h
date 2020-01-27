@@ -221,12 +221,6 @@ private:
     }
 
     void valueTreePropertyChanged(ValueTree &v, const Identifier &i) override {
-        if (v.hasType(IDs::PARAM)) {
-            if (!isSelected()) {
-                // If we're looking at something else, change the focus so we know what's changing.
-                project.selectProcessor(state);
-            }
-        }
         if (v != state)
             return;
 

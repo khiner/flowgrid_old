@@ -328,10 +328,10 @@ public:
                 project.saveAs(File(), true, true, true);
                 break;
             case CommandIDs::undo:
-                project.getUndoManager().undo();
+                project.undo();
                 break;
             case CommandIDs::redo:
-                project.getUndoManager().redo();
+                project.redo();
                 break;
             case CommandIDs::duplicateSelected:
                 project.duplicateSelectedItems();
@@ -340,16 +340,16 @@ public:
                 project.deleteSelectedItems();
                 break;
             case CommandIDs::insertTrack:
-                project.createAndAddTrack(true);
+                project.createTrack(true);
                 break;
             case CommandIDs::insertTrackWithoutMixer:
-                project.createAndAddTrack(false);
+                project.createTrack(false);
                 break;
             case CommandIDs::createMasterTrack:
                 project.createAndAddMasterTrack();
                 break;
             case CommandIDs::addMixerChannel:
-                project.createAndAddProcessor(MixerChannelProcessor::getPluginDescription());
+                project.createProcessor(MixerChannelProcessor::getPluginDescription());
                 break;
             case CommandIDs::showPush2MirrorWindow:
                 showPush2MirrorWindow();
