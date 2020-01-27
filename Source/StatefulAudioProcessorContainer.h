@@ -7,6 +7,8 @@ class StatefulAudioProcessorContainer {
 public:
     virtual ~StatefulAudioProcessorContainer() = default;
 
+    virtual AudioProcessorGraph::Node* getNodeForId(AudioProcessorGraph::NodeID) const = 0;
+
     virtual StatefulAudioProcessorWrapper *getProcessorWrapperForNodeId(AudioProcessorGraph::NodeID nodeId) const = 0;
 
     inline StatefulAudioProcessorWrapper *getProcessorWrapperForState(const ValueTree &processorState) const {

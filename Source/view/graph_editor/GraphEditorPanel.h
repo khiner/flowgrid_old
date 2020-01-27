@@ -11,7 +11,7 @@ class GraphEditorPanel
           private ValueTree::Listener {
 public:
     GraphEditorPanel(ProcessorGraph &g, Project &project, Viewport &parentViewport)
-            : graph(g), tracksManager(project.getTracksManager()),
+            : graph(g), project(project), tracksManager(project.getTracksManager()),
               viewManager(project.getViewStateManager()), parentViewport(parentViewport) {
         project.getState().addListener(this);
 
@@ -192,6 +192,7 @@ public:
 
 private:
     ProcessorGraph &graph;
+    Project& project;
     TracksStateManager& tracksManager;
     ViewStateManager& viewManager;
 
@@ -284,20 +285,20 @@ private:
             // TODO this should use the project-listener methods (only ProcessorGraph should listen to this directly),
             //  but currently this is an order-dependent snowflake
             if (child[IDs::name] == MidiInputProcessor::name()) {
-                auto *midiInputProcessor = new GraphEditorProcessor(tracksManager, child, *this, graph);
+                auto *midiInputProcessor = new GraphEditorProcessor(project, tracksManager, child, *this, graph);
                 addAndMakeVisible(midiInputProcessor);
                 midiInputProcessors.addSorted(processorComparator, midiInputProcessor);
                 resized();
             } else if (child[IDs::name] == MidiOutputProcessor::name()) {
-                auto *midiOutputProcessor = new GraphEditorProcessor(tracksManager, child, *this, graph);
+                auto *midiOutputProcessor = new GraphEditorProcessor(project, tracksManager, child, *this, graph);
                 addAndMakeVisible(midiOutputProcessor);
                 midiOutputProcessors.addSorted(processorComparator, midiOutputProcessor);
                 resized();
             } else if (child[IDs::name] == "Audio Input") {
-                addAndMakeVisible(*(audioInputProcessor = std::make_unique<GraphEditorProcessor>(tracksManager, child, *this, graph, true)));
+                addAndMakeVisible(*(audioInputProcessor = std::make_unique<GraphEditorProcessor>(project, tracksManager, child, *this, graph, true)));
                 resized();
             } else if (child[IDs::name] == "Audio Output") {
-                addAndMakeVisible(*(audioOutputProcessor = std::make_unique<GraphEditorProcessor>(tracksManager, child, *this, graph, true)));
+                addAndMakeVisible(*(audioOutputProcessor = std::make_unique<GraphEditorProcessor>(project, tracksManager, child, *this, graph, true)));
                 resized();
             }
             connectors->updateConnectors();

@@ -10,8 +10,8 @@
 
 class GraphEditorProcessor : public Component, public ValueTree::Listener {
 public:
-    GraphEditorProcessor(TracksStateManager& tracksManager, const ValueTree& state, ConnectorDragListener &connectorDragListener, ProcessorGraph& graph, bool showChannelLabels=false)
-            : tracksManager(tracksManager), state(state), connectorDragListener(connectorDragListener),
+    GraphEditorProcessor(Project& project, TracksStateManager& tracksManager, const ValueTree& state, ConnectorDragListener &connectorDragListener, ProcessorGraph& graph, bool showChannelLabels=false)
+            : project(project), tracksManager(tracksManager), state(state), connectorDragListener(connectorDragListener),
               graph(graph), showChannelLabels(showChannelLabels) {
         this->state.addListener(this);
         valueTreePropertyChanged(this->state, IDs::name);
@@ -182,6 +182,7 @@ public:
     };
 
 private:
+    Project &project;
     TracksStateManager &tracksManager;
     ValueTree state;
     DrawableText nameLabel;
@@ -223,7 +224,7 @@ private:
         if (v.hasType(IDs::PARAM)) {
             if (!isSelected()) {
                 // If we're looking at something else, change the focus so we know what's changing.
-                tracksManager.selectProcessor(state);
+                project.selectProcessor(state);
             }
         }
         if (v != state)

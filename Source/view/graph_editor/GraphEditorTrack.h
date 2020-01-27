@@ -8,7 +8,7 @@
 class GraphEditorTrack : public Component, public Utilities::ValueTreePropertyChangeListener, public GraphEditorProcessorContainer, private ChangeListener {
 public:
     explicit GraphEditorTrack(Project& project, const ValueTree& state, ConnectorDragListener &connectorDragListener, ProcessorGraph& graph)
-            : tracksManager(project.getTracksManager()), state(state),
+            : project(project), tracksManager(project.getTracksManager()), state(state),
               viewState(project.getViewState()), connectorDragListener(connectorDragListener),
               processors(project, state, connectorDragListener, graph) {
         nameLabel.setJustificationType(Justification::centred);
@@ -73,7 +73,7 @@ public:
     bool isSelected() const { return state.getProperty(IDs::selected); }
 
     void setSelected(bool selected, bool deselectOthers=true) {
-        tracksManager.setTrackSelected(state, selected, deselectOthers);
+        project.setTrackSelected(state, selected, deselectOthers);
     }
 
     const Label *getNameLabel() const { return &nameLabel; }
@@ -120,6 +120,7 @@ public:
     }
 
 private:
+    Project& project;
     TracksStateManager& tracksManager;
 
     ValueTree state, viewState;

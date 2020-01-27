@@ -16,6 +16,7 @@ public:
     explicit GraphEditorProcessors(Project& project, const ValueTree& state, ConnectorDragListener &connectorDragListener, ProcessorGraph& graph)
             : Utilities::ValueTreeObjectList<GraphEditorProcessor>(state),
               project(project), tracksManager(project.getTracksManager()), viewStateManager(project.getViewStateManager()),
+              connectionsStateManager(project.getConnectionStateManager()),
               viewState(viewStateManager.getState()), connectorDragListener(connectorDragListener), graph(graph) {
         rebuildObjects();
         viewState.addListener(this);
@@ -36,13 +37,13 @@ public:
         int slot = findSlotAt(e.getEventRelativeTo(this));
         bool isSlotSelected = tracksManager.isSlotSelected(parent, slot);
         if (e.mods.isCommandDown() && isSlotSelected) {
-            tracksManager.deselectProcessorSlot(parent, slot);
+            project.deselectProcessorSlot(parent, slot);
         } else if (!isSlotSelected) {
             // selects and focuses
-            tracksManager.selectProcessorSlot(parent, slot, !e.mods.isCommandDown());
+            project.selectProcessorSlot(parent, slot, !e.mods.isCommandDown());
         } else {
             // mouse-down on something already selected focuses
-            tracksManager.focusOnProcessorSlot(parent, slot);
+            project.focusOnProcessorSlot(parent, slot);
         }
         if (e.mods.isPopupMenu() || e.getNumberOfClicks() == 2) {
             showPopupMenu(slot);
@@ -51,8 +52,8 @@ public:
 
     void mouseUp(const MouseEvent &e) override {
         if (e.mouseWasClicked() && !e.mods.isCommandDown()) {
-            tracksManager.setTrackSelected(parent, false, false);
-            tracksManager.selectProcessorSlot(parent, findSlotAt(e.getEventRelativeTo(this)), true);
+            project.setTrackSelected(parent, false, false);
+            project.selectProcessorSlot(parent, findSlotAt(e.getEventRelativeTo(this)), true);
         }
     }
 
@@ -100,7 +101,7 @@ public:
     GraphEditorProcessor *createNewObject(const ValueTree &tree) override {
         GraphEditorProcessor *processor = currentlyMovingProcessor != nullptr
                                           ? currentlyMovingProcessor
-                                          : new GraphEditorProcessor(tracksManager, tree, connectorDragListener, graph);
+                                          : new GraphEditorProcessor(project, tracksManager, tree, connectorDragListener, graph);
         addAndMakeVisible(processor);
         return processor;
     }
@@ -160,6 +161,7 @@ private:
     Project &project;
     TracksStateManager &tracksManager;
     ViewStateManager &viewStateManager;
+    ConnectionsStateManager &connectionsStateManager;
     ValueTree viewState;
 
     ConnectorDragListener &connectorDragListener;
@@ -246,9 +248,10 @@ private:
             menu.showMenuAsync({}, ModalCallbackFunction::create
                     ([this, processor, slot](int result) {
                         if (auto *description = project.getChosenType(result)) {
-                            tracksManager.createAndAddProcessor(*description, slot);
+                            project.createAndAddProcessor(*description, slot);
                             return;
                         }
+                        // TODO remove direct graph dependency and do everything through state managers instead
                         switch (result) {
                             case DELETE_MENU_ID:
                                 getCommandManager().invokeDirectly(CommandIDs::deleteSelected, false);
@@ -266,7 +269,7 @@ private:
                                 graph.setDefaultConnectionsAllowed(processor->getNodeId(), false);
                                 break;
                             case DISCONNECT_CUSTOM_MENU_ID:
-                                graph.disconnectCustom(processor->getNodeId());
+                                connectionsStateManager.disconnectCustom(processor->getNodeId(), project.getDragDependentUndoManager());
                                 break;
                             case SHOW_PLUGIN_GUI_MENU_ID:
                                 processor->showWindow(PluginWindow::Type::normal);
@@ -295,7 +298,7 @@ private:
                     }
                 } else {
                     if (auto *description = project.getChosenType(result)) {
-                        tracksManager.createAndAddProcessor(*description, slot);
+                        project.createAndAddProcessor(*description, slot);
                     }
                 }
             }));

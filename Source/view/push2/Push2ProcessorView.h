@@ -250,7 +250,7 @@ private:
     void selectProcessor(int processorIndex) {
         const auto& focusedTrack = tracksManager.getFocusedTrack();
         if (focusedTrack.isValid() && processorIndex < focusedTrack.getNumChildren()) {
-            tracksManager.selectProcessor(focusedTrack.getChild(processorIndex));
+            project.selectProcessor(focusedTrack.getChild(processorIndex));
         }
     }
 

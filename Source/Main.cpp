@@ -6,13 +6,13 @@
 #include "BasicWindow.h"
 #include "DeviceChangeMonitor.h"
 
-class SoundMachineApplication : public JUCEApplication, public MenuBarModel, private ChangeListener, private Timer, private ProcessorLifecycleListener, private Utilities::ValueTreePropertyChangeListener {
+class SoundMachineApplication : public JUCEApplication, public MenuBarModel, private ChangeListener, private Timer, private Utilities::ValueTreePropertyChangeListener {
 public:
     SoundMachineApplication() : project(undoManager, processorManager, deviceManager),
                                 tracksManager(project.getTracksManager()),
                                 push2Colours(project.getState()),
                                 push2MidiCommunicator(project, push2Colours),
-                                processorGraph(project, project.getConnectionHelper(), undoManager, deviceManager, push2MidiCommunicator) {}
+                                processorGraph(project, project.getConnectionStateManager(), undoManager, deviceManager, push2MidiCommunicator) {}
 
     const String getApplicationName() override { return ProjectInfo::projectName; }
 
@@ -334,22 +334,22 @@ public:
                 project.getUndoManager().redo();
                 break;
             case CommandIDs::duplicateSelected:
-                tracksManager.duplicateSelectedItems();
+                project.duplicateSelectedItems();
                 break;
             case CommandIDs::deleteSelected:
-                tracksManager.deleteSelectedItems();
+                project.deleteSelectedItems();
                 break;
             case CommandIDs::insertTrack:
-                tracksManager.createAndAddTrack(true);
+                project.createAndAddTrack(true);
                 break;
             case CommandIDs::insertTrackWithoutMixer:
-                tracksManager.createAndAddTrack(false);
+                project.createAndAddTrack(false);
                 break;
             case CommandIDs::createMasterTrack:
-                tracksManager.createAndAddMasterTrack();
+                project.createAndAddMasterTrack();
                 break;
             case CommandIDs::addMixerChannel:
-                tracksManager.createAndAddProcessor(MixerChannelProcessor::getPluginDescription());
+                project.createAndAddProcessor(MixerChannelProcessor::getPluginDescription());
                 break;
             case CommandIDs::showPush2MirrorWindow:
                 showPush2MirrorWindow();
@@ -554,19 +554,17 @@ private:
         }
     }
 
-    void processorCreated(const ValueTree& child) override {
-        if (TracksStateManager::isMasterTrack(child) || child[IDs::name] == MixerChannelProcessor::name())
-            applicationCommandListChanged(); // TODO same - wasteful
-    }
-
-    void processorHasBeenDestroyed(const ValueTree &child) override {
-        if (TracksStateManager::isMasterTrack(child) || child[IDs::name] == MixerChannelProcessor::name())
-            applicationCommandListChanged(); // TODO same - wasteful
-    }
-
     void valueTreePropertyChanged(ValueTree& child, const Identifier& i) override {
         if ((child.hasType(IDs::TRACK) && i == IDs::selected) || i == IDs::focusedProcessorSlot) {
             applicationCommandListChanged(); // TODO same - wasteful
+        } else if (i == IDs::processorInitialized && child[i]) {
+            applicationCommandListChanged(); // TODO same - wasteful
+        }
+    }
+
+    void valueTreeChildRemoved(ValueTree& parent, ValueTree& child, int) override {
+        if (child.hasType(IDs::PROCESSOR)) {
+            applicationCommandListChanged();
         }
     }
 

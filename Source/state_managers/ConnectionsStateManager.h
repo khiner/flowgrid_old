@@ -119,10 +119,24 @@ public:
         return false;
     }
 
+    // Connect the given processor to the appropriate default external device input.
+    void defaultConnect(AudioProcessorGraph::NodeID fromNodeId, AudioProcessorGraph::NodeID toNodeId, ConnectionType connectionType, UndoManager *undoManager) {
+        if (toNodeId.isValid()) {
+            const auto &defaultConnectionChannels = getDefaultConnectionChannels(connectionType);
+            for (auto channel : defaultConnectionChannels) {
+                addDefaultConnection({{fromNodeId, channel}, {toNodeId, channel}}, undoManager);
+            }
+        }
+    }
+
+    const Array<int>& getDefaultConnectionChannels(ConnectionType connectionType) const {
+        return connectionType == audio ? defaultAudioConnectionChannels : defaultMidiConnectionChannels;
+    }
+
     // make a snapshot of all the information needed to capture AudioGraph connections and UI positions
     void makeConnectionsSnapshot() {
         connectionsSnapshot.clear();
-        for (auto connection : connections) {
+        for (const auto& connection : connections) {
             connectionsSnapshot.add(connection.createCopy());
         }
     }
@@ -134,12 +148,136 @@ public:
         }
     }
 
+    bool checkedAddConnection(const AudioProcessorGraph::Connection &c, bool isDefault, UndoManager* undoManager) {
+        if (isDefault && false/*&& project.isShiftHeld() */)
+            return false; // no default connection stuff while shift is held
+        if (canConnectUi(c)) {
+            if (!isDefault)
+                disconnectDefaultOutgoing(c.source.nodeID, c.source.isMIDI() ? midi : audio, undoManager); // gdum
+            addConnection(c, undoManager, isDefault);
+            return true;
+        }
+        return false;
+    }
+
+    bool canConnectUi(const AudioProcessorGraph::Connection& c) const {
+        if (auto* source = audioProcessorContainer.getNodeForId(c.source.nodeID))
+            if (auto* dest = audioProcessorContainer.getNodeForId(c.destination.nodeID))
+                return canConnectUi(source, c.source.channelIndex, dest, c.destination.channelIndex);
+
+        return false;
+    }
+
+    bool canConnectUi(AudioProcessorGraph::Node* source, int sourceChannel, AudioProcessorGraph::Node* dest, int destChannel) const noexcept {
+        bool sourceIsMIDI = sourceChannel == AudioProcessorGraph::midiChannelIndex;
+        bool destIsMIDI   = destChannel == AudioProcessorGraph::midiChannelIndex;
+
+        if (sourceChannel < 0
+            || destChannel < 0
+            || source == dest
+            || sourceIsMIDI != destIsMIDI)
+            return false;
+
+        if (source == nullptr
+            || (!sourceIsMIDI && sourceChannel >= source->getProcessor()->getTotalNumOutputChannels())
+            || (sourceIsMIDI && ! source->getProcessor()->producesMidi()))
+            return false;
+
+        if (dest == nullptr
+            || (!destIsMIDI && destChannel >= dest->getProcessor()->getTotalNumInputChannels())
+            || (destIsMIDI && ! dest->getProcessor()->acceptsMidi()))
+            return false;
+
+        return !getConnectionMatching({{source->nodeID, sourceChannel}, {dest->nodeID, destChannel}}).isValid();
+    }
+
+    bool checkedRemoveConnection(const ValueTree& connection, UndoManager* undoManager, bool allowDefaults, bool allowCustom) {
+        if (!connection.isValid() || (!connection[IDs::isCustomConnection] && false/*&& project.isShiftHeld() */))
+            return false; // no default connection stuff while shift is held
+        return removeConnection(connection, undoManager, allowDefaults, allowCustom);
+    }
+
+    bool checkedRemoveConnection(const AudioProcessorGraph::Connection &connection, UndoManager* undoManager, bool defaults, bool custom) {
+        const ValueTree &connectionState = getConnectionMatching(connection);
+        return checkedRemoveConnection(connectionState, undoManager, defaults, custom);
+    }
+
+    bool doDisconnectNode(AudioProcessorGraph::NodeID nodeId, ConnectionType connectionType, UndoManager* undoManager,
+                          bool defaults, bool custom, bool incoming, bool outgoing) {
+        const auto connections = getConnectionsForNode(nodeId, connectionType, incoming, outgoing);
+        bool anyRemoved = false;
+        for (const auto &connection : connections) {
+            if (checkedRemoveConnection(connection, undoManager, defaults, custom))
+                anyRemoved = true;
+        }
+
+        return anyRemoved;
+    }
+
+    bool disconnectNode(AudioProcessorGraph::NodeID nodeId, UndoManager *undoManager) { // gdum
+        return doDisconnectNode(nodeId, all, undoManager, true, true, true, true);
+    }
+
+    bool disconnectDefaults(AudioProcessorGraph::NodeID nodeId, UndoManager *undoManager) { // gdum
+        return doDisconnectNode(nodeId, all, undoManager, true, false, true, true);
+    }
+
+    bool disconnectDefaultOutgoing(AudioProcessorGraph::NodeID nodeId, ConnectionType connectionType, UndoManager* undoManager) {
+        return doDisconnectNode(nodeId, connectionType, undoManager, true, false, false, true);
+    }
+
+    bool disconnectCustom(AudioProcessorGraph::NodeID nodeId, UndoManager *undoManager) { // gdum
+        return doDisconnectNode(nodeId, all, undoManager, false, true, true, true);
+    }
+
+    bool addConnection(const AudioProcessorGraph::Connection& c, UndoManager *undoManager) { // gdum
+        return checkedAddConnection(c, false, undoManager);
+    }
+
+    bool addDefaultConnection(const AudioProcessorGraph::Connection& c, UndoManager *undoManager) {
+        return checkedAddConnection(c, true, undoManager);
+    }
+
+    bool addCustomConnection(const AudioProcessorGraph::Connection& c, UndoManager *undoManager) {
+        return checkedAddConnection(c, false, undoManager);
+    }
+
+    bool removeDefaultConnection(const AudioProcessorGraph::Connection& c, UndoManager *undoManager) {
+        return checkedRemoveConnection(c, undoManager, true, false);
+    }
+
+    bool canProcessorDefaultConnectTo(const ValueTree &processor, const ValueTree &otherProcessor, ConnectionType connectionType) const {
+        if (!otherProcessor.hasType(IDs::PROCESSOR) || processor == otherProcessor)
+            return false;
+
+        return isProcessorAProducer(processor, connectionType) && isProcessorAnEffect(otherProcessor, connectionType);
+    }
+
+    bool isProcessorAProducer(const ValueTree &processorState, ConnectionType connectionType) const {
+        if (auto *processorWrapper = audioProcessorContainer.getProcessorWrapperForState(processorState)) {
+            return (connectionType == audio && processorWrapper->processor->getTotalNumOutputChannels() > 0) ||
+                   (connectionType == midi && processorWrapper->processor->producesMidi());
+        }
+        return false;
+    }
+
+    bool isProcessorAnEffect(const ValueTree &processorState, ConnectionType connectionType) const {
+        if (auto *processorWrapper = audioProcessorContainer.getProcessorWrapperForState(processorState)) {
+            return (connectionType == audio && processorWrapper->processor->getTotalNumInputChannels() > 0) ||
+                   (connectionType == midi && processorWrapper->processor->acceptsMidi());
+        }
+        return false;
+    }
+
     void clear() {
         connections.removeAllChildren(nullptr);
     }
 private:
     ValueTree connections;
     StatefulAudioProcessorContainer& audioProcessorContainer;
+
+    Array<int> defaultAudioConnectionChannels {0, 1};
+    Array<int> defaultMidiConnectionChannels {AudioProcessorGraph::midiChannelIndex};
 
     Array<ValueTree> connectionsSnapshot;
 };

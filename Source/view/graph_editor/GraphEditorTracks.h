@@ -118,21 +118,21 @@ public:
     void mouseDown(const MouseEvent &e) override {
         if (auto* track = dynamic_cast<GraphEditorTrack *>(e.originalComponent->getParentComponent())) {
             if (e.originalComponent == track->getDragControlComponent() && track->getState() != tracksManager.getMasterTrack()) {
-                tracksManager.setCurrentlyDraggingTrack(track->getState());
+                project.setCurrentlyDraggingTrack(track->getState());
             }
         } else if (auto* processor = dynamic_cast<GraphEditorProcessor *>(e.originalComponent)) {
             if (!e.mods.isRightButtonDown()) {
-                tracksManager.beginDraggingProcessor(processor->getState());
+                project.beginDraggingProcessor(processor->getState());
             }
         }
     }
 
     void mouseDrag(const MouseEvent &e) override {
-        if (e.originalComponent->getParentComponent() == getTrackForState(tracksManager.getCurrentlyDraggingTrack())) {
+        if (e.originalComponent->getParentComponent() == getTrackForState(project.getCurrentlyDraggingTrack())) {
             auto pos = e.getEventRelativeTo(this).getPosition();
-            int currentIndex = parent.indexOf(tracksManager.getCurrentlyDraggingTrack());
+            int currentIndex = parent.indexOf(project.getCurrentlyDraggingTrack());
             for (auto* track : objects) {
-                if (track->getState() == tracksManager.getCurrentlyDraggingTrack())
+                if (track->getState() == project.getCurrentlyDraggingTrack())
                     continue;
                 if (pos.x < track->getX() + track->getWidth() / 2) {
                     int newIndex = jlimit(0, objects.size() - 1, objects.indexOf(track));
@@ -144,16 +144,16 @@ public:
                     }
                 }
             }
-        } else if (e.originalComponent == getProcessorForState(tracksManager.getCurrentlyDraggingProcessor()) && !e.mods.isRightButtonDown()) {
+        } else if (e.originalComponent == getProcessorForState(project.getCurrentlyDraggingProcessor()) && !e.mods.isRightButtonDown()) {
             const Point<int> &trackAndSlot = trackAndSlotAt(e);
             if (trackAndSlot.x != -1 && trackAndSlot.y != -1) {
-                tracksManager.dragProcessorToPosition(trackAndSlot);
+                project.dragProcessorToPosition(trackAndSlot);
             }
         }
     }
 
     void mouseUp(const MouseEvent &e) override {
-        tracksManager.endDraggingProcessor();
+        project.endDraggingProcessor();
     }
 
 private:
