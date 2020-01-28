@@ -96,10 +96,6 @@ public:
         return false;
     }
 
-    bool nodeHasIncomingConnections(AudioProcessorGraph::NodeID nodeId, ConnectionType connectionType) const {
-        return !getConnectionsForNode(nodeId, connectionType, true, false).isEmpty();
-    }
-
     bool removeConnection(const ValueTree& connection, UndoManager* undoManager, bool allowDefaults, bool allowCustom) {
         bool customIsAcceptable = (allowCustom && connection.hasProperty(IDs::isCustomConnection)) ||
                                   (allowDefaults && !connection.hasProperty(IDs::isCustomConnection));

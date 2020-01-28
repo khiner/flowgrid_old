@@ -138,15 +138,13 @@ public:
         return findProcessorAtSlot(track, trackAndSlot.y);
     }
 
-    inline bool isProcessorSelected(const ValueTree& processor) const {
+    bool isProcessorSelected(const ValueTree& processor) const {
         return processor.hasType(IDs::PROCESSOR) &&
                isSlotSelected(processor.getParent(), processor[IDs::processorSlot]);
     }
 
-    inline bool isProcessorFocused(const ValueTree& processor) const {
-        Point<int> trackAndSlot = viewManager.getFocusedTrackAndSlot();
-        const ValueTree& track = getTrack(trackAndSlot.x);
-        return processor.hasType(IDs::PROCESSOR) && processor.getParent() == track && trackAndSlot.y == int(processor[IDs::processorSlot]);
+    bool isProcessorFocused(const ValueTree& processor) const {
+        return getFocusedProcessor() == processor;
     }
 
     void selectAllTrackSlots(ValueTree& track, UndoManager *undoManager) {

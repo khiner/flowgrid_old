@@ -108,10 +108,11 @@ public:
     }
 
     int getFocusedTrackIndex() const { return viewState[IDs::focusedTrackIndex]; }
+    int getFocusedProcessorSlot() const { return viewState[IDs::focusedProcessorSlot]; }
 
     Point<int> getFocusedTrackAndSlot() const {
-        int trackIndex = viewState.hasProperty(IDs::focusedTrackIndex) ? int(viewState[IDs::focusedTrackIndex]) : 0;
-        int processorSlot = viewState.hasProperty(IDs::focusedProcessorSlot) ? int(viewState[IDs::focusedProcessorSlot]) : -1;
+        int trackIndex = viewState.hasProperty(IDs::focusedTrackIndex) ? getFocusedTrackIndex() : 0;
+        int processorSlot = viewState.hasProperty(IDs::focusedProcessorSlot) ? getFocusedProcessorSlot() : -1;
         return {trackIndex, processorSlot};
     }
 

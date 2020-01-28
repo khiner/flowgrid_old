@@ -154,17 +154,16 @@ public:
 
     void createAndAddMasterTrack() {
         prepareForDefaultConnectionAction();
-        tracksManager.doCreateAndAddMasterTrack();
-        afterDefaultConnectionAction();
+        ValueTree masterTrack = tracksManager.doCreateAndAddMasterTrack();
+        setTrackSelected(masterTrack, true, &undoManager, true);
+        previouslyFocusedTrackIndex = viewManager.getFocusedTrackIndex();
     }
 
     void createTrack(bool addMixer=true) {
         prepareForDefaultConnectionAction();
         ValueTree newTrack = tracksManager.doCreateAndAddTrack(&undoManager, addMixer);
-        setTrackSelected(newTrack, true, &undoManager, true, false);
-        // afterDefaultConnectionAction not needed here since all selection and default connections have been
-        // done in setTrackSelected. Just take care of this part:
-        previouslyFocusedTrackIndex = viewManager.getFocusedTrackIndex();
+        setTrackSelected(newTrack, true, &undoManager, true);
+        afterDefaultConnectionAction();
     }
 
     // Assumes we're always creating processors to the currently focused track (which is true as of now!)
@@ -174,15 +173,13 @@ public:
             prepareForDefaultConnectionAction();
             ValueTree processor = tracksManager.doCreateAndAddProcessor(description, focusedTrack, &undoManager, slot);
             selectProcessor(processor, &undoManager);
-            // TODO should clean this kind of pattern up
-            previouslyFocusedTrackIndex = viewManager.getFocusedTrackIndex();
+            afterDefaultConnectionAction();
         }
     }
 
     void duplicateSelectedItems() {
         prepareForDefaultConnectionAction();
-        const Array<ValueTree> allSelectedItems = tracksManager.findAllSelectedItems();
-        for (auto selectedItem : allSelectedItems) {
+        for (auto selectedItem : tracksManager.findAllSelectedItems()) {
             duplicateItem(selectedItem, &undoManager);
         }
         afterDefaultConnectionAction();
@@ -190,9 +187,13 @@ public:
 
     void deleteSelectedItems() {
         prepareForDefaultConnectionAction();
-        const auto allSelectedItems = tracksManager.findAllSelectedItems();
-        for (const auto &selectedItem : allSelectedItems) {
+        for (const auto &selectedItem : tracksManager.findAllSelectedItems()) {
             deleteTrackOrProcessor(selectedItem, &undoManager);
+        }
+        if (viewManager.getFocusedTrackIndex() >= tracksManager.getNumTracks()) {
+            setTrackSelected(tracksManager.getTrack(tracksManager.getNumTracks() - 1), true, &undoManager);
+        } else {
+            selectProcessorSlot(tracksManager.getFocusedTrack(), viewManager.getFocusedProcessorSlot(), &undoManager);
         }
         afterDefaultConnectionAction();
     }
@@ -539,11 +540,12 @@ public:
     }
 
     bool doDisconnectNode(AudioProcessorGraph::NodeID nodeId, ConnectionType connectionType, UndoManager* undoManager,
-                          bool defaults, bool custom, bool incoming, bool outgoing) {
+                          bool defaults, bool custom, bool incoming, bool outgoing, AudioProcessorGraph::NodeID excludingRemovalTo={}) {
         const auto connections = connectionsManager.getConnectionsForNode(nodeId, connectionType, incoming, outgoing);
         bool anyRemoved = false;
         for (const auto &connection : connections) {
-            if (checkedRemoveConnection(connection, undoManager, defaults, custom))
+            if (excludingRemovalTo != getNodeIdForState(connection.getChildWithName(IDs::DESTINATION)) &&
+                checkedRemoveConnection(connection, undoManager, defaults, custom))
                 anyRemoved = true;
         }
 
@@ -580,13 +582,17 @@ public:
     }
 
     // Connect the given processor to the appropriate default external device input.
-    void defaultConnect(AudioProcessorGraph::NodeID fromNodeId, AudioProcessorGraph::NodeID toNodeId, ConnectionType connectionType, UndoManager *undoManager) {
-        if (toNodeId.isValid()) {
+    bool defaultConnect(AudioProcessorGraph::NodeID fromNodeId, AudioProcessorGraph::NodeID toNodeId, ConnectionType connectionType, UndoManager *undoManager) {
+        if (fromNodeId.isValid() && toNodeId.isValid()) {
             const auto &defaultConnectionChannels = connectionsManager.getDefaultConnectionChannels(connectionType);
+            bool anyAdded = false;
             for (auto channel : defaultConnectionChannels) {
-                addDefaultConnection({{fromNodeId, channel}, {toNodeId, channel}}, undoManager);
+                if (addDefaultConnection({{fromNodeId, channel}, {toNodeId, channel}}, undoManager))
+                    anyAdded = true;
             }
+            return anyAdded;
         }
+        return false;
     }
 
     // checks for duplicate add should be done before! (not done here to avoid redundant checks)
@@ -717,45 +723,36 @@ public:
         return doDisconnectNode(nodeId, all, undoManager, true, true, true, true);
     }
 
-    bool disconnectDefaultOutgoing(AudioProcessorGraph::NodeID nodeId, ConnectionType connectionType, UndoManager* undoManager) {
-        return doDisconnectNode(nodeId, connectionType, undoManager, true, false, false, true);
+    bool disconnectDefaultOutgoing(AudioProcessorGraph::NodeID nodeId, ConnectionType connectionType, UndoManager* undoManager, AudioProcessorGraph::NodeID excludingRemovalTo={}) {
+        return doDisconnectNode(nodeId, connectionType, undoManager, true, false, false, true, excludingRemovalTo);
     }
 
     bool disconnectCustom(const ValueTree& processor) {
         return doDisconnectNode(getNodeIdForState(processor), all, &undoManager, false, true, true, true);
     }
 
-    // Disconnect external audio/midi inputs
+    // Disconnect external audio/midi inputs (unless `addDefaultConnections` is true and
+    // the default connection would stay the same).
     // If `addDefaultConnections` is true, then for both audio and midi connection types:
     //   * Find the topmost effect processor (receiving audio/midi) in the focused track
     //   * Connect external device inputs to its most-upstream connected processor (including itself)
     // (Note that it is possible for the same focused track to have a default audio-input processor different
     // from its default midi-input processor.)
     void resetDefaultExternalInputs(UndoManager *undoManager, bool addDefaultConnections=true) {
-        auto audioInputNodeId = getNodeIdForState(getAudioInputProcessorState());
-        disconnectDefaultOutgoing(audioInputNodeId, audio, undoManager);
+        const auto audioSourceNodeId = getDefaultInputNodeIdForConnectionType(audio);
+        const auto midiSourceNodeId = getDefaultInputNodeIdForConnectionType(midi);
 
-        for (const auto& midiInputProcessor : getInput()) {
-            if (midiInputProcessor.getProperty(IDs::name) == MidiInputProcessor::name()) {
-                const auto nodeId = getNodeIdForState(midiInputProcessor);
-                disconnectDefaultOutgoing(nodeId, midi, undoManager);
-            }
-        }
-
+        AudioProcessorGraph::NodeID audioDestinationNodeId, midiDestinationNodeId;
         if (addDefaultConnections) {
-            ValueTree processorToReceiveExternalInput = findEffectProcessorToReceiveDefaultExternalInput(audio);
-            if (processorToReceiveExternalInput.isValid())
-                defaultConnect(audioInputNodeId, getNodeIdForState(processorToReceiveExternalInput), audio, undoManager);
-
-            for (const auto& midiInputProcessor : getInput()) {
-                if (midiInputProcessor.getProperty(IDs::name) == MidiInputProcessor::name()) {
-                    const auto midiInputNodeId = getNodeIdForState(midiInputProcessor);
-                    processorToReceiveExternalInput = findEffectProcessorToReceiveDefaultExternalInput(midi);
-                    if (processorToReceiveExternalInput.isValid())
-                        defaultConnect(midiInputNodeId, getNodeIdForState(processorToReceiveExternalInput), midi, undoManager);
-                }
-            }
+            audioDestinationNodeId = getNodeIdForState(findEffectProcessorToReceiveDefaultExternalInput(audio));
+            midiDestinationNodeId = getNodeIdForState(findEffectProcessorToReceiveDefaultExternalInput(midi));
         }
+
+        defaultConnect(audioSourceNodeId, audioDestinationNodeId, audio, undoManager);
+        disconnectDefaultOutgoing(audioSourceNodeId, audio, undoManager, audioDestinationNodeId);
+
+        defaultConnect(midiSourceNodeId, midiDestinationNodeId, midi, undoManager);
+        disconnectDefaultOutgoing(midiSourceNodeId, midi, undoManager, midiDestinationNodeId);
     }
 
     ValueTree findEffectProcessorToReceiveDefaultExternalInput(ConnectionType connectionType) {
@@ -772,38 +769,6 @@ public:
             }
         }
         return {};
-    }
-
-    // Find the upper-right-most processor that flows into the given processor
-    // which doesn't already have incoming node connections.
-    ValueTree findMostUpstreamAvailableProcessorConnectedTo(const ValueTree &processor, ConnectionType connectionType) {
-        if (!processor.isValid())
-            return {};
-
-        int lowestSlot = INT_MAX;
-        ValueTree upperRightMostProcessor;
-        AudioProcessorGraph::NodeID processorNodeId = getNodeIdForState(processor);
-        if (!connectionsManager.nodeHasIncomingConnections(processorNodeId, connectionType))
-            upperRightMostProcessor = processor;
-
-        for (int i = tracksManager.getNumTracks() - 1; i >= 0; i--) {
-            const auto& track = tracksManager.getTrack(i);
-            if (track.getNumChildren() == 0)
-                continue;
-
-            const auto& firstProcessor = track.getChild(0);
-            auto firstProcessorNodeId = getNodeIdForState(firstProcessor);
-            int slot = firstProcessor[IDs::processorSlot];
-            if (slot < lowestSlot &&
-                !connectionsManager.nodeHasIncomingConnections(firstProcessorNodeId, connectionType) &&
-                connectionsManager.areProcessorsConnected(firstProcessorNodeId, processorNodeId)) {
-
-                lowestSlot = slot;
-                upperRightMostProcessor = firstProcessor;
-            }
-        }
-
-        return upperRightMostProcessor;
     }
 
 private:
@@ -1117,14 +1082,14 @@ private:
     // This is accomplished by re-setting all selection/focus properties, passing a flag to allow
     // no-ops into the undo-manager (otherwise re-saving the current state wouldn't be undoable).
     void prepareForDefaultConnectionAction() {
-        int currentlyFocusedTrackIndex = viewManager.getFocusedTrackAndSlot().x;
+        int currentlyFocusedTrackIndex = viewManager.getFocusedTrackIndex();
         if (currentlyFocusedTrackIndex != previouslyFocusedTrackIndex) {
             viewManager.focusOnTrackIndex(previouslyFocusedTrackIndex);
-            resetDefaultExternalInputs(nullptr, true);
+            resetDefaultExternalInputs(nullptr);
 
             viewManager.focusOnTrackIndex(currentlyFocusedTrackIndex);
             viewManager.addFocusStateToUndoStack(&undoManager);
-            resetDefaultExternalInputs(&undoManager, true);
+            resetDefaultExternalInputs(&undoManager);
         }
 
         for (auto track : tracksManager.getState()) {
@@ -1142,6 +1107,60 @@ private:
 
         updateAllDefaultConnections();
         previouslyFocusedTrackIndex = viewManager.getFocusedTrackIndex();
+    }
+
+    // Find the upper-right-most processor that flows into the given processor
+    // which doesn't already have incoming node connections.
+    ValueTree findMostUpstreamAvailableProcessorConnectedTo(const ValueTree &processor, ConnectionType connectionType) {
+        if (!processor.isValid())
+            return {};
+
+        int lowestSlot = INT_MAX;
+        ValueTree upperRightMostProcessor;
+        AudioProcessorGraph::NodeID processorNodeId = getNodeIdForState(processor);
+        if (isAvailableForExternalInput(processorNodeId, connectionType))
+            upperRightMostProcessor = processor;
+
+        // TODO performance improvement: only iterate over connected processors
+        for (int i = tracksManager.getNumTracks() - 1; i >= 0; i--) {
+            const auto& track = tracksManager.getTrack(i);
+            if (track.getNumChildren() == 0)
+                continue;
+
+            const auto& firstProcessor = track.getChild(0);
+            auto firstProcessorNodeId = getNodeIdForState(firstProcessor);
+            int slot = firstProcessor[IDs::processorSlot];
+            if (slot < lowestSlot &&
+                isAvailableForExternalInput(firstProcessorNodeId, connectionType) &&
+                connectionsManager.areProcessorsConnected(firstProcessorNodeId, processorNodeId)) {
+
+                lowestSlot = slot;
+                upperRightMostProcessor = firstProcessor;
+            }
+        }
+
+        return upperRightMostProcessor;
+    }
+
+    AudioProcessorGraph::NodeID getDefaultInputNodeIdForConnectionType(ConnectionType connectionType) const {
+        if (connectionType == audio) {
+            return getNodeIdForState(getAudioInputProcessorState());
+        } else if (connectionType == midi) {
+            return getNodeIdForState(getPush2MidiInputProcessor());
+        } else {
+            return {};
+        }
+    }
+
+    bool isAvailableForExternalInput(AudioProcessorGraph::NodeID nodeId, ConnectionType connectionType) const {
+        const auto& incomingConnections = connectionsManager.getConnectionsForNode(nodeId, connectionType, true, false);
+        const auto defaultInputNodeId = getDefaultInputNodeIdForConnectionType(connectionType);
+        for (const auto& incomingConnection : incomingConnections) {
+            if (getNodeIdForState(incomingConnection.getChildWithName(IDs::SOURCE)) != defaultInputNodeId) {
+                return false;
+            }
+        }
+        return true;
     }
 
     void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override {
@@ -1174,8 +1193,4 @@ private:
             deviceManager.setAudioDeviceSetup(config, true);
         }
     }
-
-    void valueTreeChildOrderChanged(ValueTree &tree, int, int) override {}
-    void valueTreeParentChanged(ValueTree &) override {}
-    void valueTreeRedirected(ValueTree &) override {}
 };

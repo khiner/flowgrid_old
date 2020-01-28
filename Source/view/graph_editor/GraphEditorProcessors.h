@@ -42,18 +42,11 @@ public:
             // selects and focuses
             project.selectProcessorSlot(parent, slot, nullptr, !e.mods.isCommandDown());
         } else {
-            // mouse-down on something already selected focuses
+            // mouse-down on something already selected focused
             project.focusOnProcessorSlot(parent, slot, nullptr);
         }
         if (e.mods.isPopupMenu() || e.getNumberOfClicks() == 2) {
             showPopupMenu(slot);
-        }
-    }
-
-    void mouseUp(const MouseEvent &e) override {
-        if (e.mouseWasClicked() && !e.mods.isCommandDown()) {
-            project.setTrackSelected(parent, false, nullptr, false, false);
-            project.selectProcessorSlot(parent, findSlotAt(e.getEventRelativeTo(this)), nullptr, true);
         }
     }
 
