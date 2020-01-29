@@ -40,10 +40,10 @@ public:
             project.deselectProcessorSlot(parent, slot);
         } else if (!isSlotSelected) {
             // selects and focuses
-            project.selectProcessorSlot(parent, slot, nullptr, !e.mods.isCommandDown());
+            project.selectProcessorSlot(parent, slot, !e.mods.isCommandDown());
         } else {
-            // mouse-down on something already selected focused
-            project.focusOnProcessorSlot(parent, slot, nullptr);
+            // mouse-down on something already selected focuses
+            project.focusOnProcessorSlot(parent, slot);
         }
         if (e.mods.isPopupMenu() || e.getNumberOfClicks() == 2) {
             showPopupMenu(slot);

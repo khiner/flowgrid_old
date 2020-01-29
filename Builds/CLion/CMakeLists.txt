@@ -1456,7 +1456,7 @@ add_executable (APP
     "../../JuceLibraryCode/include_juce_gui_basics.mm"
     "../../JuceLibraryCode/include_juce_gui_extra.mm"
     "../../JuceLibraryCode/JuceHeader.h"
-        ../../Source/state_managers/StateManager.h)
+        ../../Source/state_managers/StateManager.h ../../Source/actions/SelectAction.h ../../Source/actions/SelectTrackAction.h ../../Source/state_managers/InputStateManager.h ../../Source/state_managers/OutputStateManager.h ../../Source/actions/SelectProcessorSlotAction.h ../../Source/actions/FocusAction.h ../../Source/actions/CreateTrackAction.h ../../Source/actions/CreateProcessorAction.h)
 
 set_source_files_properties ("../../Resources/AbletonSansBold-Regular.otf" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Resources/AbletonSansLight-Regular.otf" PROPERTIES HEADER_FILE_ONLY TRUE)

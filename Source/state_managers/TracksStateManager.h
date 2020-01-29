@@ -1,5 +1,6 @@
 #pragma once
 
+
 #include "JuceHeader.h"
 #include "Identifiers.h"
 #include "unordered_map"
@@ -147,15 +148,21 @@ public:
         return getFocusedProcessor() == processor;
     }
 
-    void selectAllTrackSlots(ValueTree& track, UndoManager *undoManager) {
-        BigInteger selectedSlotsMask;
-        selectedSlotsMask.setRange(0, viewManager.getNumAvailableSlotsForTrack(track), true);
-        track.setProperty(IDs::selectedSlotsMask, selectedSlotsMask.toString(2), undoManager);
+    // TODO vector probably a better choice for these
+    Array<String> getSelectedSlotsMasks() const {
+        Array<String> selectedSlotMasks;
+        for (const auto& track : tracks) {
+            selectedSlotMasks.add(track[IDs::selectedSlotsMask]);
+        }
+        return selectedSlotMasks;
     }
 
-    void deselectAllTrackSlots(ValueTree& track, UndoManager *undoManager) {
-        BigInteger selectedSlotsMask;
-        track.setProperty(IDs::selectedSlotsMask, selectedSlotsMask.toString(2), undoManager);
+    Array<bool> getTrackSelections() const {
+        Array<bool> trackSelections;
+        for (const auto& track : tracks) {
+            trackSelections.add(track[IDs::selected]);
+        }
+        return trackSelections;
     }
 
     BigInteger getSlotMask(const ValueTree& track) const {
@@ -301,101 +308,6 @@ public:
     int getTrackWidth() { return trackWidth; }
     int getProcessorHeight() { return processorHeight; }
 
-    void addProcessorToTrack(ValueTree &track, const ValueTree &processor, int insertIndex, UndoManager *undoManager) {
-        track.addChild(processor, insertIndex, undoManager);
-        makeSlotsValid(track, undoManager);
-    }
-
-    ValueTree doCreateAndAddTrack(UndoManager* undoManager, bool addMixer=true, ValueTree nextToTrack={}, bool forceImmediatelyToRight=false) {
-        int numTracks = getNumNonMasterTracks();
-        const auto& focusedTrack = getFocusedTrack();
-
-        if (!nextToTrack.isValid()) {
-            if (focusedTrack.isValid()) {
-                // If a track is focused, insert the new track to the left of it if there's no mixer,
-                // or to the right of the first track with a mixer if the new track has a mixer.
-                nextToTrack = focusedTrack;
-
-                if (addMixer && !forceImmediatelyToRight) {
-                    while (nextToTrack.isValid() && !getMixerChannelProcessorForTrack(nextToTrack).isValid())
-                        nextToTrack = nextToTrack.getSibling(1);
-                }
-            }
-        }
-        if (nextToTrack == getMasterTrack())
-            nextToTrack = {};
-
-        bool isSubTrack = nextToTrack.isValid() && !addMixer;
-
-        ValueTree track(IDs::TRACK);
-        track.setProperty(IDs::uuid, Uuid().toString(), nullptr);
-        track.setProperty(IDs::name, isSubTrack ? makeTrackNameUnique(nextToTrack[IDs::name]) : ("Track " + String(numTracks + 1)), nullptr);
-        track.setProperty(IDs::colour, isSubTrack ? nextToTrack[IDs::colour].toString() : Colour::fromHSV((1.0f / 8.0f) * numTracks, 0.65f, 0.65f, 1.0f).toString(), nullptr);
-
-        tracks.addChild(track, nextToTrack.isValid() ? nextToTrack.getParent().indexOf(nextToTrack) + (addMixer || forceImmediatelyToRight ? 1 : 0): numTracks, undoManager);
-
-        if (addMixer)
-            doCreateAndAddProcessor(MixerChannelProcessor::getPluginDescription(), track, undoManager);
-
-        return track;
-    }
-
-    ValueTree doCreateAndAddMasterTrack() {
-        if (getMasterTrack().isValid())
-            return {}; // only one master track allowed!
-
-        ValueTree masterTrack(IDs::TRACK);
-        masterTrack.setProperty(IDs::isMasterTrack, true, nullptr);
-        masterTrack.setProperty(IDs::name, "Master", nullptr);
-        masterTrack.setProperty(IDs::colour, Colours::darkslateblue.toString(), nullptr);
-        masterTrack.setProperty(IDs::selected, false, nullptr);
-        masterTrack.setProperty(IDs::selectedSlotsMask, BigInteger().toString(2), nullptr);
-
-        tracks.addChild(masterTrack, -1, &undoManager);
-
-        doCreateAndAddProcessor(MixerChannelProcessor::getPluginDescription(), masterTrack, &undoManager);
-
-        return masterTrack;
-    }
-
-    ValueTree doCreateAndAddProcessor(const PluginDescription &description, ValueTree track, UndoManager *undoManager, int slot=-1) {
-        if (description.name == MixerChannelProcessor::name() && getMixerChannelProcessorForTrack(track).isValid())
-            return {}; // only one mixer channel per track
-
-        if (ProcessorManager::isGeneratorOrInstrument(&description) &&
-            processorManager.doesTrackAlreadyHaveGeneratorOrInstrument(track)) {
-            return doCreateAndAddProcessor(description, doCreateAndAddTrack(undoManager, false, track), undoManager, slot);
-        }
-
-        ValueTree processor(IDs::PROCESSOR);
-        processor.setProperty(IDs::id, description.createIdentifierString(), nullptr);
-        processor.setProperty(IDs::name, description.name, nullptr);
-        processor.setProperty(IDs::allowDefaultConnections, true, nullptr);
-
-        int insertIndex;
-        if (isMixerChannelProcessor(processor)) {
-            insertIndex = -1;
-            slot = getMixerChannelSlotForTrack(track);
-        } else if (slot == -1) {
-            if (description.numInputChannels == 0) {
-                insertIndex = 0;
-                slot = 0;
-            } else {
-                // Insert new effect processors _right before_ the first MixerChannel processor.
-                const ValueTree &mixerChannelProcessor = getMixerChannelProcessorForTrack(track);
-                insertIndex = mixerChannelProcessor.isValid() ? track.indexOf(mixerChannelProcessor) : track.getNumChildren();
-                slot = insertIndex <= 0 ? 0 : int(track.getChild(insertIndex - 1)[IDs::processorSlot]) + 1;
-            }
-        } else {
-            setProcessorSlot(track, processor, slot, nullptr);
-            insertIndex = getParentIndexForProcessor(track, processor, nullptr);
-        }
-        setProcessorSlot(track, processor, slot, nullptr);
-        addProcessorToTrack(track, processor, insertIndex, undoManager);
-
-        return processor;
-    }
-
     Array<ValueTree> findAllSelectedItems() const {
         Array<ValueTree> items;
         for (const auto& track : tracks) {
@@ -460,25 +372,6 @@ private:
         if (mixerChannelProcessor.isValid()) {
             setProcessorSlot(masterTrack, mixerChannelProcessor, getMixerChannelSlotForTrack(masterTrack), &undoManager);
         }
-    }
-
-    // NOTE: assumes the track hasn't been added yet!
-    const String makeTrackNameUnique(const String& trackName) {
-        for (const auto& track : tracks) {
-            String otherTrackName = track[IDs::name];
-            if (otherTrackName == trackName) {
-                if (trackName.contains("-")) {
-                    int i = trackName.getLastCharacters(trackName.length() - trackName.lastIndexOf("-") - 1).getIntValue();
-                    if (i != 0) {
-                        return makeTrackNameUnique(trackName.upToLastOccurrenceOf("-", true, false) + String(i + 1));
-                    }
-                } else {
-                    return makeTrackNameUnique(trackName + "-" + String(1));
-                }
-            }
-        }
-
-        return trackName;
     }
 
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {

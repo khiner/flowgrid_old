@@ -3,6 +3,8 @@
 #include "JuceHeader.h"
 #include "processors/StatefulAudioProcessorWrapper.h"
 
+enum ConnectionType { audio, midi, all };
+
 class StatefulAudioProcessorContainer {
 public:
     virtual ~StatefulAudioProcessorContainer() = default;

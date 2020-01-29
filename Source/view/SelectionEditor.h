@@ -39,7 +39,7 @@ public:
     void mouseDown(const MouseEvent& event) override {
         viewManager.focusOnEditorPane();
         if (auto* processorEditor = dynamic_cast<ProcessorEditor*>(event.originalComponent)) {
-            project.selectProcessor(processorEditor->getProcessorState(), nullptr);
+            project.selectProcessor(processorEditor->getProcessorState());
         }
     }
 

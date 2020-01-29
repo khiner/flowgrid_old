@@ -135,17 +135,20 @@ public:
         viewState.setProperty(IDs::focusedTrackIndex, trackIndex, nullptr);
     }
 
-    void focusOnProcessorSlot(const ValueTree& track, const int processorSlot) {
-        auto trackIndex = track.isValid() ? track.getParent().indexOf(track) : 0;
+    void focusOnProcessorSlot(const juce::Point<int> slot) {
         auto currentlyFocusedTrackAndSlot = getFocusedTrackAndSlot();
-        focusOnTrackIndex(trackIndex);
-        if (trackIndex != currentlyFocusedTrackAndSlot.x && processorSlot == currentlyFocusedTrackAndSlot.y) {
+        focusOnTrackIndex(slot.x);
+        if (slot.x != currentlyFocusedTrackAndSlot.x && slot.y == currentlyFocusedTrackAndSlot.y) {
             // Different track but same slot selected - still send out the message
             viewState.sendPropertyChangeMessage(IDs::focusedProcessorSlot);
         } else {
-            viewState.setProperty(IDs::focusedProcessorSlot, processorSlot, nullptr);
+            viewState.setProperty(IDs::focusedProcessorSlot, slot.y, nullptr);
         }
+    }
 
+    void focusOnProcessorSlot(const ValueTree& track, const int processorSlot) {
+        auto trackIndex = track.isValid() ? track.getParent().indexOf(track) : 0;
+        focusOnProcessorSlot({trackIndex, processorSlot});
     }
 
     void togglePaneFocus() {
