@@ -2,13 +2,16 @@
 
 #include <state_managers/ConnectionsStateManager.h>
 #include <state_managers/TracksStateManager.h>
-#include <actions/FocusAction.h>
 
 #include "JuceHeader.h"
+#include "ResetDefaultExternalInputConnectionsAction.h"
 
 struct SelectAction : public UndoableAction {
-    SelectAction(TracksStateManager &tracksManager, ConnectionsStateManager &connectionsManager, ViewStateManager &viewManager)
-            : tracksManager(tracksManager), connectionsManager(connectionsManager), viewManager(viewManager) {
+    SelectAction(TracksStateManager &tracksManager, ConnectionsStateManager &connectionsManager,
+                 ViewStateManager &viewManager, InputStateManager &inputManager,
+                 StatefulAudioProcessorContainer &audioProcessorContainer)
+            : tracksManager(tracksManager), connectionsManager(connectionsManager), viewManager(viewManager),
+              inputManager(inputManager), audioProcessorContainer(audioProcessorContainer) {
         this->oldSelectedSlotsMasks = tracksManager.getSelectedSlotsMasks();
         this->oldTrackSelections = tracksManager.getTrackSelections();
         this->oldFocusedSlot = viewManager.getFocusedTrackAndSlot();
@@ -18,15 +21,34 @@ struct SelectAction : public UndoableAction {
     }
 
     SelectAction(TracksStateManager &tracksManager, ConnectionsStateManager &connectionsManager, ViewStateManager &viewManager,
-                 Array<String> oldSelectedSlotsMasks, Array<bool> oldTrackSelections, juce::Point<int> oldFocusedSlot,
-                 Array<String> newSelectedSlotsMasks, Array<bool> newTrackSelections, juce::Point<int> newFocusedSlot)
+                 InputStateManager &inputManager, StatefulAudioProcessorContainer &audioProcessorContainer,
+                 SelectAction* coalesceLeft, SelectAction* coalesceRight)
             : tracksManager(tracksManager), connectionsManager(connectionsManager), viewManager(viewManager),
-              oldSelectedSlotsMasks(std::move(oldSelectedSlotsMasks)), newSelectedSlotsMasks(std::move(newSelectedSlotsMasks)),
-              oldTrackSelections(std::move(oldTrackSelections)), newTrackSelections(std::move(newTrackSelections)),
-              oldFocusedSlot(oldFocusedSlot), newFocusedSlot(newFocusedSlot) {
+              inputManager(inputManager), audioProcessorContainer(audioProcessorContainer),
+              oldSelectedSlotsMasks(std::move(coalesceLeft->oldSelectedSlotsMasks)), newSelectedSlotsMasks(std::move(coalesceRight->newSelectedSlotsMasks)),
+              oldTrackSelections(std::move(coalesceLeft->oldTrackSelections)), newTrackSelections(std::move(coalesceRight->newTrackSelections)),
+              oldFocusedSlot(coalesceLeft->oldFocusedSlot), newFocusedSlot(coalesceRight->newFocusedSlot) {
         jassert(this->oldTrackSelections.size() == this->newTrackSelections.size());
         jassert(this->newTrackSelections.size() == this->newSelectedSlotsMasks.size());
         jassert(this->newSelectedSlotsMasks.size() == this->tracksManager.getNumTracks());
+
+        if (coalesceLeft->resetInputsAction != nullptr) {
+            this->resetInputsAction = std::move(coalesceLeft->resetInputsAction);
+        }
+        if (coalesceRight->resetInputsAction != nullptr) {
+            if (this->resetInputsAction == nullptr) {
+                this->resetInputsAction = std::move(coalesceRight->resetInputsAction);
+            } else {
+                this->resetInputsAction->coalesceWith(*(coalesceRight->resetInputsAction.get()));
+            }
+        }
+    }
+
+    void setNewFocusedSlot(juce::Point<int> newFocusedSlot) {
+        this->newFocusedSlot = newFocusedSlot;
+        if (oldFocusedSlot.x != this->newFocusedSlot.x) {
+            resetInputsAction = std::make_unique<ResetDefaultExternalInputConnectionsAction>(true, connectionsManager, tracksManager, inputManager, audioProcessorContainer, tracksManager.getTrack(this->newFocusedSlot.x));
+        }
     }
 
     bool perform() override {
@@ -36,19 +58,21 @@ struct SelectAction : public UndoableAction {
             track.setProperty(IDs::selectedSlotsMask, newSelectedSlotsMasks.getUnchecked(i), nullptr);
         }
         viewManager.focusOnProcessorSlot(newFocusedSlot);
-        connectionsManager.resetDefaultExternalInputs(nullptr);
+        if (resetInputsAction != nullptr)
+            resetInputsAction->perform();
 
         return true;
     }
 
     bool undo() override {
+        if (resetInputsAction != nullptr)
+            resetInputsAction->undo();
         for (int i = 0; i < oldTrackSelections.size(); i++) {
             auto track = tracksManager.getTrack(i);
             track.setProperty(IDs::selected, oldTrackSelections.getUnchecked(i), nullptr);
             track.setProperty(IDs::selectedSlotsMask, oldSelectedSlotsMasks.getUnchecked(i), nullptr);
         }
         viewManager.focusOnProcessorSlot(oldFocusedSlot);
-        connectionsManager.resetDefaultExternalInputs(nullptr);
 
         return true;
     }
@@ -60,14 +84,8 @@ struct SelectAction : public UndoableAction {
     UndoableAction* createCoalescedAction(UndoableAction* nextAction) override {
         if (auto* nextSelect = dynamic_cast<SelectAction*>(nextAction)) {
             if (canCoalesceWith(nextSelect)) {
-                return new SelectAction(tracksManager, connectionsManager, viewManager,
-                                        oldSelectedSlotsMasks, oldTrackSelections, oldFocusedSlot,
-                                        nextSelect->newSelectedSlotsMasks, nextSelect->newTrackSelections, nextSelect->newFocusedSlot);
+                return new SelectAction(tracksManager, connectionsManager, viewManager, inputManager, audioProcessorContainer, this, nextSelect);
             }
-        } else if (auto* nextFocus = dynamic_cast<FocusAction*>(nextAction)) {
-            return new SelectAction(tracksManager, connectionsManager, viewManager,
-                                    oldSelectedSlotsMasks, oldTrackSelections, oldFocusedSlot,
-                                    newSelectedSlotsMasks, newTrackSelections, nextFocus->newFocusedSlot);
         }
 
         return nullptr;
@@ -82,10 +100,16 @@ protected:
     TracksStateManager &tracksManager;
     ConnectionsStateManager &connectionsManager;
     ViewStateManager &viewManager;
+    InputStateManager &inputManager;
+    StatefulAudioProcessorContainer &audioProcessorContainer;
+
     Array<String> oldSelectedSlotsMasks, newSelectedSlotsMasks;
     Array<bool> oldTrackSelections, newTrackSelections;
-    juce::Point<int> oldFocusedSlot, newFocusedSlot;
+
+    std::unique_ptr<ResetDefaultExternalInputConnectionsAction> resetInputsAction;
 
 private:
+    juce::Point<int> oldFocusedSlot, newFocusedSlot;
+
     JUCE_DECLARE_NON_COPYABLE(SelectAction)
 };

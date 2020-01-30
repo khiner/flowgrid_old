@@ -309,19 +309,19 @@ public:
     int getProcessorHeight() { return processorHeight; }
 
     Array<ValueTree> findAllSelectedItems() const {
-        Array<ValueTree> items;
+        Array<ValueTree> selectedItems;
         for (const auto& track : tracks) {
             if (track[IDs::selected]) {
-                items.add(track);
+                selectedItems.add(track);
             } else {
                 for (const auto& processor : track) {
                     if (isProcessorSelected(processor)) {
-                        items.add(processor);
+                        selectedItems.add(processor);
                     }
                 }
             }
         }
-        return items;
+        return selectedItems;
     }
 
     ValueTree findProcessorNearestToSlot(const ValueTree &track, int slot) const {

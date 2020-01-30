@@ -40,7 +40,7 @@ public:
         processorPageLeftButton.setBounds(escapeProcessorFocusButton.getBounds());
         processorPageRightButton.setBounds(parameterPageRightButton.getBounds());
 
-        auto bottom = r.removeFromBottom(HEADER_FOOTER_HEIGHT);
+        r.removeFromBottom(HEADER_FOOTER_HEIGHT);
         parametersPanel->setBounds(r);
         
         top = getLocalBounds().removeFromTop(HEADER_FOOTER_HEIGHT);

@@ -43,7 +43,7 @@ public:
             project.selectProcessorSlot(parent, slot, !e.mods.isCommandDown());
         } else {
             // mouse-down on something already selected focuses
-            project.focusOnProcessorSlot(parent, slot);
+            project.selectProcessorSlot(parent, slot, false);
         }
         if (e.mods.isPopupMenu() || e.getNumberOfClicks() == 2) {
             showPopupMenu(slot);

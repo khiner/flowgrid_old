@@ -1,14 +1,13 @@
 #pragma once
 
-#include <state_managers/ConnectionsStateManager.h>
 #include <state_managers/TracksStateManager.h>
 
 #include "JuceHeader.h"
 
 struct CreateProcessorAction : public UndoableAction {
     CreateProcessorAction(const PluginDescription &description, const ValueTree& parentTrack, int slot,
-                          TracksStateManager &tracksManager, ConnectionsStateManager &connectionsManager, ViewStateManager &viewManager)
-            : parentTrack(parentTrack), tracksManager(tracksManager), connectionsManager(connectionsManager), viewManager(viewManager) {
+                          TracksStateManager &tracksManager, InputStateManager &inputManager, StatefulAudioProcessorContainer &audioProcessorContainer)
+            : parentTrack(parentTrack), tracksManager(tracksManager) {
         processorToCreate = ValueTree(IDs::PROCESSOR);
         processorToCreate.setProperty(IDs::id, description.createIdentifierString(), nullptr);
         processorToCreate.setProperty(IDs::name, description.name, nullptr);
@@ -32,8 +31,6 @@ struct CreateProcessorAction : public UndoableAction {
             indexToInsertProcessor = tracksManager.getParentIndexForProcessor(parentTrack, processorToCreate, nullptr);
         }
         tracksManager.setProcessorSlot(parentTrack, processorToCreate, slot, nullptr);
-        selectProcessorAction = std::make_unique<SelectProcessorSlotAction>(parentTrack, slot, true, true,
-                                                                            tracksManager, connectionsManager, viewManager);
     }
 
     bool perform() override {
@@ -41,17 +38,11 @@ struct CreateProcessorAction : public UndoableAction {
         tracksManager.makeSlotsValid(parentTrack, nullptr); // TODO this is a bug - no undo version of this
         // makeSlotsValid should use the new moveProcessorsAction, since it moves processors (if any) by the same amount (at most one slot down)
         // however, this is fully testable beforehand without the case of adding a processor to a populated slot
-        selectProcessorAction->perform();
-        connectionsManager.updateAllDefaultConnections(nullptr);
         return true;
     }
 
     bool undo() override {
-        processorToCreate.removeProperty(IDs::processorInitialized, nullptr); // TODO I feel like this isn't really needed anymore
-        connectionsManager.disconnectProcessor(processorToCreate, nullptr);
         parentTrack.removeChild(processorToCreate, nullptr);
-        selectProcessorAction->undo();
-        connectionsManager.updateAllDefaultConnections(nullptr);
         return true;
     }
 
@@ -65,11 +56,7 @@ struct CreateProcessorAction : public UndoableAction {
 
 protected:
     TracksStateManager &tracksManager;
-    ConnectionsStateManager &connectionsManager;
-    ViewStateManager &viewManager;
 
 private:
-    std::unique_ptr<SelectProcessorSlotAction> selectProcessorAction;
-
     JUCE_DECLARE_NON_COPYABLE(CreateProcessorAction)
 };

@@ -4,6 +4,12 @@
 #include <actions/SelectProcessorSlotAction.h>
 #include <actions/CreateTrackAction.h>
 #include <actions/CreateProcessorAction.h>
+#include <actions/DeleteSelectedItemsAction.h>
+#include <actions/CreateConnectionAction.h>
+#include <actions/ResetDefaultExternalInputConnectionsAction.h>
+#include <actions/UpdateProcessorDefaultConnectionsAction.h>
+#include <actions/SetDefaultConnectionsAllowedAction.h>
+#include <actions/UpdateAllDefaultConnectionsAction.h>
 
 #pragma once
 
@@ -51,11 +57,11 @@ public:
               undoManager(undoManager), deviceManager(deviceManager) {
         state = ValueTree(IDs::PROJECT);
         state.setProperty(IDs::name, "My First Project", nullptr);
-        state.addChild(inputManager.getState(), -1, nullptr);
-        state.addChild(outputManager.getState(), -1, nullptr);
-        state.addChild(tracksManager.getState(), -1, nullptr);
-        state.addChild(connectionsManager.getState(), -1, nullptr);
-        state.addChild(viewManager.getState(), -1, nullptr);
+        state.appendChild(inputManager.getState(), nullptr);
+        state.appendChild(outputManager.getState(), nullptr);
+        state.appendChild(tracksManager.getState(), nullptr);
+        state.appendChild(connectionsManager.getState(), nullptr);
+        state.appendChild(viewManager.getState(), nullptr);
         undoManager.addChangeListener(this);
         state.addListener(this);
     }
@@ -150,9 +156,9 @@ public:
     void createTrack(bool addMixer=true) {
         undoManager.perform(new CreateTrackAction(addMixer, {}, false, tracksManager, connectionsManager, viewManager));
         if (addMixer)
-            undoManager.perform(new CreateProcessorAction(MixerChannelProcessor::getPluginDescription(), mostRecentlyCreatedTrack, -1,
-                                                          tracksManager, connectionsManager, viewManager));
-        undoManager.perform(new SelectTrackAction(mostRecentlyCreatedTrack, true, true, tracksManager, connectionsManager, viewManager));
+            undoManager.perform(new CreateProcessorAction(MixerChannelProcessor::getPluginDescription(), mostRecentlyCreatedTrack, -1, tracksManager, inputManager, *this));
+        setTrackSelected(mostRecentlyCreatedTrack, true, true);
+        updateAllDefaultConnections();
     }
 
     // Assumes we're always creating processors to the currently focused track (which is true as of now!)
@@ -173,7 +179,9 @@ public:
             doCreateAndAddProcessor(description, mostRecentlyCreatedTrack, slot);
         }
 
-        undoManager.perform(new CreateProcessorAction(description, track, slot, tracksManager, connectionsManager, viewManager));
+        undoManager.perform(new CreateProcessorAction(description, track, slot, tracksManager, inputManager, *this));
+        selectProcessor(mostRecentlyCreatedProcessor);
+        updateAllDefaultConnections();
     }
 
     ValueTree doCreateAndAddMasterTrack() {
@@ -187,27 +195,25 @@ public:
         masterTrack.setProperty(IDs::selected, false, nullptr);
         masterTrack.setProperty(IDs::selectedSlotsMask, BigInteger().toString(2), nullptr);
 
-        tracksManager.getState().addChild(masterTrack, -1, nullptr);
+        tracksManager.getState().appendChild(masterTrack, nullptr);
 
         doCreateAndAddProcessor(MixerChannelProcessor::getPluginDescription(), masterTrack);
 
         return masterTrack;
     }
 
-    void duplicateSelectedItems() {
-        for (auto selectedItem : tracksManager.findAllSelectedItems()) {
-            duplicateItem(selectedItem);
-        }
-    }
-
     void deleteSelectedItems() {
-        for (const auto &selectedItem : tracksManager.findAllSelectedItems()) {
-            deleteTrackOrProcessor(selectedItem, &undoManager);
-        }
+        undoManager.perform(new DeleteSelectedItemsAction(tracksManager, connectionsManager));
         if (viewManager.getFocusedTrackIndex() >= tracksManager.getNumTracks()) {
             setTrackSelected(tracksManager.getTrack(tracksManager.getNumTracks() - 1), true, true);
         } else {
-            selectProcessorSlot(tracksManager.getFocusedTrack(), viewManager.getFocusedProcessorSlot());
+            setProcessorSlotSelected(getFocusedTrack(), viewManager.getFocusedProcessorSlot(), true, false);
+        }
+    }
+
+    void duplicateSelectedItems() {
+        for (auto selectedItem : tracksManager.findAllSelectedItems()) {
+            duplicateItem(selectedItem);
         }
     }
 
@@ -232,7 +238,7 @@ public:
                 if (currentlyDraggingTrackAndSlot == initialDraggingTrackAndSlot)
                     restoreConnectionsSnapshot();
                 else
-                    connectionsManager.updateAllDefaultConnections(nullptr);
+                    updateAllDefaultConnections();
             }
         }
     }
@@ -251,10 +257,10 @@ public:
             currentlyDraggingProcessor = {};
             if (isShiftHeld()) {
                 setShiftHeld(false);
-                connectionsManager.updateAllDefaultConnections(&undoManager, true);
+                updateAllDefaultConnections(true);
                 setShiftHeld(true);
             } else {
-                connectionsManager.updateAllDefaultConnections(&undoManager);
+                updateAllDefaultConnections();
             }
         }
         currentlyDraggingProcessor = {};
@@ -296,13 +302,6 @@ public:
         return currentlyDraggingProcessor;
     }
 
-    // Focuses on whatever is in this slot (including nothing).
-    // A slot of -1 means to focus on the track, which actually focuses on
-    // its first processor, if present, or its first slot (which is empty).
-    void focusOnProcessorSlot(const ValueTree& track, int slot) {
-        undoManager.perform(new FocusAction(track, slot, tracksManager, connectionsManager, viewManager));
-    }
-
     void selectProcessorSlot(const ValueTree& track, int slot, bool deselectOthers=true) {
         selectionEndTrackAndSlot = std::make_unique<TrackAndSlot>(track, slot);
         if (selectionStartTrackAndSlot != nullptr) { // shift+select
@@ -310,7 +309,6 @@ public:
         } else {
             setProcessorSlotSelected(track, slot, true, deselectOthers);
         }
-        focusOnProcessorSlot(track, slot);
     }
 
     void deselectProcessorSlot(const ValueTree& track, int slot) {
@@ -318,7 +316,7 @@ public:
     }
 
     void setTrackSelected(const ValueTree& track, bool selected, bool deselectOthers) {
-        undoManager.perform(new SelectTrackAction(track, selected, deselectOthers, tracksManager, connectionsManager, viewManager));
+        undoManager.perform(new SelectTrackAction(track, selected, deselectOthers, tracksManager, connectionsManager, viewManager, inputManager, *this));
     }
 
     ValueTree getFocusedTrack() const {
@@ -329,26 +327,45 @@ public:
         selectProcessorSlot(processor.getParent(), processor[IDs::processorSlot], true);
     }
 
-    bool addConnection(const AudioProcessorGraph::Connection& c) {
-        return connectionsManager.checkedAddConnection(c, false, &undoManager);
+    bool addConnection(const AudioProcessorGraph::Connection& connection) {
+        ConnectionType connectionType = connection.source.isMIDI() ? midi : audio;
+        const auto& sourceProcessor = getProcessorStateForNodeId(connection.source.nodeID);
+        // disconnect default outgoing
+        undoManager.perform(new DisconnectProcessorAction(connectionsManager, sourceProcessor, connectionType, true, false, false, true));
+        if (undoManager.perform(new CreateConnectionAction(connection, false, connectionsManager, *this))) {
+            resetDefaultExternalInputs();
+            return true;
+        }
+        return false;
     }
 
-    bool removeConnection(const AudioProcessorGraph::Connection& c) {
-        return connectionsManager.removeConnection(c, &undoManager);
+    bool removeConnection(const AudioProcessorGraph::Connection& connection) {
+        const ValueTree &connectionState = connectionsManager.getConnectionMatching(connection);
+        if (!connectionState[IDs::isCustomConnection] && isShiftHeld())
+            return false; // no default connection stuff while shift is held
+
+        bool removed = undoManager.perform(new DeleteConnectionAction(connectionState, true, true, connectionsManager));
+        if (removed && connectionState.hasProperty(IDs::isCustomConnection)) {
+            const auto& sourceState = connectionState.getChildWithName(IDs::SOURCE);
+            auto sourceNodeId = StatefulAudioProcessorContainer::getNodeIdForState(sourceState);
+            const auto& processor = getProcessorStateForNodeId(sourceNodeId);
+            updateDefaultConnectionsForProcessor(processor);
+            resetDefaultExternalInputs();
+        }
+        return removed;
     }
 
     bool disconnectCustom(const ValueTree& processor) {
-        return connectionsManager.disconnectCustom(processor, &undoManager);
+        return doDisconnectNode(processor, all, false, true, true, true);
     }
 
     bool disconnectProcessor(const ValueTree& processor) {
-        return connectionsManager.disconnectNode(getNodeIdForState(processor), &undoManager);
+        doDisconnectNode(processor, all, true, true, true, true);
     }
 
-    void setDefaultConnectionsAllowed(ValueTree processor, bool defaultConnectionsAllowed) {
-        processor.setProperty(IDs::allowDefaultConnections, defaultConnectionsAllowed, &undoManager);
-        connectionsManager.updateDefaultConnectionsForProcessor(processor, isCurrentlyDraggingProcessor() ? nullptr : &this->undoManager);
-        connectionsManager.resetDefaultExternalInputs(&undoManager);
+    void setDefaultConnectionsAllowed(const ValueTree& processor, bool defaultConnectionsAllowed) {
+        undoManager.perform(new SetDefaultConnectionsAllowedAction(processor, defaultConnectionsAllowed, connectionsManager));
+        resetDefaultExternalInputs();
     }
 
     // make a snapshot of all the information needed to capture AudioGraph connections and UI positions
@@ -381,10 +398,10 @@ public:
     void createDefaultProject() {
         viewManager.initializeDefault();
         createAudioIoProcessors();
+        doCreateAndAddMasterTrack();
         createTrack();
         doCreateAndAddProcessor(SineBank::getPluginDescription(), mostRecentlyCreatedTrack, 0);
-        doCreateAndAddMasterTrack();
-        connectionsManager.updateAllDefaultConnections(&undoManager);
+        resetDefaultExternalInputs(); // Select action only does this if the focused track changes, so we just need to do this once ourselves
         undoManager.clearUndoHistory();
     }
 
@@ -543,7 +560,7 @@ private:
     ValueTree currentlyDraggingTrack, currentlyDraggingProcessor;
     juce::Point<int> initialDraggingTrackAndSlot, currentlyDraggingTrackAndSlot;
 
-    ValueTree mostRecentlyCreatedTrack;
+    ValueTree mostRecentlyCreatedTrack, mostRecentlyCreatedProcessor;
 
     void clear() {
         inputManager.clear();
@@ -553,21 +570,6 @@ private:
         undoManager.clearUndoHistory();
     }
 
-    void deleteTrackOrProcessor(const ValueTree &item, UndoManager *undoManager) {
-        if (!item.isValid())
-            return;
-        if (item.getParent().isValid()) {
-            if (item.hasType(IDs::TRACK)) {
-                while (item.getNumChildren() > 0)
-                    deleteTrackOrProcessor(item.getChild(item.getNumChildren() - 1), undoManager);
-            } else if (item.hasType(IDs::PROCESSOR)) {
-                ValueTree(item).removeProperty(IDs::processorInitialized, nullptr);
-                connectionsManager.disconnectProcessor(item, undoManager);
-            }
-            item.getParent().removeChild(item, undoManager);
-        }
-    }
-
     void duplicateItem(ValueTree &item) {
         if (!item.isValid() || !item.getParent().isValid())
             return;
@@ -575,7 +577,7 @@ private:
         // TODO port to actions
         if (item.hasType(IDs::TRACK) && !TracksStateManager::isMasterTrack(item)) {
             undoManager.perform(new CreateTrackAction(false, item, true, tracksManager, connectionsManager, viewManager));
-            undoManager.perform(new SelectTrackAction(mostRecentlyCreatedTrack, true, true, tracksManager, connectionsManager, viewManager));
+            setTrackSelected(mostRecentlyCreatedTrack, true, true);
             for (auto processor : item) {
                 tracksManager.saveProcessorStateInformationToState(processor);
                 auto copiedProcessor = processor.createCopy();
@@ -603,7 +605,7 @@ private:
             inputProcessor.setProperty(IDs::id, audioInputDescription.createIdentifierString(), nullptr);
             inputProcessor.setProperty(IDs::name, audioInputDescription.name, nullptr);
             inputProcessor.setProperty(IDs::allowDefaultConnections, true, nullptr);
-            inputManager.getState().addChild(inputProcessor, -1, &undoManager);
+            inputManager.getState().appendChild(inputProcessor,  &undoManager);
         }
         {
             PluginDescription &audioOutputDescription = processorManager.getAudioOutputDescription();
@@ -611,7 +613,7 @@ private:
             outputProcessor.setProperty(IDs::id, audioOutputDescription.createIdentifierString(), nullptr);
             outputProcessor.setProperty(IDs::name, audioOutputDescription.name, nullptr);
             outputProcessor.setProperty(IDs::allowDefaultConnections, true, nullptr);
-            outputManager.getState().addChild(outputProcessor, -1, &undoManager);
+            outputManager.getState().appendChild(outputProcessor, &undoManager);
         }
     }
     
@@ -632,17 +634,17 @@ private:
 
     // TODO refactor into InputStateManager
     void syncInputDevicesWithDeviceManager() {
-        Array<ValueTree> inputChildrenToDelete;
-        for (const auto& inputChild : inputManager.getState()) {
-            if (inputChild.hasProperty(IDs::deviceName)) {
-                const String &deviceName = inputChild[IDs::deviceName];
+        Array<ValueTree> inputProcessorsToDelete;
+        for (const auto& inputProcessor : inputManager.getState()) {
+            if (inputProcessor.hasProperty(IDs::deviceName)) {
+                const String &deviceName = inputProcessor[IDs::deviceName];
                 if (!MidiInput::getDevices().contains(deviceName) || !deviceManager.isMidiInputEnabled(deviceName)) {
-                    inputChildrenToDelete.add(inputChild);
+                    inputProcessorsToDelete.add(inputProcessor);
                 }
             }
         }
-        for (const auto& inputChild : inputChildrenToDelete) {
-            deleteTrackOrProcessor(inputChild, &undoManager);
+        for (const auto& inputProcessor : inputProcessorsToDelete) {
+            undoManager.perform(new DeleteProcessorAction(inputProcessor, tracksManager, connectionsManager));
         }
         for (const auto& deviceName : MidiInput::getDevices()) {
             if (deviceManager.isMidiInputEnabled(deviceName) &&
@@ -658,17 +660,17 @@ private:
     }
 
     void syncOutputDevicesWithDeviceManager() {
-        Array<ValueTree> outputChildrenToDelete;
-        for (const auto& outputChild : outputManager.getState()) {
-            if (outputChild.hasProperty(IDs::deviceName)) {
-                const String &deviceName = outputChild[IDs::deviceName];
+        Array<ValueTree> outputProcessorsToDelete;
+        for (const auto& outputProcessor : outputManager.getState()) {
+            if (outputProcessor.hasProperty(IDs::deviceName)) {
+                const String &deviceName = outputProcessor[IDs::deviceName];
                 if (!MidiOutput::getDevices().contains(deviceName) || !deviceManager.isMidiOutputEnabled(deviceName)) {
-                    outputChildrenToDelete.add(outputChild);
+                    outputProcessorsToDelete.add(outputProcessor);
                 }
             }
         }
-        for (const auto& outputChild : outputChildrenToDelete) {
-            deleteTrackOrProcessor(outputChild, &undoManager);
+        for (const auto& outputProcessor : outputProcessorsToDelete) {
+            undoManager.perform(new DeleteProcessorAction(outputProcessor, tracksManager, connectionsManager));
         }
         for (const auto& deviceName : MidiOutput::getDevices()) {
             if (deviceManager.isMidiOutputEnabled(deviceName) &&
@@ -684,7 +686,8 @@ private:
     }
 
     void setProcessorSlotSelected(const ValueTree& track, int slot, bool selected, bool deselectOthers=true) {
-        undoManager.perform(new SelectProcessorSlotAction(track, slot, selected, deselectOthers, tracksManager, connectionsManager, viewManager));
+        undoManager.perform(new SelectProcessorSlotAction(track, slot, selected, deselectOthers,
+                                                          tracksManager, connectionsManager, viewManager, inputManager, *this));
     }
 
     void selectRectangle(const ValueTree &track, int slot) {
@@ -707,7 +710,6 @@ private:
                 }
             }
         }
-        focusOnProcessorSlot(track, slot);
     }
 
     void startRectangleSelection() {
@@ -823,6 +825,24 @@ private:
             return {tracksManager.indexOf(trackAndSlot.track), trackAndSlot.slot};
     }
 
+    bool doDisconnectNode(const ValueTree& processor, ConnectionType connectionType,
+                          bool defaults, bool custom, bool incoming, bool outgoing, AudioProcessorGraph::NodeID excludingRemovalTo={}) {
+        return undoManager.perform(new DisconnectProcessorAction(connectionsManager, processor, connectionType, defaults,
+                                                                 custom, incoming, outgoing, excludingRemovalTo));
+    }
+
+    void updateAllDefaultConnections(bool makeInvalidDefaultsIntoCustom=false) {
+        undoManager.perform(new UpdateAllDefaultConnectionsAction(makeInvalidDefaultsIntoCustom, connectionsManager, tracksManager, inputManager, *this));
+    }
+
+    void resetDefaultExternalInputs() {
+        undoManager.perform(new ResetDefaultExternalInputConnectionsAction(true, connectionsManager, tracksManager, inputManager, *this));
+    }
+
+    void updateDefaultConnectionsForProcessor(const ValueTree &processor, bool makeInvalidDefaultsIntoCustom=false) {
+        undoManager.perform(new UpdateProcessorDefaultConnectionsAction(processor, makeInvalidDefaultsIntoCustom, connectionsManager, *this));
+    }
+
     void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override {
         if (child[IDs::name] == MidiInputProcessor::name() && !deviceManager.isMidiInputEnabled(child[IDs::deviceName])) {
             deviceManager.setMidiInputEnabled(child[IDs::deviceName], true);
@@ -831,7 +851,8 @@ private:
         }
         if (child.hasType(IDs::TRACK)) {
             mostRecentlyCreatedTrack = child;
-        }
+        } else if (child.hasType(IDs::PROCESSOR))
+            mostRecentlyCreatedProcessor = child;
     }
 
     void valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int) override {

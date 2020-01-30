@@ -2,10 +2,8 @@
 
 #include <state_managers/ConnectionsStateManager.h>
 #include <state_managers/TracksStateManager.h>
-#include <actions/CreateProcessorAction.h>
 
 #include "JuceHeader.h"
-#include "SelectTrackAction.h"
 
 struct CreateTrackAction : public UndoableAction {
     CreateTrackAction(bool addMixer, ValueTree nextToTrack, bool forceImmediatelyToRight,
@@ -41,21 +39,11 @@ struct CreateTrackAction : public UndoableAction {
 
     bool perform() override {
         tracksManager.getState().addChild(trackToCreate, indexToInsertTrack, nullptr);
-        if (createProcessorAction != nullptr)
-            createProcessorAction->perform();
-        if (selectTrackAction != nullptr)
-            selectTrackAction->perform();
         return true;
     }
 
     bool undo() override {
-        if (createProcessorAction != nullptr)
-            createProcessorAction->undo();
-        if (selectTrackAction != nullptr)
-            selectTrackAction->undo();
-
         tracksManager.getState().removeChild(trackToCreate, nullptr);
-
         return true;
     }
 
@@ -90,8 +78,5 @@ protected:
         return trackName;
     }
 private:
-    std::unique_ptr<CreateProcessorAction> createProcessorAction;
-    std::unique_ptr<SelectTrackAction> selectTrackAction;
-
     JUCE_DECLARE_NON_COPYABLE(CreateTrackAction)
 };

@@ -67,7 +67,7 @@ namespace Utilities {
         while (fromParent.getNumChildren() > 0) {
             const auto& child = fromParent.getChild(0);
             fromParent.removeChild(0, undoManager);
-            toParent.addChild(child, -1, undoManager);
+            toParent.appendChild(child, undoManager);
         }
     }
 

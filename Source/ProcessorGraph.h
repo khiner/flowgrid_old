@@ -76,15 +76,15 @@ public:
     }
 
     bool removeConnection(const Connection& c) override {
-        return connectionsManager.removeConnection(c, &undoManager);
+        return project.removeConnection(c);
     }
 
     bool addConnection(const Connection& c) override {
-        return connectionsManager.checkedAddConnection(c, false, &undoManager);
+        return project.addConnection(c);
     }
 
     bool disconnectNode(AudioProcessorGraph::NodeID nodeId) override {
-        return connectionsManager.disconnectNode(nodeId, &undoManager);
+        return project.disconnectProcessor(getProcessorStateForNodeId(nodeId));
     }
 
     UndoManager &undoManager;
