@@ -21,7 +21,7 @@
 #include "state/ViewState.h"
 #include "actions/SelectTrackAction.h"
 
-class Project : public FileBasedDocument, public StatefulAudioProcessorContainer,
+class Project : public Stateful, public FileBasedDocument, public StatefulAudioProcessorContainer,
                 private ChangeListener, private ValueTree::Listener {
 public:
     struct TrackAndSlot {
@@ -71,8 +71,50 @@ public:
         deviceManager.removeChangeListener(this);
     }
 
+    ValueTree& getState() override { return state; }
+
+    void loadFromState(const ValueTree& newState) override {
+        clear();
+
+        view.loadFromState(newState.getChildWithName(IDs::VIEW_STATE));
+
+        const String& inputDeviceName = newState.getChildWithName(IDs::INPUT)[IDs::deviceName];
+        const String& outputDeviceName = newState.getChildWithName(IDs::OUTPUT)[IDs::deviceName];
+
+        // TODO this should be replaced with the greyed-out IO processor behavior (keeping connections)
+        static const String& failureMessage = TRANS("Could not open an Audio IO device used by this project.  "
+                                                    "All connections with the missing device will be gone.  "
+                                                    "If you want this project to look like it did when you saved it, "
+                                                    "the best thing to do is to reconnect the missing device and "
+                                                    "reload this project (without saving first!).");
+
+        if (isDeviceWithNamePresent(inputDeviceName))
+            input.loadFromState(newState.getChildWithName(IDs::INPUT));
+        else
+            AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, TRANS("Failed to open input device \"") + inputDeviceName + "\"", failureMessage);
+
+        if (isDeviceWithNamePresent(outputDeviceName))
+            output.loadFromState(newState.getChildWithName(IDs::OUTPUT));
+        else
+            AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, TRANS("Failed to open output device \"") + outputDeviceName + "\"", failureMessage);
+
+        tracks.loadFromState(newState.getChildWithName(IDs::TRACKS));
+        connections.loadFromState(newState.getChildWithName(IDs::CONNECTIONS));
+        selectProcessor(tracks.getFocusedProcessor());
+        undoManager.clearUndoHistory();
+        sendChangeMessage();
+    }
+
+    void clear() override {
+        input.clear();
+        output.clear();
+        tracks.clear();
+        connections.clear();
+        undoManager.clearUndoHistory();
+    }
+
     void initialise(AudioProcessorGraph& graph) {
-        this->graph = &graph;
+        this->graph = &graph; // TODO kill?
         const auto &lastOpenedProjectFile = getLastDocumentOpened();
         if (!(lastOpenedProjectFile.exists() && loadFrom(lastOpenedProjectFile, true)))
             newDocument();
@@ -117,8 +159,6 @@ public:
     UndoManager& getUndoManager() { return undoManager; }
 
     AudioDeviceManager& getDeviceManager() { return deviceManager; }
-
-    ValueTree& getState() { return state; }
 
     ViewState& getView() { return view; }
 
@@ -459,40 +499,11 @@ public:
     }
 
     Result loadDocument(const File &file) override {
-        clear();
-
         const ValueTree& newState = Utilities::loadValueTree(file, true);
         if (!newState.isValid() || !newState.hasType(IDs::PROJECT))
             return Result::fail(TRANS("Not a valid project file"));
 
-        view.loadFromState(newState.getChildWithName(IDs::VIEW_STATE));
-
-        const String& inputDeviceName = newState.getChildWithName(IDs::INPUT)[IDs::deviceName];
-        const String& outputDeviceName = newState.getChildWithName(IDs::OUTPUT)[IDs::deviceName];
-
-        // TODO this should be replaced with the greyed-out IO processor behavior (keeping connections)
-        static const String& failureMessage = TRANS("Could not open an Audio IO device used by this project.  "
-                                                    "All connections with the missing device will be gone.  "
-                                                    "If you want this project to look like it did when you saved it, "
-                                                    "the best thing to do is to reconnect the missing device and "
-                                                    "reload this project (without saving first!).");
-
-        if (isDeviceWithNamePresent(inputDeviceName))
-            input.loadFromState(newState.getChildWithName(IDs::INPUT));
-        else
-            AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, TRANS("Failed to open input device \"") + inputDeviceName + "\"", failureMessage);
-
-        if (isDeviceWithNamePresent(outputDeviceName))
-            output.loadFromState(newState.getChildWithName(IDs::OUTPUT));
-        else
-            AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, TRANS("Failed to open output device \"") + outputDeviceName + "\"", failureMessage);
-
-        tracks.loadFromState(newState.getChildWithName(IDs::TRACKS));
-        connections.loadFromState(newState.getChildWithName(IDs::CONNECTIONS));
-        selectProcessor(tracks.getFocusedProcessor());
-        undoManager.clearUndoHistory();
-        sendChangeMessage();
-
+        loadFromState(newState);
         return Result::ok();
     }
 
@@ -559,14 +570,6 @@ private:
     juce::Point<int> initialDraggingTrackAndSlot, currentlyDraggingTrackAndSlot;
 
     ValueTree mostRecentlyCreatedTrack, mostRecentlyCreatedProcessor;
-
-    void clear() {
-        input.clear();
-        output.clear();
-        tracks.clear();
-        connections.clear();
-        undoManager.clearUndoHistory();
-    }
 
     void duplicateItem(ValueTree &item) {
         if (!item.isValid() || !item.getParent().isValid())

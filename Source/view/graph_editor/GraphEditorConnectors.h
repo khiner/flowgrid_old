@@ -3,7 +3,7 @@
 #pragma once
 
 #include <ValueTreeObjectList.h>
-#include <Project.h>
+#include <state/Project.h>
 #include <ProcessorGraph.h>
 #include "JuceHeader.h"
 #include "GraphEditorConnector.h"

@@ -3,14 +3,22 @@
 #include <Utilities.h>
 #include "JuceHeader.h"
 
-class State {
+class Stateful {
 public:
     virtual void loadFromState(const ValueTree& state) = 0;
 
     virtual ValueTree& getState() = 0;
 
-    void clear() {
+    virtual void clear() {
         getState().removeAllChildren(nullptr);
+    }
+
+    void addListener(ValueTree::Listener *listener) {
+        getState().addListener(listener);
+    }
+
+    void removeListener(ValueTree::Listener *listener) {
+        getState().removeListener(listener);
     }
 
     static void resetVarToInt(ValueTree& tree, const Identifier& id, ValueTree::Listener* listenerToExclude) {

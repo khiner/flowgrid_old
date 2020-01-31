@@ -62,7 +62,7 @@ add_executable (APP
     "../../Source/state/Identifiers.h"
     "../../Source/state/InputState.h"
     "../../Source/state/OutputState.h"
-    "../../Source/state/State.h"
+    "../../Source/state/Stateful.h"
     "../../Source/state/TracksState.h"
     "../../Source/state/ViewState.h"
     "../../Source/usb/libusb/config_msvc.h"
@@ -110,7 +110,7 @@ add_executable (APP
     "../../Source/Main.cpp"
     "../../Source/PluginManager.h"
     "../../Source/ProcessorGraph.h"
-    "../../Source/Project.h"
+    "../../Source/state/Project.h"
     "../../Source/StatefulAudioProcessorContainer.h"
     "../../Source/Utilities.h"
     "../../Source/ValueTreeObjectList.h"
@@ -1522,7 +1522,7 @@ set_source_files_properties ("../../Source/state/ConnectionsState.h" PROPERTIES 
 set_source_files_properties ("../../Source/state/Identifiers.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/state/InputState.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/state/OutputState.h" PROPERTIES HEADER_FILE_ONLY TRUE)
-set_source_files_properties ("../../Source/state/State.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/state/Stateful.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/state/TracksState.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/state/ViewState.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/usb/libusb/config_msvc.h" PROPERTIES HEADER_FILE_ONLY TRUE)
@@ -1568,7 +1568,7 @@ set_source_files_properties ("../../Source/DeviceChangeMonitor.h" PROPERTIES HEA
 set_source_files_properties ("../../Source/DeviceManagerUtilities.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/PluginManager.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/ProcessorGraph.h" PROPERTIES HEADER_FILE_ONLY TRUE)
-set_source_files_properties ("../../Source/Project.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/state/Project.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/StatefulAudioProcessorContainer.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/Utilities.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/ValueTreeObjectList.h" PROPERTIES HEADER_FILE_ONLY TRUE)

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <ValueTreeObjectList.h>
-#include <Project.h>
+#include <state/Project.h>
 #include "GraphEditorProcessor.h"
 #include "GraphEditorProcessorContainer.h"
 #include "ConnectorDragListener.h"

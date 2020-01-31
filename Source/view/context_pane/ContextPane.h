@@ -2,7 +2,7 @@
 
 #include <state/Identifiers.h>
 #include "JuceHeader.h"
-#include "Project.h"
+#include "state/Project.h"
 
 class ContextPane :
         public Component,

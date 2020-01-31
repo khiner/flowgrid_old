@@ -3,7 +3,7 @@
 #include <midi/MidiCommunicator.h>
 #include "view/push2/Push2Listener.h"
 #include "view/push2/Push2Colours.h"
-#include "Project.h"
+#include "state/Project.h"
 
 class Push2MidiCommunicator : public MidiCommunicator, private Push2Colours::Listener, private Timer {
 public:

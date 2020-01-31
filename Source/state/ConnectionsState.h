@@ -9,7 +9,7 @@
 
 using SAPC = StatefulAudioProcessorContainer;
 
-class ConnectionsState : public State {
+class ConnectionsState : public Stateful {
 public:
     explicit ConnectionsState(StatefulAudioProcessorContainer& audioProcessorContainer,
                               InputState& input, OutputState& output,

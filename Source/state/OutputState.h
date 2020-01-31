@@ -3,9 +3,9 @@
 #include <PluginManager.h>
 #include "JuceHeader.h"
 #include "StatefulAudioProcessorContainer.h"
-#include "State.h"
+#include "Stateful.h"
 
-class OutputState : public State {
+class OutputState : public Stateful {
 public:
     explicit OutputState(StatefulAudioProcessorContainer& audioProcessorContainer, PluginManager& pluginManager)
             : audioProcessorContainer(audioProcessorContainer), pluginManager(pluginManager) {

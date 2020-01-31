@@ -2,9 +2,9 @@
 
 #include "JuceHeader.h"
 #include "Identifiers.h"
-#include "State.h"
+#include "Stateful.h"
 
-class ViewState : public State {
+class ViewState : public Stateful {
 public:
     ViewState() {
         viewState = ValueTree(IDs::VIEW_STATE);

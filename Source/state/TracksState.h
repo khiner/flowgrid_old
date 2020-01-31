@@ -7,10 +7,10 @@
 #include "StatefulAudioProcessorContainer.h"
 #include "state/ViewState.h"
 #include "PluginManager.h"
-#include "State.h"
+#include "Stateful.h"
 
 class TracksState :
-        public State,
+        public Stateful,
         private ValueTree::Listener {
 public:
     TracksState(ViewState& view, StatefulAudioProcessorContainer& audioProcessorContainer,

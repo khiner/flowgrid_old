@@ -1,7 +1,7 @@
 #pragma once
 
 #include "JuceHeader.h"
-#include "Project.h"
+#include "state/Project.h"
 #include "push2/Push2MidiCommunicator.h"
 
 class Push2NoteModePadLedManager : public MidiInputCallback, public Push2Colours::Listener {
