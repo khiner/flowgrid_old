@@ -6,7 +6,7 @@
 #include "JuceHeader.h"
 #include "ConnectorDragListener.h"
 #include "Utilities.h"
-#include "Identifiers.h"
+#include "state/Identifiers.h"
 #include "ProcessorGraph.h"
 
 struct GraphEditorPin : public Component, public SettableTooltipClient, private Utilities::ValueTreePropertyChangeListener {

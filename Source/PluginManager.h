@@ -2,7 +2,7 @@
 
 #include "JuceHeader.h"
 #include "processors/InternalPluginFormat.h"
-#include "Identifiers.h"
+#include "state/Identifiers.h"
 #include "ApplicationPropertiesAndCommandManager.h"
 
 class PluginManager : private ChangeListener {

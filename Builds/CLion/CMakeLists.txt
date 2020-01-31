@@ -87,7 +87,7 @@ add_executable (APP
     "../../Source/config.h"
     "../../Source/DeviceChangeMonitor.h"
     "../../Source/DeviceManagerUtilities.h"
-    "../../Source/Identifiers.h"
+    "../../Source/state/Identifiers.h"
     "../../Source/Main.cpp"
     "../../Source/ProcessorGraph.h"
     "../../Source/Project.h"
@@ -1527,7 +1527,7 @@ set_source_files_properties ("../../Source/BasicWindow.h" PROPERTIES HEADER_FILE
 set_source_files_properties ("../../Source/config.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/DeviceChangeMonitor.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/DeviceManagerUtilities.h" PROPERTIES HEADER_FILE_ONLY TRUE)
-set_source_files_properties ("../../Source/Identifiers.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/state/Identifiers.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/ProcessorGraph.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/Project.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/StatefulAudioProcessorContainer.h" PROPERTIES HEADER_FILE_ONLY TRUE)
