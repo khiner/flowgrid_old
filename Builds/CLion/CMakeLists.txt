@@ -83,7 +83,7 @@ add_executable (APP
     "../../Source/view/SelectionEditor.h"
     "../../Source/view/UiColours.h"
     "../../Source/ApplicationPropertiesAndCommandManager.h"
-    "../../Source/BasicWindow.h"
+    "../../Source/view/BasicWindow.h"
     "../../Source/config.h"
     "../../Source/DeviceChangeMonitor.h"
     "../../Source/DeviceManagerUtilities.h"
@@ -1523,7 +1523,7 @@ set_source_files_properties ("../../Source/view/PluginWindow.h" PROPERTIES HEADE
 set_source_files_properties ("../../Source/view/SelectionEditor.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/view/UiColours.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/ApplicationPropertiesAndCommandManager.h" PROPERTIES HEADER_FILE_ONLY TRUE)
-set_source_files_properties ("../../Source/BasicWindow.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/view/BasicWindow.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/config.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/DeviceChangeMonitor.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/DeviceManagerUtilities.h" PROPERTIES HEADER_FILE_ONLY TRUE)

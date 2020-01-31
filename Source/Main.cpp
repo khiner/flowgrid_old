@@ -3,7 +3,7 @@
 #include "ApplicationPropertiesAndCommandManager.h"
 #include <view/graph_editor/GraphEditor.h>
 #include <view/CustomColourIds.h>
-#include "BasicWindow.h"
+#include "view/BasicWindow.h"
 #include "DeviceChangeMonitor.h"
 
 class SoundMachineApplication : public JUCEApplication, public MenuBarModel, private ChangeListener, private Timer, private Utilities::ValueTreePropertyChangeListener {

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Utilities.h>
-#include <BasicWindow.h>
+#include <view/BasicWindow.h>
 #include "JuceHeader.h"
 #include "ConnectorDragListener.h"
 #include "ProcessorGraph.h"
