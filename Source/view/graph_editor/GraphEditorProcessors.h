@@ -15,7 +15,7 @@ class GraphEditorProcessors : public Component,
 public:
     explicit GraphEditorProcessors(Project& project, const ValueTree& state, ConnectorDragListener &connectorDragListener, ProcessorGraph& graph)
             : Utilities::ValueTreeObjectList<GraphEditorProcessor>(state),
-              project(project), tracksManager(project.getTracksManager()), viewStateManager(project.getViewStateManager()),
+              project(project), tracks(project.getTracksManager()), viewStateManager(project.getViewStateManager()),
               connectionsStateManager(project.getConnectionStateManager()),
               viewState(viewStateManager.getState()), connectorDragListener(connectorDragListener), graph(graph) {
         rebuildObjects();
@@ -27,15 +27,15 @@ public:
         freeObjects();
     }
 
-    bool isMasterTrack() const { return TracksStateManager::isMasterTrack(parent); }
+    bool isMasterTrack() const { return TracksState::isMasterTrack(parent); }
 
-    int getNumAvailableSlots() const { return tracksManager.getNumAvailableSlotsForTrack(parent); }
+    int getNumAvailableSlots() const { return tracks.getNumAvailableSlotsForTrack(parent); }
 
-    int getSlotOffset() const { return tracksManager.getSlotOffsetForTrack(parent); }
+    int getSlotOffset() const { return tracks.getSlotOffsetForTrack(parent); }
 
     void mouseDown(const MouseEvent &e) override {
         int slot = findSlotAt(e.getEventRelativeTo(this));
-        bool isSlotSelected = tracksManager.isSlotSelected(parent, slot);
+        bool isSlotSelected = tracks.isSlotSelected(parent, slot);
         if (e.mods.isCommandDown() && isSlotSelected) {
             project.deselectProcessorSlot(parent, slot);
         } else if (!isSlotSelected) {
@@ -59,9 +59,9 @@ public:
             bool isMixerChannel = slot == processorSlotRectangles.size() - 1;
             if (slot == slotOffset) {
                 if (isMasterTrack())
-                    r.removeFromLeft(TracksStateManager::TRACK_LABEL_HEIGHT);
+                    r.removeFromLeft(TracksState::TRACK_LABEL_HEIGHT);
                 else
-                    r.removeFromTop(TracksStateManager::TRACK_LABEL_HEIGHT);
+                    r.removeFromTop(TracksState::TRACK_LABEL_HEIGHT);
             }
             auto cellSize = isMixerChannel ? nonMixerCellSize * 2 : nonMixerCellSize;
             auto processorBounds = isMasterTrack() ? r.removeFromLeft(cellSize) : r.removeFromTop(cellSize);
@@ -78,10 +78,10 @@ public:
             auto fillColour = baseColour.brighter(0.13);
             if (viewStateManager.isProcessorSlotInView(parent, slot)) {
                 fillColour = fillColour.brighter(0.3);
-                if (tracksManager.isTrackSelected(parent))
+                if (tracks.isTrackSelected(parent))
                     fillColour = fillColour.brighter(0.2);
-                if (tracksManager.isSlotSelected(parent, slot))
-                        fillColour = tracksManager.getTrackColour(parent);
+                if (tracks.isSlotSelected(parent, slot))
+                        fillColour = tracks.getTrackColour(parent);
             }
             processorSlotRectangles.getUnchecked(slot)->setFill(fillColour);
         }
@@ -94,7 +94,7 @@ public:
     GraphEditorProcessor *createNewObject(const ValueTree &tree) override {
         GraphEditorProcessor *processor = currentlyMovingProcessor != nullptr
                                           ? currentlyMovingProcessor
-                                          : new GraphEditorProcessor(project, tracksManager, tree, connectorDragListener, graph);
+                                          : new GraphEditorProcessor(project, tracks, tree, connectorDragListener, graph);
         addAndMakeVisible(processor);
         return processor;
     }
@@ -152,9 +152,9 @@ private:
             ADD_MIXER_CHANNEL_MENU_ID = 13;
 
     Project &project;
-    TracksStateManager &tracksManager;
-    ViewStateManager &viewStateManager;
-    ConnectionsStateManager &connectionsStateManager;
+    TracksState &tracks;
+    ViewState &viewStateManager;
+    ConnectionsState &connectionsStateManager;
     ValueTree viewState;
 
     ConnectorDragListener &connectorDragListener;
@@ -208,7 +208,7 @@ private:
     void showPopupMenu(int slot) {
         PopupMenu menu;
         auto* processor = findProcessorAtSlot(slot);
-        bool isMixerChannel = slot == tracksManager.getMixerChannelSlotForTrack(parent);
+        bool isMixerChannel = slot == tracks.getMixerChannelSlotForTrack(parent);
 
         if (processor != nullptr) {
             if (!isMixerChannel) {
@@ -299,12 +299,12 @@ private:
     }
 
     int getNonMixerCellSize() const {
-        return isMasterTrack() ? tracksManager.getTrackWidth() : tracksManager.getProcessorHeight();
+        return isMasterTrack() ? tracks.getTrackWidth() : tracks.getProcessorHeight();
     }
 
     int findSlotAt(const Point<int> relativePosition) const {
         int length = isMasterTrack() ? relativePosition.x : relativePosition.y;
-        int slot = (length - TracksStateManager::TRACK_LABEL_HEIGHT) / getNonMixerCellSize();
+        int slot = (length - TracksState::TRACK_LABEL_HEIGHT) / getNonMixerCellSize();
         return jlimit(0, getNumAvailableSlots() - 1, slot);
     }
 };

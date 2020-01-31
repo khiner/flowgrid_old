@@ -3,13 +3,13 @@
 #include "JuceHeader.h"
 
 #include <Identifiers.h>
-#include <state/ConnectionsStateManager.h>
+#include <state/ConnectionsState.h>
 #include "CreateOrDeleteConnectionsAction.h"
 
 struct CreateConnectionAction : public CreateOrDeleteConnectionsAction {
     CreateConnectionAction(const AudioProcessorGraph::Connection &connection, bool isDefault,
-                           ConnectionsStateManager &connectionsManager, StatefulAudioProcessorContainer &audioProcessorContainer)
-            : CreateOrDeleteConnectionsAction(connectionsManager) {
+                           ConnectionsState &connections, StatefulAudioProcessorContainer &audioProcessorContainer)
+            : CreateOrDeleteConnectionsAction(connections) {
         if (canAddConnection(connection, audioProcessorContainer) &&
             (!isDefault || (audioProcessorContainer.getProcessorStateForNodeId(connection.source.nodeID)[IDs::allowDefaultConnections] &&
                             audioProcessorContainer.getProcessorStateForNodeId(connection.destination.nodeID)[IDs::allowDefaultConnections]))) {
@@ -49,8 +49,8 @@ struct CreateConnectionAction : public CreateOrDeleteConnectionsAction {
     }
 
     bool hasConnectionMatching(const AudioProcessorGraph::Connection &connection) {
-        for (const auto& connectionState : connectionsManager.getState()) {
-            if (ConnectionsStateManager::stateToConnection(connectionState) == connection) {
+        for (const auto& connectionState : connections.getState()) {
+            if (ConnectionsState::stateToConnection(connectionState) == connection) {
                 return true;
             }
         }

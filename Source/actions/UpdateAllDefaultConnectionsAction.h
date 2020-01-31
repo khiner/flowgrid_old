@@ -7,20 +7,20 @@
 
 #include <Identifiers.h>
 #include <StatefulAudioProcessorContainer.h>
-#include <state/InputStateManager.h>
+#include <state/InputState.h>
 
 struct UpdateAllDefaultConnectionsAction : public CreateOrDeleteConnectionsAction {
     
     UpdateAllDefaultConnectionsAction(bool makeInvalidDefaultsIntoCustom,
-                                      ConnectionsStateManager &connectionsManager, TracksStateManager &tracksManager,
-                                      InputStateManager &inputManager, StatefulAudioProcessorContainer &audioProcessorContainer)
-            : CreateOrDeleteConnectionsAction(connectionsManager) {
-        for (const auto& track : tracksManager.getState()) {
+                                      ConnectionsState &connections, TracksState &tracks, InputState &input,
+                                      StatefulAudioProcessorContainer &audioProcessorContainer)
+            : CreateOrDeleteConnectionsAction(connections) {
+        for (const auto& track : tracks.getState()) {
             for (const auto& processor : track) {
-                coalesceWith(UpdateProcessorDefaultConnectionsAction(processor, makeInvalidDefaultsIntoCustom, connectionsManager, audioProcessorContainer));
+                coalesceWith(UpdateProcessorDefaultConnectionsAction(processor, makeInvalidDefaultsIntoCustom, connections, audioProcessorContainer));
             }
         }
-        coalesceWith(ResetDefaultExternalInputConnectionsAction(true, connectionsManager, tracksManager, inputManager, audioProcessorContainer));
+        coalesceWith(ResetDefaultExternalInputConnectionsAction(true, connections, tracks, input, audioProcessorContainer));
     }
 
 private:

@@ -1,16 +1,16 @@
 #pragma once
 
-#include <state/ConnectionsStateManager.h>
-#include <state/TracksStateManager.h>
+#include <state/ConnectionsState.h>
+#include <state/TracksState.h>
 
 #include "JuceHeader.h"
 
 struct CreateTrackAction : public UndoableAction {
     CreateTrackAction(bool addMixer, ValueTree nextToTrack, bool forceImmediatelyToRight,
-                      TracksStateManager &tracksManager, ConnectionsStateManager &connectionsManager, ViewStateManager &viewManager)
-            : tracksManager(tracksManager), connectionsManager(connectionsManager), viewManager(viewManager) {
-        int numTracks = tracksManager.getNumNonMasterTracks();
-        const auto& focusedTrack = tracksManager.getFocusedTrack();
+                      TracksState &tracks, ConnectionsState &connections, ViewState &view)
+            : tracks(tracks), connections(connections), view(view) {
+        int numTracks = tracks.getNumNonMasterTracks();
+        const auto& focusedTrack = tracks.getFocusedTrack();
 
         if (!nextToTrack.isValid()) {
             if (focusedTrack.isValid()) {
@@ -19,12 +19,12 @@ struct CreateTrackAction : public UndoableAction {
                 nextToTrack = focusedTrack;
 
                 if (addMixer && !forceImmediatelyToRight) {
-                    while (nextToTrack.isValid() && !tracksManager.getMixerChannelProcessorForTrack(nextToTrack).isValid())
+                    while (nextToTrack.isValid() && !tracks.getMixerChannelProcessorForTrack(nextToTrack).isValid())
                         nextToTrack = nextToTrack.getSibling(1);
                 }
             }
         }
-        if (nextToTrack == tracksManager.getMasterTrack())
+        if (nextToTrack == tracks.getMasterTrack())
             nextToTrack = {};
 
         bool isSubTrack = nextToTrack.isValid() && !addMixer;
@@ -38,12 +38,12 @@ struct CreateTrackAction : public UndoableAction {
     }
 
     bool perform() override {
-        tracksManager.getState().addChild(trackToCreate, indexToInsertTrack, nullptr);
+        tracks.getState().addChild(trackToCreate, indexToInsertTrack, nullptr);
         return true;
     }
 
     bool undo() override {
-        tracksManager.getState().removeChild(trackToCreate, nullptr);
+        tracks.getState().removeChild(trackToCreate, nullptr);
         return true;
     }
 
@@ -55,13 +55,13 @@ struct CreateTrackAction : public UndoableAction {
     int indexToInsertTrack;
 
 protected:
-    TracksStateManager &tracksManager;
-    ConnectionsStateManager &connectionsManager;
-    ViewStateManager &viewManager;
+    TracksState &tracks;
+    ConnectionsState &connections;
+    ViewState &view;
 
     // NOTE: assumes the track hasn't been added yet!
     String makeTrackNameUnique(const String& trackName) {
-        for (const auto& track : tracksManager.getState()) {
+        for (const auto& track : tracks.getState()) {
             String otherTrackName = track[IDs::name];
             if (otherTrackName == trackName) {
                 if (trackName.contains("-")) {

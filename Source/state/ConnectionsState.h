@@ -5,19 +5,19 @@
 #include <utility>
 
 #include "StatefulAudioProcessorContainer.h"
-#include "TracksStateManager.h"
+#include "TracksState.h"
 
 using SAPC = StatefulAudioProcessorContainer;
 
-class ConnectionsStateManager : public StateManager {
+class ConnectionsState : public State {
 public:
-    explicit ConnectionsStateManager(StatefulAudioProcessorContainer& audioProcessorContainer,
-                                     InputStateManager& inputManager, OutputStateManager& outputManager,
-                                     TracksStateManager& tracksManager)
+    explicit ConnectionsState(StatefulAudioProcessorContainer& audioProcessorContainer,
+                              InputState& input, OutputState& output,
+                              TracksState& tracks)
             : audioProcessorContainer(audioProcessorContainer),
-              inputManager(inputManager),
-              outputManager(outputManager),
-              tracksManager(tracksManager) {
+              input(input),
+              output(output),
+              tracks(tracks) {
         connections = ValueTree(IDs::CONNECTIONS);
     }
 
@@ -37,7 +37,7 @@ public:
             for (const auto &otherProcessor : otherTrack) {
                 if (otherProcessor == processor) continue;
                 bool isOtherProcessorBelow = int(otherProcessor[IDs::processorSlot]) > int(processor[IDs::processorSlot]) ||
-                                             (track != otherTrack && TracksStateManager::isMasterTrack(otherTrack));
+                                             (track != otherTrack && TracksState::isMasterTrack(otherTrack));
                 if (!isOtherProcessorBelow) continue;
                 if (canProcessorDefaultConnectTo(processor, otherProcessor, connectionType) ||
                     // If a non-effect (another producer) is under this processor in the same track, and no effect processors
@@ -49,7 +49,7 @@ public:
             }
         }
 
-        return outputManager.getAudioOutputProcessorState();
+        return output.getAudioOutputProcessorState();
     }
 
     bool isNodeConnected(AudioProcessorGraph::NodeID nodeId) const {
@@ -114,9 +114,9 @@ public:
 private:
     ValueTree connections;
     StatefulAudioProcessorContainer& audioProcessorContainer;
-    InputStateManager& inputManager;
-    OutputStateManager& outputManager;
-    TracksStateManager& tracksManager;
+    InputState& input;
+    OutputState& output;
+    TracksState& tracks;
 
     ValueTree connectionsSnapshot;
 };

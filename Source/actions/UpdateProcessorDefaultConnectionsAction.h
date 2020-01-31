@@ -5,7 +5,7 @@
 
 #include <Identifiers.h>
 #include <StatefulAudioProcessorContainer.h>
-#include <state/InputStateManager.h>
+#include <state/InputState.h>
 
 // Disconnect external audio/midi inputs (unless `addDefaultConnections` is true and
 // the default connection would stay the same).
@@ -17,13 +17,13 @@
 struct UpdateProcessorDefaultConnectionsAction : public CreateOrDeleteConnectionsAction {
     
     UpdateProcessorDefaultConnectionsAction(const ValueTree &processor, bool makeInvalidDefaultsIntoCustom,
-                                            ConnectionsStateManager &connectionsManager, StatefulAudioProcessorContainer &audioProcessorContainer)
-            : CreateOrDeleteConnectionsAction(connectionsManager) {
+                                            ConnectionsState &connections, StatefulAudioProcessorContainer &audioProcessorContainer)
+            : CreateOrDeleteConnectionsAction(connections) {
         for (auto connectionType : {audio, midi}) {
-            auto processorToConnectTo = connectionsManager.findProcessorToFlowInto(processor.getParent(), processor, connectionType);
+            auto processorToConnectTo = connections.findProcessorToFlowInto(processor.getParent(), processor, connectionType);
             auto nodeIdToConnectTo = StatefulAudioProcessorContainer::getNodeIdForState(processorToConnectTo);
 
-            auto disconnectDefaultsAction = DisconnectProcessorAction(connectionsManager, processor, connectionType, true, false, false, true, nodeIdToConnectTo);
+            auto disconnectDefaultsAction = DisconnectProcessorAction(connections, processor, connectionType, true, false, false, true, nodeIdToConnectTo);
             coalesceWith(disconnectDefaultsAction);
             if (makeInvalidDefaultsIntoCustom && !disconnectDefaultsAction.connectionsToDelete.isEmpty()) {
                 for (const auto& connectionToConvert : disconnectDefaultsAction.connectionsToDelete) {
@@ -32,7 +32,7 @@ struct UpdateProcessorDefaultConnectionsAction : public CreateOrDeleteConnection
                     connectionsToCreate.add(customConnection);
                 }
             } else {
-                coalesceWith(DefaultConnectProcessorAction(processor, nodeIdToConnectTo, connectionType, connectionsManager, audioProcessorContainer));
+                coalesceWith(DefaultConnectProcessorAction(processor, nodeIdToConnectTo, connectionType, connections, audioProcessorContainer));
             }
         }
     }

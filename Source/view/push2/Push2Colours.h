@@ -1,5 +1,6 @@
 #pragma once
 
+#include <state/TracksState.h>
 #include "JuceHeader.h"
 #include "unordered_map"
 #include "Identifiers.h"
@@ -13,11 +14,15 @@ public:
         virtual void trackColourChanged(const String &trackUuid, const Colour &colour) = 0;
     };
 
-    explicit Push2Colours(ValueTree& state) : state(state) {
-        this->state.addListener(this);
+    explicit Push2Colours(TracksState& tracks) : tracks(tracks) {
+        this->tracks.getState().addListener(this);
         for (uint8 colourIndex = 1; colourIndex < CHAR_MAX - 1; colourIndex++) {
             availableColourIndexes.add(colourIndex);
         }
+    }
+
+    ~Push2Colours() override {
+        tracks.getState().removeListener(this);
     }
 
     uint8 findIndexForColourAddingIfNeeded(const Colour &colour) {
@@ -42,7 +47,7 @@ private:
     
     ListenerList<Listener> listeners;
 
-    ValueTree& state;
+    TracksState &tracks;
     
     void addColour(const Colour &colour) {
         jassert(!availableColourIndexes.isEmpty());
@@ -85,10 +90,4 @@ private:
             } 
         }
     }
-
-    void valueTreeChildOrderChanged(ValueTree &tree, int, int) override {}
-
-    void valueTreeParentChanged(ValueTree &) override {}
-
-    void valueTreeRedirected(ValueTree &) override {}
 };

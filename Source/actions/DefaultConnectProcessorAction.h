@@ -8,15 +8,15 @@
 
 struct DefaultConnectProcessorAction : public CreateOrDeleteConnectionsAction {
     DefaultConnectProcessorAction(const ValueTree &fromProcessor, AudioProcessorGraph::NodeID toNodeId,
-                                  ConnectionType connectionType, ConnectionsStateManager &connectionsManager,
+                                  ConnectionType connectionType, ConnectionsState &connections,
                                   StatefulAudioProcessorContainer &audioProcessorContainer)
-            : CreateOrDeleteConnectionsAction(connectionsManager) {
+            : CreateOrDeleteConnectionsAction(connections) {
         const auto fromNodeId = StatefulAudioProcessorContainer::getNodeIdForState(fromProcessor);
         if (fromProcessor.isValid() && toNodeId.isValid()) {
             const auto &defaultConnectionChannels = getDefaultConnectionChannels(connectionType);
             for (auto channel : defaultConnectionChannels) {
                 AudioProcessorGraph::Connection connection = {{fromNodeId, channel}, {toNodeId, channel}};
-                coalesceWith(CreateConnectionAction(connection, true, connectionsManager, audioProcessorContainer));
+                coalesceWith(CreateConnectionAction(connection, true, connections, audioProcessorContainer));
             }
         }
     }

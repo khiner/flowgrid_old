@@ -10,8 +10,8 @@
 
 class GraphEditorProcessor : public Component, public ValueTree::Listener {
 public:
-    GraphEditorProcessor(Project& project, TracksStateManager& tracksManager, const ValueTree& state, ConnectorDragListener &connectorDragListener, ProcessorGraph& graph, bool showChannelLabels=false)
-            : project(project), tracksManager(tracksManager), state(state), connectorDragListener(connectorDragListener),
+    GraphEditorProcessor(Project& project, TracksState& tracks, const ValueTree& state, ConnectorDragListener &connectorDragListener, ProcessorGraph& graph, bool showChannelLabels=false)
+            : project(project), tracks(tracks), state(state), connectorDragListener(connectorDragListener),
               graph(graph), showChannelLabels(showChannelLabels) {
         this->state.addListener(this);
         valueTreePropertyChanged(this->state, IDs::name);
@@ -61,10 +61,10 @@ public:
 
     inline bool isIoProcessor() const { return InternalPluginFormat::isIoProcessorName(state[IDs::name]); }
 
-    inline bool isSelected() { return tracksManager.isProcessorSelected(state); }
+    inline bool isSelected() { return tracks.isProcessorSelected(state); }
 
     void toggleBypass() {
-        state.setProperty(IDs::bypassed, !state[IDs::bypassed], tracksManager.getUndoManager());
+        state.setProperty(IDs::bypassed, !state[IDs::bypassed], tracks.getUndoManager());
     }
 
     void paint(Graphics &g) override {
@@ -183,7 +183,7 @@ public:
 
 private:
     Project &project;
-    TracksStateManager &tracksManager;
+    TracksState &tracks;
     ValueTree state;
     DrawableText nameLabel;
     std::unique_ptr<ParametersPanel> parametersPanel;

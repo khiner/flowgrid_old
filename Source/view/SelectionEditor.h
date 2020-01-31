@@ -13,8 +13,8 @@ class SelectionEditor : public Component,
                         private ValueTree::Listener {
 public:
     SelectionEditor(Project& project, ProcessorGraph &audioGraphBuilder)
-            : project(project), tracksManager(project.getTracksManager()),
-              viewManager(project.getViewStateManager()),
+            : project(project), tracks(project.getTracksManager()),
+              view(project.getViewStateManager()),
               audioGraphBuilder(audioGraphBuilder), contextPane(project) {
         this->project.getState().addListener(this);
 
@@ -37,7 +37,7 @@ public:
     }
 
     void mouseDown(const MouseEvent& event) override {
-        viewManager.focusOnEditorPane();
+        view.focusOnEditorPane();
         if (auto* processorEditor = dynamic_cast<ProcessorEditor*>(event.originalComponent)) {
             project.selectProcessor(processorEditor->getProcessorState());
         }
@@ -60,7 +60,7 @@ public:
 
         r.removeFromRight(8);
         processorEditorsComponent.setBounds(0, 0, r.getWidth(), PROCESSOR_EDITOR_HEIGHT *
-                tracksManager.getFocusedTrack().getNumChildren());
+                tracks.getFocusedTrack().getNumChildren());
         r = processorEditorsComponent.getBounds();
         for (auto* editor : processorEditors) {
             if (editor->isVisible())
@@ -70,7 +70,7 @@ public:
 
     void buttonClicked(Button *b) override {
         if (b == &addProcessorButton) {
-            const auto& focusedTrack = tracksManager.getFocusedTrack();
+            const auto& focusedTrack = tracks.getFocusedTrack();
             if (focusedTrack.isValid()) {
                 addProcessorMenu = std::make_unique<PopupMenu>();
                 project.addPluginsToMenu(*addProcessorMenu, focusedTrack);
@@ -89,8 +89,8 @@ private:
     TextButton addProcessorButton{"Add Processor"};
 
     Project &project;
-    TracksStateManager &tracksManager;
-    ViewStateManager &viewManager;
+    TracksState &tracks;
+    ViewState &view;
     ProcessorGraph &audioGraphBuilder;
 
     Viewport contextPaneViewport, processorEditorsViewport;
@@ -101,7 +101,7 @@ private:
     std::unique_ptr<PopupMenu> addProcessorMenu;
 
     void refreshProcessors(const ValueTree& singleProcessorToRefresh={}, bool onlyUpdateFocusState=false) {
-        const ValueTree &focusedTrack = tracksManager.getFocusedTrack();
+        const ValueTree &focusedTrack = tracks.getFocusedTrack();
         if (!focusedTrack.isValid()) {
             for (auto* editor : processorEditors) {
                 editor->setVisible(false);
@@ -111,7 +111,7 @@ private:
             assignProcessorToEditor(singleProcessorToRefresh);
         } else {
             for (int processorSlot = 0; processorSlot < processorEditors.size(); processorSlot++) {
-                const auto &processor = TracksStateManager::findProcessorAtSlot(focusedTrack, processorSlot);
+                const auto &processor = TracksState::findProcessorAtSlot(focusedTrack, processorSlot);
                 assignProcessorToEditor(processor, processorSlot, onlyUpdateFocusState);
             }
         }
@@ -126,8 +126,8 @@ private:
                     processorEditor->setProcessor(processorWrapper);
                     processorEditor->setVisible(true);
                 }
-                processorEditor->setSelected(tracksManager.isProcessorSelected(processor));
-                processorEditor->setFocused(tracksManager.isProcessorFocused(processor));
+                processorEditor->setSelected(tracks.isProcessorSelected(processor));
+                processorEditor->setFocused(tracks.isProcessorFocused(processor));
             }
         } else {
             processorEditor->setVisible(false);
@@ -143,7 +143,7 @@ private:
 
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {
         if (i == IDs::focusedTrackIndex) {
-            addProcessorButton.setVisible(tracksManager.getFocusedTrack().isValid());
+            addProcessorButton.setVisible(tracks.getFocusedTrack().isValid());
             refreshProcessors();
         } else if (i == IDs::processorInitialized) {
             refreshProcessors(); // TODO only the new processor
@@ -160,7 +160,7 @@ private:
         } else if (i == IDs::processorSlot) {
             refreshProcessors();
         } else if (i == IDs::focusedPane) {
-            unfocusOverlay.setVisible(viewManager.isGridPaneFocused());
+            unfocusOverlay.setVisible(view.isGridPaneFocused());
             unfocusOverlay.toFront(false);
         }
     }

@@ -7,10 +7,10 @@
 #include "DisconnectProcessorAction.h"
 
 struct SetDefaultConnectionsAllowedAction : public CreateOrDeleteConnectionsAction {
-    SetDefaultConnectionsAllowedAction(const ValueTree& processor, bool defaultConnectionsAllowed, ConnectionsStateManager& connectionsManager)
-            : CreateOrDeleteConnectionsAction(connectionsManager), processor(processor), defaultConnectionsAllowed(defaultConnectionsAllowed) {
+    SetDefaultConnectionsAllowedAction(const ValueTree& processor, bool defaultConnectionsAllowed, ConnectionsState& connections)
+            : CreateOrDeleteConnectionsAction(connections), processor(processor), defaultConnectionsAllowed(defaultConnectionsAllowed) {
         if (!defaultConnectionsAllowed) {
-            coalesceWith(DisconnectProcessorAction(connectionsManager, processor, all, true, false, true, true, AudioProcessorGraph::NodeID()));
+            coalesceWith(DisconnectProcessorAction(connections, processor, all, true, false, true, true, AudioProcessorGraph::NodeID()));
         }
     }
 

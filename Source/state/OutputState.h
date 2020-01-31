@@ -3,11 +3,11 @@
 #include <PluginManager.h>
 #include "JuceHeader.h"
 #include "StatefulAudioProcessorContainer.h"
-#include "StateManager.h"
+#include "State.h"
 
-class OutputStateManager : public StateManager {
+class OutputState : public State {
 public:
-    explicit OutputStateManager(StatefulAudioProcessorContainer& audioProcessorContainer, PluginManager& pluginManager)
+    explicit OutputState(StatefulAudioProcessorContainer& audioProcessorContainer, PluginManager& pluginManager)
             : audioProcessorContainer(audioProcessorContainer), pluginManager(pluginManager) {
         output = ValueTree(IDs::OUTPUT);
     }

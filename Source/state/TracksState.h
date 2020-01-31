@@ -5,17 +5,17 @@
 #include "Identifiers.h"
 #include "unordered_map"
 #include "StatefulAudioProcessorContainer.h"
-#include "state/ViewStateManager.h"
+#include "state/ViewState.h"
 #include "PluginManager.h"
-#include "StateManager.h"
+#include "State.h"
 
-class TracksStateManager :
-        public StateManager,
+class TracksState :
+        public State,
         private ValueTree::Listener {
 public:
-    TracksStateManager(ViewStateManager& viewManager, StatefulAudioProcessorContainer& audioProcessorContainer,
-                       PluginManager& pluginManager, UndoManager& undoManager)
-            : viewManager(viewManager), audioProcessorContainer(audioProcessorContainer),
+    TracksState(ViewState& view, StatefulAudioProcessorContainer& audioProcessorContainer,
+                PluginManager& pluginManager, UndoManager& undoManager)
+            : view(view), audioProcessorContainer(audioProcessorContainer),
               pluginManager(pluginManager), undoManager(undoManager) {
         tracks = ValueTree(IDs::TRACKS);
         tracks.addListener(this);
@@ -54,26 +54,26 @@ public:
     int indexOf(const ValueTree& track) const { return tracks.indexOf(track); }
 
     int getViewIndexForTrack(const ValueTree& track) const {
-        return indexOf(track) - viewManager.getGridViewTrackOffset();
+        return indexOf(track) - view.getGridViewTrackOffset();
     }
 
     int getNumAvailableSlotsForTrack(const ValueTree &track) const {
-        return viewManager.getNumAvailableSlotsForTrack(track);
+        return view.getNumAvailableSlotsForTrack(track);
     }
 
     int getSlotOffsetForTrack(const ValueTree& track) const {
-        return viewManager.getSlotOffsetForTrack(track);
+        return view.getSlotOffsetForTrack(track);
     }
 
     ValueTree getTrackWithViewIndex(int trackViewIndex) const {
-        return getTrack(trackViewIndex + viewManager.getGridViewTrackOffset());
+        return getTrack(trackViewIndex + view.getGridViewTrackOffset());
     }
 
     ValueTree getTrack(int trackIndex) const { return tracks.getChild(trackIndex); }
     ValueTree getMasterTrack() const { return tracks.getChildWithProperty(IDs::isMasterTrack, true); }
 
     int getMixerChannelSlotForTrack(const ValueTree& track) const {
-        return viewManager.getMixerChannelSlotForTrack(track);
+        return view.getMixerChannelSlotForTrack(track);
     }
 
     const ValueTree getMixerChannelProcessorForTrack(const ValueTree& track) const {
@@ -129,12 +129,12 @@ public:
     }
 
     ValueTree getFocusedTrack() const {
-        Point<int> trackAndSlot = viewManager.getFocusedTrackAndSlot();
+        Point<int> trackAndSlot = view.getFocusedTrackAndSlot();
         return getTrack(trackAndSlot.x);
     }
 
     ValueTree getFocusedProcessor() const {
-        Point<int> trackAndSlot = viewManager.getFocusedTrackAndSlot();
+        Point<int> trackAndSlot = view.getFocusedTrackAndSlot();
         const ValueTree& track = getTrack(trackAndSlot.x);
         return findProcessorAtSlot(track, trackAndSlot.y);
     }
@@ -344,7 +344,7 @@ public:
     static constexpr int TRACK_LABEL_HEIGHT = 32; // TODO move to ViewManager?
 private:
     ValueTree tracks;
-    ViewStateManager& viewManager;
+    ViewState& view;
     StatefulAudioProcessorContainer& audioProcessorContainer;
     PluginManager &pluginManager;
     UndoManager &undoManager;
@@ -354,7 +354,7 @@ private:
     int trackWidth {0}, processorHeight {0};
 
     void addProcessorRow() {
-        viewManager.addProcessorRow(&undoManager);
+        view.addProcessorRow(&undoManager);
         for (const auto& track : tracks) {
             if (isMasterTrack(track))
                 continue;
@@ -366,7 +366,7 @@ private:
     }
 
     void addMasterProcessorSlot() {
-        viewManager.addMasterProcessorSlot(&undoManager);
+        view.addMasterProcessorSlot(&undoManager);
         const auto& masterTrack = getMasterTrack();
         auto mixerChannelProcessor = getMixerChannelProcessorForTrack(masterTrack);
         if (mixerChannelProcessor.isValid()) {
@@ -378,14 +378,14 @@ private:
         if (tree.hasType(IDs::TRACK) && i == IDs::selected) {
             if (tree[i]) {
                 if (!isMasterTrack(tree))
-                    viewManager.updateViewTrackOffsetToInclude(indexOf(tree), getNumNonMasterTracks());
+                    view.updateViewTrackOffsetToInclude(indexOf(tree), getNumNonMasterTracks());
             }
         } else if (i == IDs::selectedSlotsMask) {
             if (!isMasterTrack(tree))
-                viewManager.updateViewTrackOffsetToInclude(indexOf(tree), getNumNonMasterTracks());
+                view.updateViewTrackOffsetToInclude(indexOf(tree), getNumNonMasterTracks());
             auto slot = findSelectedSlotForTrack(tree);
             if (slot != -1)
-                viewManager.updateViewSlotOffsetToInclude(slot, isMasterTrack(tree));
+                view.updateViewSlotOffsetToInclude(slot, isMasterTrack(tree));
         }
     }
 };

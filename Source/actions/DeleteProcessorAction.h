@@ -1,18 +1,17 @@
 #pragma once
 
-#include <state/ConnectionsStateManager.h>
-#include <state/TracksStateManager.h>
+#include <state/ConnectionsState.h>
+#include <state/TracksState.h>
 
 #include "JuceHeader.h"
 #include "DisconnectProcessorAction.h"
 
 struct DeleteProcessorAction : public UndoableAction {
-    DeleteProcessorAction(const ValueTree& processorToDelete,
-                          TracksStateManager &tracksManager, ConnectionsStateManager &connectionsManager)
+    DeleteProcessorAction(const ValueTree& processorToDelete, TracksState &tracks, ConnectionsState &connections)
             : parentTrack(processorToDelete.getParent()), processorToDelete(processorToDelete),
               processorIndex(parentTrack.indexOf(processorToDelete)),
-              tracksManager(tracksManager), connectionsManager(connectionsManager),
-              disconnectProcessorAction(DisconnectProcessorAction(connectionsManager, processorToDelete, all, true, true, true, true)) {
+              tracks(tracks), connections(connections),
+              disconnectProcessorAction(DisconnectProcessorAction(connections, processorToDelete, all, true, true, true, true)) {
     }
 
     bool perform() override {
@@ -38,8 +37,8 @@ private:
     ValueTree processorToDelete;
     int processorIndex;
 
-    TracksStateManager &tracksManager;
-    ConnectionsStateManager &connectionsManager;
+    TracksState &tracks;
+    ConnectionsState &connections;
 
     DisconnectProcessorAction disconnectProcessorAction;
 

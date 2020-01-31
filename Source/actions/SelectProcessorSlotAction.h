@@ -5,12 +5,12 @@
 
 struct SelectProcessorSlotAction : public SelectAction {
     SelectProcessorSlotAction(const ValueTree& track, int slot, bool selected, bool deselectOthers,
-                              TracksStateManager &tracksManager, ConnectionsStateManager &connectionsManager, ViewStateManager &viewManager,
-                              InputStateManager &inputManager, StatefulAudioProcessorContainer &audioProcessorContainer)
-            : SelectAction(tracksManager, connectionsManager, viewManager, inputManager, audioProcessorContainer) {
+                              TracksState &tracks, ConnectionsState &connections, ViewState &view,
+                              InputState &input, StatefulAudioProcessorContainer &audioProcessorContainer)
+            : SelectAction(tracks, connections, view, input, audioProcessorContainer) {
         jassert(track.isValid());
 
-        const auto currentSlotMask = tracksManager.getSlotMask(track);
+        const auto currentSlotMask = tracks.getSlotMask(track);
         if (deselectOthers) {
             for (int i = 0; i < newTrackSelections.size(); i++) {
                 newTrackSelections.setUnchecked(i, false);
@@ -20,7 +20,7 @@ struct SelectProcessorSlotAction : public SelectAction {
 
         auto newSlotMask = deselectOthers ? BigInteger() : currentSlotMask;
         newSlotMask.setBit(slot, selected);
-        auto trackIndex = tracksManager.indexOf(track);
+        auto trackIndex = tracks.indexOf(track);
         newSelectedSlotsMasks.setUnchecked(trackIndex, newSlotMask.toString(2));
         if (selected) {
             setNewFocusedSlot({trackIndex, slot});

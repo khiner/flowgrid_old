@@ -1,41 +1,41 @@
 #pragma once
 
-#include <state/TracksStateManager.h>
+#include <state/TracksState.h>
 
 #include "JuceHeader.h"
 
 struct CreateProcessorAction : public UndoableAction {
     CreateProcessorAction(const PluginDescription &description, const ValueTree& parentTrack, int slot,
-                          TracksStateManager &tracksManager, InputStateManager &inputManager, StatefulAudioProcessorContainer &audioProcessorContainer)
-            : parentTrack(parentTrack), tracksManager(tracksManager) {
+                          TracksState &tracks, InputState &input, StatefulAudioProcessorContainer &audioProcessorContainer)
+            : parentTrack(parentTrack), tracks(tracks) {
         processorToCreate = ValueTree(IDs::PROCESSOR);
         processorToCreate.setProperty(IDs::id, description.createIdentifierString(), nullptr);
         processorToCreate.setProperty(IDs::name, description.name, nullptr);
         processorToCreate.setProperty(IDs::allowDefaultConnections, true, nullptr);
 
-        if (tracksManager.isMixerChannelProcessor(processorToCreate)) {
+        if (tracks.isMixerChannelProcessor(processorToCreate)) {
             indexToInsertProcessor = -1;
-            slot = tracksManager.getMixerChannelSlotForTrack(parentTrack);
+            slot = tracks.getMixerChannelSlotForTrack(parentTrack);
         } else if (slot == -1) {
             if (description.numInputChannels == 0) {
                 indexToInsertProcessor = 0;
                 slot = 0;
             } else {
                 // Insert new effect processors _right before_ the first MixerChannel processor.
-                const ValueTree &mixerChannelProcessor = tracksManager.getMixerChannelProcessorForTrack(parentTrack);
+                const ValueTree &mixerChannelProcessor = tracks.getMixerChannelProcessorForTrack(parentTrack);
                 indexToInsertProcessor = mixerChannelProcessor.isValid() ? parentTrack.indexOf(mixerChannelProcessor) : parentTrack.getNumChildren();
                 slot = indexToInsertProcessor <= 0 ? 0 : int(parentTrack.getChild(indexToInsertProcessor - 1)[IDs::processorSlot]) + 1;
             }
         } else {
-            tracksManager.setProcessorSlot(parentTrack, processorToCreate, slot, nullptr);
-            indexToInsertProcessor = tracksManager.getParentIndexForProcessor(parentTrack, processorToCreate, nullptr);
+            tracks.setProcessorSlot(parentTrack, processorToCreate, slot, nullptr);
+            indexToInsertProcessor = tracks.getParentIndexForProcessor(parentTrack, processorToCreate, nullptr);
         }
-        tracksManager.setProcessorSlot(parentTrack, processorToCreate, slot, nullptr);
+        tracks.setProcessorSlot(parentTrack, processorToCreate, slot, nullptr);
     }
 
     bool perform() override {
         parentTrack.addChild(processorToCreate, indexToInsertProcessor, nullptr);
-        tracksManager.makeSlotsValid(parentTrack, nullptr); // TODO this is a bug - no undo version of this
+        tracks.makeSlotsValid(parentTrack, nullptr); // TODO this is a bug - no undo version of this
         // makeSlotsValid should use the new moveProcessorsAction, since it moves processors (if any) by the same amount (at most one slot down)
         // however, this is fully testable beforehand without the case of adding a processor to a populated slot
         return true;
@@ -55,7 +55,7 @@ struct CreateProcessorAction : public UndoableAction {
     int indexToInsertProcessor;
 
 protected:
-    TracksStateManager &tracksManager;
+    TracksState &tracks;
 
 private:
     JUCE_DECLARE_NON_COPYABLE(CreateProcessorAction)

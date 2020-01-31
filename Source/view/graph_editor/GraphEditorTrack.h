@@ -7,10 +7,9 @@
 
 class GraphEditorTrack : public Component, public Utilities::ValueTreePropertyChangeListener, public GraphEditorProcessorContainer, private ChangeListener {
 public:
-    explicit GraphEditorTrack(Project& project, const ValueTree& state, ConnectorDragListener &connectorDragListener, ProcessorGraph& graph)
-            : project(project), tracksManager(project.getTracksManager()), state(state),
-              viewState(project.getViewState()), connectorDragListener(connectorDragListener),
-              processors(project, state, connectorDragListener, graph) {
+    explicit GraphEditorTrack(Project& project, TracksState& tracks, const ValueTree& state, ConnectorDragListener &connectorDragListener, ProcessorGraph& graph)
+            : project(project), tracks(tracks), view(project.getView()), state(state),
+              connectorDragListener(connectorDragListener), processors(project, state, connectorDragListener, graph) {
         nameLabel.setJustificationType(Justification::centred);
         updateLabelColour();
         addAndMakeVisible(nameLabel);
@@ -18,7 +17,7 @@ public:
         if (!isMasterTrack()) {
             nameLabel.setText(getTrackName(), dontSendNotification);
             nameLabel.setEditable(false, true);
-            nameLabel.onTextChange = [this] { this->state.setProperty(IDs::name, nameLabel.getText(false), this->tracksManager.getUndoManager()); };
+            nameLabel.onTextChange = [this] { this->state.setProperty(IDs::name, nameLabel.getText(false), this->tracks.getUndoManager()); };
         } else {
             masterTrackName.setText(getTrackName());
             masterTrackName.setColour(findColour(TextEditor::textColourId));
@@ -27,12 +26,12 @@ public:
         }
         nameLabel.addMouseListener(this, false);
         this->state.addListener(this);
-        viewState.addListener(this);
+        view.getState().addListener(this);
     }
 
     ~GraphEditorTrack() override {
         nameLabel.removeMouseListener(this);
-        viewState.removeListener(this);
+        view.getState().removeListener(this);
         this->state.removeListener(this);
     }
 
@@ -55,20 +54,20 @@ public:
 
     const ValueTree& getState() const { return state; }
 
-    bool isMasterTrack() const { return TracksStateManager::isMasterTrack(state); }
+    bool isMasterTrack() const { return TracksState::isMasterTrack(state); }
 
     int getTrackIndex() const { return state.getParent().indexOf(state); }
 
-    int getTrackViewIndex() const { return tracksManager.getViewIndexForTrack(state); }
+    int getTrackViewIndex() const { return tracks.getViewIndexForTrack(state); }
 
     String getTrackName() const { return state[IDs::name].toString(); }
 
     Colour getColour() const {
-        const Colour &trackColour = tracksManager.getTrackColour(state);
+        const Colour &trackColour = tracks.getTrackColour(state);
         return isSelected() ? trackColour.brighter(0.25) : trackColour;
     }
 
-    void setColour(const Colour& colour) { state.setProperty(IDs::colour, colour.toString(), tracksManager.getUndoManager()); }
+    void setColour(const Colour& colour) { state.setProperty(IDs::colour, colour.toString(), tracks.getUndoManager()); }
 
     bool isSelected() const { return state.getProperty(IDs::selected); }
 
@@ -84,16 +83,16 @@ public:
         auto r = getLocalBounds();
         processors.setBounds(r);
         const auto &nameLabelBounds = isMasterTrack()
-                                      ? r.removeFromLeft(TracksStateManager::TRACK_LABEL_HEIGHT)
-                                         .withX(tracksManager.getTrackWidth() * processors.getSlotOffset())
-                                      : r.removeFromTop(TracksStateManager::TRACK_LABEL_HEIGHT)
-                                         .withY(tracksManager.getProcessorHeight() * processors.getSlotOffset());
+                                      ? r.removeFromLeft(TracksState::TRACK_LABEL_HEIGHT)
+                                         .withX(tracks.getTrackWidth() * processors.getSlotOffset())
+                                      : r.removeFromTop(TracksState::TRACK_LABEL_HEIGHT)
+                                         .withY(tracks.getProcessorHeight() * processors.getSlotOffset());
         nameLabel.setBounds(nameLabelBounds);
         nameLabel.toFront(false);
         if (isMasterTrack()) {
             const auto& labelBoundsFloat = nameLabelBounds.toFloat();
             masterTrackName.setBoundingBox(Parallelogram<float>(labelBoundsFloat.getBottomLeft(), labelBoundsFloat.getTopLeft(), labelBoundsFloat.getBottomRight()));
-            masterTrackName.setFontHeight(3 * TracksStateManager::TRACK_LABEL_HEIGHT / 4);
+            masterTrackName.setFontHeight(3 * TracksState::TRACK_LABEL_HEIGHT / 4);
             masterTrackName.toFront(false);
         }
     }
@@ -121,9 +120,9 @@ public:
 
 private:
     Project& project;
-    TracksStateManager& tracksManager;
-
-    ValueTree state, viewState;
+    TracksState& tracks;
+    ViewState& view;
+    ValueTree state;
 
     Label nameLabel;
     DrawableText masterTrackName;

@@ -7,7 +7,7 @@
 
 #include <Identifiers.h>
 #include <StatefulAudioProcessorContainer.h>
-#include <state/InputStateManager.h>
+#include <state/InputState.h>
 
 // Disconnect external audio/midi inputs (unless `addDefaultConnections` is true and
 // the default connection would stay the same).
@@ -23,42 +23,40 @@
 // change the focus state temporarily
 struct ResetDefaultExternalInputConnectionsAction : public CreateOrDeleteConnectionsAction {
 
-    ResetDefaultExternalInputConnectionsAction(bool addDefaultConnections, ConnectionsStateManager& connectionsManager,
-                                               TracksStateManager& tracksManager, InputStateManager& inputManager,
-                                               StatefulAudioProcessorContainer &audioProcessorContainer,
-                                               ValueTree trackToTreatAsFocused={})
-            : CreateOrDeleteConnectionsAction(connectionsManager) {
+    ResetDefaultExternalInputConnectionsAction(bool addDefaultConnections, ConnectionsState& connections, TracksState& tracks, InputState& input,
+                                               StatefulAudioProcessorContainer &audioProcessorContainer, ValueTree trackToTreatAsFocused={})
+            : CreateOrDeleteConnectionsAction(connections) {
         if (!trackToTreatAsFocused.isValid())
-            trackToTreatAsFocused = tracksManager.getFocusedTrack();
+            trackToTreatAsFocused = tracks.getFocusedTrack();
 
-        const auto audioSourceNodeId = inputManager.getDefaultInputNodeIdForConnectionType(audio);
-        const auto midiSourceNodeId = inputManager.getDefaultInputNodeIdForConnectionType(midi);
+        const auto audioSourceNodeId = input.getDefaultInputNodeIdForConnectionType(audio);
+        const auto midiSourceNodeId = input.getDefaultInputNodeIdForConnectionType(midi);
         const ValueTree &audioInputProcessor = audioProcessorContainer.getProcessorStateForNodeId(audioSourceNodeId);
         const ValueTree &midiInputProcessor = audioProcessorContainer.getProcessorStateForNodeId(midiSourceNodeId);
 
         AudioProcessorGraph::NodeID audioDestinationNodeId, midiDestinationNodeId;
         if (addDefaultConnections) {
-            audioDestinationNodeId = SAPC::getNodeIdForState(findEffectProcessorToReceiveDefaultExternalInput(audio, tracksManager, inputManager, trackToTreatAsFocused));
-            midiDestinationNodeId = SAPC::getNodeIdForState(findEffectProcessorToReceiveDefaultExternalInput(midi, tracksManager, inputManager, trackToTreatAsFocused));
+            audioDestinationNodeId = SAPC::getNodeIdForState(findEffectProcessorToReceiveDefaultExternalInput(audio, tracks, input, trackToTreatAsFocused));
+            midiDestinationNodeId = SAPC::getNodeIdForState(findEffectProcessorToReceiveDefaultExternalInput(midi, tracks, input, trackToTreatAsFocused));
         }
 
-        coalesceWith(DefaultConnectProcessorAction( audioInputProcessor, audioDestinationNodeId, audio, connectionsManager, audioProcessorContainer));
-        coalesceWith(DisconnectProcessorAction(connectionsManager, audioInputProcessor, audio, true, false, false, true, audioDestinationNodeId));
+        coalesceWith(DefaultConnectProcessorAction( audioInputProcessor, audioDestinationNodeId, audio, connections, audioProcessorContainer));
+        coalesceWith(DisconnectProcessorAction(connections, audioInputProcessor, audio, true, false, false, true, audioDestinationNodeId));
 
-        coalesceWith(DefaultConnectProcessorAction(midiInputProcessor, midiDestinationNodeId, midi, connectionsManager, audioProcessorContainer));
-        coalesceWith(DisconnectProcessorAction(connectionsManager, midiInputProcessor, midi, true, false, false, true, midiDestinationNodeId));
+        coalesceWith(DefaultConnectProcessorAction(midiInputProcessor, midiDestinationNodeId, midi, connections, audioProcessorContainer));
+        coalesceWith(DisconnectProcessorAction(connections, midiInputProcessor, midi, true, false, false, true, midiDestinationNodeId));
     }
 
 private:
 
-    ValueTree findEffectProcessorToReceiveDefaultExternalInput(ConnectionType connectionType, TracksStateManager& tracksManager, InputStateManager& inputManager, const ValueTree& focusedTrack) {
+    ValueTree findEffectProcessorToReceiveDefaultExternalInput(ConnectionType connectionType, TracksState& tracks, InputState& input, const ValueTree& focusedTrack) {
         const ValueTree &topmostEffectProcessor = findTopmostEffectProcessor(focusedTrack, connectionType);
-        return findMostUpstreamAvailableProcessorConnectedTo(topmostEffectProcessor, connectionType, tracksManager, inputManager);
+        return findMostUpstreamAvailableProcessorConnectedTo(topmostEffectProcessor, connectionType, tracks, input);
     }
 
     ValueTree findTopmostEffectProcessor(const ValueTree& track, ConnectionType connectionType) {
         for (const auto& processor : track) {
-            if (connectionsManager.isProcessorAnEffect(processor, connectionType)) {
+            if (connections.isProcessorAnEffect(processor, connectionType)) {
                 return processor;
             }
         }
@@ -68,19 +66,19 @@ private:
     // Find the upper-right-most processor that flows into the given processor
     // which doesn't already have incoming node connections.
     ValueTree findMostUpstreamAvailableProcessorConnectedTo(const ValueTree &processor, ConnectionType connectionType,
-                                                            TracksStateManager& tracksManager, InputStateManager& inputManager) {
+                                                            TracksState& tracks, InputState& input) {
         if (!processor.isValid())
             return {};
 
         int lowestSlot = INT_MAX;
         ValueTree upperRightMostProcessor;
         AudioProcessorGraph::NodeID processorNodeId = SAPC::getNodeIdForState(processor);
-        if (isAvailableForExternalInput(processor, connectionType, inputManager))
+        if (isAvailableForExternalInput(processor, connectionType, input))
             upperRightMostProcessor = processor;
 
         // TODO performance improvement: only iterate over connected processors
-        for (int i = tracksManager.getNumTracks() - 1; i >= 0; i--) {
-            const auto& track = tracksManager.getTrack(i);
+        for (int i = tracks.getNumTracks() - 1; i >= 0; i--) {
+            const auto& track = tracks.getTrack(i);
             if (track.getNumChildren() == 0)
                 continue;
 
@@ -88,7 +86,7 @@ private:
             auto firstProcessorNodeId = SAPC::getNodeIdForState(firstProcessor);
             int slot = firstProcessor[IDs::processorSlot];
             if (slot < lowestSlot &&
-                isAvailableForExternalInput(firstProcessor, connectionType, inputManager) &&
+                isAvailableForExternalInput(firstProcessor, connectionType, input) &&
                 areProcessorsConnected(firstProcessorNodeId, processorNodeId)) {
 
                 lowestSlot = slot;
@@ -99,9 +97,9 @@ private:
         return upperRightMostProcessor;
     }
 
-    bool isAvailableForExternalInput(const ValueTree& processor, ConnectionType connectionType, InputStateManager& inputManager) {
+    bool isAvailableForExternalInput(const ValueTree& processor, ConnectionType connectionType, InputState& input) {
         const auto& incomingConnections = getConnectionsForNode(processor, connectionType, true, false);
-        const auto defaultInputNodeId = inputManager.getDefaultInputNodeIdForConnectionType(connectionType);
+        const auto defaultInputNodeId = input.getDefaultInputNodeIdForConnectionType(connectionType);
         for (const auto& incomingConnection : incomingConnections) {
             if (SAPC::getNodeIdForState(incomingConnection.getChildWithName(IDs::SOURCE)) != defaultInputNodeId) {
                 return false;
@@ -116,7 +114,7 @@ private:
             return true;
 
         Array<AudioProcessorGraph::NodeID> exploredDownstreamNodes;
-        for (const auto& connection : connectionsManager.getState()) {
+        for (const auto& connection : connections.getState()) {
             if (SAPC::getNodeIdForState(connection.getChildWithName(IDs::SOURCE)) == upstreamNodeId) {
                 auto otherDownstreamNodeId = SAPC::getNodeIdForState(connection.getChildWithName(IDs::DESTINATION));
                 if (!exploredDownstreamNodes.contains(otherDownstreamNodeId)) {

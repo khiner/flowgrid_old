@@ -7,14 +7,14 @@
 #include <actions/DeleteConnectionAction.h>
 
 struct DisconnectProcessorAction : public CreateOrDeleteConnectionsAction {
-    DisconnectProcessorAction(ConnectionsStateManager &connectionsManager, const ValueTree &processor, ConnectionType connectionType,
+    DisconnectProcessorAction(ConnectionsState &connections, const ValueTree &processor, ConnectionType connectionType,
                               bool defaults, bool custom, bool incoming, bool outgoing, AudioProcessorGraph::NodeID excludingRemovalTo = {})
-                              : CreateOrDeleteConnectionsAction(connectionsManager) {
+                              : CreateOrDeleteConnectionsAction(connections) {
         const auto nodeConnections = getConnectionsForNode(processor, connectionType, incoming, outgoing);
         for (const auto &connection : nodeConnections) {
             const auto destinationNodeId = StatefulAudioProcessorContainer::getNodeIdForState(connection.getChildWithName(IDs::DESTINATION));
             if (excludingRemovalTo != destinationNodeId) {
-                coalesceWith(DeleteConnectionAction(connection, custom, defaults, connectionsManager));
+                coalesceWith(DeleteConnectionAction(connection, custom, defaults, connections));
             }
         }
     }

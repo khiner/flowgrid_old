@@ -9,8 +9,8 @@
 class SoundMachineApplication : public JUCEApplication, public MenuBarModel, private ChangeListener, private Timer, private Utilities::ValueTreePropertyChangeListener {
 public:
     SoundMachineApplication() : project(undoManager, pluginManager, deviceManager),
-                                tracksManager(project.getTracksManager()),
-                                push2Colours(project.getState()),
+                                tracks(project.getTracksManager()),
+                                push2Colours(project.getTracks()),
                                 push2MidiCommunicator(project, push2Colours),
                                 processorGraph(project, project.getConnectionStateManager(), undoManager, deviceManager, push2MidiCommunicator) {}
 
@@ -245,24 +245,24 @@ public:
             case CommandIDs::createMasterTrack:
                 result.setInfo("Create master track", String(), category, 0);
                 result.addDefaultKeypress('m', ModifierKeys::commandModifier | ModifierKeys::shiftModifier);
-                result.setActive(!tracksManager.getMasterTrack().isValid());
+                result.setActive(!tracks.getMasterTrack().isValid());
                 break;
             case CommandIDs::addMixerChannel:
                 result.setInfo("Add mixer channel", String(), category, 0);
                 result.addDefaultKeypress('m', ModifierKeys::commandModifier);
-                result.setActive(tracksManager.getFocusedTrack().isValid() &&
-                                 !tracksManager.getMixerChannelProcessorForFocusedTrack().isValid());
+                result.setActive(tracks.getFocusedTrack().isValid() &&
+                                 !tracks.getMixerChannelProcessorForFocusedTrack().isValid());
                 break;
             case CommandIDs::duplicateSelected:
                 result.setInfo("Duplicate selected item(s)", String(), category, 0);
                 result.addDefaultKeypress('d', ModifierKeys::commandModifier);
-                result.setActive(tracksManager.canDuplicateSelected());
+                result.setActive(tracks.canDuplicateSelected());
                 break;
             case CommandIDs::deleteSelected:
                 result.setInfo("Delete selected item(s)", String(), category, 0);
                 result.addDefaultKeypress(KeyPress::deleteKey, ModifierKeys::noModifiers);
                 result.addDefaultKeypress(KeyPress::backspaceKey, ModifierKeys::noModifiers);
-                result.setActive(tracksManager.getFocusedTrack().isValid());
+                result.setActive(tracks.getFocusedTrack().isValid());
                 break;
             case CommandIDs::showPush2MirrorWindow:
                 result.setInfo("Open a window mirroring a Push 2 display", String(), category, 0);
@@ -483,7 +483,7 @@ private:
     AudioDeviceManager deviceManager;
 
     Project project;
-    TracksStateManager& tracksManager;
+    TracksState& tracks;
     Push2Colours push2Colours;
     Push2MidiCommunicator push2MidiCommunicator;
     ProcessorGraph processorGraph;

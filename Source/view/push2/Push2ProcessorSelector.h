@@ -8,7 +8,7 @@ class Push2ProcessorSelector : public Push2ComponentBase {
     class ProcessorSelectorRow : public Component {
     public:
         explicit ProcessorSelectorRow(Project &project, Push2 &push2, bool top)
-                : project(project), tracksManager(project.getTracksManager()) {
+                : project(project), tracks(project.getTracksManager()) {
             for (int i = 0; i < NUM_COLUMNS; i++) {
                 auto *label = new Push2Label(i, top, push2);
                 addChildComponent(label);
@@ -139,11 +139,11 @@ class Push2ProcessorSelector : public Push2ComponentBase {
     private:
         int currentViewOffset { 0 };
         Project &project;
-        TracksStateManager &tracksManager;
+        TracksState &tracks;
         DrawableRectangle selectionRectangleOverlay;
 
         void updateLabels() {
-            const bool trackHasMixerAlready = tracksManager.focusedTrackHasMixerChannel();
+            const bool trackHasMixerAlready = tracks.focusedTrackHasMixerChannel();
 
             for (int i = 0; i < labels.size(); i++) {
                 Push2Label *label = labels.getUnchecked(i);

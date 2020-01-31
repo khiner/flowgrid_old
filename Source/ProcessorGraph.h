@@ -7,23 +7,23 @@
 #include "JuceHeader.h"
 #include "PluginManager.h"
 #include "Project.h"
-#include "state/ConnectionsStateManager.h"
+#include "state/ConnectionsState.h"
 #include "StatefulAudioProcessorContainer.h"
 #include "push2/Push2MidiCommunicator.h"
 
 class ProcessorGraph : public AudioProcessorGraph, public StatefulAudioProcessorContainer,
                        private ValueTree::Listener, private Timer {
 public:
-    explicit ProcessorGraph(Project &project, ConnectionsStateManager& connectionsManager,
+    explicit ProcessorGraph(Project &project, ConnectionsState& connections,
                             UndoManager &undoManager, AudioDeviceManager& deviceManager,
                             Push2MidiCommunicator& push2MidiCommunicator)
-            : undoManager(undoManager), project(project), viewManager(project.getViewStateManager()),
-            tracksManager(project.getTracksManager()), connectionsManager(connectionsManager),
+            : undoManager(undoManager), project(project), view(project.getViewStateManager()),
+            tracks(project.getTracksManager()), connections(connections),
             deviceManager(deviceManager), push2MidiCommunicator(push2MidiCommunicator) {
         enableAllBuses();
 
         project.getState().addListener(this);
-        viewManager.getState().addListener(this);
+        view.getState().addListener(this);
         project.setStatefulAudioProcessorContainer(this);
     }
 
@@ -48,7 +48,7 @@ public:
     }
 
     StatefulAudioProcessorWrapper *getMasterGainProcessor() {
-        const ValueTree &gain = tracksManager.getMixerChannelProcessorForTrack(tracksManager.getMasterTrack());
+        const ValueTree &gain = tracks.getMixerChannelProcessorForTrack(tracks.getMasterTrack());
         return getProcessorWrapperForState(gain);
     }
 
@@ -92,10 +92,10 @@ private:
     std::map<NodeID, std::unique_ptr<StatefulAudioProcessorWrapper> > processorWrapperForNodeId;
 
     Project &project;
-    ViewStateManager &viewManager;
-    TracksStateManager &tracksManager;
+    ViewState &view;
+    TracksState &tracks;
 
-    ConnectionsStateManager &connectionsManager;
+    ConnectionsState &connections;
     AudioDeviceManager &deviceManager;
     Push2MidiCommunicator &push2MidiCommunicator;
     

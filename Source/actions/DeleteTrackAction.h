@@ -1,18 +1,18 @@
 #pragma once
 
-#include <state/ConnectionsStateManager.h>
-#include <state/TracksStateManager.h>
+#include <state/ConnectionsState.h>
+#include <state/TracksState.h>
 #include <actions/DeleteProcessorAction.h>
 
 #include "JuceHeader.h"
 
 struct DeleteTrackAction : public UndoableAction {
-    DeleteTrackAction(const ValueTree& trackToDelete, TracksStateManager &tracksManager, ConnectionsStateManager &connectionsManager)
+    DeleteTrackAction(const ValueTree& trackToDelete, TracksState &tracks, ConnectionsState &connections)
             : trackToDelete(trackToDelete), trackIndex(trackToDelete.getParent().indexOf(trackToDelete)),
-              tracksManager(tracksManager), connectionsManager(connectionsManager) {
+              tracks(tracks), connections(connections) {
         while (trackToDelete.getNumChildren() > 0) {
             const ValueTree &processorToDelete = trackToDelete.getChild(trackToDelete.getNumChildren() - 1);
-            deleteProcessorActions.add(new DeleteProcessorAction(processorToDelete, tracksManager, connectionsManager));
+            deleteProcessorActions.add(new DeleteProcessorAction(processorToDelete, tracks, connections));
         }
     }
 
@@ -20,13 +20,13 @@ struct DeleteTrackAction : public UndoableAction {
         for (auto* deleteProcessorAction : deleteProcessorActions) {
             deleteProcessorAction->perform();
         }
-        tracksManager.getState().removeChild(trackIndex, nullptr);
+        tracks.getState().removeChild(trackIndex, nullptr);
 
         return true;
     }
 
     bool undo() override {
-        tracksManager.getState().addChild(trackToDelete, trackIndex, nullptr);
+        tracks.getState().addChild(trackToDelete, trackIndex, nullptr);
         for (auto* deleteProcessorAction : deleteProcessorActions) {
             deleteProcessorAction->undo();
         }
@@ -42,8 +42,8 @@ private:
     ValueTree trackToDelete;
     int trackIndex;
 
-    TracksStateManager &tracksManager;
-    ConnectionsStateManager &connectionsManager;
+    TracksState &tracks;
+    ConnectionsState &connections;
 
     OwnedArray<DeleteProcessorAction> deleteProcessorActions;
 

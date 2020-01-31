@@ -3,7 +3,7 @@
 #include <Utilities.h>
 #include "JuceHeader.h"
 
-class StateManager {
+class State {
 public:
     virtual void loadFromState(const ValueTree& state) = 0;
 

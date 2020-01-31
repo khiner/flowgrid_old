@@ -42,9 +42,9 @@ add_executable (APP
     "../../Source/push2/Push2DisplayBridge.h"
     "../../Source/push2/Push2MidiCommunicator.h"
     "../../Source/push2/Push2UsbCommunicator.h"
-    "../../Source/state/ConnectionsStateManager.h"
-    "../../Source/state/TracksStateManager.h"
-    "../../Source/state/ViewStateManager.h"
+    "../../Source/state/ConnectionsState.h"
+    "../../Source/state/TracksState.h"
+    "../../Source/state/ViewState.h"
     "../../Source/usb/libusb/config_msvc.h"
     "../../Source/usb/libusb/config_xcode.h"
     "../../Source/usb/libusb/libusb_platform_wrapper.c"
@@ -1456,7 +1456,7 @@ add_executable (APP
     "../../JuceLibraryCode/include_juce_gui_basics.mm"
     "../../JuceLibraryCode/include_juce_gui_extra.mm"
     "../../JuceLibraryCode/JuceHeader.h"
-        ../../Source/state/StateManager.h ../../Source/actions/SelectAction.h ../../Source/actions/SelectTrackAction.h ../../Source/state/InputStateManager.h ../../Source/state/OutputStateManager.h ../../Source/actions/SelectProcessorSlotAction.h ../../Source/actions/CreateTrackAction.h ../../Source/actions/CreateProcessorAction.h ../../Source/actions/DeleteProcessorAction.h ../../Source/actions/DeleteTrackAction.h ../../Source/actions/DeleteSelectedItemsAction.h ../../Source/actions/CreateConnectionAction.h ../../Source/actions/DeleteConnectionAction.h ../../Source/actions/DisconnectProcessorAction.h ../../Source/actions/CreateOrDeleteConnectionsAction ../../Source/actions/DefaultConnectProcessorAction.h ../../Source/actions/ResetDefaultExternalInputConnectionsAction.h ../../Source/actions/UpdateProcessorDefaultConnectionsAction.h ../../Source/actions/SetDefaultConnectionsAllowedAction.h ../../Source/actions/UpdateAllDefaultConnectionsAction.h)
+        ../../Source/state/State.h ../../Source/actions/SelectAction.h ../../Source/actions/SelectTrackAction.h ../../Source/state/InputState.h ../../Source/state/OutputState.h ../../Source/actions/SelectProcessorSlotAction.h ../../Source/actions/CreateTrackAction.h ../../Source/actions/CreateProcessorAction.h ../../Source/actions/DeleteProcessorAction.h ../../Source/actions/DeleteTrackAction.h ../../Source/actions/DeleteSelectedItemsAction.h ../../Source/actions/CreateConnectionAction.h ../../Source/actions/DeleteConnectionAction.h ../../Source/actions/DisconnectProcessorAction.h ../../Source/actions/CreateOrDeleteConnectionsAction ../../Source/actions/DefaultConnectProcessorAction.h ../../Source/actions/ResetDefaultExternalInputConnectionsAction.h ../../Source/actions/UpdateProcessorDefaultConnectionsAction.h ../../Source/actions/SetDefaultConnectionsAllowedAction.h ../../Source/actions/UpdateAllDefaultConnectionsAction.h)
 
 set_source_files_properties ("../../Resources/AbletonSansBold-Regular.otf" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Resources/AbletonSansLight-Regular.otf" PROPERTIES HEADER_FILE_ONLY TRUE)
@@ -1483,9 +1483,9 @@ set_source_files_properties ("../../Source/push2/Push2Display.h" PROPERTIES HEAD
 set_source_files_properties ("../../Source/push2/Push2DisplayBridge.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/push2/Push2MidiCommunicator.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/push2/Push2UsbCommunicator.h" PROPERTIES HEADER_FILE_ONLY TRUE)
-set_source_files_properties ("../../Source/state/ConnectionsStateManager.h" PROPERTIES HEADER_FILE_ONLY TRUE)
-set_source_files_properties ("../../Source/state/TracksStateManager.h" PROPERTIES HEADER_FILE_ONLY TRUE)
-set_source_files_properties ("../../Source/state/ViewStateManager.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/state/ConnectionsState.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/state/TracksState.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/state/ViewState.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/usb/libusb/config_msvc.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/usb/libusb/config_xcode.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/usb/UsbCommunicator.h" PROPERTIES HEADER_FILE_ONLY TRUE)

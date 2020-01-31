@@ -30,26 +30,26 @@ public:
     }
 
     void belowScreenButtonPressed(int buttonIndex) override {
-        auto track = tracksManager.getTrackWithViewIndex(buttonIndex);
-        if (track.isValid() && !TracksStateManager::isMasterTrack(track)) {
+        auto track = tracks.getTrackWithViewIndex(buttonIndex);
+        if (track.isValid() && !TracksState::isMasterTrack(track)) {
             project.setTrackSelected(track, true, true);
         }
     }
 
     void updateEnabledPush2Buttons() override {
-        auto focusedTrack = tracksManager.getFocusedTrack();
+        auto focusedTrack = tracks.getFocusedTrack();
         for (auto* label : trackLabels) {
             label->setVisible(false);
         }
         if (!isVisible())
             return;
         int labelIndex = 0;
-        for (int i = 0; i < jmin(trackLabels.size(), tracksManager.getNumNonMasterTracks()); i++) {
+        for (int i = 0; i < jmin(trackLabels.size(), tracks.getNumNonMasterTracks()); i++) {
             auto *label = trackLabels.getUnchecked(labelIndex++);
-            const auto& track = tracksManager.getTrackWithViewIndex(i);
+            const auto& track = tracks.getTrackWithViewIndex(i);
             // TODO left/right buttons
             label->setVisible(true);
-            label->setMainColour(tracksManager.getTrackColour(track));
+            label->setMainColour(tracks.getTrackColour(track));
             label->setText(track[IDs::name], dontSendNotification);
             label->setSelected(track == focusedTrack);
         }
@@ -75,10 +75,10 @@ protected:
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {
         if (tree.hasType(IDs::TRACK)) {
             if (i == IDs::name || i == IDs::colour) {
-                int trackIndex = tracksManager.getViewIndexForTrack(tree);
+                int trackIndex = tracks.getViewIndexForTrack(tree);
                 if (trackIndex < 0 || trackIndex >= trackLabels.size())
                     return;
-                if (i == IDs::name && !TracksStateManager::isMasterTrack(tree)) {
+                if (i == IDs::name && !TracksState::isMasterTrack(tree)) {
                     trackLabels.getUnchecked(trackIndex)->setText(tree[IDs::name], dontSendNotification);
                 }
             } else if (i == IDs::selected && tree[IDs::selected]) {
@@ -101,9 +101,9 @@ protected:
 
 protected:
     void trackColourChanged(const String &trackUuid, const Colour &colour) override {
-        auto track = tracksManager.findTrackWithUuid(trackUuid);
-        if (!TracksStateManager::isMasterTrack(track)) {
-            if (auto *trackLabel = trackLabels[tracksManager.getViewIndexForTrack(track)]) {
+        auto track = tracks.findTrackWithUuid(trackUuid);
+        if (!TracksState::isMasterTrack(track)) {
+            if (auto *trackLabel = trackLabels[tracks.getViewIndexForTrack(track)]) {
                 trackLabel->setMainColour(colour);
             }
         }

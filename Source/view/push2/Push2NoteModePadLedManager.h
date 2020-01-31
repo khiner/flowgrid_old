@@ -7,7 +7,7 @@
 class Push2NoteModePadLedManager : public MidiInputCallback, public Push2Colours::Listener {
 public:
     Push2NoteModePadLedManager(Project& project, Push2MidiCommunicator& push2)
-            : project(project), tracksManager(project.getTracksManager()), push2(push2) {
+            : project(project), tracks(project.getTracksManager()), push2(push2) {
         push2.getPush2Colours().addListener(this);
     }
 
@@ -39,7 +39,7 @@ public:
 
     void trackColourChanged(const String &trackUuid, const Colour &colour) override {
         // TODO a bit slow. might want to pass this all down from parent instead of listening directly
-        if (tracksManager.isTrackSelected(tracksManager.findTrackWithUuid(trackUuid))) {
+        if (tracks.isTrackSelected(tracks.findTrackWithUuid(trackUuid))) {
             selectedTrackColour = colour;
             updatePadColours();
         }
@@ -49,7 +49,7 @@ public:
 
 private:
     Project& project;
-    TracksStateManager& tracksManager;
+    TracksState& tracks;
 
     Push2MidiCommunicator& push2;
     Colour selectedTrackColour { Colours::white };

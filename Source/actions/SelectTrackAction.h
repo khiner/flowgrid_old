@@ -5,17 +5,17 @@
 
 struct SelectTrackAction : public SelectAction {
     SelectTrackAction(const ValueTree& track, bool selected, bool deselectOthers,
-                      TracksStateManager &tracksManager, ConnectionsStateManager &connectionsManager, ViewStateManager &viewManager,
-                      InputStateManager &inputManager, StatefulAudioProcessorContainer &audioProcessorContainer)
-            : SelectAction(tracksManager, connectionsManager, viewManager, inputManager, audioProcessorContainer) {
+                      TracksState &tracks, ConnectionsState &connections, ViewState &view,
+                      InputState &input, StatefulAudioProcessorContainer &audioProcessorContainer)
+            : SelectAction(tracks, connections, view, input, audioProcessorContainer) {
         jassert(track.isValid());
 
-        auto trackIndex = tracksManager.indexOf(track);
+        auto trackIndex = tracks.indexOf(track);
         // take care of this track
         newTrackSelections.setUnchecked(trackIndex, selected);
         if (selected) {
             BigInteger selectedSlotsMask;
-            selectedSlotsMask.setRange(0, viewManager.getNumAvailableSlotsForTrack(track), true);
+            selectedSlotsMask.setRange(0, view.getNumAvailableSlotsForTrack(track), true);
             newSelectedSlotsMasks.setUnchecked(trackIndex, selectedSlotsMask.toString(2));
             const ValueTree &firstProcessor = track.getChild(0);
             int slot = firstProcessor.isValid() ? int(firstProcessor[IDs::processorSlot]) : 0;

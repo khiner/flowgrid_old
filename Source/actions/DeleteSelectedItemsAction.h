@@ -1,19 +1,19 @@
 #pragma once
 
-#include <state/ConnectionsStateManager.h>
-#include <state/TracksStateManager.h>
+#include <state/ConnectionsState.h>
+#include <state/TracksState.h>
 
 #include "JuceHeader.h"
 #include "DeleteTrackAction.h"
 
 struct DeleteSelectedItemsAction : public UndoableAction {
-    DeleteSelectedItemsAction(TracksStateManager &tracksManager, ConnectionsStateManager &connectionsManager)
-            : tracksManager(tracksManager), connectionsManager(connectionsManager) {
-        for (const auto &selectedItem : tracksManager.findAllSelectedItems()) {
+    DeleteSelectedItemsAction(TracksState &tracks, ConnectionsState &connections)
+            : tracks(tracks), connections(connections) {
+        for (const auto &selectedItem : tracks.findAllSelectedItems()) {
             if (selectedItem.hasType(IDs::TRACK))
-                deleteTrackActions.add(new DeleteTrackAction(selectedItem, tracksManager, connectionsManager));
+                deleteTrackActions.add(new DeleteTrackAction(selectedItem, tracks, connections));
             else if (selectedItem.hasType(IDs::PROCESSOR))
-                deleteProcessorActions.add(new DeleteProcessorAction(selectedItem, tracksManager, connectionsManager));
+                deleteProcessorActions.add(new DeleteProcessorAction(selectedItem, tracks, connections));
         }
     }
 
@@ -40,8 +40,8 @@ struct DeleteSelectedItemsAction : public UndoableAction {
     }
 
 private:
-    TracksStateManager &tracksManager;
-    ConnectionsStateManager &connectionsManager;
+    TracksState &tracks;
+    ConnectionsState &connections;
 
     OwnedArray<DeleteTrackAction> deleteTrackActions;
     OwnedArray<DeleteProcessorAction> deleteProcessorActions;

@@ -45,7 +45,7 @@ public:
     }
 
     void handleIncomingMidiMessage(MidiInput *source, const MidiMessage &message) override {
-        if (message.isNoteOff() || (message.isNoteOnOrOff() && viewManager.isInNoteMode())) {
+        if (message.isNoteOff() || (message.isNoteOnOrOff() && view.isInNoteMode())) {
             push2NoteModePadLedManager.handleIncomingMidiMessage(source, message);
         }
     }
@@ -107,7 +107,7 @@ public:
     }
 
     void masterButtonPressed() override {
-        project.setTrackSelected(tracksManager.getMasterTrack(), true, true);
+        project.setTrackSelected(tracks.getMasterTrack(), true, true);
     }
 
     void aboveScreenButtonPressed(int buttonIndex) override {
@@ -136,18 +136,18 @@ public:
         }
     }
 
-    void noteButtonPressed() override { viewManager.setNoteMode(); }
+    void noteButtonPressed() override { view.setNoteMode(); }
 
-    void sessionButtonPressed() override { viewManager.setSessionMode(); }
+    void sessionButtonPressed() override { view.setSessionMode(); }
 
     void updateEnabledPush2Buttons() override {
         if (isVisible()) {
             push2.enableWhiteLedButton(Push2::addTrack);
             push2.enableWhiteLedButton(Push2::mix);
-            if (viewManager.isInNoteMode()) {
+            if (view.isInNoteMode()) {
                 push2.activateWhiteLedButton(Push2::note);
                 push2.enableWhiteLedButton(Push2::session);
-            } else if (viewManager.isInSessionMode()) {
+            } else if (view.isInSessionMode()) {
                 push2.enableWhiteLedButton(Push2::note);
                 push2.activateWhiteLedButton(Push2::session);
             }
@@ -188,7 +188,7 @@ private:
     }
 
     void updatePush2SelectionDependentButtons() {
-        const auto &focusedTrack = tracksManager.getFocusedTrack();
+        const auto &focusedTrack = tracks.getFocusedTrack();
         if (focusedTrack.isValid()) {
             push2.activateWhiteLedButton(Push2MidiCommunicator::delete_);
             push2.enableWhiteLedButton(Push2MidiCommunicator::addDevice);
@@ -197,14 +197,14 @@ private:
             push2.disableWhiteLedButton(Push2MidiCommunicator::addDevice);
         }
 
-        if (tracksManager.canDuplicateSelected())
+        if (tracks.canDuplicateSelected())
             push2.activateWhiteLedButton(Push2::duplicate);
         else
             push2.disableWhiteLedButton(Push2::duplicate);
 
-        if (!tracksManager.getMasterTrack().isValid())
+        if (!tracks.getMasterTrack().isValid())
             push2.disableWhiteLedButton(Push2MidiCommunicator::master);
-        else if (focusedTrack != tracksManager.getMasterTrack())
+        else if (focusedTrack != tracks.getMasterTrack())
             push2.enableWhiteLedButton(Push2MidiCommunicator::master);
         else
             push2.activateWhiteLedButton(Push2MidiCommunicator::master);
@@ -229,11 +229,11 @@ private:
     }
 
     void updatePush2NoteModePadLedManagerVisibility() {
-        push2NoteModePadLedManager.setVisible(isVisible() && viewManager.isInNoteMode() && project.isPush2MidiInputProcessorConnected());
+        push2NoteModePadLedManager.setVisible(isVisible() && view.isInNoteMode() && project.isPush2MidiInputProcessorConnected());
     }
 
     void updateFocusedProcessor() {
-        auto *focusedProcessorWrapper = graph.getProcessorWrapperForState(tracksManager.getFocusedProcessor());
+        auto *focusedProcessorWrapper = graph.getProcessorWrapperForState(tracks.getFocusedProcessor());
         if (currentlyViewingChild != &mixerView || !dynamic_cast<MixerChannelProcessor *>(focusedProcessorWrapper->processor)) {
             processorView.processorFocused(focusedProcessorWrapper);
             showChild(&processorView);
@@ -274,7 +274,7 @@ private:
     void valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int) override {
         if (child.hasType(IDs::TRACK)) {
             updatePush2SelectionDependentButtons();
-            if (!tracksManager.getFocusedTrack().isValid()) {
+            if (!tracks.getFocusedTrack().isValid()) {
                 showChild(nullptr);
                 processorView.processorFocused(nullptr);
             }

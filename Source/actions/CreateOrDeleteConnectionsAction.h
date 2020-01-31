@@ -3,12 +3,12 @@
 #include <Identifiers.h>
 
 #include <utility>
-#include <state/ConnectionsStateManager.h>
+#include <state/ConnectionsState.h>
 #include "JuceHeader.h"
 
 struct CreateOrDeleteConnectionsAction : public UndoableAction {
-    explicit CreateOrDeleteConnectionsAction(ConnectionsStateManager& connectionsManager)
-            : connectionsManager(connectionsManager) {
+    explicit CreateOrDeleteConnectionsAction(ConnectionsState& connections)
+            : connections(connections) {
     }
 
     bool perform() override {
@@ -16,9 +16,9 @@ struct CreateOrDeleteConnectionsAction : public UndoableAction {
             return false;
 
         for (const auto& connectionToCreate : connectionsToCreate)
-            connectionsManager.getState().appendChild(connectionToCreate, nullptr);
+            connections.getState().appendChild(connectionToCreate, nullptr);
         for (const auto& connectionToDelete : connectionsToDelete)
-            connectionsManager.getState().removeChild(connectionToDelete, nullptr);
+            connections.getState().removeChild(connectionToDelete, nullptr);
         return true;
     }
 
@@ -27,9 +27,9 @@ struct CreateOrDeleteConnectionsAction : public UndoableAction {
             return false;
 
         for (const auto& connectionToDelete : connectionsToDelete)
-            connectionsManager.getState().appendChild(connectionToDelete, nullptr);
+            connections.getState().appendChild(connectionToDelete, nullptr);
         for (const auto& connectionToCreate : connectionsToCreate)
-            connectionsManager.getState().removeChild(connectionToCreate, nullptr);
+            connections.getState().removeChild(connectionToCreate, nullptr);
         return true;
     }
 
@@ -39,7 +39,7 @@ struct CreateOrDeleteConnectionsAction : public UndoableAction {
 
     UndoableAction* createCoalescedAction(UndoableAction* nextAction) override {
         if (auto* nextConnect = dynamic_cast<CreateOrDeleteConnectionsAction*>(nextAction)) {
-            auto *coalesced = new CreateOrDeleteConnectionsAction(connectionsManager);
+            auto *coalesced = new CreateOrDeleteConnectionsAction(connections);
             coalesced->coalesceWith(*this);
             coalesced->coalesceWith(*nextConnect);
             return coalesced;
@@ -59,7 +59,7 @@ struct CreateOrDeleteConnectionsAction : public UndoableAction {
     Array<ValueTree> connectionsToDelete;
 
 protected:
-    ConnectionsStateManager &connectionsManager;
+    ConnectionsState &connections;
 
     void addConnection(const ValueTree& connection) {
         int deleteIndex = connectionsToDelete.indexOf(connection);
@@ -83,7 +83,7 @@ protected:
                                            bool incoming=true, bool outgoing=true,
                                            bool includeCustom=true, bool includeDefault=true) {
         Array<ValueTree> nodeConnections;
-        for (const auto& connection : connectionsManager.getState()) {
+        for (const auto& connection : connections.getState()) {
             if ((connection[IDs::isCustomConnection] && !includeCustom) || (!connection[IDs::isCustomConnection] && !includeDefault))
                 continue;
 

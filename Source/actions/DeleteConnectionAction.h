@@ -5,9 +5,8 @@
 #include "CreateOrDeleteConnectionsAction.h"
 
 struct DeleteConnectionAction : public CreateOrDeleteConnectionsAction {
-    DeleteConnectionAction(const ValueTree &connection, bool allowCustom, bool allowDefaults,
-                           ConnectionsStateManager &connectionsManager)
-            : CreateOrDeleteConnectionsAction(connectionsManager) {
+    DeleteConnectionAction(const ValueTree &connection, bool allowCustom, bool allowDefaults, ConnectionsState &connections)
+            : CreateOrDeleteConnectionsAction(connections) {
         if (canRemoveConnection(connection, allowDefaults, allowCustom))
             removeConnection(connection);
     }

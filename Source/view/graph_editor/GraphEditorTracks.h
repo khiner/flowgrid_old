@@ -11,35 +11,35 @@ class GraphEditorTracks : public Component,
                           private Utilities::ValueTreeObjectList<GraphEditorTrack>,
                           public GraphEditorProcessorContainer {
 public:
-    explicit GraphEditorTracks(Project& project, const ValueTree &state, ConnectorDragListener &connectorDragListener, ProcessorGraph& graph)
-            : Utilities::ValueTreeObjectList<GraphEditorTrack>(state), project(project),
-              tracksManager(project.getTracksManager()), viewManager(project.getViewStateManager()),
+    explicit GraphEditorTracks(Project& project, TracksState &tracks, ConnectorDragListener &connectorDragListener, ProcessorGraph& graph)
+            : Utilities::ValueTreeObjectList<GraphEditorTrack>(tracks.getState()), project(project),
+              tracks(tracks), view(project.getViewStateManager()),
               connectorDragListener(connectorDragListener), graph(graph) {
         rebuildObjects();
-        viewManager.getState().addListener(this);
+        view.getState().addListener(this);
     }
 
     ~GraphEditorTracks() override {
-        viewManager.getState().removeListener(this);
+        view.getState().removeListener(this);
         freeObjects();
     }
 
     void resized() override {
         auto r = getLocalBounds();
-        auto trackBounds = r.removeFromTop(tracksManager.getProcessorHeight() * (viewManager.getNumTrackProcessorSlots() + 1) + TracksStateManager::TRACK_LABEL_HEIGHT);
-        trackBounds.removeFromLeft(jmax(0, viewManager.getMasterViewSlotOffset() - viewManager.getGridViewTrackOffset()) * tracksManager.getTrackWidth() + TracksStateManager::TRACK_LABEL_HEIGHT);
+        auto trackBounds = r.removeFromTop(tracks.getProcessorHeight() * (view.getNumTrackProcessorSlots() + 1) + TracksState::TRACK_LABEL_HEIGHT);
+        trackBounds.removeFromLeft(jmax(0, view.getMasterViewSlotOffset() - view.getGridViewTrackOffset()) * tracks.getTrackWidth() + TracksState::TRACK_LABEL_HEIGHT);
 
         for (auto *track : objects) {
             if (track->isMasterTrack())
                 continue;
-            track->setBounds(trackBounds.removeFromLeft(tracksManager.getTrackWidth()));
+            track->setBounds(trackBounds.removeFromLeft(tracks.getTrackWidth()));
         }
 
         if (auto* masterTrack = findMasterTrack()) {
             masterTrack->setBounds(
-                    r.removeFromTop(tracksManager.getProcessorHeight())
-                     .withX(tracksManager.getTrackWidth() * jmax(0, viewManager.getGridViewTrackOffset() - viewManager.getMasterViewSlotOffset()))
-                     .withWidth(TracksStateManager::TRACK_LABEL_HEIGHT + tracksManager.getTrackWidth() * viewManager.getNumMasterProcessorSlots())
+                    r.removeFromTop(tracks.getProcessorHeight())
+                     .withX(tracks.getTrackWidth() * jmax(0, view.getGridViewTrackOffset() - view.getMasterViewSlotOffset()))
+                     .withWidth(TracksState::TRACK_LABEL_HEIGHT + tracks.getTrackWidth() * view.getNumMasterProcessorSlots())
             );
         }
     }
@@ -57,7 +57,7 @@ public:
     }
 
     GraphEditorTrack *createNewObject(const ValueTree &tree) override {
-        auto *track = new GraphEditorTrack(project, tree, connectorDragListener, graph);
+        auto *track = new GraphEditorTrack(project, tracks, tree, connectorDragListener, graph);
         addAndMakeVisible(track);
         track->addMouseListener(this, true);
         return track;
@@ -117,7 +117,7 @@ public:
     
     void mouseDown(const MouseEvent &e) override {
         if (auto* track = dynamic_cast<GraphEditorTrack *>(e.originalComponent->getParentComponent())) {
-            if (e.originalComponent == track->getDragControlComponent() && track->getState() != tracksManager.getMasterTrack()) {
+            if (e.originalComponent == track->getDragControlComponent() && track->getState() != tracks.getMasterTrack()) {
                 project.setCurrentlyDraggingTrack(track->getState());
             }
         } else if (auto* processor = dynamic_cast<GraphEditorProcessor *>(e.originalComponent)) {
@@ -158,8 +158,8 @@ public:
 
 private:
     Project& project;
-    TracksStateManager& tracksManager;
-    ViewStateManager& viewManager;
+    TracksState& tracks;
+    ViewState& view;
     ConnectorDragListener &connectorDragListener;
     ProcessorGraph &graph;
 
