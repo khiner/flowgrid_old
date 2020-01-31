@@ -1,6 +1,6 @@
 #include <utility>
-#include <state_managers/InputStateManager.h>
-#include <state_managers/OutputStateManager.h>
+#include <state/InputStateManager.h>
+#include <state/OutputStateManager.h>
 #include <actions/SelectProcessorSlotAction.h>
 #include <actions/CreateTrackAction.h>
 #include <actions/CreateProcessorAction.h>
@@ -16,9 +16,9 @@
 #include "PluginManager.h"
 #include "Utilities.h"
 #include "StatefulAudioProcessorContainer.h"
-#include "state_managers/TracksStateManager.h"
-#include "state_managers/ConnectionsStateManager.h"
-#include "state_managers/ViewStateManager.h"
+#include "state/TracksStateManager.h"
+#include "state/ConnectionsStateManager.h"
+#include "state/ViewStateManager.h"
 #include "actions/SelectTrackAction.h"
 
 class Project : public FileBasedDocument, public StatefulAudioProcessorContainer,

@@ -64,13 +64,13 @@
         <FILE id="LQgmAZ" name="Push2UsbCommunicator.h" compile="0" resource="0"
               file="Source/push2/Push2UsbCommunicator.h"/>
       </GROUP>
-      <GROUP id="{A1927578-CD3E-BB14-8513-C588B8AFA9BF}" name="state_managers">
+      <GROUP id="{A1927578-CD3E-BB14-8513-C588B8AFA9BF}" name="state">
         <FILE id="az21aW" name="ConnectionsStateManager.h" compile="0" resource="0"
-              file="Source/state_managers/ConnectionsStateManager.h"/>
+              file="Source/state/ConnectionsStateManager.h"/>
         <FILE id="J9AQFW" name="TracksStateManager.h" compile="0" resource="0"
-              file="Source/state_managers/TracksStateManager.h"/>
+              file="Source/state/TracksStateManager.h"/>
         <FILE id="NKSrVa" name="ViewStateManager.h" compile="0" resource="0"
-              file="Source/state_managers/ViewStateManager.h"/>
+              file="Source/state/ViewStateManager.h"/>
       </GROUP>
       <GROUP id="{98024CB2-5E42-5515-DC69-568A3FFABF20}" name="usb">
         <GROUP id="{7ECBFF29-BB6C-952B-A172-B6B294C36F35}" name="libusb">

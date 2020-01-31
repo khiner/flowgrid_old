@@ -1,7 +1,7 @@
 #pragma once
 
-#include <state_managers/ConnectionsStateManager.h>
-#include <state_managers/TracksStateManager.h>
+#include <state/ConnectionsStateManager.h>
+#include <state/TracksStateManager.h>
 
 #include "JuceHeader.h"
 #include "ResetDefaultExternalInputConnectionsAction.h"

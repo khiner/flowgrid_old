@@ -3,7 +3,7 @@
 #include "JuceHeader.h"
 
 #include <Identifiers.h>
-#include <state_managers/ConnectionsStateManager.h>
+#include <state/ConnectionsStateManager.h>
 #include "CreateOrDeleteConnectionsAction.h"
 
 struct CreateConnectionAction : public CreateOrDeleteConnectionsAction {

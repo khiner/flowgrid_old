@@ -5,7 +5,7 @@
 
 #include <Identifiers.h>
 #include <StatefulAudioProcessorContainer.h>
-#include <state_managers/InputStateManager.h>
+#include <state/InputStateManager.h>
 
 // Disconnect external audio/midi inputs (unless `addDefaultConnections` is true and
 // the default connection would stay the same).

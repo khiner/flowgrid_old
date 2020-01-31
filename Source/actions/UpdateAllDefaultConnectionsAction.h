@@ -7,7 +7,7 @@
 
 #include <Identifiers.h>
 #include <StatefulAudioProcessorContainer.h>
-#include <state_managers/InputStateManager.h>
+#include <state/InputStateManager.h>
 
 struct UpdateAllDefaultConnectionsAction : public CreateOrDeleteConnectionsAction {
     

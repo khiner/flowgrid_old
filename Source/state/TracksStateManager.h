@@ -5,7 +5,7 @@
 #include "Identifiers.h"
 #include "unordered_map"
 #include "StatefulAudioProcessorContainer.h"
-#include "state_managers/ViewStateManager.h"
+#include "state/ViewStateManager.h"
 #include "PluginManager.h"
 #include "StateManager.h"
 

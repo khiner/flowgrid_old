@@ -7,7 +7,7 @@
 #include "JuceHeader.h"
 #include "PluginManager.h"
 #include "Project.h"
-#include "state_managers/ConnectionsStateManager.h"
+#include "state/ConnectionsStateManager.h"
 #include "StatefulAudioProcessorContainer.h"
 #include "push2/Push2MidiCommunicator.h"
 
