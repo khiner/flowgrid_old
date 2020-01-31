@@ -20,6 +20,23 @@ add_executable (APP
     "../../Resources/AbletonSansLight-Regular.otf"
     "../../Resources/AbletonSansMedium-Regular.otf"
     "../../Resources/PushStartup.png"
+    "../../Source/actions/CreateConnectionAction.h"
+    "../../Source/actions/CreateOrDeleteConnectionsAction.h"
+    "../../Source/actions/CreateProcessorAction.h"
+    "../../Source/actions/CreateTrackAction.h"
+    "../../Source/actions/DefaultConnectProcessorAction.h"
+    "../../Source/actions/DeleteConnectionAction.h"
+    "../../Source/actions/DeleteProcessorAction.h"
+    "../../Source/actions/DeleteSelectedItemsAction.h"
+    "../../Source/actions/DeleteTrackAction.h"
+    "../../Source/actions/DisconnectProcessorAction.h"
+    "../../Source/actions/ResetDefaultExternalInputConnectionsAction.h"
+    "../../Source/actions/SelectAction.h"
+    "../../Source/actions/SelectProcessorSlotAction.h"
+    "../../Source/actions/SelectTrackAction.h"
+    "../../Source/actions/SetDefaultConnectionsAllowedAction.h"
+    "../../Source/actions/UpdateAllDefaultConnectionsAction.h"
+    "../../Source/actions/UpdateProcessorDefaultConnectionsAction.h"
     "../../Source/audio_sources/ToneSourceWithParameters.h"
     "../../Source/midi/MidiCommunicator.h"
     "../../Source/processors/Arpeggiator.h"
@@ -34,7 +51,6 @@ add_executable (APP
     "../../Source/processors/MidiOutputProcessor.h"
     "../../Source/processors/MixerChannelProcessor.h"
     "../../Source/processors/ParameterTypesTestProcessor.h"
-    "../../Source/PluginManager.h"
     "../../Source/processors/SineBank.h"
     "../../Source/processors/SineSynth.h"
     "../../Source/processors/StatefulAudioProcessorWrapper.h"
@@ -43,6 +59,10 @@ add_executable (APP
     "../../Source/push2/Push2MidiCommunicator.h"
     "../../Source/push2/Push2UsbCommunicator.h"
     "../../Source/state/ConnectionsState.h"
+    "../../Source/state/Identifiers.h"
+    "../../Source/state/InputState.h"
+    "../../Source/state/OutputState.h"
+    "../../Source/state/State.h"
     "../../Source/state/TracksState.h"
     "../../Source/state/ViewState.h"
     "../../Source/usb/libusb/config_msvc.h"
@@ -78,22 +98,22 @@ add_executable (APP
     "../../Source/view/push2/Push2ProcessorSelector.h"
     "../../Source/view/push2/Push2ProcessorView.h"
     "../../Source/view/push2/Push2TrackManagingView.h"
+    "../../Source/view/BasicWindow.h"
     "../../Source/view/CustomColourIds.h"
     "../../Source/view/PluginWindow.h"
     "../../Source/view/SelectionEditor.h"
     "../../Source/view/UiColours.h"
     "../../Source/ApplicationPropertiesAndCommandManager.h"
-    "../../Source/view/BasicWindow.h"
     "../../Source/config.h"
     "../../Source/DeviceChangeMonitor.h"
     "../../Source/DeviceManagerUtilities.h"
-    "../../Source/state/Identifiers.h"
     "../../Source/Main.cpp"
+    "../../Source/PluginManager.h"
     "../../Source/ProcessorGraph.h"
     "../../Source/Project.h"
     "../../Source/StatefulAudioProcessorContainer.h"
     "../../Source/Utilities.h"
-        "../../Source/ValueTreeObjectList.h"
+    "../../Source/ValueTreeObjectList.h"
     "../../modules/JUCE/modules/juce_audio_basics/audio_play_head/juce_AudioPlayHead.h"
     "../../modules/JUCE/modules/juce_audio_basics/buffers/juce_AudioChannelSet.cpp"
     "../../modules/JUCE/modules/juce_audio_basics/buffers/juce_AudioChannelSet.h"
@@ -1455,12 +1475,29 @@ add_executable (APP
     "../../JuceLibraryCode/include_juce_gui_basics.mm"
     "../../JuceLibraryCode/include_juce_gui_extra.mm"
     "../../JuceLibraryCode/JuceHeader.h"
-        ../../Source/state/State.h ../../Source/actions/SelectAction.h ../../Source/actions/SelectTrackAction.h ../../Source/state/InputState.h ../../Source/state/OutputState.h ../../Source/actions/SelectProcessorSlotAction.h ../../Source/actions/CreateTrackAction.h ../../Source/actions/CreateProcessorAction.h ../../Source/actions/DeleteProcessorAction.h ../../Source/actions/DeleteTrackAction.h ../../Source/actions/DeleteSelectedItemsAction.h ../../Source/actions/CreateConnectionAction.h ../../Source/actions/DeleteConnectionAction.h ../../Source/actions/DisconnectProcessorAction.h ../../Source/actions/CreateOrDeleteConnectionsAction ../../Source/actions/DefaultConnectProcessorAction.h ../../Source/actions/ResetDefaultExternalInputConnectionsAction.h ../../Source/actions/UpdateProcessorDefaultConnectionsAction.h ../../Source/actions/SetDefaultConnectionsAllowedAction.h ../../Source/actions/UpdateAllDefaultConnectionsAction.h)
+)
 
 set_source_files_properties ("../../Resources/AbletonSansBold-Regular.otf" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Resources/AbletonSansLight-Regular.otf" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Resources/AbletonSansMedium-Regular.otf" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Resources/PushStartup.png" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/actions/CreateConnectionAction.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/actions/CreateOrDeleteConnectionsAction.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/actions/CreateProcessorAction.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/actions/CreateTrackAction.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/actions/DefaultConnectProcessorAction.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/actions/DeleteConnectionAction.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/actions/DeleteProcessorAction.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/actions/DeleteSelectedItemsAction.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/actions/DeleteTrackAction.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/actions/DisconnectProcessorAction.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/actions/ResetDefaultExternalInputConnectionsAction.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/actions/SelectAction.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/actions/SelectProcessorSlotAction.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/actions/SelectTrackAction.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/actions/SetDefaultConnectionsAllowedAction.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/actions/UpdateAllDefaultConnectionsAction.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/actions/UpdateProcessorDefaultConnectionsAction.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/audio_sources/ToneSourceWithParameters.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/midi/MidiCommunicator.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/processors/Arpeggiator.h" PROPERTIES HEADER_FILE_ONLY TRUE)
@@ -1474,7 +1511,6 @@ set_source_files_properties ("../../Source/processors/MidiKeyboardProcessor.h" P
 set_source_files_properties ("../../Source/processors/MidiOutputProcessor.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/processors/MixerChannelProcessor.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/processors/ParameterTypesTestProcessor.h" PROPERTIES HEADER_FILE_ONLY TRUE)
-set_source_files_properties ("../../Source/PluginManager.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/processors/SineBank.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/processors/SineSynth.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/processors/StatefulAudioProcessorWrapper.h" PROPERTIES HEADER_FILE_ONLY TRUE)
@@ -1483,6 +1519,10 @@ set_source_files_properties ("../../Source/push2/Push2DisplayBridge.h" PROPERTIE
 set_source_files_properties ("../../Source/push2/Push2MidiCommunicator.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/push2/Push2UsbCommunicator.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/state/ConnectionsState.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/state/Identifiers.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/state/InputState.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/state/OutputState.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/state/State.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/state/TracksState.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/state/ViewState.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/usb/libusb/config_msvc.h" PROPERTIES HEADER_FILE_ONLY TRUE)
@@ -1517,16 +1557,16 @@ set_source_files_properties ("../../Source/view/push2/Push2NoteModePadLedManager
 set_source_files_properties ("../../Source/view/push2/Push2ProcessorSelector.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/view/push2/Push2ProcessorView.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/view/push2/Push2TrackManagingView.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/view/BasicWindow.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/view/CustomColourIds.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/view/PluginWindow.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/view/SelectionEditor.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/view/UiColours.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/ApplicationPropertiesAndCommandManager.h" PROPERTIES HEADER_FILE_ONLY TRUE)
-set_source_files_properties ("../../Source/view/BasicWindow.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/config.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/DeviceChangeMonitor.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/DeviceManagerUtilities.h" PROPERTIES HEADER_FILE_ONLY TRUE)
-set_source_files_properties ("../../Source/state/Identifiers.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/PluginManager.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/ProcessorGraph.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/Project.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/StatefulAudioProcessorContainer.h" PROPERTIES HEADER_FILE_ONLY TRUE)
