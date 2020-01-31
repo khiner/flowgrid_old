@@ -1,6 +1,6 @@
 #pragma once
 
-#include <audio_sources/ToneSourceWithParameters.h>
+#include "audio_sources/ToneSourceWithParameters.h"
 #include "JuceHeader.h"
 #include "DefaultAudioProcessor.h"
 

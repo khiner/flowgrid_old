@@ -37,8 +37,8 @@ add_executable (APP
     "../../Source/actions/SetDefaultConnectionsAllowedAction.h"
     "../../Source/actions/UpdateAllDefaultConnectionsAction.h"
     "../../Source/actions/UpdateProcessorDefaultConnectionsAction.h"
-    "../../Source/audio_sources/ToneSourceWithParameters.h"
     "../../Source/midi/MidiCommunicator.h"
+    "../../Source/processors/audio_sources/ToneSourceWithParameters.h"
     "../../Source/processors/Arpeggiator.h"
     "../../Source/processors/BalanceProcessor.h"
     "../../Source/processors/DefaultAudioProcessor.cpp"
@@ -1498,8 +1498,8 @@ set_source_files_properties ("../../Source/actions/SelectTrackAction.h" PROPERTI
 set_source_files_properties ("../../Source/actions/SetDefaultConnectionsAllowedAction.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/actions/UpdateAllDefaultConnectionsAction.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/actions/UpdateProcessorDefaultConnectionsAction.h" PROPERTIES HEADER_FILE_ONLY TRUE)
-set_source_files_properties ("../../Source/audio_sources/ToneSourceWithParameters.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/midi/MidiCommunicator.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/processors/audio_sources/ToneSourceWithParameters.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/processors/Arpeggiator.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/processors/BalanceProcessor.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/processors/DefaultAudioProcessor.h" PROPERTIES HEADER_FILE_ONLY TRUE)
