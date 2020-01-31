@@ -524,16 +524,16 @@ public:
 
     File getLastDocumentOpened() override {
         RecentlyOpenedFilesList recentFiles;
-        recentFiles.restoreFromString(getApplicationProperties().getUserSettings()->getValue("recentProjectFiles"));
+        recentFiles.restoreFromString(getUserSettings()->getValue("recentProjectFiles"));
 
         return recentFiles.getFile(0);
     }
 
     void setLastDocumentOpened(const File &file) override {
         RecentlyOpenedFilesList recentFiles;
-        recentFiles.restoreFromString(getApplicationProperties().getUserSettings()->getValue("recentProjectFiles"));
+        recentFiles.restoreFromString(getUserSettings()->getValue("recentProjectFiles"));
         recentFiles.addFile(file);
-        getApplicationProperties().getUserSettings()->setValue("recentProjectFiles", recentFiles.toString());
+        getUserSettings()->setValue("recentProjectFiles", recentFiles.toString());
     }
 
     static const String getFilenameSuffix() { return ".smp"; }

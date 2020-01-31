@@ -40,7 +40,7 @@ public:
 
         pluginListComponent = std::unique_ptr<PluginListComponent>(processorManager.makePluginListComponent());
 
-        auto savedAudioState = getApplicationProperties().getUserSettings()->getXmlValue("audioDeviceState");
+        auto savedAudioState = getUserSettings()->getXmlValue("audioDeviceState");
         deviceManager.initialise(256, 256, savedAudioState.get(), true);
 
         deviceManager.addChangeListener(this);
@@ -101,7 +101,7 @@ public:
             menu.addCommandItem(&getCommandManager(), CommandIDs::open);
 
             RecentlyOpenedFilesList recentFiles;
-            recentFiles.restoreFromString(getApplicationProperties().getUserSettings()->getValue("recentProjectFiles"));
+            recentFiles.restoreFromString(getUserSettings()->getValue("recentProjectFiles"));
 
             PopupMenu recentFilesMenu;
             recentFiles.createPopupMenuItems(recentFilesMenu, 100, true, true);
@@ -147,7 +147,7 @@ public:
         if (topLevelMenuIndex == 0) { // File menu
             if (menuItemID >= 100 && menuItemID < 200) {
                 RecentlyOpenedFilesList recentFiles;
-                recentFiles.restoreFromString(getApplicationProperties().getUserSettings()->getValue("recentProjectFiles"));
+                recentFiles.restoreFromString(getUserSettings()->getValue("recentProjectFiles"));
 
                 if (project.saveIfNeededAndUserAgrees() == FileBasedDocument::savedOk) {
                     project.loadFrom(recentFiles.getFile(menuItemID - 100), true);
@@ -166,7 +166,7 @@ public:
                 else if (menuItemID == 203) processorManager.setPluginSortMethod(KnownPluginList::sortByManufacturer);
                 else if (menuItemID == 204) processorManager.setPluginSortMethod(KnownPluginList::sortByFileSystemLocation);
 
-                getApplicationProperties().getUserSettings()->setValue("pluginSortMethod", (int) processorManager.getPluginSortMethod());
+                getUserSettings()->setValue("pluginSortMethod", (int) processorManager.getPluginSortMethod());
                 menuItemsChanged();
             }
         }
@@ -549,8 +549,8 @@ private:
                 push2MidiCommunicator.setMidiInputAndOutput(nullptr, nullptr);
             }
             std::unique_ptr<XmlElement> audioState(deviceManager.createStateXml());
-            getApplicationProperties().getUserSettings()->setValue("audioDeviceState", audioState.get());
-            getApplicationProperties().getUserSettings()->saveIfNeeded();
+            getUserSettings()->setValue("audioDeviceState", audioState.get());
+            getUserSettings()->saveIfNeeded();
         }
     }
 
@@ -575,6 +575,7 @@ private:
 
 static SoundMachineApplication& getApp() { return *dynamic_cast<SoundMachineApplication*>(JUCEApplication::getInstance()); }
 ApplicationProperties& getApplicationProperties() { return getApp().applicationPropertiesAndCommandManager.applicationProperties; }
+PropertiesFile* getUserSettings() { return getApplicationProperties().getUserSettings(); }
 ApplicationCommandManager& getCommandManager()    { return getApp().applicationPropertiesAndCommandManager.commandManager; }
 
 // This macro generates the main() routine that launches the app.

@@ -8,7 +8,7 @@
 class ProcessorManager : private ChangeListener {
 public:
     ProcessorManager() {
-        std::unique_ptr<XmlElement> savedPluginList(getApplicationProperties().getUserSettings()->getXmlValue(PLUGIN_LIST_FILE_NAME));
+        std::unique_ptr<XmlElement> savedPluginList(getUserSettings()->getXmlValue(PLUGIN_LIST_FILE_NAME));
 
         if (savedPluginList != nullptr) {
             knownPluginListExternal.recreateFromXml(*savedPluginList);
@@ -20,7 +20,7 @@ public:
                 userCreatablePluginListInternal.addType(pluginType);
         }
 
-        pluginSortMethod = (KnownPluginList::SortMethod) getApplicationProperties().getUserSettings()->getIntValue("pluginSortMethod", KnownPluginList::sortByCategory);
+        pluginSortMethod = (KnownPluginList::SortMethod) getUserSettings()->getIntValue("pluginSortMethod", KnownPluginList::sortByCategory);
         knownPluginListExternal.addChangeListener(this);
 
         formatManager.addDefaultFormats();
@@ -28,8 +28,8 @@ public:
     }
 
     PluginListComponent* makePluginListComponent() {
-        const File &deadMansPedalFile = getApplicationProperties().getUserSettings()->getFile().getSiblingFile("RecentlyCrashedPluginsList");
-        return new PluginListComponent(formatManager, knownPluginListExternal, deadMansPedalFile, getApplicationProperties().getUserSettings(), true);
+        const File &deadMansPedalFile = getUserSettings()->getFile().getSiblingFile("RecentlyCrashedPluginsList");
+        return new PluginListComponent(formatManager, knownPluginListExternal, deadMansPedalFile, getUserSettings(), true);
     }
 
     std::unique_ptr<PluginDescription> getDescriptionForIdentifier(const String &identifier) {
@@ -113,7 +113,7 @@ private:
             std::unique_ptr<XmlElement> savedPluginList(knownPluginListExternal.createXml());
 
             if (savedPluginList != nullptr) {
-                getApplicationProperties().getUserSettings()->setValue(PLUGIN_LIST_FILE_NAME, savedPluginList.get());
+                getUserSettings()->setValue(PLUGIN_LIST_FILE_NAME, savedPluginList.get());
                 getApplicationProperties().saveIfNeeded();
             }
         }
