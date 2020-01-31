@@ -13,7 +13,7 @@ public:
     GraphEditorPanel(ProcessorGraph &g, Project &project, Viewport &parentViewport)
             : graph(g), project(project), tracks(project.getTracksManager()),
               view(project.getViewStateManager()), parentViewport(parentViewport) {
-        project.getState().addListener(this);
+        project.addListener(this);
 
         addAndMakeVisible(*(graphEditorTracks = std::make_unique<GraphEditorTracks>(project, project.getTracks(), *this, graph)));
         addAndMakeVisible(*(connectors = std::make_unique<GraphEditorConnectors>(project.getConnectionStateManager(), *this, *this, graph)));

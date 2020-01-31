@@ -26,7 +26,7 @@ public:
         addChildComponent(processorSelector);
         addChildComponent(mixerView);
 
-        this->project.getState().addListener(this);
+        this->project.addListener(this);
         this->project.getUndoManager().addChangeListener(this);
 
         setBounds(0, 0, Push2Display::WIDTH, Push2Display::HEIGHT);
@@ -40,7 +40,7 @@ public:
     ~Push2Component() override {
         setVisible(false);
         project.getUndoManager().removeChangeListener(this);
-        project.getState().removeListener(this);
+        project.removeListener(this);
     }
 
     void handleIncomingMidiMessage(MidiInput *source, const MidiMessage &message) override {

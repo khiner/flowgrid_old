@@ -16,11 +16,11 @@ public:
               tracks(tracks), view(project.getViewStateManager()),
               connectorDragListener(connectorDragListener), graph(graph) {
         rebuildObjects();
-        view.getState().addListener(this);
+        view.addListener(this);
     }
 
     ~GraphEditorTracks() override {
-        view.getState().removeListener(this);
+        view.removeListener(this);
         freeObjects();
     }
 

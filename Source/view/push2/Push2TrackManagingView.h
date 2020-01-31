@@ -8,7 +8,7 @@ class Push2TrackManagingView : public Push2ComponentBase, protected ValueTree::L
 public:
     explicit Push2TrackManagingView(Project &project, Push2MidiCommunicator &push2)
             : Push2ComponentBase(project, push2) {
-        project.getState().addListener(this);
+        project.addListener(this);
 
         for (int i = 0; i < NUM_COLUMNS; i++) {
             addChildComponent(trackLabels.add(new Push2Label(i, false, push2)));
@@ -17,7 +17,7 @@ public:
 
     ~Push2TrackManagingView() override {
         push2.getPush2Colours().removeListener(this);
-        project.getState().removeListener(this);
+        project.removeListener(this);
     }
 
     void resized() override {

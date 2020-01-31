@@ -15,14 +15,14 @@ public:
     };
 
     explicit Push2Colours(TracksState& tracks) : tracks(tracks) {
-        this->tracks.getState().addListener(this);
+        this->tracks.addListener(this);
         for (uint8 colourIndex = 1; colourIndex < CHAR_MAX - 1; colourIndex++) {
             availableColourIndexes.add(colourIndex);
         }
     }
 
     ~Push2Colours() override {
-        tracks.getState().removeListener(this);
+        tracks.removeListener(this);
     }
 
     uint8 findIndexForColourAddingIfNeeded(const Colour &colour) {

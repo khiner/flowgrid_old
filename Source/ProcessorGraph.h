@@ -22,14 +22,14 @@ public:
             deviceManager(deviceManager), push2MidiCommunicator(push2MidiCommunicator) {
         enableAllBuses();
 
-        project.getState().addListener(this);
-        view.getState().addListener(this);
+        project.addListener(this);
+        view.addListener(this);
         project.setStatefulAudioProcessorContainer(this);
     }
 
     ~ProcessorGraph() override {
         project.setStatefulAudioProcessorContainer(nullptr);
-        project.getState().removeListener(this);
+        project.removeListener(this);
     }
 
     StatefulAudioProcessorWrapper* getProcessorWrapperForNodeId(NodeID nodeId) const override {

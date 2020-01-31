@@ -24,7 +24,7 @@ public:
         Process::makeForegroundProcess();
 
         project.addChangeListener(this);
-        project.getState().addListener(this);
+        project.addListener(this);
 
         deviceChangeMonitor = std::make_unique<DeviceChangeMonitor>(deviceManager);
 
@@ -69,7 +69,7 @@ public:
         deviceChangeMonitor = nullptr;
         deviceManager.removeAudioCallback(&player);
         project.removeChangeListener(this);
-        project.getState().removeListener(this);
+        project.removeListener(this);
         setMacMainMenu(nullptr);
     }
 

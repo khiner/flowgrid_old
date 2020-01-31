@@ -15,7 +15,7 @@ public:
             : project(project), tracks(project.getTracksManager()),
               view(project.getViewStateManager()),
               audioGraphBuilder(audioGraphBuilder), contextPane(project) {
-        this->project.getState().addListener(this);
+        this->project.addListener(this);
 
         addAndMakeVisible(addProcessorButton);
         addAndMakeVisible(processorEditorsViewport);
@@ -32,7 +32,7 @@ public:
 
     ~SelectionEditor() override {
         removeMouseListener(this);
-        project.getState().removeListener(this);
+        project.removeListener(this);
     }
 
     void mouseDown(const MouseEvent& event) override {

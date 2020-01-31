@@ -11,11 +11,11 @@ public:
     explicit ContextPane(Project &project)
             : project(project), tracks(project.getTracksManager()),
               view(project.getViewStateManager()) {
-        this->project.getState().addListener(this);
+        this->project.addListener(this);
     }
 
     ~ContextPane() override {
-        project.getState().removeListener(this);
+        project.removeListener(this);
     }
 
     void resized() override {

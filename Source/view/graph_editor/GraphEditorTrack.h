@@ -26,12 +26,12 @@ public:
         }
         nameLabel.addMouseListener(this, false);
         this->state.addListener(this);
-        view.getState().addListener(this);
+        view.addListener(this);
     }
 
     ~GraphEditorTrack() override {
         nameLabel.removeMouseListener(this);
-        view.getState().removeListener(this);
+        view.removeListener(this);
         this->state.removeListener(this);
     }
 
