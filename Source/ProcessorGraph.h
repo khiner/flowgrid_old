@@ -5,7 +5,7 @@
 #include <processors/StatefulAudioProcessorWrapper.h>
 
 #include "JuceHeader.h"
-#include "processors/ProcessorManager.h"
+#include "PluginManager.h"
 #include "Project.h"
 #include "state_managers/ConnectionsStateManager.h"
 #include "StatefulAudioProcessorContainer.h"

@@ -1,13 +1,13 @@
 #pragma once
 
 #include "JuceHeader.h"
-#include "InternalPluginFormat.h"
+#include "processors/InternalPluginFormat.h"
 #include "Identifiers.h"
 #include "ApplicationPropertiesAndCommandManager.h"
 
-class ProcessorManager : private ChangeListener {
+class PluginManager : private ChangeListener {
 public:
-    ProcessorManager() {
+    PluginManager() {
         std::unique_ptr<XmlElement> savedPluginList(getUserSettings()->getXmlValue(PLUGIN_LIST_FILE_NAME));
 
         if (savedPluginList != nullptr) {

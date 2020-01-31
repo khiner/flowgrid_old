@@ -1,14 +1,14 @@
 #pragma once
 
-#include <processors/ProcessorManager.h>
+#include <PluginManager.h>
 #include "JuceHeader.h"
 #include "StatefulAudioProcessorContainer.h"
 #include "StateManager.h"
 
 class OutputStateManager : public StateManager {
 public:
-    explicit OutputStateManager(StatefulAudioProcessorContainer& audioProcessorContainer, ProcessorManager& processorManager)
-            : audioProcessorContainer(audioProcessorContainer), processorManager(processorManager) {
+    explicit OutputStateManager(StatefulAudioProcessorContainer& audioProcessorContainer, PluginManager& pluginManager)
+            : audioProcessorContainer(audioProcessorContainer), pluginManager(pluginManager) {
         output = ValueTree(IDs::OUTPUT);
     }
 
@@ -20,7 +20,7 @@ public:
     }
 
     ValueTree getAudioOutputProcessorState() const {
-        return output.getChildWithProperty(IDs::name, processorManager.getAudioOutputDescription().name);
+        return output.getChildWithProperty(IDs::name, pluginManager.getAudioOutputDescription().name);
     }
 
     void updateWithAudioDeviceSetup(const AudioDeviceManager::AudioDeviceSetup& audioDeviceSetup, UndoManager *undoManager) {
@@ -30,5 +30,5 @@ public:
 private:
     ValueTree output;
     StatefulAudioProcessorContainer& audioProcessorContainer;
-    ProcessorManager &processorManager;
+    PluginManager &pluginManager;
 };

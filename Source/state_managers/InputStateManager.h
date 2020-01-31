@@ -1,14 +1,14 @@
 #pragma once
 
-#include <processors/ProcessorManager.h>
+#include <PluginManager.h>
 #include "JuceHeader.h"
 #include "StatefulAudioProcessorContainer.h"
 #include "StateManager.h"
 
 class InputStateManager : public StateManager {
 public:
-    explicit InputStateManager(StatefulAudioProcessorContainer& audioProcessorContainer, ProcessorManager& processorManager)
-            : audioProcessorContainer(audioProcessorContainer), processorManager(processorManager) {
+    explicit InputStateManager(StatefulAudioProcessorContainer& audioProcessorContainer, PluginManager& pluginManager)
+            : audioProcessorContainer(audioProcessorContainer), pluginManager(pluginManager) {
         input = ValueTree(IDs::INPUT);
     }
 
@@ -20,7 +20,7 @@ public:
     }
 
     ValueTree getAudioInputProcessorState() const {
-        return input.getChildWithProperty(IDs::name, processorManager.getAudioInputDescription().name);
+        return input.getChildWithProperty(IDs::name, pluginManager.getAudioInputDescription().name);
     }
 
     ValueTree getPush2MidiInputProcessor() const {
@@ -44,5 +44,5 @@ public:
 private:
     ValueTree input;
     StatefulAudioProcessorContainer& audioProcessorContainer;
-    ProcessorManager &processorManager;
+    PluginManager &pluginManager;
 };

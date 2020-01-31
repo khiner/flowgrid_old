@@ -34,7 +34,7 @@ add_executable (APP
     "../../Source/processors/MidiOutputProcessor.h"
     "../../Source/processors/MixerChannelProcessor.h"
     "../../Source/processors/ParameterTypesTestProcessor.h"
-    "../../Source/processors/ProcessorManager.h"
+    "../../Source/PluginManager.h"
     "../../Source/processors/SineBank.h"
     "../../Source/processors/SineSynth.h"
     "../../Source/processors/StatefulAudioProcessorWrapper.h"
@@ -1475,7 +1475,7 @@ set_source_files_properties ("../../Source/processors/MidiKeyboardProcessor.h" P
 set_source_files_properties ("../../Source/processors/MidiOutputProcessor.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/processors/MixerChannelProcessor.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/processors/ParameterTypesTestProcessor.h" PROPERTIES HEADER_FILE_ONLY TRUE)
-set_source_files_properties ("../../Source/processors/ProcessorManager.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/PluginManager.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/processors/SineBank.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/processors/SineSynth.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/processors/StatefulAudioProcessorWrapper.h" PROPERTIES HEADER_FILE_ONLY TRUE)

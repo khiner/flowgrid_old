@@ -8,7 +8,7 @@
 
 class SoundMachineApplication : public JUCEApplication, public MenuBarModel, private ChangeListener, private Timer, private Utilities::ValueTreePropertyChangeListener {
 public:
-    SoundMachineApplication() : project(undoManager, processorManager, deviceManager),
+    SoundMachineApplication() : project(undoManager, pluginManager, deviceManager),
                                 tracksManager(project.getTracksManager()),
                                 push2Colours(project.getState()),
                                 push2MidiCommunicator(project, push2Colours),
@@ -38,7 +38,7 @@ public:
         lookAndFeel.setColour(Slider::rotarySliderOutlineColourId,
                 lookAndFeel.findColour(Slider::rotarySliderOutlineColourId).brighter(0.06));
 
-        pluginListComponent = std::unique_ptr<PluginListComponent>(processorManager.makePluginListComponent());
+        pluginListComponent = std::unique_ptr<PluginListComponent>(pluginManager.makePluginListComponent());
 
         auto savedAudioState = getUserSettings()->getXmlValue("audioDeviceState");
         deviceManager.initialise(256, 256, savedAudioState.get(), true);
@@ -129,7 +129,7 @@ public:
             menu.addCommandItem(&getCommandManager(), CommandIDs::showAudioMidiSettings);
             menu.addCommandItem(&getCommandManager(), CommandIDs::showPluginListEditor);
 
-            const auto& pluginSortMethod = processorManager.getPluginSortMethod();
+            const auto& pluginSortMethod = pluginManager.getPluginSortMethod();
 
             PopupMenu sortTypeMenu;
             sortTypeMenu.addItem(200, "List plugins in default order",      true, pluginSortMethod == KnownPluginList::defaultOrder);
@@ -160,13 +160,13 @@ public:
             if (menuItemID == 1) {
                 showAudioMidiSettings();
             } else if (menuItemID >= 200 && menuItemID < 210) {
-                if (menuItemID == 200) processorManager.setPluginSortMethod(KnownPluginList::defaultOrder);
-                else if (menuItemID == 201) processorManager.setPluginSortMethod(KnownPluginList::sortAlphabetically);
-                else if (menuItemID == 202) processorManager.setPluginSortMethod(KnownPluginList::sortByCategory);
-                else if (menuItemID == 203) processorManager.setPluginSortMethod(KnownPluginList::sortByManufacturer);
-                else if (menuItemID == 204) processorManager.setPluginSortMethod(KnownPluginList::sortByFileSystemLocation);
+                if (menuItemID == 200) pluginManager.setPluginSortMethod(KnownPluginList::defaultOrder);
+                else if (menuItemID == 201) pluginManager.setPluginSortMethod(KnownPluginList::sortAlphabetically);
+                else if (menuItemID == 202) pluginManager.setPluginSortMethod(KnownPluginList::sortByCategory);
+                else if (menuItemID == 203) pluginManager.setPluginSortMethod(KnownPluginList::sortByManufacturer);
+                else if (menuItemID == 204) pluginManager.setPluginSortMethod(KnownPluginList::sortByFileSystemLocation);
 
-                getUserSettings()->setValue("pluginSortMethod", (int) processorManager.getPluginSortMethod());
+                getUserSettings()->setValue("pluginSortMethod", (int) pluginManager.getPluginSortMethod());
                 menuItemsChanged();
             }
         }
@@ -473,7 +473,7 @@ public:
     ApplicationPropertiesAndCommandManager applicationPropertiesAndCommandManager;
 
 private:
-    ProcessorManager processorManager;
+    PluginManager pluginManager;
 
     std::unique_ptr<Push2Component> push2Component;
     std::unique_ptr<MainWindow> mainWindow;

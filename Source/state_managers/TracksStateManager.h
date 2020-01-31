@@ -6,7 +6,7 @@
 #include "unordered_map"
 #include "StatefulAudioProcessorContainer.h"
 #include "state_managers/ViewStateManager.h"
-#include "processors/ProcessorManager.h"
+#include "PluginManager.h"
 #include "StateManager.h"
 
 class TracksStateManager :
@@ -14,9 +14,9 @@ class TracksStateManager :
         private ValueTree::Listener {
 public:
     TracksStateManager(ViewStateManager& viewManager, StatefulAudioProcessorContainer& audioProcessorContainer,
-                       ProcessorManager& processorManager, UndoManager& undoManager)
+                       PluginManager& pluginManager, UndoManager& undoManager)
             : viewManager(viewManager), audioProcessorContainer(audioProcessorContainer),
-              processorManager(processorManager), undoManager(undoManager) {
+              pluginManager(pluginManager), undoManager(undoManager) {
         tracks = ValueTree(IDs::TRACKS);
         tracks.addListener(this);
         tracks.setProperty(IDs::name, "Tracks", nullptr);
@@ -346,7 +346,7 @@ private:
     ValueTree tracks;
     ViewStateManager& viewManager;
     StatefulAudioProcessorContainer& audioProcessorContainer;
-    ProcessorManager &processorManager;
+    PluginManager &pluginManager;
     UndoManager &undoManager;
 
     std::unordered_map<int, int> slotForNodeIdSnapshot;

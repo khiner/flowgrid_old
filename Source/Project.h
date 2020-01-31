@@ -13,7 +13,7 @@
 
 #pragma once
 
-#include "processors/ProcessorManager.h"
+#include "PluginManager.h"
 #include "Utilities.h"
 #include "StatefulAudioProcessorContainer.h"
 #include "state_managers/TracksStateManager.h"
@@ -47,12 +47,12 @@ public:
         const int slot;
     };
 
-    Project(UndoManager &undoManager, ProcessorManager& processorManager, AudioDeviceManager& deviceManager)
+    Project(UndoManager &undoManager, PluginManager& pluginManager, AudioDeviceManager& deviceManager)
             : FileBasedDocument(getFilenameSuffix(), "*" + getFilenameSuffix(), "Load a project", "Save project"),
-              processorManager(processorManager),
-              tracksManager(viewManager, *this, processorManager, undoManager),
-              inputManager(*this, processorManager),
-              outputManager(*this, processorManager),
+              pluginManager(pluginManager),
+              tracksManager(viewManager, *this, pluginManager, undoManager),
+              inputManager(*this, pluginManager),
+              outputManager(*this, pluginManager),
               connectionsManager(*this, inputManager, outputManager, tracksManager),
               undoManager(undoManager), deviceManager(deviceManager) {
         state = ValueTree(IDs::PROJECT);
@@ -173,8 +173,8 @@ public:
         if (description.name == MixerChannelProcessor::name() && tracksManager.getMixerChannelProcessorForTrack(track).isValid())
             return; // only one mixer channel per track
 
-        if (ProcessorManager::isGeneratorOrInstrument(&description) &&
-            processorManager.doesTrackAlreadyHaveGeneratorOrInstrument(track)) {
+        if (PluginManager::isGeneratorOrInstrument(&description) &&
+            pluginManager.doesTrackAlreadyHaveGeneratorOrInstrument(track)) {
             undoManager.perform(new CreateTrackAction(false, track, false, tracksManager, connectionsManager, viewManager));
             doCreateAndAddProcessor(description, mostRecentlyCreatedTrack, slot);
         }
@@ -414,8 +414,8 @@ public:
         PopupMenu internalSubMenu;
         PopupMenu externalSubMenu;
 
-        getUserCreatablePluginListInternal().addToMenu(internalSubMenu, processorManager.getPluginSortMethod(), disabledPluginIds);
-        getPluginListExternal().addToMenu(externalSubMenu, processorManager.getPluginSortMethod(), {}, String(), getUserCreatablePluginListInternal().getNumTypes());
+        getUserCreatablePluginListInternal().addToMenu(internalSubMenu, pluginManager.getPluginSortMethod(), disabledPluginIds);
+        getPluginListExternal().addToMenu(externalSubMenu, pluginManager.getPluginSortMethod(), {}, String(), getUserCreatablePluginListInternal().getNumTypes());
 
         menu.addSubMenu("Internal", internalSubMenu, true);
         menu.addSeparator();
@@ -423,27 +423,27 @@ public:
     }
 
     KnownPluginList &getUserCreatablePluginListInternal() const {
-        return processorManager.getUserCreatablePluginListInternal();
+        return pluginManager.getUserCreatablePluginListInternal();
     }
 
     KnownPluginList &getPluginListExternal() const {
-        return processorManager.getKnownPluginListExternal();
+        return pluginManager.getKnownPluginListExternal();
     }
 
     KnownPluginList::SortMethod getPluginSortMethod() const {
-        return processorManager.getPluginSortMethod();
+        return pluginManager.getPluginSortMethod();
     }
 
     AudioPluginFormatManager& getFormatManager() const {
-        return processorManager.getFormatManager();
+        return pluginManager.getFormatManager();
     }
 
     const PluginDescription* getChosenType(const int menuId) const {
-        return processorManager.getChosenType(menuId);
+        return pluginManager.getChosenType(menuId);
     }
 
     std::unique_ptr<PluginDescription> getTypeForIdentifier(const String &identifier) const {
-        return processorManager.getDescriptionForIdentifier(identifier);
+        return pluginManager.getDescriptionForIdentifier(identifier);
     }
 
     //==============================================================================================================
@@ -540,7 +540,7 @@ public:
 
 private:
     ValueTree state;
-    ProcessorManager &processorManager;
+    PluginManager &pluginManager;
     ViewStateManager viewManager;
     TracksStateManager tracksManager;
     InputStateManager inputManager;
@@ -600,7 +600,7 @@ private:
 
     void createAudioIoProcessors() {
         {
-            PluginDescription &audioInputDescription = processorManager.getAudioInputDescription();
+            PluginDescription &audioInputDescription = pluginManager.getAudioInputDescription();
             ValueTree inputProcessor(IDs::PROCESSOR);
             inputProcessor.setProperty(IDs::id, audioInputDescription.createIdentifierString(), nullptr);
             inputProcessor.setProperty(IDs::name, audioInputDescription.name, nullptr);
@@ -608,7 +608,7 @@ private:
             inputManager.getState().appendChild(inputProcessor,  &undoManager);
         }
         {
-            PluginDescription &audioOutputDescription = processorManager.getAudioOutputDescription();
+            PluginDescription &audioOutputDescription = pluginManager.getAudioOutputDescription();
             ValueTree outputProcessor(IDs::PROCESSOR);
             outputProcessor.setProperty(IDs::id, audioOutputDescription.createIdentifierString(), nullptr);
             outputProcessor.setProperty(IDs::name, audioOutputDescription.name, nullptr);

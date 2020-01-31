@@ -2,7 +2,7 @@
 #include <Utilities.h>
 #include <Identifiers.h>
 #include <ValueTreeItems.h>
-#include <processors/ProcessorManager.h>
+#include <PluginManager.h>
 #include "processor_editor/ProcessorEditor.h"
 #include "view/context_pane/ContextPane.h"
 #include "view/CustomColourIds.h"
