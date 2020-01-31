@@ -18,192 +18,192 @@
     </GROUP>
     <GROUP id="{70A85A13-6570-7111-6CCB-8EB5F2BD67E2}" name="Source">
       <GROUP id="{93B529E4-B219-AD1B-80C9-788FA557D792}" name="actions">
-        <FILE id="IcM19t" name="CreateConnectionAction.h" compile="0" resource="0"
+        <FILE id="vSqN51" name="CreateConnectionAction.h" compile="0" resource="0"
               file="Source/actions/CreateConnectionAction.h"/>
-        <FILE id="HY079Q" name="CreateOrDeleteConnectionsAction.h" compile="0"
+        <FILE id="w0TaJg" name="CreateOrDeleteConnectionsAction.h" compile="0"
               resource="0" file="Source/actions/CreateOrDeleteConnectionsAction.h"/>
-        <FILE id="bSECVa" name="CreateProcessorAction.h" compile="0" resource="0"
+        <FILE id="vig6d3" name="CreateProcessorAction.h" compile="0" resource="0"
               file="Source/actions/CreateProcessorAction.h"/>
-        <FILE id="OHf5mu" name="CreateTrackAction.h" compile="0" resource="0"
+        <FILE id="SwAulR" name="CreateTrackAction.h" compile="0" resource="0"
               file="Source/actions/CreateTrackAction.h"/>
-        <FILE id="EHvhNb" name="DefaultConnectProcessorAction.h" compile="0"
+        <FILE id="V4AxY1" name="DefaultConnectProcessorAction.h" compile="0"
               resource="0" file="Source/actions/DefaultConnectProcessorAction.h"/>
-        <FILE id="wApkJo" name="DeleteConnectionAction.h" compile="0" resource="0"
+        <FILE id="FsRffJ" name="DeleteConnectionAction.h" compile="0" resource="0"
               file="Source/actions/DeleteConnectionAction.h"/>
-        <FILE id="Urtzmt" name="DeleteProcessorAction.h" compile="0" resource="0"
+        <FILE id="VfiFzA" name="DeleteProcessorAction.h" compile="0" resource="0"
               file="Source/actions/DeleteProcessorAction.h"/>
-        <FILE id="r6qLI2" name="DeleteSelectedItemsAction.h" compile="0" resource="0"
+        <FILE id="DYcYiy" name="DeleteSelectedItemsAction.h" compile="0" resource="0"
               file="Source/actions/DeleteSelectedItemsAction.h"/>
-        <FILE id="UeanpS" name="DeleteTrackAction.h" compile="0" resource="0"
+        <FILE id="ydwqsQ" name="DeleteTrackAction.h" compile="0" resource="0"
               file="Source/actions/DeleteTrackAction.h"/>
-        <FILE id="Cw4Pxz" name="DisconnectProcessorAction.h" compile="0" resource="0"
+        <FILE id="inyXPn" name="DisconnectProcessorAction.h" compile="0" resource="0"
               file="Source/actions/DisconnectProcessorAction.h"/>
-        <FILE id="k5ghW4" name="ResetDefaultExternalInputConnectionsAction.h"
+        <FILE id="UBjh2A" name="ResetDefaultExternalInputConnectionsAction.h"
               compile="0" resource="0" file="Source/actions/ResetDefaultExternalInputConnectionsAction.h"/>
-        <FILE id="Xez0As" name="SelectAction.h" compile="0" resource="0" file="Source/actions/SelectAction.h"/>
-        <FILE id="s4NV4i" name="SelectProcessorSlotAction.h" compile="0" resource="0"
+        <FILE id="JpyBu0" name="SelectAction.h" compile="0" resource="0" file="Source/actions/SelectAction.h"/>
+        <FILE id="WFGBYo" name="SelectProcessorSlotAction.h" compile="0" resource="0"
               file="Source/actions/SelectProcessorSlotAction.h"/>
-        <FILE id="BhGTlR" name="SelectTrackAction.h" compile="0" resource="0"
+        <FILE id="GsALCb" name="SelectTrackAction.h" compile="0" resource="0"
               file="Source/actions/SelectTrackAction.h"/>
-        <FILE id="lewugI" name="SetDefaultConnectionsAllowedAction.h" compile="0"
+        <FILE id="qsi84f" name="SetDefaultConnectionsAllowedAction.h" compile="0"
               resource="0" file="Source/actions/SetDefaultConnectionsAllowedAction.h"/>
-        <FILE id="H8PDjl" name="UpdateAllDefaultConnectionsAction.h" compile="0"
+        <FILE id="Uk2DLN" name="UpdateAllDefaultConnectionsAction.h" compile="0"
               resource="0" file="Source/actions/UpdateAllDefaultConnectionsAction.h"/>
-        <FILE id="RSoMgT" name="UpdateProcessorDefaultConnectionsAction.h"
+        <FILE id="HDGwgG" name="UpdateProcessorDefaultConnectionsAction.h"
               compile="0" resource="0" file="Source/actions/UpdateProcessorDefaultConnectionsAction.h"/>
       </GROUP>
       <GROUP id="{F075B483-DC20-5434-EB4A-CCBF3F14C345}" name="audio_sources">
-        <FILE id="kwEFUS" name="ToneSourceWithParameters.h" compile="0" resource="0"
+        <FILE id="puKmB4" name="ToneSourceWithParameters.h" compile="0" resource="0"
               file="Source/audio_sources/ToneSourceWithParameters.h"/>
       </GROUP>
       <GROUP id="{CB64732E-31B1-B787-E998-E08FC149DE5A}" name="midi">
-        <FILE id="n4WfQS" name="MidiCommunicator.h" compile="0" resource="0"
+        <FILE id="XfTR7w" name="MidiCommunicator.h" compile="0" resource="0"
               file="Source/midi/MidiCommunicator.h"/>
       </GROUP>
       <GROUP id="{20DD1921-5000-E9E6-A876-05AE39F5EC30}" name="processors">
-        <FILE id="chqJS8" name="Arpeggiator.h" compile="0" resource="0" file="Source/processors/Arpeggiator.h"/>
-        <FILE id="KQcnmn" name="BalanceProcessor.h" compile="0" resource="0"
+        <FILE id="O0u5yD" name="Arpeggiator.h" compile="0" resource="0" file="Source/processors/Arpeggiator.h"/>
+        <FILE id="t64evr" name="BalanceProcessor.h" compile="0" resource="0"
               file="Source/processors/BalanceProcessor.h"/>
-        <FILE id="vVP8oV" name="DefaultAudioProcessor.cpp" compile="1" resource="0"
+        <FILE id="e3BETd" name="DefaultAudioProcessor.cpp" compile="1" resource="0"
               file="Source/processors/DefaultAudioProcessor.cpp"/>
-        <FILE id="MrRvod" name="DefaultAudioProcessor.h" compile="0" resource="0"
+        <FILE id="CqPdJG" name="DefaultAudioProcessor.h" compile="0" resource="0"
               file="Source/processors/DefaultAudioProcessor.h"/>
-        <FILE id="fT6ouq" name="GainProcessor.h" compile="0" resource="0" file="Source/processors/GainProcessor.h"/>
-        <FILE id="toDSK0" name="InternalPluginFormat.h" compile="0" resource="0"
+        <FILE id="wxDJv4" name="GainProcessor.h" compile="0" resource="0" file="Source/processors/GainProcessor.h"/>
+        <FILE id="FXtICp" name="InternalPluginFormat.h" compile="0" resource="0"
               file="Source/processors/InternalPluginFormat.h"/>
-        <FILE id="fksLQM" name="InternalProcessorIncludes.h" compile="0" resource="0"
+        <FILE id="wxhVWd" name="InternalProcessorIncludes.h" compile="0" resource="0"
               file="Source/processors/InternalProcessorIncludes.h"/>
-        <FILE id="nrtfrC" name="MidiInputProcessor.h" compile="0" resource="0"
+        <FILE id="saPset" name="MidiInputProcessor.h" compile="0" resource="0"
               file="Source/processors/MidiInputProcessor.h"/>
-        <FILE id="ktynvE" name="MidiKeyboardProcessor.h" compile="0" resource="0"
+        <FILE id="KtUbfU" name="MidiKeyboardProcessor.h" compile="0" resource="0"
               file="Source/processors/MidiKeyboardProcessor.h"/>
-        <FILE id="pRjX4x" name="MidiOutputProcessor.h" compile="0" resource="0"
+        <FILE id="aWoGEQ" name="MidiOutputProcessor.h" compile="0" resource="0"
               file="Source/processors/MidiOutputProcessor.h"/>
-        <FILE id="wHMYaz" name="MixerChannelProcessor.h" compile="0" resource="0"
+        <FILE id="XiyjBG" name="MixerChannelProcessor.h" compile="0" resource="0"
               file="Source/processors/MixerChannelProcessor.h"/>
-        <FILE id="NcK36a" name="ParameterTypesTestProcessor.h" compile="0"
+        <FILE id="w9rRGU" name="ParameterTypesTestProcessor.h" compile="0"
               resource="0" file="Source/processors/ParameterTypesTestProcessor.h"/>
-        <FILE id="Rz6bxm" name="SineBank.h" compile="0" resource="0" file="Source/processors/SineBank.h"/>
-        <FILE id="xtrJsK" name="SineSynth.h" compile="0" resource="0" file="Source/processors/SineSynth.h"/>
-        <FILE id="RZbYXe" name="StatefulAudioProcessorWrapper.h" compile="0"
+        <FILE id="nXI7Ue" name="SineBank.h" compile="0" resource="0" file="Source/processors/SineBank.h"/>
+        <FILE id="GZdtFJ" name="SineSynth.h" compile="0" resource="0" file="Source/processors/SineSynth.h"/>
+        <FILE id="Nl9mhH" name="StatefulAudioProcessorWrapper.h" compile="0"
               resource="0" file="Source/processors/StatefulAudioProcessorWrapper.h"/>
       </GROUP>
       <GROUP id="{C90C8B0A-38A0-BF87-3996-63A3FEE2251A}" name="push2">
-        <FILE id="cQD7t1" name="Push2Display.h" compile="0" resource="0" file="Source/push2/Push2Display.h"/>
-        <FILE id="f51EPE" name="Push2DisplayBridge.h" compile="0" resource="0"
+        <FILE id="XYWIkF" name="Push2Display.h" compile="0" resource="0" file="Source/push2/Push2Display.h"/>
+        <FILE id="iFH6bK" name="Push2DisplayBridge.h" compile="0" resource="0"
               file="Source/push2/Push2DisplayBridge.h"/>
-        <FILE id="XyC3ur" name="Push2MidiCommunicator.h" compile="0" resource="0"
+        <FILE id="Yehqw8" name="Push2MidiCommunicator.h" compile="0" resource="0"
               file="Source/push2/Push2MidiCommunicator.h"/>
-        <FILE id="r5LCBP" name="Push2UsbCommunicator.h" compile="0" resource="0"
+        <FILE id="XnBoTp" name="Push2UsbCommunicator.h" compile="0" resource="0"
               file="Source/push2/Push2UsbCommunicator.h"/>
       </GROUP>
       <GROUP id="{1D763701-55C8-9973-F46B-2A4D11C22DE5}" name="state">
-        <FILE id="n04Ww5" name="ConnectionsState.h" compile="0" resource="0"
+        <FILE id="JYOcSs" name="ConnectionsState.h" compile="0" resource="0"
               file="Source/state/ConnectionsState.h"/>
-        <FILE id="ZNKe5E" name="Identifiers.h" compile="0" resource="0" file="Source/state/Identifiers.h"/>
-        <FILE id="od8KXr" name="InputState.h" compile="0" resource="0" file="Source/state/InputState.h"/>
-        <FILE id="MpcJvY" name="OutputState.h" compile="0" resource="0" file="Source/state/OutputState.h"/>
-        <FILE id="Jk6nJO" name="State.h" compile="0" resource="0" file="Source/state/State.h"/>
-        <FILE id="wUij5I" name="TracksState.h" compile="0" resource="0" file="Source/state/TracksState.h"/>
-        <FILE id="Hkk534" name="ViewState.h" compile="0" resource="0" file="Source/state/ViewState.h"/>
+        <FILE id="UuYffn" name="Identifiers.h" compile="0" resource="0" file="Source/state/Identifiers.h"/>
+        <FILE id="ceppEz" name="InputState.h" compile="0" resource="0" file="Source/state/InputState.h"/>
+        <FILE id="a9880U" name="OutputState.h" compile="0" resource="0" file="Source/state/OutputState.h"/>
+        <FILE id="bU8CYA" name="Project.h" compile="0" resource="0" file="Source/state/Project.h"/>
+        <FILE id="XLggJw" name="Stateful.h" compile="0" resource="0" file="Source/state/Stateful.h"/>
+        <FILE id="lEyRWw" name="TracksState.h" compile="0" resource="0" file="Source/state/TracksState.h"/>
+        <FILE id="NATMYA" name="ViewState.h" compile="0" resource="0" file="Source/state/ViewState.h"/>
       </GROUP>
       <GROUP id="{6F25CC2E-1B57-2765-BF8A-E0A7E4706B00}" name="usb">
         <GROUP id="{382B5DDD-3E53-AE9C-84F1-D33DA5A70D0A}" name="libusb">
-          <FILE id="qlWCeD" name="config_msvc.h" compile="0" resource="0" file="Source/usb/libusb/config_msvc.h"/>
-          <FILE id="r5uS8m" name="config_xcode.h" compile="0" resource="0" file="Source/usb/libusb/config_xcode.h"/>
-          <FILE id="WqRQrn" name="libusb_platform_wrapper.c" compile="1" resource="0"
+          <FILE id="h42fIV" name="config_msvc.h" compile="0" resource="0" file="Source/usb/libusb/config_msvc.h"/>
+          <FILE id="X4WBQW" name="config_xcode.h" compile="0" resource="0" file="Source/usb/libusb/config_xcode.h"/>
+          <FILE id="kzvLMm" name="libusb_platform_wrapper.c" compile="1" resource="0"
                 file="Source/usb/libusb/libusb_platform_wrapper.c"/>
         </GROUP>
-        <FILE id="BRiO2v" name="UsbCommunicator.h" compile="0" resource="0"
+        <FILE id="ALdZ7e" name="UsbCommunicator.h" compile="0" resource="0"
               file="Source/usb/UsbCommunicator.h"/>
       </GROUP>
       <GROUP id="{5A8A5D31-61E4-521E-A4C9-33EFC4BCB50B}" name="view">
         <GROUP id="{194C3471-7D97-E83A-1F70-E33BD9A68982}" name="context_pane">
-          <FILE id="O6g4dL" name="ContextPane.h" compile="0" resource="0" file="Source/view/context_pane/ContextPane.h"/>
+          <FILE id="LJw64X" name="ContextPane.h" compile="0" resource="0" file="Source/view/context_pane/ContextPane.h"/>
         </GROUP>
         <GROUP id="{1C0B1E44-37BE-AEA4-9E83-34B7F023C255}" name="graph_editor">
-          <FILE id="yMZJ8Z" name="ConnectorDragListener.h" compile="0" resource="0"
+          <FILE id="Jz4aiN" name="ConnectorDragListener.h" compile="0" resource="0"
                 file="Source/view/graph_editor/ConnectorDragListener.h"/>
-          <FILE id="IqHciy" name="GraphEditor.h" compile="0" resource="0" file="Source/view/graph_editor/GraphEditor.h"/>
-          <FILE id="TLe2hb" name="GraphEditorConnector.h" compile="0" resource="0"
+          <FILE id="Ig8dTc" name="GraphEditor.h" compile="0" resource="0" file="Source/view/graph_editor/GraphEditor.h"/>
+          <FILE id="bMSx7D" name="GraphEditorConnector.h" compile="0" resource="0"
                 file="Source/view/graph_editor/GraphEditorConnector.h"/>
-          <FILE id="AfwE2n" name="GraphEditorConnectors.h" compile="0" resource="0"
+          <FILE id="BTtiAu" name="GraphEditorConnectors.h" compile="0" resource="0"
                 file="Source/view/graph_editor/GraphEditorConnectors.h"/>
-          <FILE id="zfweN3" name="GraphEditorPanel.h" compile="0" resource="0"
+          <FILE id="Q3LrPd" name="GraphEditorPanel.h" compile="0" resource="0"
                 file="Source/view/graph_editor/GraphEditorPanel.h"/>
-          <FILE id="Zzfe6N" name="GraphEditorPin.h" compile="0" resource="0"
+          <FILE id="rpcLaC" name="GraphEditorPin.h" compile="0" resource="0"
                 file="Source/view/graph_editor/GraphEditorPin.h"/>
-          <FILE id="pkJnV9" name="GraphEditorProcessor.h" compile="0" resource="0"
+          <FILE id="SgqXHZ" name="GraphEditorProcessor.h" compile="0" resource="0"
                 file="Source/view/graph_editor/GraphEditorProcessor.h"/>
-          <FILE id="AXhSqL" name="GraphEditorProcessorContainer.h" compile="0"
+          <FILE id="NyXDrn" name="GraphEditorProcessorContainer.h" compile="0"
                 resource="0" file="Source/view/graph_editor/GraphEditorProcessorContainer.h"/>
-          <FILE id="wsC1sU" name="GraphEditorProcessors.h" compile="0" resource="0"
+          <FILE id="y55dyn" name="GraphEditorProcessors.h" compile="0" resource="0"
                 file="Source/view/graph_editor/GraphEditorProcessors.h"/>
-          <FILE id="SM7LKA" name="GraphEditorTrack.h" compile="0" resource="0"
+          <FILE id="XgDmJ0" name="GraphEditorTrack.h" compile="0" resource="0"
                 file="Source/view/graph_editor/GraphEditorTrack.h"/>
-          <FILE id="EiRKDT" name="GraphEditorTracks.h" compile="0" resource="0"
+          <FILE id="LYurhz" name="GraphEditorTracks.h" compile="0" resource="0"
                 file="Source/view/graph_editor/GraphEditorTracks.h"/>
         </GROUP>
         <GROUP id="{B6749145-89F6-5012-7425-D2F98CBC29BB}" name="level_meter">
-          <FILE id="cAt3fL" name="LevelMeter.h" compile="0" resource="0" file="Source/view/level_meter/LevelMeter.h"/>
-          <FILE id="B24mT2" name="LevelMeterSource.h" compile="0" resource="0"
+          <FILE id="bPuHNZ" name="LevelMeter.h" compile="0" resource="0" file="Source/view/level_meter/LevelMeter.h"/>
+          <FILE id="TJeUBo" name="LevelMeterSource.h" compile="0" resource="0"
                 file="Source/view/level_meter/LevelMeterSource.h"/>
         </GROUP>
         <GROUP id="{8D4C663D-1C62-273C-05FA-0F9711005B92}" name="processor_editor">
-          <FILE id="Bk0mOj" name="DraggableValueLabel.h" compile="0" resource="0"
+          <FILE id="K034WG" name="DraggableValueLabel.h" compile="0" resource="0"
                 file="Source/view/processor_editor/DraggableValueLabel.h"/>
-          <FILE id="rgGPgI" name="ParameterDisplayComponent.h" compile="0" resource="0"
+          <FILE id="SCCUJY" name="ParameterDisplayComponent.h" compile="0" resource="0"
                 file="Source/view/processor_editor/ParameterDisplayComponent.h"/>
-          <FILE id="n4qCdU" name="ParametersPanel.h" compile="0" resource="0"
+          <FILE id="NTJwCy" name="ParametersPanel.h" compile="0" resource="0"
                 file="Source/view/processor_editor/ParametersPanel.h"/>
-          <FILE id="yE4S4v" name="ProcessorEditor.h" compile="0" resource="0"
+          <FILE id="ryBoB9" name="ProcessorEditor.h" compile="0" resource="0"
                 file="Source/view/processor_editor/ProcessorEditor.h"/>
-          <FILE id="PnGZjE" name="SwitchParameterComponent.h" compile="0" resource="0"
+          <FILE id="EGDAxX" name="SwitchParameterComponent.h" compile="0" resource="0"
                 file="Source/view/processor_editor/SwitchParameterComponent.h"/>
         </GROUP>
         <GROUP id="{4BFD5A80-F04D-43FB-1639-73BBECEB972E}" name="push2">
-          <FILE id="p0e3MT" name="Push2Colours.h" compile="0" resource="0" file="Source/view/push2/Push2Colours.h"/>
-          <FILE id="N1POQZ" name="Push2Component.h" compile="0" resource="0"
+          <FILE id="KmctKk" name="Push2Colours.h" compile="0" resource="0" file="Source/view/push2/Push2Colours.h"/>
+          <FILE id="XGpjEk" name="Push2Component.h" compile="0" resource="0"
                 file="Source/view/push2/Push2Component.h"/>
-          <FILE id="bUDWgj" name="Push2ComponentBase.h" compile="0" resource="0"
+          <FILE id="ua6X8t" name="Push2ComponentBase.h" compile="0" resource="0"
                 file="Source/view/push2/Push2ComponentBase.h"/>
-          <FILE id="ii0aZP" name="Push2Label.h" compile="0" resource="0" file="Source/view/push2/Push2Label.h"/>
-          <FILE id="VrUniP" name="Push2Listener.h" compile="0" resource="0" file="Source/view/push2/Push2Listener.h"/>
-          <FILE id="yfzAqJ" name="Push2MixerView.h" compile="0" resource="0"
+          <FILE id="UZUKTQ" name="Push2Label.h" compile="0" resource="0" file="Source/view/push2/Push2Label.h"/>
+          <FILE id="HHexV5" name="Push2Listener.h" compile="0" resource="0" file="Source/view/push2/Push2Listener.h"/>
+          <FILE id="kxOEJM" name="Push2MixerView.h" compile="0" resource="0"
                 file="Source/view/push2/Push2MixerView.h"/>
-          <FILE id="kRV9Hc" name="Push2NoteModePadLedManager.h" compile="0" resource="0"
+          <FILE id="typq2R" name="Push2NoteModePadLedManager.h" compile="0" resource="0"
                 file="Source/view/push2/Push2NoteModePadLedManager.h"/>
-          <FILE id="TGZI6m" name="Push2ProcessorSelector.h" compile="0" resource="0"
+          <FILE id="Kvd9Pl" name="Push2ProcessorSelector.h" compile="0" resource="0"
                 file="Source/view/push2/Push2ProcessorSelector.h"/>
-          <FILE id="FaFp9D" name="Push2ProcessorView.h" compile="0" resource="0"
+          <FILE id="mJWmLO" name="Push2ProcessorView.h" compile="0" resource="0"
                 file="Source/view/push2/Push2ProcessorView.h"/>
-          <FILE id="VgEOR1" name="Push2TrackManagingView.h" compile="0" resource="0"
+          <FILE id="WvEKys" name="Push2TrackManagingView.h" compile="0" resource="0"
                 file="Source/view/push2/Push2TrackManagingView.h"/>
         </GROUP>
-        <FILE id="KQlLfh" name="BasicWindow.h" compile="0" resource="0" file="Source/view/BasicWindow.h"/>
-        <FILE id="GO8sCT" name="CustomColourIds.h" compile="0" resource="0"
+        <FILE id="ALqRgD" name="BasicWindow.h" compile="0" resource="0" file="Source/view/BasicWindow.h"/>
+        <FILE id="vG8LiJ" name="CustomColourIds.h" compile="0" resource="0"
               file="Source/view/CustomColourIds.h"/>
-        <FILE id="dnC27p" name="PluginWindow.h" compile="0" resource="0" file="Source/view/PluginWindow.h"/>
-        <FILE id="Jeb2T6" name="SelectionEditor.h" compile="0" resource="0"
+        <FILE id="B6fkFe" name="PluginWindow.h" compile="0" resource="0" file="Source/view/PluginWindow.h"/>
+        <FILE id="Hjwa3z" name="SelectionEditor.h" compile="0" resource="0"
               file="Source/view/SelectionEditor.h"/>
-        <FILE id="diZISF" name="UiColours.h" compile="0" resource="0" file="Source/view/UiColours.h"/>
+        <FILE id="A4jZbp" name="UiColours.h" compile="0" resource="0" file="Source/view/UiColours.h"/>
       </GROUP>
-      <FILE id="LVh1Vu" name="ApplicationPropertiesAndCommandManager.h" compile="0"
+      <FILE id="EkxEdE" name="ApplicationPropertiesAndCommandManager.h" compile="0"
             resource="0" file="Source/ApplicationPropertiesAndCommandManager.h"/>
-      <FILE id="dLnOa2" name="config.h" compile="0" resource="0" file="Source/config.h"/>
-      <FILE id="gh5kX9" name="DeviceChangeMonitor.h" compile="0" resource="0"
+      <FILE id="QJ5BJT" name="config.h" compile="0" resource="0" file="Source/config.h"/>
+      <FILE id="KpDxXe" name="DeviceChangeMonitor.h" compile="0" resource="0"
             file="Source/DeviceChangeMonitor.h"/>
-      <FILE id="yXS3EH" name="DeviceManagerUtilities.h" compile="0" resource="0"
+      <FILE id="jYKxfI" name="DeviceManagerUtilities.h" compile="0" resource="0"
             file="Source/DeviceManagerUtilities.h"/>
-      <FILE id="Jt7RHC" name="Main.cpp" compile="1" resource="0" file="Source/Main.cpp"/>
-      <FILE id="XwVEq6" name="PluginManager.h" compile="0" resource="0" file="Source/PluginManager.h"/>
-      <FILE id="l4ZDRH" name="ProcessorGraph.h" compile="0" resource="0"
+      <FILE id="dkMsUj" name="Main.cpp" compile="1" resource="0" file="Source/Main.cpp"/>
+      <FILE id="MbtQZM" name="PluginManager.h" compile="0" resource="0" file="Source/PluginManager.h"/>
+      <FILE id="HNNids" name="ProcessorGraph.h" compile="0" resource="0"
             file="Source/ProcessorGraph.h"/>
-      <FILE id="qIauqT" name="Project.h" compile="0" resource="0" file="Source/Project.h"/>
-      <FILE id="QsZjTQ" name="StatefulAudioProcessorContainer.h" compile="0"
+      <FILE id="lV8l21" name="StatefulAudioProcessorContainer.h" compile="0"
             resource="0" file="Source/StatefulAudioProcessorContainer.h"/>
-      <FILE id="dw5Jf7" name="Utilities.h" compile="0" resource="0" file="Source/Utilities.h"/>
-      <FILE id="aPxInA" name="ValueTreeObjectList.h" compile="0" resource="0"
+      <FILE id="f0fq8f" name="Utilities.h" compile="0" resource="0" file="Source/Utilities.h"/>
+      <FILE id="DgN8jI" name="ValueTreeObjectList.h" compile="0" resource="0"
             file="Source/ValueTreeObjectList.h"/>
     </GROUP>
   </MAINGROUP>
