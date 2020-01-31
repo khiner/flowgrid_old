@@ -1,7 +1,6 @@
 #pragma once
 
 #include <processors/StatefulAudioProcessorWrapper.h>
-#include <ValueTreeItems.h>
 #include <PluginManager.h>
 #include <push2/Push2MidiCommunicator.h>
 #include "push2/Push2DisplayBridge.h"

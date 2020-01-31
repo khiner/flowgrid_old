@@ -1,7 +1,6 @@
 #include <JuceHeader.h>
 #include <Utilities.h>
 #include <state/Identifiers.h>
-#include <ValueTreeItems.h>
 #include <PluginManager.h>
 #include "processor_editor/ProcessorEditor.h"
 #include "view/context_pane/ContextPane.h"

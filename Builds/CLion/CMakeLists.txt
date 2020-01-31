@@ -93,8 +93,7 @@ add_executable (APP
     "../../Source/Project.h"
     "../../Source/StatefulAudioProcessorContainer.h"
     "../../Source/Utilities.h"
-    "../../Source/ValueTreeItems.h"
-    "../../Source/ValueTreeObjectList.h"
+        "../../Source/ValueTreeObjectList.h"
     "../../modules/JUCE/modules/juce_audio_basics/audio_play_head/juce_AudioPlayHead.h"
     "../../modules/JUCE/modules/juce_audio_basics/buffers/juce_AudioChannelSet.cpp"
     "../../modules/JUCE/modules/juce_audio_basics/buffers/juce_AudioChannelSet.h"
@@ -1532,7 +1531,6 @@ set_source_files_properties ("../../Source/ProcessorGraph.h" PROPERTIES HEADER_F
 set_source_files_properties ("../../Source/Project.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/StatefulAudioProcessorContainer.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/Utilities.h" PROPERTIES HEADER_FILE_ONLY TRUE)
-set_source_files_properties ("../../Source/ValueTreeItems.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/ValueTreeObjectList.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../modules/JUCE/modules/juce_audio_basics/audio_play_head/juce_AudioPlayHead.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../modules/JUCE/modules/juce_audio_basics/buffers/juce_AudioChannelSet.cpp" PROPERTIES HEADER_FILE_ONLY TRUE)
