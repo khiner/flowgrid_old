@@ -252,7 +252,6 @@ public:
             // they could be dragged and reconnected like any old processor, but please don't :)
             return;
 
-        undoManager.beginNewTransaction();
         currentlyDraggingProcessor = processor;
         initialDraggingTrackAndSlot = {tracks.indexOf(processor.getParent()), processor[IDs::processorSlot]};
         currentlyDraggingTrackAndSlot = initialDraggingTrackAndSlot;
@@ -264,6 +263,9 @@ public:
     void dragProcessorToPosition(const juce::Point<int> &trackAndSlot) {
         if (!isCurrentlyDraggingProcessor() || trackAndSlot == currentlyDraggingTrackAndSlot)
             return;
+
+        if (currentlyDraggingTrackAndSlot == initialDraggingTrackAndSlot)
+            undoManager.beginNewTransaction();
 
         auto onlyMoveActionInCurrentTransaction = [&]() -> bool {
             Array<const UndoableAction *> actionsFound;
