@@ -554,7 +554,7 @@ private:
 
         undoManager.perform(new CreateProcessorAction(description, track, slot, tracks, input, view, *this));
         selectProcessor(mostRecentlyCreatedProcessor);
-        updateAllDefaultConnections(true);
+        updateAllDefaultConnections();
     }
 
     ValueTree doCreateAndAddMasterTrack() {
