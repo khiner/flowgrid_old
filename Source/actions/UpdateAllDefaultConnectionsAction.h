@@ -9,18 +9,26 @@
 #include <StatefulAudioProcessorContainer.h>
 #include <state/InputState.h>
 
+#include <utility>
+
 struct UpdateAllDefaultConnectionsAction : public CreateOrDeleteConnectionsAction {
     
-    UpdateAllDefaultConnectionsAction(bool makeInvalidDefaultsIntoCustom,
+    UpdateAllDefaultConnectionsAction(bool makeInvalidDefaultsIntoCustom, bool resetDefaultExternalInputConnections,
                                       ConnectionsState &connections, TracksState &tracks, InputState &input,
-                                      StatefulAudioProcessorContainer &audioProcessorContainer)
+                                      StatefulAudioProcessorContainer &audioProcessorContainer,
+                                      ValueTree trackToTreatAsFocused={})
             : CreateOrDeleteConnectionsAction(connections) {
         for (const auto& track : tracks.getState()) {
             for (const auto& processor : track) {
                 coalesceWith(UpdateProcessorDefaultConnectionsAction(processor, makeInvalidDefaultsIntoCustom, connections, audioProcessorContainer));
             }
         }
-        coalesceWith(ResetDefaultExternalInputConnectionsAction(true, connections, tracks, input, audioProcessorContainer));
+        if (resetDefaultExternalInputConnections) {
+            perform();
+            auto resetAction = ResetDefaultExternalInputConnectionsAction(true, connections, tracks, input, audioProcessorContainer, std::move(trackToTreatAsFocused));
+            undo();
+            coalesceWith(resetAction);
+        }
     }
 
 private:

@@ -6,7 +6,7 @@
 #include "view/BasicWindow.h"
 #include "DeviceChangeMonitor.h"
 
-class SoundMachineApplication : public JUCEApplication, public MenuBarModel, private ChangeListener, private Timer, private Utilities::ValueTreePropertyChangeListener {
+class SoundMachineApplication : public JUCEApplication, public MenuBarModel, private ChangeListener, private Utilities::ValueTreePropertyChangeListener {
 public:
     SoundMachineApplication() : project(undoManager, pluginManager, deviceManager),
                                 tracks(project.getTracksManager()),
@@ -29,7 +29,6 @@ public:
         deviceChangeMonitor = std::make_unique<DeviceChangeMonitor>(deviceManager);
 
         setMacMainMenu(this);
-        startTimer(500);
 
         auto &lookAndFeel = LookAndFeel::getDefaultLookAndFeel();
         lookAndFeel.setDefaultSansSerifTypeface(Typeface::createSystemTypefaceFor(
@@ -55,7 +54,7 @@ public:
         player.setProcessor(&processorGraph);
         deviceManager.addAudioCallback(&player);
 
-        project.initialise(processorGraph);
+        project.initialize();
         processorGraph.removeIllegalConnections();
         undoManager.clearUndoHistory();
 
@@ -566,10 +565,6 @@ private:
         if (child.hasType(IDs::PROCESSOR)) {
             applicationCommandListChanged();
         }
-    }
-
-    void timerCallback() override {
-        undoManager.beginNewTransaction();
     }
 };
 

@@ -98,7 +98,7 @@ private:
     }
 
     bool isAvailableForExternalInput(const ValueTree& processor, ConnectionType connectionType, InputState& input) {
-        const auto& incomingConnections = getConnectionsForNode(processor, connectionType, true, false);
+        const auto& incomingConnections = connections.getConnectionsForNode(processor, connectionType, true, false);
         const auto defaultInputNodeId = input.getDefaultInputNodeIdForConnectionType(connectionType);
         for (const auto& incomingConnection : incomingConnections) {
             if (SAPC::getNodeIdForState(incomingConnection.getChildWithName(IDs::SOURCE)) != defaultInputNodeId) {

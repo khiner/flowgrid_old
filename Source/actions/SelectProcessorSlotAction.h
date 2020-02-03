@@ -8,8 +8,6 @@ struct SelectProcessorSlotAction : public SelectAction {
                               TracksState &tracks, ConnectionsState &connections, ViewState &view,
                               InputState &input, StatefulAudioProcessorContainer &audioProcessorContainer)
             : SelectAction(tracks, connections, view, input, audioProcessorContainer) {
-        jassert(track.isValid());
-
         const auto currentSlotMask = tracks.getSlotMask(track);
         if (deselectOthers) {
             for (int i = 0; i < newTrackSelections.size(); i++) {

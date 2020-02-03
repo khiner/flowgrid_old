@@ -19,9 +19,9 @@ struct SelectAction : public UndoableAction {
         this->newFocusedSlot = oldFocusedSlot;
     }
 
-    SelectAction(TracksState &tracks, ConnectionsState &connections, ViewState &view, InputState &input,
-                 StatefulAudioProcessorContainer &audioProcessorContainer,
-                 SelectAction* coalesceLeft, SelectAction* coalesceRight)
+    SelectAction(SelectAction* coalesceLeft, SelectAction* coalesceRight,
+                 TracksState &tracks, ConnectionsState &connections, ViewState &view, InputState &input,
+                 StatefulAudioProcessorContainer &audioProcessorContainer)
             : tracks(tracks), connections(connections), view(view),
               input(input), audioProcessorContainer(audioProcessorContainer),
               oldSelectedSlotsMasks(std::move(coalesceLeft->oldSelectedSlotsMasks)), newSelectedSlotsMasks(std::move(coalesceRight->newSelectedSlotsMasks)),
@@ -43,11 +43,15 @@ struct SelectAction : public UndoableAction {
         }
     }
 
-    void setNewFocusedSlot(juce::Point<int> newFocusedSlot) {
+    void setNewFocusedSlot(juce::Point<int> newFocusedSlot, bool resetDefaultExternalInputs=true) {
         this->newFocusedSlot = newFocusedSlot;
-        if (oldFocusedSlot.x != this->newFocusedSlot.x) {
+        if (resetDefaultExternalInputs && oldFocusedSlot.x != this->newFocusedSlot.x) {
             resetInputsAction = std::make_unique<ResetDefaultExternalInputConnectionsAction>(true, connections, tracks, input, audioProcessorContainer, tracks.getTrack(this->newFocusedSlot.x));
         }
+    }
+
+    ValueTree getNewFocusedTrack() {
+        return tracks.getTrack(newFocusedSlot.x);
     }
 
     bool perform() override {
@@ -83,7 +87,7 @@ struct SelectAction : public UndoableAction {
     UndoableAction* createCoalescedAction(UndoableAction* nextAction) override {
         if (auto* nextSelect = dynamic_cast<SelectAction*>(nextAction)) {
             if (canCoalesceWith(nextSelect)) {
-                return new SelectAction(tracks, connections, view, input, audioProcessorContainer, this, nextSelect);
+                return new SelectAction(this, nextSelect, tracks, connections, view, input, audioProcessorContainer);
             }
         }
 
@@ -107,8 +111,5 @@ protected:
 
     std::unique_ptr<ResetDefaultExternalInputConnectionsAction> resetInputsAction;
 
-private:
     juce::Point<int> oldFocusedSlot, newFocusedSlot;
-
-    JUCE_DECLARE_NON_COPYABLE(SelectAction)
 };

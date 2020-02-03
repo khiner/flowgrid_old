@@ -61,6 +61,28 @@ public:
         return false;
     }
 
+    Array<ValueTree> getConnectionsForNode(const ValueTree& processor, ConnectionType connectionType,
+                                           bool incoming=true, bool outgoing=true,
+                                           bool includeCustom=true, bool includeDefault=true) {
+        Array<ValueTree> nodeConnections;
+        for (const auto& connection : connections) {
+            if ((connection[IDs::isCustomConnection] && !includeCustom) || (!connection[IDs::isCustomConnection] && !includeDefault))
+                continue;
+
+            int processorNodeId = int(StatefulAudioProcessorContainer::getNodeIdForState(processor).uid);
+            const auto &endpointType = connection.getChildWithProperty(IDs::nodeId, processorNodeId);
+            bool directionIsAcceptable = (incoming && endpointType.hasType(IDs::DESTINATION)) || (outgoing && endpointType.hasType(IDs::SOURCE));
+            bool typeIsAcceptable = connectionType == all ||
+                                    (connectionType == audio && int(endpointType[IDs::channel]) != AudioProcessorGraph::midiChannelIndex) ||
+                                    (connectionType == midi && int(endpointType[IDs::channel]) == AudioProcessorGraph::midiChannelIndex);
+
+            if (directionIsAcceptable && typeIsAcceptable)
+                nodeConnections.add(connection);
+        }
+
+        return nodeConnections;
+    }
+
     static AudioProcessorGraph::Connection stateToConnection(const ValueTree& connectionState) {
         const auto& sourceState = connectionState.getChildWithName(IDs::SOURCE);
         const auto& destState = connectionState.getChildWithName(IDs::DESTINATION);
@@ -74,18 +96,6 @@ public:
             }
         }
         return {};
-    }
-
-    // make a snapshot of all the information needed to capture AudioGraph connections and UI positions
-    void makeConnectionsSnapshot() {
-        connectionsSnapshot = connections.createCopy();
-    }
-
-    void restoreConnectionsSnapshot() {
-        connections.removeAllChildren(nullptr);
-        for (const auto& connection : connectionsSnapshot) {
-            connections.addChild(connection, -1, nullptr);
-        }
     }
 
     bool canProcessorDefaultConnectTo(const ValueTree &processor, const ValueTree &otherProcessor, ConnectionType connectionType) const {
@@ -117,6 +127,4 @@ private:
     InputState& input;
     OutputState& output;
     TracksState& tracks;
-
-    ValueTree connectionsSnapshot;
 };

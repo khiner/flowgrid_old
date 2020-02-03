@@ -11,6 +11,15 @@ struct CreateOrDeleteConnectionsAction : public UndoableAction {
             : connections(connections) {
     }
 
+    CreateOrDeleteConnectionsAction(CreateOrDeleteConnectionsAction* coalesceLeft, CreateOrDeleteConnectionsAction* coalesceRight,
+                                    ConnectionsState& connections)
+            : connections(connections) {
+        if (coalesceLeft != nullptr)
+            this->coalesceWith(*coalesceLeft);
+        if (coalesceRight != nullptr)
+            this->coalesceWith(*coalesceRight);
+    }
+
     bool perform() override {
         if (connectionsToCreate.isEmpty() && connectionsToDelete.isEmpty())
             return false;
@@ -39,10 +48,7 @@ struct CreateOrDeleteConnectionsAction : public UndoableAction {
 
     UndoableAction* createCoalescedAction(UndoableAction* nextAction) override {
         if (auto* nextConnect = dynamic_cast<CreateOrDeleteConnectionsAction*>(nextAction)) {
-            auto *coalesced = new CreateOrDeleteConnectionsAction(connections);
-            coalesced->coalesceWith(*this);
-            coalesced->coalesceWith(*nextConnect);
-            return coalesced;
+            return new CreateOrDeleteConnectionsAction(this, nextConnect, connections);
         }
 
         return nullptr;
@@ -57,9 +63,6 @@ struct CreateOrDeleteConnectionsAction : public UndoableAction {
 
     Array<ValueTree> connectionsToCreate;
     Array<ValueTree> connectionsToDelete;
-
-protected:
-    ConnectionsState &connections;
 
     void addConnection(const ValueTree& connection) {
         int deleteIndex = connectionsToDelete.indexOf(connection);
@@ -79,28 +82,9 @@ protected:
         }
     }
 
-    Array<ValueTree> getConnectionsForNode(const ValueTree& processor, ConnectionType connectionType,
-                                           bool incoming=true, bool outgoing=true,
-                                           bool includeCustom=true, bool includeDefault=true) {
-        Array<ValueTree> nodeConnections;
-        for (const auto& connection : connections.getState()) {
-            if ((connection[IDs::isCustomConnection] && !includeCustom) || (!connection[IDs::isCustomConnection] && !includeDefault))
-                continue;
+protected:
+    ConnectionsState &connections;
 
-            int processorNodeId = int(StatefulAudioProcessorContainer::getNodeIdForState(processor).uid);
-            const auto &endpointType = connection.getChildWithProperty(IDs::nodeId, processorNodeId);
-            bool directionIsAcceptable = (incoming && endpointType.hasType(IDs::DESTINATION)) || (outgoing && endpointType.hasType(IDs::SOURCE));
-            bool typeIsAcceptable = connectionType == all ||
-                                    (connectionType == audio && int(endpointType[IDs::channel]) != AudioProcessorGraph::midiChannelIndex) ||
-                                    (connectionType == midi && int(endpointType[IDs::channel]) == AudioProcessorGraph::midiChannelIndex);
-
-            if (directionIsAcceptable && typeIsAcceptable)
-                nodeConnections.add(connection);
-        }
-
-        return nodeConnections;
-    }
 private:
-
     JUCE_DECLARE_NON_COPYABLE(CreateOrDeleteConnectionsAction)
 };

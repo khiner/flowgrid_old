@@ -30,6 +30,8 @@ add_executable (APP
     "../../Source/actions/DeleteSelectedItemsAction.h"
     "../../Source/actions/DeleteTrackAction.h"
     "../../Source/actions/DisconnectProcessorAction.h"
+    "../../Source/actions/InsertProcessorAction.h"
+    "../../Source/actions/MoveSelectedItemsAction.h"
     "../../Source/actions/ResetDefaultExternalInputConnectionsAction.h"
     "../../Source/actions/SelectAction.h"
     "../../Source/actions/SelectProcessorSlotAction.h"
@@ -1491,6 +1493,8 @@ set_source_files_properties ("../../Source/actions/DeleteProcessorAction.h" PROP
 set_source_files_properties ("../../Source/actions/DeleteSelectedItemsAction.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/actions/DeleteTrackAction.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/actions/DisconnectProcessorAction.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/actions/InsertProcessorAction.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/actions/MoveSelectedItemsAction.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/actions/ResetDefaultExternalInputConnectionsAction.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/actions/SelectAction.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/actions/SelectProcessorSlotAction.h" PROPERTIES HEADER_FILE_ONLY TRUE)

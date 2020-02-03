@@ -250,7 +250,7 @@ private:
                                 getCommandManager().invokeDirectly(CommandIDs::deleteSelected, false);
                                 break;
                             case TOGGLE_BYPASS_MENU_ID:
-                                processor->toggleBypass();
+                                project.toggleProcessorBypass(processor->getState());
                                 break;
                             case ENABLE_DEFAULTS_MENU_ID:
                                 project.setDefaultConnectionsAllowed(processor->getState(), true);
@@ -302,7 +302,7 @@ private:
         return isMasterTrack() ? tracks.getTrackWidth() : tracks.getProcessorHeight();
     }
 
-    int findSlotAt(const Point<int> relativePosition) const {
+    int findSlotAt(const juce::Point<int> relativePosition) const {
         int length = isMasterTrack() ? relativePosition.x : relativePosition.y;
         int slot = (length - TracksState::TRACK_LABEL_HEIGHT) / getNonMixerCellSize();
         return jlimit(0, getNumAvailableSlots() - 1, slot);

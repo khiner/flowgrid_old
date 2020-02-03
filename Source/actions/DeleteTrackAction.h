@@ -7,12 +7,13 @@
 #include "JuceHeader.h"
 
 struct DeleteTrackAction : public UndoableAction {
-    DeleteTrackAction(const ValueTree& trackToDelete, TracksState &tracks, ConnectionsState &connections)
+    DeleteTrackAction(const ValueTree& trackToDelete, TracksState &tracks, ConnectionsState &connections,
+                      StatefulAudioProcessorContainer &audioProcessorContainer)
             : trackToDelete(trackToDelete), trackIndex(trackToDelete.getParent().indexOf(trackToDelete)),
               tracks(tracks), connections(connections) {
         while (trackToDelete.getNumChildren() > 0) {
             const ValueTree &processorToDelete = trackToDelete.getChild(trackToDelete.getNumChildren() - 1);
-            deleteProcessorActions.add(new DeleteProcessorAction(processorToDelete, tracks, connections));
+            deleteProcessorActions.add(new DeleteProcessorAction(processorToDelete, tracks, connections, audioProcessorContainer));
         }
     }
 

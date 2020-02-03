@@ -41,14 +41,6 @@ public:
         viewState.setProperty(IDs::gridViewTrackOffset, gridViewTrackOffset, nullptr);
     }
 
-    void addProcessorRow(UndoManager* undoManager) {
-        viewState.setProperty(IDs::numProcessorSlots, getNumTrackProcessorSlots() + 1, undoManager);
-    }
-
-    void addMasterProcessorSlot(UndoManager* undoManager) {
-        viewState.setProperty(IDs::numMasterProcessorSlots, getNumMasterProcessorSlots() + 1, undoManager);
-    }
-
     int getMixerChannelSlotForTrack(const ValueTree& track) const {
         return getNumAvailableSlotsForTrack(track) - 1;
     }

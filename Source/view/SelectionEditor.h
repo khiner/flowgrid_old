@@ -110,7 +110,7 @@ private:
             assignProcessorToEditor(singleProcessorToRefresh);
         } else {
             for (int processorSlot = 0; processorSlot < processorEditors.size(); processorSlot++) {
-                const auto &processor = TracksState::findProcessorAtSlot(focusedTrack, processorSlot);
+                const auto &processor = TracksState::getProcessorAtSlot(focusedTrack, processorSlot);
                 assignProcessorToEditor(processor, processorSlot, onlyUpdateFocusState);
             }
         }

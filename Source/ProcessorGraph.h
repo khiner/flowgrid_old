@@ -43,6 +43,34 @@ public:
         return nodeIdAndProcessorWrapper->second.get();
     }
 
+    void pauseAudioGraphUpdates() override {
+        graphUpdatesArePaused = true;
+    }
+
+    void resumeAudioGraphUpdatesAndApplyDiffSincePause() override {
+        graphUpdatesArePaused = false;
+        for (auto& connection : connectionsSincePause.connectionsToCreate)
+            valueTreeChildAdded(connections.getState(), connection);
+        for (auto& connection : connectionsSincePause.connectionsToDelete)
+            valueTreeChildRemoved(connections.getState(), connection, 0);
+    }
+
+    AudioProcessorGraph::Node* getNodeForId(AudioProcessorGraph::NodeID nodeId) const override {
+        return AudioProcessorGraph::getNodeForId(nodeId);
+    }
+
+    bool removeConnection(const Connection& c) override {
+        return project.removeConnection(c);
+    }
+
+    bool addConnection(const Connection& c) override {
+        return project.addConnection(c);
+    }
+
+    bool disconnectNode(AudioProcessorGraph::NodeID nodeId) override {
+        return project.disconnectProcessor(getProcessorStateForNodeId(nodeId));
+    }
+
     Node* getNodeForState(const ValueTree &processorState) const {
         return AudioProcessorGraph::getNodeForId(getNodeIdForState(processorState));
     }
@@ -71,22 +99,6 @@ public:
         return !wasEmpty;
     }
 
-    AudioProcessorGraph::Node* getNodeForId(AudioProcessorGraph::NodeID nodeId) const override {
-        return AudioProcessorGraph::getNodeForId(nodeId);
-    }
-
-    bool removeConnection(const Connection& c) override {
-        return project.removeConnection(c);
-    }
-
-    bool addConnection(const Connection& c) override {
-        return project.addConnection(c);
-    }
-
-    bool disconnectNode(AudioProcessorGraph::NodeID nodeId) override {
-        return project.disconnectProcessor(getProcessorStateForNodeId(nodeId));
-    }
-
     UndoManager &undoManager;
 private:
     std::map<NodeID, std::unique_ptr<StatefulAudioProcessorWrapper> > processorWrapperForNodeId;
@@ -101,7 +113,9 @@ private:
     
     OwnedArray<PluginWindow> activePluginWindows;
 
-    bool isMoving { false };
+    bool graphUpdatesArePaused { false };
+
+    CreateOrDeleteConnectionsAction connectionsSincePause { connections };
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ProcessorGraph)
 
@@ -164,6 +178,12 @@ private:
         processorWrapperForNodeId.erase(nodeId);
         nodes.removeObject(AudioProcessorGraph::getNodeForId(nodeId));
         topologyChanged();
+
+        for (int i = activePluginWindows.size(); --i >= 0;) {
+            if (!nodes.contains(activePluginWindows.getUnchecked(i)->node)) {
+                activePluginWindows.remove(i);
+            }
+        }
     }
 
     void recursivelyAddProcessors(const ValueTree &state) {
@@ -198,6 +218,16 @@ private:
         }
     }
 
+    void onProcessorCreated(const ValueTree& processor) override {
+        if (getProcessorWrapperForState(processor) == nullptr) {
+            addProcessor(processor);
+        }
+    }
+
+    void onProcessorDestroyed(const ValueTree& processor) override {
+        removeProcessor(processor);
+    }
+
     void valueTreePropertyChanged(ValueTree& tree, const Identifier& i) override {
         if (tree.hasType(IDs::PROCESSOR)) {
             if (i == IDs::bypassed) {
@@ -209,17 +239,14 @@ private:
     }
 
     void valueTreeChildAdded(ValueTree& parent, ValueTree& child) override {
-        if (child.hasType(IDs::PROCESSOR)) {
-            if (!project.isCurrentlyDraggingProcessor()) {
-                if (getProcessorWrapperForState(child) == nullptr) {
-                    addProcessor(child);
-                }
-            }
-        } else if (child.hasType(IDs::CONNECTION)) {
-            if (!project.isCurrentlyDraggingProcessor()) { // TODO use `...ExcludingListener(graph)` instead
+        if (child.hasType(IDs::CONNECTION)) {
+            if (graphUpdatesArePaused) {
+                connectionsSincePause.addConnection(child);
+            } else {
                 const ValueTree &sourceState = child.getChildWithName(IDs::SOURCE);
                 const ValueTree &destState = child.getChildWithName(IDs::DESTINATION);
 
+                // TODO just use AudioProcessorGraph::addConnection(connections.stateToConnection(child) ?
                 if (auto *source = getNodeForState(sourceState)) {
                     if (auto *dest = getNodeForState(destState)) {
                         int destChannel = destState[IDs::channel];
@@ -232,7 +259,7 @@ private:
                 }
             }
         } else if (child.hasType(IDs::TRACK)) {
-            recursivelyAddProcessors(child);
+            recursivelyAddProcessors(child); // TODO might be a problem for moving tracks
         } else if (child.hasType(IDs::CHANNEL)) {
             updateIoChannelEnabled(parent, child, true);
             // TODO shouldn't affect state in state listeners - trace back to specific user actions and do this in the action method
@@ -242,19 +269,14 @@ private:
 
     void valueTreeChildRemoved(ValueTree& parent, ValueTree& child, int indexFromWhichChildWasRemoved) override {
         if (child.hasType(IDs::PROCESSOR)) {
-            if (!isMoving) {
-                removeProcessor(child);
-            }
-            for (int i = activePluginWindows.size(); --i >= 0;) {
-                if (!nodes.contains(activePluginWindows.getUnchecked(i)->node)) {
-                    activePluginWindows.remove(i);
-                }
-            }
         } else if (child.hasType(IDs::CONNECTION)) {
-            if (!project.isCurrentlyDraggingProcessor()) {
+            if (graphUpdatesArePaused) {
+                connectionsSincePause.removeConnection(child);
+            } else {
                 const ValueTree &sourceState = child.getChildWithName(IDs::SOURCE);
                 const ValueTree &destState = child.getChildWithName(IDs::DESTINATION);
 
+                // TODO just use AudioProcessorGraph::removeConnection(connections.stateToConnection(child) ?
                 if (auto *source = getNodeForState(sourceState)) {
                     if (auto *dest = getNodeForState(destState)) {
                         int destChannel = destState[IDs::channel];
@@ -272,21 +294,11 @@ private:
         }
     }
 
-    void valueTreeChildWillBeMovedToNewParent(ValueTree child, ValueTree& oldParent, int oldIndex, ValueTree& newParent, int newIndex) override {
-        if (child.hasType(IDs::PROCESSOR))
-            isMoving = true;
-    }
-
-    void valueTreeChildHasMovedToNewParent(ValueTree child, ValueTree& oldParent, int oldIndex, ValueTree& newParent, int newIndex) override {
-        if (child.hasType(IDs::PROCESSOR))
-            isMoving = false;
-    }
-
     void timerCallback() override {
         bool anythingUpdated = false;
 
-        for (auto& nodeIdAndprocessorWrapper : processorWrapperForNodeId) {
-            if (nodeIdAndprocessorWrapper.second->flushParameterValuesToValueTree())
+        for (auto& nodeIdAndProcessorWrapper : processorWrapperForNodeId) {
+            if (nodeIdAndProcessorWrapper.second->flushParameterValuesToValueTree())
                 anythingUpdated = true;
         }
 

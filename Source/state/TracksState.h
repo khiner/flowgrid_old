@@ -84,23 +84,23 @@ public:
         return getMixerChannelProcessorForTrack(getFocusedTrack());
     }
 
-    bool isMixerChannelProcessor(const ValueTree& processor) const {
-        return processor[IDs::name] == MixerChannelProcessor::name();
-    }
-
-    const bool focusedTrackHasMixerChannel() const {
+    bool focusedTrackHasMixerChannel() const {
         return getMixerChannelProcessorForFocusedTrack().isValid();
     }
 
-    inline int getNumNonMasterTracks() const {
+    int getNumNonMasterTracks() const {
         return getMasterTrack().isValid() ? tracks.getNumChildren() - 1 : tracks.getNumChildren();
     }
 
-    static inline bool isMasterTrack(const ValueTree& track) {
+    static bool isMasterTrack(const ValueTree& track) {
         return track.hasProperty(IDs::isMasterTrack);
     }
 
-    inline bool isTrackSelected(const ValueTree& track) const {
+    static bool isMixerChannelProcessor(const ValueTree& processor) {
+        return processor[IDs::name] == MixerChannelProcessor::name();
+    }
+
+    bool isTrackSelected(const ValueTree& track) const {
         if (track[IDs::selected])
             return true;
         return trackHasAnySlotSelected(track);
@@ -114,29 +114,29 @@ public:
         return {};
     }
 
-    inline int findSelectedSlotForTrack(const ValueTree& track) const {
+    int firstSelectedSlotForTrack(const ValueTree& track) const {
         return getSlotMask(track).getHighestBit();
     }
 
     // TODO many (if not all) of the usages of this method should be replaced
     // with checking for track _focus_
-    inline bool trackHasAnySlotSelected(const ValueTree &track) const {
-        return findSelectedSlotForTrack(track) != -1;
+    bool trackHasAnySlotSelected(const ValueTree &track) const {
+        return firstSelectedSlotForTrack(track) != -1;
     }
 
-    inline const Colour getTrackColour(const ValueTree& track) const {
+    const Colour getTrackColour(const ValueTree& track) const {
         return Colour::fromString(track[IDs::colour].toString());
     }
 
     ValueTree getFocusedTrack() const {
-        Point<int> trackAndSlot = view.getFocusedTrackAndSlot();
+        juce::Point<int> trackAndSlot = view.getFocusedTrackAndSlot();
         return getTrack(trackAndSlot.x);
     }
 
     ValueTree getFocusedProcessor() const {
-        Point<int> trackAndSlot = view.getFocusedTrackAndSlot();
+        juce::Point<int> trackAndSlot = view.getFocusedTrackAndSlot();
         const ValueTree& track = getTrack(trackAndSlot.x);
-        return findProcessorAtSlot(track, trackAndSlot.y);
+        return getProcessorAtSlot(track, trackAndSlot.y);
     }
 
     bool isProcessorSelected(const ValueTree& processor) const {
@@ -171,7 +171,7 @@ public:
         return selectedSlotsMask;
     }
 
-    static ValueTree findProcessorAtSlot(const ValueTree& track, int slot) {
+    static ValueTree getProcessorAtSlot(const ValueTree& track, int slot) {
         return track.getChildWithProperty(IDs::processorSlot, slot);
     }
 
@@ -179,75 +179,13 @@ public:
         return getSlotMask(track)[slot];
     }
 
-    void setProcessorSlot(const ValueTree& track, ValueTree& processor, int newSlot, UndoManager* undoManager) {
-        if (!processor.isValid())
-            return;
-
-        if (newSlot >= getMixerChannelSlotForTrack(track) && !isMixerChannelProcessor(processor)) {
-            if (isMasterTrack(track)) {
-                addMasterProcessorSlot();
-            } else {
-                addProcessorRow();
-            }
-            newSlot = getMixerChannelSlotForTrack(track) - 1;
+    int getInsertIndexForSlot(const ValueTree &track, int slot) {
+        for (const auto& processor : track) {
+            int otherSlot = processor[IDs::processorSlot];
+            if (otherSlot >= slot)
+                return track.indexOf(processor);
         }
-        processor.setProperty(IDs::processorSlot, newSlot, undoManager);
-    }
-
-
-    void makeSlotsValid(const ValueTree& parent, UndoManager* undoManager) {
-        std::vector<int> slots;
-        for (const ValueTree& child : parent) {
-            if (child.hasType(IDs::PROCESSOR)) {
-                slots.push_back(int(child[IDs::processorSlot]));
-            }
-        }
-        sort(slots.begin(), slots.end());
-        for (int i = 1; i < slots.size(); i++) {
-            while (slots[i] <= slots[i - 1]) {
-                slots[i] += 1;
-            }
-        }
-
-        auto iterator = slots.begin();
-        for (ValueTree child : parent) {
-            if (child.hasType(IDs::PROCESSOR)) {
-                int newSlot = *(iterator++);
-                setProcessorSlot(parent, child, newSlot, undoManager);
-            }
-        }
-    }
-
-    int getParentIndexForProcessor(const ValueTree &parent, const ValueTree &processorState, UndoManager* undoManager) {
-        auto slot = int(processorState[IDs::processorSlot]);
-        for (ValueTree otherProcessorState : parent) {
-            if (processorState == otherProcessorState)
-                continue;
-            if (otherProcessorState.hasType(IDs::PROCESSOR)) {
-                auto otherSlot = int(otherProcessorState[IDs::processorSlot]);
-                if (otherSlot == slot) {
-                    if (otherProcessorState.getParent() == processorState.getParent()) {
-                        // moving within same parent - need to resolve the "tie" in a way that guarantees the child order changes.
-                        int currentIndex = parent.indexOf(processorState);
-                        int currentOtherIndex = parent.indexOf(otherProcessorState);
-                        if (currentIndex < currentOtherIndex) {
-                            setProcessorSlot(parent, otherProcessorState, otherSlot - 1, undoManager);
-                            return currentIndex + 2;
-                        } else {
-                            setProcessorSlot(parent, otherProcessorState, otherSlot + 1, undoManager);
-                            return currentIndex - 1;
-                        }
-                    } else {
-                        return parent.indexOf(otherProcessorState);
-                    }
-                } else if (otherSlot > slot) {
-                    return parent.indexOf(otherProcessorState);
-                }
-            }
-        }
-
-        // TODO in this and other places, we assume processors are the only type of track child.
-        return parent.getNumChildren();
+        return track.getNumChildren();
     }
 
     // TODO needs update for multi-selection
@@ -261,27 +199,6 @@ public:
 
     UndoManager* getUndoManager() {
         return &undoManager;
-    }
-
-    void makeConnectionsSnapshot() {
-        slotForNodeIdSnapshot.clear();
-        for (const auto& track : tracks) {
-            for (const auto& child : track) {
-                if (child.hasType(IDs::PROCESSOR)) {
-                    slotForNodeIdSnapshot.insert(std::__1::pair<int, int>(child[IDs::nodeId], child[IDs::processorSlot]));
-                }
-            }
-        }
-    }
-
-    void restoreConnectionsSnapshot() {
-        for (const auto& track : tracks) {
-            for (auto child : track) {
-                if (child.hasType(IDs::PROCESSOR)) {
-                    setProcessorSlot(track, child, slotForNodeIdSnapshot.at(int(child[IDs::nodeId])), nullptr);
-                }
-            }
-        }
     }
 
     void saveProcessorStateInformation() const {
@@ -353,27 +270,6 @@ private:
 
     int trackWidth {0}, processorHeight {0};
 
-    void addProcessorRow() {
-        view.addProcessorRow(&undoManager);
-        for (const auto& track : tracks) {
-            if (isMasterTrack(track))
-                continue;
-            auto mixerChannelProcessor = getMixerChannelProcessorForTrack(track);
-            if (mixerChannelProcessor.isValid()) {
-                setProcessorSlot(track, mixerChannelProcessor, getMixerChannelSlotForTrack(track), &undoManager);
-            }
-        }
-    }
-
-    void addMasterProcessorSlot() {
-        view.addMasterProcessorSlot(&undoManager);
-        const auto& masterTrack = getMasterTrack();
-        auto mixerChannelProcessor = getMixerChannelProcessorForTrack(masterTrack);
-        if (mixerChannelProcessor.isValid()) {
-            setProcessorSlot(masterTrack, mixerChannelProcessor, getMixerChannelSlotForTrack(masterTrack), &undoManager);
-        }
-    }
-
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {
         if (tree.hasType(IDs::TRACK) && i == IDs::selected) {
             if (tree[i]) {
@@ -383,7 +279,7 @@ private:
         } else if (i == IDs::selectedSlotsMask) {
             if (!isMasterTrack(tree))
                 view.updateViewTrackOffsetToInclude(indexOf(tree), getNumNonMasterTracks());
-            auto slot = findSelectedSlotForTrack(tree);
+            auto slot = firstSelectedSlotForTrack(tree);
             if (slot != -1)
                 view.updateViewSlotOffsetToInclude(slot, isMasterTrack(tree));
         }
