@@ -8,8 +8,8 @@
 // (The new processor always "wins" by keeping its given slot.)
 // Doesn't take care of any select actions! (Caller is responsible for that.)
 struct InsertProcessorAction : UndoableAction {
-    InsertProcessorAction(ValueTree &toTrack, const ValueTree& processor, int toSlot,
-                          TracksState &tracks, ViewState &view)
+    InsertProcessorAction(const ValueTree &processor, ValueTree &toTrack, int toSlot, TracksState &tracks,
+                          ViewState &view)
             : addOrMoveProcessorAction(processor, toTrack, toSlot, tracks),
               makeSlotsValidAction(createMakeSlotsValidAction(toTrack, tracks, view)) {
         // cleanup - yeah it's ugly but avoids need for some copy/move madness in createMakeSlotsValidAction

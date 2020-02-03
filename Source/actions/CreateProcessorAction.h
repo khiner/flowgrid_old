@@ -56,7 +56,7 @@ private:
             }
         }
 
-        return {parentTrack, processorToCreate, slot, tracks, view};
+        return {processorToCreate, parentTrack, slot, tracks, view};
     }
 
     JUCE_DECLARE_NON_COPYABLE(CreateProcessorAction)

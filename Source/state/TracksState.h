@@ -93,7 +93,7 @@ public:
     }
 
     static bool isMasterTrack(const ValueTree& track) {
-        return track.hasProperty(IDs::isMasterTrack);
+        return track[IDs::isMasterTrack];
     }
 
     static bool isMixerChannelProcessor(const ValueTree& processor) {

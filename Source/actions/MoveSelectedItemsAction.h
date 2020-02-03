@@ -129,7 +129,7 @@ private:
             auto addInsertActionsForProcessor = [&](const ValueTree &processor) {
                 if (tracks.isProcessorSelected(processor)) {
                     auto toSlot = int(processor[IDs::processorSlot]) + gridDelta.y;
-                    insertActions.add(new InsertProcessorAction(toTrack, processor, toSlot, tracks, view));
+                    insertActions.add(new InsertProcessorAction(processor, toTrack, toSlot, tracks, view));
                     // Need to actually _do_ the move for each track, since this could affect the results of
                     // a later track's slot moves. i.e. if gridDelta.x == -1, then we need to move selected processors
                     // out of this track before advancing to the next track (at trackIndex + 1).
