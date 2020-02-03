@@ -262,17 +262,17 @@ public:
     }
 
     void dragProcessorToPosition(const juce::Point<int> &trackAndSlot) {
-        if (!isCurrentlyDraggingProcessor() || trackAndSlot == initialDraggingTrackAndSlot)
+        if (!isCurrentlyDraggingProcessor() || trackAndSlot == currentlyDraggingTrackAndSlot)
             return;
 
-        auto onlyMoveActionInCurrentTransaction = [](const UndoManager &undoManager) -> bool {
+        auto onlyMoveActionInCurrentTransaction = [&]() -> bool {
             Array<const UndoableAction *> actionsFound;
             undoManager.getActionsInCurrentTransaction(actionsFound);
             return actionsFound.size() == 1 && (dynamic_cast<const MoveSelectedItemsAction *>(actionsFound.getUnchecked(0)) != nullptr);
         };
 
         if (undoManager.getNumActionsInCurrentTransaction() > 0) {
-            if (onlyMoveActionInCurrentTransaction(undoManager)) {
+            if (onlyMoveActionInCurrentTransaction()) {
                 undoManager.undoCurrentTransactionOnly();
             } else {
                 undoManager.beginNewTransaction();
@@ -280,7 +280,8 @@ public:
             }
         }
 
-        if (undoManager.perform(new MoveSelectedItemsAction(trackAndSlot - initialDraggingTrackAndSlot, isShiftHeld(),
+        if (trackAndSlot == initialDraggingTrackAndSlot ||
+            undoManager.perform(new MoveSelectedItemsAction(trackAndSlot - initialDraggingTrackAndSlot, isShiftHeld(),
                                                             tracks, connections, view, input, *this))) {
             currentlyDraggingTrackAndSlot = trackAndSlot;
         }
