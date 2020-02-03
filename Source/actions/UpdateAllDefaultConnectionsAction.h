@@ -18,11 +18,10 @@ struct UpdateAllDefaultConnectionsAction : public CreateOrDeleteConnectionsActio
                                       StatefulAudioProcessorContainer &audioProcessorContainer,
                                       ValueTree trackToTreatAsFocused={})
             : CreateOrDeleteConnectionsAction(connections) {
-        for (const auto& track : tracks.getState()) {
-            for (const auto& processor : track) {
+        for (const auto& track : tracks.getState())
+            for (const auto& processor : track)
                 coalesceWith(UpdateProcessorDefaultConnectionsAction(processor, makeInvalidDefaultsIntoCustom, connections, audioProcessorContainer));
-            }
-        }
+
         if (resetDefaultExternalInputConnections) {
             perform();
             auto resetAction = ResetDefaultExternalInputConnectionsAction(true, connections, tracks, input, audioProcessorContainer, std::move(trackToTreatAsFocused));

@@ -59,11 +59,9 @@ private:
     }
 
     ValueTree findTopmostEffectProcessor(const ValueTree& track, ConnectionType connectionType) {
-        for (const auto& processor : track) {
-            if (connections.isProcessorAnEffect(processor, connectionType)) {
+        for (const auto& processor : track)
+            if (connections.isProcessorAnEffect(processor, connectionType))
                 return processor;
-            }
-        }
         return {};
     }
 
@@ -104,11 +102,10 @@ private:
     bool isAvailableForExternalInput(const ValueTree& processor, ConnectionType connectionType, InputState& input) {
         const auto& incomingConnections = connections.getConnectionsForNode(processor, connectionType, true, false);
         const auto defaultInputNodeId = input.getDefaultInputNodeIdForConnectionType(connectionType);
-        for (const auto& incomingConnection : incomingConnections) {
-            if (SAPC::getNodeIdForState(incomingConnection.getChildWithName(IDs::SOURCE)) != defaultInputNodeId) {
+        for (const auto& incomingConnection : incomingConnections)
+            if (SAPC::getNodeIdForState(incomingConnection.getChildWithName(IDs::SOURCE)) != defaultInputNodeId)
                 return false;
-            }
-        }
+
         return true;
     }
 

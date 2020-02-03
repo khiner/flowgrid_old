@@ -43,7 +43,7 @@ private:
 
     InsertProcessorAction createInsertAction(const PluginDescription &description, ValueTree &parentTrack,
                                              TracksState &tracks, ViewState &view, int slot) {
-        if (tracks.isMixerChannelProcessor(processorToCreate)) {
+        if (TracksState::isMixerChannelProcessor(processorToCreate)) {
             slot = tracks.getMixerChannelSlotForTrack(parentTrack);
         } else if (slot == -1) {
             if (description.numInputChannels == 0) {
