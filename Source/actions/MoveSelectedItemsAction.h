@@ -138,12 +138,13 @@ private:
                 }
             };
 
+            auto selectedProcessors = TracksState::getSelectedProcessorsForTrack(fromTrack);
             if (gridDelta.y <= 0) {
-                for (int processorIndex = 0; processorIndex < fromTrack.getNumChildren(); processorIndex++)
-                    addInsertActionsForProcessor(fromTrack.getChild(processorIndex));
+                for (int processorIndex = 0; processorIndex < selectedProcessors.size(); processorIndex++)
+                    addInsertActionsForProcessor(selectedProcessors.getUnchecked(processorIndex));
             } else {
-                for (int processorIndex = fromTrack.getNumChildren() - 1; processorIndex >= 0; processorIndex--)
-                    addInsertActionsForProcessor(fromTrack.getChild(processorIndex));
+                for (int processorIndex = selectedProcessors.size() - 1; processorIndex >= 0; processorIndex--)
+                    addInsertActionsForProcessor(selectedProcessors.getUnchecked(processorIndex));
             }
         };
 

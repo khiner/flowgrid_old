@@ -165,7 +165,7 @@ public:
         return trackSelections;
     }
 
-    BigInteger getSlotMask(const ValueTree& track) const {
+    static BigInteger getSlotMask(const ValueTree& track) {
         BigInteger selectedSlotsMask;
         selectedSlotsMask.parseString(track[IDs::selectedSlotsMask].toString(), 2);
         return selectedSlotsMask;
@@ -173,6 +173,17 @@ public:
 
     static ValueTree getProcessorAtSlot(const ValueTree& track, int slot) {
         return track.getChildWithProperty(IDs::processorSlot, slot);
+    }
+
+    static Array<ValueTree> getSelectedProcessorsForTrack(const ValueTree& track) {
+        Array<ValueTree> selectedProcessors;
+        auto selectedSlotsMask = getSlotMask(track);
+        for (const auto& processor : track) {
+            int slot = processor[IDs::processorSlot];
+            if (selectedSlotsMask[slot])
+                selectedProcessors.add(processor);
+        }
+        return selectedProcessors;
     }
 
     bool isSlotSelected(const ValueTree& track, int slot) const {
