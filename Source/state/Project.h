@@ -254,7 +254,7 @@ public:
 
         undoManager.beginNewTransaction();
         currentlyDraggingProcessor = processor;
-        initialDraggingTrackAndSlot = {tracks.indexOf(currentlyDraggingProcessor.getParent()), currentlyDraggingProcessor[IDs::processorSlot]};
+        initialDraggingTrackAndSlot = {tracks.indexOf(processor.getParent()), processor[IDs::processorSlot]};
         currentlyDraggingTrackAndSlot = initialDraggingTrackAndSlot;
 
         // During drag actions, everything _except the audio graph_ is updated as a preview
@@ -268,7 +268,7 @@ public:
         auto onlyMoveActionInCurrentTransaction = [&]() -> bool {
             Array<const UndoableAction *> actionsFound;
             undoManager.getActionsInCurrentTransaction(actionsFound);
-            return actionsFound.size() == 1 && (dynamic_cast<const MoveSelectedItemsAction *>(actionsFound.getUnchecked(0)) != nullptr);
+            return actionsFound.size() == 1 && dynamic_cast<const MoveSelectedItemsAction *>(actionsFound.getUnchecked(0)) != nullptr;
         };
 
         if (undoManager.getNumActionsInCurrentTransaction() > 0) {

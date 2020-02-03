@@ -268,8 +268,7 @@ private:
     }
 
     void valueTreeChildRemoved(ValueTree& parent, ValueTree& child, int indexFromWhichChildWasRemoved) override {
-        if (child.hasType(IDs::PROCESSOR)) {
-        } else if (child.hasType(IDs::CONNECTION)) {
+        if (child.hasType(IDs::CONNECTION)) {
             if (graphUpdatesArePaused) {
                 connectionsSincePause.removeConnection(child);
             } else {
