@@ -412,6 +412,7 @@ public:
         doCreateAndAddProcessor(SineBank::getPluginDescription(), mostRecentlyCreatedTrack, 0);
         resetDefaultExternalInputs(); // Select action only does this if the focused track changes, so we just need to do this once ourselves
         undoManager.clearUndoHistory();
+        sendChangeMessage();
     }
 
     void addPluginsToMenu(PopupMenu& menu, const ValueTree& track) const {
