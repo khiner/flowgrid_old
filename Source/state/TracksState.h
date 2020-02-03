@@ -179,11 +179,13 @@ public:
         return getSlotMask(track)[slot];
     }
 
-    int getInsertIndexForSlot(const ValueTree &track, int slot) {
-        for (const auto& processor : track) {
-            int otherSlot = processor[IDs::processorSlot];
-            if (otherSlot >= slot)
-                return track.indexOf(processor);
+    static int getInsertIndexForProcessor(const ValueTree &track, const ValueTree& processor, int insertSlot) {
+        for (const auto& otherProcessor : track) {
+            int otherSlot = otherProcessor[IDs::processorSlot];
+            if (otherSlot >= insertSlot && otherProcessor != processor)
+                return track == processor.getParent() ?
+                       std::max(0, track.indexOf(otherProcessor) - 1) :
+                       track.indexOf(otherProcessor);
         }
         return track.getNumChildren();
     }

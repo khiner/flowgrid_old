@@ -8,8 +8,8 @@
 // (The new processor always "wins" by keeping its given slot.)
 // Doesn't take care of any select actions! (Caller is responsible for that.)
 struct InsertProcessorAction : UndoableAction {
-    InsertProcessorAction(const ValueTree &processor, ValueTree &toTrack, int toSlot, TracksState &tracks,
-                          ViewState &view)
+    InsertProcessorAction(const ValueTree &processor, ValueTree &toTrack, int toSlot,
+                          TracksState &tracks, ViewState &view)
             : addOrMoveProcessorAction(processor, toTrack, toSlot, tracks),
               makeSlotsValidAction(createMakeSlotsValidAction(toTrack, tracks, view)) {
         // cleanup - yeah it's ugly but avoids need for some copy/move madness in createMakeSlotsValidAction
@@ -37,13 +37,15 @@ private:
     struct AddOrMoveProcessorAction : public UndoableAction {
         AddOrMoveProcessorAction(const ValueTree& processor, ValueTree &toTrack, int newSlot, TracksState &tracks)
                 : processor(processor), oldTrack(processor.getParent()), newTrack(toTrack),
-                  oldIndex(oldTrack.indexOf(processor)), newIndex(tracks.getInsertIndexForSlot(newTrack, newSlot)),
+                  oldIndex(oldTrack.indexOf(processor)), newIndex(TracksState::getInsertIndexForProcessor(newTrack, processor, newSlot)),
                   oldSlot(processor[IDs::processorSlot]), newSlot(newSlot) {}
 
         bool perform() override {
             processor.setProperty(IDs::processorSlot, newSlot, nullptr);
             if (!oldTrack.isValid()) { // only inserting, not moving from another track
                 newTrack.addChild(processor, newIndex, nullptr);
+            } else if (oldTrack == newTrack) {
+                newTrack.moveChild(oldIndex, newIndex, nullptr);
             } else {
                 newTrack.moveChildFromParent(oldTrack, oldIndex, newIndex, nullptr);
             }
@@ -55,6 +57,8 @@ private:
             processor.setProperty(IDs::processorSlot, oldSlot, nullptr);
             if (!oldTrack.isValid()) { // only inserting, not moving from another track
                 newTrack.removeChild(processor, nullptr);
+            } else if (oldTrack == newTrack) {
+                oldTrack.moveChild(newIndex, oldIndex, nullptr);
             } else {
                 oldTrack.moveChildFromParent(newTrack, newIndex, oldIndex, nullptr);
             }
