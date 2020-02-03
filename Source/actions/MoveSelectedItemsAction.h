@@ -10,7 +10,7 @@ struct MoveSelectedItemsAction : UndoableAction {
                             InputState &input, StatefulAudioProcessorContainer &audioProcessorContainer)
             : tracks(tracks), connections(connections), view(view), input(input),
               audioProcessorContainer(audioProcessorContainer),
-              gridDelta(gridDelta),
+              gridDelta(limitGridDelta(gridDelta)),
               insertActions(createInsertActions()),
               updateSelectionAction(createUpdateSelectionAction()),
               updateConnectionsAction(createUpdateConnectionsAction(makeInvalidDefaultsIntoCustom)) {
@@ -46,6 +46,23 @@ struct MoveSelectedItemsAction : UndoableAction {
     }
 
 private:
+
+    juce::Point<int> limitGridDelta(juce::Point<int> gridDelta) {
+        int minSelectedSlot = INT_MAX, maxSelectedSlot = INT_MIN;
+
+        for (const auto& selectedItem : tracks.findAllSelectedItems()) {
+            if (selectedItem.hasType(IDs::PROCESSOR)) {
+                int slot = selectedItem[IDs::processorSlot];
+                if (slot < minSelectedSlot)
+                    minSelectedSlot = slot;
+                if (slot > maxSelectedSlot)
+                    maxSelectedSlot = slot;
+            }
+        }
+        int minAllowedSlot = 0;
+        int maxAllowedSlot = view.getNumTrackProcessorSlots() - 2; // - 1 for reserved mixer slot, - 1 for 0-based index
+        return {gridDelta.x, std::clamp(gridDelta.y, minAllowedSlot - minSelectedSlot, maxAllowedSlot - maxSelectedSlot)};
+    }
 
     struct MoveSelectionsAction : public SelectAction {
         MoveSelectionsAction(juce::Point<int> gridDelta,
@@ -96,11 +113,10 @@ private:
     SelectAction updateSelectionAction;
     UpdateAllDefaultConnectionsAction updateConnectionsAction;
 
-    // TODO limit to borders & mixer channel slots
-    // Side effect: this actually does the processor/track moves in preparation for
+    // As a side effect, this method actually does the processor/track moves in preparation for
     // `createUpdateConnectionsAction`, which should be called immediately after this.
-    // This avoids an unnecessary `undo` on all insert actions here, followed by
-    // a `perform` in `createUpdateConnectionsAction` to find where new default connections will be.
+    // This avoids a redundant `undo` on all insert actions here, as well as the subsequent
+    // `perform` that would be needed in `createUpdateConnectionsAction` to find the new default connections.
     OwnedArray<InsertProcessorAction> createInsertActions() {
         OwnedArray<InsertProcessorAction> insertActions;
         if (gridDelta.x == 0 && gridDelta.y == 0)
