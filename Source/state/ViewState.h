@@ -150,11 +150,6 @@ public:
             focusOnGridPane();
     }
 
-    void addFocusStateToUndoStack(UndoManager *undoManager) {
-        resetVarAllowingNoopUndo(viewState, IDs::focusedTrackIndex, undoManager);
-        resetVarAllowingNoopUndo(viewState, IDs::focusedProcessorSlot, undoManager);
-    }
-
     const String sessionControlMode = "session", noteControlMode = "note";
     const String gridPaneName = "grid", editorPaneName = "editor";
 
