@@ -303,6 +303,6 @@ private:
                 anythingUpdated = true;
         }
 
-        startTimer(anythingUpdated ? 1000 / 50 : jlimit(50, 500, getTimerInterval() + 20));
+        startTimer(anythingUpdated ? 1000 / 50 : std::clamp(getTimerInterval() + 20, 50, 500));
     }
 };

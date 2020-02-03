@@ -100,7 +100,7 @@ public:
 
     void encoderRotated(int encoderIndex, float changeAmount) override {
         if (auto *parameter = parametersPanel->getParameterOnCurrentPageAt(encoderIndex)) {
-            parameter->setValue(jlimit(0.0f, 1.0f, parameter->getValue() + changeAmount));
+            parameter->setValue(std::clamp(parameter->getValue() + changeAmount, 0.0f, 1.0f));
         }
     }
 

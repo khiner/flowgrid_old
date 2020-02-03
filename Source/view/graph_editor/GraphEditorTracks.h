@@ -135,7 +135,7 @@ public:
                 if (track->getState() == project.getCurrentlyDraggingTrack())
                     continue;
                 if (pos.x < track->getX() + track->getWidth() / 2) {
-                    int newIndex = jlimit(0, objects.size() - 1, objects.indexOf(track));
+                    int newIndex = std::clamp(objects.indexOf(track), 0, objects.size() - 1);
                     if (currentIndex != newIndex) {
                         if (currentIndex < newIndex) {
                             --newIndex;

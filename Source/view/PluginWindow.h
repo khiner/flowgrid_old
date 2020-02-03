@@ -123,7 +123,7 @@ private:
 
             panel.addProperties(programs);
 
-            setSize(400, jlimit(25, 400, totalHeight));
+            setSize(400, std::clamp(totalHeight, 25, 400));
         }
 
         void paint(Graphics &g) override {

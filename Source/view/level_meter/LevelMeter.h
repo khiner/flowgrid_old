@@ -92,7 +92,7 @@ public:
 
     void mouseDrag(const MouseEvent &event) override {
         if (event.originalComponent == &gainValueControl) {
-            float newValue = jlimit(0.0f, 1.0f, 1.0f - float(event.getEventRelativeTo(this).getPosition().y) / float(getHeight()));
+            float newValue = std::clamp(1.0f - float(event.getEventRelativeTo(this).getPosition().y) / float(getHeight()), 0.0f, 1.0f);
             setValue(normalisableRange.convertFrom0to1(newValue), sendNotificationSync);
         }
     }

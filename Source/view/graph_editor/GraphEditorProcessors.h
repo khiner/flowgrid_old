@@ -305,6 +305,6 @@ private:
     int findSlotAt(const juce::Point<int> relativePosition) const {
         int length = isMasterTrack() ? relativePosition.x : relativePosition.y;
         int slot = (length - TracksState::TRACK_LABEL_HEIGHT) / getNonMixerCellSize();
-        return jlimit(0, getNumAvailableSlots() - 1, slot);
+        return std::clamp(slot, 0, getNumAvailableSlots() - 1);
     }
 };
