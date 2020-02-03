@@ -29,6 +29,10 @@ struct ResetDefaultExternalInputConnectionsAction : public CreateOrDeleteConnect
         if (!trackToTreatAsFocused.isValid())
             trackToTreatAsFocused = tracks.getFocusedTrack();
 
+        if (TracksState::isMasterTrack(trackToTreatAsFocused))
+            // When master gets focus, keep existing external input connections.
+            return;
+
         const auto audioSourceNodeId = input.getDefaultInputNodeIdForConnectionType(audio);
         const auto midiSourceNodeId = input.getDefaultInputNodeIdForConnectionType(midi);
         const ValueTree &audioInputProcessor = audioProcessorContainer.getProcessorStateForNodeId(audioSourceNodeId);
