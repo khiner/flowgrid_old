@@ -53,6 +53,8 @@ public:
             valueTreeChildAdded(connections.getState(), connection);
         for (auto& connection : connectionsSincePause.connectionsToDelete)
             valueTreeChildRemoved(connections.getState(), connection, 0);
+        connectionsSincePause.connectionsToCreate.clearQuick();
+        connectionsSincePause.connectionsToDelete.clearQuick();
     }
 
     AudioProcessorGraph::Node* getNodeForId(AudioProcessorGraph::NodeID nodeId) const override {
