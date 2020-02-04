@@ -37,7 +37,7 @@ private:
     struct AddOrMoveProcessorAction : public UndoableAction {
         AddOrMoveProcessorAction(const ValueTree& processor, ValueTree &toTrack, int newSlot, TracksState &tracks)
                 : processor(processor), oldTrack(processor.getParent()), newTrack(toTrack),
-                  oldSlot(processor[IDs::processorSlot]), newSlot(limitNewSlot(newSlot, tracks)),
+                  oldSlot(processor[IDs::processorSlot]), newSlot(newSlot),
                   oldIndex(oldTrack.indexOf(processor)), newIndex(TracksState::getInsertIndexForProcessor(newTrack, processor, this->newSlot)) {}
 
         bool perform() override {
@@ -71,14 +71,6 @@ private:
         ValueTree oldTrack, newTrack;
         int oldSlot, newSlot;
         int oldIndex, newIndex;
-
-        int limitNewSlot(int newSlot, TracksState &tracks) {
-            int mixerChannelSlot = tracks.getMixerChannelSlotForTrack(newTrack);
-            if (TracksState::isMixerChannelProcessor(processor) && !tracks.getMixerChannelProcessorForTrack(newTrack).isValid())
-                return std::min(newSlot, mixerChannelSlot);
-            else
-                return std::min(newSlot, mixerChannelSlot - 1);
-        }
     };
 
     struct MakeSlotsValidAction : public UndoableAction {

@@ -184,7 +184,7 @@ public:
                        std::max(0, track.indexOf(otherProcessor) - 1) :
                        track.indexOf(otherProcessor);
         }
-        return track.getNumChildren();
+        return processor.getParent() == track ? track.getNumChildren() - 1 : track.getNumChildren();
     }
 
     // TODO needs update for multi-selection

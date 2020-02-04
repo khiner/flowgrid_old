@@ -48,20 +48,36 @@ struct MoveSelectedItemsAction : UndoableAction {
 private:
 
     juce::Point<int> limitGridDelta(juce::Point<int> gridDelta) {
-        int minSelectedSlot = INT_MAX, maxSelectedSlot = INT_MIN;
+        int minAllowedSlot = 0, minAllowedTrackIndex = 0;
+        int maxAllowedTrackIndex = tracks.getNumTracks() - 1; // Max allowed slot is potentially different for each track
 
-        for (const auto& selectedItem : tracks.findAllSelectedItems()) {
-            if (selectedItem.hasType(IDs::PROCESSOR)) {
-                int slot = selectedItem[IDs::processorSlot];
-                if (slot < minSelectedSlot)
-                    minSelectedSlot = slot;
-                if (slot > maxSelectedSlot)
-                    maxSelectedSlot = slot;
+        for (const auto& oldTrack : tracks.getState()) {
+            for (const auto& processor : oldTrack) {
+                if (tracks.isProcessorSelected(processor)) {
+                    juce::Point<int> oldPosition = {tracks.indexOf(oldTrack), processor[IDs::processorSlot]};
+                    auto newPosition = oldPosition + gridDelta;
+                    const ValueTree &newTrack = tracks.getTrack(newPosition.x);
+
+                    int maxAllowedSlot = tracks.getMixerChannelSlotForTrack(newTrack);
+                    // Mixer channels can be dragged into the reserved last slot of each track
+                    // if it doesn't already hold a mixer channel.
+                    if (!TracksState::isMixerChannelProcessor(processor) ||
+                        tracks.getMixerChannelProcessorForTrack(newTrack).isValid())
+                        maxAllowedSlot -= 1;
+
+                    if (newPosition.x < minAllowedTrackIndex)
+                        gridDelta.x += minAllowedTrackIndex - newPosition.x;
+                    if (newPosition.x > maxAllowedTrackIndex)
+                        gridDelta.x += maxAllowedTrackIndex - newPosition.x;
+                    if (newPosition.y < minAllowedSlot)
+                        gridDelta.y += minAllowedSlot - newPosition.y;
+                    if (newPosition.y > maxAllowedSlot)
+                        gridDelta.y += maxAllowedSlot - newPosition.y;
+                }
             }
         }
-        int minAllowedSlot = 0;
-        int maxAllowedSlot = view.getNumTrackProcessorSlots() - 1;
-        return {gridDelta.x, std::clamp(gridDelta.y, minAllowedSlot - minSelectedSlot, maxAllowedSlot - maxSelectedSlot)};
+
+        return gridDelta;
     }
 
     struct MoveSelectionsAction : public SelectAction {
