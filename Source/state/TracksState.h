@@ -52,35 +52,26 @@ public:
 
     int getNumTracks() const { return tracks.getNumChildren(); }
     int indexOf(const ValueTree& track) const { return tracks.indexOf(track); }
+    ValueTree getTrack(int trackIndex) const { return tracks.getChild(trackIndex); }
 
-    int getViewIndexForTrack(const ValueTree& track) const {
-        return indexOf(track) - view.getGridViewTrackOffset();
-    }
-
-    int getNumAvailableSlotsForTrack(const ValueTree &track) const {
-        return view.getNumAvailableSlotsForTrack(track);
-    }
-
-    int getSlotOffsetForTrack(const ValueTree& track) const {
-        return view.getSlotOffsetForTrack(track);
-    }
+    int getViewIndexForTrack(const ValueTree& track) const { return indexOf(track) - view.getGridViewTrackOffset(); }
+    int getNumAvailableSlotsForTrack(const ValueTree &track) const { return view.getNumAvailableSlotsForTrack(track); }
+    int getSlotOffsetForTrack(const ValueTree& track) const { return view.getSlotOffsetForTrack(track); }
 
     ValueTree getTrackWithViewIndex(int trackViewIndex) const {
         return getTrack(trackViewIndex + view.getGridViewTrackOffset());
     }
 
-    ValueTree getTrack(int trackIndex) const { return tracks.getChild(trackIndex); }
     ValueTree getMasterTrack() const { return tracks.getChildWithProperty(IDs::isMasterTrack, true); }
+    static bool isMasterTrack(const ValueTree& track) { return track[IDs::isMasterTrack]; }
 
-    int getMixerChannelSlotForTrack(const ValueTree& track) const {
-        return view.getMixerChannelSlotForTrack(track);
+    int getMixerChannelSlotForTrack(const ValueTree& track) const { return view.getMixerChannelSlotForTrack(track); }
+
+    ValueTree getMixerChannelProcessorForTrack(const ValueTree& track) const {
+        return getProcessorAtSlot(track, getMixerChannelSlotForTrack(track));
     }
 
-    const ValueTree getMixerChannelProcessorForTrack(const ValueTree& track) const {
-        return track.getChildWithProperty(IDs::name, MixerChannelProcessor::name());
-    }
-
-    const ValueTree getMixerChannelProcessorForFocusedTrack() const {
+    ValueTree getMixerChannelProcessorForFocusedTrack() const {
         return getMixerChannelProcessorForTrack(getFocusedTrack());
     }
 
@@ -90,10 +81,6 @@ public:
 
     int getNumNonMasterTracks() const {
         return getMasterTrack().isValid() ? tracks.getNumChildren() - 1 : tracks.getNumChildren();
-    }
-
-    static bool isMasterTrack(const ValueTree& track) {
-        return track[IDs::isMasterTrack];
     }
 
     static bool isMixerChannelProcessor(const ValueTree& processor) {
@@ -107,10 +94,9 @@ public:
     }
 
     ValueTree findTrackWithUuid(const String& uuid) {
-        for (const auto& track : tracks) {
+        for (const auto& track : tracks)
             if (track[IDs::uuid] == uuid)
                 return track;
-        }
         return {};
     }
 

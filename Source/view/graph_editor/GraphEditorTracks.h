@@ -169,6 +169,7 @@ private:
         }
     }
 
+    // TODO I think we can avoid all this nonsense and just destroy and recreate the graph children. Probably not worth the complexity
     void valueTreeChildWillBeMovedToNewParent(ValueTree child, ValueTree& oldParent, int oldIndex, ValueTree& newParent, int newIndex) override {
         if (child.hasType(IDs::PROCESSOR)) {
             auto *fromTrack = getTrackForState(oldParent);

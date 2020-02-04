@@ -247,11 +247,6 @@ public:
     }
 
     void beginDraggingProcessor(const ValueTree& processor) {
-        if (processor[IDs::name] == MixerChannelProcessor::name())
-            // mixer channel processors are special processors.
-            // they could be dragged and reconnected like any old processor, but please don't :)
-            return;
-
         currentlyDraggingProcessor = processor;
         initialDraggingTrackAndSlot = {tracks.indexOf(processor.getParent()), processor[IDs::processorSlot]};
         currentlyDraggingTrackAndSlot = initialDraggingTrackAndSlot;
@@ -419,9 +414,6 @@ public:
 
     void addPluginsToMenu(PopupMenu& menu, const ValueTree& track) const {
         StringArray disabledPluginIds;
-        if (tracks.getMixerChannelProcessorForTrack(track).isValid()) {
-            disabledPluginIds.add(MixerChannelProcessor::getPluginDescription().fileOrIdentifier);
-        }
 
         PopupMenu internalSubMenu;
         PopupMenu externalSubMenu;
@@ -545,9 +537,6 @@ private:
     ValueTree mostRecentlyCreatedTrack, mostRecentlyCreatedProcessor;
 
     void doCreateAndAddProcessor(const PluginDescription &description, ValueTree& track, int slot=-1) {
-        if (description.name == MixerChannelProcessor::name() && tracks.getMixerChannelProcessorForTrack(track).isValid())
-            return; // only one mixer channel per track
-
         if (PluginManager::isGeneratorOrInstrument(&description) &&
             pluginManager.doesTrackAlreadyHaveGeneratorOrInstrument(track)) {
             undoManager.perform(new CreateTrackAction(false, track, false, tracks, connections, view));

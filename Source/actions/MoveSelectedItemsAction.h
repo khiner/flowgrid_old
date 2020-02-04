@@ -60,7 +60,7 @@ private:
             }
         }
         int minAllowedSlot = 0;
-        int maxAllowedSlot = view.getNumTrackProcessorSlots() - 2; // - 1 for reserved mixer slot, - 1 for 0-based index
+        int maxAllowedSlot = view.getNumTrackProcessorSlots() - 1;
         return {gridDelta.x, std::clamp(gridDelta.y, minAllowedSlot - minSelectedSlot, maxAllowedSlot - maxSelectedSlot)};
     }
 

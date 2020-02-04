@@ -37,8 +37,8 @@ private:
     struct AddOrMoveProcessorAction : public UndoableAction {
         AddOrMoveProcessorAction(const ValueTree& processor, ValueTree &toTrack, int newSlot, TracksState &tracks)
                 : processor(processor), oldTrack(processor.getParent()), newTrack(toTrack),
-                  oldIndex(oldTrack.indexOf(processor)), newIndex(TracksState::getInsertIndexForProcessor(newTrack, processor, newSlot)),
-                  oldSlot(processor[IDs::processorSlot]), newSlot(newSlot) {}
+                  oldSlot(processor[IDs::processorSlot]), newSlot(limitNewSlot(newSlot, tracks)),
+                  oldIndex(oldTrack.indexOf(processor)), newIndex(TracksState::getInsertIndexForProcessor(newTrack, processor, this->newSlot)) {}
 
         bool perform() override {
             processor.setProperty(IDs::processorSlot, newSlot, nullptr);
@@ -69,8 +69,16 @@ private:
     private:
         ValueTree processor;
         ValueTree oldTrack, newTrack;
-        int oldIndex, newIndex;
         int oldSlot, newSlot;
+        int oldIndex, newIndex;
+
+        int limitNewSlot(int newSlot, TracksState &tracks) {
+            int mixerChannelSlot = tracks.getMixerChannelSlotForTrack(newTrack);
+            if (TracksState::isMixerChannelProcessor(processor) && !tracks.getMixerChannelProcessorForTrack(newTrack).isValid())
+                return std::min(newSlot, mixerChannelSlot);
+            else
+                return std::min(newSlot, mixerChannelSlot - 1);
+        }
     };
 
     struct MakeSlotsValidAction : public UndoableAction {
@@ -118,7 +126,7 @@ private:
             SetProcessorSlotAction(const ValueTree &track, const ValueTree& processor, int newSlot,
                                    TracksState &tracks, ViewState &view)
                     : processor(processor), oldSlot(processor[IDs::processorSlot]), newSlot(newSlot) {
-                if (!TracksState::isMixerChannelProcessor(this->processor) && this->newSlot >= tracks.getMixerChannelSlotForTrack(track)) {
+                if (this->newSlot >= tracks.getMixerChannelSlotForTrack(track) && !TracksState::isMixerChannelProcessor(this->processor)) {
                     addProcessorRowAction = std::make_unique<AddProcessorRowAction>(track, tracks, view);
                     this->newSlot = tracks.getMixerChannelSlotForTrack(track);
                 }
@@ -147,41 +155,42 @@ private:
                         : track(track), tracks(tracks), view(view) {}
 
                 bool perform() override {
+                    Array<ValueTree> processorsNeedingSlotIncrement;
                     if (TracksState::isMasterTrack(track)) {
+                        processorsNeedingSlotIncrement.add(tracks.getMixerChannelProcessorForTrack(track));
                         view.getState().setProperty(IDs::numMasterProcessorSlots, view.getNumMasterProcessorSlots() + 1, nullptr);
-                        auto mixerChannelProcessor = tracks.getMixerChannelProcessorForTrack(track);
-                        if (mixerChannelProcessor.isValid())
-                            mixerChannelProcessor.setProperty(IDs::processorSlot, int(mixerChannelProcessor[IDs::processorSlot]) + 1, nullptr);
                     } else {
-                        view.getState().setProperty(IDs::numProcessorSlots, view.getNumTrackProcessorSlots() + 1, nullptr);
                         for (const auto &nonMasterTrack : tracks.getState()) {
-                            if (TracksState::isMasterTrack(nonMasterTrack))
-                                continue;
-                            auto mixerChannelProcessor = tracks.getMixerChannelProcessorForTrack(nonMasterTrack);
-                            if (mixerChannelProcessor.isValid())
-                                mixerChannelProcessor.setProperty(IDs::processorSlot, int(mixerChannelProcessor[IDs::processorSlot]) + 1, nullptr);
+                            if (!TracksState::isMasterTrack(nonMasterTrack))
+                                processorsNeedingSlotIncrement.add(tracks.getMixerChannelProcessorForTrack(nonMasterTrack));
                         }
+                        view.getState().setProperty(IDs::numProcessorSlots, view.getNumTrackProcessorSlots() + 1, nullptr);
                     }
+                    for (auto& processorToIncrement : processorsNeedingSlotIncrement) {
+                        if (processorToIncrement.isValid())
+                            processorToIncrement.setProperty(IDs::processorSlot, int(processorToIncrement[IDs::processorSlot]) + 1, nullptr);
+                    }
+
                     return true;
                 }
 
                 bool undo() override {
+                    Array<ValueTree> processorsNeedingSlotDecrement;
                     if (TracksState::isMasterTrack(track)) {
-                        auto mixerChannelProcessor = tracks.getMixerChannelProcessorForTrack(track);
-                        if (mixerChannelProcessor.isValid())
-                            mixerChannelProcessor.setProperty(IDs::processorSlot, int(mixerChannelProcessor[IDs::processorSlot]) - 1, nullptr);
-
+                        processorsNeedingSlotDecrement.add(tracks.getMixerChannelProcessorForTrack(track));
                         view.getState().setProperty(IDs::numMasterProcessorSlots, view.getNumMasterProcessorSlots() - 1, nullptr);
                     } else {
                         for (const auto &nonMasterTrack : tracks.getState()) {
-                            if (TracksState::isMasterTrack(nonMasterTrack))
-                                continue;
-                            auto mixerChannelProcessor = tracks.getMixerChannelProcessorForTrack(nonMasterTrack);
-                            if (mixerChannelProcessor.isValid())
-                                mixerChannelProcessor.setProperty(IDs::processorSlot, int(mixerChannelProcessor[IDs::processorSlot]) - 1, nullptr);
+                            if (!TracksState::isMasterTrack(nonMasterTrack))
+                                processorsNeedingSlotDecrement.add(tracks.getMixerChannelProcessorForTrack(nonMasterTrack));
                         }
                         view.getState().setProperty(IDs::numProcessorSlots, view.getNumTrackProcessorSlots() - 1, nullptr);
                     }
+                    for (auto& processorToDecrement : processorsNeedingSlotDecrement) {
+                        if (processorToDecrement.isValid())
+                            processorToDecrement.setProperty(IDs::processorSlot, int(processorToDecrement[IDs::processorSlot]) - 1, nullptr);
+                    }
+
                     return true;
                 }
 
