@@ -50,6 +50,13 @@ public:
         }
     }
 
+    void mouseUp(const MouseEvent &e) override {
+        if (e.mouseWasClicked() && !e.mods.isCommandDown()) {
+            // single click deselects other tracks/processors
+            project.selectProcessorSlot(parent, findSlotAt(e.getEventRelativeTo(this)), true);
+        }
+    }
+
     void resized() override {
         auto r = getLocalBounds();
         auto slotOffset = getSlotOffset();
