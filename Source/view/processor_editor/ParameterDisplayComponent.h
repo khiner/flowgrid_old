@@ -16,6 +16,12 @@ public:
         detachParameterComponent();
     }
 
+    // This allows the parent to capture click events when clicking on non-interactive elements like param labels.
+    // For example, this allows dragging a processor with inline param UI in the graph
+    bool hitTest(int x, int y) override {
+        return parameterComponent != nullptr && parameterComponent->getBounds().contains(x, y);
+    }
+
     void setParameter(StatefulAudioProcessorWrapper::Parameter *parameterWrapper) {
         if (this->parameterWrapper == parameterWrapper && parameterComponent)
             return;
