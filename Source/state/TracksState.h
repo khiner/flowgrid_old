@@ -185,14 +185,14 @@ public:
     }
 
     static int getInsertIndexForProcessor(const ValueTree &track, const ValueTree& processor, int insertSlot) {
+        bool sameTrack = track == processor.getParent();
+        auto handleSameTrack = [sameTrack](int index) -> int { return sameTrack ? std::max(0, index - 1) : index; };
         for (const auto& otherProcessor : track) {
             int otherSlot = otherProcessor[IDs::processorSlot];
             if (otherSlot >= insertSlot && otherProcessor != processor)
-                return track == processor.getParent() ?
-                       std::max(0, track.indexOf(otherProcessor) - 1) :
-                       track.indexOf(otherProcessor);
+                return handleSameTrack(track.indexOf(otherProcessor));
         }
-        return processor.getParent() == track ? track.getNumChildren() - 1 : track.getNumChildren();
+        return handleSameTrack(track.getNumChildren());
     }
 
     // TODO needs update for multi-selection
