@@ -189,8 +189,13 @@ public:
         auto handleSameTrack = [sameTrack](int index) -> int { return sameTrack ? std::max(0, index - 1) : index; };
         for (const auto& otherProcessor : track) {
             int otherSlot = otherProcessor[IDs::processorSlot];
-            if (otherSlot >= insertSlot && otherProcessor != processor)
-                return handleSameTrack(track.indexOf(otherProcessor));
+            if (otherSlot >= insertSlot && otherProcessor != processor) {
+                int otherIndex = track.indexOf(otherProcessor);
+                if (sameTrack && track.indexOf(processor) < otherIndex)
+                    return handleSameTrack(otherIndex);
+                else
+                    return otherIndex;
+            }
         }
         return handleSameTrack(track.getNumChildren());
     }
