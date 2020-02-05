@@ -173,10 +173,10 @@ public:
         Array<ValueTree> selectedProcessors;
         auto selectedSlotsMask = getSlotMask(track);
         for (const auto& processor : track) {
-            int slot = processor[IDs::processorSlot];
-            if (selectedSlotsMask[slot])
-                selectedProcessors.add(processor);
-        }
+                int slot = processor[IDs::processorSlot];
+                if (selectedSlotsMask[slot])
+                        selectedProcessors.add(processor);
+            }
         return selectedProcessors;
     }
 

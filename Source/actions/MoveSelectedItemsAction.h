@@ -167,29 +167,26 @@ private:
             return insertActions;
 
         auto addInsertActionsForTrackIndex = [&](int fromTrackIndex) {
-            const auto& fromTrack = tracks.getTrack(fromTrackIndex);
-            int toTrackIndex = fromTrackIndex + gridDelta.x;
-            auto toTrack = tracks.getTrack(toTrackIndex);
+            const int toTrackIndex = fromTrackIndex + gridDelta.x;
+            const auto selectedProcessors = TracksState::getSelectedProcessorsForTrack(tracks.getTrack(fromTrackIndex));
 
-            auto addInsertActionsForProcessor = [&](const ValueTree &processor) {
-                if (tracks.isProcessorSelected(processor)) {
-                    auto toSlot = int(processor[IDs::processorSlot]) + gridDelta.y;
-                    insertActions.add(new InsertProcessorAction(processor, toTrackIndex, toSlot, tracks, view));
-                    // Need to actually _do_ the move for each track, since this could affect the results of
-                    // a later track's slot moves. i.e. if gridDelta.x == -1, then we need to move selected processors
-                    // out of this track before advancing to the next track (at trackIndex + 1).
-                    // (This action is undone later.)
-                    insertActions.getLast()->perform();
-                }
+            auto addInsertActionsForProcessor = [&](const ValueTree& processor) {
+                auto toSlot = int(processor[IDs::processorSlot]) + gridDelta.y;
+                insertActions.add(new InsertProcessorAction(processor, toTrackIndex, toSlot, tracks, view));
+                // Need to actually _do_ the move for each track, since this could affect the results of
+                // a later track's slot moves. i.e. if gridDelta.x == -1, then we need to move selected processors
+                // out of this track before advancing to the next track. (This action is undone later.)
+                insertActions.getLast()->perform();
             };
 
-            auto selectedProcessors = TracksState::getSelectedProcessorsForTrack(fromTrack);
-            if (gridDelta.y <= 0) {
-                for (int processorIndex = 0; processorIndex < selectedProcessors.size(); processorIndex++)
+            if (fromTrackIndex == toTrackIndex && gridDelta.y > 0) {
+                for (int processorIndex = selectedProcessors.size() - 1; processorIndex >= 0; processorIndex--) {
                     addInsertActionsForProcessor(selectedProcessors.getUnchecked(processorIndex));
+                }
             } else {
-                for (int processorIndex = selectedProcessors.size() - 1; processorIndex >= 0; processorIndex--)
-                    addInsertActionsForProcessor(selectedProcessors.getUnchecked(processorIndex));
+                for (const auto& processor : selectedProcessors) {
+                    addInsertActionsForProcessor(processor);
+                }
             }
         };
 
