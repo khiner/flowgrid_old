@@ -265,10 +265,9 @@ private:
     PluginManager &pluginManager;
     UndoManager &undoManager;
 
-    std::unordered_map<int, int> slotForNodeIdSnapshot;
-
     int trackWidth {0}, processorHeight {0};
 
+    // TODO these state changes should originate from the action that caused them (state changes themselves are not derived from state)
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {
         if (tree.hasType(IDs::TRACK) && i == IDs::selected) {
             if (tree[i]) {

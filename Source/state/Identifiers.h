@@ -2,13 +2,13 @@
 
 #include "JuceHeader.h"
 
-namespace IDs
-{
-    #define DECLARE_ID(name) const juce::Identifier name (#name);
+namespace IDs {
+    #define DECLARE_ID(name) const juce::Identifier name(#name);
+
 
     DECLARE_ID(PARAM)
-    DECLARE_ID(value)
     DECLARE_ID(id)
+    DECLARE_ID(value)
 
     DECLARE_ID(TRACKS)
     DECLARE_ID(INPUT)
@@ -17,9 +17,9 @@ namespace IDs
     DECLARE_ID(MIDI_OUTPUT)
 
     DECLARE_ID(PROJECT)
-    DECLARE_ID(uuid)
 
     DECLARE_ID(TRACK)
+    DECLARE_ID(uuid)
     DECLARE_ID(colour)
     DECLARE_ID(name)
     DECLARE_ID(selected)
@@ -40,8 +40,6 @@ namespace IDs
     DECLARE_ID(INPUT_CHANNELS)
     DECLARE_ID(OUTPUT_CHANNELS)
     DECLARE_ID(CHANNEL)
-
-    DECLARE_ID(PARAM_NA)
 
     DECLARE_ID(CONNECTIONS)
     DECLARE_ID(CONNECTION)
