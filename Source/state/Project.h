@@ -233,7 +233,7 @@ public:
         if (view.getFocusedTrackIndex() >= tracks.getNumTracks()) {
             setTrackSelected(tracks.getTrack(tracks.getNumTracks() - 1), true, true);
         } else {
-            resetDefaultExternalInputs();
+            updateAllDefaultConnections(false);
         }
     }
 
