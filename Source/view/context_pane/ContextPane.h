@@ -103,7 +103,7 @@ private:
             auto *cell = masterTrackGridCells.getUnchecked(processorSlot);
             const auto &processor = TracksState::getProcessorAtSlot(masterTrack, processorSlot);
             bool inView = view.isProcessorSlotInView(masterTrack, processorSlot);
-            cell->setTrackAndProcessor(masterTrack, processor, inView, trackSelected, tracks.isSlotSelected(masterTrack, processorSlot));
+            cell->setTrackAndProcessor(masterTrack, processor, inView, trackSelected, TracksState::isSlotSelected(masterTrack, processorSlot));
         }
 
         for (auto trackIndex = 0; trackIndex < gridCells.size(); trackIndex++) {
@@ -114,7 +114,7 @@ private:
                 auto *cell = trackGridCells->getUnchecked(processorSlot);
                 const auto& processor = TracksState::getProcessorAtSlot(track, processorSlot);
                 bool inView = view.isProcessorSlotInView(track, processorSlot);
-                cell->setTrackAndProcessor(track, processor, inView, trackSelected, tracks.isSlotSelected(track, processorSlot));
+                cell->setTrackAndProcessor(track, processor, inView, trackSelected, TracksState::isSlotSelected(track, processorSlot));
             }
         }
     }

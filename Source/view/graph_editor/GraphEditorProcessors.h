@@ -35,7 +35,7 @@ public:
 
     void mouseDown(const MouseEvent &e) override {
         int slot = findSlotAt(e.getEventRelativeTo(this));
-        bool isSlotSelected = tracks.isSlotSelected(parent, slot);
+        bool isSlotSelected = TracksState::isSlotSelected(parent, slot);
         if (e.mods.isCommandDown() && isSlotSelected) {
             project.deselectProcessorSlot(parent, slot);
         } else if (!isSlotSelected) {
@@ -87,7 +87,7 @@ public:
                 fillColour = fillColour.brighter(0.3);
                 if (tracks.doesTrackHaveSelections(parent))
                     fillColour = fillColour.brighter(0.2);
-                if (tracks.isSlotSelected(parent, slot))
+                if (TracksState::isSlotSelected(parent, slot))
                         fillColour = tracks.getTrackColour(parent);
             }
             processorSlotRectangles.getUnchecked(slot)->setFill(fillColour);

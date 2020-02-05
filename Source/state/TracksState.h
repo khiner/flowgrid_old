@@ -108,8 +108,16 @@ public:
         return {};
     }
 
-    int firstSelectedSlotForTrack(const ValueTree& track) const {
+    static int firstSelectedSlotForTrack(const ValueTree& track) {
         return getSlotMask(track).getHighestBit();
+    }
+
+    static ValueTree firstNonSelectedProcessorForTrack(const ValueTree& track) {
+        for (const auto& processor : track) {
+            if (!isProcessorSelected(processor))
+                return processor;
+        }
+        return {};
     }
 
     // TODO many (if not all) of the usages of this method should be replaced
@@ -133,7 +141,7 @@ public:
         return getProcessorAtSlot(track, trackAndSlot.y);
     }
 
-    bool isProcessorSelected(const ValueTree& processor) const {
+    static bool isProcessorSelected(const ValueTree& processor) {
         return processor.hasType(IDs::PROCESSOR) &&
                isSlotSelected(processor.getParent(), processor[IDs::processorSlot]);
     }
@@ -166,7 +174,7 @@ public:
     }
 
     static ValueTree getProcessorAtSlot(const ValueTree& track, int slot) {
-        return track.getChildWithProperty(IDs::processorSlot, slot);
+        return track.isValid() ? track.getChildWithProperty(IDs::processorSlot, slot) : ValueTree();
     }
 
     static Array<ValueTree> getSelectedProcessorsForTrack(const ValueTree& track) {
@@ -180,11 +188,11 @@ public:
         return selectedProcessors;
     }
 
-    bool isSlotSelected(const ValueTree& track, int slot) const {
+    static bool isSlotSelected(const ValueTree& track, int slot) {
         return getSlotMask(track)[slot];
     }
 
-    static int getInsertIndexForProcessor(const ValueTree &track, const ValueTree& processor, int insertSlot) {
+    int getInsertIndexForProcessor(const ValueTree &track, const ValueTree& processor, int insertSlot) {
         bool sameTrack = track == processor.getParent();
         auto handleSameTrack = [sameTrack](int index) -> int { return sameTrack ? std::max(0, index - 1) : index; };
         for (const auto& otherProcessor : track) {
@@ -197,7 +205,7 @@ public:
                     return otherIndex;
             }
         }
-        return handleSameTrack(track.getNumChildren());
+        return handleSameTrack(getMixerChannelProcessorForTrack(track).isValid() ? track.getNumChildren() - 1 : track.getNumChildren());
     }
 
     // TODO needs update for multi-selection

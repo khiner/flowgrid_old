@@ -49,61 +49,48 @@ struct MoveSelectedItemsAction : UndoableAction {
 private:
 
     juce::Point<int> limitGridDelta(juce::Point<int> gridDelta) {
-        int minAllowedSlot = 0, minAllowedTrackIndex = 0;
-        int maxAllowedTrackIndex = tracks.getNumTracks() - 1; // Max allowed slot is potentially different for each track
-
-        auto toGridPoint = fromGridPoint + gridDelta;
-        bool fromMaster = TracksState::isMasterTrack(tracks.getTrack(fromGridPoint.x));
-        bool toMaster = TracksState::isMasterTrack(tracks.getTrack(toGridPoint.x));
         bool multipleTracksSelected = tracks.doesMoreThanOneTrackHaveSelections();
-        if (multipleTracksSelected) {
-            if (tracks.doesTrackHaveSelections(tracks.getMasterTrack())) {
-                // In the special case that multiple tracks have selections and the master track is one of them,
-                // disallow movement because it doesn't make sense dragging horizontally and vertically
-                // at the same time.
-                return {0, 0};
-            } else {
-                if (!fromMaster && toMaster) {
-                    // When dragging from a non-master track to the master track,
-                    // interpret as dragging beyond the y-limit, to whatever track slot corresponding to the master track x-grid-position (toSlot.y)
-                    toGridPoint = {std::min(toGridPoint.y, tracks.getNumNonMasterTracks() - 1), view.getNumTrackProcessorSlots() - 2};
-                    gridDelta = toGridPoint - fromGridPoint;
-                }
-                // If more than one track has any selected items, it is ill defined to move some of the processors
-                // from a non-master track to the master track
-                maxAllowedTrackIndex = tracks.getNumNonMasterTracks() - 1;
-            }
-        }
+        // In the special case that multiple tracks have selections and the master track is one of them,
+        // disallow movement because it doesn't make sense dragging horizontally and vertically at the same time.
+        if (multipleTracksSelected && tracks.doesTrackHaveSelections(tracks.getMasterTrack()))
+            return {0, 0};
+
+        // When dragging from a non-master track to the master track,
+        // interpret as dragging beyond the y-limit, to whatever track slot corresponding to the master track x-grid-position (toSlot.y)
+        if (multipleTracksSelected &&
+            !TracksState::isMasterTrack(tracks.getTrack(fromGridPoint.x)) &&
+            TracksState::isMasterTrack(tracks.getTrack((fromGridPoint + gridDelta).x)))
+            gridDelta = {gridDelta.y, view.getNumTrackProcessorSlots() - 2};
+
+        // If more than one track has any selected items, don't move any the processors from a non-master track to the master track
+        int maxAllowedTrackIndex = multipleTracksSelected ? tracks.getNumNonMasterTracks() - 1 : tracks.getNumTracks() - 1;
 
         for (const auto& oldTrack : tracks.getState()) {
+            const int oldTrackIndex = tracks.indexOf(oldTrack);
             for (const auto& processor : oldTrack) {
-                if (tracks.isProcessorSelected(processor)) {
-                    const juce::Point<int> oldPosition = {tracks.indexOf(oldTrack), processor[IDs::processorSlot]};
-                    auto newPosition = oldPosition + gridDelta;
-                    if (newPosition.x < minAllowedTrackIndex) {
-                        gridDelta.x += minAllowedTrackIndex - newPosition.x;
-                        newPosition = oldPosition + gridDelta;
-                    }
-                    if (newPosition.x > maxAllowedTrackIndex) {
-                        gridDelta.x += maxAllowedTrackIndex - newPosition.x;
-                        newPosition = oldPosition + gridDelta;
-                    }
+                if (TracksState::isProcessorSelected(processor)) {
+                    gridDelta.x = std::clamp(gridDelta.x, -oldTrackIndex, maxAllowedTrackIndex - oldTrackIndex);
 
-                    const ValueTree& newTrack = tracks.getTrack(newPosition.x);
+                    const ValueTree& newTrack = tracks.getTrack(oldTrackIndex + gridDelta.x);
                     int maxAllowedSlot = tracks.getMixerChannelSlotForTrack(newTrack);
-                    // Mixer channels can be dragged into the reserved last slot of each track
-                    // if it doesn't already hold a mixer channel.
-                    if (!TracksState::isMixerChannelProcessor(processor) ||
-                        tracks.getMixerChannelProcessorForTrack(newTrack).isValid())
+                    // Mixer channels can be dragged into the reserved last slot of each track if it doesn't already hold a mixer channel.
+                    if (!TracksState::isMixerChannelProcessor(processor) || tracks.getMixerChannelProcessorForTrack(newTrack).isValid())
                         maxAllowedSlot -= 1;
 
-                    if (newPosition.y < minAllowedSlot)
-                        gridDelta.y += minAllowedSlot - newPosition.y;
-                    if (newPosition.y > maxAllowedSlot)
-                        gridDelta.y += maxAllowedSlot - newPosition.y;
+                    const int oldSlot = processor[IDs::processorSlot];
+                    gridDelta.y = std::clamp(gridDelta.y, -oldSlot, maxAllowedSlot - oldSlot);
                 }
             }
         }
+
+        // If this move would add new processor rows, make sure we're doing it for good reason!
+        // Only force new rows to be added if the selected group is being explicitly dragged to underneath
+        // at least one non-mixer processor.
+//        if (firstNonSelectedProcessor.isValid() && !TracksState::isMixerChannelProcessor(firstNonSelectedProcessor)) {
+//            int firstNonSelectedSlot = firstNonSelectedProcessor[IDs::processorSlot];
+//            if (toGridPoint.y < firstNonSelectedSlot)
+//                toGridPoint.y = std::min(toGridPoint.y, 0);
+//        }
 
         return gridDelta;
     }
@@ -180,13 +167,11 @@ private:
             };
 
             if (fromTrackIndex == toTrackIndex && gridDelta.y > 0) {
-                for (int processorIndex = selectedProcessors.size() - 1; processorIndex >= 0; processorIndex--) {
+                for (int processorIndex = selectedProcessors.size() - 1; processorIndex >= 0; processorIndex--)
                     addInsertActionsForProcessor(selectedProcessors.getUnchecked(processorIndex));
-                }
             } else {
-                for (const auto& processor : selectedProcessors) {
+                for (const auto& processor : selectedProcessors)
                     addInsertActionsForProcessor(processor);
-                }
             }
         };
 
