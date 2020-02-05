@@ -132,7 +132,9 @@ private:
                                    TracksState &tracks, ViewState &view)
                     : processor(processor), oldSlot(processor[IDs::processorSlot]), newSlot(newSlot) {
                 const auto& track = tracks.getTrack(trackIndex);
-                if (this->newSlot >= tracks.getMixerChannelSlotForTrack(track) && !TracksState::isMixerChannelProcessor(this->processor)) {
+                const auto& mixerChannel = tracks.getMixerChannelProcessorForTrack(track);
+                if (this->newSlot == tracks.getMixerChannelSlotForTrack(track) &&
+                    mixerChannel.isValid() && mixerChannel != this->processor) {
                     addProcessorRowAction = std::make_unique<AddProcessorRowAction>(trackIndex, tracks, view);
                     this->newSlot = tracks.getMixerChannelSlotForTrack(track);
                 }
