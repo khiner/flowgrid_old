@@ -63,7 +63,7 @@ public:
     }
 
     ValueTree getMasterTrack() const { return tracks.getChildWithProperty(IDs::isMasterTrack, true); }
-    static bool isMasterTrack(const ValueTree& track) { return track[IDs::isMasterTrack]; }
+    static bool isMasterTrack(const ValueTree& track) { return track.hasProperty(IDs::isMasterTrack) && track[IDs::isMasterTrack]; }
 
     int getMixerChannelSlotForTrack(const ValueTree& track) const { return view.getMixerChannelSlotForTrack(track); }
 

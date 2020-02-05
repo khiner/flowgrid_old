@@ -166,14 +166,15 @@ private:
         if (gridDelta.x == 0 && gridDelta.y == 0)
             return insertActions;
 
-        auto addInsertActionsForTrackIndex = [&](int trackIndex) {
-            const auto& fromTrack = tracks.getTrack(trackIndex);
-            auto toTrack = tracks.getTrack(trackIndex + gridDelta.x);
+        auto addInsertActionsForTrackIndex = [&](int fromTrackIndex) {
+            const auto& fromTrack = tracks.getTrack(fromTrackIndex);
+            int toTrackIndex = fromTrackIndex + gridDelta.x;
+            auto toTrack = tracks.getTrack(toTrackIndex);
 
             auto addInsertActionsForProcessor = [&](const ValueTree &processor) {
                 if (tracks.isProcessorSelected(processor)) {
                     auto toSlot = int(processor[IDs::processorSlot]) + gridDelta.y;
-                    insertActions.add(new InsertProcessorAction(processor, toTrack, toSlot, tracks, view));
+                    insertActions.add(new InsertProcessorAction(processor, toTrackIndex, toSlot, tracks, view));
                     // Need to actually _do_ the move for each track, since this could affect the results of
                     // a later track's slot moves. i.e. if gridDelta.x == -1, then we need to move selected processors
                     // out of this track before advancing to the next track (at trackIndex + 1).

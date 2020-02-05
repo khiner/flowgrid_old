@@ -6,9 +6,9 @@
 #include "InsertProcessorAction.h"
 
 struct CreateProcessorAction : public UndoableAction {
-    CreateProcessorAction(const PluginDescription &description, ValueTree& parentTrack, int slot,
+    CreateProcessorAction(const PluginDescription &description, const ValueTree& track, int slot,
                           TracksState &tracks, InputState &input, ViewState &view, StatefulAudioProcessorContainer &audioProcessorContainer)
-            : processorToCreate(createProcessor(description)), insertAction(createInsertAction(description, parentTrack, tracks, view, slot)), audioProcessorContainer(audioProcessorContainer) {
+            : processorToCreate(createProcessor(description)), insertAction(createInsertAction(description, track, slot, tracks, view)), audioProcessorContainer(audioProcessorContainer) {
     }
 
     bool perform() override {
@@ -41,22 +41,22 @@ private:
         return processorToCreate;
     }
 
-    InsertProcessorAction createInsertAction(const PluginDescription &description, ValueTree &parentTrack,
-                                             TracksState &tracks, ViewState &view, int slot) {
-        if (TracksState::isMixerChannelProcessor(processorToCreate) && !tracks.getMixerChannelProcessorForTrack(parentTrack).isValid()) {
-            slot = tracks.getMixerChannelSlotForTrack(parentTrack);
+    InsertProcessorAction createInsertAction(const PluginDescription &description, const ValueTree& track, int slot,
+                                             TracksState &tracks, ViewState &view) {
+        if (TracksState::isMixerChannelProcessor(processorToCreate) && !tracks.getMixerChannelProcessorForTrack(track).isValid()) {
+            slot = tracks.getMixerChannelSlotForTrack(track);
         } else if (slot == -1) {
             if (description.numInputChannels == 0) {
                 slot = 0;
             } else {
                 // Insert new effect processors _right before_ the first MixerChannel processor.
-                const ValueTree &mixerChannelProcessor = tracks.getMixerChannelProcessorForTrack(parentTrack);
-                int indexToInsertProcessor = mixerChannelProcessor.isValid() ? parentTrack.indexOf(mixerChannelProcessor) : parentTrack.getNumChildren();
-                slot = indexToInsertProcessor <= 0 ? 0 : int(parentTrack.getChild(indexToInsertProcessor - 1)[IDs::processorSlot]) + 1;
+                const ValueTree &mixerChannelProcessor = tracks.getMixerChannelProcessorForTrack(track);
+                int indexToInsertProcessor = mixerChannelProcessor.isValid() ? track.indexOf(mixerChannelProcessor) : track.getNumChildren();
+                slot = indexToInsertProcessor <= 0 ? 0 : int(track.getChild(indexToInsertProcessor - 1)[IDs::processorSlot]) + 1;
             }
         }
 
-        return {processorToCreate, parentTrack, slot, tracks, view};
+        return {processorToCreate, tracks.indexOf(track), slot, tracks, view};
     }
 
     JUCE_DECLARE_NON_COPYABLE(CreateProcessorAction)
