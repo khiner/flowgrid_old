@@ -97,7 +97,7 @@ private:
         volumeParametersPanel.clearParameters();
         panParametersPanel.clearParameters();
 
-        if (tracks.isTrackSelected(tracks.getMasterTrack())) {
+        if (tracks.doesTrackHaveSelections(tracks.getMasterTrack())) {
             const auto& mixerChannel = tracks.getMixerChannelProcessorForFocusedTrack();
             if (auto* processorWrapper = project.getProcessorWrapperForState(mixerChannel)) {
                 volumeParametersPanel.addParameter(processorWrapper->getParameter(1));

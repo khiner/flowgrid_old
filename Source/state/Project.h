@@ -278,7 +278,7 @@ public:
         }
 
         if (trackAndSlot == initialDraggingTrackAndSlot ||
-            undoManager.perform(new MoveSelectedItemsAction(trackAndSlot - initialDraggingTrackAndSlot, isShiftHeld(),
+            undoManager.perform(new MoveSelectedItemsAction(initialDraggingTrackAndSlot, trackAndSlot, isShiftHeld(),
                                                             tracks, connections, view, input, *this))) {
             currentlyDraggingTrackAndSlot = trackAndSlot;
         }

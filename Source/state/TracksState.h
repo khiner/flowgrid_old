@@ -87,10 +87,18 @@ public:
         return processor[IDs::name] == MixerChannelProcessor::name();
     }
 
-    bool isTrackSelected(const ValueTree& track) const {
-        if (track[IDs::selected])
-            return true;
-        return trackHasAnySlotSelected(track);
+    bool doesTrackHaveSelections(const ValueTree& track) const {
+        return track[IDs::selected] || trackHasAnySlotSelected(track);
+    }
+
+    bool doesMoreThanOneTrackHaveSelections() const {
+        bool foundOne = false;
+        for (const auto& track : tracks) {
+            if (doesTrackHaveSelections(track)) {
+                if (foundOne) return true; // found a second one
+                else foundOne = true;
+            }
+        }
     }
 
     ValueTree findTrackWithUuid(const String& uuid) {

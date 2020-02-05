@@ -85,7 +85,7 @@ public:
             auto fillColour = baseColour.brighter(0.13);
             if (viewStateManager.isProcessorSlotInView(parent, slot)) {
                 fillColour = fillColour.brighter(0.3);
-                if (tracks.isTrackSelected(parent))
+                if (tracks.doesTrackHaveSelections(parent))
                     fillColour = fillColour.brighter(0.2);
                 if (tracks.isSlotSelected(parent, slot))
                         fillColour = tracks.getTrackColour(parent);

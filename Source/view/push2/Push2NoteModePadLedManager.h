@@ -39,7 +39,7 @@ public:
 
     void trackColourChanged(const String &trackUuid, const Colour &colour) override {
         // TODO a bit slow. might want to pass this all down from parent instead of listening directly
-        if (tracks.isTrackSelected(tracks.findTrackWithUuid(trackUuid))) {
+        if (tracks.doesTrackHaveSelections(tracks.findTrackWithUuid(trackUuid))) {
             selectedTrackColour = colour;
             updatePadColours();
         }

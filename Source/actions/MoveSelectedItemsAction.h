@@ -5,12 +5,13 @@
 #include "UpdateAllDefaultConnectionsAction.h"
 
 struct MoveSelectedItemsAction : UndoableAction {
-    MoveSelectedItemsAction(juce::Point<int> gridDelta, bool makeInvalidDefaultsIntoCustom,
+    MoveSelectedItemsAction(juce::Point<int> fromGridPoint, juce::Point<int> toGridPoint, bool makeInvalidDefaultsIntoCustom,
                             TracksState &tracks, ConnectionsState &connections, ViewState &view,
                             InputState &input, StatefulAudioProcessorContainer &audioProcessorContainer)
             : tracks(tracks), connections(connections), view(view), input(input),
               audioProcessorContainer(audioProcessorContainer),
-              gridDelta(limitGridDelta(gridDelta)),
+              fromGridPoint(fromGridPoint),
+              gridDelta(limitGridDelta(toGridPoint - fromGridPoint)),
               insertActions(createInsertActions()),
               updateSelectionAction(createUpdateSelectionAction()),
               updateConnectionsAction(createUpdateConnectionsAction(makeInvalidDefaultsIntoCustom)) {
@@ -51,13 +52,44 @@ private:
         int minAllowedSlot = 0, minAllowedTrackIndex = 0;
         int maxAllowedTrackIndex = tracks.getNumTracks() - 1; // Max allowed slot is potentially different for each track
 
+        auto toGridPoint = fromGridPoint + gridDelta;
+        bool fromMaster = TracksState::isMasterTrack(tracks.getTrack(fromGridPoint.x));
+        bool toMaster = TracksState::isMasterTrack(tracks.getTrack(toGridPoint.x));
+        bool multipleTracksSelected = tracks.doesMoreThanOneTrackHaveSelections();
+        if (multipleTracksSelected) {
+            if (tracks.doesTrackHaveSelections(tracks.getMasterTrack())) {
+                // In the special case that multiple tracks have selections and the master track is one of them,
+                // disallow movement because it doesn't make sense dragging horizontally and vertically
+                // at the same time.
+                return {0, 0};
+            } else {
+                if (!fromMaster && toMaster) {
+                    // When dragging from a non-master track to the master track,
+                    // interpret as dragging beyond the y-limit, to whatever track slot corresponding to the master track x-grid-position (toSlot.y)
+                    toGridPoint = {std::min(toGridPoint.y, tracks.getNumNonMasterTracks() - 1), view.getNumTrackProcessorSlots() - 2};
+                    gridDelta = toGridPoint - fromGridPoint;
+                }
+                // If more than one track has any selected items, it is ill defined to move some of the processors
+                // from a non-master track to the master track
+                maxAllowedTrackIndex = tracks.getNumNonMasterTracks() - 1;
+            }
+        }
+
         for (const auto& oldTrack : tracks.getState()) {
             for (const auto& processor : oldTrack) {
                 if (tracks.isProcessorSelected(processor)) {
-                    juce::Point<int> oldPosition = {tracks.indexOf(oldTrack), processor[IDs::processorSlot]};
+                    const juce::Point<int> oldPosition = {tracks.indexOf(oldTrack), processor[IDs::processorSlot]};
                     auto newPosition = oldPosition + gridDelta;
-                    const ValueTree &newTrack = tracks.getTrack(newPosition.x);
+                    if (newPosition.x < minAllowedTrackIndex) {
+                        gridDelta.x += minAllowedTrackIndex - newPosition.x;
+                        newPosition = oldPosition + gridDelta;
+                    }
+                    if (newPosition.x > maxAllowedTrackIndex) {
+                        gridDelta.x += maxAllowedTrackIndex - newPosition.x;
+                        newPosition = oldPosition + gridDelta;
+                    }
 
+                    const ValueTree& newTrack = tracks.getTrack(newPosition.x);
                     int maxAllowedSlot = tracks.getMixerChannelSlotForTrack(newTrack);
                     // Mixer channels can be dragged into the reserved last slot of each track
                     // if it doesn't already hold a mixer channel.
@@ -65,10 +97,6 @@ private:
                         tracks.getMixerChannelProcessorForTrack(newTrack).isValid())
                         maxAllowedSlot -= 1;
 
-                    if (newPosition.x < minAllowedTrackIndex)
-                        gridDelta.x += minAllowedTrackIndex - newPosition.x;
-                    if (newPosition.x > maxAllowedTrackIndex)
-                        gridDelta.x += maxAllowedTrackIndex - newPosition.x;
                     if (newPosition.y < minAllowedSlot)
                         gridDelta.y += minAllowedSlot - newPosition.y;
                     if (newPosition.y > maxAllowedSlot)
@@ -124,7 +152,7 @@ private:
     InputState &input;
     StatefulAudioProcessorContainer &audioProcessorContainer;
 
-    juce::Point<int> gridDelta;
+    juce::Point<int> fromGridPoint, gridDelta;
     OwnedArray<InsertProcessorAction> insertActions;
     SelectAction updateSelectionAction;
     UpdateAllDefaultConnectionsAction updateConnectionsAction;

@@ -98,7 +98,7 @@ private:
             return;
 
         const auto& masterTrack = tracks.getMasterTrack();
-        bool trackSelected = tracks.isTrackSelected(masterTrack);
+        bool trackSelected = tracks.doesTrackHaveSelections(masterTrack);
         for (auto processorSlot = 0; processorSlot < masterTrackGridCells.size(); processorSlot++) {
             auto *cell = masterTrackGridCells.getUnchecked(processorSlot);
             const auto &processor = TracksState::getProcessorAtSlot(masterTrack, processorSlot);
@@ -109,7 +109,7 @@ private:
         for (auto trackIndex = 0; trackIndex < gridCells.size(); trackIndex++) {
             auto* trackGridCells = gridCells.getUnchecked(trackIndex);
             const auto& track = tracks.getTrack(trackIndex);
-            trackSelected = tracks.isTrackSelected(track);
+            trackSelected = tracks.doesTrackHaveSelections(track);
             for (auto processorSlot = 0; processorSlot < trackGridCells->size(); processorSlot++) {
                 auto *cell = trackGridCells->getUnchecked(processorSlot);
                 const auto& processor = TracksState::getProcessorAtSlot(track, processorSlot);
