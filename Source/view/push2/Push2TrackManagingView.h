@@ -49,7 +49,7 @@ public:
             const auto& track = tracks.getTrackWithViewIndex(i);
             // TODO left/right buttons
             label->setVisible(true);
-            label->setMainColour(tracks.getTrackColour(track));
+            label->setMainColour(TracksState::getTrackColour(track));
             label->setText(track[IDs::name], dontSendNotification);
             label->setSelected(track == focusedTrack);
         }

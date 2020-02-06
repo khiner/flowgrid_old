@@ -87,7 +87,7 @@ public:
         return processor[IDs::name] == MixerChannelProcessor::name();
     }
 
-    bool doesTrackHaveSelections(const ValueTree& track) const {
+    static bool doesTrackHaveSelections(const ValueTree& track) {
         return track[IDs::selected] || trackHasAnySlotSelected(track);
     }
 
@@ -122,11 +122,11 @@ public:
 
     // TODO many (if not all) of the usages of this method should be replaced
     // with checking for track _focus_
-    bool trackHasAnySlotSelected(const ValueTree &track) const {
+    static bool trackHasAnySlotSelected(const ValueTree &track) {
         return firstSelectedSlotForTrack(track) != -1;
     }
 
-    const Colour getTrackColour(const ValueTree& track) const {
+    static Colour getTrackColour(const ValueTree& track) {
         return Colour::fromString(track[IDs::colour].toString());
     }
 
