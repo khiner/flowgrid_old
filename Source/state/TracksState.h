@@ -112,40 +112,6 @@ public:
         return getSlotMask(track).getHighestBit();
     }
 
-    ValueTree findFirstTrackWithSelectedProcessors() {
-        for (const auto& track : tracks) {
-            if (findFirstSelectedProcessor(track).isValid())
-                return track;
-        }
-        return {};
-    }
-
-    ValueTree findLastTrackWithSelectedProcessors() {
-        for (int i = getNumTracks() - 1; i >= 0; i--) {
-            const auto& track = tracks.getChild(i);
-            if (findFirstSelectedProcessor(track).isValid())
-                return track;
-        }
-        return {};
-    }
-
-    static ValueTree findFirstSelectedProcessor(const ValueTree& track) {
-        for (const auto& processor : track) {
-            if (isSlotSelected(track, processor[IDs::processorSlot]))
-                return processor;
-        }
-        return {};
-    }
-
-    static ValueTree findLastSelectedProcessor(const ValueTree& track) {
-        for (int i = track.getNumChildren() - 1; i >= 0; i--) {
-            const auto& processor = track.getChild(i);
-            if (isSlotSelected(track, processor[IDs::processorSlot]))
-                return processor;
-        }
-        return {};
-    }
-
     static bool trackHasAnySlotSelected(const ValueTree &track) {
         return firstSelectedSlotForTrack(track) != -1;
     }

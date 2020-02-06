@@ -48,107 +48,6 @@ struct MoveSelectedItemsAction : UndoableAction {
 
 private:
 
-    static ValueTree lastNonSelectedNonMixerProcessorWithSlotLessThan(const ValueTree& track, int slot) {
-        for (int i = track.getNumChildren() - 1; i >= 0; i--) {
-            const auto& processor = track.getChild(i);
-            if (int(processor[IDs::processorSlot]) < slot &&
-                !TracksState::isMixerChannelProcessor(processor) &&
-                !TracksState::isProcessorSelected(processor))
-                return processor;
-        }
-        return {};
-    }
-
-    // This is done in three phases.
-    // * Handle cases when there are both master-track and non-master-track selections.
-    // * _Limit_ the x/y delta to the obvious left/right/top/bottom boundaries, with appropriate special cases for mixer channel slots.
-    // * _Expand_ the slot-delta just enough to allow groups of selected processors to move below non-selected processors.
-    // (The principle here is to only create new processor rows if necessary.)
-    juce::Point<int> limitGridDelta(juce::Point<int> gridDelta) {
-        // ---------- Special cases ---------- //
-
-        bool multipleTracksSelected = tracks.doesMoreThanOneTrackHaveSelections();
-        // In the special case that multiple tracks have selections and the master track is one of them,
-        // disallow movement because it doesn't make sense dragging horizontally and vertically at the same time.
-        if (multipleTracksSelected && tracks.doesTrackHaveSelections(tracks.getMasterTrack()))
-            return {0, 0};
-
-        auto originalGridDelta = gridDelta; // used for y-expand phase after limiting gridDelta
-
-        // When dragging from a non-master track to the master track,
-        // interpret as dragging beyond the y-limit, to whatever track slot corresponding to the master track x-grid-position (toSlot.y)
-        if (multipleTracksSelected &&
-            !TracksState::isMasterTrack(tracks.getTrack(fromGridPoint.x)) &&
-            TracksState::isMasterTrack(tracks.getTrack((fromGridPoint + gridDelta).x)))
-            gridDelta = {gridDelta.y, view.getNumTrackProcessorSlots() - 2};
-
-
-        // ---------- Limit track movement ---------- //
-
-        // If more than one track has any selected items, don't move any the processors from a non-master track to the master track
-        int maxAllowedTrackIndex = multipleTracksSelected ? tracks.getNumNonMasterTracks() - 1 : tracks.getNumTracks() - 1;
-
-        const auto& firstTrackWithSelectedProcessors = tracks.findFirstTrackWithSelectedProcessors();
-        const auto& lastTrackWithSelectedProcessors = tracks.findLastTrackWithSelectedProcessors();
-        gridDelta.x = std::clamp(gridDelta.x, -tracks.indexOf(firstTrackWithSelectedProcessors),
-                                 maxAllowedTrackIndex - tracks.indexOf(lastTrackWithSelectedProcessors));
-
-
-        // ---------- Limit processor movement ---------- //
-
-        for (const auto& fromTrack : tracks.getState()) {
-            const auto& lastSelectedProcessor = TracksState::findLastSelectedProcessor(fromTrack);
-            if (!lastSelectedProcessor.isValid())
-                continue; // no selections to move
-
-            // Mixer channels can be dragged into the reserved last slot of each track if it doesn't already hold a mixer channel.
-            const auto& toTrack = tracks.getTrack(tracks.indexOf(fromTrack) + gridDelta.x);
-            int maxAllowedSlot = tracks.getMixerChannelSlotForTrack(toTrack) - 1;
-            if (!tracks.getMixerChannelProcessorForTrack(toTrack).isValid() &&
-                TracksState::isMixerChannelProcessor(lastSelectedProcessor))
-                maxAllowedSlot += 1;
-
-            const auto& firstSelectedProcessor = TracksState::findFirstSelectedProcessor(fromTrack); // valid since lastSelected is valid
-            const int firstSelectedSlot = firstSelectedProcessor[IDs::processorSlot];
-            const int lastSelectedSlot = lastSelectedProcessor[IDs::processorSlot];
-            gridDelta.y = std::clamp(gridDelta.y, -firstSelectedSlot, maxAllowedSlot - lastSelectedSlot);
-        }
-
-        // ---------- Expand processor movement while limiting dynamic processor row creation ---------- //
-
-        // If this move would add new processor rows, make sure we're doing it for good reason!
-        // Only force new rows to be added if the selected group is being explicitly dragged to underneath
-        // at least one non-mixer processor.
-        //
-        // Find the largest slot-delta, less than the original given slot-delta, such that a contiguous selected
-        // group in the pre-move track would end up _completely below a non-selected, non-mixer_ processor in
-        // the post-move track.
-        for (const auto& oldTrack : tracks.getState()) {
-            if (!TracksState::trackHasAnySlotSelected(oldTrack))
-                continue;
-            const ValueTree& newTrack = tracks.getTrack(tracks.indexOf(oldTrack) + gridDelta.x);
-            bool firstSelectedInGroup = false;
-            for (int slot = 0; slot < tracks.getNumAvailableSlotsForTrack(oldTrack); slot++) {
-                const auto& processor = TracksState::getProcessorAtSlot(oldTrack, slot);
-                if (!firstSelectedInGroup && processor.isValid() && TracksState::isProcessorSelected(processor)) {
-                    firstSelectedInGroup = true;
-
-                    int newSlot = int(processor[IDs::processorSlot]) + originalGridDelta.y;
-                    const auto& lastNonSelected = lastNonSelectedNonMixerProcessorWithSlotLessThan(newTrack, newSlot);
-                    if (lastNonSelected.isValid()) {
-                        int newSlotDelta = int(lastNonSelected[IDs::processorSlot]) + 1 - int(processor[IDs::processorSlot]);
-                        if (newSlotDelta <= originalGridDelta.y)
-                            gridDelta.y = std::max(gridDelta.y, newSlotDelta); // TODO feels like there's a break condition here somewhere...
-                    }
-                } else {
-                    firstSelectedInGroup = false;
-                }
-            }
-        }
-
-        return gridDelta;
-    }
-
     struct MoveSelectionsAction : public SelectAction {
         MoveSelectionsAction(juce::Point<int> gridDelta,
                              TracksState &tracks, ConnectionsState &connections, ViewState &view,
@@ -249,6 +148,139 @@ private:
 
     SelectAction createUpdateSelectionAction() {
         return MoveSelectionsAction(gridDelta, tracks, connections, view, input, audioProcessorContainer);
+    }
+
+
+    // This is done in three phases.
+    // * Handle cases when there are both master-track and non-master-track selections.
+    // * _Limit_ the x/y delta to the obvious left/right/top/bottom boundaries, with appropriate special cases for mixer channel slots.
+    // * _Expand_ the slot-delta just enough to allow groups of selected processors to move below non-selected processors.
+    // (The principle here is to only create new processor rows if necessary.)
+    juce::Point<int> limitGridDelta(juce::Point<int> originalGridDelta) {
+        bool multipleTracksSelected = tracks.doesMoreThanOneTrackHaveSelections();
+        // In the special case that multiple tracks have selections and the master track is one of them,
+        // disallow movement because it doesn't make sense dragging horizontally and vertically at the same time.
+        if (multipleTracksSelected && TracksState::doesTrackHaveSelections(tracks.getMasterTrack()))
+            return {0, 0};
+
+        // When dragging from a non-master track to the master track, interpret as dragging beyond the y-limit,
+        // to whatever track slot corresponding to the master track x-grid-position (x/y is flipped in master track).
+        if (multipleTracksSelected &&
+            !TracksState::isMasterTrack(tracks.getTrack(fromGridPoint.x)) &&
+            TracksState::isMasterTrack(tracks.getTrack(fromGridPoint.x + originalGridDelta.x)))
+            return {limitTrackDelta(originalGridDelta.y, multipleTracksSelected), view.getNumTrackProcessorSlots() - 2};
+
+        int limitedTrackDelta = limitTrackDelta(originalGridDelta.x, multipleTracksSelected);
+        int limitedSlotDelta = limitSlotDelta(originalGridDelta.y, limitedTrackDelta);
+        return {limitedTrackDelta, limitedSlotDelta};
+    }
+
+    int limitTrackDelta(int originalTrackDelta, bool multipleTracksSelected) {
+        // If more than one track has any selected items, don't move any the processors from a non-master track to the master track
+        int maxAllowedTrackIndex = multipleTracksSelected ? tracks.getNumNonMasterTracks() - 1 : tracks.getNumTracks() - 1;
+
+        const auto& firstTrackWithSelectedProcessors = findFirstTrackWithSelectedProcessors();
+        const auto& lastTrackWithSelectedProcessors = findLastTrackWithSelectedProcessors();
+        return std::clamp(originalTrackDelta, -tracks.indexOf(firstTrackWithSelectedProcessors),
+                          maxAllowedTrackIndex - tracks.indexOf(lastTrackWithSelectedProcessors));
+    }
+
+    int limitSlotDelta(int originalSlotDelta, int limitedTrackDelta) {
+        int limitedSlotDelta = originalSlotDelta;
+        for (const auto& fromTrack : tracks.getState()) {
+            const auto& lastSelectedProcessor = findLastSelectedProcessor(fromTrack);
+            if (!lastSelectedProcessor.isValid())
+                continue; // no processors to move
+
+            // Mixer channels can be dragged into the reserved last slot of each track if it doesn't already hold a mixer channel.
+            const auto& toTrack = tracks.getTrack(tracks.indexOf(fromTrack) + limitedTrackDelta);
+            int maxAllowedSlot = tracks.getMixerChannelSlotForTrack(toTrack) - 1;
+            if (!tracks.getMixerChannelProcessorForTrack(toTrack).isValid() &&
+                TracksState::isMixerChannelProcessor(lastSelectedProcessor))
+                maxAllowedSlot += 1;
+
+            const auto& firstSelectedProcessor = findFirstSelectedProcessor(fromTrack); // valid since lastSelected is valid
+            const int firstSelectedSlot = firstSelectedProcessor[IDs::processorSlot];
+            const int lastSelectedSlot = lastSelectedProcessor[IDs::processorSlot];
+            limitedSlotDelta = std::clamp(limitedSlotDelta, -firstSelectedSlot, maxAllowedSlot - lastSelectedSlot);
+
+            // ---------- Expand processor movement while limiting dynamic processor row creation ---------- //
+
+            // If this move would add new processor rows, make sure we're doing it for good reason!
+            // Only force new rows to be added if the selected group is being explicitly dragged to underneath
+            // at least one non-mixer processor.
+            //
+            // Find the largest slot-delta, less than the original given slot-delta, such that a contiguous selected
+            // group in the pre-move track would end up _completely below a non-selected, non-mixer_ processor in
+            // the post-move track.
+            for (const auto& processor : getFirstProcessorInEachContiguousSelectedGroup(fromTrack)) {
+                int toSlot = int(processor[IDs::processorSlot]) + originalSlotDelta;
+                const auto& lastNonSelected = lastNonSelectedNonMixerProcessorWithSlotLessThan(toTrack, toSlot);
+                if (lastNonSelected.isValid()) {
+                    int candidateSlotDelta = int(lastNonSelected[IDs::processorSlot]) + 1 - int(processor[IDs::processorSlot]);
+                    if (candidateSlotDelta <= originalSlotDelta)
+                        limitedSlotDelta = std::max(limitedSlotDelta, candidateSlotDelta);
+                }
+            }
+        }
+
+        return limitedSlotDelta;
+    }
+
+    static ValueTree lastNonSelectedNonMixerProcessorWithSlotLessThan(const ValueTree& track, int slot) {
+        for (int i = track.getNumChildren() - 1; i >= 0; i--) {
+            const auto& processor = track.getChild(i);
+            if (int(processor[IDs::processorSlot]) < slot &&
+                !TracksState::isMixerChannelProcessor(processor) &&
+                !TracksState::isProcessorSelected(processor))
+                return processor;
+        }
+        return {};
+    }
+
+    static Array<ValueTree> getFirstProcessorInEachContiguousSelectedGroup(const ValueTree& track) {
+        Array<ValueTree> firstProcessorInEachContiguousSelectedGroup;
+        int lastSelectedProcessorSlot = -2;
+        for (const auto& processor : track) {
+            int slot = processor[IDs::processorSlot];
+            if (slot > lastSelectedProcessorSlot + 1 && TracksState::isSlotSelected(track, slot)) {
+                lastSelectedProcessorSlot = slot;
+                firstProcessorInEachContiguousSelectedGroup.add(processor);
+            }
+        }
+        return firstProcessorInEachContiguousSelectedGroup;
+    }
+
+    ValueTree findFirstTrackWithSelectedProcessors() {
+        for (const auto& track : tracks.getState())
+            if (findFirstSelectedProcessor(track).isValid())
+                return track;
+        return {};
+    }
+
+    ValueTree findLastTrackWithSelectedProcessors() {
+        for (int i = tracks.getNumTracks() - 1; i >= 0; i--) {
+            const auto& track = tracks.getTrack(i);
+            if (findFirstSelectedProcessor(track).isValid())
+                return track;
+        }
+        return {};
+    }
+
+    static ValueTree findFirstSelectedProcessor(const ValueTree& track) {
+        for (const auto& processor : track)
+            if (TracksState::isSlotSelected(track, processor[IDs::processorSlot]))
+                return processor;
+        return {};
+    }
+
+    static ValueTree findLastSelectedProcessor(const ValueTree& track) {
+        for (int i = track.getNumChildren() - 1; i >= 0; i--) {
+            const auto& processor = track.getChild(i);
+            if (TracksState::isSlotSelected(track, processor[IDs::processorSlot]))
+                return processor;
+        }
+        return {};
     }
 
     JUCE_DECLARE_NON_COPYABLE(MoveSelectedItemsAction)
