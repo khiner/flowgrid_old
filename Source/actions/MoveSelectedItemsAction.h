@@ -59,11 +59,14 @@ private:
         return {};
     }
 
-    // This is done in two passes.
-    // First, _limit_ the x/y delta to the obvious left/right/top/bottom boundaries, with appropriate special cases for mixer channel slots.
-    // Second, _expand_ the slot-delta just enough to allow groups of selected processors to move below non-selected processors.
+    // This is done in three phases.
+    // * Handle cases when there are both master-track and non-master-track selections.
+    // * _Limit_ the x/y delta to the obvious left/right/top/bottom boundaries, with appropriate special cases for mixer channel slots.
+    // * _Expand_ the slot-delta just enough to allow groups of selected processors to move below non-selected processors.
     // (The principle here is to only create new processor rows if necessary.)
     juce::Point<int> limitGridDelta(juce::Point<int> gridDelta) {
+        // ---------- Special cases ---------- //
+
         bool multipleTracksSelected = tracks.doesMoreThanOneTrackHaveSelections();
         // In the special case that multiple tracks have selections and the master track is one of them,
         // disallow movement because it doesn't make sense dragging horizontally and vertically at the same time.
@@ -79,28 +82,39 @@ private:
             TracksState::isMasterTrack(tracks.getTrack((fromGridPoint + gridDelta).x)))
             gridDelta = {gridDelta.y, view.getNumTrackProcessorSlots() - 2};
 
+
+        // ---------- Limit track movement ---------- //
+
         // If more than one track has any selected items, don't move any the processors from a non-master track to the master track
         int maxAllowedTrackIndex = multipleTracksSelected ? tracks.getNumNonMasterTracks() - 1 : tracks.getNumTracks() - 1;
 
-        for (const auto& oldTrack : tracks.getState()) {
-            if (!TracksState::trackHasAnySlotSelected(oldTrack))
-                continue;
-            const int oldTrackIndex = tracks.indexOf(oldTrack);
-            gridDelta.x = std::clamp(gridDelta.x, -oldTrackIndex, maxAllowedTrackIndex - oldTrackIndex);
+        const auto& firstTrackWithSelectedProcessors = tracks.findFirstTrackWithSelectedProcessors();
+        const auto& lastTrackWithSelectedProcessors = tracks.findLastTrackWithSelectedProcessors();
+        gridDelta.x = std::clamp(gridDelta.x, -tracks.indexOf(firstTrackWithSelectedProcessors),
+                                 maxAllowedTrackIndex - tracks.indexOf(lastTrackWithSelectedProcessors));
 
-            const ValueTree& newTrack = tracks.getTrack(oldTrackIndex + gridDelta.x);
-            bool newTrackHasMixer = tracks.getMixerChannelProcessorForTrack(newTrack).isValid();
-            for (const auto& processor : oldTrack) {
-                if (TracksState::isProcessorSelected(processor)) {
-                    // Mixer channels can be dragged into the reserved last slot of each track if it doesn't already hold a mixer channel.
-                    int maxAllowedSlot = tracks.getMixerChannelSlotForTrack(newTrack);
-                    if (newTrackHasMixer || !TracksState::isMixerChannelProcessor(processor))
-                        maxAllowedSlot -= 1;
-                    const int oldSlot = processor[IDs::processorSlot];
-                    gridDelta.y = std::clamp(gridDelta.y, -oldSlot, maxAllowedSlot - oldSlot);
-                }
-            }
+
+        // ---------- Limit processor movement ---------- //
+
+        for (const auto& fromTrack : tracks.getState()) {
+            const auto& lastSelectedProcessor = TracksState::findLastSelectedProcessor(fromTrack);
+            if (!lastSelectedProcessor.isValid())
+                continue; // no selections to move
+
+            // Mixer channels can be dragged into the reserved last slot of each track if it doesn't already hold a mixer channel.
+            const auto& toTrack = tracks.getTrack(tracks.indexOf(fromTrack) + gridDelta.x);
+            int maxAllowedSlot = tracks.getMixerChannelSlotForTrack(toTrack) - 1;
+            if (!tracks.getMixerChannelProcessorForTrack(toTrack).isValid() &&
+                TracksState::isMixerChannelProcessor(lastSelectedProcessor))
+                maxAllowedSlot += 1;
+
+            const auto& firstSelectedProcessor = TracksState::findFirstSelectedProcessor(fromTrack); // valid since lastSelected is valid
+            const int firstSelectedSlot = firstSelectedProcessor[IDs::processorSlot];
+            const int lastSelectedSlot = lastSelectedProcessor[IDs::processorSlot];
+            gridDelta.y = std::clamp(gridDelta.y, -firstSelectedSlot, maxAllowedSlot - lastSelectedSlot);
         }
+
+        // ---------- Expand processor movement while limiting dynamic processor row creation ---------- //
 
         // If this move would add new processor rows, make sure we're doing it for good reason!
         // Only force new rows to be added if the selected group is being explicitly dragged to underneath
