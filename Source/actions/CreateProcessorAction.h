@@ -8,9 +8,9 @@
 #include "InsertProcessorAction.h"
 
 struct CreateProcessorAction : public UndoableAction {
-    CreateProcessorAction(const ValueTree& processorToCreate, const PluginDescription &description, int trackIndex, int slot,
+    CreateProcessorAction(ValueTree processorToCreate, const PluginDescription &description, int trackIndex, int slot,
                           TracksState &tracks, ViewState &view, StatefulAudioProcessorContainer &audioProcessorContainer)
-            : processorToCreate(processorToCreate), insertAction(processorToCreate, trackIndex, slot, tracks, view),
+            : processorToCreate(std::move(processorToCreate)), insertAction(this->processorToCreate, trackIndex, slot, tracks, view),
               audioProcessorContainer(audioProcessorContainer) {}
 
     CreateProcessorAction(const PluginDescription &description, int trackIndex, int slot,

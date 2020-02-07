@@ -1,17 +1,14 @@
 #pragma once
 
-#include <state/ConnectionsState.h>
 #include <state/TracksState.h>
 
 #include "JuceHeader.h"
-#include "DisconnectProcessorAction.h"
 
 struct DuplicateProcessorAction : public UndoableAction {
     DuplicateProcessorAction(ValueTree& processorToDuplicate, int toTrackIndex, int toSlot,
                              TracksState &tracks, ViewState &view, StatefulAudioProcessorContainer &audioProcessorContainer, PluginManager &pluginManager)
-            : parentTrack(processorToDuplicate.getParent()),
-              processorIndex(parentTrack.indexOf(processorToDuplicate)),
-              createProcessorAction(createProcessor(processorToDuplicate, tracks), *pluginManager.getDescriptionForIdentifier(processorToDuplicate[IDs::id]),
+            : createProcessorAction(createProcessor(processorToDuplicate, tracks),
+                                    *pluginManager.getDescriptionForIdentifier(processorToDuplicate[IDs::id]),
                                     toTrackIndex, toSlot, tracks, view, audioProcessorContainer) {}
 
     DuplicateProcessorAction(ValueTree& processorToDuplicate, TracksState &tracks, ViewState &view,
@@ -32,8 +29,6 @@ struct DuplicateProcessorAction : public UndoableAction {
     }
 
 private:
-    ValueTree parentTrack;
-    int processorIndex;
     CreateProcessorAction createProcessorAction;
 
     static ValueTree createProcessor(ValueTree& fromProcessor, TracksState &tracks) {

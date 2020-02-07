@@ -2,7 +2,6 @@
 
 #include <state/ConnectionsState.h>
 #include <state/TracksState.h>
-#include <actions/DeleteProcessorAction.h>
 
 #include "JuceHeader.h"
 
@@ -12,9 +11,14 @@ struct DuplicateTrackAction : public UndoableAction {
             : trackToDuplicate(trackToDuplicate), trackIndex(trackToDuplicate.getParent().indexOf(trackToDuplicate)),
               createTrackAction(false, trackToDuplicate, true, tracks, connections, view) {
             for (auto processor : trackToDuplicate) {
-                duplicateProcessorActions.add(new DuplicateProcessorAction(processor, tracks.indexOf(trackToDuplicate) + 1, int(processor[IDs::processorSlot]) + 1,
+                duplicateProcessorActions.add(new DuplicateProcessorAction(processor, tracks.indexOf(trackToDuplicate) + 1, processor[IDs::processorSlot],
                                                                            tracks, view, audioProcessorContainer, pluginManager));
+                // Insert indexes will depend on how many processors are in the track at action creation time,
+                // so we actually need to perform as we go and undo all after.
+                duplicateProcessorActions.getLast()->perform();
             }
+        for (auto* duplicateProcessorAction : duplicateProcessorActions)
+            duplicateProcessorAction->undo();
     }
 
     bool perform() override {

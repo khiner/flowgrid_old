@@ -10,8 +10,7 @@ struct MoveSelectedItemsAction : UndoableAction {
                             InputState &input, StatefulAudioProcessorContainer &audioProcessorContainer)
             : tracks(tracks), connections(connections), view(view), input(input),
               audioProcessorContainer(audioProcessorContainer),
-              fromGridPoint(fromGridPoint),
-              gridDelta(limitGridDelta(toGridPoint - fromGridPoint)),
+              gridDelta(limitedGridDelta(fromGridPoint, toGridPoint)),
               insertActions(createInsertActions()),
               updateSelectionAction(createUpdateSelectionAction()),
               updateConnectionsAction(createUpdateConnectionsAction(makeInvalidDefaultsIntoCustom)) {
@@ -92,7 +91,7 @@ private:
     InputState &input;
     StatefulAudioProcessorContainer &audioProcessorContainer;
 
-    juce::Point<int> fromGridPoint, gridDelta;
+    juce::Point<int> gridDelta;
     OwnedArray<InsertProcessorAction> insertActions;
     SelectAction updateSelectionAction;
     UpdateAllDefaultConnectionsAction updateConnectionsAction;
@@ -107,8 +106,12 @@ private:
             return insertActions;
 
         auto addInsertActionsForTrackIndex = [&](int fromTrackIndex) {
+            const auto& fromTrack = tracks.getTrack(fromTrackIndex);
+            if (!findFirstSelectedProcessor(fromTrack).isValid())
+                return;
+
             const int toTrackIndex = fromTrackIndex + gridDelta.x;
-            const auto selectedProcessors = TracksState::getSelectedProcessorsForTrack(tracks.getTrack(fromTrackIndex));
+            const auto selectedProcessors = TracksState::getSelectedProcessorsForTrack(fromTrack);
 
             auto addInsertActionsForProcessor = [&](const ValueTree& processor) {
                 auto toSlot = int(processor[IDs::processorSlot]) + gridDelta.y;
@@ -119,7 +122,7 @@ private:
                 insertActions.getLast()->perform();
             };
 
-            if (fromTrackIndex == toTrackIndex && gridDelta.y > 0) {
+            if (gridDelta.x == 0 && gridDelta.y > 0) {
                 for (int processorIndex = selectedProcessors.size() - 1; processorIndex >= 0; processorIndex--)
                     addInsertActionsForProcessor(selectedProcessors.getUnchecked(processorIndex));
             } else {
@@ -155,7 +158,8 @@ private:
     // * _Limit_ the x/y delta to the obvious left/right/top/bottom boundaries, with appropriate special cases for mixer channel slots.
     // * _Expand_ the slot-delta just enough to allow groups of selected processors to move below non-selected processors.
     // (The principle here is to only create new processor rows if necessary.)
-    juce::Point<int> limitGridDelta(juce::Point<int> originalGridDelta) {
+    juce::Point<int> limitedGridDelta(juce::Point<int> fromGridPoint, juce::Point<int> toGridPoint) {
+        auto originalGridDelta = toGridPoint - fromGridPoint;
         bool multipleTracksSelected = tracks.doesMoreThanOneTrackHaveSelections();
         // In the special case that multiple tracks have selections and the master track is one of them,
         // disallow movement because it doesn't make sense dragging horizontally and vertically at the same time.
