@@ -198,7 +198,8 @@ private:
             // Mixer channels can be dragged into the reserved last slot of each track if it doesn't already hold a mixer channel.
             const auto& toTrack = tracks.getTrack(tracks.indexOf(fromTrack) + limitedTrackDelta);
             int maxAllowedSlot = tracks.getMixerChannelSlotForTrack(toTrack) - 1;
-            if (!tracks.getMixerChannelProcessorForTrack(toTrack).isValid() &&
+            const ValueTree &mixerChannel = tracks.getMixerChannelProcessorForTrack(toTrack);
+            if ((!mixerChannel.isValid() || lastSelectedProcessor == mixerChannel) &&
                 TracksState::isMixerChannelProcessor(lastSelectedProcessor))
                 maxAllowedSlot += 1;
 
