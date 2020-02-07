@@ -195,7 +195,8 @@ public:
                     return otherIndex;
             }
         }
-        return handleSameTrack(getMixerChannelProcessorForTrack(track).isValid() ? track.getNumChildren() - 1 : track.getNumChildren());
+        const ValueTree &mixerChannel = getMixerChannelProcessorForTrack(track);
+        return handleSameTrack(mixerChannel.isValid() && processor != mixerChannel ? track.getNumChildren() - 1 : track.getNumChildren());
     }
 
     // TODO needs update for multi-selection
