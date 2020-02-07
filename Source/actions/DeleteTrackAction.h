@@ -10,7 +10,7 @@ struct DeleteTrackAction : public UndoableAction {
     DeleteTrackAction(const ValueTree& trackToDelete, TracksState &tracks, ConnectionsState &connections,
                       StatefulAudioProcessorContainer &audioProcessorContainer)
             : trackToDelete(trackToDelete), trackIndex(trackToDelete.getParent().indexOf(trackToDelete)),
-              tracks(tracks), connections(connections) {
+              tracks(tracks) {
         while (trackToDelete.getNumChildren() > 0) {
             const ValueTree &processorToDelete = trackToDelete.getChild(trackToDelete.getNumChildren() - 1);
             deleteProcessorActions.add(new DeleteProcessorAction(processorToDelete, tracks, connections, audioProcessorContainer));
@@ -44,7 +44,6 @@ private:
     int trackIndex;
 
     TracksState &tracks;
-    ConnectionsState &connections;
 
     OwnedArray<DeleteProcessorAction> deleteProcessorActions;
 

@@ -150,7 +150,6 @@ private:
         return MoveSelectionsAction(gridDelta, tracks, connections, view, input, audioProcessorContainer);
     }
 
-
     // This is done in three phases.
     // * Handle cases when there are both master-track and non-master-track selections.
     // * _Limit_ the x/y delta to the obvious left/right/top/bottom boundaries, with appropriate special cases for mixer channel slots.

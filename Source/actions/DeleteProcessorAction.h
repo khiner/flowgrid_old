@@ -11,9 +11,8 @@ struct DeleteProcessorAction : public UndoableAction {
             StatefulAudioProcessorContainer &audioProcessorContainer)
             : parentTrack(processorToDelete.getParent()), processorToDelete(processorToDelete),
               processorIndex(parentTrack.indexOf(processorToDelete)),
-              tracks(tracks), connections(connections), audioProcessorContainer(audioProcessorContainer),
-              disconnectProcessorAction(DisconnectProcessorAction(connections, processorToDelete, all, true, true, true, true)) {
-    }
+              disconnectProcessorAction(DisconnectProcessorAction(connections, processorToDelete, all, true, true, true, true)),
+              audioProcessorContainer(audioProcessorContainer) {}
 
     bool perform() override {
         disconnectProcessorAction.perform();
@@ -38,12 +37,9 @@ private:
     ValueTree parentTrack;
     ValueTree processorToDelete;
     int processorIndex;
-
-    TracksState &tracks;
-    ConnectionsState &connections;
-    StatefulAudioProcessorContainer &audioProcessorContainer;
-
     DisconnectProcessorAction disconnectProcessorAction;
+
+    StatefulAudioProcessorContainer &audioProcessorContainer;
 
     JUCE_DECLARE_NON_COPYABLE(DeleteProcessorAction)
 };

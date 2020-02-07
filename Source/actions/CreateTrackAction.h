@@ -8,7 +8,7 @@
 struct CreateTrackAction : public UndoableAction {
     CreateTrackAction(bool addMixer, ValueTree nextToTrack, bool forceImmediatelyToRight,
                       TracksState &tracks, ConnectionsState &connections, ViewState &view)
-            : tracks(tracks), connections(connections), view(view) {
+            : tracks(tracks) {
         int numTracks = tracks.getNumNonMasterTracks();
         const auto& focusedTrack = tracks.getFocusedTrack();
 
@@ -29,6 +29,7 @@ struct CreateTrackAction : public UndoableAction {
 
         bool isSubTrack = nextToTrack.isValid() && !addMixer;
 
+        // TODO move into method and construct in initializer list
         trackToCreate = ValueTree(IDs::TRACK);
         trackToCreate.setProperty(IDs::uuid, Uuid().toString(), nullptr);
         trackToCreate.setProperty(IDs::name, isSubTrack ? makeTrackNameUnique(nextToTrack[IDs::name]) : ("Track " + String(numTracks + 1)), nullptr);
@@ -56,8 +57,6 @@ struct CreateTrackAction : public UndoableAction {
 
 protected:
     TracksState &tracks;
-    ConnectionsState &connections;
-    ViewState &view;
 
     // NOTE: assumes the track hasn't been added yet!
     String makeTrackNameUnique(const String& trackName) {

@@ -123,7 +123,7 @@ private:
 
     void addProcessor(const ValueTree &processorState) {
         static String errorMessage = "Could not create processor";
-        auto description = project.getTypeForIdentifier(processorState[IDs::id]);
+        auto description = project.getDescriptionForIdentifier(processorState[IDs::id]);
         auto processor = project.getFormatManager().createPluginInstance(*description, getSampleRate(), getBlockSize(), errorMessage);
         if (processorState.hasProperty(IDs::state)) {
             MemoryBlock memoryBlock;

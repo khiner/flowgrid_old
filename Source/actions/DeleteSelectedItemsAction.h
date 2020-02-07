@@ -7,8 +7,7 @@
 #include "DeleteTrackAction.h"
 
 struct DeleteSelectedItemsAction : public UndoableAction {
-    DeleteSelectedItemsAction(TracksState &tracks, ConnectionsState &connections, StatefulAudioProcessorContainer &audioProcessorContainer)
-            : tracks(tracks), connections(connections) {
+    DeleteSelectedItemsAction(TracksState &tracks, ConnectionsState &connections, StatefulAudioProcessorContainer &audioProcessorContainer) {
         for (const auto &selectedItem : tracks.findAllSelectedItems()) {
             if (selectedItem.hasType(IDs::TRACK))
                 deleteTrackActions.add(new DeleteTrackAction(selectedItem, tracks, connections, audioProcessorContainer));
@@ -23,7 +22,7 @@ struct DeleteSelectedItemsAction : public UndoableAction {
         for (auto *deleteTrackAction : deleteTrackActions)
             deleteTrackAction->perform();
 
-        return true;
+        return !deleteProcessorActions.isEmpty() || !deleteTrackActions.isEmpty();
     }
 
     bool undo() override {
@@ -32,7 +31,7 @@ struct DeleteSelectedItemsAction : public UndoableAction {
         for (auto *deleteProcessorAction : deleteProcessorActions)
             deleteProcessorAction->undo();
 
-        return true;
+        return !deleteProcessorActions.isEmpty() || !deleteTrackActions.isEmpty();
     }
 
     int getSizeInUnits() override {
@@ -40,9 +39,6 @@ struct DeleteSelectedItemsAction : public UndoableAction {
     }
 
 private:
-    TracksState &tracks;
-    ConnectionsState &connections;
-
     OwnedArray<DeleteTrackAction> deleteTrackActions;
     OwnedArray<DeleteProcessorAction> deleteProcessorActions;
 

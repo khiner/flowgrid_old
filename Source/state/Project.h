@@ -11,6 +11,7 @@
 #include <actions/SetDefaultConnectionsAllowedAction.h>
 #include <actions/UpdateAllDefaultConnectionsAction.h>
 #include <actions/MoveSelectedItemsAction.h>
+#include <actions/DuplicateSelectedItemsAction.h>
 
 #pragma once
 
@@ -211,7 +212,9 @@ public:
         undoManager.beginNewTransaction();
         undoManager.perform(new CreateTrackAction(addMixer, {}, false, tracks, connections, view));
         if (addMixer)
-            undoManager.perform(new CreateProcessorAction(MixerChannelProcessor::getPluginDescription(), mostRecentlyCreatedTrack, -1, tracks, input, view, *this));
+            undoManager.perform(new CreateProcessorAction(MixerChannelProcessor::getPluginDescription(),
+                                                          tracks.indexOf(mostRecentlyCreatedTrack),
+                                                          tracks, view, *this));
         setTrackSelected(mostRecentlyCreatedTrack, true, true);
         updateAllDefaultConnections(true);
     }
@@ -238,12 +241,11 @@ public:
     }
 
     void duplicateSelectedItems() {
-        undoManager.beginNewTransaction();
         if (isCurrentlyDraggingProcessor())
             endDraggingProcessor();
-        for (auto selectedItem : tracks.findAllSelectedItems()) {
-            duplicateItem(selectedItem);
-        }
+        undoManager.beginNewTransaction();
+        undoManager.perform(new DuplicateSelectedItemsAction(tracks, connections, view, *this, pluginManager));
+        updateAllDefaultConnections(false);
     }
 
     void beginDraggingProcessor(const ValueTree& processor) {
@@ -446,7 +448,7 @@ public:
         return pluginManager.getChosenType(menuId);
     }
 
-    std::unique_ptr<PluginDescription> getTypeForIdentifier(const String &identifier) const {
+    std::unique_ptr<PluginDescription> getDescriptionForIdentifier(const String &identifier) const {
         return pluginManager.getDescriptionForIdentifier(identifier);
     }
 
@@ -543,7 +545,11 @@ private:
             doCreateAndAddProcessor(description, mostRecentlyCreatedTrack, slot);
         }
 
-        undoManager.perform(new CreateProcessorAction(description, track, slot, tracks, input, view, *this));
+        if (slot == -1)
+            undoManager.perform(new CreateProcessorAction(description, tracks.indexOf(track), tracks, view, *this));
+        else
+            undoManager.perform(new CreateProcessorAction(description, tracks.indexOf(track), slot, tracks, view, *this));
+
         selectProcessor(mostRecentlyCreatedProcessor);
         updateAllDefaultConnections();
     }
@@ -564,32 +570,6 @@ private:
         doCreateAndAddProcessor(MixerChannelProcessor::getPluginDescription(), masterTrack);
 
         return masterTrack;
-    }
-
-    void duplicateItem(ValueTree &item) {
-        if (!item.isValid() || !item.getParent().isValid())
-            return;
-
-        // TODO port to actions
-//        if (item.hasType(IDs::TRACK) && !TracksState::isMasterTrack(item)) {
-//            undoManager.perform(new CreateTrackAction(false, item, true, tracks, connections, view));
-//            setTrackSelected(mostRecentlyCreatedTrack, true, true);
-//            for (auto processor : item) {
-//                tracks.saveProcessorStateInformationToState(processor);
-//                auto copiedProcessor = processor.createCopy();
-//                copiedProcessor.removeProperty(IDs::nodeId, nullptr);
-//                mostRecentlyCreatedTrack.addChild(copiedProcessor, item.indexOf(processor), &undoManager);
-//                selectProcessor(copiedProcessor);
-//            }
-//        } else if (item.hasType(IDs::PROCESSOR) && !tracks.isMixerChannelProcessor(item)) {
-//            tracks.saveProcessorStateInformationToState(item);
-//            auto track = item.getParent();
-//            auto copiedProcessor = item.createCopy();
-//            setProcessorSlot(track, copiedProcessor, int(item[IDs::processorSlot]) + 1);
-//            copiedProcessor.removeProperty(IDs::nodeId, nullptr);
-//            track.addChild(copiedProcessor, track.indexOf(item), &undoManager);
-//            selectProcessor(copiedProcessor);
-//        }
     }
 
     void createAudioIoProcessors() {

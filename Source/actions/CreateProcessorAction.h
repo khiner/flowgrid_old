@@ -2,14 +2,25 @@
 
 #include <state/TracksState.h>
 
+#include <utility>
+
 #include "JuceHeader.h"
 #include "InsertProcessorAction.h"
 
 struct CreateProcessorAction : public UndoableAction {
-    CreateProcessorAction(const PluginDescription &description, const ValueTree& track, int slot,
-                          TracksState &tracks, InputState &input, ViewState &view, StatefulAudioProcessorContainer &audioProcessorContainer)
-            : processorToCreate(createProcessor(description)), insertAction(createInsertAction(description, track, slot, tracks, view)), audioProcessorContainer(audioProcessorContainer) {
-    }
+    CreateProcessorAction(const ValueTree& processorToCreate, const PluginDescription &description, int trackIndex, int slot,
+                          TracksState &tracks, ViewState &view, StatefulAudioProcessorContainer &audioProcessorContainer)
+            : processorToCreate(processorToCreate), insertAction(processorToCreate, trackIndex, slot, tracks, view),
+              audioProcessorContainer(audioProcessorContainer) {}
+
+    CreateProcessorAction(const PluginDescription &description, int trackIndex, int slot,
+                          TracksState &tracks, ViewState &view, StatefulAudioProcessorContainer &audioProcessorContainer)
+            : CreateProcessorAction(createProcessor(description), description, trackIndex, slot, tracks, view, audioProcessorContainer) {}
+
+    CreateProcessorAction(const PluginDescription &description, int trackIndex,
+                          TracksState &tracks, ViewState &view, StatefulAudioProcessorContainer &audioProcessorContainer)
+            : CreateProcessorAction(createProcessor(description), description, trackIndex, getInsertSlot(description, trackIndex, tracks),
+                                    tracks, view, audioProcessorContainer) {}
 
     bool perform() override {
         insertAction.perform();
@@ -41,11 +52,13 @@ private:
         return processorToCreate;
     }
 
-    InsertProcessorAction createInsertAction(const PluginDescription &description, const ValueTree& track, int slot,
-                                             TracksState &tracks, ViewState &view) {
-        if (TracksState::isMixerChannelProcessor(processorToCreate) && !tracks.getMixerChannelProcessorForTrack(track).isValid()) {
+    static int getInsertSlot(const PluginDescription &description, int trackIndex, TracksState &tracks) {
+        const auto& track = tracks.getTrack(trackIndex);
+
+        int slot;
+        if (description.name == MixerChannelProcessor::name() && !tracks.getMixerChannelProcessorForTrack(track).isValid()) {
             slot = tracks.getMixerChannelSlotForTrack(track);
-        } else if (slot == -1) {
+        } else {
             if (description.numInputChannels == 0) {
                 slot = 0;
             } else {
@@ -55,8 +68,7 @@ private:
                 slot = indexToInsertProcessor <= 0 ? 0 : int(track.getChild(indexToInsertProcessor - 1)[IDs::processorSlot]) + 1;
             }
         }
-
-        return {processorToCreate, tracks.indexOf(track), slot, tracks, view};
+        return slot;
     }
 
     JUCE_DECLARE_NON_COPYABLE(CreateProcessorAction)

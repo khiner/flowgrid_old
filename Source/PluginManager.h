@@ -53,7 +53,7 @@ public:
         return userCreatablePluginListInternal;
     }
 
-    const KnownPluginList::SortMethod getPluginSortMethod() const {
+    KnownPluginList::SortMethod getPluginSortMethod() const {
         return pluginSortMethod;
     }
 
@@ -68,13 +68,11 @@ public:
     const PluginDescription* getChosenType(const int menuId) const {
         // TODO use `getTypes()[i]` instead (`getType` is deprecated)
         int internalPluginListIndex = userCreatablePluginListInternal.getIndexChosenByMenu(menuId);
-        if (internalPluginListIndex != -1) {
+        if (internalPluginListIndex != -1)
             return userCreatablePluginListInternal.getType(internalPluginListIndex);
-        }
         int externalPluginListIndex = knownPluginListExternal.getIndexChosenByMenu(menuId - userCreatablePluginListInternal.getNumTypes());
-        if (externalPluginListIndex != -1) {
+        if (externalPluginListIndex != -1)
             return knownPluginListExternal.getType(externalPluginListIndex);
-        }
         return nullptr;
     }
 
@@ -83,15 +81,10 @@ public:
     }
 
     bool doesTrackAlreadyHaveGeneratorOrInstrument(const ValueTree& track) {
-        for (const auto& child : track) {
-            if (child.hasType(IDs::PROCESSOR)) {
-                if (auto existingDescription = getDescriptionForIdentifier(child.getProperty(IDs::id))) {
-                    if (isGeneratorOrInstrument(existingDescription.get())) {
-                        return true;
-                    }
-                }
-            }
-        }
+        for (const auto& child : track)
+            if (auto existingDescription = getDescriptionForIdentifier(child.getProperty(IDs::id)))
+                if (isGeneratorOrInstrument(existingDescription.get()))
+                    return true;
         return false;
     }
 
