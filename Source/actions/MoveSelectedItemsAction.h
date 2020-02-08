@@ -8,7 +8,8 @@ struct MoveSelectedItemsAction : UndoableAction {
     MoveSelectedItemsAction(juce::Point<int> fromGridPoint, juce::Point<int> toGridPoint, bool makeInvalidDefaultsIntoCustom,
                             TracksState &tracks, ConnectionsState &connections, ViewState &view,
                             InputState &input, StatefulAudioProcessorContainer &audioProcessorContainer)
-            : gridDelta(limitedGridDelta(fromGridPoint, toGridPoint, tracks, view)), insertActions(createInsertActions(tracks, view)),
+            : gridDelta(limitedGridDelta(fromGridPoint, toGridPoint, tracks, view)),
+              insertActions(createInsertActions(tracks, view)),
               updateSelectionAction(gridDelta, tracks, connections, view, input, audioProcessorContainer),
               updateConnectionsAction(makeInvalidDefaultsIntoCustom, true, tracks, connections, input,
                                       audioProcessorContainer, updateSelectionAction.getNewFocusedTrack()) {
@@ -88,7 +89,7 @@ private:
     MoveSelectionsAction updateSelectionAction;
     UpdateAllDefaultConnectionsAction updateConnectionsAction;
 
-    // As a side effect, this method actually does the processor/track moves in preparation for
+    // As a side effect, this method actually performs the processor/track moves in preparation for
     // `createUpdateConnectionsAction`, which should be called immediately after this.
     // This avoids a redundant `undo` on all insert actions here, as well as the subsequent
     // `perform` that would be needed in `createUpdateConnectionsAction` to find the new default connections.

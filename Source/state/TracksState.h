@@ -195,6 +195,12 @@ public:
         return selectedSlotsMask;
     }
 
+    String createFullSelectionBitmask(const ValueTree& track) {
+        BigInteger selectedSlotsMask;
+        selectedSlotsMask.setRange(0, view.getNumAvailableSlotsForTrack(track), true);
+        return selectedSlotsMask.toString(2);
+    }
+
     static ValueTree getProcessorAtSlot(const ValueTree& track, int slot) {
         return track.isValid() ? track.getChildWithProperty(IDs::processorSlot, slot) : ValueTree();
     }

@@ -14,9 +14,8 @@ struct SelectTrackAction : public SelectAction {
         // take care of this track
         newTrackSelections.setUnchecked(trackIndex, selected);
         if (selected) {
-            BigInteger selectedSlotsMask;
-            selectedSlotsMask.setRange(0, view.getNumAvailableSlotsForTrack(track), true);
-            newSelectedSlotsMasks.setUnchecked(trackIndex, selectedSlotsMask.toString(2));
+            newSelectedSlotsMasks.setUnchecked(trackIndex, tracks.createFullSelectionBitmask(track));
+
             const ValueTree &firstProcessor = track.getChild(0);
             int slot = firstProcessor.isValid() ? int(firstProcessor[IDs::processorSlot]) : 0;
             setNewFocusedSlot({trackIndex, slot});

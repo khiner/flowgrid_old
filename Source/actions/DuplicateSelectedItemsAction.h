@@ -8,9 +8,8 @@
 // TODO should copy and insert the entire selected range, not one-at-a-time
 struct DuplicateSelectedItemsAction : public UndoableAction {
     DuplicateSelectedItemsAction(TracksState &tracks, ConnectionsState &connections, ViewState &view, InputState &input,
-                                 StatefulAudioProcessorContainer &audioProcessorContainer, PluginManager &pluginManager)
-            : selectAction(tracks, connections, view, input, audioProcessorContainer) {
-        const auto duplicatedTrackIndices = findDuplicatedTrackIndices(tracks);
+                                 PluginManager &pluginManager, StatefulAudioProcessorContainer &audioProcessorContainer) {
+        auto duplicatedTrackIndices = findDuplicatedTrackIndices(tracks);
         int selectedTrackIndex = 0;
         for (const auto& selectedItem : tracks.findAllSelectedItems()) {
             if (selectedItem.hasType(IDs::TRACK) && !TracksState::isMasterTrack(selectedItem)) {
@@ -27,6 +26,7 @@ struct DuplicateSelectedItemsAction : public UndoableAction {
                                                    tracks, view, pluginManager, audioProcessorContainer);
             }
         }
+        selectAction = std::make_unique<MoveSelectionsAction>(createTrackActions, tracks, connections, view, input, audioProcessorContainer);
         for (int i = createProcessorActions.size() - 1; i >= 0; i--)
             createProcessorActions.getUnchecked(i)->undoTemporary();
         for (int i = createTrackActions.size() - 1; i >= 0; i--)
@@ -39,13 +39,13 @@ struct DuplicateSelectedItemsAction : public UndoableAction {
         for (auto* createProcessorAction : createProcessorActions)
             createProcessorAction->perform();
 
-//        selectAction.perform();
+        selectAction->perform();
 
         return !createTrackActions.isEmpty() || !createProcessorActions.isEmpty();
     }
 
     bool undo() override {
-//        selectAction.undo();
+        selectAction->undo();
 
         for (int i = createProcessorActions.size() - 1; i >= 0; i--)
             createProcessorActions.getUnchecked(i)->undo();
@@ -61,15 +61,26 @@ struct DuplicateSelectedItemsAction : public UndoableAction {
 
 private:
     struct MoveSelectionsAction : public SelectAction {
-        MoveSelectionsAction(TracksState &tracks, ConnectionsState &connections, ViewState &view,
+        MoveSelectionsAction(const OwnedArray<CreateTrackAction>& createTrackActions,
+                             TracksState &tracks, ConnectionsState &connections, ViewState &view,
                              InputState &input, StatefulAudioProcessorContainer &audioProcessorContainer)
-                : SelectAction(tracks, connections, view, input, audioProcessorContainer) {}
+                : SelectAction(tracks, connections, view, input, audioProcessorContainer) {
+            for (int i = 0; i < newTrackSelections.size(); i++) {
+                newTrackSelections.setUnchecked(i, false);
+                newSelectedSlotsMasks.setUnchecked(i, BigInteger().toString(2));
+            }
+            for (auto* createTrackAction : createTrackActions) {
+                newTrackSelections.setUnchecked(createTrackAction->insertIndex, true);
+                const auto& track = tracks.getTrack(createTrackAction->insertIndex);
+                newSelectedSlotsMasks.setUnchecked(createTrackAction->insertIndex, tracks.createFullSelectionBitmask(track));
+            }
+        }
     };
 
     OwnedArray<CreateTrackAction> createTrackActions;
     OwnedArray<CreateProcessorAction> createProcessorActions;
-    MoveSelectionsAction selectAction;
-    
+    std::unique_ptr<SelectAction> selectAction;
+
     void addAndPerformCreateProcessorAction(ValueTree processor, int trackIndex, int slot,
                                             TracksState &tracks, ViewState &view, PluginManager &pluginManager,
                                             StatefulAudioProcessorContainer &audioProcessorContainer) {

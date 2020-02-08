@@ -11,9 +11,9 @@ struct CreateTrackAction : public UndoableAction {
             : CreateTrackAction(calculateInsertIndex(addMixer, derivedFromTrack, tracks),
                                 addMixer, derivedFromTrack, tracks, connections, view) {}
 
-    CreateTrackAction(int indexToInsertTrack, bool addMixer, ValueTree derivedFromTrack,
+    CreateTrackAction(int insertIndex, bool addMixer, ValueTree derivedFromTrack,
                       TracksState &tracks, ConnectionsState &connections, ViewState &view)
-            : indexToInsertTrack(indexToInsertTrack), tracks(tracks) {
+            : insertIndex(insertIndex), tracks(tracks) {
         const auto& focusedTrack = tracks.getFocusedTrack();
 
         if (!derivedFromTrack.isValid()) {
@@ -41,7 +41,7 @@ struct CreateTrackAction : public UndoableAction {
     }
 
     bool perform() override {
-        tracks.getState().addChild(trackToCreate, indexToInsertTrack, nullptr);
+        tracks.getState().addChild(trackToCreate, insertIndex, nullptr);
         return true;
     }
 
@@ -55,7 +55,7 @@ struct CreateTrackAction : public UndoableAction {
     }
 
     ValueTree trackToCreate;
-    int indexToInsertTrack;
+    int insertIndex;
 
 protected:
     TracksState &tracks;
