@@ -14,7 +14,7 @@
 struct UpdateAllDefaultConnectionsAction : public CreateOrDeleteConnectionsAction {
     
     UpdateAllDefaultConnectionsAction(bool makeInvalidDefaultsIntoCustom, bool resetDefaultExternalInputConnections,
-                                      ConnectionsState &connections, TracksState &tracks, InputState &input,
+                                      TracksState &tracks, ConnectionsState &connections, InputState &input,
                                       StatefulAudioProcessorContainer &audioProcessorContainer,
                                       ValueTree trackToTreatAsFocused={})
             : CreateOrDeleteConnectionsAction(connections) {

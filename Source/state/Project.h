@@ -210,7 +210,7 @@ public:
 
     void createTrack(bool addMixer=true) {
         undoManager.beginNewTransaction();
-        undoManager.perform(new CreateTrackAction(addMixer, {}, false, tracks, connections, view));
+        undoManager.perform(new CreateTrackAction(addMixer, {}, tracks, connections, view));
         if (addMixer)
             undoManager.perform(new CreateProcessorAction(MixerChannelProcessor::getPluginDescription(),
                                                           tracks.indexOf(mostRecentlyCreatedTrack),
@@ -541,7 +541,7 @@ private:
     void doCreateAndAddProcessor(const PluginDescription &description, ValueTree& track, int slot=-1) {
         if (PluginManager::isGeneratorOrInstrument(&description) &&
             pluginManager.doesTrackAlreadyHaveGeneratorOrInstrument(track)) {
-            undoManager.perform(new CreateTrackAction(false, track, false, tracks, connections, view));
+            undoManager.perform(new CreateTrackAction(false, track, tracks, connections, view));
             doCreateAndAddProcessor(description, mostRecentlyCreatedTrack, slot);
         }
 
@@ -565,6 +565,7 @@ private:
         masterTrack.setProperty(IDs::selected, false, nullptr);
         masterTrack.setProperty(IDs::selectedSlotsMask, BigInteger().toString(2), nullptr);
 
+        // TODO should be done via action
         tracks.getState().appendChild(masterTrack, nullptr);
 
         doCreateAndAddProcessor(MixerChannelProcessor::getPluginDescription(), masterTrack);
@@ -810,7 +811,8 @@ private:
     }
 
     void updateAllDefaultConnections(bool makeInvalidDefaultsIntoCustom=false) {
-        undoManager.perform(new UpdateAllDefaultConnectionsAction(makeInvalidDefaultsIntoCustom, true, connections, tracks, input, *this));
+        undoManager.perform(new UpdateAllDefaultConnectionsAction(makeInvalidDefaultsIntoCustom, true, tracks,
+                                                                  connections, input, *this));
     }
 
     void resetDefaultExternalInputs() {

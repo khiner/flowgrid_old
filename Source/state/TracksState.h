@@ -140,6 +140,38 @@ public:
         return getFocusedProcessor() == processor;
     }
 
+    ValueTree findFirstTrackWithSelectedProcessors() {
+        for (const auto& track : tracks)
+            if (findFirstSelectedProcessor(track).isValid())
+                return track;
+        return {};
+    }
+
+    ValueTree findLastTrackWithSelectedProcessors() {
+        for (int i = getNumTracks() - 1; i >= 0; i--) {
+            const auto& track = getTrack(i);
+            if (findFirstSelectedProcessor(track).isValid())
+                return track;
+        }
+        return {};
+    }
+
+    static ValueTree findFirstSelectedProcessor(const ValueTree& track) {
+        for (const auto& processor : track)
+            if (isSlotSelected(track, processor[IDs::processorSlot]))
+                return processor;
+        return {};
+    }
+
+    static ValueTree findLastSelectedProcessor(const ValueTree& track) {
+        for (int i = track.getNumChildren() - 1; i >= 0; i--) {
+            const auto& processor = track.getChild(i);
+            if (isSlotSelected(track, processor[IDs::processorSlot]))
+                return processor;
+        }
+        return {};
+    }
+
     // TODO vector probably a better choice for these
     Array<String> getSelectedSlotsMasks() const {
         Array<String> selectedSlotMasks;

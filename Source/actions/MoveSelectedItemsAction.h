@@ -8,12 +8,10 @@ struct MoveSelectedItemsAction : UndoableAction {
     MoveSelectedItemsAction(juce::Point<int> fromGridPoint, juce::Point<int> toGridPoint, bool makeInvalidDefaultsIntoCustom,
                             TracksState &tracks, ConnectionsState &connections, ViewState &view,
                             InputState &input, StatefulAudioProcessorContainer &audioProcessorContainer)
-            : tracks(tracks), connections(connections), view(view), input(input),
-              audioProcessorContainer(audioProcessorContainer),
-              gridDelta(limitedGridDelta(fromGridPoint, toGridPoint)),
-              insertActions(createInsertActions()),
-              updateSelectionAction(createUpdateSelectionAction()),
-              updateConnectionsAction(createUpdateConnectionsAction(makeInvalidDefaultsIntoCustom)) {
+            : gridDelta(limitedGridDelta(fromGridPoint, toGridPoint, tracks, view)), insertActions(createInsertActions(tracks, view)),
+              updateSelectionAction(gridDelta, tracks, connections, view, input, audioProcessorContainer),
+              updateConnectionsAction(makeInvalidDefaultsIntoCustom, true, tracks, connections, input,
+                                      audioProcessorContainer, updateSelectionAction.getNewFocusedTrack()) {
         // cleanup - yeah it's ugly but avoids need for some copy/move madness in createUpdateConnectionsAction
         for (int i = insertActions.size() - 1; i >= 0; i--)
             insertActions.getUnchecked(i)->undo();
@@ -85,29 +83,23 @@ private:
         }
     };
 
-    TracksState &tracks;
-    ConnectionsState &connections;
-    ViewState &view;
-    InputState &input;
-    StatefulAudioProcessorContainer &audioProcessorContainer;
-
     juce::Point<int> gridDelta;
     OwnedArray<InsertProcessorAction> insertActions;
-    SelectAction updateSelectionAction;
+    MoveSelectionsAction updateSelectionAction;
     UpdateAllDefaultConnectionsAction updateConnectionsAction;
 
     // As a side effect, this method actually does the processor/track moves in preparation for
     // `createUpdateConnectionsAction`, which should be called immediately after this.
     // This avoids a redundant `undo` on all insert actions here, as well as the subsequent
     // `perform` that would be needed in `createUpdateConnectionsAction` to find the new default connections.
-    OwnedArray<InsertProcessorAction> createInsertActions() {
+    OwnedArray<InsertProcessorAction> createInsertActions(TracksState &tracks, ViewState &view) {
         OwnedArray<InsertProcessorAction> insertActions;
         if (gridDelta.x == 0 && gridDelta.y == 0)
             return insertActions;
 
         auto addInsertActionsForTrackIndex = [&](int fromTrackIndex) {
             const auto& fromTrack = tracks.getTrack(fromTrackIndex);
-            if (!findFirstSelectedProcessor(fromTrack).isValid())
+            if (!TracksState::findFirstSelectedProcessor(fromTrack).isValid())
                 return;
 
             const int toTrackIndex = fromTrackIndex + gridDelta.x;
@@ -142,23 +134,12 @@ private:
         return insertActions;
     }
 
-    // Assumes all insertActions have been performed (see comment above `createInsertActions`)
-    // After determining what the new default connections will be, it moves everything back to where it was.
-    UpdateAllDefaultConnectionsAction createUpdateConnectionsAction(bool makeInvalidDefaultsIntoCustom) {
-        return UpdateAllDefaultConnectionsAction(makeInvalidDefaultsIntoCustom, true, connections, tracks, input,
-                                                 audioProcessorContainer, updateSelectionAction.getNewFocusedTrack());
-    }
-
-    SelectAction createUpdateSelectionAction() {
-        return MoveSelectionsAction(gridDelta, tracks, connections, view, input, audioProcessorContainer);
-    }
-
     // This is done in three phases.
     // * Handle cases when there are both master-track and non-master-track selections.
     // * _Limit_ the x/y delta to the obvious left/right/top/bottom boundaries, with appropriate special cases for mixer channel slots.
     // * _Expand_ the slot-delta just enough to allow groups of selected processors to move below non-selected processors.
     // (The principle here is to only create new processor rows if necessary.)
-    juce::Point<int> limitedGridDelta(juce::Point<int> fromGridPoint, juce::Point<int> toGridPoint) {
+    static juce::Point<int> limitedGridDelta(juce::Point<int> fromGridPoint, juce::Point<int> toGridPoint, TracksState &tracks, ViewState& view) {
         auto originalGridDelta = toGridPoint - fromGridPoint;
         bool multipleTracksSelected = tracks.doesMoreThanOneTrackHaveSelections();
         // In the special case that multiple tracks have selections and the master track is one of them,
@@ -171,27 +152,27 @@ private:
         if (multipleTracksSelected &&
             !TracksState::isMasterTrack(tracks.getTrack(fromGridPoint.x)) &&
             TracksState::isMasterTrack(tracks.getTrack(fromGridPoint.x + originalGridDelta.x)))
-            return {limitTrackDelta(originalGridDelta.y, multipleTracksSelected), view.getNumTrackProcessorSlots() - 2};
+            return {limitTrackDelta(originalGridDelta.y, multipleTracksSelected, tracks), view.getNumTrackProcessorSlots() - 2};
 
-        int limitedTrackDelta = limitTrackDelta(originalGridDelta.x, multipleTracksSelected);
-        int limitedSlotDelta = limitSlotDelta(originalGridDelta.y, limitedTrackDelta);
+        int limitedTrackDelta = limitTrackDelta(originalGridDelta.x, multipleTracksSelected, tracks);
+        int limitedSlotDelta = limitSlotDelta(originalGridDelta.y, limitedTrackDelta, tracks);
         return {limitedTrackDelta, limitedSlotDelta};
     }
 
-    int limitTrackDelta(int originalTrackDelta, bool multipleTracksSelected) {
+    static int limitTrackDelta(int originalTrackDelta, bool multipleTracksSelected, TracksState &tracks) {
         // If more than one track has any selected items, don't move any the processors from a non-master track to the master track
         int maxAllowedTrackIndex = multipleTracksSelected ? tracks.getNumNonMasterTracks() - 1 : tracks.getNumTracks() - 1;
 
-        const auto& firstTrackWithSelectedProcessors = findFirstTrackWithSelectedProcessors();
-        const auto& lastTrackWithSelectedProcessors = findLastTrackWithSelectedProcessors();
+        const auto& firstTrackWithSelectedProcessors = tracks.findFirstTrackWithSelectedProcessors();
+        const auto& lastTrackWithSelectedProcessors = tracks.findLastTrackWithSelectedProcessors();
         return std::clamp(originalTrackDelta, -tracks.indexOf(firstTrackWithSelectedProcessors),
                           maxAllowedTrackIndex - tracks.indexOf(lastTrackWithSelectedProcessors));
     }
 
-    int limitSlotDelta(int originalSlotDelta, int limitedTrackDelta) {
+    static int limitSlotDelta(int originalSlotDelta, int limitedTrackDelta, TracksState &tracks) {
         int limitedSlotDelta = originalSlotDelta;
         for (const auto& fromTrack : tracks.getState()) {
-            const auto& lastSelectedProcessor = findLastSelectedProcessor(fromTrack);
+            const auto& lastSelectedProcessor = TracksState::findLastSelectedProcessor(fromTrack);
             if (!lastSelectedProcessor.isValid())
                 continue; // no processors to move
 
@@ -203,7 +184,7 @@ private:
                 TracksState::isMixerChannelProcessor(lastSelectedProcessor))
                 maxAllowedSlot += 1;
 
-            const auto& firstSelectedProcessor = findFirstSelectedProcessor(fromTrack); // valid since lastSelected is valid
+            const auto& firstSelectedProcessor = TracksState::findFirstSelectedProcessor(fromTrack); // valid since lastSelected is valid
             const int firstSelectedSlot = firstSelectedProcessor[IDs::processorSlot];
             const int lastSelectedSlot = lastSelectedProcessor[IDs::processorSlot];
             limitedSlotDelta = std::clamp(limitedSlotDelta, -firstSelectedSlot, maxAllowedSlot - lastSelectedSlot);
@@ -253,38 +234,6 @@ private:
             }
         }
         return firstProcessorInEachContiguousSelectedGroup;
-    }
-
-    ValueTree findFirstTrackWithSelectedProcessors() {
-        for (const auto& track : tracks.getState())
-            if (findFirstSelectedProcessor(track).isValid())
-                return track;
-        return {};
-    }
-
-    ValueTree findLastTrackWithSelectedProcessors() {
-        for (int i = tracks.getNumTracks() - 1; i >= 0; i--) {
-            const auto& track = tracks.getTrack(i);
-            if (findFirstSelectedProcessor(track).isValid())
-                return track;
-        }
-        return {};
-    }
-
-    static ValueTree findFirstSelectedProcessor(const ValueTree& track) {
-        for (const auto& processor : track)
-            if (TracksState::isSlotSelected(track, processor[IDs::processorSlot]))
-                return processor;
-        return {};
-    }
-
-    static ValueTree findLastSelectedProcessor(const ValueTree& track) {
-        for (int i = track.getNumChildren() - 1; i >= 0; i--) {
-            const auto& processor = track.getChild(i);
-            if (TracksState::isSlotSelected(track, processor[IDs::processorSlot]))
-                return processor;
-        }
-        return {};
     }
 
     JUCE_DECLARE_NON_COPYABLE(MoveSelectedItemsAction)
