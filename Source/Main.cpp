@@ -255,7 +255,7 @@ public:
             case CommandIDs::duplicateSelected:
                 result.setInfo("Duplicate selected item(s)", String(), category, 0);
                 result.addDefaultKeypress('d', ModifierKeys::commandModifier);
-                result.setActive(tracks.canDuplicateSelected());
+                result.setActive(tracks.doesAnyTrackHaveSelections());
                 break;
             case CommandIDs::deleteSelected:
                 result.setInfo("Delete selected item(s)", String(), category, 0);

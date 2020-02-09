@@ -196,7 +196,7 @@ private:
             push2.disableWhiteLedButton(Push2MidiCommunicator::addDevice);
         }
 
-        if (tracks.canDuplicateSelected())
+        if (tracks.doesAnyTrackHaveSelections())
             push2.activateWhiteLedButton(Push2::duplicate);
         else
             push2.disableWhiteLedButton(Push2::duplicate);

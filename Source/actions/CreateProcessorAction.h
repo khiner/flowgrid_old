@@ -8,7 +8,7 @@
 #include "InsertProcessorAction.h"
 
 struct CreateProcessorAction : public UndoableAction {
-    CreateProcessorAction(ValueTree processorToCreate, const PluginDescription &description, int trackIndex, int slot,
+    CreateProcessorAction(ValueTree processorToCreate, int trackIndex, int slot,
                           TracksState &tracks, ViewState &view, StatefulAudioProcessorContainer &audioProcessorContainer)
             : trackIndex(trackIndex), slot(slot), processorToCreate(std::move(processorToCreate)),
               insertAction(this->processorToCreate, trackIndex, slot, tracks, view),
@@ -16,34 +16,31 @@ struct CreateProcessorAction : public UndoableAction {
 
     CreateProcessorAction(const PluginDescription &description, int trackIndex, int slot,
                           TracksState &tracks, ViewState &view, StatefulAudioProcessorContainer &audioProcessorContainer)
-            : CreateProcessorAction(createProcessor(description), description, trackIndex, slot, tracks, view, audioProcessorContainer) {}
+            : CreateProcessorAction(createProcessor(description), trackIndex, slot, tracks, view, audioProcessorContainer) {}
 
     CreateProcessorAction(const PluginDescription &description, int trackIndex,
                           TracksState &tracks, ViewState &view, StatefulAudioProcessorContainer &audioProcessorContainer)
-            : CreateProcessorAction(createProcessor(description), description, trackIndex, getInsertSlot(description, trackIndex, tracks),
+            : CreateProcessorAction(createProcessor(description), trackIndex, getInsertSlot(description, trackIndex, tracks),
                                     tracks, view, audioProcessorContainer) {}
 
     bool perform() override {
         insertAction.perform();
-        audioProcessorContainer.onProcessorCreated(processorToCreate);
+        if (processorToCreate.isValid())
+            audioProcessorContainer.onProcessorCreated(processorToCreate);
         return true;
     }
 
     bool undo() override {
         insertAction.undo();
-        audioProcessorContainer.onProcessorDestroyed(processorToCreate);
+        if (processorToCreate.isValid())
+            audioProcessorContainer.onProcessorDestroyed(processorToCreate);
         return true;
     }
 
     // The temporary versions of the perform/undo methods are used only to change the grid state
     // in the creation of other undoable actions that affect the grid.
-    bool performTemporary() {
-        insertAction.perform();
-    }
-
-    bool undoTemporary() {
-        insertAction.undo();
-    }
+    bool performTemporary() { insertAction.perform(); }
+    bool undoTemporary() { insertAction.undo(); }
 
     int getSizeInUnits() override {
         return (int)sizeof(*this); //xxx should be more accurate

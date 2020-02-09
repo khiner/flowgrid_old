@@ -5,10 +5,10 @@
 
 #include "JuceHeader.h"
 
-// TODO should copy and insert the entire selected range, not one-at-a-time
+// TODO update focus
 struct DuplicateSelectedItemsAction : public UndoableAction {
-    DuplicateSelectedItemsAction(TracksState &tracks, ConnectionsState &connections, ViewState &view, InputState &input,
-                                 PluginManager &pluginManager, StatefulAudioProcessorContainer &audioProcessorContainer) {
+    DuplicateSelectedItemsAction(TracksState &tracks, ConnectionsState &connections, ViewState &view,
+                                 InputState &input, StatefulAudioProcessorContainer &audioProcessorContainer) {
         auto selectedTracks = tracks.findSelectedNonMasterTracks();
         auto nonSelectedTracks = tracks.findNonSelectedTracks();
         std::vector<int> selectedTrackIndices;
@@ -23,24 +23,23 @@ struct DuplicateSelectedItemsAction : public UndoableAction {
             createTrackActions.getLast()->perform();
             for (const auto& processor : selectedTrack)
                 addAndPerformCreateProcessorAction(processor, duplicatedTrackIndex, processor[IDs::processorSlot],
-                                                   tracks, view, pluginManager, audioProcessorContainer);
+                                                   tracks, view, audioProcessorContainer);
             selectedTrackIndex++;
         }
         for (const auto& nonSelectedTrack : nonSelectedTracks) {
-            auto selectedProcessors = TracksState::findSelectedProcessorsForTrack(nonSelectedTrack);
-            selectedProcessors.removeIf([](const ValueTree& processor) { return TracksState::isMixerChannelProcessor(processor); });
+            const BigInteger slotsMask = TracksState::getSlotMask(nonSelectedTrack);
 
-            std::vector<int> selectedProcessorSlots;
-            for (const auto& selectedProcessor : selectedProcessors)
-                selectedProcessorSlots.push_back(selectedProcessor[IDs::processorSlot]);
-            auto duplicatedProcessorSlots = findDuplicationIndices(selectedProcessorSlots);
+            std::vector<int> selectedSlots;
+            for (int slot = 0; slot <= std::min(tracks.getMixerChannelSlotForTrack(nonSelectedTrack) - 1, slotsMask.getHighestBit()); slot++)
+                if (slotsMask[slot])
+                    selectedSlots.push_back(slot);
 
-            int selectedProcessorIndex = 0;
-            for (const auto& selectedProcessor : selectedProcessors) {
-                int duplicatedProcessorSlot = duplicatedProcessorSlots[selectedProcessorIndex];
-                addAndPerformCreateProcessorAction(selectedProcessor, tracks.indexOf(nonSelectedTrack), duplicatedProcessorSlot,
-                                                   tracks, view, pluginManager, audioProcessorContainer);
-                selectedProcessorIndex++;
+            auto duplicatedSlots = findDuplicationIndices(selectedSlots);
+
+            for (int i = 0; i < selectedSlots.size(); i++) {
+                const auto& processor = TracksState::getProcessorAtSlot(nonSelectedTrack, selectedSlots[i]);
+                addAndPerformCreateProcessorAction(processor, tracks.indexOf(nonSelectedTrack), duplicatedSlots[i],
+                                                   tracks, view, audioProcessorContainer);
             }
         }
 
@@ -52,17 +51,22 @@ struct DuplicateSelectedItemsAction : public UndoableAction {
     }
 
     bool perform() override {
-        for (auto* createTrackAction : createTrackActions)
-            createTrackAction->perform();
-        for (auto* createProcessorAction : createProcessorActions)
-            createProcessorAction->perform();
+        if (createTrackActions.isEmpty() && createProcessorActions.isEmpty())
+            return false;
 
+        for (auto *createTrackAction : createTrackActions)
+            createTrackAction->perform();
+        for (auto *createProcessorAction : createProcessorActions)
+            createProcessorAction->perform();
         selectAction->perform();
 
-        return !createTrackActions.isEmpty() || !createProcessorActions.isEmpty();
+        return true;
     }
 
     bool undo() override {
+        if (createTrackActions.isEmpty() && createProcessorActions.isEmpty())
+            return false;
+
         selectAction->undo();
 
         for (int i = createProcessorActions.size() - 1; i >= 0; i--)
@@ -70,7 +74,7 @@ struct DuplicateSelectedItemsAction : public UndoableAction {
         for (int i = createTrackActions.size() - 1; i >= 0; i--)
             createTrackActions.getUnchecked(i)->undo();
 
-        return !createTrackActions.isEmpty() || !createProcessorActions.isEmpty();
+        return true;
     }
 
     int getSizeInUnits() override {
@@ -108,10 +112,8 @@ private:
     std::unique_ptr<SelectAction> selectAction;
 
     void addAndPerformCreateProcessorAction(ValueTree processor, int trackIndex, int slot,
-                                            TracksState &tracks, ViewState &view, PluginManager &pluginManager,
-                                            StatefulAudioProcessorContainer &audioProcessorContainer) {
-        createProcessorActions.add(new CreateProcessorAction(createProcessor(processor, tracks),  *pluginManager.getDescriptionForIdentifier(processor[IDs::id]),
-                                                             trackIndex, slot, tracks, view, audioProcessorContainer));
+                                            TracksState &tracks, ViewState &view, StatefulAudioProcessorContainer &audioProcessorContainer) {
+        createProcessorActions.add(new CreateProcessorAction(createProcessor(processor, tracks), trackIndex, slot, tracks, view, audioProcessorContainer));
         // Insert indexes will depend on how many processors are in the track at action creation time,
         // so we actually need to perform as we go and undo all after.
         createProcessorActions.getLast()->performTemporary();

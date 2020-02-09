@@ -244,7 +244,7 @@ public:
         if (isCurrentlyDraggingProcessor())
             endDraggingProcessor();
         undoManager.beginNewTransaction();
-        undoManager.perform(new DuplicateSelectedItemsAction(tracks, connections, view, input, pluginManager, *this));
+        undoManager.perform(new DuplicateSelectedItemsAction(tracks, connections, view, input, *this));
         updateAllDefaultConnections(false);
     }
 

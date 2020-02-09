@@ -91,6 +91,13 @@ public:
         return track[IDs::selected] || trackHasAnySlotSelected(track);
     }
 
+    bool doesAnyTrackHaveSelections() const {
+        for (const auto& track : tracks)
+            if (doesTrackHaveSelections(track))
+                return true;
+        return false;
+    }
+
     bool doesMoreThanOneTrackHaveSelections() const {
         bool foundOne = false;
         for (const auto& track : tracks) {
@@ -172,7 +179,6 @@ public:
         return {};
     }
 
-    // TODO vector probably a better choice for these
     Array<String> getSelectedSlotsMasks() const {
         Array<String> selectedSlotMasks;
         for (const auto& track : tracks) {
@@ -224,15 +230,6 @@ public:
         }
         const ValueTree &mixerChannel = getMixerChannelProcessorForTrack(track);
         return handleSameTrack(mixerChannel.isValid() && processor != mixerChannel ? track.getNumChildren() - 1 : track.getNumChildren());
-    }
-
-    // TODO needs update for multi-selection
-    bool canDuplicateSelected() const {
-        const auto& focusedTrack = getFocusedTrack();
-        if (focusedTrack[IDs::selected] && !isMasterTrack(focusedTrack))
-            return true;
-        auto focusedProcessor = getFocusedProcessor();
-        return focusedProcessor.isValid() && !isMixerChannelProcessor(focusedProcessor);
     }
 
     UndoManager* getUndoManager() {

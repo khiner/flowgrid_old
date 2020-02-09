@@ -4,14 +4,12 @@
 
 #include "JuceHeader.h"
 #include "SelectAction.h"
-#include "UpdateAllDefaultConnectionsAction.h"
 
 // Inserting a processor "pushes" any contiguous set of processors starting at the given slot down.
 // (The new processor always "wins" by keeping its given slot.)
 // Doesn't take care of any select actions! (Caller is responsible for that.)
 struct InsertProcessorAction : UndoableAction {
-    InsertProcessorAction(const ValueTree &processor, int toTrackIndex, int toSlot,
-                          TracksState &tracks, ViewState &view)
+    InsertProcessorAction(const ValueTree &processor, int toTrackIndex, int toSlot, TracksState &tracks, ViewState &view)
             : addOrMoveProcessorAction(processor, toTrackIndex, toSlot, tracks, view),
               makeSlotsValidAction(createMakeSlotsValidAction(toTrackIndex, tracks, view)) {
         // cleanup - yeah it's ugly but avoids need for some copy/move madness in createMakeSlotsValidAction
@@ -52,12 +50,14 @@ private:
         bool perform() override {
             for (auto *addProcessorRowAction : addProcessorRowActions)
                 addProcessorRowAction->perform();
-            processor.setProperty(IDs::processorSlot, newSlot, nullptr);
+            if (processor.isValid())
+                processor.setProperty(IDs::processorSlot, newSlot, nullptr);
             return true;
         }
 
         bool undo() override {
-            processor.setProperty(IDs::processorSlot, oldSlot, nullptr);
+            if (processor.isValid())
+                processor.setProperty(IDs::processorSlot, oldSlot, nullptr);
             for (auto *addProcessorRowAction : addProcessorRowActions)
                 addProcessorRowAction->undo();
             return true;
@@ -133,15 +133,16 @@ private:
                   tracks(tracks) {}
 
         bool perform() override {
-            const ValueTree& oldTrack = tracks.getTrack(oldTrackIndex);
-            ValueTree newTrack = tracks.getTrack(newTrackIndex);
+            if (processor.isValid()) {
+                const ValueTree &oldTrack = tracks.getTrack(oldTrackIndex);
+                ValueTree newTrack = tracks.getTrack(newTrackIndex);
 
-            if (!oldTrack.isValid()) { // only inserting, not moving from another track
-                newTrack.addChild(processor, newIndex, nullptr);
-            } else if (oldTrack == newTrack) {
-                newTrack.moveChild(oldIndex, newIndex, nullptr);
-            } else {
-                newTrack.moveChildFromParent(oldTrack, oldIndex, newIndex, nullptr);
+                if (!oldTrack.isValid()) // only inserting, not moving from another track
+                    newTrack.addChild(processor, newIndex, nullptr);
+                else if (oldTrack == newTrack)
+                    newTrack.moveChild(oldIndex, newIndex, nullptr);
+                else
+                    newTrack.moveChildFromParent(oldTrack, oldIndex, newIndex, nullptr);
             }
             setProcessorSlotAction.perform();
 
@@ -149,16 +150,18 @@ private:
         }
 
         bool undo() override {
-            ValueTree oldTrack = tracks.getTrack(oldTrackIndex);
-            ValueTree newTrack = tracks.getTrack(newTrackIndex);
-
             setProcessorSlotAction.undo();
-            if (!oldTrack.isValid()) { // only inserting, not moving from another track
-                newTrack.removeChild(processor, nullptr);
-            } else if (oldTrack == newTrack) {
-                newTrack.moveChild(newIndex, oldIndex, nullptr);
-            } else {
-                oldTrack.moveChildFromParent(newTrack, newIndex, oldIndex, nullptr);
+
+            if (processor.isValid()) {
+                ValueTree oldTrack = tracks.getTrack(oldTrackIndex);
+                ValueTree newTrack = tracks.getTrack(newTrackIndex);
+
+                if (!oldTrack.isValid()) // only inserting, not moving from another track
+                    newTrack.removeChild(processor, nullptr);
+                else if (oldTrack == newTrack)
+                    newTrack.moveChild(newIndex, oldIndex, nullptr);
+                else
+                    oldTrack.moveChildFromParent(newTrack, newIndex, oldIndex, nullptr);
             }
 
             return true;
