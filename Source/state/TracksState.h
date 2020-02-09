@@ -205,17 +205,6 @@ public:
         return track.isValid() ? track.getChildWithProperty(IDs::processorSlot, slot) : ValueTree();
     }
 
-    static Array<ValueTree> getSelectedProcessorsForTrack(const ValueTree& track) {
-        Array<ValueTree> selectedProcessors;
-        auto selectedSlotsMask = getSlotMask(track);
-        for (const auto& processor : track) {
-                int slot = processor[IDs::processorSlot];
-                if (selectedSlotsMask[slot])
-                        selectedProcessors.add(processor);
-            }
-        return selectedProcessors;
-    }
-
     static bool isSlotSelected(const ValueTree& track, int slot) {
         return getSlotMask(track)[slot];
     }
@@ -277,17 +266,37 @@ public:
     Array<ValueTree> findAllSelectedItems() const {
         Array<ValueTree> selectedItems;
         for (const auto& track : tracks) {
-            if (track[IDs::selected]) {
+            if (track[IDs::selected])
                 selectedItems.add(track);
-            } else {
-                for (const auto& processor : track) {
-                    if (isProcessorSelected(processor)) {
-                        selectedItems.add(processor);
-                    }
-                }
-            }
+            else
+                selectedItems.addArray(findSelectedProcessorsForTrack(track));
         }
         return selectedItems;
+    }
+
+    Array<ValueTree> findSelectedNonMasterTracks() const {
+        Array<ValueTree> selectedTracks;
+        for (const auto& track : tracks)
+            if (track[IDs::selected] && !isMasterTrack(track))
+                selectedTracks.add(track);
+        return selectedTracks;
+    }
+
+    Array<ValueTree> findNonSelectedTracks() const {
+        Array<ValueTree> nonSelectedTracks;
+        for (const auto& track : tracks)
+            if (!track[IDs::selected])
+                nonSelectedTracks.add(track);
+        return nonSelectedTracks;
+    }
+
+    static Array<ValueTree> findSelectedProcessorsForTrack(const ValueTree& track) {
+        Array<ValueTree> selectedProcessors;
+        auto selectedSlotsMask = getSlotMask(track);
+        for (const auto& processor : track)
+            if (selectedSlotsMask[int(processor[IDs::processorSlot])])
+                selectedProcessors.add(processor);
+        return selectedProcessors;
     }
 
     ValueTree findProcessorNearestToSlot(const ValueTree &track, int slot) const {

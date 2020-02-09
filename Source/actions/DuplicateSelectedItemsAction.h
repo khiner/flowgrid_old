@@ -9,24 +9,42 @@
 struct DuplicateSelectedItemsAction : public UndoableAction {
     DuplicateSelectedItemsAction(TracksState &tracks, ConnectionsState &connections, ViewState &view, InputState &input,
                                  PluginManager &pluginManager, StatefulAudioProcessorContainer &audioProcessorContainer) {
-        auto duplicatedTrackIndices = findDuplicatedTrackIndices(tracks);
+        auto selectedTracks = tracks.findSelectedNonMasterTracks();
+        auto nonSelectedTracks = tracks.findNonSelectedTracks();
+        std::vector<int> selectedTrackIndices;
+        for (const auto& selectedTrack : selectedTracks)
+            selectedTrackIndices.push_back(tracks.indexOf(selectedTrack));
+
+        auto duplicatedTrackIndices = findDuplicationIndices(selectedTrackIndices);
         int selectedTrackIndex = 0;
-        for (const auto& selectedItem : tracks.findAllSelectedItems()) {
-            if (selectedItem.hasType(IDs::TRACK) && !TracksState::isMasterTrack(selectedItem)) {
-                int duplicatedTrackIndex = duplicatedTrackIndices[selectedTrackIndex];
-                createTrackActions.add(new CreateTrackAction(duplicatedTrackIndex, false, selectedItem, tracks, connections, view));
-                createTrackActions.getLast()->perform();
-                for (const auto& processor : selectedItem)
-                    addAndPerformCreateProcessorAction(processor, duplicatedTrackIndex, processor[IDs::processorSlot],
-                                                       tracks, view, pluginManager, audioProcessorContainer);
-                selectedTrackIndex++;
-            } else if (selectedItem.hasType(IDs::PROCESSOR) && !TracksState::isMixerChannelProcessor(selectedItem)) {
-                // TODO findNewProcessorIndices
-                addAndPerformCreateProcessorAction(selectedItem, tracks.indexOf(selectedItem.getParent()), int(selectedItem[IDs::processorSlot]) + 1,
+        for (const auto& selectedTrack : selectedTracks) {
+            int duplicatedTrackIndex = duplicatedTrackIndices[selectedTrackIndex];
+            createTrackActions.add(new CreateTrackAction(duplicatedTrackIndex, false, selectedTrack, tracks, connections, view));
+            createTrackActions.getLast()->perform();
+            for (const auto& processor : selectedTrack)
+                addAndPerformCreateProcessorAction(processor, duplicatedTrackIndex, processor[IDs::processorSlot],
                                                    tracks, view, pluginManager, audioProcessorContainer);
+            selectedTrackIndex++;
+        }
+        for (const auto& nonSelectedTrack : nonSelectedTracks) {
+            auto selectedProcessors = TracksState::findSelectedProcessorsForTrack(nonSelectedTrack);
+            selectedProcessors.removeIf([](const ValueTree& processor) { return TracksState::isMixerChannelProcessor(processor); });
+
+            std::vector<int> selectedProcessorSlots;
+            for (const auto& selectedProcessor : selectedProcessors)
+                selectedProcessorSlots.push_back(selectedProcessor[IDs::processorSlot]);
+            auto duplicatedProcessorSlots = findDuplicationIndices(selectedProcessorSlots);
+
+            int selectedProcessorIndex = 0;
+            for (const auto& selectedProcessor : selectedProcessors) {
+                int duplicatedProcessorSlot = duplicatedProcessorSlots[selectedProcessorIndex];
+                addAndPerformCreateProcessorAction(selectedProcessor, tracks.indexOf(nonSelectedTrack), duplicatedProcessorSlot,
+                                                   tracks, view, pluginManager, audioProcessorContainer);
+                selectedProcessorIndex++;
             }
         }
-        selectAction = std::make_unique<MoveSelectionsAction>(createTrackActions, tracks, connections, view, input, audioProcessorContainer);
+
+        selectAction = std::make_unique<MoveSelectionsAction>(createTrackActions, createProcessorActions, tracks, connections, view, input, audioProcessorContainer);
         for (int i = createProcessorActions.size() - 1; i >= 0; i--)
             createProcessorActions.getUnchecked(i)->undoTemporary();
         for (int i = createTrackActions.size() - 1; i >= 0; i--)
@@ -62,12 +80,20 @@ struct DuplicateSelectedItemsAction : public UndoableAction {
 private:
     struct MoveSelectionsAction : public SelectAction {
         MoveSelectionsAction(const OwnedArray<CreateTrackAction>& createTrackActions,
+                             const OwnedArray<CreateProcessorAction>& createProcessorActions,
                              TracksState &tracks, ConnectionsState &connections, ViewState &view,
                              InputState &input, StatefulAudioProcessorContainer &audioProcessorContainer)
                 : SelectAction(tracks, connections, view, input, audioProcessorContainer) {
             for (int i = 0; i < newTrackSelections.size(); i++) {
                 newTrackSelections.setUnchecked(i, false);
                 newSelectedSlotsMasks.setUnchecked(i, BigInteger().toString(2));
+            }
+            for (auto* createProcessorAction : createProcessorActions) {
+                String maskString = newSelectedSlotsMasks.getUnchecked(createProcessorAction->trackIndex);
+                BigInteger mask;
+                mask.parseString(maskString, 2);
+                mask.setBit(createProcessorAction->slot, true);
+                newSelectedSlotsMasks.setUnchecked(createProcessorAction->trackIndex, mask.toString(2));
             }
             for (auto* createTrackAction : createTrackActions) {
                 newTrackSelections.setUnchecked(createTrackAction->insertIndex, true);
@@ -98,25 +124,20 @@ private:
         return duplicatedProcessor;
     }
 
-    static std::vector<int> findDuplicatedTrackIndices(TracksState &tracks) {
-        std::vector<int> oldTrackIndices;
-        for (const auto& track : tracks.getState())
-            if (track[IDs::selected] && !TracksState::isMasterTrack(track))
-                oldTrackIndices.push_back(tracks.indexOf(track));
-
-        auto newTrackIndices = oldTrackIndices;
+    static std::vector<int> findDuplicationIndices(std::vector<int> currentIndices) {
+        auto duplicationIndices = currentIndices;
         int previousIndex = -1;
         int endOfContiguousRange = 0;
-        for (int i = 0; i < newTrackIndices.size(); i++) {
-            int oldTrackIndex = oldTrackIndices[i];
-            if (previousIndex != -1 && oldTrackIndex - previousIndex > 1)
+        for (int i = 0; i < duplicationIndices.size(); i++) {
+            int currentIndex = currentIndices[i];
+            if (previousIndex != -1 && currentIndex - previousIndex > 1)
                 endOfContiguousRange = i;
-            for (int j = endOfContiguousRange; j < newTrackIndices.size(); j++)
-                newTrackIndices[j] += 1;
-            previousIndex = oldTrackIndex;
+            for (int j = endOfContiguousRange; j < duplicationIndices.size(); j++)
+                duplicationIndices[j] += 1;
+            previousIndex = currentIndex;
         }
 
-        return newTrackIndices;
+        return duplicationIndices;
     }
 
     JUCE_DECLARE_NON_COPYABLE(DuplicateSelectedItemsAction)

@@ -104,7 +104,7 @@ private:
                 return;
 
             const int toTrackIndex = fromTrackIndex + gridDelta.x;
-            const auto selectedProcessors = TracksState::getSelectedProcessorsForTrack(fromTrack);
+            const auto selectedProcessors = TracksState::findSelectedProcessorsForTrack(fromTrack);
 
             auto addInsertActionsForProcessor = [&](const ValueTree& processor) {
                 auto toSlot = int(processor[IDs::processorSlot]) + gridDelta.y;

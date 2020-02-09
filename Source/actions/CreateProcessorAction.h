@@ -10,7 +10,8 @@
 struct CreateProcessorAction : public UndoableAction {
     CreateProcessorAction(ValueTree processorToCreate, const PluginDescription &description, int trackIndex, int slot,
                           TracksState &tracks, ViewState &view, StatefulAudioProcessorContainer &audioProcessorContainer)
-            : processorToCreate(std::move(processorToCreate)), insertAction(this->processorToCreate, trackIndex, slot, tracks, view),
+            : trackIndex(trackIndex), slot(slot), processorToCreate(std::move(processorToCreate)),
+              insertAction(this->processorToCreate, trackIndex, slot, tracks, view),
               audioProcessorContainer(audioProcessorContainer) {}
 
     CreateProcessorAction(const PluginDescription &description, int trackIndex, int slot,
@@ -47,6 +48,8 @@ struct CreateProcessorAction : public UndoableAction {
     int getSizeInUnits() override {
         return (int)sizeof(*this); //xxx should be more accurate
     }
+
+    int trackIndex, slot;
 
 private:
     ValueTree processorToCreate;
