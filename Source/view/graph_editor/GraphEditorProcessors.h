@@ -80,13 +80,16 @@ public:
     }
 
     void updateProcessorSlotColours() {
-        const static auto& baseColour = findColour(ResizableWindow::backgroundColourId);
+        const static auto& baseColour = findColour(ResizableWindow::backgroundColourId).brighter(0.4);
+
         for (int slot = 0; slot < processorSlotRectangles.size(); slot++) {
-            auto fillColour = baseColour.brighter(0.4);
+            auto fillColour = baseColour;
             if (TracksState::doesTrackHaveSelections(parent))
                 fillColour = fillColour.brighter(0.2);
             if (TracksState::isSlotSelected(parent, slot))
                 fillColour = TracksState::getTrackColour(parent);
+            if (tracks.isSlotFocused(parent, slot))
+                fillColour = fillColour.brighter(0.16);
             if (!view.isProcessorSlotInView(parent, slot))
                 fillColour = fillColour.darker(0.3);
             processorSlotRectangles.getUnchecked(slot)->setFill(fillColour);
@@ -172,7 +175,9 @@ private:
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {
         if (isSuitableType(tree) && i == IDs::processorSlot) {
             resized();
-        } else if ((tree.hasType(IDs::TRACK) && i == IDs::selected) || i == IDs::gridViewTrackOffset) {
+        } else if ((tree.hasType(IDs::TRACK) && i == IDs::selected) ||
+                   i == IDs::selectedSlotsMask  || i == IDs::focusedTrackIndex || i == IDs::focusedProcessorSlot ||
+                   i == IDs::gridViewTrackOffset) {
             updateProcessorSlotColours();
         } else if (i == IDs::gridViewSlotOffset || (i == IDs::masterViewSlotOffset && isMasterTrack())) {
             resized();
@@ -189,10 +194,7 @@ private:
             processorSlotRectangles.removeLast(processorSlotRectangles.size() - numSlots, true);
             resized();
             updateProcessorSlotColours();
-        } else if (i == IDs::selectedSlotsMask) {
-            updateProcessorSlotColours();
         }
-
         Utilities::ValueTreeObjectList<GraphEditorProcessor>::valueTreePropertyChanged(tree, i);
     }
 

@@ -127,8 +127,17 @@ public:
         return Colour::fromString(track[IDs::colour].toString());
     }
 
+    static bool isSlotSelected(const ValueTree& track, int slot) {
+        return getSlotMask(track)[slot];
+    }
+
+    static bool isProcessorSelected(const ValueTree& processor) {
+        return processor.hasType(IDs::PROCESSOR) &&
+               isSlotSelected(processor.getParent(), processor[IDs::processorSlot]);
+    }
+
     ValueTree getFocusedTrack() const {
-        juce::Point<int> trackAndSlot = view.getFocusedTrackAndSlot();
+        auto trackAndSlot = view.getFocusedTrackAndSlot();
         return getTrack(trackAndSlot.x);
     }
 
@@ -138,13 +147,13 @@ public:
         return getProcessorAtSlot(track, trackAndSlot.y);
     }
 
-    static bool isProcessorSelected(const ValueTree& processor) {
-        return processor.hasType(IDs::PROCESSOR) &&
-               isSlotSelected(processor.getParent(), processor[IDs::processorSlot]);
-    }
-
     bool isProcessorFocused(const ValueTree& processor) const {
         return getFocusedProcessor() == processor;
+    }
+
+    bool isSlotFocused(const ValueTree& track, int slot) const {
+        auto trackAndSlot = view.getFocusedTrackAndSlot();
+        return indexOf(track) == trackAndSlot.x && slot == trackAndSlot.y;
     }
 
     ValueTree findFirstTrackWithSelectedProcessors() {
@@ -209,10 +218,6 @@ public:
 
     static ValueTree getProcessorAtSlot(const ValueTree& track, int slot) {
         return track.isValid() ? track.getChildWithProperty(IDs::processorSlot, slot) : ValueTree();
-    }
-
-    static bool isSlotSelected(const ValueTree& track, int slot) {
-        return getSlotMask(track)[slot];
     }
 
     int getInsertIndexForProcessor(const ValueTree &track, const ValueTree& processor, int insertSlot) {
