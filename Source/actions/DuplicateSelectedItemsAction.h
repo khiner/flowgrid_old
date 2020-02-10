@@ -5,10 +5,10 @@
 
 #include "JuceHeader.h"
 
-// TODO update focus
 struct DuplicateSelectedItemsAction : public UndoableAction {
     DuplicateSelectedItemsAction(TracksState &tracks, ConnectionsState &connections, ViewState &view,
                                  InputState &input, StatefulAudioProcessorContainer &audioProcessorContainer) {
+        oldFocusedSlot = view.getFocusedTrackAndSlot();
         auto selectedTracks = tracks.findSelectedNonMasterTracks();
         auto nonSelectedTracks = tracks.findNonSelectedTracks();
         std::vector<int> selectedTrackIndices;
@@ -16,15 +16,16 @@ struct DuplicateSelectedItemsAction : public UndoableAction {
             selectedTrackIndices.push_back(tracks.indexOf(selectedTrack));
 
         auto duplicatedTrackIndices = findDuplicationIndices(selectedTrackIndices);
-        int selectedTrackIndex = 0;
-        for (const auto& selectedTrack : selectedTracks) {
+        for (int selectedTrackIndex = 0; selectedTrackIndex < selectedTracks.size(); selectedTrackIndex++) {
+            const auto& selectedTrack = selectedTracks.getUnchecked(selectedTrackIndex);
             int duplicatedTrackIndex = duplicatedTrackIndices[selectedTrackIndex];
             createTrackActions.add(new CreateTrackAction(duplicatedTrackIndex, false, selectedTrack, tracks, connections, view));
             createTrackActions.getLast()->perform();
-            for (const auto& processor : selectedTrack)
-                addAndPerformCreateProcessorAction(processor, duplicatedTrackIndex, processor[IDs::processorSlot],
-                                                   tracks, view, audioProcessorContainer);
-            selectedTrackIndex++;
+            for (const auto& processor : selectedTrack) {
+                int slot = processor[IDs::processorSlot];
+                addAndPerformCreateProcessorAction(processor, selectedTrackIndex, duplicatedTrackIndex,
+                                                   slot, slot, tracks, view, audioProcessorContainer);
+            }
         }
         for (const auto& nonSelectedTrack : nonSelectedTracks) {
             const BigInteger slotsMask = TracksState::getSlotMask(nonSelectedTrack);
@@ -35,15 +36,17 @@ struct DuplicateSelectedItemsAction : public UndoableAction {
                     selectedSlots.push_back(slot);
 
             auto duplicatedSlots = findDuplicationIndices(selectedSlots);
-
             for (int i = 0; i < selectedSlots.size(); i++) {
                 const auto& processor = TracksState::getProcessorAtSlot(nonSelectedTrack, selectedSlots[i]);
-                addAndPerformCreateProcessorAction(processor, tracks.indexOf(nonSelectedTrack), duplicatedSlots[i],
+                int trackIndex = tracks.indexOf(nonSelectedTrack);
+                addAndPerformCreateProcessorAction(processor, trackIndex, trackIndex, selectedSlots[i], duplicatedSlots[i],
                                                    tracks, view, audioProcessorContainer);
             }
         }
 
         selectAction = std::make_unique<MoveSelectionsAction>(createTrackActions, createProcessorActions, tracks, connections, view, input, audioProcessorContainer);
+        selectAction->setNewFocusedSlot(newFocusedSlot);
+
         for (int i = createProcessorActions.size() - 1; i >= 0; i--)
             createProcessorActions.getUnchecked(i)->undoTemporary();
         for (int i = createTrackActions.size() - 1; i >= 0; i--)
@@ -111,12 +114,16 @@ private:
     OwnedArray<CreateProcessorAction> createProcessorActions;
     std::unique_ptr<SelectAction> selectAction;
 
-    void addAndPerformCreateProcessorAction(ValueTree processor, int trackIndex, int slot,
+    juce::Point<int> oldFocusedSlot, newFocusedSlot;
+
+    // Insert indexes will depend on how many processors are in the track at action creation time,
+    // so we actually need to perform as we go and undo all of these afterward.
+    void addAndPerformCreateProcessorAction(ValueTree processor, int fromTrackIndex, int toTrackIndex, int fromSlot, int toSlot,
                                             TracksState &tracks, ViewState &view, StatefulAudioProcessorContainer &audioProcessorContainer) {
-        createProcessorActions.add(new CreateProcessorAction(createProcessor(processor, tracks), trackIndex, slot, tracks, view, audioProcessorContainer));
-        // Insert indexes will depend on how many processors are in the track at action creation time,
-        // so we actually need to perform as we go and undo all after.
+        createProcessorActions.add(new CreateProcessorAction(createProcessor(processor, tracks), toTrackIndex, toSlot, tracks, view, audioProcessorContainer));
         createProcessorActions.getLast()->performTemporary();
+        if (oldFocusedSlot.x == fromTrackIndex && oldFocusedSlot.y == fromSlot)
+            newFocusedSlot = {toTrackIndex, toSlot};
     }
 
     static ValueTree createProcessor(ValueTree& fromProcessor, TracksState &tracks) {
