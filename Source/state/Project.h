@@ -229,15 +229,14 @@ public:
     }
 
     void deleteSelectedItems() {
-        undoManager.beginNewTransaction();
         if (isCurrentlyDraggingProcessor())
             endDraggingProcessor();
+
+        undoManager.beginNewTransaction();
         undoManager.perform(new DeleteSelectedItemsAction(tracks, connections, *this));
-        if (view.getFocusedTrackIndex() >= tracks.getNumTracks()) {
+        if (view.getFocusedTrackIndex() >= tracks.getNumTracks())
             setTrackSelected(tracks.getTrack(tracks.getNumTracks() - 1), true, true);
-        } else {
-            updateAllDefaultConnections(false);
-        }
+        updateAllDefaultConnections(false);
     }
 
     void duplicateSelectedItems() {
