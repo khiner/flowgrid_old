@@ -11,16 +11,13 @@ struct DeleteTrackAction : public UndoableAction {
                       StatefulAudioProcessorContainer &audioProcessorContainer)
             : trackToDelete(trackToDelete), trackIndex(trackToDelete.getParent().indexOf(trackToDelete)),
               tracks(tracks) {
-        while (trackToDelete.getNumChildren() > 0) {
-            const ValueTree &processorToDelete = trackToDelete.getChild(trackToDelete.getNumChildren() - 1);
-            deleteProcessorActions.add(new DeleteProcessorAction(processorToDelete, tracks, connections, audioProcessorContainer));
-        }
+        for (const auto& processor : trackToDelete)
+            deleteProcessorActions.add(new DeleteProcessorAction(processor, tracks, connections, audioProcessorContainer));
     }
 
     bool perform() override {
-        for (auto* deleteProcessorAction : deleteProcessorActions) {
+        for (auto* deleteProcessorAction : deleteProcessorActions)
             deleteProcessorAction->perform();
-        }
         tracks.getState().removeChild(trackIndex, nullptr);
 
         return true;
@@ -28,9 +25,8 @@ struct DeleteTrackAction : public UndoableAction {
 
     bool undo() override {
         tracks.getState().addChild(trackToDelete, trackIndex, nullptr);
-        for (auto* deleteProcessorAction : deleteProcessorActions) {
+        for (auto* deleteProcessorAction : deleteProcessorActions)
             deleteProcessorAction->undo();
-        }
 
         return true;
     }
