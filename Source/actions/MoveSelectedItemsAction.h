@@ -174,20 +174,21 @@ private:
     // (The principle here is to only create new processor rows if necessary.)
     static juce::Point<int> limitedGridDelta(juce::Point<int> fromGridPoint, juce::Point<int> toGridPoint, TracksState &tracks, ViewState& view) {
         auto originalGridDelta = toGridPoint - fromGridPoint;
-        bool multipleTracksWithSelections = tracks.doesMoreThanOneTrackHaveSelections();
+        bool multipleTracksWithSelections = tracks.moreThanOneTrackHasSelections();
         // In the special case that multiple tracks have selections and the master track is one of them,
         // disallow movement because it doesn't make sense dragging horizontally and vertically at the same time.
         if (multipleTracksWithSelections && TracksState::doesTrackHaveSelections(tracks.getMasterTrack()))
             return {0, 0};
 
+        bool anyTrackSelected = tracks.anyTrackSelected();
         // When dragging from a non-master track to the master track, interpret as dragging beyond the y-limit,
         // to whatever track slot corresponding to the master track x-grid-position (x/y is flipped in master track).
         if (multipleTracksWithSelections &&
             !TracksState::isMasterTrack(tracks.getTrack(fromGridPoint.x)) &&
             TracksState::isMasterTrack(tracks.getTrack(fromGridPoint.x + originalGridDelta.x)))
-            return {limitTrackDelta(originalGridDelta.y, multipleTracksWithSelections, tracks), view.getNumTrackProcessorSlots() - 2};
+            return {limitTrackDelta(originalGridDelta.y, anyTrackSelected, multipleTracksWithSelections, tracks), view.getNumTrackProcessorSlots() - 2};
 
-        int limitedTrackDelta = limitTrackDelta(originalGridDelta.x, multipleTracksWithSelections, tracks);
+        int limitedTrackDelta = limitTrackDelta(originalGridDelta.x, anyTrackSelected, multipleTracksWithSelections, tracks);
         if (fromGridPoint.y == -1) // track-move only
             return {limitedTrackDelta, 0};
 
@@ -195,9 +196,11 @@ private:
         return {limitedTrackDelta, limitedSlotDelta};
     }
 
-    static int limitTrackDelta(int originalTrackDelta, bool multipleTracksSelected, TracksState &tracks) {
-        // If more than one track has any selected items, don't move any the processors from a non-master track to the master track
-        int maxAllowedTrackIndex = multipleTracksSelected ? tracks.getNumNonMasterTracks() - 1 : tracks.getNumTracks() - 1;
+    static int limitTrackDelta(int originalTrackDelta, bool anyTrackSelected, bool multipleTracksWithSelections, TracksState &tracks) {
+        // If more than one track has any selected items, or if any track itself is selected,
+        // don't move any the processors from a non-master track to the master track, or move
+        // a full track into the master track slot.
+        int maxAllowedTrackIndex = anyTrackSelected || multipleTracksWithSelections ? tracks.getNumNonMasterTracks() - 1 : tracks.getNumTracks() - 1;
 
         const auto& firstTrackWithSelectedProcessors = tracks.findFirstTrackWithSelectedProcessors();
         const auto& lastTrackWithSelectedProcessors = tracks.findLastTrackWithSelectedProcessors();

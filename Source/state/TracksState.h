@@ -91,14 +91,21 @@ public:
         return track[IDs::selected] || trackHasAnySlotSelected(track);
     }
 
-    bool doesAnyTrackHaveSelections() const {
+    bool anyTrackSelected() const {
+        for (const auto& track : tracks)
+            if (track[IDs::selected])
+                return true;
+        return false;
+    }
+
+    bool anyTrackHasSelections() const {
         for (const auto& track : tracks)
             if (doesTrackHaveSelections(track))
                 return true;
         return false;
     }
 
-    bool doesMoreThanOneTrackHaveSelections() const {
+    bool moreThanOneTrackHasSelections() const {
         bool foundOne = false;
         for (const auto& track : tracks) {
             if (doesTrackHaveSelections(track)) {
