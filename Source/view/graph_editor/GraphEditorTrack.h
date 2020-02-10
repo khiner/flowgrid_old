@@ -63,7 +63,7 @@ public:
     String getTrackName() const { return state[IDs::name].toString(); }
 
     Colour getColour() const {
-        const Colour &trackColour = tracks.getTrackColour(state);
+        const Colour &trackColour = TracksState::getTrackColour(state);
         return isSelected() ? trackColour.brighter(0.25) : trackColour;
     }
 

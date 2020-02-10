@@ -107,7 +107,7 @@ public:
         return nullptr;
     }
 
-    Point<int> trackAndSlotAt(const MouseEvent &e) {
+    juce::Point<int> trackAndSlotAt(const MouseEvent &e) {
         for (auto* track : objects) {
             if (track->contains(e.getEventRelativeTo(track).getPosition()))
                 return { track->getTrackIndex(), track->findSlotAt(e) };
@@ -145,7 +145,7 @@ public:
                 }
             }
         } else if (e.originalComponent == getProcessorForState(project.getCurrentlyDraggingProcessor()) && !e.mods.isRightButtonDown()) {
-            const Point<int> &trackAndSlot = trackAndSlotAt(e);
+            const auto& trackAndSlot = trackAndSlotAt(e);
             if (trackAndSlot.x != -1 && trackAndSlot.y != -1) {
                 project.dragProcessorToPosition(trackAndSlot);
             }
