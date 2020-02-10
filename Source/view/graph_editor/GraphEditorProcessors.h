@@ -15,9 +15,9 @@ class GraphEditorProcessors : public Component,
 public:
     explicit GraphEditorProcessors(Project& project, const ValueTree& state, ConnectorDragListener &connectorDragListener, ProcessorGraph& graph)
             : Utilities::ValueTreeObjectList<GraphEditorProcessor>(state),
-              project(project), tracks(project.getTracksManager()), viewStateManager(project.getViewStateManager()),
-              connectionsStateManager(project.getConnectionStateManager()),
-              viewState(viewStateManager.getState()), connectorDragListener(connectorDragListener), graph(graph) {
+              project(project), tracks(project.getTracksManager()), view(project.getViewStateManager()),
+              connections(project.getConnectionStateManager()),
+              viewState(view.getState()), connectorDragListener(connectorDragListener), graph(graph) {
         rebuildObjects();
         viewState.addListener(this);
         valueTreePropertyChanged(viewState, isMasterTrack() ? IDs::numMasterProcessorSlots : IDs::numProcessorSlots);
@@ -80,16 +80,15 @@ public:
     }
 
     void updateProcessorSlotColours() {
-        const auto& baseColour = findColour(ResizableWindow::backgroundColourId);
+        const static auto& baseColour = findColour(ResizableWindow::backgroundColourId);
         for (int slot = 0; slot < processorSlotRectangles.size(); slot++) {
-            auto fillColour = baseColour.brighter(0.13);
-            if (viewStateManager.isProcessorSlotInView(parent, slot)) {
-                fillColour = fillColour.brighter(0.3);
-                if (tracks.doesTrackHaveSelections(parent))
-                    fillColour = fillColour.brighter(0.2);
-                if (TracksState::isSlotSelected(parent, slot))
-                        fillColour = tracks.getTrackColour(parent);
-            }
+            auto fillColour = baseColour.brighter(0.4);
+            if (TracksState::doesTrackHaveSelections(parent))
+                fillColour = fillColour.brighter(0.2);
+            if (TracksState::isSlotSelected(parent, slot))
+                fillColour = TracksState::getTrackColour(parent);
+            if (!view.isProcessorSlotInView(parent, slot))
+                fillColour = fillColour.darker(0.3);
             processorSlotRectangles.getUnchecked(slot)->setFill(fillColour);
         }
     }
@@ -160,8 +159,8 @@ private:
 
     Project &project;
     TracksState &tracks;
-    ViewState &viewStateManager;
-    ConnectionsState &connectionsStateManager;
+    ViewState &view;
+    ConnectionsState &connections;
     ValueTree viewState;
 
     ConnectorDragListener &connectorDragListener;
