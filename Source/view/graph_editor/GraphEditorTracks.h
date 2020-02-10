@@ -109,46 +109,29 @@ public:
 
     juce::Point<int> trackAndSlotAt(const MouseEvent &e) {
         for (auto* track : objects) {
-            if (track->contains(e.getEventRelativeTo(track).getPosition()))
-                return { track->getTrackIndex(), track->findSlotAt(e) };
+            if (track->contains(e.getEventRelativeTo(track).getPosition())) {
+                if (const auto* trackLabel = dynamic_cast<Label *>(e.originalComponent))
+                    return {track->getTrackIndex(), -1}; // initiated at track label
+                else
+                    return {track->getTrackIndex(), track->findSlotAt(e)};
+            }
         }
         return { -1, -1 };
     }
     
     void mouseDown(const MouseEvent &e) override {
-        if (auto* track = dynamic_cast<GraphEditorTrack *>(e.originalComponent->getParentComponent())) {
-            if (e.originalComponent == track->getDragControlComponent() && track->getState() != tracks.getMasterTrack()) {
-                project.setCurrentlyDraggingTrack(track->getState());
-            }
-        } else if (auto* processor = dynamic_cast<GraphEditorProcessor *>(e.originalComponent)) {
-            if (!e.mods.isRightButtonDown()) {
-                project.beginDraggingProcessor(processor->getState());
-            }
+        if (!e.mods.isRightButtonDown()) {
+            const auto trackAndSlot = trackAndSlotAt(e);
+            if (trackAndSlot.x != -1)
+                project.beginDragging(trackAndSlot);
         }
     }
 
     void mouseDrag(const MouseEvent &e) override {
-        if (e.originalComponent->getParentComponent() == getTrackForState(project.getCurrentlyDraggingTrack())) {
-            auto pos = e.getEventRelativeTo(this).getPosition();
-            int currentIndex = parent.indexOf(project.getCurrentlyDraggingTrack());
-            for (auto* track : objects) {
-                if (track->getState() == project.getCurrentlyDraggingTrack())
-                    continue;
-                if (pos.x < track->getX() + track->getWidth() / 2) {
-                    int newIndex = std::clamp(objects.indexOf(track), 0, objects.size() - 1);
-                    if (currentIndex != newIndex) {
-                        if (currentIndex < newIndex) {
-                            --newIndex;
-                        }
-                        return parent.moveChild(currentIndex, newIndex, &project.getUndoManager());
-                    }
-                }
-            }
-        } else if (e.originalComponent == getProcessorForState(project.getCurrentlyDraggingProcessor()) && !e.mods.isRightButtonDown()) {
+        if (project.isCurrentlyDraggingProcessor() && !e.mods.isRightButtonDown()) {
             const auto& trackAndSlot = trackAndSlotAt(e);
-            if (trackAndSlot.x != -1 && trackAndSlot.y != -1) {
-                project.dragProcessorToPosition(trackAndSlot);
-            }
+            if (trackAndSlot.x != -1)
+                project.dragToPosition(trackAndSlot);
         }
     }
 

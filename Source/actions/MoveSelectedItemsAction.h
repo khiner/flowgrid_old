@@ -9,20 +9,20 @@ struct MoveSelectedItemsAction : UndoableAction {
                             TracksState &tracks, ConnectionsState &connections, ViewState &view,
                             InputState &input, StatefulAudioProcessorContainer &audioProcessorContainer)
             : gridDelta(limitedGridDelta(fromGridPoint, toGridPoint, tracks, view)),
-              insertActions(createInsertActions(tracks, view)),
               updateSelectionAction(gridDelta, tracks, connections, view, input, audioProcessorContainer),
+              insertTrackOrProcessorActions(createInsertActions(tracks, view)),
               updateConnectionsAction(makeInvalidDefaultsIntoCustom, true, tracks, connections, input,
                                       audioProcessorContainer, updateSelectionAction.getNewFocusedTrack()) {
         // cleanup - yeah it's ugly but avoids need for some copy/move madness in createUpdateConnectionsAction
-        for (int i = insertActions.size() - 1; i >= 0; i--)
-            insertActions.getUnchecked(i)->undo();
+        for (int i = insertTrackOrProcessorActions.size() - 1; i >= 0; i--)
+            insertTrackOrProcessorActions.getUnchecked(i)->undo();
     }
 
     bool perform() override {
-        if (insertActions.isEmpty())
+        if (insertTrackOrProcessorActions.isEmpty())
             return false;
 
-        for (auto* insertAction : insertActions)
+        for (auto* insertAction : insertTrackOrProcessorActions)
             insertAction->perform();
         updateSelectionAction.perform();
         updateConnectionsAction.perform();
@@ -30,11 +30,11 @@ struct MoveSelectedItemsAction : UndoableAction {
     }
 
     bool undo() override {
-        if (insertActions.isEmpty())
+        if (insertTrackOrProcessorActions.isEmpty())
             return false;
 
-        for (int i = insertActions.size() - 1; i >= 0; i--)
-            insertActions.getUnchecked(i)->undo();
+        for (int i = insertTrackOrProcessorActions.size() - 1; i >= 0; i--)
+            insertTrackOrProcessorActions.getUnchecked(i)->undo();
         updateSelectionAction.undo();
         updateConnectionsAction.undo();
         return true;
@@ -53,6 +53,8 @@ private:
                 : SelectAction(tracks, connections, view, input, audioProcessorContainer) {
             if (gridDelta.y != 0) {
                 for (int i = 0; i < tracks.getNumTracks(); i++) {
+                    if (oldTrackSelections.getUnchecked(i))
+                        continue; // track itself is being moved, so don't move its selected slots
                     const auto& track = tracks.getTrack(i);
                     BigInteger selectedSlotsMask;
                     selectedSlotsMask.parseString(track[IDs::selectedSlotsMask].toString(), 2);
@@ -66,6 +68,8 @@ private:
                     int toTrackIndex = fromTrackIndex + gridDelta.x;
                     if (toTrackIndex >= 0 && toTrackIndex < newSelectedSlotsMasks.size()) {
                         const auto &toTrack = tracks.getTrack(toTrackIndex);
+                        newTrackSelections.setUnchecked(toTrackIndex, newTrackSelections.getUnchecked(fromTrackIndex));
+                        newTrackSelections.setUnchecked(fromTrackIndex, false);
                         newSelectedSlotsMasks.setUnchecked(toTrackIndex, newSelectedSlotsMasks.getUnchecked(fromTrackIndex));
                         newSelectedSlotsMasks.setUnchecked(fromTrackIndex, BigInteger().toString(2));
                     }
@@ -84,32 +88,60 @@ private:
         }
     };
 
+    struct InsertTrackAction : UndoableAction {
+        InsertTrackAction(int fromTrackIndex, int toTrackIndex, TracksState &tracks)
+                : fromTrackIndex(fromTrackIndex), toTrackIndex(toTrackIndex), tracks(tracks) {
+        }
+
+        bool perform() override {
+            tracks.getState().moveChild(fromTrackIndex, toTrackIndex, nullptr);
+            return true;
+        }
+
+        bool undo() override {
+            tracks.getState().moveChild(toTrackIndex, fromTrackIndex, nullptr);
+            return true;
+        }
+
+        int fromTrackIndex, toTrackIndex;
+
+        TracksState &tracks;
+    };
+
     juce::Point<int> gridDelta;
-    OwnedArray<InsertProcessorAction> insertActions;
     MoveSelectionsAction updateSelectionAction;
+    OwnedArray<UndoableAction> insertTrackOrProcessorActions;
     UpdateAllDefaultConnectionsAction updateConnectionsAction;
 
     // As a side effect, this method actually performs the processor/track moves in preparation for
     // `createUpdateConnectionsAction`, which should be called immediately after this.
     // This avoids a redundant `undo` on all insert actions here, as well as the subsequent
     // `perform` that would be needed in `createUpdateConnectionsAction` to find the new default connections.
-    OwnedArray<InsertProcessorAction> createInsertActions(TracksState &tracks, ViewState &view) {
-        OwnedArray<InsertProcessorAction> insertActions;
+    OwnedArray<UndoableAction> createInsertActions(TracksState &tracks, ViewState &view) {
+        OwnedArray<UndoableAction> insertActions;
+
         if (gridDelta.x == 0 && gridDelta.y == 0)
             return insertActions;
 
         auto addInsertActionsForTrackIndex = [&](int fromTrackIndex) {
             const auto& fromTrack = tracks.getTrack(fromTrackIndex);
+            const int toTrackIndex = fromTrackIndex + gridDelta.x;
+
+            if (fromTrack[IDs::selected]) {
+                insertActions.add(new InsertTrackAction(fromTrackIndex, toTrackIndex, tracks));
+                insertActions.getLast()->perform();
+                return;
+            }
+
             if (!TracksState::findFirstSelectedProcessor(fromTrack).isValid())
                 return;
 
-            const int toTrackIndex = fromTrackIndex + gridDelta.x;
             const auto selectedProcessors = TracksState::findSelectedProcessorsForTrack(fromTrack);
 
             auto addInsertActionsForProcessor = [&](const ValueTree& processor) {
                 auto toSlot = int(processor[IDs::processorSlot]) + gridDelta.y;
                 insertActions.add(new InsertProcessorAction(processor, toTrackIndex, toSlot, tracks, view));
-                // Need to actually _do_ the move for each track, since this could affect the results of
+                // Need to actually _do_ the move for each processor, since this could affect the results of
                 // a later track's slot moves. i.e. if gridDelta.x == -1, then we need to move selected processors
                 // out of this track before advancing to the next track. (This action is undone later.)
                 insertActions.getLast()->perform();
@@ -142,20 +174,23 @@ private:
     // (The principle here is to only create new processor rows if necessary.)
     static juce::Point<int> limitedGridDelta(juce::Point<int> fromGridPoint, juce::Point<int> toGridPoint, TracksState &tracks, ViewState& view) {
         auto originalGridDelta = toGridPoint - fromGridPoint;
-        bool multipleTracksSelected = tracks.doesMoreThanOneTrackHaveSelections();
+        bool multipleTracksWithSelections = tracks.doesMoreThanOneTrackHaveSelections();
         // In the special case that multiple tracks have selections and the master track is one of them,
         // disallow movement because it doesn't make sense dragging horizontally and vertically at the same time.
-        if (multipleTracksSelected && TracksState::doesTrackHaveSelections(tracks.getMasterTrack()))
+        if (multipleTracksWithSelections && TracksState::doesTrackHaveSelections(tracks.getMasterTrack()))
             return {0, 0};
 
         // When dragging from a non-master track to the master track, interpret as dragging beyond the y-limit,
         // to whatever track slot corresponding to the master track x-grid-position (x/y is flipped in master track).
-        if (multipleTracksSelected &&
+        if (multipleTracksWithSelections &&
             !TracksState::isMasterTrack(tracks.getTrack(fromGridPoint.x)) &&
             TracksState::isMasterTrack(tracks.getTrack(fromGridPoint.x + originalGridDelta.x)))
-            return {limitTrackDelta(originalGridDelta.y, multipleTracksSelected, tracks), view.getNumTrackProcessorSlots() - 2};
+            return {limitTrackDelta(originalGridDelta.y, multipleTracksWithSelections, tracks), view.getNumTrackProcessorSlots() - 2};
 
-        int limitedTrackDelta = limitTrackDelta(originalGridDelta.x, multipleTracksSelected, tracks);
+        int limitedTrackDelta = limitTrackDelta(originalGridDelta.x, multipleTracksWithSelections, tracks);
+        if (fromGridPoint.y == -1) // track-move only
+            return {limitedTrackDelta, 0};
+
         int limitedSlotDelta = limitSlotDelta(originalGridDelta.y, limitedTrackDelta, tracks);
         return {limitedTrackDelta, limitedSlotDelta};
     }
@@ -173,6 +208,9 @@ private:
     static int limitSlotDelta(int originalSlotDelta, int limitedTrackDelta, TracksState &tracks) {
         int limitedSlotDelta = originalSlotDelta;
         for (const auto& fromTrack : tracks.getState()) {
+            if (fromTrack[IDs::selected])
+                continue; // entire track will be moved, so it shouldn't restrict other slot movements
+
             const auto& lastSelectedProcessor = TracksState::findLastSelectedProcessor(fromTrack);
             if (!lastSelectedProcessor.isValid())
                 continue; // no processors to move

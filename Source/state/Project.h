@@ -248,17 +248,22 @@ public:
         updateAllDefaultConnections(false);
     }
 
-    void beginDraggingProcessor(const ValueTree& processor) {
-        currentlyDraggingProcessor = processor;
-        initialDraggingTrackAndSlot = {tracks.indexOf(processor.getParent()), processor[IDs::processorSlot]};
+    void beginDragging(const juce::Point<int> trackAndSlot) {
+        initialDraggingTrackAndSlot = trackAndSlot;
         currentlyDraggingTrackAndSlot = initialDraggingTrackAndSlot;
 
         // During drag actions, everything _except the audio graph_ is updated as a preview
         statefulAudioProcessorContainer->pauseAudioGraphUpdates();
     }
 
-    void dragProcessorToPosition(const juce::Point<int> &trackAndSlot) {
-        if (!isCurrentlyDraggingProcessor() || trackAndSlot == currentlyDraggingTrackAndSlot)
+    void dragToPosition(juce::Point<int> trackAndSlot) {
+         if (!isCurrentlyDraggingProcessor())
+            return;
+
+         if (initialDraggingTrackAndSlot.y == -1) // track-move only
+            trackAndSlot.y = -1;
+
+        if (trackAndSlot == currentlyDraggingTrackAndSlot)
             return;
 
         if (currentlyDraggingTrackAndSlot == initialDraggingTrackAndSlot)
@@ -290,25 +295,12 @@ public:
         if (!isCurrentlyDraggingProcessor())
             return;
 
-        currentlyDraggingTrack = {};
-        currentlyDraggingProcessor = {};
+        initialDraggingTrackAndSlot = {-1, -1};
         statefulAudioProcessorContainer->resumeAudioGraphUpdatesAndApplyDiffSincePause();
     }
 
-    void setCurrentlyDraggingTrack(const ValueTree& currentlyDraggingTrack) {
-        this->currentlyDraggingTrack = currentlyDraggingTrack;
-    }
-
-    const ValueTree& getCurrentlyDraggingTrack() const {
-        return currentlyDraggingTrack;
-    }
-
     bool isCurrentlyDraggingProcessor() {
-        return currentlyDraggingProcessor.isValid();
-    }
-
-    ValueTree& getCurrentlyDraggingProcessor() {
-        return currentlyDraggingProcessor;
+        return initialDraggingTrackAndSlot.x != -1 || initialDraggingTrackAndSlot.y != -1;
     }
 
     void selectProcessorSlot(const ValueTree& track, int slot, bool deselectOthers=true) {
@@ -320,8 +312,9 @@ public:
         }
     }
 
-    void deselectProcessorSlot(const ValueTree& track, int slot) {
-        setProcessorSlotSelected(track, slot, false, false);
+    void setProcessorSlotSelected(const ValueTree& track, int slot, bool selected, bool deselectOthers=true) {
+        undoManager.perform(new SelectProcessorSlotAction(track, slot, selected, deselectOthers,
+                                                          tracks, connections, view, input, *this));
     }
 
     void setTrackSelected(const ValueTree& track, bool selected, bool deselectOthers) {
@@ -533,7 +526,6 @@ private:
 
     bool shiftHeld { false }, push2ShiftHeld { false };
 
-    ValueTree currentlyDraggingTrack, currentlyDraggingProcessor;
     juce::Point<int> initialDraggingTrackAndSlot, currentlyDraggingTrackAndSlot;
 
     ValueTree mostRecentlyCreatedTrack, mostRecentlyCreatedProcessor;
@@ -662,11 +654,6 @@ private:
                 onProcessorCreated(midiOutputProcessor);
             }
         }
-    }
-
-    void setProcessorSlotSelected(const ValueTree& track, int slot, bool selected, bool deselectOthers=true) {
-        undoManager.perform(new SelectProcessorSlotAction(track, slot, selected, deselectOthers,
-                                                          tracks, connections, view, input, *this));
     }
 
     void selectRectangle(const ValueTree &track, int slot) {

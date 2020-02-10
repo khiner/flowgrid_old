@@ -106,6 +106,7 @@ public:
                 else foundOne = true;
             }
         }
+        return false;
     }
 
     ValueTree findTrackWithUuid(const String& uuid) {

@@ -37,7 +37,7 @@ public:
         int slot = findSlotAt(e.getEventRelativeTo(this));
         bool isSlotSelected = TracksState::isSlotSelected(parent, slot);
         if (e.mods.isCommandDown() && isSlotSelected) {
-            project.deselectProcessorSlot(parent, slot);
+            project.setProcessorSlotSelected(parent, slot, false, false);
         } else if (!isSlotSelected) {
             // selects and focuses
             project.selectProcessorSlot(parent, slot, !e.mods.isCommandDown());

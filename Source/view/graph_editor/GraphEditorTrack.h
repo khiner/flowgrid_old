@@ -47,7 +47,22 @@ public:
 
                 CallOutBox::launchAsynchronously(colourSelector, getScreenBounds(), nullptr);
             } else {
-                setSelected(!(isSelected() && e.mods.isCommandDown()), !e.mods.isCommandDown());
+                if (!isSelected()) {
+                    // selects and focuses
+                    project.setTrackSelected(state, true, !e.mods.isCommandDown());
+                } else {
+                    // mouse-down on something already selected focuses
+                    project.setTrackSelected(state, !e.mods.isCommandDown(), false);
+                }
+            }
+        }
+    }
+
+    void mouseUp(const MouseEvent &e) override {
+        if (e.eventComponent == &nameLabel) {
+            if (e.mouseWasClicked() && !e.mods.isCommandDown()) {
+                // single click deselects other tracks/processors
+                project.setTrackSelected(state, true, true);
             }
         }
     }
@@ -57,8 +72,6 @@ public:
     bool isMasterTrack() const { return TracksState::isMasterTrack(state); }
 
     int getTrackIndex() const { return state.getParent().indexOf(state); }
-
-    int getTrackViewIndex() const { return tracks.getViewIndexForTrack(state); }
 
     String getTrackName() const { return state[IDs::name].toString(); }
 
@@ -70,10 +83,6 @@ public:
     void setColour(const Colour& colour) { state.setProperty(IDs::colour, colour.toString(), tracks.getUndoManager()); }
 
     bool isSelected() const { return state.getProperty(IDs::selected); }
-
-    void setSelected(bool selected, bool deselectOthers=true) {
-        project.setTrackSelected(state, selected, deselectOthers);
-    }
 
     const Label *getNameLabel() const { return &nameLabel; }
 
@@ -134,9 +143,8 @@ private:
     }
 
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {
-        if (i == IDs::gridViewSlotOffset || ((i == IDs::gridViewTrackOffset || i == IDs::masterViewSlotOffset) && isMasterTrack())) {
+        if (i == IDs::gridViewSlotOffset || ((i == IDs::gridViewTrackOffset || i == IDs::masterViewSlotOffset) && isMasterTrack()))
             resized();
-        }
 
         if (tree != state)
             return;
