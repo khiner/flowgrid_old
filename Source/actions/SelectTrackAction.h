@@ -8,7 +8,8 @@ struct SelectTrackAction : public SelectAction {
                       TracksState &tracks, ConnectionsState &connections, ViewState &view,
                       InputState &input, StatefulAudioProcessorContainer &audioProcessorContainer)
             : SelectAction(tracks, connections, view, input, audioProcessorContainer) {
-        jassert(track.isValid());
+        if (!track.isValid())
+            return; // no-op
 
         auto trackIndex = tracks.indexOf(track);
         // take care of this track

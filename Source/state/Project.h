@@ -234,7 +234,7 @@ public:
 
         undoManager.beginNewTransaction();
         undoManager.perform(new DeleteSelectedItemsAction(tracks, connections, *this));
-        if (view.getFocusedTrackIndex() >= tracks.getNumTracks())
+        if (view.getFocusedTrackIndex() >= tracks.getNumTracks() && tracks.getNumTracks() > 0)
             setTrackSelected(tracks.getTrack(tracks.getNumTracks() - 1), true, true);
         updateAllDefaultConnections(false);
     }
