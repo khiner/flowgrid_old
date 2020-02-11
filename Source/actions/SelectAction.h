@@ -60,7 +60,7 @@ struct SelectAction : public UndoableAction {
             track.setProperty(IDs::selected, newTrackSelections.getUnchecked(i), nullptr);
             track.setProperty(IDs::selectedSlotsMask, newSelectedSlotsMasks.getUnchecked(i), nullptr);
         }
-        view.focusOnProcessorSlot(newFocusedSlot);
+        updateViewFocus(newFocusedSlot);
         if (resetInputsAction != nullptr)
             resetInputsAction->perform();
 
@@ -75,8 +75,7 @@ struct SelectAction : public UndoableAction {
             track.setProperty(IDs::selected, oldTrackSelections.getUnchecked(i), nullptr);
             track.setProperty(IDs::selectedSlotsMask, oldSelectedSlotsMasks.getUnchecked(i), nullptr);
         }
-        view.focusOnProcessorSlot(oldFocusedSlot);
-
+        updateViewFocus(oldFocusedSlot);
         return true;
     }
 
@@ -85,11 +84,9 @@ struct SelectAction : public UndoableAction {
     }
 
     UndoableAction* createCoalescedAction(UndoableAction* nextAction) override {
-        if (auto* nextSelect = dynamic_cast<SelectAction*>(nextAction)) {
-            if (canCoalesceWith(nextSelect)) {
+        if (auto* nextSelect = dynamic_cast<SelectAction*>(nextAction))
+            if (canCoalesceWith(nextSelect))
                 return new SelectAction(this, nextSelect, tracks, connections, view, input, audioProcessorContainer);
-            }
-        }
 
         return nullptr;
     }
@@ -98,6 +95,15 @@ protected:
     bool canCoalesceWith(SelectAction *otherAction) {
         return oldSelectedSlotsMasks.size() == otherAction->oldSelectedSlotsMasks.size() &&
                oldTrackSelections.size() == otherAction->oldTrackSelections.size();
+    }
+
+    void updateViewFocus(const juce::Point<int> focusedSlot) {
+        view.focusOnProcessorSlot(focusedSlot);
+        const auto& focusedTrack = tracks.getTrack(focusedSlot.x);
+        bool isMaster = TracksState::isMasterTrack(focusedTrack);
+        if (!isMaster)
+            view.updateViewTrackOffsetToInclude(focusedSlot.x, tracks.getNumNonMasterTracks());
+        view.updateViewSlotOffsetToInclude(focusedSlot.y, isMaster);
     }
 
     TracksState &tracks;

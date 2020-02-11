@@ -16,7 +16,6 @@ public:
     TracksState(ViewState& view, PluginManager& pluginManager, UndoManager& undoManager)
             : view(view), pluginManager(pluginManager), undoManager(undoManager) {
         tracks = ValueTree(IDs::TRACKS);
-        tracks.addListener(this);
         tracks.setProperty(IDs::name, "Tracks", nullptr);
     }
 
@@ -310,20 +309,4 @@ private:
     ViewState& view;
     PluginManager &pluginManager;
     UndoManager &undoManager;
-
-    // TODO these state changes should originate from the action that caused them (state changes themselves are not derived from state)
-    void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {
-        if (tree.hasType(IDs::TRACK) && i == IDs::selected) {
-            if (tree[i]) {
-                if (!isMasterTrack(tree))
-                    view.updateViewTrackOffsetToInclude(indexOf(tree), getNumNonMasterTracks());
-            }
-        } else if (i == IDs::selectedSlotsMask) {
-            if (!isMasterTrack(tree))
-                view.updateViewTrackOffsetToInclude(indexOf(tree), getNumNonMasterTracks());
-            auto slot = firstSelectedSlotForTrack(tree);
-            if (slot != -1)
-                view.updateViewSlotOffsetToInclude(slot, isMasterTrack(tree));
-        }
-    }
 };
