@@ -13,10 +13,8 @@ class TracksState :
         public Stateful,
         private ValueTree::Listener {
 public:
-    TracksState(ViewState& view, StatefulAudioProcessorContainer& audioProcessorContainer,
-                PluginManager& pluginManager, UndoManager& undoManager)
-            : view(view), audioProcessorContainer(audioProcessorContainer),
-              pluginManager(pluginManager), undoManager(undoManager) {
+    TracksState(ViewState& view, PluginManager& pluginManager, UndoManager& undoManager)
+            : view(view), pluginManager(pluginManager), undoManager(undoManager) {
         tracks = ValueTree(IDs::TRACKS);
         tracks.addListener(this);
         tracks.setProperty(IDs::name, "Tracks", nullptr);
@@ -249,24 +247,6 @@ public:
         return &undoManager;
     }
 
-    void saveProcessorStateInformation() const {
-        for (const auto& track : tracks) {
-            for (auto processorState : track) {
-                saveProcessorStateInformationToState(processorState);
-            }
-        }
-    }
-
-    void saveProcessorStateInformationToState(ValueTree &processorState) const {
-        if (auto* processorWrapper = audioProcessorContainer.getProcessorWrapperForState(processorState)) {
-            MemoryBlock memoryBlock;
-            if (auto* processor = processorWrapper->processor) {
-                processor->getStateInformation(memoryBlock);
-                processorState.setProperty(IDs::state, memoryBlock.toBase64Encoding(), nullptr);
-            }
-        }
-    }
-
     void setTrackWidth(int trackWidth) { this->trackWidth = trackWidth; }
     void setProcessorHeight(int processorHeight) { this->processorHeight = processorHeight; }
 
@@ -330,7 +310,6 @@ public:
 private:
     ValueTree tracks;
     ViewState& view;
-    StatefulAudioProcessorContainer& audioProcessorContainer;
     PluginManager &pluginManager;
     UndoManager &undoManager;
 

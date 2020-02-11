@@ -7,7 +7,7 @@
 class Push2NoteModePadLedManager : public MidiInputCallback, public Push2Colours::Listener {
 public:
     Push2NoteModePadLedManager(Project& project, Push2MidiCommunicator& push2)
-            : project(project), tracks(project.getTracksManager()), push2(push2) {
+            : project(project), tracks(project.getTracks()), push2(push2) {
         push2.getPush2Colours().addListener(this);
     }
 

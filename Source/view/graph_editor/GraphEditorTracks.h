@@ -13,7 +13,7 @@ class GraphEditorTracks : public Component,
 public:
     explicit GraphEditorTracks(Project& project, TracksState &tracks, ConnectorDragListener &connectorDragListener, ProcessorGraph& graph)
             : Utilities::ValueTreeObjectList<GraphEditorTrack>(tracks.getState()), project(project),
-              tracks(tracks), view(project.getViewStateManager()),
+              tracks(tracks), view(project.getView()),
               connectorDragListener(connectorDragListener), graph(graph) {
         rebuildObjects();
         view.addListener(this);

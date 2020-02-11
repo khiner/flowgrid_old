@@ -15,8 +15,8 @@ class GraphEditorProcessors : public Component,
 public:
     explicit GraphEditorProcessors(Project& project, const ValueTree& state, ConnectorDragListener &connectorDragListener, ProcessorGraph& graph)
             : Utilities::ValueTreeObjectList<GraphEditorProcessor>(state),
-              project(project), tracks(project.getTracksManager()), view(project.getViewStateManager()),
-              connections(project.getConnectionStateManager()),
+              project(project), tracks(project.getTracks()), view(project.getView()),
+              connections(project.getConnections()),
               viewState(view.getState()), connectorDragListener(connectorDragListener), graph(graph) {
         rebuildObjects();
         viewState.addListener(this);

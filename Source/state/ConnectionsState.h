@@ -11,13 +11,8 @@ using SAPC = StatefulAudioProcessorContainer;
 
 class ConnectionsState : public Stateful {
 public:
-    explicit ConnectionsState(StatefulAudioProcessorContainer& audioProcessorContainer,
-                              InputState& input, OutputState& output,
-                              TracksState& tracks)
-            : audioProcessorContainer(audioProcessorContainer),
-              input(input),
-              output(output),
-              tracks(tracks) {
+    explicit ConnectionsState(StatefulAudioProcessorContainer& audioProcessorContainer, TracksState& tracks)
+            : audioProcessorContainer(audioProcessorContainer), tracks(tracks) {
         connections = ValueTree(IDs::CONNECTIONS);
     }
 
@@ -49,7 +44,7 @@ public:
             }
         }
 
-        return output.getAudioOutputProcessorState();
+        return {};
     }
 
     bool isNodeConnected(AudioProcessorGraph::NodeID nodeId) const {
@@ -124,7 +119,5 @@ public:
 private:
     ValueTree connections;
     StatefulAudioProcessorContainer& audioProcessorContainer;
-    InputState& input;
-    OutputState& output;
     TracksState& tracks;
 };

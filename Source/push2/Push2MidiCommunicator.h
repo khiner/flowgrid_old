@@ -8,7 +8,7 @@
 class Push2MidiCommunicator : public MidiCommunicator, private Push2Colours::Listener, private Timer {
 public:
     explicit Push2MidiCommunicator(Project& project, Push2Colours& push2Colours) :
-            project(project), view(project.getViewStateManager()), push2Colours(push2Colours) {};
+            project(project), view(project.getView()), push2Colours(push2Colours) {};
 
     void initialize() override {
         MidiCommunicator::initialize();

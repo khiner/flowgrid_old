@@ -11,7 +11,7 @@ using Push2 = Push2MidiCommunicator;
 class Push2ComponentBase : public Component, public Push2Listener, public Push2Colours::Listener {
 public:
     Push2ComponentBase(Project& project, Push2MidiCommunicator& push2)
-            : project(project), tracks(project.getTracksManager()), view(project.getViewStateManager()),
+            : project(project), tracks(project.getTracks()), view(project.getView()),
               push2(push2) {
         push2.getPush2Colours().addListener(this);
     }

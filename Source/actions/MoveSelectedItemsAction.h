@@ -7,11 +7,11 @@
 struct MoveSelectedItemsAction : UndoableAction {
     MoveSelectedItemsAction(juce::Point<int> fromGridPoint, juce::Point<int> toGridPoint, bool makeInvalidDefaultsIntoCustom,
                             TracksState &tracks, ConnectionsState &connections, ViewState &view,
-                            InputState &input, StatefulAudioProcessorContainer &audioProcessorContainer)
+                            InputState &input, OutputState &output, StatefulAudioProcessorContainer &audioProcessorContainer)
             : gridDelta(limitedGridDelta(fromGridPoint, toGridPoint, tracks, view)),
               updateSelectionAction(gridDelta, tracks, connections, view, input, audioProcessorContainer),
               insertTrackOrProcessorActions(createInsertActions(tracks, view)),
-              updateConnectionsAction(makeInvalidDefaultsIntoCustom, true, tracks, connections, input,
+              updateConnectionsAction(makeInvalidDefaultsIntoCustom, true, tracks, connections, input, output,
                                       audioProcessorContainer, updateSelectionAction.getNewFocusedTrack()) {
         // cleanup - yeah it's ugly but avoids need for some copy/move madness in createUpdateConnectionsAction
         for (int i = insertTrackOrProcessorActions.size() - 1; i >= 0; i--)

@@ -51,12 +51,13 @@ public:
 
     Project(UndoManager &undoManager, PluginManager& pluginManager, AudioDeviceManager& deviceManager)
             : FileBasedDocument(getFilenameSuffix(), "*" + getFilenameSuffix(), "Load a project", "Save project"),
+              undoManager(undoManager),
               pluginManager(pluginManager),
-              tracks(view, *this, pluginManager, undoManager),
-              input(*this, pluginManager),
-              output(*this, pluginManager),
-              connections(*this, input, output, tracks),
-              undoManager(undoManager), deviceManager(deviceManager) {
+              tracks(view, pluginManager, undoManager),
+              connections(*this, tracks),
+              input(tracks, connections, *this, pluginManager, undoManager, deviceManager),
+              output(tracks, connections, *this, pluginManager, undoManager, deviceManager),
+              deviceManager(deviceManager) {
         state = ValueTree(IDs::PROJECT);
         state.setProperty(IDs::name, "My First Project", nullptr);
         state.appendChild(input.getState(), nullptr);
@@ -70,7 +71,6 @@ public:
 
     ~Project() override {
         state.removeListener(this);
-        deviceManager.removeChangeListener(this);
     }
 
     ValueTree& getState() override { return state; }
@@ -115,13 +115,11 @@ public:
         undoManager.clearUndoHistory();
     }
 
-    // TODO any way to to all this in the constructor?
+    // TODO any way to do all this in the constructor?
     void initialize() {
         const auto &lastOpenedProjectFile = getLastDocumentOpened();
         if (!(lastOpenedProjectFile.exists() && loadFrom(lastOpenedProjectFile, true)))
             newDocument();
-        deviceManager.addChangeListener(this);
-        changeListenerCallback(&deviceManager);
         undoManager.clearUndoHistory();
     }
 
@@ -166,19 +164,19 @@ public:
             statefulAudioProcessorContainer->onProcessorDestroyed(processor);
     }
 
-    TracksState& getTracksManager() { return tracks; }
+    TracksState& getTracks() { return tracks; }
 
-    ConnectionsState& getConnectionStateManager() { return connections; }
+    ConnectionsState& getConnections() { return connections; }
 
-    ViewState& getViewStateManager() { return view; }
+    ViewState& getView() { return view; }
+
+    InputState& getInput() { return input; }
+
+    OutputState& getOutput() { return output; }
 
     UndoManager& getUndoManager() { return undoManager; }
 
     AudioDeviceManager& getDeviceManager() { return deviceManager; }
-
-    ViewState& getView() { return view; }
-
-    TracksState& getTracks() { return tracks; }
 
     bool isPush2MidiInputProcessorConnected() const {
         return connections.isNodeConnected(getNodeIdForState(input.getPush2MidiInputProcessor()));
@@ -285,7 +283,7 @@ public:
 
         if (trackAndSlot == initialDraggingTrackAndSlot ||
             undoManager.perform(new MoveSelectedItemsAction(initialDraggingTrackAndSlot, trackAndSlot, isShiftHeld(),
-                                                            tracks, connections, view, input, *this))) {
+                                                            tracks, connections, view, input, output, *this))) {
             currentlyDraggingTrackAndSlot = trackAndSlot;
         }
     }
@@ -397,7 +395,8 @@ public:
 
     void createDefaultProject() {
         view.initializeDefault();
-        createAudioIoProcessors();
+        input.initializeDefault();
+        output.initializeDefault();
         doCreateAndAddMasterTrack();
         createTrack();
         doCreateAndAddProcessor(SineBank::getPluginDescription(), mostRecentlyCreatedTrack, 0);
@@ -484,7 +483,10 @@ public:
     }
 
     Result saveDocument(const File &file) override {
-        tracks.saveProcessorStateInformation();
+        for (const auto& track : tracks.getState())
+            for (auto processorState : track)
+                saveProcessorStateInformationToState(processorState);
+
         if (Utilities::saveValueTree(state, file, true))
             return Result::ok();
 
@@ -505,18 +507,18 @@ public:
         getUserSettings()->setValue("recentProjectFiles", recentFiles.toString());
     }
 
-    static const String getFilenameSuffix() { return ".smp"; }
+    static String getFilenameSuffix() { return ".smp"; }
 
 private:
     ValueTree state;
+
+    UndoManager &undoManager;
     PluginManager &pluginManager;
     ViewState view;
     TracksState tracks;
+    ConnectionsState connections;
     InputState input;
     OutputState output;
-    ConnectionsState connections;
-
-    UndoManager &undoManager;
 
     AudioDeviceManager& deviceManager;
 
@@ -563,95 +565,11 @@ private:
 
         return masterTrack;
     }
-
-    void createAudioIoProcessors() {
-        {
-            PluginDescription &audioInputDescription = pluginManager.getAudioInputDescription();
-            ValueTree inputProcessor(IDs::PROCESSOR);
-            inputProcessor.setProperty(IDs::id, audioInputDescription.createIdentifierString(), nullptr);
-            inputProcessor.setProperty(IDs::name, audioInputDescription.name, nullptr);
-            inputProcessor.setProperty(IDs::allowDefaultConnections, true, nullptr);
-            input.getState().appendChild(inputProcessor,  &undoManager);
-            onProcessorCreated(inputProcessor);
-        }
-        {
-            PluginDescription &audioOutputDescription = pluginManager.getAudioOutputDescription();
-            ValueTree outputProcessor(IDs::PROCESSOR);
-            outputProcessor.setProperty(IDs::id, audioOutputDescription.createIdentifierString(), nullptr);
-            outputProcessor.setProperty(IDs::name, audioOutputDescription.name, nullptr);
-            outputProcessor.setProperty(IDs::allowDefaultConnections, true, nullptr);
-            output.getState().appendChild(outputProcessor, &undoManager);
-            onProcessorCreated(outputProcessor);
-        }
-    }
     
     void changeListenerCallback(ChangeBroadcaster* source) override {
-        if (source == &deviceManager) {
-            deviceManager.updateEnabledMidiInputsAndOutputs();
-            syncInputDevicesWithDeviceManager();
-            syncOutputDevicesWithDeviceManager();
-            AudioDeviceManager::AudioDeviceSetup config;
-            deviceManager.getAudioDeviceSetup(config);
-            input.updateWithAudioDeviceSetup(config, &undoManager);
-            output.updateWithAudioDeviceSetup(config, &undoManager);
-        } else if (source == &undoManager) {
+        if (source == &undoManager) {
             // if there is nothing to undo, there is nothing to save!
             setChangedFlag(undoManager.canUndo());
-        }
-    }
-
-    // TODO refactor into InputState
-    void syncInputDevicesWithDeviceManager() {
-        Array<ValueTree> inputProcessorsToDelete;
-        for (const auto& inputProcessor : input.getState()) {
-            if (inputProcessor.hasProperty(IDs::deviceName)) {
-                const String &deviceName = inputProcessor[IDs::deviceName];
-                if (!MidiInput::getDevices().contains(deviceName) || !deviceManager.isMidiInputEnabled(deviceName)) {
-                    inputProcessorsToDelete.add(inputProcessor);
-                }
-            }
-        }
-        for (const auto& inputProcessor : inputProcessorsToDelete) {
-            undoManager.perform(new DeleteProcessorAction(inputProcessor, tracks, connections, *this));
-        }
-        for (const auto& deviceName : MidiInput::getDevices()) {
-            if (deviceManager.isMidiInputEnabled(deviceName) &&
-                !input.getState().getChildWithProperty(IDs::deviceName, deviceName).isValid()) {
-                ValueTree midiInputProcessor(IDs::PROCESSOR);
-                midiInputProcessor.setProperty(IDs::id, MidiInputProcessor::getPluginDescription().createIdentifierString(), nullptr);
-                midiInputProcessor.setProperty(IDs::name, MidiInputProcessor::name(), nullptr);
-                midiInputProcessor.setProperty(IDs::allowDefaultConnections, true, nullptr);
-                midiInputProcessor.setProperty(IDs::deviceName, deviceName, nullptr);
-                input.getState().addChild(midiInputProcessor, -1, &undoManager);
-                onProcessorCreated(midiInputProcessor);
-            }
-        }
-    }
-
-    void syncOutputDevicesWithDeviceManager() {
-        Array<ValueTree> outputProcessorsToDelete;
-        for (const auto& outputProcessor : output.getState()) {
-            if (outputProcessor.hasProperty(IDs::deviceName)) {
-                const String &deviceName = outputProcessor[IDs::deviceName];
-                if (!MidiOutput::getDevices().contains(deviceName) || !deviceManager.isMidiOutputEnabled(deviceName)) {
-                    outputProcessorsToDelete.add(outputProcessor);
-                }
-            }
-        }
-        for (const auto& outputProcessor : outputProcessorsToDelete) {
-            undoManager.perform(new DeleteProcessorAction(outputProcessor, tracks, connections, *this));
-        }
-        for (const auto& deviceName : MidiOutput::getDevices()) {
-            if (deviceManager.isMidiOutputEnabled(deviceName) &&
-                !output.getState().getChildWithProperty(IDs::deviceName, deviceName).isValid()) {
-                ValueTree midiOutputProcessor(IDs::PROCESSOR);
-                midiOutputProcessor.setProperty(IDs::id, MidiOutputProcessor::getPluginDescription().createIdentifierString(), nullptr);
-                midiOutputProcessor.setProperty(IDs::name, MidiOutputProcessor::name(), nullptr);
-                midiOutputProcessor.setProperty(IDs::allowDefaultConnections, true, nullptr);
-                midiOutputProcessor.setProperty(IDs::deviceName, deviceName, nullptr);
-                output.getState().addChild(midiOutputProcessor, -1, &undoManager);
-                onProcessorCreated(midiOutputProcessor);
-            }
         }
     }
 
@@ -740,7 +658,7 @@ private:
             for (int slot = focusedProcessorSlot;
                  (delta < 0 ? slot >= 0 : slot < view.getNumAvailableSlotsForTrack(focusedTrack));
                  slot += delta) {
-                const auto &processor = tracks.getProcessorAtSlot(focusedTrack, slot);
+                const auto &processor = TracksState::getProcessorAtSlot(focusedTrack, slot);
                 if (processor.isValid())
                     return {focusedTrack, processor};
             }
@@ -797,8 +715,7 @@ private:
     }
 
     void updateAllDefaultConnections(bool makeInvalidDefaultsIntoCustom=false) {
-        undoManager.perform(new UpdateAllDefaultConnectionsAction(makeInvalidDefaultsIntoCustom, true, tracks,
-                                                                  connections, input, *this));
+        undoManager.perform(new UpdateAllDefaultConnectionsAction(makeInvalidDefaultsIntoCustom, true, tracks, connections, input, output, *this));
     }
 
     void resetDefaultExternalInputs() {
@@ -806,7 +723,7 @@ private:
     }
 
     void updateDefaultConnectionsForProcessor(const ValueTree &processor, bool makeInvalidDefaultsIntoCustom=false) {
-        undoManager.perform(new UpdateProcessorDefaultConnectionsAction(processor, makeInvalidDefaultsIntoCustom, connections, *this));
+        undoManager.perform(new UpdateProcessorDefaultConnectionsAction(processor, makeInvalidDefaultsIntoCustom, connections, output, *this));
     }
 
     void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override {

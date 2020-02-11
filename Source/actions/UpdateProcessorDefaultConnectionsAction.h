@@ -17,10 +17,13 @@
 struct UpdateProcessorDefaultConnectionsAction : public CreateOrDeleteConnectionsAction {
     
     UpdateProcessorDefaultConnectionsAction(const ValueTree &processor, bool makeInvalidDefaultsIntoCustom,
-                                            ConnectionsState &connections, StatefulAudioProcessorContainer &audioProcessorContainer)
+                                            ConnectionsState &connections, OutputState &output,
+                                            StatefulAudioProcessorContainer &audioProcessorContainer)
             : CreateOrDeleteConnectionsAction(connections) {
         for (auto connectionType : {audio, midi}) {
             auto processorToConnectTo = connections.findProcessorToFlowInto(processor.getParent(), processor, connectionType);
+            if (!processorToConnectTo.isValid())
+                processorToConnectTo = output.getAudioOutputProcessorState();
             auto nodeIdToConnectTo = StatefulAudioProcessorContainer::getNodeIdForState(processorToConnectTo);
 
             auto disconnectDefaultsAction = DisconnectProcessorAction(connections, processor, connectionType, true, false, false, true, nodeIdToConnectTo);

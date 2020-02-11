@@ -11,12 +11,12 @@ class GraphEditorPanel
           private ValueTree::Listener {
 public:
     GraphEditorPanel(ProcessorGraph &g, Project &project, Viewport &parentViewport)
-            : graph(g), project(project), tracks(project.getTracksManager()),
-              view(project.getViewStateManager()), parentViewport(parentViewport) {
+            : graph(g), project(project), tracks(project.getTracks()),
+              view(project.getView()), parentViewport(parentViewport) {
         project.addListener(this);
 
         addAndMakeVisible(*(graphEditorTracks = std::make_unique<GraphEditorTracks>(project, project.getTracks(), *this, graph)));
-        addAndMakeVisible(*(connectors = std::make_unique<GraphEditorConnectors>(project.getConnectionStateManager(), *this, *this, graph)));
+        addAndMakeVisible(*(connectors = std::make_unique<GraphEditorConnectors>(project.getConnections(), *this, *this, graph)));
         unfocusOverlay.setFill(findColour(CustomColourIds::unfocusedOverlayColourId));
         addChildComponent(unfocusOverlay);
         addMouseListener(this, true);

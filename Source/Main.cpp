@@ -9,10 +9,11 @@
 class SoundMachineApplication : public JUCEApplication, public MenuBarModel, private ChangeListener, private Utilities::ValueTreePropertyChangeListener {
 public:
     SoundMachineApplication() : project(undoManager, pluginManager, deviceManager),
-                                tracks(project.getTracksManager()),
-                                push2Colours(project.getTracks()),
+                                tracks(project.getTracks()),
+                                push2Colours(tracks),
                                 push2MidiCommunicator(project, push2Colours),
-                                processorGraph(project, project.getConnectionStateManager(), undoManager, deviceManager, push2MidiCommunicator) {}
+                                processorGraph(project, tracks, project.getConnections(), project.getInput(), project.getOutput(),
+                                               undoManager, deviceManager, push2MidiCommunicator) {}
 
     const String getApplicationName() override { return ProjectInfo::projectName; }
 
@@ -372,7 +373,7 @@ public:
                 showAudioMidiSettings();
                 break;
             case CommandIDs::togglePaneFocus:
-                project.getViewStateManager().togglePaneFocus();
+                project.getView().togglePaneFocus();
                 break;
 //            case CommandIDs::aboutBox:
 //                // TODO
@@ -534,7 +535,7 @@ private:
     void changeListenerCallback(ChangeBroadcaster* source) override {
         if (source == &project) {
             mainWindow->setName(project.getDocumentTitle());
-            applicationCommandListChanged(); // TODO wasteful to refresh *all* items. is there a way to just change what we need?
+            applicationCommandListChanged();
         } else if (source == &deviceManager) {
             if (!push2MidiCommunicator.isInitialized() && MidiInput::getDevices().contains(push2MidiDeviceName, true)) {
                 auto midiInput = MidiInput::openDevice(MidiInput::getDevices().indexOf(push2MidiDeviceName, true), &push2MidiCommunicator);

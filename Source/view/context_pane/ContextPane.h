@@ -9,8 +9,8 @@ class ContextPane :
         private ValueTree::Listener {
 public:
     explicit ContextPane(Project &project)
-            : project(project), tracks(project.getTracksManager()),
-              view(project.getViewStateManager()) {
+            : project(project), tracks(project.getTracks()),
+              view(project.getView()) {
         this->project.addListener(this);
     }
 

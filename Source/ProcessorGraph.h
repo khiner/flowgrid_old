@@ -14,22 +14,28 @@
 class ProcessorGraph : public AudioProcessorGraph, public StatefulAudioProcessorContainer,
                        private ValueTree::Listener, private Timer {
 public:
-    explicit ProcessorGraph(Project &project, ConnectionsState& connections,
+    explicit ProcessorGraph(Project &project, TracksState &tracks, ConnectionsState& connections,
+                            InputState &input, OutputState &output,
                             UndoManager &undoManager, AudioDeviceManager& deviceManager,
                             Push2MidiCommunicator& push2MidiCommunicator)
-            : undoManager(undoManager), project(project), view(project.getViewStateManager()),
-            tracks(project.getTracksManager()), connections(connections),
+            : undoManager(undoManager), project(project),
+            tracks(tracks), connections(connections), input(input), output(output),
             deviceManager(deviceManager), push2MidiCommunicator(push2MidiCommunicator) {
         enableAllBuses();
 
-        project.addListener(this);
-        view.addListener(this);
+        tracks.addListener(this);
+        connections.addListener(this);
+        input.addListener(this);
+        output.addListener(this);
         project.setStatefulAudioProcessorContainer(this);
     }
 
     ~ProcessorGraph() override {
         project.setStatefulAudioProcessorContainer(nullptr);
-        project.removeListener(this);
+        output.removeListener(this);
+        input.removeListener(this);
+        connections.removeListener(this);
+        tracks.removeListener(this);
     }
 
     StatefulAudioProcessorWrapper* getProcessorWrapperForNodeId(NodeID nodeId) const override {
@@ -106,10 +112,11 @@ private:
     std::map<NodeID, std::unique_ptr<StatefulAudioProcessorWrapper> > processorWrapperForNodeId;
 
     Project &project;
-    ViewState &view;
     TracksState &tracks;
-
     ConnectionsState &connections;
+    InputState &input;
+    OutputState &output;
+
     AudioDeviceManager &deviceManager;
     Push2MidiCommunicator &push2MidiCommunicator;
     
@@ -221,9 +228,8 @@ private:
     }
 
     void onProcessorCreated(const ValueTree& processor) override {
-        if (getProcessorWrapperForState(processor) == nullptr) {
+        if (getProcessorWrapperForState(processor) == nullptr)
             addProcessor(processor);
-        }
     }
 
     void onProcessorDestroyed(const ValueTree& processor) override {
@@ -260,7 +266,7 @@ private:
                     }
                 }
             }
-        } else if (child.hasType(IDs::TRACK)) {
+        } else if (child.hasType(IDs::TRACK) || parent.hasType(IDs::INPUT) || parent.hasType(IDs::OUTPUT)) {
             recursivelyAddProcessors(child); // TODO might be a problem for moving tracks
         } else if (child.hasType(IDs::CHANNEL)) {
             updateIoChannelEnabled(parent, child, true);
@@ -298,10 +304,9 @@ private:
     void timerCallback() override {
         bool anythingUpdated = false;
 
-        for (auto& nodeIdAndProcessorWrapper : processorWrapperForNodeId) {
+        for (auto& nodeIdAndProcessorWrapper : processorWrapperForNodeId)
             if (nodeIdAndProcessorWrapper.second->flushParameterValuesToValueTree())
                 anythingUpdated = true;
-        }
 
         startTimer(anythingUpdated ? 1000 / 50 : std::clamp(getTimerInterval() + 20, 50, 500));
     }

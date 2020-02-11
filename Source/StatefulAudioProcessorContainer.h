@@ -34,4 +34,14 @@ public:
     static AudioProcessorGraph::NodeID getNodeIdForState(const ValueTree &processorState) {
         return processorState.isValid() ? AudioProcessorGraph::NodeID(int(processorState[IDs::nodeId])) : AudioProcessorGraph::NodeID{};
     }
+
+    void saveProcessorStateInformationToState(ValueTree &processorState) const {
+        if (auto* processorWrapper = getProcessorWrapperForState(processorState)) {
+            MemoryBlock memoryBlock;
+            if (auto* processor = processorWrapper->processor) {
+                processor->getStateInformation(memoryBlock);
+                processorState.setProperty(IDs::state, memoryBlock.toBase64Encoding(), nullptr);
+            }
+        }
+    }
 };

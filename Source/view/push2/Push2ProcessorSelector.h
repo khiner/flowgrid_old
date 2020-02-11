@@ -8,7 +8,7 @@ class Push2ProcessorSelector : public Push2ComponentBase {
     class ProcessorSelectorRow : public Component {
     public:
         explicit ProcessorSelectorRow(Project &project, Push2 &push2, bool top)
-                : project(project), tracks(project.getTracksManager()) {
+                : project(project), tracks(project.getTracks()) {
             for (int i = 0; i < NUM_COLUMNS; i++) {
                 auto *label = new Push2Label(i, top, push2);
                 addChildComponent(label);

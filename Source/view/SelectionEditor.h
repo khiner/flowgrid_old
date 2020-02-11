@@ -12,8 +12,8 @@ class SelectionEditor : public Component,
                         private ValueTree::Listener {
 public:
     SelectionEditor(Project& project, ProcessorGraph &audioGraphBuilder)
-            : project(project), tracks(project.getTracksManager()),
-              view(project.getViewStateManager()),
+            : project(project), tracks(project.getTracks()),
+              view(project.getView()),
               audioGraphBuilder(audioGraphBuilder), contextPane(project) {
         this->project.addListener(this);
 
