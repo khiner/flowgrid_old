@@ -6,7 +6,7 @@
 #include "StatefulAudioProcessorContainer.h"
 #include "Stateful.h"
 
-class OutputState : public Stateful, private ChangeListener {
+class OutputState : public Stateful, private ChangeListener, private ValueTree::Listener {
 public:
     OutputState(TracksState &tracks, ConnectionsState &connections,
                          StatefulAudioProcessorContainer& audioProcessorContainer, PluginManager& pluginManager,
@@ -15,11 +15,13 @@ public:
               audioProcessorContainer(audioProcessorContainer), pluginManager(pluginManager),
               undoManager(undoManager), deviceManager(deviceManager) {
         output = ValueTree(IDs::OUTPUT);
+        output.addListener(this);
         deviceManager.addChangeListener(this);
     }
 
     ~OutputState() override {
         deviceManager.removeChangeListener(this);
+        output.removeListener(this);
     }
 
     ValueTree& getState() override { return output; }
@@ -86,6 +88,25 @@ private:
             AudioDeviceManager::AudioDeviceSetup config;
             deviceManager.getAudioDeviceSetup(config);
             output.setProperty(IDs::deviceName, config.outputDeviceName, &undoManager);
+        }
+    }
+
+    void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override {
+        if (child[IDs::name] == MidiOutputProcessor::name() && !deviceManager.isMidiOutputEnabled(child[IDs::deviceName]))
+            deviceManager.setMidiOutputEnabled(child[IDs::deviceName], true);
+    }
+
+    void valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int) override {
+        if (child[IDs::name] == MidiOutputProcessor::name() && deviceManager.isMidiOutputEnabled(child[IDs::deviceName]))
+            deviceManager.setMidiOutputEnabled(child[IDs::deviceName], false);
+    }
+
+    void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {
+        if (i == IDs::deviceName && tree == output) {
+            AudioDeviceManager::AudioDeviceSetup config;
+            deviceManager.getAudioDeviceSetup(config);
+            config.outputDeviceName = tree[IDs::deviceName];
+            deviceManager.setAudioDeviceSetup(config, true);
         }
     }
 };

@@ -727,37 +727,9 @@ private:
     }
 
     void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override {
-        if (child[IDs::name] == MidiInputProcessor::name() && !deviceManager.isMidiInputEnabled(child[IDs::deviceName])) {
-            deviceManager.setMidiInputEnabled(child[IDs::deviceName], true);
-        } else if (child[IDs::name] == MidiOutputProcessor::name() && !deviceManager.isMidiOutputEnabled(child[IDs::deviceName])) {
-            deviceManager.setMidiOutputEnabled(child[IDs::deviceName], true);
-        }
         if (child.hasType(IDs::TRACK)) {
             mostRecentlyCreatedTrack = child;
         } else if (child.hasType(IDs::PROCESSOR))
             mostRecentlyCreatedProcessor = child;
-    }
-
-    void valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int) override {
-        if (child[IDs::name] == MidiInputProcessor::name() && deviceManager.isMidiInputEnabled(child[IDs::deviceName])) {
-            deviceManager.setMidiInputEnabled(child[IDs::deviceName], false);
-        } else if (child[IDs::name] == MidiOutputProcessor::name() && deviceManager.isMidiOutputEnabled(child[IDs::deviceName])) {
-            deviceManager.setMidiOutputEnabled(child[IDs::deviceName], false);
-        }
-    }
-
-    void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {
-        if (i == IDs::deviceName && (tree == input.getState() || tree == output.getState())) {
-            AudioDeviceManager::AudioDeviceSetup config;
-            deviceManager.getAudioDeviceSetup(config);
-            const String &deviceName = tree[IDs::deviceName];
-
-            if (tree == input.getState())
-                config.inputDeviceName = deviceName;
-            else if (tree == output.getState())
-                config.outputDeviceName = deviceName;
-
-            deviceManager.setAudioDeviceSetup(config, true);
-        }
     }
 };
