@@ -66,11 +66,11 @@ public:
         state.appendChild(connections.getState(), nullptr);
         state.appendChild(view.getState(), nullptr);
         undoManager.addChangeListener(this);
-        state.addListener(this);
+        tracks.addListener(this);
     }
 
     ~Project() override {
-        state.removeListener(this);
+        tracks.removeListener(this);
     }
 
     ValueTree& getState() override { return state; }
