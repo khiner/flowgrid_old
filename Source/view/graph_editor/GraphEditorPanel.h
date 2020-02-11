@@ -33,8 +33,8 @@ public:
 
     // Call this method when the parent viewport size has changed or when the number of tracks has changed.
     void resize() {
-        tracks.setProcessorHeight(getProcessorHeight());
-        tracks.setTrackWidth(getTrackWidth());
+        view.setProcessorHeight(getProcessorHeight());
+        view.setTrackWidth(getTrackWidth());
         int newWidth = getTrackWidth() * jmax(ViewState::NUM_VISIBLE_TRACKS, tracks.getNumNonMasterTracks(),
                                               view.getNumMasterProcessorSlots()) + ViewState::TRACK_LABEL_HEIGHT * 2;
         int newHeight = getProcessorHeight() * (jmax(ViewState::NUM_VISIBLE_TRACKS,

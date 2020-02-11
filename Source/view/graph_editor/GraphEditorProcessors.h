@@ -307,7 +307,7 @@ private:
     }
 
     int getNonMixerCellSize() const {
-        return isMasterTrack() ? tracks.getTrackWidth() : tracks.getProcessorHeight();
+        return isMasterTrack() ? view.getTrackWidth() : view.getProcessorHeight();
     }
 
     int findSlotAt(const juce::Point<int> relativePosition) const {

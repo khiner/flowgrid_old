@@ -102,7 +102,7 @@ public:
     int getFocusedTrackIndex() const { return viewState[IDs::focusedTrackIndex]; }
     int getFocusedProcessorSlot() const { return viewState[IDs::focusedProcessorSlot]; }
 
-    Point<int> getFocusedTrackAndSlot() const {
+    juce::Point<int> getFocusedTrackAndSlot() const {
         int trackIndex = viewState.hasProperty(IDs::focusedTrackIndex) ? getFocusedTrackIndex() : 0;
         int processorSlot = viewState.hasProperty(IDs::focusedProcessorSlot) ? getFocusedProcessorSlot() : -1;
         return {trackIndex, processorSlot};
@@ -150,6 +150,12 @@ public:
             focusOnGridPane();
     }
 
+    void setTrackWidth(int trackWidth) { this->trackWidth = trackWidth; }
+    void setProcessorHeight(int processorHeight) { this->processorHeight = processorHeight; }
+
+    int getTrackWidth() { return trackWidth; }
+    int getProcessorHeight() { return processorHeight; }
+
     const String sessionControlMode = "session", noteControlMode = "note";
     const String gridPaneName = "grid", editorPaneName = "editor";
 
@@ -157,4 +163,6 @@ public:
     static constexpr int TRACK_LABEL_HEIGHT = 32;
 private:
     ValueTree viewState;
+
+    int trackWidth {0}, processorHeight {0};
 };

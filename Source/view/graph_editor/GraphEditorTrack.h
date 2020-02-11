@@ -93,9 +93,9 @@ public:
         processors.setBounds(r);
         const auto &nameLabelBounds = isMasterTrack()
                                       ? r.removeFromLeft(ViewState::TRACK_LABEL_HEIGHT)
-                                         .withX(tracks.getTrackWidth() * processors.getSlotOffset())
+                                         .withX(view.getTrackWidth() * processors.getSlotOffset())
                                       : r.removeFromTop(ViewState::TRACK_LABEL_HEIGHT)
-                                         .withY(tracks.getProcessorHeight() * processors.getSlotOffset());
+                                         .withY(view.getProcessorHeight() * processors.getSlotOffset());
         nameLabel.setBounds(nameLabelBounds);
         nameLabel.toFront(false);
         if (isMasterTrack()) {

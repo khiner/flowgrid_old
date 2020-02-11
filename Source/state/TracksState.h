@@ -247,12 +247,6 @@ public:
         return &undoManager;
     }
 
-    void setTrackWidth(int trackWidth) { this->trackWidth = trackWidth; }
-    void setProcessorHeight(int processorHeight) { this->processorHeight = processorHeight; }
-
-    int getTrackWidth() { return trackWidth; }
-    int getProcessorHeight() { return processorHeight; }
-
     Array<ValueTree> findAllSelectedItems() const {
         Array<ValueTree> selectedItems;
         for (const auto& track : tracks) {
@@ -311,8 +305,6 @@ private:
     ViewState& view;
     PluginManager &pluginManager;
     UndoManager &undoManager;
-
-    int trackWidth {0}, processorHeight {0};
 
     // TODO these state changes should originate from the action that caused them (state changes themselves are not derived from state)
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {
