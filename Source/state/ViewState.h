@@ -154,6 +154,7 @@ public:
     const String gridPaneName = "grid", editorPaneName = "editor";
 
     static constexpr int NUM_VISIBLE_TRACKS = 8, NUM_VISIBLE_PROCESSOR_SLOTS = 10;
+    static constexpr int TRACK_LABEL_HEIGHT = 32;
 private:
     ValueTree viewState;
 };

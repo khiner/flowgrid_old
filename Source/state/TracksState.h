@@ -306,7 +306,6 @@ public:
         return nearestProcessor;
     }
 
-    static constexpr int TRACK_LABEL_HEIGHT = 32; // TODO move to ViewManager?
 private:
     ValueTree tracks;
     ViewState& view;

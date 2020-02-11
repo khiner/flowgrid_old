@@ -92,16 +92,16 @@ public:
         auto r = getLocalBounds();
         processors.setBounds(r);
         const auto &nameLabelBounds = isMasterTrack()
-                                      ? r.removeFromLeft(TracksState::TRACK_LABEL_HEIGHT)
+                                      ? r.removeFromLeft(ViewState::TRACK_LABEL_HEIGHT)
                                          .withX(tracks.getTrackWidth() * processors.getSlotOffset())
-                                      : r.removeFromTop(TracksState::TRACK_LABEL_HEIGHT)
+                                      : r.removeFromTop(ViewState::TRACK_LABEL_HEIGHT)
                                          .withY(tracks.getProcessorHeight() * processors.getSlotOffset());
         nameLabel.setBounds(nameLabelBounds);
         nameLabel.toFront(false);
         if (isMasterTrack()) {
             const auto& labelBoundsFloat = nameLabelBounds.toFloat();
             masterTrackName.setBoundingBox(Parallelogram<float>(labelBoundsFloat.getBottomLeft(), labelBoundsFloat.getTopLeft(), labelBoundsFloat.getBottomRight()));
-            masterTrackName.setFontHeight(3 * TracksState::TRACK_LABEL_HEIGHT / 4);
+            masterTrackName.setFontHeight(3 * ViewState::TRACK_LABEL_HEIGHT / 4);
             masterTrackName.toFront(false);
         }
     }

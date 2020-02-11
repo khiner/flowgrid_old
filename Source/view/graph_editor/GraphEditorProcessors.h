@@ -66,9 +66,9 @@ public:
             bool isMixerChannel = slot == processorSlotRectangles.size() - 1;
             if (slot == slotOffset) {
                 if (isMasterTrack())
-                    r.removeFromLeft(TracksState::TRACK_LABEL_HEIGHT);
+                    r.removeFromLeft(ViewState::TRACK_LABEL_HEIGHT);
                 else
-                    r.removeFromTop(TracksState::TRACK_LABEL_HEIGHT);
+                    r.removeFromTop(ViewState::TRACK_LABEL_HEIGHT);
             }
             auto cellSize = isMixerChannel ? nonMixerCellSize * 2 : nonMixerCellSize;
             auto processorBounds = isMasterTrack() ? r.removeFromLeft(cellSize) : r.removeFromTop(cellSize);
@@ -312,7 +312,7 @@ private:
 
     int findSlotAt(const juce::Point<int> relativePosition) const {
         int length = isMasterTrack() ? relativePosition.x : relativePosition.y;
-        int slot = (length - TracksState::TRACK_LABEL_HEIGHT) / getNonMixerCellSize();
+        int slot = (length - ViewState::TRACK_LABEL_HEIGHT) / getNonMixerCellSize();
         return std::clamp(slot, 0, getNumAvailableSlots() - 1);
     }
 };
