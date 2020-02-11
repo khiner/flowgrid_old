@@ -243,10 +243,6 @@ public:
         return handleSameTrack(mixerChannel.isValid() && processor != mixerChannel ? track.getNumChildren() - 1 : track.getNumChildren());
     }
 
-    UndoManager* getUndoManager() {
-        return &undoManager;
-    }
-
     Array<ValueTree> findAllSelectedItems() const {
         Array<ValueTree> selectedItems;
         for (const auto& track : tracks) {
@@ -298,6 +294,15 @@ public:
                 break; // processors are ordered by slot.
         }
         return nearestProcessor;
+    }
+
+    void setTrackName(ValueTree track, const String& name) {
+        undoManager.beginNewTransaction();
+        track.setProperty(IDs::name, name, &undoManager);
+    }
+
+    void setTrackColour(ValueTree track, const Colour& colour) {
+        track.setProperty(IDs::colour, colour.toString(), &undoManager);
     }
 
 private:

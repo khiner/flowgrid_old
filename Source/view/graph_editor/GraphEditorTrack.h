@@ -17,7 +17,7 @@ public:
         if (!isMasterTrack()) {
             nameLabel.setText(getTrackName(), dontSendNotification);
             nameLabel.setEditable(false, true);
-            nameLabel.onTextChange = [this] { this->state.setProperty(IDs::name, nameLabel.getText(false), this->tracks.getUndoManager()); };
+            nameLabel.onTextChange = [this] { this->tracks.setTrackName(this->state, nameLabel.getText(false)); };
         } else {
             masterTrackName.setText(getTrackName());
             masterTrackName.setColour(findColour(TextEditor::textColourId));
@@ -80,13 +80,7 @@ public:
         return isSelected() ? trackColour.brighter(0.25) : trackColour;
     }
 
-    void setColour(const Colour& colour) { state.setProperty(IDs::colour, colour.toString(), tracks.getUndoManager()); }
-
     bool isSelected() const { return state.getProperty(IDs::selected); }
-
-    const Label *getNameLabel() const { return &nameLabel; }
-
-    const Component *getDragControlComponent() const { return getNameLabel(); }
 
     void resized() override {
         auto r = getLocalBounds();
@@ -158,7 +152,7 @@ private:
 
     void changeListenerCallback(ChangeBroadcaster *source) override {
         if (auto *cs = dynamic_cast<ColourSelector *> (source)) {
-            setColour(cs->getCurrentColour());
+            tracks.setTrackColour(state, cs->getCurrentColour());
         }
     }
 };
