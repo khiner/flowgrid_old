@@ -172,39 +172,6 @@ private:
 
     OwnedArray<DrawableRectangle> processorSlotRectangles;
 
-    void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {
-        if (isSuitableType(tree) && i == IDs::processorSlot) {
-            resized();
-        } else if ((tree.hasType(IDs::TRACK) && i == IDs::selected) ||
-                   i == IDs::selectedSlotsMask  || i == IDs::focusedTrackIndex || i == IDs::focusedProcessorSlot ||
-                   i == IDs::gridViewTrackOffset) {
-            updateProcessorSlotColours();
-        } else if (i == IDs::gridViewSlotOffset || (i == IDs::masterViewSlotOffset && isMasterTrack())) {
-            resized();
-            updateProcessorSlotColours();
-        } else if (i == IDs::numProcessorSlots || (i == IDs::numMasterProcessorSlots && isMasterTrack())) {
-            auto numSlots = getNumAvailableSlots();
-            while (processorSlotRectangles.size() < numSlots) {
-                auto* rect = new DrawableRectangle();
-                processorSlotRectangles.add(rect);
-                addAndMakeVisible(rect);
-                rect->setCornerSize({3, 3});
-                rect->toBack();
-            }
-            processorSlotRectangles.removeLast(processorSlotRectangles.size() - numSlots, true);
-            resized();
-            updateProcessorSlotColours();
-        }
-        Utilities::ValueTreeObjectList<GraphEditorProcessor>::valueTreePropertyChanged(tree, i);
-    }
-
-    void valueTreeChildAdded(ValueTree &parent, ValueTree &tree) override {
-        ValueTreeObjectList::valueTreeChildAdded(parent, tree);
-        if (this->parent == parent && isSuitableType(tree)) {
-            resized();
-        }
-    }
-
     GraphEditorProcessor* findProcessorAtSlot(int slot) const {
         for (auto* processor : objects) {
             if (processor->getSlot() == slot)
@@ -314,5 +281,38 @@ private:
         int length = isMasterTrack() ? relativePosition.x : relativePosition.y;
         int slot = (length - ViewState::TRACK_LABEL_HEIGHT) / getNonMixerCellSize();
         return std::clamp(slot, 0, getNumAvailableSlots() - 1);
+    }
+
+    void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {
+        if (isSuitableType(tree) && i == IDs::processorSlot) {
+            resized();
+        } else if (i == IDs::selected || i == IDs::colour ||
+                   i == IDs::selectedSlotsMask  || i == IDs::focusedTrackIndex || i == IDs::focusedProcessorSlot ||
+                   i == IDs::gridViewTrackOffset) {
+            updateProcessorSlotColours();
+        } else if (i == IDs::gridViewSlotOffset || (i == IDs::masterViewSlotOffset && isMasterTrack())) {
+            resized();
+            updateProcessorSlotColours();
+        } else if (i == IDs::numProcessorSlots || (i == IDs::numMasterProcessorSlots && isMasterTrack())) {
+            auto numSlots = getNumAvailableSlots();
+            while (processorSlotRectangles.size() < numSlots) {
+                auto* rect = new DrawableRectangle();
+                processorSlotRectangles.add(rect);
+                addAndMakeVisible(rect);
+                rect->setCornerSize({3, 3});
+                rect->toBack();
+            }
+            processorSlotRectangles.removeLast(processorSlotRectangles.size() - numSlots, true);
+            resized();
+            updateProcessorSlotColours();
+        }
+        Utilities::ValueTreeObjectList<GraphEditorProcessor>::valueTreePropertyChanged(tree, i);
+    }
+
+    void valueTreeChildAdded(ValueTree &parent, ValueTree &tree) override {
+        ValueTreeObjectList::valueTreeChildAdded(parent, tree);
+        if (this->parent == parent && isSuitableType(tree)) {
+            resized();
+        }
     }
 };
