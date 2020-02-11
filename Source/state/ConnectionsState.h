@@ -48,10 +48,9 @@ public:
     }
 
     bool isNodeConnected(AudioProcessorGraph::NodeID nodeId) const {
-        for (const auto& connection : connections) {
+        for (const auto& connection : connections)
             if (SAPC::getNodeIdForState(connection.getChildWithName(IDs::SOURCE)) == nodeId)
                 return true;
-        }
 
         return false;
     }
@@ -85,11 +84,9 @@ public:
     }
 
     ValueTree getConnectionMatching(const AudioProcessorGraph::Connection &connection) const {
-        for (auto connectionState : connections) {
-            if (stateToConnection(connectionState) == connection) {
+        for (auto connectionState : connections)
+            if (stateToConnection(connectionState) == connection)
                 return connectionState;
-            }
-        }
         return {};
     }
 
@@ -100,20 +97,25 @@ public:
         return isProcessorAProducer(processor, connectionType) && isProcessorAnEffect(otherProcessor, connectionType);
     }
 
-    bool isProcessorAProducer(const ValueTree &processorState, ConnectionType connectionType) const {
-        if (auto *processorWrapper = audioProcessorContainer.getProcessorWrapperForState(processorState)) {
+    bool isProcessorAProducer(const ValueTree &processor, ConnectionType connectionType) const {
+        if (auto *processorWrapper = audioProcessorContainer.getProcessorWrapperForState(processor))
             return (connectionType == audio && processorWrapper->processor->getTotalNumOutputChannels() > 0) ||
                    (connectionType == midi && processorWrapper->processor->producesMidi());
-        }
         return false;
     }
 
-    bool isProcessorAnEffect(const ValueTree &processorState, ConnectionType connectionType) const {
-        if (auto *processorWrapper = audioProcessorContainer.getProcessorWrapperForState(processorState)) {
+    bool isProcessorAnEffect(const ValueTree &processor, ConnectionType connectionType) const {
+        if (auto *processorWrapper = audioProcessorContainer.getProcessorWrapperForState(processor))
             return (connectionType == audio && processorWrapper->processor->getTotalNumInputChannels() > 0) ||
                    (connectionType == midi && processorWrapper->processor->acceptsMidi());
-        }
         return false;
+    }
+
+    ValueTree findFirstProcessorReceivingDefaultConnectionsFrom(AudioProcessorGraph::NodeID sourceNodeId, ConnectionType connectionType) {
+        const auto outgoingConnections = getConnectionsForNode(audioProcessorContainer.getProcessorStateForNodeId(sourceNodeId), connectionType, false, true, false, true);
+        if (outgoingConnections.isEmpty())
+            return {};
+        return audioProcessorContainer.getProcessorStateForNodeId(SAPC::getNodeIdForState(outgoingConnections.getFirst().getChildWithName(IDs::DESTINATION)));
     }
 
 private:

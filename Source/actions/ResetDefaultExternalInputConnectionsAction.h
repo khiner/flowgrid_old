@@ -29,26 +29,24 @@ struct ResetDefaultExternalInputConnectionsAction : public CreateOrDeleteConnect
         if (!trackToTreatAsFocused.isValid())
             trackToTreatAsFocused = tracks.getFocusedTrack();
 
-        if (TracksState::isMasterTrack(trackToTreatAsFocused))
-            // When master gets focus, keep existing external input connections.
-            return;
+        for (auto connectionType : {audio, midi}) {
+            const auto sourceNodeId = input.getDefaultInputNodeIdForConnectionType(connectionType);
 
-        const auto audioSourceNodeId = input.getDefaultInputNodeIdForConnectionType(audio);
-        const auto midiSourceNodeId = input.getDefaultInputNodeIdForConnectionType(midi);
-        const ValueTree &audioInputProcessor = audioProcessorContainer.getProcessorStateForNodeId(audioSourceNodeId);
-        const ValueTree &midiInputProcessor = audioProcessorContainer.getProcessorStateForNodeId(midiSourceNodeId);
+            // Don't change default input connections if master received focus but a non-master processor already has default inputs connected.
+            if (TracksState::isMasterTrack(trackToTreatAsFocused)) {
+                const auto &alreadyReceivingDefaults = connections.findFirstProcessorReceivingDefaultConnectionsFrom(sourceNodeId, connectionType);
+                if (alreadyReceivingDefaults.isValid() && !TracksState::isMasterTrack(alreadyReceivingDefaults.getParent()))
+                    continue;
+            }
 
-        AudioProcessorGraph::NodeID audioDestinationNodeId, midiDestinationNodeId;
-        if (addDefaultConnections) {
-            audioDestinationNodeId = SAPC::getNodeIdForState(findEffectProcessorToReceiveDefaultExternalInput(audio, tracks, input, trackToTreatAsFocused));
-            midiDestinationNodeId = SAPC::getNodeIdForState(findEffectProcessorToReceiveDefaultExternalInput(midi, tracks, input, trackToTreatAsFocused));
+            const ValueTree &inputProcessor = audioProcessorContainer.getProcessorStateForNodeId(sourceNodeId);
+            AudioProcessorGraph::NodeID destinationNodeId;
+            if (addDefaultConnections)
+                destinationNodeId = SAPC::getNodeIdForState(findEffectProcessorToReceiveDefaultExternalInput(connectionType, tracks, input, trackToTreatAsFocused));
+
+            coalesceWith(DefaultConnectProcessorAction(inputProcessor, destinationNodeId, connectionType, connections, audioProcessorContainer));
+            coalesceWith(DisconnectProcessorAction(connections, inputProcessor, connectionType, true, false, false, true, destinationNodeId));
         }
-
-        coalesceWith(DefaultConnectProcessorAction( audioInputProcessor, audioDestinationNodeId, audio, connections, audioProcessorContainer));
-        coalesceWith(DisconnectProcessorAction(connections, audioInputProcessor, audio, true, false, false, true, audioDestinationNodeId));
-
-        coalesceWith(DefaultConnectProcessorAction(midiInputProcessor, midiDestinationNodeId, midi, connections, audioProcessorContainer));
-        coalesceWith(DisconnectProcessorAction(connections, midiInputProcessor, midi, true, false, false, true, midiDestinationNodeId));
     }
 
 private:
