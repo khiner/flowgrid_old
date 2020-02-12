@@ -4,14 +4,6 @@
 
 namespace Utilities {
 
-/** Iterates through a list of Components, calling a function on each.
-    @param fn   The signature of the fn should be equivalent to "void fn (Component* c)"
-*/
-    template<typename FunctionType>
-    inline void visitComponents(std::initializer_list<Component *> comps, FunctionType &&fn) {
-        std::for_each(std::begin(comps), std::end(comps), fn);
-    }
-
 /** Adds and makes visible any number of Components to a parent. */
     inline void addAndMakeVisible(Component &parent, Array<Component *> comps) {
         std::for_each(std::begin(comps), std::end(comps),
