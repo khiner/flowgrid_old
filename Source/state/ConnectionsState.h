@@ -2,8 +2,6 @@
 
 #include "JuceHeader.h"
 
-#include <utility>
-
 #include "StatefulAudioProcessorContainer.h"
 #include "TracksState.h"
 

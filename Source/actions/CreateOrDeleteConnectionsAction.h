@@ -2,7 +2,6 @@
 
 #include <state/Identifiers.h>
 
-#include <utility>
 #include <state/ConnectionsState.h>
 #include "JuceHeader.h"
 

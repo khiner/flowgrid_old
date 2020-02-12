@@ -9,8 +9,6 @@
 #include <StatefulAudioProcessorContainer.h>
 #include <state/InputState.h>
 
-#include <utility>
-
 struct UpdateAllDefaultConnectionsAction : public CreateOrDeleteConnectionsAction {
     
     UpdateAllDefaultConnectionsAction(bool makeInvalidDefaultsIntoCustom, bool resetDefaultExternalInputConnections,

@@ -1,4 +1,5 @@
-#include <utility>
+#pragma once
+
 #include <state/InputState.h>
 #include <state/OutputState.h>
 #include <actions/SelectProcessorSlotAction.h>
@@ -13,8 +14,6 @@
 #include <actions/MoveSelectedItemsAction.h>
 #include <actions/DuplicateSelectedItemsAction.h>
 #include <actions/SelectRectangleAction.h>
-
-#pragma once
 
 #include "PluginManager.h"
 #include "Utilities.h"

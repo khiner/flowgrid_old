@@ -2,8 +2,6 @@
 
 #include <state/TracksState.h>
 
-#include <utility>
-
 #include "JuceHeader.h"
 #include "InsertProcessorAction.h"
 
