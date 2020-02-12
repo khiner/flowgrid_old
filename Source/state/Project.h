@@ -12,6 +12,7 @@
 #include <actions/UpdateAllDefaultConnectionsAction.h>
 #include <actions/MoveSelectedItemsAction.h>
 #include <actions/DuplicateSelectedItemsAction.h>
+#include <actions/SelectRectangleAction.h>
 
 #pragma once
 
@@ -26,29 +27,6 @@
 class Project : public Stateful, public FileBasedDocument, public StatefulAudioProcessorContainer,
                 private ChangeListener, private ValueTree::Listener {
 public:
-    struct TrackAndSlot {
-        TrackAndSlot() : slot(0) {};
-        TrackAndSlot(ValueTree track, const ValueTree& processor) : track(std::move(track)), slot(processor[IDs::processorSlot]) {}
-        TrackAndSlot(ValueTree track, const int slot) : track(std::move(track)), slot(jmax(-1, slot)) {}
-        TrackAndSlot(ValueTree track) : track(std::move(track)), slot(-1) {}
-
-        bool isValid() const { return track.isValid(); }
-
-        void select(Project& project) {
-            if (!track.isValid())
-                return;
-
-            const auto& focusedTrack = project.getFocusedTrack();
-            if (slot != -1)
-                project.selectProcessorSlot(track, slot);
-            if (slot == -1 || (focusedTrack != track && focusedTrack[IDs::selected]))
-                project.setTrackSelected(track, true, true);
-        }
-
-        ValueTree track;
-        const int slot;
-    };
-
     Project(UndoManager &undoManager, PluginManager& pluginManager, AudioDeviceManager& deviceManager)
             : FileBasedDocument(getFilenameSuffix(), "*" + getFilenameSuffix(), "Load a project", "Save project"),
               undoManager(undoManager),
@@ -132,7 +110,6 @@ public:
     void redo() {
         if (isCurrentlyDraggingProcessor())
             endDraggingProcessor();
-        endRectangleSelection(); // TODO should not need
         undoManager.redo();
     }
 
@@ -301,9 +278,9 @@ public:
     }
 
     void selectProcessorSlot(const ValueTree& track, int slot, bool deselectOthers=true) {
-        selectionEndTrackAndSlot = std::make_unique<TrackAndSlot>(track, slot);
-        if (selectionStartTrackAndSlot != nullptr) { // shift+select
-            selectRectangle(track, slot);
+        selectionEndTrackAndSlot = {tracks.indexOf(track), slot};
+        if (selectionStartTrackAndSlot.x != -1 && selectionStartTrackAndSlot.y != -1) { // shift+select
+            undoManager.perform(new SelectRectangleAction(selectionStartTrackAndSlot, selectionEndTrackAndSlot, tracks, connections, view, input, *this));
         } else {
             setProcessorSlotSelected(track, slot, true, deselectOthers);
         }
@@ -316,10 +293,6 @@ public:
 
     void setTrackSelected(const ValueTree& track, bool selected, bool deselectOthers) {
         undoManager.perform(new SelectTrackAction(track, selected, deselectOthers, tracks, connections, view, input, *this));
-    }
-
-    ValueTree getFocusedTrack() const {
-        return tracks.getFocusedTrack();
     }
 
     void selectProcessor(const ValueTree& processor) {
@@ -377,21 +350,33 @@ public:
         processor.setProperty(IDs::bypassed, !processor[IDs::bypassed], &undoManager);
     }
 
-    void navigateUp() { findItemToSelectWithUpDownDelta(-1).select(*this); }
+    void navigateUp() { selectTrackAndSlot(findItemToSelectWithUpDownDelta(-1)); }
 
-    void navigateDown() { findItemToSelectWithUpDownDelta(1).select(*this); }
+    void navigateDown() { selectTrackAndSlot(findItemToSelectWithUpDownDelta(1)); }
 
-    void navigateLeft() { findItemToSelectWithLeftRightDelta(-1).select(*this); }
+    void navigateLeft() { selectTrackAndSlot(findItemToSelectWithLeftRightDelta(-1)); }
 
-    void navigateRight() { findItemToSelectWithLeftRightDelta(1).select(*this); }
+    void navigateRight() { selectTrackAndSlot(findItemToSelectWithLeftRightDelta(1)); }
 
-    bool canNavigateUp() const { return findItemToSelectWithUpDownDelta(-1).isValid(); }
+    bool canNavigateUp() const { return findItemToSelectWithUpDownDelta(-1).x != -1; }
 
-    bool canNavigateDown() const { return findItemToSelectWithUpDownDelta(1).isValid(); }
+    bool canNavigateDown() const { return findItemToSelectWithUpDownDelta(1).x != -1; }
 
-    bool canNavigateLeft() const { return findItemToSelectWithLeftRightDelta(-1).isValid(); }
+    bool canNavigateLeft() const { return findItemToSelectWithLeftRightDelta(-1).x != -1; }
 
-    bool canNavigateRight() const { return findItemToSelectWithLeftRightDelta(1).isValid(); }
+    bool canNavigateRight() const { return findItemToSelectWithLeftRightDelta(1).x != -1; }
+
+    void selectTrackAndSlot(juce::Point<int> trackAndSlot) {
+        if (trackAndSlot.x < 0 || trackAndSlot.x >= tracks.getNumTracks())
+            return;
+
+        const auto& track = tracks.getTrack(trackAndSlot.x);
+        const int slot = trackAndSlot.y;
+        if (slot != -1)
+            selectProcessorSlot(track, slot);
+        else
+            setTrackSelected(track, true, true);
+    }
 
     void createDefaultProject() {
         view.initializeDefault();
@@ -523,7 +508,7 @@ private:
     AudioDeviceManager& deviceManager;
 
     StatefulAudioProcessorContainer* statefulAudioProcessorContainer {};
-    std::unique_ptr<TrackAndSlot> selectionStartTrackAndSlot {}, selectionEndTrackAndSlot {};
+    juce::Point<int> selectionStartTrackAndSlot{-1, -1}, selectionEndTrackAndSlot{-1, -1};
 
     bool shiftHeld { false }, push2ShiftHeld { false };
 
@@ -573,139 +558,131 @@ private:
         }
     }
 
-    void selectRectangle(const ValueTree &track, int slot) {
-        const auto trackIndex = tracks.indexOf(track);
-        const auto selectionStartTrackIndex = tracks.indexOf(selectionStartTrackAndSlot->track);
-        const auto gridPosition = trackAndSlotToGridPosition({track, slot});
-        Rectangle<int> selectionRectangle(trackAndSlotToGridPosition(*selectionStartTrackAndSlot), gridPosition);
-        selectionRectangle.setSize(selectionRectangle.getWidth() + 1, selectionRectangle.getHeight() + 1);
-
-        for (int otherTrackIndex = 0; otherTrackIndex < tracks.getNumTracks(); otherTrackIndex++) {
-            auto otherTrack = tracks.getTrack(otherTrackIndex);
-            bool trackSelected = (slot == -1 || selectionStartTrackAndSlot->slot == -1) &&
-                                 ((selectionStartTrackIndex <= otherTrackIndex && otherTrackIndex <= trackIndex) ||
-                                  (trackIndex <= otherTrackIndex && otherTrackIndex <= selectionStartTrackIndex));
-            setTrackSelected(otherTrack, trackSelected, false);
-            if (!trackSelected) {
-                for (int otherSlot = 0; otherSlot < view.getNumAvailableSlotsForTrack(otherTrack); otherSlot++) {
-                    const auto otherGridPosition = trackAndSlotToGridPosition({otherTrack, otherSlot});
-                    setProcessorSlotSelected(otherTrack, otherSlot, selectionRectangle.contains(otherGridPosition), false);
-                }
-            }
-        }
-    }
-
     void startRectangleSelection() {
         const juce::Point<int> focusedTrackAndSlot = view.getFocusedTrackAndSlot();
         const auto& focusedTrack = tracks.getTrack(focusedTrackAndSlot.x);
-        if (focusedTrack.isValid()) {
-            selectionStartTrackAndSlot = focusedTrack[IDs::selected]
-                                         ? std::make_unique<TrackAndSlot>(focusedTrack)
-                                         : std::make_unique<TrackAndSlot>(focusedTrack, focusedTrackAndSlot.y);
-        }
+        selectionStartTrackAndSlot = focusedTrack[IDs::selected] ? juce::Point(focusedTrackAndSlot.x, -1) : focusedTrackAndSlot;
     }
 
     void endRectangleSelection() {
-        selectionStartTrackAndSlot.reset();
-        selectionEndTrackAndSlot.reset();
+        selectionStartTrackAndSlot = {-1, -1};
+        selectionEndTrackAndSlot = {-1, -1};
     }
 
-    TrackAndSlot getMostRecentSelectedTrackAndSlot() const {
-        if (selectionEndTrackAndSlot != nullptr) {
-            return *selectionEndTrackAndSlot;
-        } else {
-            juce::Point<int> focusedTrackAndSlot = view.getFocusedTrackAndSlot();
-            return {tracks.getTrack(focusedTrackAndSlot.x), focusedTrackAndSlot.y};
-        }
-    }
-
-    TrackAndSlot findGridItemToSelectWithDelta(int xDelta, int yDelta) const {
-        const auto gridPosition = trackAndSlotToGridPosition(getMostRecentSelectedTrackAndSlot());
-        return gridPositionToTrackAndSlot(gridPosition + juce::Point<int>(xDelta, yDelta));
-    }
-
-    TrackAndSlot findItemToSelectWithLeftRightDelta(int delta) const {
+    juce::Point<int> findItemToSelectWithLeftRightDelta(int delta) const {
         if (view.isGridPaneFocused())
-            return findGridItemToSelectWithDelta(delta, 0);
+            return findTrackAndSlotToFocusWithGridDelta(delta, 0);
         else
             return findSelectionPaneItemToSelectWithLeftRightDelta(delta);
     }
 
-    TrackAndSlot findItemToSelectWithUpDownDelta(int delta) const {
+    juce::Point<int> findItemToSelectWithUpDownDelta(int delta) const {
         if (view.isGridPaneFocused())
-            return findGridItemToSelectWithDelta(0, delta);
+            return findTrackAndSlotToFocusWithGridDelta(0, delta);
         else
             return findSelectionPaneItemToFocusWithUpDownDelta(delta);
     }
 
-    TrackAndSlot findSelectionPaneItemToFocusWithUpDownDelta(int delta) const {
-        const juce::Point<int> focusedTrackAndSlot = view.getFocusedTrackAndSlot();
-        const ValueTree& focusedTrack = tracks.getTrack(focusedTrackAndSlot.x);
-        if (!focusedTrack.isValid())
-            return {};
+    // Returns point with x == trackIndex and y == slot.
+    // If given position is off the grid, x = -1 is returned
+    juce::Point<int> findTrackAndSlotToFocusWithGridDelta(int xDelta, int yDelta) const {
+        const auto focusedTrackAndSlot = view.getFocusedTrackAndSlot();
+        const auto& focusedTrack = tracks.getTrack(focusedTrackAndSlot.x);
+        bool masterIsFocused = TracksState::isMasterTrack(focusedTrack);
+        int slotDelta = masterIsFocused ? xDelta : yDelta;
 
-        // XXX broken - EXC_BAD_...
-        ValueTree focusedProcessor = {};//getFocusedProcessor();
-        if (focusedProcessor.isValid()) {
-            if (delta > 0 && focusedTrack[IDs::selected])
-                return {focusedTrack, focusedProcessor}; // re-selecting the processor will deselect the parent.
+        if (focusedTrack[IDs::selected] && slotDelta < 0)
+            // up when track is selected does nothing
+            return {-1, -1};
+        else if (focusedTrack[IDs::selected] && slotDelta > 0)
+            // down when track is selected selects the first slot
+            return {focusedTrackAndSlot.x, 0};
 
-            const auto &siblingProcessorToSelect = focusedProcessor.getSibling(delta);
-            if (siblingProcessorToSelect.isValid())
-                return {focusedTrack, siblingProcessorToSelect};
-        } else { // no focused processor - selection is on empty slot
-            auto focusedProcessorSlot = focusedTrackAndSlot.y;
-            for (int slot = focusedProcessorSlot;
-                 (delta < 0 ? slot >= 0 : slot < view.getNumAvailableSlotsForTrack(focusedTrack));
-                 slot += delta) {
-                const auto &processor = TracksState::getProcessorAtSlot(focusedTrack, slot);
-                if (processor.isValid())
-                    return {focusedTrack, processor};
+        const auto fromGridPosition = trackAndSlotToGridPosition(focusedTrack, focusedTrackAndSlot.y);
+        const auto toGridPosition = fromGridPosition + juce::Point(xDelta, yDelta);
+        if (toGridPosition.y > view.getNumTrackProcessorSlots())
+            return {-1, -1};
+
+        int trackIndex, slot;
+        if (toGridPosition.y == view.getNumTrackProcessorSlots()) {
+            trackIndex = tracks.indexOf(tracks.getMasterTrack());
+            slot = toGridPosition.x + view.getMasterViewSlotOffset() - view.getGridViewTrackOffset();
+        } else {
+            trackIndex = toGridPosition.x;
+            if (trackIndex >= tracks.getNumNonMasterTracks()) {
+                if (masterIsFocused)
+                    trackIndex = tracks.getNumNonMasterTracks() - 1;
+                else
+                    return {-1, -1};
             }
-
-            return delta < 0 && !focusedTrack[IDs::selected] ? TrackAndSlot(focusedTrack) : TrackAndSlot();
+            slot = toGridPosition.y + view.getGridViewSlotOffset();
         }
+
+        if (trackIndex < 0 || slot < -1 || slot >= view.getNumAvailableSlotsForTrack(tracks.getTrack(trackIndex)))
+            return {-1, -1};
+
+        return {trackIndex, slot};
     }
 
-    TrackAndSlot findSelectionPaneItemToSelectWithLeftRightDelta(int delta) const {
+    juce::Point<int> trackAndSlotToGridPosition(const ValueTree& track, int slot) const {
+        if (TracksState::isMasterTrack(track))
+            return {slot + view.getGridViewTrackOffset() - view.getMasterViewSlotOffset(), view.getNumTrackProcessorSlots()};
+        else
+            return {tracks.indexOf(track), slot};
+    }
+
+    juce::Point<int> findSelectionPaneItemToFocusWithUpDownDelta(int delta) const {
+        const auto focusedTrackAndSlot = view.getFocusedTrackAndSlot();
+        const auto& focusedTrack = tracks.getTrack(focusedTrackAndSlot.x);
+        if (!focusedTrack.isValid())
+            return {-1, -1};
+
+        const ValueTree& focusedProcessor = TracksState::getProcessorAtSlot(focusedTrack, focusedTrackAndSlot.y);
+        if (delta > 0 && focusedTrack[IDs::selected])
+            // down when track is selected deselects the track
+            return {focusedTrackAndSlot.x, focusedTrackAndSlot.y};
+        ValueTree siblingProcessorToSelect;
+        if (focusedProcessor.isValid()) {
+             siblingProcessorToSelect = focusedProcessor.getSibling(delta);
+        } else { // no focused processor - selection is on empty slot
+            for (int slot = focusedTrackAndSlot.y + delta; (delta < 0 ? slot >= 0 : slot < view.getNumAvailableSlotsForTrack(focusedTrack)); slot += delta) {
+                siblingProcessorToSelect = TracksState::getProcessorAtSlot(focusedTrack, slot);
+                if (siblingProcessorToSelect.isValid())
+                    break;
+            }
+        }
+        if (siblingProcessorToSelect.isValid())
+            return {focusedTrackAndSlot.x, siblingProcessorToSelect[IDs::processorSlot]};
+        else if (delta < 0)
+            return {focusedTrackAndSlot.x, -1};
+        else
+            return {-1, -1};
+    }
+
+    juce::Point<int> findSelectionPaneItemToSelectWithLeftRightDelta(int delta) const {
         const juce::Point<int> focusedTrackAndSlot = view.getFocusedTrackAndSlot();
         const ValueTree& focusedTrack = tracks.getTrack(focusedTrackAndSlot.x);
         if (!focusedTrack.isValid())
-            return {};
+            return {-1, -1};
 
         const auto& siblingTrackToSelect = focusedTrack.getSibling(delta);
         if (!siblingTrackToSelect.isValid())
-            return {};
+            return {-1, -1};
+
+        int siblingTrackIndex = tracks.indexOf(siblingTrackToSelect);
 
         if (focusedTrack[IDs::selected] || focusedTrack.getNumChildren() == 0)
-            return {siblingTrackToSelect};
+            return {siblingTrackIndex, -1};
 
-        auto focusedSlot = focusedTrackAndSlot.y;
-        if (focusedSlot != -1) {
-            const auto& processorToSelect = tracks.findProcessorNearestToSlot(siblingTrackToSelect, focusedSlot);
-            return processorToSelect.isValid() ? TrackAndSlot(siblingTrackToSelect, processorToSelect) : TrackAndSlot(siblingTrackToSelect);
+        if (focusedTrackAndSlot.y != -1) {
+            const auto& processorToSelect = tracks.findProcessorNearestToSlot(siblingTrackToSelect, focusedTrackAndSlot.y);
+            if (processorToSelect.isValid())
+                return {siblingTrackIndex, focusedTrackAndSlot.y};
+            else
+                return {siblingTrackIndex, -1};
         }
 
-        return {};
-    }
-
-    const TrackAndSlot gridPositionToTrackAndSlot(const juce::Point<int> gridPosition) const {
-        if (gridPosition.y >= view.getNumTrackProcessorSlots())
-            return {tracks.getMasterTrack(),
-                    jmin(gridPosition.x + view.getMasterViewSlotOffset() - view.getGridViewTrackOffset(),
-                         view.getNumMasterProcessorSlots() - 1)};
-        else
-            return {tracks.getTrack(jmin(gridPosition.x, tracks.getNumNonMasterTracks() - 1)),
-                    jmin(gridPosition.y + view.getGridViewSlotOffset(),
-                         view.getNumTrackProcessorSlots() - 1)};
-    }
-
-    juce::Point<int> trackAndSlotToGridPosition(const TrackAndSlot& trackAndSlot) const {
-        if (TracksState::isMasterTrack(trackAndSlot.track))
-            return {trackAndSlot.slot + view.getGridViewTrackOffset() - view.getMasterViewSlotOffset(),
-                    view.getNumTrackProcessorSlots()};
-        else
-            return {tracks.indexOf(trackAndSlot.track), trackAndSlot.slot};
+        return {-1, -1};
     }
 
     bool doDisconnectNode(const ValueTree& processor, ConnectionType connectionType,

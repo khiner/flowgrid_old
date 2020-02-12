@@ -47,9 +47,8 @@ struct CreateOrDeleteConnectionsAction : public UndoableAction {
     }
 
     UndoableAction* createCoalescedAction(UndoableAction* nextAction) override {
-        if (auto* nextConnect = dynamic_cast<CreateOrDeleteConnectionsAction*>(nextAction)) {
+        if (auto* nextConnect = dynamic_cast<CreateOrDeleteConnectionsAction*>(nextAction))
             return new CreateOrDeleteConnectionsAction(this, nextConnect, connections);
-        }
 
         return nullptr;
     }
@@ -66,20 +65,18 @@ struct CreateOrDeleteConnectionsAction : public UndoableAction {
 
     void addConnection(const ValueTree& connection) {
         int deleteIndex = connectionsToDelete.indexOf(connection);
-        if (deleteIndex != -1) {
+        if (deleteIndex != -1)
             connectionsToDelete.remove(deleteIndex); // cancels out
-        } else if (!connectionsToCreate.contains(connection)) {
+        else if (!connectionsToCreate.contains(connection))
             connectionsToCreate.add(connection);
-        }
     }
 
     void removeConnection(const ValueTree& connection) {
         int createIndex = connectionsToCreate.indexOf(connection);
-        if (createIndex != -1) {
+        if (createIndex != -1)
             connectionsToCreate.remove(createIndex); // cancels out
-        } else if (!connectionsToDelete.contains(connection)) {
+        else if (!connectionsToDelete.contains(connection))
             connectionsToDelete.add(connection);
-        }
     }
 
 protected:

@@ -36,6 +36,7 @@ add_executable (APP
     "../../Source/actions/ResetDefaultExternalInputConnectionsAction.h"
     "../../Source/actions/SelectAction.h"
     "../../Source/actions/SelectProcessorSlotAction.h"
+    "../../Source/actions/SelectRectangleAction.h"
     "../../Source/actions/SelectTrackAction.h"
     "../../Source/actions/SetDefaultConnectionsAllowedAction.h"
     "../../Source/actions/UpdateAllDefaultConnectionsAction.h"
@@ -1500,6 +1501,7 @@ set_source_files_properties ("../../Source/actions/MoveSelectedItemsAction.h" PR
 set_source_files_properties ("../../Source/actions/ResetDefaultExternalInputConnectionsAction.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/actions/SelectAction.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/actions/SelectProcessorSlotAction.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/actions/SelectRectangleAction.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/actions/SelectTrackAction.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/actions/SetDefaultConnectionsAllowedAction.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/actions/UpdateAllDefaultConnectionsAction.h" PROPERTIES HEADER_FILE_ONLY TRUE)
