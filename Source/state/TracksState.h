@@ -319,20 +319,13 @@ public:
     }
 
     juce::Point<int> trackAndSlotWithGridDelta(int xDelta, int yDelta) const {
-        const auto focusedTrackAndSlot = view.getFocusedTrackAndSlot();
+        auto focusedTrackAndSlot = view.getFocusedTrackAndSlot();
         const auto& focusedTrack = getTrack(focusedTrackAndSlot.x);
-        bool masterIsFocused = TracksState::isMasterTrack(focusedTrack);
-        int slotDelta = masterIsFocused ? xDelta : yDelta;
-
-        if (focusedTrack[IDs::selected] && slotDelta < 0)
-            // up when track is selected does nothing
-            return INVALID_TRACK_AND_SLOT;
-        else if (focusedTrack[IDs::selected] && slotDelta > 0)
-            // down when track is selected selects the first slot
-            return {focusedTrackAndSlot.x, 0};
+        if (focusedTrack[IDs::selected])
+            focusedTrackAndSlot.y = -1;
 
         const auto fromGridPosition = trackAndSlotToGridPosition(focusedTrackAndSlot);
-        return gridPositionToTrackAndSlot(fromGridPosition + juce::Point(xDelta, yDelta), masterIsFocused);
+        return gridPositionToTrackAndSlot(fromGridPosition + juce::Point(xDelta, yDelta), TracksState::isMasterTrack(focusedTrack));
     }
 
     juce::Point<int> selectionPaneTrackAndSlotWithUpDownDelta(int delta) const {
@@ -406,11 +399,11 @@ public:
             slot = gridPosition.x + view.getMasterViewSlotOffset() - view.getGridViewTrackOffset();
         } else {
             trackIndex = gridPosition.x;
-            if (trackIndex >= getNumNonMasterTracks()) {
+            if (trackIndex < 0 || trackIndex >= getNumNonMasterTracks()) {
                 if (allowUpFromMaster)
                     // This is annoyingly tied to arrow selection.
-                    // Allow navigating UP from master track, but not RIGHT from rightmost non-master track.
-                    trackIndex = getNumNonMasterTracks() - 1;
+                    // Allow navigating UP from master track, but not LEFT or RIGHT into no track
+                    trackIndex = std::clamp(trackIndex, 0, getNumNonMasterTracks() - 1);
                 else
                     return INVALID_TRACK_AND_SLOT;
             }

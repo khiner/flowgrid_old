@@ -14,7 +14,7 @@ struct SelectRectangleAction : public SelectAction {
 
         for (int trackIndex = 0; trackIndex < tracks.getNumTracks(); trackIndex++) {
             auto track = tracks.getTrack(trackIndex);
-            bool trackSelected = selectionRectangle.contains(trackIndex, -1);
+            bool trackSelected = selectionRectangle.contains(tracks.trackAndSlotToGridPosition({trackIndex, -1}));
             newTrackSelections.setUnchecked(trackIndex, trackSelected);
             if (trackSelected) {
                 newSelectedSlotsMasks.setUnchecked(trackIndex, tracks.createFullSelectionBitmask(track));
