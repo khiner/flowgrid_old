@@ -210,7 +210,7 @@ public:
     }
 
     void beginDragging(const juce::Point<int> trackAndSlot) {
-        if (trackAndSlot == tracks.INVALID_TRACK_AND_SLOT)
+        if (trackAndSlot == TracksState::INVALID_TRACK_AND_SLOT || TracksState::isMasterTrack(tracks.getTrack(trackAndSlot.x)))
             return;
 
         initialDraggingTrackAndSlot = trackAndSlot;
@@ -221,7 +221,9 @@ public:
     }
 
     void dragToPosition(juce::Point<int> trackAndSlot) {
-         if (!isCurrentlyDraggingProcessor() || trackAndSlot == currentlyDraggingTrackAndSlot || trackAndSlot == tracks.INVALID_TRACK_AND_SLOT)
+        if (!isCurrentlyDraggingProcessor() || trackAndSlot == currentlyDraggingTrackAndSlot ||
+            (currentlyDraggingTrackAndSlot.y == -1 && trackAndSlot.x == currentlyDraggingTrackAndSlot.x) ||
+            trackAndSlot == TracksState::INVALID_TRACK_AND_SLOT)
             return;
 
         if (currentlyDraggingTrackAndSlot == initialDraggingTrackAndSlot)
@@ -253,12 +255,12 @@ public:
         if (!isCurrentlyDraggingProcessor())
             return;
 
-        initialDraggingTrackAndSlot = tracks.INVALID_TRACK_AND_SLOT;
+        initialDraggingTrackAndSlot = TracksState::INVALID_TRACK_AND_SLOT;
         statefulAudioProcessorContainer->resumeAudioGraphUpdatesAndApplyDiffSincePause();
     }
 
     bool isCurrentlyDraggingProcessor() {
-        return initialDraggingTrackAndSlot != tracks.INVALID_TRACK_AND_SLOT;
+        return initialDraggingTrackAndSlot != TracksState::INVALID_TRACK_AND_SLOT;
     }
 
     void setProcessorSlotSelected(const ValueTree& track, int slot, bool selected, bool deselectOthers=true) {
@@ -349,13 +351,13 @@ public:
 
     void navigateRight() { selectTrackAndSlot(tracks.trackAndSlotWithLeftRightDelta(1)); }
 
-    bool canNavigateUp() const { return tracks.trackAndSlotWithUpDownDelta(-1).x != tracks.INVALID_TRACK_AND_SLOT.x; }
+    bool canNavigateUp() const { return tracks.trackAndSlotWithUpDownDelta(-1).x != TracksState::INVALID_TRACK_AND_SLOT.x; }
 
-    bool canNavigateDown() const { return tracks.trackAndSlotWithUpDownDelta(1).x != tracks.INVALID_TRACK_AND_SLOT.x; }
+    bool canNavigateDown() const { return tracks.trackAndSlotWithUpDownDelta(1).x != TracksState::INVALID_TRACK_AND_SLOT.x; }
 
-    bool canNavigateLeft() const { return tracks.trackAndSlotWithLeftRightDelta(-1).x != tracks.INVALID_TRACK_AND_SLOT.x; }
+    bool canNavigateLeft() const { return tracks.trackAndSlotWithLeftRightDelta(-1).x != TracksState::INVALID_TRACK_AND_SLOT.x; }
 
-    bool canNavigateRight() const { return tracks.trackAndSlotWithLeftRightDelta(1).x != tracks.INVALID_TRACK_AND_SLOT.x; }
+    bool canNavigateRight() const { return tracks.trackAndSlotWithLeftRightDelta(1).x != TracksState::INVALID_TRACK_AND_SLOT.x; }
 
     void selectTrackAndSlot(juce::Point<int> trackAndSlot) {
         if (trackAndSlot.x < 0 || trackAndSlot.x >= tracks.getNumTracks())
@@ -503,7 +505,8 @@ private:
 
     bool shiftHeld { false }, push2ShiftHeld { false };
 
-    juce::Point<int> initialDraggingTrackAndSlot, currentlyDraggingTrackAndSlot;
+    juce::Point<int> initialDraggingTrackAndSlot = TracksState::INVALID_TRACK_AND_SLOT,
+            currentlyDraggingTrackAndSlot = TracksState::INVALID_TRACK_AND_SLOT;
 
     ValueTree mostRecentlyCreatedTrack, mostRecentlyCreatedProcessor;
 

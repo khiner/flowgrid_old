@@ -431,7 +431,7 @@ public:
         return {trackIndex, slot};
     }
 
-    const juce::Point<int> INVALID_TRACK_AND_SLOT = {-1, -1};
+    static constexpr juce::Point<int> INVALID_TRACK_AND_SLOT = {-1, -1};
 
 private:
     ValueTree tracks;

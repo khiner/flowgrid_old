@@ -137,7 +137,7 @@ private:
         for (auto* track : objects)
             if (track->contains(e.getEventRelativeTo(track).getPosition()))
                 return {track->getTrackIndex(), track->findSlotAt(e)};
-        return tracks.INVALID_TRACK_AND_SLOT;
+        return TracksState::INVALID_TRACK_AND_SLOT;
     }
 
     void valueTreePropertyChanged(ValueTree &tree, const juce::Identifier &i) override {
