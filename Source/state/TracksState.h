@@ -60,7 +60,7 @@ public:
     }
 
     ValueTree getMasterTrack() const { return tracks.getChildWithProperty(IDs::isMasterTrack, true); }
-    static bool isMasterTrack(const ValueTree& track) { return track.hasProperty(IDs::isMasterTrack) && track[IDs::isMasterTrack]; }
+    static bool isMasterTrack(const ValueTree& track) { return track[IDs::isMasterTrack]; }
 
     int getMixerChannelSlotForTrack(const ValueTree& track) const { return view.getMixerChannelSlotForTrack(track); }
 
@@ -303,6 +303,127 @@ public:
     void setTrackColour(ValueTree track, const Colour& colour) {
         track.setProperty(IDs::colour, colour.toString(), &undoManager);
     }
+
+    juce::Point<int> trackAndSlotWithLeftRightDelta(int delta) const {
+        if (view.isGridPaneFocused())
+            return trackAndSlotWithGridDelta(delta, 0);
+        else
+            return selectionPaneTrackAndSlotWithLeftRightDelta(delta);
+    }
+
+    juce::Point<int> trackAndSlotWithUpDownDelta(int delta) const {
+        if (view.isGridPaneFocused())
+            return trackAndSlotWithGridDelta(0, delta);
+        else
+            return selectionPaneTrackAndSlotWithUpDownDelta(delta);
+    }
+
+    juce::Point<int> trackAndSlotWithGridDelta(int xDelta, int yDelta) const {
+        const auto focusedTrackAndSlot = view.getFocusedTrackAndSlot();
+        const auto& focusedTrack = getTrack(focusedTrackAndSlot.x);
+        bool masterIsFocused = TracksState::isMasterTrack(focusedTrack);
+        int slotDelta = masterIsFocused ? xDelta : yDelta;
+
+        if (focusedTrack[IDs::selected] && slotDelta < 0)
+            // up when track is selected does nothing
+            return INVALID_TRACK_AND_SLOT;
+        else if (focusedTrack[IDs::selected] && slotDelta > 0)
+            // down when track is selected selects the first slot
+            return {focusedTrackAndSlot.x, 0};
+
+        const auto fromGridPosition = trackAndSlotToGridPosition(focusedTrackAndSlot);
+        return gridPositionToTrackAndSlot(fromGridPosition + juce::Point(xDelta, yDelta), masterIsFocused);
+    }
+
+    juce::Point<int> selectionPaneTrackAndSlotWithUpDownDelta(int delta) const {
+        const auto focusedTrackAndSlot = view.getFocusedTrackAndSlot();
+        const auto& focusedTrack = getTrack(focusedTrackAndSlot.x);
+        if (!focusedTrack.isValid())
+            return INVALID_TRACK_AND_SLOT;
+
+        const ValueTree& focusedProcessor = TracksState::getProcessorAtSlot(focusedTrack, focusedTrackAndSlot.y);
+        if (delta > 0 && focusedTrack[IDs::selected])
+            // down when track is selected deselects the track
+            return {focusedTrackAndSlot.x, focusedTrackAndSlot.y};
+        ValueTree siblingProcessorToSelect;
+        if (focusedProcessor.isValid()) {
+            siblingProcessorToSelect = focusedProcessor.getSibling(delta);
+        } else { // no focused processor - selection is on empty slot
+            for (int slot = focusedTrackAndSlot.y + delta; (delta < 0 ? slot >= 0 : slot < view.getNumAvailableSlotsForTrack(focusedTrack)); slot += delta) {
+                siblingProcessorToSelect = TracksState::getProcessorAtSlot(focusedTrack, slot);
+                if (siblingProcessorToSelect.isValid())
+                    break;
+            }
+        }
+        if (siblingProcessorToSelect.isValid())
+            return {focusedTrackAndSlot.x, siblingProcessorToSelect[IDs::processorSlot]};
+        else if (delta < 0)
+            return {focusedTrackAndSlot.x, -1};
+        else
+            return INVALID_TRACK_AND_SLOT;
+    }
+
+    juce::Point<int> selectionPaneTrackAndSlotWithLeftRightDelta(int delta) const {
+        const juce::Point<int> focusedTrackAndSlot = view.getFocusedTrackAndSlot();
+        const ValueTree& focusedTrack = getTrack(focusedTrackAndSlot.x);
+        if (!focusedTrack.isValid())
+            return INVALID_TRACK_AND_SLOT;
+
+        const auto& siblingTrackToSelect = focusedTrack.getSibling(delta);
+        if (!siblingTrackToSelect.isValid())
+            return INVALID_TRACK_AND_SLOT;
+
+        int siblingTrackIndex = indexOf(siblingTrackToSelect);
+
+        if (focusedTrack[IDs::selected] || focusedTrack.getNumChildren() == 0)
+            return {siblingTrackIndex, -1};
+
+        if (focusedTrackAndSlot.y != -1) {
+            const auto& processorToSelect = findProcessorNearestToSlot(siblingTrackToSelect, focusedTrackAndSlot.y);
+            if (processorToSelect.isValid())
+                return {siblingTrackIndex, focusedTrackAndSlot.y};
+            else
+                return {siblingTrackIndex, -1};
+        }
+
+        return INVALID_TRACK_AND_SLOT;
+    }
+
+    juce::Point<int> trackAndSlotToGridPosition(const juce::Point<int> trackAndSlot) const {
+        if (TracksState::isMasterTrack(getTrack(trackAndSlot.x)))
+            return {trackAndSlot.y + view.getGridViewTrackOffset() - view.getMasterViewSlotOffset(), view.getNumTrackProcessorSlots()};
+        else
+            return trackAndSlot;
+    }
+
+    juce::Point<int> gridPositionToTrackAndSlot(const juce::Point<int> gridPosition, bool allowUpFromMaster=false) const {
+        if (gridPosition.y > view.getNumTrackProcessorSlots())
+            return INVALID_TRACK_AND_SLOT;
+
+        int trackIndex, slot;
+        if (gridPosition.y == view.getNumTrackProcessorSlots()) {
+            trackIndex = indexOf(getMasterTrack());
+            slot = gridPosition.x + view.getMasterViewSlotOffset() - view.getGridViewTrackOffset();
+        } else {
+            trackIndex = gridPosition.x;
+            if (trackIndex >= getNumNonMasterTracks()) {
+                if (allowUpFromMaster)
+                    // This is annoyingly tied to arrow selection.
+                    // Allow navigating UP from master track, but not RIGHT from rightmost non-master track.
+                    trackIndex = getNumNonMasterTracks() - 1;
+                else
+                    return INVALID_TRACK_AND_SLOT;
+            }
+            slot = gridPosition.y + view.getGridViewSlotOffset();
+        }
+
+        if (trackIndex < 0 || slot < -1 || slot >= view.getNumAvailableSlotsForTrack(getTrack(trackIndex)))
+            return INVALID_TRACK_AND_SLOT;
+
+        return {trackIndex, slot};
+    }
+
+    const juce::Point<int> INVALID_TRACK_AND_SLOT = {-1, -1};
 
 private:
     ValueTree tracks;

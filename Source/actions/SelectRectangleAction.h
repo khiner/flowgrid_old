@@ -5,34 +5,32 @@
 #include "SelectTrackAction.h"
 
 struct SelectRectangleAction : public SelectAction {
-    SelectRectangleAction(const juce::Point<int> fromGridPoint, const juce::Point<int> toGridPoint,
-                      TracksState &tracks, ConnectionsState &connections, ViewState &view,
-                      InputState &input, StatefulAudioProcessorContainer &audioProcessorContainer)
+    SelectRectangleAction(const juce::Point<int> fromTrackAndSlot, const juce::Point<int> toTrackAndSlot,
+                          TracksState &tracks, ConnectionsState &connections, ViewState &view,
+                          InputState &input, StatefulAudioProcessorContainer &audioProcessorContainer)
             : SelectAction(tracks, connections, view, input, audioProcessorContainer) {
-        Rectangle<int> selectionRectangle(fromGridPoint, toGridPoint);
+        Rectangle<int> selectionRectangle(tracks.trackAndSlotToGridPosition(fromTrackAndSlot), tracks.trackAndSlotToGridPosition(toTrackAndSlot));
         selectionRectangle.setSize(selectionRectangle.getWidth() + 1, selectionRectangle.getHeight() + 1);
 
-        for (int otherTrackIndex = 0; otherTrackIndex < tracks.getNumTracks(); otherTrackIndex++) {
-            auto otherTrack = tracks.getTrack(otherTrackIndex);
-            bool trackSelected = (fromGridPoint.y == -1 || toGridPoint.y == -1) &&
-                                 ((fromGridPoint.x <= otherTrackIndex && otherTrackIndex <= toGridPoint.x) ||
-                                  (toGridPoint.x <= otherTrackIndex && otherTrackIndex <= fromGridPoint.x));
-            newTrackSelections.setUnchecked(otherTrackIndex, trackSelected);
+        for (int trackIndex = 0; trackIndex < tracks.getNumTracks(); trackIndex++) {
+            auto track = tracks.getTrack(trackIndex);
+            bool trackSelected = selectionRectangle.contains(trackIndex, -1);
+            newTrackSelections.setUnchecked(trackIndex, trackSelected);
             if (trackSelected) {
-                newSelectedSlotsMasks.setUnchecked(otherTrackIndex, tracks.createFullSelectionBitmask(otherTrack));
+                newSelectedSlotsMasks.setUnchecked(trackIndex, tracks.createFullSelectionBitmask(track));
             } else {
                 BigInteger newSlotsMask;
-                for (int otherSlot = 0; otherSlot < view.getNumAvailableSlotsForTrack(otherTrack); otherSlot++)
-                    newSlotsMask.setBit(otherSlot, selectionRectangle.contains(juce::Point(otherTrackIndex, otherSlot)));
-                newSelectedSlotsMasks.setUnchecked(otherTrackIndex, newSlotsMask.toString(2));
+                for (int otherSlot = 0; otherSlot < view.getNumAvailableSlotsForTrack(track); otherSlot++)
+                    newSlotsMask.setBit(otherSlot, selectionRectangle.contains(tracks.trackAndSlotToGridPosition({trackIndex, otherSlot})));
+                newSelectedSlotsMasks.setUnchecked(trackIndex, newSlotsMask.toString(2));
             }
         }
-        int slotToFocus = toGridPoint.y;
+        int slotToFocus = toTrackAndSlot.y;
         if (slotToFocus == -1) {
-            const ValueTree &firstProcessor = tracks.getTrack(toGridPoint.x).getChild(0);
+            const ValueTree &firstProcessor = tracks.getTrack(toTrackAndSlot.x).getChild(0);
             slotToFocus = firstProcessor.isValid() ? int(firstProcessor[IDs::processorSlot]) : 0;
         }
-        setNewFocusedSlot({toGridPoint.x, slotToFocus});
+        setNewFocusedSlot({toTrackAndSlot.x, slotToFocus});
     }
 
 private:

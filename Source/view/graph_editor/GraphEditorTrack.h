@@ -47,13 +47,8 @@ public:
 
                 CallOutBox::launchAsynchronously(colourSelector, getScreenBounds(), nullptr);
             } else {
-                if (!isSelected()) {
-                    // selects and focuses
-                    project.setTrackSelected(state, true, !e.mods.isCommandDown());
-                } else {
-                    // mouse-down on something already selected focuses
-                    project.setTrackSelected(state, !e.mods.isCommandDown(), false);
-                }
+                bool isTrackSelected = isSelected();
+                project.setTrackSelected(state, !(isTrackSelected && e.mods.isCommandDown()), !(isTrackSelected || e.mods.isCommandDown()));
             }
         }
     }
@@ -62,7 +57,7 @@ public:
         if (e.eventComponent == &nameLabel) {
             if (e.mouseWasClicked() && !e.mods.isCommandDown()) {
                 // single click deselects other tracks/processors
-                project.setTrackSelected(state, true, true);
+                project.setTrackSelected(state, true);
             }
         }
     }

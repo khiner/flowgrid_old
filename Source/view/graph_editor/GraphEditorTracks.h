@@ -116,23 +116,17 @@ public:
                     return {track->getTrackIndex(), track->findSlotAt(e)};
             }
         }
-        return { -1, -1 };
+        return tracks.INVALID_TRACK_AND_SLOT;
     }
     
     void mouseDown(const MouseEvent &e) override {
-        if (!e.mods.isRightButtonDown()) {
-            const auto trackAndSlot = trackAndSlotAt(e);
-            if (trackAndSlot.x != -1)
-                project.beginDragging(trackAndSlot);
-        }
+        if (!e.mods.isRightButtonDown())
+            project.beginDragging(trackAndSlotAt(e));
     }
 
     void mouseDrag(const MouseEvent &e) override {
-        if (project.isCurrentlyDraggingProcessor() && !e.mods.isRightButtonDown()) {
-            const auto& trackAndSlot = trackAndSlotAt(e);
-            if (trackAndSlot.x != -1)
-                project.dragToPosition(trackAndSlot);
-        }
+        if (project.isCurrentlyDraggingProcessor() && !e.mods.isRightButtonDown())
+            project.dragToPosition(trackAndSlotAt(e));
     }
 
     void mouseUp(const MouseEvent &e) override {

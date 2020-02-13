@@ -32,7 +32,7 @@ public:
     void belowScreenButtonPressed(int buttonIndex) override {
         auto track = tracks.getTrackWithViewIndex(buttonIndex);
         if (track.isValid() && !TracksState::isMasterTrack(track)) {
-            project.setTrackSelected(track, true, true);
+            project.setTrackSelected(track, true);
         }
     }
 

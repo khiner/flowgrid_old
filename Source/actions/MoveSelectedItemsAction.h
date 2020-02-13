@@ -5,11 +5,11 @@
 #include "UpdateAllDefaultConnectionsAction.h"
 
 struct MoveSelectedItemsAction : UndoableAction {
-    MoveSelectedItemsAction(juce::Point<int> fromGridPoint, juce::Point<int> toGridPoint, bool makeInvalidDefaultsIntoCustom,
+    MoveSelectedItemsAction(juce::Point<int> fromTrackAndSlot, juce::Point<int> toTrackAndSlot, bool makeInvalidDefaultsIntoCustom,
                             TracksState &tracks, ConnectionsState &connections, ViewState &view,
                             InputState &input, OutputState &output, StatefulAudioProcessorContainer &audioProcessorContainer)
-            : gridDelta(limitedGridDelta(fromGridPoint, toGridPoint, tracks, view)),
-              updateSelectionAction(gridDelta, tracks, connections, view, input, audioProcessorContainer),
+            : trackAndSlotDelta(limitedDelta(fromTrackAndSlot, toTrackAndSlot, tracks, view)),
+              updateSelectionAction(trackAndSlotDelta, tracks, connections, view, input, audioProcessorContainer),
               insertTrackOrProcessorActions(createInsertActions(tracks, view)),
               updateConnectionsAction(makeInvalidDefaultsIntoCustom, true, tracks, connections, input, output,
                                       audioProcessorContainer, updateSelectionAction.getNewFocusedTrack()) {
@@ -47,25 +47,25 @@ struct MoveSelectedItemsAction : UndoableAction {
 private:
 
     struct MoveSelectionsAction : public SelectAction {
-        MoveSelectionsAction(juce::Point<int> gridDelta,
+        MoveSelectionsAction(juce::Point<int> trackAndSlotDelta,
                              TracksState &tracks, ConnectionsState &connections, ViewState &view,
                              InputState &input, StatefulAudioProcessorContainer &audioProcessorContainer)
                 : SelectAction(tracks, connections, view, input, audioProcessorContainer) {
-            if (gridDelta.y != 0) {
+            if (trackAndSlotDelta.y != 0) {
                 for (int i = 0; i < tracks.getNumTracks(); i++) {
                     if (oldTrackSelections.getUnchecked(i))
                         continue; // track itself is being moved, so don't move its selected slots
                     const auto& track = tracks.getTrack(i);
                     BigInteger selectedSlotsMask;
                     selectedSlotsMask.parseString(track[IDs::selectedSlotsMask].toString(), 2);
-                    selectedSlotsMask.shiftBits(gridDelta.y, 0);
+                    selectedSlotsMask.shiftBits(trackAndSlotDelta.y, 0);
                     newSelectedSlotsMasks.setUnchecked(i, selectedSlotsMask.toString(2));
                 }
             }
-            if (gridDelta.x != 0) {
+            if (trackAndSlotDelta.x != 0) {
                 auto moveTrackSelections = [&](int fromTrackIndex) {
                     const auto &fromTrack = tracks.getTrack(fromTrackIndex);
-                    int toTrackIndex = fromTrackIndex + gridDelta.x;
+                    int toTrackIndex = fromTrackIndex + trackAndSlotDelta.x;
                     if (toTrackIndex >= 0 && toTrackIndex < newSelectedSlotsMasks.size()) {
                         const auto &toTrack = tracks.getTrack(toTrackIndex);
                         newTrackSelections.setUnchecked(toTrackIndex, newTrackSelections.getUnchecked(fromTrackIndex));
@@ -74,17 +74,17 @@ private:
                         newSelectedSlotsMasks.setUnchecked(fromTrackIndex, BigInteger().toString(2));
                     }
                 };
-                if (gridDelta.x < 0) {
+                if (trackAndSlotDelta.x < 0) {
                     for (int fromTrackIndex = 0; fromTrackIndex < tracks.getNumTracks(); fromTrackIndex++) {
                         moveTrackSelections(fromTrackIndex);
                     }
-                } else if (gridDelta.x > 0) {
+                } else if (trackAndSlotDelta.x > 0) {
                     for (int fromTrackIndex = tracks.getNumTracks() - 1; fromTrackIndex >= 0; fromTrackIndex--) {
                         moveTrackSelections(fromTrackIndex);
                     }
                 }
             }
-            setNewFocusedSlot(oldFocusedSlot + gridDelta, false);
+            setNewFocusedSlot(oldFocusedSlot + trackAndSlotDelta, false);
         }
     };
 
@@ -108,7 +108,7 @@ private:
         TracksState &tracks;
     };
 
-    juce::Point<int> gridDelta;
+    juce::Point<int> trackAndSlotDelta;
     MoveSelectionsAction updateSelectionAction;
     OwnedArray<UndoableAction> insertTrackOrProcessorActions;
     UpdateAllDefaultConnectionsAction updateConnectionsAction;
@@ -120,12 +120,12 @@ private:
     OwnedArray<UndoableAction> createInsertActions(TracksState &tracks, ViewState &view) {
         OwnedArray<UndoableAction> insertActions;
 
-        if (gridDelta.x == 0 && gridDelta.y == 0)
+        if (trackAndSlotDelta.x == 0 && trackAndSlotDelta.y == 0)
             return insertActions;
 
         auto addInsertActionsForTrackIndex = [&](int fromTrackIndex) {
             const auto& fromTrack = tracks.getTrack(fromTrackIndex);
-            const int toTrackIndex = fromTrackIndex + gridDelta.x;
+            const int toTrackIndex = fromTrackIndex + trackAndSlotDelta.x;
 
             if (fromTrack[IDs::selected]) {
                 insertActions.add(new InsertTrackAction(fromTrackIndex, toTrackIndex, tracks));
@@ -139,15 +139,15 @@ private:
             const auto selectedProcessors = TracksState::findSelectedProcessorsForTrack(fromTrack);
 
             auto addInsertActionsForProcessor = [&](const ValueTree& processor) {
-                auto toSlot = int(processor[IDs::processorSlot]) + gridDelta.y;
+                auto toSlot = int(processor[IDs::processorSlot]) + trackAndSlotDelta.y;
                 insertActions.add(new InsertProcessorAction(processor, toTrackIndex, toSlot, tracks, view));
                 // Need to actually _do_ the move for each processor, since this could affect the results of
-                // a later track's slot moves. i.e. if gridDelta.x == -1, then we need to move selected processors
+                // a later track's slot moves. i.e. if trackAndSlotDelta.x == -1, then we need to move selected processors
                 // out of this track before advancing to the next track. (This action is undone later.)
                 insertActions.getLast()->perform();
             };
 
-            if (gridDelta.x == 0 && gridDelta.y > 0) {
+            if (trackAndSlotDelta.x == 0 && trackAndSlotDelta.y > 0) {
                 for (int processorIndex = selectedProcessors.size() - 1; processorIndex >= 0; processorIndex--)
                     addInsertActionsForProcessor(selectedProcessors.getUnchecked(processorIndex));
             } else {
@@ -156,7 +156,7 @@ private:
             }
         };
 
-        if (gridDelta.x <= 0) {
+        if (trackAndSlotDelta.x <= 0) {
             for (int trackIndex = 0; trackIndex < tracks.getNumTracks(); trackIndex++)
                 addInsertActionsForTrackIndex(trackIndex);
         } else {
@@ -172,8 +172,9 @@ private:
     // * _Limit_ the x/y delta to the obvious left/right/top/bottom boundaries, with appropriate special cases for mixer channel slots.
     // * _Expand_ the slot-delta just enough to allow groups of selected processors to move below non-selected processors.
     // (The principle here is to only create new processor rows if necessary.)
-    static juce::Point<int> limitedGridDelta(juce::Point<int> fromGridPoint, juce::Point<int> toGridPoint, TracksState &tracks, ViewState& view) {
-        auto originalGridDelta = toGridPoint - fromGridPoint;
+    static juce::Point<int> limitedDelta(juce::Point<int> fromTrackAndSlot, juce::Point<int> toTrackAndSlot,
+                                         TracksState &tracks, ViewState& view) {
+        auto originalDelta = toTrackAndSlot - fromTrackAndSlot;
         bool multipleTracksWithSelections = tracks.moreThanOneTrackHasSelections();
         // In the special case that multiple tracks have selections and the master track is one of them,
         // disallow movement because it doesn't make sense dragging horizontally and vertically at the same time.
@@ -182,17 +183,18 @@ private:
 
         bool anyTrackSelected = tracks.anyTrackSelected();
         // When dragging from a non-master track to the master track, interpret as dragging beyond the y-limit,
-        // to whatever track slot corresponding to the master track x-grid-position (x/y is flipped in master track).
+        // to whatever track slot corresponding to the master track x-position (x/y is flipped in master track).
         if (multipleTracksWithSelections &&
-            !TracksState::isMasterTrack(tracks.getTrack(fromGridPoint.x)) &&
-            TracksState::isMasterTrack(tracks.getTrack(fromGridPoint.x + originalGridDelta.x)))
-            return {limitTrackDelta(originalGridDelta.y, anyTrackSelected, multipleTracksWithSelections, tracks), view.getNumTrackProcessorSlots() - 2};
+            !TracksState::isMasterTrack(tracks.getTrack(fromTrackAndSlot.x)) &&
+            TracksState::isMasterTrack(tracks.getTrack(toTrackAndSlot.x)))
+            return {limitTrackDelta(toTrackAndSlot.y - fromTrackAndSlot.x, anyTrackSelected, multipleTracksWithSelections, tracks),
+                    view.getNumTrackProcessorSlots() - 2 - fromTrackAndSlot.y};
 
-        int limitedTrackDelta = limitTrackDelta(originalGridDelta.x, anyTrackSelected, multipleTracksWithSelections, tracks);
-        if (fromGridPoint.y == -1) // track-move only
+        int limitedTrackDelta = limitTrackDelta(originalDelta.x, anyTrackSelected, multipleTracksWithSelections, tracks);
+        if (fromTrackAndSlot.y == -1) // track-move only
             return {limitedTrackDelta, 0};
 
-        int limitedSlotDelta = limitSlotDelta(originalGridDelta.y, limitedTrackDelta, tracks);
+        int limitedSlotDelta = limitSlotDelta(originalDelta.y, limitedTrackDelta, tracks);
         return {limitedTrackDelta, limitedSlotDelta};
     }
 

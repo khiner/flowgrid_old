@@ -106,7 +106,7 @@ public:
     }
 
     void masterButtonPressed() override {
-        project.setTrackSelected(tracks.getMasterTrack(), true, true);
+        project.setTrackSelected(tracks.getMasterTrack(), true);
     }
 
     void aboveScreenButtonPressed(int buttonIndex) override {

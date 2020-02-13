@@ -36,15 +36,7 @@ public:
     void mouseDown(const MouseEvent &e) override {
         int slot = findSlotAt(e.getEventRelativeTo(this));
         bool isSlotSelected = TracksState::isSlotSelected(parent, slot);
-        if (e.mods.isCommandDown() && isSlotSelected) {
-            project.setProcessorSlotSelected(parent, slot, false, false);
-        } else if (!isSlotSelected) {
-            // selects and focuses
-            project.selectProcessorSlot(parent, slot, !e.mods.isCommandDown());
-        } else {
-            // mouse-down on something already selected focuses
-            project.selectProcessorSlot(parent, slot, false);
-        }
+        project.setProcessorSlotSelected(parent, slot, !(isSlotSelected && e.mods.isCommandDown()), !(isSlotSelected || e.mods.isCommandDown()));
         if (e.mods.isPopupMenu() || e.getNumberOfClicks() == 2) {
             showPopupMenu(slot);
         }
@@ -53,7 +45,7 @@ public:
     void mouseUp(const MouseEvent &e) override {
         if (e.mouseWasClicked() && !e.mods.isCommandDown()) {
             // single click deselects other tracks/processors
-            project.selectProcessorSlot(parent, findSlotAt(e.getEventRelativeTo(this)), true);
+            project.setProcessorSlotSelected(parent, findSlotAt(e.getEventRelativeTo(this)), true);
         }
     }
 
