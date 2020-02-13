@@ -46,7 +46,7 @@ struct SelectAction : public UndoableAction {
     void setNewFocusedSlot(juce::Point<int> newFocusedSlot, bool resetDefaultExternalInputs=true) {
         this->newFocusedSlot = newFocusedSlot;
         if (resetDefaultExternalInputs && oldFocusedSlot.x != this->newFocusedSlot.x) {
-            resetInputsAction = std::make_unique<ResetDefaultExternalInputConnectionsAction>(true, connections, tracks, input, audioProcessorContainer, tracks.getTrack(this->newFocusedSlot.x));
+            resetInputsAction = std::make_unique<ResetDefaultExternalInputConnectionsAction>(true, connections, tracks, input, audioProcessorContainer, getNewFocusedTrack());
         }
     }
 
@@ -60,7 +60,8 @@ struct SelectAction : public UndoableAction {
             track.setProperty(IDs::selected, newTrackSelections.getUnchecked(i), nullptr);
             track.setProperty(IDs::selectedSlotsMask, newSelectedSlotsMasks.getUnchecked(i), nullptr);
         }
-        updateViewFocus(newFocusedSlot);
+        if (newFocusedSlot != oldFocusedSlot)
+            updateViewFocus(newFocusedSlot);
         if (resetInputsAction != nullptr)
             resetInputsAction->perform();
 
@@ -75,7 +76,8 @@ struct SelectAction : public UndoableAction {
             track.setProperty(IDs::selected, oldTrackSelections.getUnchecked(i), nullptr);
             track.setProperty(IDs::selectedSlotsMask, oldSelectedSlotsMasks.getUnchecked(i), nullptr);
         }
-        updateViewFocus(oldFocusedSlot);
+        if (oldFocusedSlot != newFocusedSlot)
+            updateViewFocus(oldFocusedSlot);
         return true;
     }
 

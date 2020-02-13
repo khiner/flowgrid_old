@@ -106,22 +106,15 @@ public:
         }
         return nullptr;
     }
-
-    juce::Point<int> trackAndSlotAt(const MouseEvent &e) {
-        for (auto* track : objects) {
-            if (track->contains(e.getEventRelativeTo(track).getPosition())) {
-                if (const auto* trackLabel = dynamic_cast<Label *>(e.originalComponent))
-                    return {track->getTrackIndex(), -1}; // initiated at track label
-                else
-                    return {track->getTrackIndex(), track->findSlotAt(e)};
-            }
-        }
-        return tracks.INVALID_TRACK_AND_SLOT;
-    }
     
     void mouseDown(const MouseEvent &e) override {
-        if (!e.mods.isRightButtonDown())
-            project.beginDragging(trackAndSlotAt(e));
+        if (!e.mods.isRightButtonDown()) {
+            const auto trackAndSlot = trackAndSlotAt(e);
+            if (const auto *trackLabel = dynamic_cast<Label *>(e.originalComponent))
+                project.beginDragging({trackAndSlot.x, -1}); // initiated at track label
+            else
+                project.beginDragging(trackAndSlot);
+        }
     }
 
     void mouseDrag(const MouseEvent &e) override {
@@ -139,6 +132,15 @@ private:
     ViewState& view;
     ConnectorDragListener &connectorDragListener;
     ProcessorGraph &graph;
+
+    juce::Point<int> trackAndSlotAt(const MouseEvent &e) {
+        for (auto* track : objects) {
+            if (track->contains(e.getEventRelativeTo(track).getPosition())) {
+                return {track->getTrackIndex(), track->findSlotAt(e)};
+            }
+        }
+        return tracks.INVALID_TRACK_AND_SLOT;
+    }
 
     void valueTreePropertyChanged(ValueTree &tree, const juce::Identifier &i) override {
         if (i == IDs::gridViewTrackOffset || i == IDs::masterViewSlotOffset) {

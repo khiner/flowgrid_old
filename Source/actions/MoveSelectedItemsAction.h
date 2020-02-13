@@ -64,7 +64,6 @@ private:
             }
             if (trackAndSlotDelta.x != 0) {
                 auto moveTrackSelections = [&](int fromTrackIndex) {
-                    const auto &fromTrack = tracks.getTrack(fromTrackIndex);
                     int toTrackIndex = fromTrackIndex + trackAndSlotDelta.x;
                     if (toTrackIndex >= 0 && toTrackIndex < newSelectedSlotsMasks.size()) {
                         const auto &toTrack = tracks.getTrack(toTrackIndex);
@@ -84,6 +83,7 @@ private:
                     }
                 }
             }
+
             setNewFocusedSlot(oldFocusedSlot + trackAndSlotDelta, false);
         }
     };
@@ -128,8 +128,10 @@ private:
             const int toTrackIndex = fromTrackIndex + trackAndSlotDelta.x;
 
             if (fromTrack[IDs::selected]) {
-                insertActions.add(new InsertTrackAction(fromTrackIndex, toTrackIndex, tracks));
-                insertActions.getLast()->perform();
+                if (fromTrackIndex != toTrackIndex) {
+                    insertActions.add(new InsertTrackAction(fromTrackIndex, toTrackIndex, tracks));
+                    insertActions.getLast()->perform();
+                }
                 return;
             }
 
@@ -168,10 +170,10 @@ private:
     }
 
     // This is done in three phases.
-    // * Handle cases when there are both master-track and non-master-track selections.
-    // * _Limit_ the x/y delta to the obvious left/right/top/bottom boundaries, with appropriate special cases for mixer channel slots.
-    // * _Expand_ the slot-delta just enough to allow groups of selected processors to move below non-selected processors.
-    // (The principle here is to only create new processor rows if necessary.)
+    // * _Handle edge cases_, such as when both master-track and non-master-tracks have selections.
+    // * _Limit_ the track/slot-delta to the obvious left/right/top/bottom boundaries, with appropriate special cases for mixer channel slots.
+    // * _Expand_ the slot-delta just enough to allow groups of selected processors to move below non-selected processors,
+    //   while only creating new processor rows if necessary.
     static juce::Point<int> limitedDelta(juce::Point<int> fromTrackAndSlot, juce::Point<int> toTrackAndSlot,
                                          TracksState &tracks, ViewState& view) {
         auto originalDelta = toTrackAndSlot - fromTrackAndSlot;
@@ -182,13 +184,14 @@ private:
             return {0, 0};
 
         bool anyTrackSelected = tracks.anyTrackSelected();
+
         // When dragging from a non-master track to the master track, interpret as dragging beyond the y-limit,
         // to whatever track slot corresponding to the master track x-position (x/y is flipped in master track).
         if (multipleTracksWithSelections &&
             !TracksState::isMasterTrack(tracks.getTrack(fromTrackAndSlot.x)) &&
-            TracksState::isMasterTrack(tracks.getTrack(toTrackAndSlot.x)))
-            return {limitTrackDelta(toTrackAndSlot.y - fromTrackAndSlot.x, anyTrackSelected, multipleTracksWithSelections, tracks),
-                    view.getNumTrackProcessorSlots() - 2 - fromTrackAndSlot.y};
+            TracksState::isMasterTrack(tracks.getTrack(toTrackAndSlot.x))) {
+            originalDelta = {toTrackAndSlot.y - fromTrackAndSlot.x, view.getNumTrackProcessorSlots() - 1 - fromTrackAndSlot.y};
+        }
 
         int limitedTrackDelta = limitTrackDelta(originalDelta.x, anyTrackSelected, multipleTracksWithSelections, tracks);
         if (fromTrackAndSlot.y == -1) // track-move only

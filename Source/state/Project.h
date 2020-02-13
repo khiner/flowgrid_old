@@ -233,13 +233,7 @@ public:
     }
 
     void dragToPosition(juce::Point<int> trackAndSlot) {
-         if (!isCurrentlyDraggingProcessor() || trackAndSlot == tracks.INVALID_TRACK_AND_SLOT)
-            return;
-
-         if (initialDraggingTrackAndSlot.y == -1) // track-move only
-            trackAndSlot.y = -1;
-
-        if (trackAndSlot == currentlyDraggingTrackAndSlot)
+         if (!isCurrentlyDraggingProcessor() || trackAndSlot == currentlyDraggingTrackAndSlot || trackAndSlot == tracks.INVALID_TRACK_AND_SLOT)
             return;
 
         if (currentlyDraggingTrackAndSlot == initialDraggingTrackAndSlot)
