@@ -82,7 +82,7 @@ public:
                 fillColour = TracksState::getTrackColour(parent);
             if (tracks.isSlotFocused(parent, slot))
                 fillColour = fillColour.brighter(0.16);
-            if (!view.isProcessorSlotInView(parent, slot))
+            if (!tracks.isProcessorSlotInView(parent, slot))
                 fillColour = fillColour.darker(0.3);
             processorSlotRectangles.getUnchecked(slot)->setFill(fillColour);
         }

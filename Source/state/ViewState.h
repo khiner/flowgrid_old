@@ -41,32 +41,6 @@ public:
         viewState.setProperty(IDs::gridViewTrackOffset, gridViewTrackOffset, nullptr);
     }
 
-    int getMixerChannelSlotForTrack(const ValueTree& track) const {
-        return getNumAvailableSlotsForTrack(track) - 1;
-    }
-
-    // TODO cleanup - shouldn't access IDs::isMasterTrack directly outside of TracksState
-    int getNumAvailableSlotsForTrack(const ValueTree &track) const {
-        return track.hasProperty(IDs::isMasterTrack) ? getNumMasterProcessorSlots() : getNumTrackProcessorSlots();
-    }
-
-    int getSlotOffsetForTrack(const ValueTree& track) const {
-        return track.hasProperty(IDs::isMasterTrack) ? getMasterViewSlotOffset() : getGridViewSlotOffset();
-    }
-
-    bool isProcessorSlotInView(const ValueTree& track, int correctedSlot) {
-        bool inView = correctedSlot >= getSlotOffsetForTrack(track) &&
-                      correctedSlot < getSlotOffsetForTrack(track) + NUM_VISIBLE_TRACKS;
-        if (track.hasProperty(IDs::isMasterTrack))
-            inView &= getGridViewSlotOffset() + NUM_VISIBLE_TRACKS > getNumTrackProcessorSlots();
-        else {
-            auto trackIndex = track.getParent().indexOf(track);
-            auto trackViewOffset = getGridViewTrackOffset();
-            inView &= trackIndex >= trackViewOffset && trackIndex < trackViewOffset + NUM_VISIBLE_TRACKS;
-        }
-        return inView;
-    }
-
     void updateViewTrackOffsetToInclude(int trackIndex, int numNonMasterTracks) {
         if (trackIndex < 0)
             return; // invalid

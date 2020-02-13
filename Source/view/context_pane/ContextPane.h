@@ -102,7 +102,7 @@ private:
         for (auto processorSlot = 0; processorSlot < masterTrackGridCells.size(); processorSlot++) {
             auto *cell = masterTrackGridCells.getUnchecked(processorSlot);
             const auto &processor = TracksState::getProcessorAtSlot(masterTrack, processorSlot);
-            cell->setTrackAndProcessor(masterTrack, processor, view.isProcessorSlotInView(masterTrack, processorSlot),
+            cell->setTrackAndProcessor(masterTrack, processor, tracks.isProcessorSlotInView(masterTrack, processorSlot),
                                        trackSelected, TracksState::isSlotSelected(masterTrack, processorSlot),
                                        tracks.isSlotFocused(masterTrack, processorSlot));
         }
@@ -114,7 +114,7 @@ private:
             for (auto processorSlot = 0; processorSlot < trackGridCells->size(); processorSlot++) {
                 auto *cell = trackGridCells->getUnchecked(processorSlot);
                 const auto& processor = TracksState::getProcessorAtSlot(track, processorSlot);
-                cell->setTrackAndProcessor(track, processor, view.isProcessorSlotInView(track, processorSlot),
+                cell->setTrackAndProcessor(track, processor, tracks.isProcessorSlotInView(track, processorSlot),
                                            trackSelected, TracksState::isSlotSelected(track, processorSlot),
                                            tracks.isSlotFocused(track, processorSlot));
             }
