@@ -514,7 +514,7 @@ private:
         if (PluginManager::isGeneratorOrInstrument(&description) &&
             pluginManager.doesTrackAlreadyHaveGeneratorOrInstrument(track)) {
             undoManager.perform(new CreateTrackAction(false, track, tracks, connections, view));
-            doCreateAndAddProcessor(description, mostRecentlyCreatedTrack, slot);
+            return doCreateAndAddProcessor(description, mostRecentlyCreatedTrack, slot);
         }
 
         if (slot == -1)
