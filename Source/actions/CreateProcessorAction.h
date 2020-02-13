@@ -46,12 +46,6 @@ struct CreateProcessorAction : public UndoableAction {
 
     int trackIndex, slot;
 
-private:
-    ValueTree processorToCreate;
-    InsertProcessorAction insertAction;
-
-    StatefulAudioProcessorContainer &audioProcessorContainer;
-
     static ValueTree createProcessor(const PluginDescription &description) {
         ValueTree processorToCreate(IDs::PROCESSOR);
         processorToCreate.setProperty(IDs::id, description.createIdentifierString(), nullptr);
@@ -59,6 +53,12 @@ private:
         processorToCreate.setProperty(IDs::allowDefaultConnections, true, nullptr);
         return processorToCreate;
     }
+
+private:
+    ValueTree processorToCreate;
+    InsertProcessorAction insertAction;
+
+    StatefulAudioProcessorContainer &audioProcessorContainer;
 
     static int getInsertSlot(const PluginDescription &description, int trackIndex, TracksState &tracks) {
         const auto& track = tracks.getTrack(trackIndex);

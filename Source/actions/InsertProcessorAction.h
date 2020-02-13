@@ -1,7 +1,6 @@
 #pragma once
 
 #include "JuceHeader.h"
-#include "SelectAction.h"
 
 // Inserting a processor "pushes" any contiguous set of processors starting at the given slot down.
 // (The new processor always "wins" by keeping its given slot.)

@@ -2,6 +2,7 @@
 
 #include <PluginManager.h>
 #include <actions/DeleteProcessorAction.h>
+#include <actions/CreateProcessorAction.h>
 #include "JuceHeader.h"
 #include "StatefulAudioProcessorContainer.h"
 #include "Stateful.h"
@@ -30,11 +31,7 @@ public:
     }
 
     void initializeDefault() {
-        PluginDescription &audioInputDescription = pluginManager.getAudioInputDescription();
-        ValueTree inputProcessor(IDs::PROCESSOR);
-        inputProcessor.setProperty(IDs::id, audioInputDescription.createIdentifierString(), nullptr);
-        inputProcessor.setProperty(IDs::name, audioInputDescription.name, nullptr);
-        inputProcessor.setProperty(IDs::allowDefaultConnections, true, nullptr);
+        auto inputProcessor = CreateProcessorAction::createProcessor(pluginManager.getAudioInputDescription());
         input.appendChild(inputProcessor,  &undoManager);
     }
 
@@ -83,10 +80,7 @@ private:
         for (const auto& deviceName : MidiInput::getDevices()) {
             if (deviceManager.isMidiInputEnabled(deviceName) &&
                 !input.getChildWithProperty(IDs::deviceName, deviceName).isValid()) {
-                ValueTree midiInputProcessor(IDs::PROCESSOR);
-                midiInputProcessor.setProperty(IDs::id, MidiInputProcessor::getPluginDescription().createIdentifierString(), nullptr);
-                midiInputProcessor.setProperty(IDs::name, MidiInputProcessor::name(), nullptr);
-                midiInputProcessor.setProperty(IDs::allowDefaultConnections, true, nullptr);
+                auto midiInputProcessor = CreateProcessorAction::createProcessor(MidiInputProcessor::getPluginDescription());
                 midiInputProcessor.setProperty(IDs::deviceName, deviceName, nullptr);
                 input.addChild(midiInputProcessor, -1, &undoManager);
             }
