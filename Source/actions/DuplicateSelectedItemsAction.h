@@ -19,7 +19,7 @@ struct DuplicateSelectedItemsAction : public UndoableAction {
         for (int selectedTrackIndex = 0; selectedTrackIndex < selectedTracks.size(); selectedTrackIndex++) {
             const auto& selectedTrack = selectedTracks.getUnchecked(selectedTrackIndex);
             int duplicatedTrackIndex = duplicatedTrackIndices[selectedTrackIndex];
-            createTrackActions.add(new CreateTrackAction(duplicatedTrackIndex, false, selectedTrack, tracks, connections, view));
+            createTrackActions.add(new CreateTrackAction(duplicatedTrackIndex, false, false, selectedTrack, tracks, connections, view));
             createTrackActions.getLast()->perform();
             for (const auto& processor : selectedTrack) {
                 int slot = processor[IDs::processorSlot];

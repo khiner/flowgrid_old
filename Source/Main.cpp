@@ -340,13 +340,13 @@ public:
                 project.deleteSelectedItems();
                 break;
             case CommandIDs::insertTrack:
-                project.createTrack(true);
+                project.createTrack(false, true);
                 break;
             case CommandIDs::insertTrackWithoutMixer:
-                project.createTrack(false);
+                project.createTrack(false, false);
                 break;
             case CommandIDs::createMasterTrack:
-                project.createAndAddMasterTrack();
+                project.createTrack(true, true);
                 break;
             case CommandIDs::addMixerChannel:
                 project.createProcessor(MixerChannelProcessor::getPluginDescription());

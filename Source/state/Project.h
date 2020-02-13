@@ -168,21 +168,17 @@ public:
         this->push2ShiftHeld = push2ShiftHeld;
     }
 
-    void createAndAddMasterTrack() {
-        undoManager.beginNewTransaction();
-        ValueTree masterTrack = doCreateAndAddMasterTrack();
-        setTrackSelected(masterTrack, true);
-    }
+    void createTrack(bool isMaster, bool addMixer) {
+        if (isMaster && tracks.getMasterTrack().isValid())
+            return; // only one master track allowed!
 
-    void createTrack(bool addMixer=true) {
         undoManager.beginNewTransaction();
-        undoManager.perform(new CreateTrackAction(addMixer, {}, tracks, connections, view));
+        undoManager.perform(new CreateTrackAction(isMaster, addMixer, {}, tracks, connections, view));
         if (addMixer)
             undoManager.perform(new CreateProcessorAction(MixerChannelProcessor::getPluginDescription(),
-                                                          tracks.indexOf(mostRecentlyCreatedTrack),
-                                                          tracks, view, *this));
+                                                          tracks.indexOf(mostRecentlyCreatedTrack), tracks, view, *this));
         setTrackSelected(mostRecentlyCreatedTrack, true);
-        updateAllDefaultConnections(true);
+        updateAllDefaultConnections();
     }
 
     // Assumes we're always creating processors to the currently focused track (which is true as of now!)
@@ -377,8 +373,8 @@ public:
         view.initializeDefault();
         input.initializeDefault();
         output.initializeDefault();
-        doCreateAndAddMasterTrack();
-        createTrack();
+        createTrack(true, true);
+        createTrack(false, true);
         doCreateAndAddProcessor(SineBank::getPluginDescription(), mostRecentlyCreatedTrack, 0);
         resetDefaultExternalInputs(); // Select action only does this if the focused track changes, so we just need to do this once ourselves
         undoManager.clearUndoHistory();
@@ -514,7 +510,7 @@ private:
     void doCreateAndAddProcessor(const PluginDescription &description, ValueTree& track, int slot=-1) {
         if (PluginManager::isGeneratorOrInstrument(&description) &&
             pluginManager.doesTrackAlreadyHaveGeneratorOrInstrument(track)) {
-            undoManager.perform(new CreateTrackAction(false, track, tracks, connections, view));
+            undoManager.perform(new CreateTrackAction(false, false, track, tracks, connections, view));
             return doCreateAndAddProcessor(description, mostRecentlyCreatedTrack, slot);
         }
 
@@ -525,25 +521,6 @@ private:
 
         selectProcessor(mostRecentlyCreatedProcessor);
         updateAllDefaultConnections();
-    }
-
-    ValueTree doCreateAndAddMasterTrack() {
-        if (tracks.getMasterTrack().isValid())
-            return {}; // only one master track allowed!
-
-        ValueTree masterTrack(IDs::TRACK);
-        masterTrack.setProperty(IDs::isMasterTrack, true, nullptr);
-        masterTrack.setProperty(IDs::name, "Master", nullptr);
-        masterTrack.setProperty(IDs::colour, Colours::darkslateblue.toString(), nullptr);
-        masterTrack.setProperty(IDs::selected, false, nullptr);
-        masterTrack.setProperty(IDs::selectedSlotsMask, BigInteger().toString(2), nullptr);
-
-        // TODO should be done via action
-        tracks.getState().appendChild(masterTrack, nullptr);
-
-        doCreateAndAddProcessor(MixerChannelProcessor::getPluginDescription(), masterTrack);
-
-        return masterTrack;
     }
     
     void changeListenerCallback(ChangeBroadcaster* source) override {
