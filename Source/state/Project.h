@@ -161,19 +161,11 @@ public:
     bool isShiftHeld() const { return shiftHeld || push2ShiftHeld; }
 
     void setShiftHeld(bool shiftHeld) {
-        if (!isShiftHeld() && shiftHeld)
-            startRectangleSelection();
         this->shiftHeld = shiftHeld;
-        if (!isShiftHeld())
-            endRectangleSelection();
     }
 
-    void setPush2ShiftHeld(bool shiftHeld) {
-        if (!isShiftHeld() && shiftHeld)
-            startRectangleSelection();
-        this->push2ShiftHeld = shiftHeld;
-        if (!isShiftHeld())
-            endRectangleSelection();
+    void setPush2ShiftHeld(bool push2ShiftHeld) {
+        this->push2ShiftHeld = push2ShiftHeld;
     }
 
     void createAndAddMasterTrack() {
@@ -274,19 +266,28 @@ public:
     }
 
     void setProcessorSlotSelected(const ValueTree& track, int slot, bool selected, bool deselectOthers=true) {
-        selectionEndTrackAndSlot = {tracks.indexOf(track), slot};
-        if (selected && selectionStartTrackAndSlot != tracks.INVALID_TRACK_AND_SLOT) // shift+select
-            undoManager.perform(new SelectRectangleAction(selectionStartTrackAndSlot, selectionEndTrackAndSlot, tracks, connections, view, input, *this));
-        else
-            undoManager.perform(new SelectProcessorSlotAction(track, slot, selected, selected && deselectOthers, tracks, connections, view, input, *this));
+        if (!track.isValid())
+            return;
+
+        SelectAction *selectAction = nullptr;
+        if (selected) {
+            const juce::Point<int> trackAndSlot(tracks.indexOf(track), slot);
+            if (push2ShiftHeld || shiftHeld)
+                selectAction = new SelectRectangleAction(selectionStartTrackAndSlot, trackAndSlot, tracks, connections, view, input, *this);
+            else
+                selectionStartTrackAndSlot = trackAndSlot;
+        }
+        if (selectAction == nullptr) {
+            if (slot == -1)
+                selectAction = new SelectTrackAction(track, selected, deselectOthers, tracks, connections, view, input, *this);
+            else
+                selectAction = new SelectProcessorSlotAction(track, slot, selected, selected && deselectOthers, tracks, connections, view, input, *this);
+        }
+        undoManager.perform(selectAction);
     }
 
     void setTrackSelected(const ValueTree& track, bool selected, bool deselectOthers=true) {
-        selectionEndTrackAndSlot = {tracks.indexOf(track), -1};
-        if (selected && selectionStartTrackAndSlot != tracks.INVALID_TRACK_AND_SLOT) // shift+select
-            undoManager.perform(new SelectRectangleAction(selectionStartTrackAndSlot, selectionEndTrackAndSlot, tracks, connections, view, input, *this));
-        else
-            undoManager.perform(new SelectTrackAction(track, selected, deselectOthers, tracks, connections, view, input, *this));
+        setProcessorSlotSelected(track, -1, selected, deselectOthers);
     }
 
     void selectProcessor(const ValueTree& processor) {
@@ -502,7 +503,7 @@ private:
     AudioDeviceManager& deviceManager;
 
     StatefulAudioProcessorContainer* statefulAudioProcessorContainer {};
-    juce::Point<int> selectionStartTrackAndSlot = tracks.INVALID_TRACK_AND_SLOT, selectionEndTrackAndSlot = tracks.INVALID_TRACK_AND_SLOT;
+    juce::Point<int> selectionStartTrackAndSlot = {0, 0};
 
     bool shiftHeld { false }, push2ShiftHeld { false };
 
@@ -550,17 +551,6 @@ private:
             // if there is nothing to undo, there is nothing to save!
             setChangedFlag(undoManager.canUndo());
         }
-    }
-
-    void startRectangleSelection() {
-        const juce::Point<int> focusedTrackAndSlot = view.getFocusedTrackAndSlot();
-        const auto& focusedTrack = tracks.getTrack(focusedTrackAndSlot.x);
-        selectionStartTrackAndSlot = focusedTrack[IDs::selected] ? juce::Point(focusedTrackAndSlot.x, -1) : focusedTrackAndSlot;
-    }
-
-    void endRectangleSelection() {
-        selectionStartTrackAndSlot = tracks.INVALID_TRACK_AND_SLOT;
-        selectionEndTrackAndSlot = tracks.INVALID_TRACK_AND_SLOT;
     }
 
     bool doDisconnectNode(const ValueTree& processor, ConnectionType connectionType,

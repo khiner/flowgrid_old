@@ -131,10 +131,10 @@ For a track with processors:
   - Mouse-down on one of multiple selected tracks/processors (beginning a drag) changes the _focus_,
     but doesn't change track/slot _selection_
 
-* Selecting a track or processor, then holding shift, and selecting another track or processor:
-  - Selects all tracks/slots in a rectangle beginning with the first selection and ending with the second selection
+* Holding shift, and selecting another track or processor:
+  - Selects all tracks/slots in a rectangle beginning with the current selection and ending with the new selection
   - Continuing to hold shift and selecting a different cell updates the end selection point
-  - Releasing and re-holding shift keeps the start-selection point (TODO not the case right now!)
+  - Releasing and re-holding shift keeps the start-selection point
 
 * Holding Command while selecting:
   - Adds individual tracks/slots to the selection group if they are not already selected
