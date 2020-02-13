@@ -134,18 +134,15 @@ private:
     ProcessorGraph &graph;
 
     juce::Point<int> trackAndSlotAt(const MouseEvent &e) {
-        for (auto* track : objects) {
-            if (track->contains(e.getEventRelativeTo(track).getPosition())) {
+        for (auto* track : objects)
+            if (track->contains(e.getEventRelativeTo(track).getPosition()))
                 return {track->getTrackIndex(), track->findSlotAt(e)};
-            }
-        }
         return tracks.INVALID_TRACK_AND_SLOT;
     }
 
     void valueTreePropertyChanged(ValueTree &tree, const juce::Identifier &i) override {
-        if (i == IDs::gridViewTrackOffset || i == IDs::masterViewSlotOffset) {
+        if (i == IDs::gridViewTrackOffset || i == IDs::masterViewSlotOffset)
             resized();
-        }
     }
 
     // TODO I think we can avoid all this nonsense and just destroy and recreate the graph children. Probably not worth the complexity

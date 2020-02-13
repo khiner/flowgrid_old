@@ -21,7 +21,7 @@ struct UpdateAllDefaultConnectionsAction : public CreateOrDeleteConnectionsActio
 
         if (resetDefaultExternalInputConnections) {
             perform();
-            auto resetAction = ResetDefaultExternalInputConnectionsAction(true, connections, tracks, input, audioProcessorContainer, std::move(trackToTreatAsFocused));
+            auto resetAction = ResetDefaultExternalInputConnectionsAction(connections, tracks, input, audioProcessorContainer, std::move(trackToTreatAsFocused));
             undo();
             coalesceWith(resetAction);
         }

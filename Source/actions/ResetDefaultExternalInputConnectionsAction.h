@@ -23,7 +23,7 @@
 // change the focus state temporarily
 struct ResetDefaultExternalInputConnectionsAction : public CreateOrDeleteConnectionsAction {
 
-    ResetDefaultExternalInputConnectionsAction(bool addDefaultConnections, ConnectionsState& connections, TracksState& tracks, InputState& input,
+    ResetDefaultExternalInputConnectionsAction(ConnectionsState& connections, TracksState& tracks, InputState& input,
                                                StatefulAudioProcessorContainer &audioProcessorContainer, ValueTree trackToTreatAsFocused={})
             : CreateOrDeleteConnectionsAction(connections) {
         if (!trackToTreatAsFocused.isValid())
@@ -41,11 +41,12 @@ struct ResetDefaultExternalInputConnectionsAction : public CreateOrDeleteConnect
 
             const ValueTree &inputProcessor = audioProcessorContainer.getProcessorStateForNodeId(sourceNodeId);
             AudioProcessorGraph::NodeID destinationNodeId;
-            if (addDefaultConnections)
-                destinationNodeId = SAPC::getNodeIdForState(findEffectProcessorToReceiveDefaultExternalInput(connectionType, tracks, input, trackToTreatAsFocused));
+            destinationNodeId = SAPC::getNodeIdForState(findEffectProcessorToReceiveDefaultExternalInput(connectionType, tracks, input, trackToTreatAsFocused));
 
-            coalesceWith(DefaultConnectProcessorAction(inputProcessor, destinationNodeId, connectionType, connections, audioProcessorContainer));
-            coalesceWith(DisconnectProcessorAction(connections, inputProcessor, connectionType, true, false, false, true, destinationNodeId));
+            if (destinationNodeId.isValid()) {
+                coalesceWith(DefaultConnectProcessorAction(inputProcessor, destinationNodeId, connectionType, connections, audioProcessorContainer));
+                coalesceWith(DisconnectProcessorAction(connections, inputProcessor, connectionType, true, false, false, true, destinationNodeId));
+            }
         }
     }
 
@@ -63,7 +64,7 @@ private:
         return {};
     }
 
-    // Find the upper-right-most processor that flows into the given processor
+    // Find the upper-right-most effect processor that flows into the given processor
     // which doesn't already have incoming node connections.
     ValueTree findMostUpstreamAvailableProcessorConnectedTo(const ValueTree &processor, ConnectionType connectionType,
                                                             TracksState& tracks, InputState& input) {
@@ -98,6 +99,9 @@ private:
     }
 
     bool isAvailableForExternalInput(const ValueTree& processor, ConnectionType connectionType, InputState& input) {
+        if (!connections.isProcessorAnEffect(processor, connectionType))
+            return false;
+
         const auto& incomingConnections = connections.getConnectionsForNode(processor, connectionType, true, false);
         const auto defaultInputNodeId = input.getDefaultInputNodeIdForConnectionType(connectionType);
         for (const auto& incomingConnection : incomingConnections)

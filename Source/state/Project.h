@@ -541,7 +541,7 @@ private:
     }
 
     void resetDefaultExternalInputs() {
-        undoManager.perform(new ResetDefaultExternalInputConnectionsAction(true, connections, tracks, input, *this));
+        undoManager.perform(new ResetDefaultExternalInputConnectionsAction(connections, tracks, input, *this));
     }
 
     void updateDefaultConnectionsForProcessor(const ValueTree &processor, bool makeInvalidDefaultsIntoCustom=false) {

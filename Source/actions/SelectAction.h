@@ -46,7 +46,7 @@ struct SelectAction : public UndoableAction {
     void setNewFocusedSlot(juce::Point<int> newFocusedSlot, bool resetDefaultExternalInputs=true) {
         this->newFocusedSlot = newFocusedSlot;
         if (resetDefaultExternalInputs && oldFocusedSlot.x != this->newFocusedSlot.x) {
-            resetInputsAction = std::make_unique<ResetDefaultExternalInputConnectionsAction>(true, connections, tracks, input, audioProcessorContainer, getNewFocusedTrack());
+            resetInputsAction = std::make_unique<ResetDefaultExternalInputConnectionsAction>(connections, tracks, input, audioProcessorContainer, getNewFocusedTrack());
         }
     }
 

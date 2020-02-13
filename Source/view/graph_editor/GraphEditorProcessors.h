@@ -37,9 +37,8 @@ public:
         int slot = findSlotAt(e.getEventRelativeTo(this));
         bool isSlotSelected = TracksState::isSlotSelected(parent, slot);
         project.setProcessorSlotSelected(parent, slot, !(isSlotSelected && e.mods.isCommandDown()), !(isSlotSelected || e.mods.isCommandDown()));
-        if (e.mods.isPopupMenu() || e.getNumberOfClicks() == 2) {
+        if (e.mods.isPopupMenu() || e.getNumberOfClicks() == 2)
             showPopupMenu(slot);
-        }
     }
 
     void mouseUp(const MouseEvent &e) override {
@@ -65,9 +64,8 @@ public:
             auto cellSize = isMixerChannel ? nonMixerCellSize * 2 : nonMixerCellSize;
             auto processorBounds = isMasterTrack() ? r.removeFromLeft(cellSize) : r.removeFromTop(cellSize);
             processorSlotRectangles.getUnchecked(slot)->setRectangle(processorBounds.reduced(1).toFloat());
-            if (auto *processor = findProcessorAtSlot(slot)) {
+            if (auto *processor = findProcessorAtSlot(slot))
                 processor->setBounds(processorBounds);
-            }
         }
     }
 
@@ -101,11 +99,10 @@ public:
     }
 
     void deleteObject(GraphEditorProcessor *processor) override {
-        if (currentlyMovingProcessor == nullptr) {
+        if (currentlyMovingProcessor == nullptr)
             delete processor;
-        } else {
+        else
             removeChildComponent(processor);
-        }
     }
 
     void newObjectAdded(GraphEditorProcessor *processor) override { processor->addMouseListener(this, true); resized(); }
@@ -115,20 +112,16 @@ public:
     void objectOrderChanged() override { resized(); }
 
     GraphEditorProcessor *getProcessorForNodeId(AudioProcessorGraph::NodeID nodeId) const override {
-        for (auto *processor : objects) {
-            if (processor->getNodeId() == nodeId) {
+        for (auto *processor : objects)
+            if (processor->getNodeId() == nodeId)
                 return processor;
-            }
-        }
         return nullptr;
     }
 
     GraphEditorPin *findPinAt(const MouseEvent &e) const {
-        for (auto *processor : objects) {
-            if (auto* pin = processor->findPinAt(e)) {
+        for (auto *processor : objects)
+            if (auto* pin = processor->findPinAt(e))
                 return pin;
-            }
-        }
         return nullptr;
     }
 
@@ -165,10 +158,9 @@ private:
     OwnedArray<DrawableRectangle> processorSlotRectangles;
 
     GraphEditorProcessor* findProcessorAtSlot(int slot) const {
-        for (auto* processor : objects) {
+        for (auto* processor : objects)
             if (processor->getSlot() == slot)
                 return processor;
-        }
         return nullptr;
     }
 
@@ -245,21 +237,18 @@ private:
                         }
                     }));
         } else { // no processor in this slot
-            if (isMixerChannel) {
+            if (isMixerChannel)
                 menu.addItem(ADD_MIXER_CHANNEL_MENU_ID, "Add mixer channel");
-            } else {
+            else
                 project.addPluginsToMenu(menu, parent);
-            }
 
             menu.showMenuAsync({}, ModalCallbackFunction::create([this, slot, isMixerChannel](int result) {
                 if (isMixerChannel) {
                     if (result == ADD_MIXER_CHANNEL_MENU_ID) {
                         getCommandManager().invokeDirectly(CommandIDs::addMixerChannel, false);
                     }
-                } else {
-                    if (auto *description = project.getChosenType(result)) {
-                        project.createProcessor(*description, slot);
-                    }
+                } else if (auto *description = project.getChosenType(result)) {
+                    project.createProcessor(*description, slot);
                 }
             }));
         }
@@ -271,6 +260,8 @@ private:
 
     int findSlotAt(const juce::Point<int> relativePosition) const {
         int length = isMasterTrack() ? relativePosition.x : relativePosition.y;
+        if (length < ViewState::TRACK_LABEL_HEIGHT)
+            return -1;
         int slot = (length - ViewState::TRACK_LABEL_HEIGHT) / getNonMixerCellSize();
         return std::clamp(slot, 0, getNumAvailableSlots() - 1);
     }
@@ -303,8 +294,7 @@ private:
 
     void valueTreeChildAdded(ValueTree &parent, ValueTree &tree) override {
         ValueTreeObjectList::valueTreeChildAdded(parent, tree);
-        if (this->parent == parent && isSuitableType(tree)) {
+        if (this->parent == parent && isSuitableType(tree))
             resized();
-        }
     }
 };
