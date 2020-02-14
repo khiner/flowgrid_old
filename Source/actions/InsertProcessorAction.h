@@ -26,17 +26,17 @@ struct InsertProcessorAction : UndoableAction {
     }
 
     int getSizeInUnits() override {
-        return (int)sizeof(*this); //xxx should be more accurate
+        return (int) sizeof(*this); //xxx should be more accurate
     }
 
 private:
 
     struct SetProcessorSlotAction : public UndoableAction {
-        SetProcessorSlotAction(int trackIndex, const ValueTree& processor, int newSlot,
+        SetProcessorSlotAction(int trackIndex, const ValueTree &processor, int newSlot,
                                TracksState &tracks, ViewState &view)
                 : processor(processor), oldSlot(processor[IDs::processorSlot]), newSlot(newSlot) {
-            const auto& track = tracks.getTrack(trackIndex);
-            const auto& mixerChannel = tracks.getMixerChannelProcessorForTrack(track);
+            const auto &track = tracks.getTrack(trackIndex);
+            const auto &mixerChannel = tracks.getMixerChannelProcessorForTrack(track);
             if ((mixerChannel.isValid() && mixerChannel != this->processor) ||
                 (!mixerChannel.isValid() && !TracksState::isMixerChannelProcessor(this->processor))) {
                 for (int i = 0; i <= this->newSlot - tracks.getMixerChannelSlotForTrack(track); i++)
@@ -69,7 +69,7 @@ private:
                     : trackIndex(trackIndex), tracks(tracks), view(view) {}
 
             bool perform() override {
-                const auto& track = tracks.getTrack(trackIndex);
+                const auto &track = tracks.getTrack(trackIndex);
                 Array<ValueTree> processorsNeedingSlotIncrement;
                 if (TracksState::isMasterTrack(track)) {
                     processorsNeedingSlotIncrement.add(tracks.getMixerChannelProcessorForTrack(track));
@@ -82,7 +82,7 @@ private:
                     view.getState().setProperty(IDs::numProcessorSlots, view.getNumTrackProcessorSlots() + 1, nullptr);
                 }
 
-                for (auto& processorToIncrement : processorsNeedingSlotIncrement)
+                for (auto &processorToIncrement : processorsNeedingSlotIncrement)
                     if (processorToIncrement.isValid())
                         processorToIncrement.setProperty(IDs::processorSlot, int(processorToIncrement[IDs::processorSlot]) + 1, nullptr);
 
@@ -90,7 +90,7 @@ private:
             }
 
             bool undo() override {
-                const auto& track = tracks.getTrack(trackIndex);
+                const auto &track = tracks.getTrack(trackIndex);
                 Array<ValueTree> processorsNeedingSlotDecrement;
                 if (TracksState::isMasterTrack(track)) {
                     processorsNeedingSlotDecrement.add(tracks.getMixerChannelProcessorForTrack(track));
@@ -102,7 +102,7 @@ private:
                     }
                     view.getState().setProperty(IDs::numProcessorSlots, view.getNumTrackProcessorSlots() - 1, nullptr);
                 }
-                for (auto& processorToDecrement : processorsNeedingSlotDecrement) {
+                for (auto &processorToDecrement : processorsNeedingSlotDecrement) {
                     if (processorToDecrement.isValid())
                         processorToDecrement.setProperty(IDs::processorSlot, int(processorToDecrement[IDs::processorSlot]) - 1, nullptr);
                 }
@@ -121,7 +121,7 @@ private:
     };
 
     struct AddOrMoveProcessorAction : public UndoableAction {
-        AddOrMoveProcessorAction(const ValueTree& processor, int newTrackIndex, int newSlot, TracksState &tracks, ViewState &view)
+        AddOrMoveProcessorAction(const ValueTree &processor, int newTrackIndex, int newSlot, TracksState &tracks, ViewState &view)
                 : processor(processor), oldTrackIndex(tracks.indexOf(processor.getParent())), newTrackIndex(newTrackIndex),
                   oldSlot(processor[IDs::processorSlot]), newSlot(newSlot),
                   oldIndex(tracks.getTrack(oldTrackIndex).indexOf(processor)),
@@ -177,9 +177,9 @@ private:
 
     struct MakeSlotsValidAction : public UndoableAction {
         MakeSlotsValidAction(int trackIndex, TracksState &tracks, ViewState &view) : tracks(tracks) {
-            const ValueTree& track = tracks.getTrack(trackIndex);
+            const ValueTree &track = tracks.getTrack(trackIndex);
             std::vector<int> slots;
-            for (const ValueTree& child : track)
+            for (const ValueTree &child : track)
                 slots.push_back(child[IDs::processorSlot]);
             sort(slots.begin(), slots.end());
             for (int i = 1; i < slots.size(); i++)
@@ -187,7 +187,7 @@ private:
                     slots[i] += 1;
 
             auto iterator = slots.begin();
-            for (const ValueTree& processor : track) {
+            for (const ValueTree &processor : track) {
                 int newSlot = *(iterator++);
                 // Need to actually _do_ the move for each processor, since this could affect the results of
                 // a later processor slot move. (This action is undone later.)
@@ -199,7 +199,7 @@ private:
         }
 
         bool perform() override {
-            for (auto* setSlotAction : setSlotActions)
+            for (auto *setSlotAction : setSlotActions)
                 setSlotAction->perform();
             return true;
         }
@@ -211,7 +211,7 @@ private:
         }
 
         int getSizeInUnits() override {
-            return (int)sizeof(*this); //xxx should be more accurate
+            return (int) sizeof(*this); //xxx should be more accurate
         }
 
     private:
@@ -224,7 +224,7 @@ private:
 
     MakeSlotsValidAction createMakeSlotsValidAction(int trackIndex, TracksState &tracks, ViewState &view) {
         addOrMoveProcessorAction.perform();
-        return { trackIndex, tracks, view };
+        return {trackIndex, tracks, view};
     }
 
     AddOrMoveProcessorAction addOrMoveProcessorAction;

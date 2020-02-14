@@ -12,7 +12,7 @@ public:
         this->deviceName = deviceName;
     }
 
-    MidiMessageCollector& getMidiMessageCollector() {
+    MidiMessageCollector &getMidiMessageCollector() {
         return messageCollector;
     }
 
@@ -25,18 +25,21 @@ public:
     const String getName() const override { return !deviceName.isEmpty() ? deviceName : DefaultAudioProcessor::getName(); }
 
     bool acceptsMidi() const override { return false; }
+
     bool producesMidi() const override { return true; }
+
     bool isMidiEffect() const override { return false; }
 
     void prepareToPlay(double sampleRate, int maximumExpectedSamplesPerBlock) override {
         messageCollector.reset(sampleRate);
     }
 
-    void processBlock(AudioSampleBuffer& buffer, MidiBuffer& midiMessages) override {
+    void processBlock(AudioSampleBuffer &buffer, MidiBuffer &midiMessages) override {
         messageCollector.removeNextBlockOfMessages(midiMessages, buffer.getNumSamples());
     }
+
 private:
-    String deviceName {};
+    String deviceName{};
 
     MidiMessageCollector messageCollector;
 };

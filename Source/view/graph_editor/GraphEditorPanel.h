@@ -27,7 +27,7 @@ public:
         draggingConnector = nullptr;
     }
 
-    void mouseDown(const MouseEvent& event) override {
+    void mouseDown(const MouseEvent &event) override {
         view.focusOnGridPane();
     }
 
@@ -79,8 +79,8 @@ public:
 
         int midiOutputProcessorWidthInChannels = midiOutputProcessors.size() * 2;
         float audioOutputWidthRatio = audioOutputProcessor
-                ? float(audioOutputProcessor->getNumInputChannels()) / float(audioOutputProcessor->getNumInputChannels() + midiOutputProcessorWidthInChannels)
-                : 0;
+                                      ? float(audioOutputProcessor->getNumInputChannels()) / float(audioOutputProcessor->getNumInputChannels() + midiOutputProcessorWidthInChannels)
+                                      : 0;
         if (audioOutputProcessor != nullptr) {
             audioOutputProcessor->setBounds(bottom.removeFromLeft(int(ioProcessorWidth * audioOutputWidthRatio)));
             for (auto *midiOutputProcessor : midiOutputProcessors) {
@@ -192,20 +192,21 @@ public:
 
 private:
     ProcessorGraph &graph;
-    Project& project;
-    TracksState& tracks;
-    ViewState& view;
+    Project &project;
+    TracksState &tracks;
+    ViewState &view;
 
-    const AudioProcessorGraph::Connection EMPTY_CONNECTION {{ProcessorGraph::NodeID(0), 0}, {ProcessorGraph::NodeID(0), 0}};
+    const AudioProcessorGraph::Connection EMPTY_CONNECTION{{ProcessorGraph::NodeID(0), 0},
+                                                           {ProcessorGraph::NodeID(0), 0}};
     std::unique_ptr<GraphEditorConnectors> connectors;
-    GraphEditorConnector *draggingConnector {};
+    GraphEditorConnector *draggingConnector{};
     std::unique_ptr<GraphEditorTracks> graphEditorTracks;
     std::unique_ptr<GraphEditorProcessor> audioInputProcessor;
     std::unique_ptr<GraphEditorProcessor> audioOutputProcessor;
     OwnedArray<GraphEditorProcessor> midiInputProcessors;
     OwnedArray<GraphEditorProcessor> midiOutputProcessors;
 
-    AudioProcessorGraph::Connection initialDraggingConnection { EMPTY_CONNECTION };
+    AudioProcessorGraph::Connection initialDraggingConnection{EMPTY_CONNECTION};
 
     GraphEditorProcessor::ElementComparator processorComparator;
 
@@ -226,17 +227,17 @@ private:
         else if ((pin = audioOutputProcessor->findPinAt(e)))
             return pin;
         for (auto *midiInputProcessor : midiInputProcessors) {
-            if (auto* pin = midiInputProcessor->findPinAt(e))
+            if (auto *pin = midiInputProcessor->findPinAt(e))
                 return pin;
         }
         for (auto *midiOutputProcessor : midiOutputProcessors) {
-            if (auto* pin = midiOutputProcessor->findPinAt(e))
+            if (auto *pin = midiOutputProcessor->findPinAt(e))
                 return pin;
         }
         return graphEditorTracks->findPinAt(e);
     }
 
-    GraphEditorProcessor* findMidiInputProcessorForNodeId(const AudioProcessorGraph::NodeID nodeId) const {
+    GraphEditorProcessor *findMidiInputProcessorForNodeId(const AudioProcessorGraph::NodeID nodeId) const {
         for (auto *midiInputProcessor : midiInputProcessors) {
             if (midiInputProcessor->getNodeId() == nodeId)
                 return midiInputProcessor;
@@ -244,7 +245,7 @@ private:
         return nullptr;
     }
 
-    GraphEditorProcessor* findMidiOutputProcessorForNodeId(const AudioProcessorGraph::NodeID nodeId) const {
+    GraphEditorProcessor *findMidiOutputProcessorForNodeId(const AudioProcessorGraph::NodeID nodeId) const {
         for (auto *midiOutputProcessor : midiOutputProcessors) {
             if (midiOutputProcessor->getNodeId() == nodeId)
                 return midiOutputProcessor;
@@ -261,7 +262,7 @@ private:
         );
     }
 
-    void valueTreePropertyChanged(ValueTree& tree, const Identifier& i) override {
+    void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {
         if (tree.hasType(IDs::PROCESSOR) && i == IDs::processorSlot) {
             connectors->updateConnectors();
         } else if (i == IDs::numMasterProcessorSlots || i == IDs::numProcessorSlots) {
@@ -278,7 +279,7 @@ private:
         }
     }
 
-    void valueTreeChildAdded(ValueTree& parent, ValueTree& child) override {
+    void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override {
         if (child.hasType(IDs::TRACK)) {
             resize();
         } else if (child.hasType(IDs::PROCESSOR)) {
@@ -309,7 +310,7 @@ private:
         }
     }
 
-    void valueTreeChildRemoved(ValueTree& parent, ValueTree& child, int indexFromWhichChildWasRemoved) override {
+    void valueTreeChildRemoved(ValueTree &parent, ValueTree &child, int indexFromWhichChildWasRemoved) override {
         if (child.hasType(IDs::TRACK)) {
             resize();
         } else if (child.hasType(IDs::PROCESSOR)) {
@@ -328,15 +329,15 @@ private:
         }
     }
 
-    void valueTreeChildOrderChanged(ValueTree& parent, int oldIndex, int newIndex) override {
+    void valueTreeChildOrderChanged(ValueTree &parent, int oldIndex, int newIndex) override {
         if (parent.hasType(IDs::TRACKS)) {
             connectors->updateConnectors();
         }
     }
 
-    void valueTreeParentChanged(ValueTree& treeWhoseParentHasChanged) override {}
+    void valueTreeParentChanged(ValueTree &treeWhoseParentHasChanged) override {}
 
-    void valueTreeRedirected(ValueTree& treeWhichHasBeenChanged) override {}
+    void valueTreeRedirected(ValueTree &treeWhichHasBeenChanged) override {}
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (GraphEditorPanel)
 };

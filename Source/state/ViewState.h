@@ -10,9 +10,9 @@ public:
         viewState = ValueTree(IDs::VIEW_STATE);
     };
 
-    ValueTree& getState() override { return viewState; }
+    ValueTree &getState() override { return viewState; }
 
-    void loadFromState(const ValueTree& state) override {
+    void loadFromState(const ValueTree &state) override {
         viewState.copyPropertiesFrom(state, nullptr);
     }
 
@@ -74,6 +74,7 @@ public:
     }
 
     int getFocusedTrackIndex() const { return viewState[IDs::focusedTrackIndex]; }
+
     int getFocusedProcessorSlot() const { return viewState[IDs::focusedProcessorSlot]; }
 
     juce::Point<int> getFocusedTrackAndSlot() const {
@@ -83,18 +84,27 @@ public:
     }
 
     int getNumTrackProcessorSlots() const { return viewState[IDs::numProcessorSlots]; }
+
     int getNumMasterProcessorSlots() const { return viewState[IDs::numMasterProcessorSlots]; }
+
     int getGridViewTrackOffset() const { return viewState[IDs::gridViewTrackOffset]; }
+
     int getGridViewSlotOffset() const { return viewState[IDs::gridViewSlotOffset]; }
+
     int getMasterViewSlotOffset() const { return viewState[IDs::masterViewSlotOffset]; }
 
     bool isInNoteMode() const { return viewState[IDs::controlMode] == noteControlMode; }
+
     bool isInSessionMode() const { return viewState[IDs::controlMode] == sessionControlMode; }
+
     bool isGridPaneFocused() const { return viewState[IDs::focusedPane] == gridPaneName; }
 
     void setNoteMode() { viewState.setProperty(IDs::controlMode, noteControlMode, nullptr); }
+
     void setSessionMode() { viewState.setProperty(IDs::controlMode, sessionControlMode, nullptr); }
+
     void focusOnGridPane() { viewState.setProperty(IDs::focusedPane, gridPaneName, nullptr); }
+
     void focusOnEditorPane() { viewState.setProperty(IDs::focusedPane, editorPaneName, nullptr); }
 
     void focusOnTrackIndex(const int trackIndex) {
@@ -112,7 +122,7 @@ public:
         }
     }
 
-    void focusOnProcessorSlot(const ValueTree& track, const int processorSlot) {
+    void focusOnProcessorSlot(const ValueTree &track, const int processorSlot) {
         auto trackIndex = track.isValid() ? track.getParent().indexOf(track) : 0;
         focusOnProcessorSlot({trackIndex, processorSlot});
     }
@@ -125,9 +135,11 @@ public:
     }
 
     void setTrackWidth(int trackWidth) { this->trackWidth = trackWidth; }
+
     void setProcessorHeight(int processorHeight) { this->processorHeight = processorHeight; }
 
     int getTrackWidth() { return trackWidth; }
+
     int getProcessorHeight() { return processorHeight; }
 
     const String sessionControlMode = "session", noteControlMode = "note";
@@ -138,5 +150,5 @@ public:
 private:
     ValueTree viewState;
 
-    int trackWidth {0}, processorHeight {0};
+    int trackWidth{0}, processorHeight{0};
 };

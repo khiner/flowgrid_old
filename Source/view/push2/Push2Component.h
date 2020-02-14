@@ -74,21 +74,21 @@ public:
         if (masterGainParameter != nullptr)
             masterGainParameter->setValue(masterGainParameter->getValue() + changeAmount);
     }
-    
+
     void encoderRotated(int encoderIndex, float changeAmount) override {
         if (currentlyViewingChild != nullptr) {
             currentlyViewingChild->encoderRotated(encoderIndex, changeAmount);
         }
     }
-    
+
     void undoButtonPressed() override {
         getCommandManager().invokeDirectly(isShiftHeld ? CommandIDs::redo : CommandIDs::undo, false);
     }
-    
+
     void addTrackButtonPressed() override {
         getCommandManager().invokeDirectly(isShiftHeld ? CommandIDs::insertTrackWithoutMixer : CommandIDs::insertTrack, false);
     }
-    
+
     void deleteButtonPressed() override {
         getCommandManager().invokeDirectly(CommandIDs::deleteSelected, false);
     }
@@ -96,7 +96,7 @@ public:
     void duplicateButtonPressed() override {
         getCommandManager().invokeDirectly(CommandIDs::duplicateSelected, false);
     }
-    
+
     void addDeviceButtonPressed() override {
         showChild(&processorSelector);
     }
@@ -127,11 +127,16 @@ public:
             return;
         }
         switch (arrowDirection) {
-            case Push2::leftArrowDirection: return project.navigateLeft();
-            case Push2::rightArrowDirection: return project.navigateRight();
-            case Push2::upArrowDirection: return project.navigateUp();
-            case Push2::downArrowDirection: return project.navigateDown();
-            default: return;
+            case Push2::leftArrowDirection:
+                return project.navigateLeft();
+            case Push2::rightArrowDirection:
+                return project.navigateRight();
+            case Push2::upArrowDirection:
+                return project.navigateUp();
+            case Push2::downArrowDirection:
+                return project.navigateDown();
+            default:
+                return;
         }
     }
 
@@ -172,7 +177,7 @@ private:
     Push2MixerView mixerView;
     Push2NoteModePadLedManager push2NoteModePadLedManager;
 
-    Push2ComponentBase *currentlyViewingChild {};
+    Push2ComponentBase *currentlyViewingChild{};
 
     void timerCallback() override { drawFrame(); }
 
@@ -209,7 +214,7 @@ private:
             push2.activateWhiteLedButton(Push2MidiCommunicator::master);
         push2NoteModePadLedManager.trackSelected(focusedTrack);
 
-        for (int direction : { Push2::upArrowDirection, Push2::downArrowDirection, Push2::leftArrowDirection, Push2::rightArrowDirection }) {
+        for (int direction : {Push2::upArrowDirection, Push2::downArrowDirection, Push2::leftArrowDirection, Push2::rightArrowDirection}) {
             if (isVisible() && currentlyViewingChild != &processorSelector && canNavigateInDirection(direction))
                 push2.activateWhiteLedButton(Push2::ccNumberForArrowButton(direction));
             else
@@ -219,11 +224,16 @@ private:
 
     bool canNavigateInDirection(int direction) const {
         switch (direction) {
-            case Push2::rightArrowDirection: return project.canNavigateRight();
-            case Push2::downArrowDirection: return project.canNavigateDown();
-            case Push2::leftArrowDirection: return project.canNavigateLeft();
-            case Push2::upArrowDirection: return project.canNavigateUp();
-            default: return false;
+            case Push2::rightArrowDirection:
+                return project.canNavigateRight();
+            case Push2::downArrowDirection:
+                return project.canNavigateDown();
+            case Push2::leftArrowDirection:
+                return project.canNavigateLeft();
+            case Push2::upArrowDirection:
+                return project.canNavigateUp();
+            default:
+                return false;
         }
     }
 
@@ -239,7 +249,7 @@ private:
         }
     }
 
-    void showChild(Push2ComponentBase* child) {
+    void showChild(Push2ComponentBase *child) {
         if (currentlyViewingChild == child)
             return;
 
@@ -285,8 +295,8 @@ private:
         }
     }
 
-    void changeListenerCallback(ChangeBroadcaster* source) override {
-        if (auto* undoManager = dynamic_cast<UndoManager *>(source)) {
+    void changeListenerCallback(ChangeBroadcaster *source) override {
+        if (auto *undoManager = dynamic_cast<UndoManager *>(source)) {
             if ((!isShiftHeld && undoManager->canUndo()) || (isShiftHeld && undoManager->canRedo()))
                 push2.activateWhiteLedButton(Push2::undo);
             else

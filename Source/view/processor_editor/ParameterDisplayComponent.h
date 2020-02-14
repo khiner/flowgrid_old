@@ -72,8 +72,8 @@ public:
             auto *parameterSwitch = new SwitchParameterComponent(labels);
             parameterWrapper->attachSwitch(parameterSwitch);
             parameterComponent.reset(parameterSwitch);
-        } else if (auto* levelMeterSource = parameterWrapper->getLevelMeterSource()) {
-            auto* levelMeter = new LevelMeter();
+        } else if (auto *levelMeterSource = parameterWrapper->getLevelMeterSource()) {
+            auto *levelMeter = new LevelMeter();
             levelMeter->setMeterSource(levelMeterSource);
             parameterWrapper->attachLevelMeter(levelMeter);
             parameterWrapper->attachLabel(&valueLabel);
@@ -145,17 +145,22 @@ public:
         parameterComponent->setBounds(area);
     }
 
-    void parameterWillBeDestroyed(StatefulAudioProcessorWrapper::Parameter* parameter) override {
+    void parameterWillBeDestroyed(StatefulAudioProcessorWrapper::Parameter *parameter) override {
         if (parameter == this->parameterWrapper)
             detachParameterComponent();
     }
 
-    Slider* getSlider() const { return dynamic_cast<Slider *>(parameterComponent.get()); }
-    DraggableValueLabel* getDraggableValueLabel() const { return dynamic_cast<DraggableValueLabel *>(parameterComponent.get()); }
-    Button* getButton() const { return dynamic_cast<Button *>(parameterComponent.get()); }
-    ComboBox* getCombobox() const { return dynamic_cast<ComboBox *>(parameterComponent.get()); }
-    SwitchParameterComponent* getSwitch() const { return dynamic_cast<SwitchParameterComponent *>(parameterComponent.get()); }
-    LevelMeter* getLevelMeter() const { return dynamic_cast<LevelMeter *>(parameterComponent.get()); }
+    Slider *getSlider() const { return dynamic_cast<Slider *>(parameterComponent.get()); }
+
+    DraggableValueLabel *getDraggableValueLabel() const { return dynamic_cast<DraggableValueLabel *>(parameterComponent.get()); }
+
+    Button *getButton() const { return dynamic_cast<Button *>(parameterComponent.get()); }
+
+    ComboBox *getCombobox() const { return dynamic_cast<ComboBox *>(parameterComponent.get()); }
+
+    SwitchParameterComponent *getSwitch() const { return dynamic_cast<SwitchParameterComponent *>(parameterComponent.get()); }
+
+    LevelMeter *getLevelMeter() const { return dynamic_cast<LevelMeter *>(parameterComponent.get()); }
 
 private:
     Label parameterName, valueLabel;
@@ -167,7 +172,7 @@ private:
             return;
 
         parameterWrapper->removeListener(this);
-        if (auto* slider = getSlider()) {
+        if (auto *slider = getSlider()) {
             parameterWrapper->detachSlider(slider);
             parameterWrapper->detachLabel(&valueLabel);
         } else if (auto *button = getButton())

@@ -3,7 +3,7 @@
 #include "JuceHeader.h"
 
 namespace IDs {
-    #define DECLARE_ID(name) const juce::Identifier name(#name);
+#define DECLARE_ID(name) const juce::Identifier name(#name);
 
 
     DECLARE_ID(PARAM)
@@ -59,5 +59,5 @@ namespace IDs {
     DECLARE_ID(numMasterProcessorSlots)
     DECLARE_ID(numProcessorSlots)
 
-    #undef DECLARE_ID
+#undef DECLARE_ID
 }

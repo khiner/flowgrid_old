@@ -14,13 +14,13 @@
 class ProcessorGraph : public AudioProcessorGraph, public StatefulAudioProcessorContainer,
                        private ValueTree::Listener, private Timer {
 public:
-    explicit ProcessorGraph(Project &project, TracksState &tracks, ConnectionsState& connections,
+    explicit ProcessorGraph(Project &project, TracksState &tracks, ConnectionsState &connections,
                             InputState &input, OutputState &output,
-                            UndoManager &undoManager, AudioDeviceManager& deviceManager,
-                            Push2MidiCommunicator& push2MidiCommunicator)
+                            UndoManager &undoManager, AudioDeviceManager &deviceManager,
+                            Push2MidiCommunicator &push2MidiCommunicator)
             : undoManager(undoManager), project(project),
-            tracks(tracks), connections(connections), input(input), output(output),
-            deviceManager(deviceManager), push2MidiCommunicator(push2MidiCommunicator) {
+              tracks(tracks), connections(connections), input(input), output(output),
+              deviceManager(deviceManager), push2MidiCommunicator(push2MidiCommunicator) {
         enableAllBuses();
 
         tracks.addListener(this);
@@ -38,7 +38,7 @@ public:
         tracks.removeListener(this);
     }
 
-    StatefulAudioProcessorWrapper* getProcessorWrapperForNodeId(NodeID nodeId) const override {
+    StatefulAudioProcessorWrapper *getProcessorWrapperForNodeId(NodeID nodeId) const override {
         if (!nodeId.isValid())
             return nullptr;
 
@@ -55,23 +55,23 @@ public:
 
     void resumeAudioGraphUpdatesAndApplyDiffSincePause() override {
         graphUpdatesArePaused = false;
-        for (auto& connection : connectionsSincePause.connectionsToCreate)
+        for (auto &connection : connectionsSincePause.connectionsToCreate)
             valueTreeChildAdded(connections.getState(), connection);
-        for (auto& connection : connectionsSincePause.connectionsToDelete)
+        for (auto &connection : connectionsSincePause.connectionsToDelete)
             valueTreeChildRemoved(connections.getState(), connection, 0);
         connectionsSincePause.connectionsToCreate.clearQuick();
         connectionsSincePause.connectionsToDelete.clearQuick();
     }
 
-    AudioProcessorGraph::Node* getNodeForId(AudioProcessorGraph::NodeID nodeId) const override {
+    AudioProcessorGraph::Node *getNodeForId(AudioProcessorGraph::NodeID nodeId) const override {
         return AudioProcessorGraph::getNodeForId(nodeId);
     }
 
-    bool removeConnection(const Connection& c) override {
+    bool removeConnection(const Connection &c) override {
         return project.removeConnection(c);
     }
 
-    bool addConnection(const Connection& c) override {
+    bool addConnection(const Connection &c) override {
         return project.addConnection(c);
     }
 
@@ -79,7 +79,7 @@ public:
         return project.disconnectProcessor(getProcessorStateForNodeId(nodeId));
     }
 
-    Node* getNodeForState(const ValueTree &processorState) const {
+    Node *getNodeForState(const ValueTree &processorState) const {
         return AudioProcessorGraph::getNodeForId(getNodeIdForState(processorState));
     }
 
@@ -88,14 +88,14 @@ public:
         return getProcessorWrapperForState(gain);
     }
 
-    ResizableWindow* getOrCreateWindowFor(Node* node, PluginWindow::Type type) {
+    ResizableWindow *getOrCreateWindowFor(Node *node, PluginWindow::Type type) {
         jassert(node != nullptr);
 
-        for (auto* w : activePluginWindows)
+        for (auto *w : activePluginWindows)
             if (w->node->nodeID == node->nodeID && w->type == type)
                 return w;
 
-        if (auto* processor = node->getProcessor())
+        if (auto *processor = node->getProcessor())
             return activePluginWindows.add(new PluginWindow(node, type, activePluginWindows));
 
         return nullptr;
@@ -119,12 +119,12 @@ private:
 
     AudioDeviceManager &deviceManager;
     Push2MidiCommunicator &push2MidiCommunicator;
-    
+
     OwnedArray<PluginWindow> activePluginWindows;
 
-    bool graphUpdatesArePaused { false };
+    bool graphUpdatesArePaused{false};
 
-    CreateOrDeleteConnectionsAction connectionsSincePause { connections };
+    CreateOrDeleteConnectionsAction connectionsSincePause{connections};
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ProcessorGraph)
 
@@ -157,7 +157,7 @@ private:
             }
         } else if (auto *midiOutputProcessor = dynamic_cast<MidiOutputProcessor *>(newNode->getProcessor())) {
             const String &deviceName = processorState.getProperty(IDs::deviceName);
-            if (auto* enabledMidiOutput = deviceManager.getEnabledMidiOutput(deviceName))
+            if (auto *enabledMidiOutput = deviceManager.getEnabledMidiOutput(deviceName))
                 midiOutputProcessor->setMidiOutput(enabledMidiOutput);
         }
         ValueTree mutableProcessor = processorState;
@@ -169,7 +169,7 @@ private:
     }
 
     void removeProcessor(const ValueTree &processor) {
-        auto* processorWrapper = getProcessorWrapperForState(processor);
+        auto *processorWrapper = getProcessorWrapperForState(processor);
         jassert(processorWrapper);
         const NodeID nodeId = getNodeIdForState(processor);
 
@@ -200,12 +200,12 @@ private:
             addProcessor(state);
             return;
         }
-        for (const ValueTree& child : state) {
+        for (const ValueTree &child : state) {
             recursivelyAddProcessors(child);
         }
     }
 
-    void updateIoChannelEnabled(const ValueTree& parent, const ValueTree& channel, bool enabled) {
+    void updateIoChannelEnabled(const ValueTree &parent, const ValueTree &channel, bool enabled) {
         String processorName = parent.getParent()[IDs::name];
         bool isInput;
         if (processorName == "Audio Input" && parent.hasType(IDs::OUTPUT_CHANNELS))
@@ -214,7 +214,7 @@ private:
             isInput = false;
         else
             return;
-        if (auto* audioDevice = deviceManager.getCurrentAudioDevice()) {
+        if (auto *audioDevice = deviceManager.getCurrentAudioDevice()) {
             AudioDeviceManager::AudioDeviceSetup config;
             deviceManager.getAudioDeviceSetup(config);
             auto &channels = isInput ? config.inputChannels : config.outputChannels;
@@ -227,16 +227,16 @@ private:
         }
     }
 
-    void onProcessorCreated(const ValueTree& processor) override {
+    void onProcessorCreated(const ValueTree &processor) override {
         if (getProcessorWrapperForState(processor) == nullptr)
             addProcessor(processor);
     }
 
-    void onProcessorDestroyed(const ValueTree& processor) override {
+    void onProcessorDestroyed(const ValueTree &processor) override {
         removeProcessor(processor);
     }
 
-    void valueTreePropertyChanged(ValueTree& tree, const Identifier& i) override {
+    void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {
         if (tree.hasType(IDs::PROCESSOR)) {
             if (i == IDs::bypassed) {
                 if (auto node = getNodeForState(tree)) {
@@ -246,7 +246,7 @@ private:
         }
     }
 
-    void valueTreeChildAdded(ValueTree& parent, ValueTree& child) override {
+    void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override {
         if (child.hasType(IDs::CONNECTION)) {
             if (graphUpdatesArePaused) {
                 connectionsSincePause.addConnection(child);
@@ -275,7 +275,7 @@ private:
         }
     }
 
-    void valueTreeChildRemoved(ValueTree& parent, ValueTree& child, int indexFromWhichChildWasRemoved) override {
+    void valueTreeChildRemoved(ValueTree &parent, ValueTree &child, int indexFromWhichChildWasRemoved) override {
         if (child.hasType(IDs::CONNECTION)) {
             if (graphUpdatesArePaused) {
                 connectionsSincePause.removeConnection(child);
@@ -304,7 +304,7 @@ private:
     void timerCallback() override {
         bool anythingUpdated = false;
 
-        for (auto& nodeIdAndProcessorWrapper : processorWrapperForNodeId)
+        for (auto &nodeIdAndProcessorWrapper : processorWrapperForNodeId)
             if (nodeIdAndProcessorWrapper.second->flushParameterValuesToValueTree())
                 anythingUpdated = true;
 

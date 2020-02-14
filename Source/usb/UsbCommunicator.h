@@ -11,7 +11,7 @@
 
 class UsbCommunicator : private Timer {
 public:
-    UsbCommunicator(const uint16_t vendorId, const uint16_t productId):
+    UsbCommunicator(const uint16_t vendorId, const uint16_t productId) :
             vendorId(vendorId), productId(productId), frameHeaderTransfer(nullptr), terminate(false) {
         auto errorCode = libusb_init(nullptr);
         if (errorCode < 0)
@@ -93,7 +93,7 @@ public:
 protected:
     // Allocate a libusb_transfer mapped to a transfer buffer. It also sets
     // up the callback needed to communicate the transfer is done
-    libusb_transfer* allocateAndPrepareTransferChunk(libusb_device_handle *handle, UsbCommunicator *instance,
+    libusb_transfer *allocateAndPrepareTransferChunk(libusb_device_handle *handle, UsbCommunicator *instance,
                                                      unsigned char *buffer, int bufferSize,
                                                      const unsigned char endpoint) {
         // Allocate a transfer structure
@@ -121,13 +121,13 @@ protected:
      *  Note that there's no real need of doing double buffering since the
      *  display deals nicely with it already
      */
-    virtual void onFrameSendCompleted()= 0;
+    virtual void onFrameSendCompleted() = 0;
 
     uint16_t vendorId;
     uint16_t productId;
     libusb_transfer *frameHeaderTransfer;
-    libusb_device_handle *handle {};
-    std::atomic<bool> headerNeedsSending { true };
+    libusb_device_handle *handle{};
+    std::atomic<bool> headerNeedsSending{true};
 
 private:
     void timerCallback() override {

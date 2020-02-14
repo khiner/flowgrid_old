@@ -14,7 +14,7 @@ public:
               parameterPageRightButton("Page parameters right", 0.0, Colours::white),
               processorPageLeftButton("Page processors left", 0.5, Colours::white),
               processorPageRightButton("Page processors right", 0.0, Colours::white) {
-        
+
         for (int i = 0; i < NUM_COLUMNS; i++) {
             addChildComponent(processorLabels.add(new Push2Label(i, true, push2MidiCommunicator)));
         }
@@ -42,9 +42,9 @@ public:
 
         r.removeFromBottom(HEADER_FOOTER_HEIGHT);
         parametersPanel->setBounds(r);
-        
+
         top = getLocalBounds().removeFromTop(HEADER_FOOTER_HEIGHT);
-        for (auto* processorLabel : processorLabels) {
+        for (auto *processorLabel : processorLabels) {
             processorLabel->setBounds(top.removeFromLeft(labelWidth));
         }
     }
@@ -55,7 +55,7 @@ public:
             parametersPanel->setProcessorWrapper(nullptr);
         }
     }
-    
+
     void processorFocused(StatefulAudioProcessorWrapper *processorWrapper) {
         parametersPanel->setProcessorWrapper(processorWrapper);
         if (processorWrapper == nullptr) {
@@ -115,10 +115,10 @@ private:
     std::unique_ptr<ParametersPanel> parametersPanel;
     OwnedArray<Push2Label> processorLabels;
     ArrowButton escapeProcessorFocusButton, parameterPageLeftButton, parameterPageRightButton,
-                processorPageLeftButton, processorPageRightButton;
+            processorPageLeftButton, processorPageRightButton;
 
     int processorLabelOffset = 0;
-    bool processorHasFocus { false };
+    bool processorHasFocus{false};
 
     int getProcessorIndexForButtonIndex(int buttonIndex) {
         return buttonIndex + processorLabelOffset - (canPageProcessorsLeft() ? 1 : 0);
@@ -134,7 +134,7 @@ private:
     }
 
     void updatePageButtonVisibility() {
-        const auto& focusedTrack = tracks.getFocusedTrack();
+        const auto &focusedTrack = tracks.getFocusedTrack();
         Colour trackColour = getColourForTrack(focusedTrack);
 
         if (processorHasFocus) { // TODO reset when processor changes
@@ -167,9 +167,9 @@ private:
     }
 
     void updateProcessorButtons() {
-        const auto& focusedTrack = tracks.getFocusedTrack();
+        const auto &focusedTrack = tracks.getFocusedTrack();
         if (processorHasFocus || !focusedTrack.isValid()) { // TODO reset when processor changes
-            for (auto* label : processorLabels)
+            for (auto *label : processorLabels)
                 label->setVisible(false);
         } else {
             for (int buttonIndex = 0; buttonIndex < processorLabels.size(); buttonIndex++) {
@@ -197,14 +197,14 @@ private:
         }
     }
 
-    Colour getColourForTrack(const ValueTree& track) {
+    Colour getColourForTrack(const ValueTree &track) {
         return track.isValid() ? tracks.getTrackColour(track) : Colours::black;
     }
 
     void updateColours() {
-        const auto& focusedTrack = tracks.getFocusedTrack();
+        const auto &focusedTrack = tracks.getFocusedTrack();
         if (focusedTrack.isValid()) {
-            const auto& colour = getColourForTrack(focusedTrack);
+            const auto &colour = getColourForTrack(focusedTrack);
             for (auto *processorLabel : processorLabels) {
                 processorLabel->setMainColour(colour);
             }
@@ -243,12 +243,12 @@ private:
     }
 
     bool canPageProcessorsRight() const {
-        const auto& focusedTrack = tracks.getFocusedTrack();
+        const auto &focusedTrack = tracks.getFocusedTrack();
         return focusedTrack.getNumChildren() > processorLabelOffset + (canPageProcessorsLeft() ? NUM_COLUMNS - 1 : NUM_COLUMNS);
     }
 
     void selectProcessor(int processorIndex) {
-        const auto& focusedTrack = tracks.getFocusedTrack();
+        const auto &focusedTrack = tracks.getFocusedTrack();
         if (focusedTrack.isValid() && processorIndex < focusedTrack.getNumChildren()) {
             project.selectProcessor(focusedTrack.getChild(processorIndex));
         }
@@ -261,7 +261,7 @@ private:
             int processorIndex = tree.getParent().indexOf(tree);
             if (i == IDs::name) {
                 auto buttonIndex = getButtonIndexForProcessorIndex(processorIndex);
-                if (auto* processorLabel = processorLabels[buttonIndex]) {
+                if (auto *processorLabel = processorLabels[buttonIndex]) {
                     processorLabel->setText(tree[IDs::name], dontSendNotification);
                 }
             }

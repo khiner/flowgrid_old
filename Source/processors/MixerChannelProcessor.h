@@ -44,7 +44,7 @@ public:
         }
     }
 
-    void processBlock(AudioSampleBuffer& buffer, MidiBuffer& midiMessages) override {
+    void processBlock(AudioSampleBuffer &buffer, MidiBuffer &midiMessages) override {
         if (buffer.getNumChannels() == 2) {
             // 0db at center, linear stereo balance control
             // http://www.kvraudio.com/forum/viewtopic.php?t=148865
@@ -68,7 +68,7 @@ public:
         meterSource.measureBlock(buffer);
     }
 
-    LevelMeterSource* getMeterSource() {
+    LevelMeterSource *getMeterSource() {
         return &meterSource;
     }
 
@@ -79,9 +79,10 @@ public:
     AudioParameterFloat *getBalanceParameter() {
         return balanceParameter;
     }
+
 private:
-    LinearSmoothedValue<float> balance { 0.0 };
-    LinearSmoothedValue<float> gain { Decibels::decibelsToGain(0.0f) };
+    LinearSmoothedValue<float> balance{0.0};
+    LinearSmoothedValue<float> gain{Decibels::decibelsToGain(0.0f)};
 
     AudioParameterFloat *balanceParameter;
     AudioParameterFloat *gainParameter;

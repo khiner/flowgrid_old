@@ -6,13 +6,13 @@
 #include "JuceHeader.h"
 
 struct CreateTrackAction : public UndoableAction {
-    CreateTrackAction(bool isMaster, bool addMixer, const ValueTree& derivedFromTrack, TracksState &tracks, ConnectionsState &connections, ViewState &view)
+    CreateTrackAction(bool isMaster, bool addMixer, const ValueTree &derivedFromTrack, TracksState &tracks, ConnectionsState &connections, ViewState &view)
             : CreateTrackAction(calculateInsertIndex(isMaster, addMixer, derivedFromTrack, tracks),
                                 isMaster, addMixer, derivedFromTrack, tracks, connections, view) {}
 
     CreateTrackAction(int insertIndex, bool isMaster, bool addMixer, ValueTree derivedFromTrack, TracksState &tracks, ConnectionsState &connections, ViewState &view)
             : insertIndex(insertIndex), tracks(tracks) {
-        const auto& focusedTrack = tracks.getFocusedTrack();
+        const auto &focusedTrack = tracks.getFocusedTrack();
 
         if (!isMaster && !derivedFromTrack.isValid() && focusedTrack.isValid()) {
             // If a track is focused, insert the new track to the left of it if there's no mixer,
@@ -54,7 +54,7 @@ struct CreateTrackAction : public UndoableAction {
     }
 
     int getSizeInUnits() override {
-        return (int)sizeof(*this); //xxx should be more accurate
+        return (int) sizeof(*this); //xxx should be more accurate
     }
 
     ValueTree trackToCreate;
@@ -64,8 +64,8 @@ protected:
     TracksState &tracks;
 
     // NOTE: assumes the track hasn't been added yet!
-    String makeTrackNameUnique(const String& trackName) {
-        for (const auto& track : tracks.getState()) {
+    String makeTrackNameUnique(const String &trackName) {
+        for (const auto &track : tracks.getState()) {
             String otherTrackName = track[IDs::name];
             if (otherTrackName == trackName) {
                 if (trackName.contains("-")) {
@@ -80,6 +80,7 @@ protected:
 
         return trackName;
     }
+
 private:
 
     static int calculateInsertIndex(bool isMaster, bool addMixer, const ValueTree &derivedFromTrack, TracksState &tracks) {

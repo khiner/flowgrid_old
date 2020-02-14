@@ -12,22 +12,22 @@ struct DuplicateSelectedItemsAction : public UndoableAction {
         auto selectedTracks = tracks.findSelectedNonMasterTracks();
         auto nonSelectedTracks = tracks.findNonSelectedTracks();
         std::vector<int> selectedTrackIndices;
-        for (const auto& selectedTrack : selectedTracks)
+        for (const auto &selectedTrack : selectedTracks)
             selectedTrackIndices.push_back(tracks.indexOf(selectedTrack));
 
         auto duplicatedTrackIndices = findDuplicationIndices(selectedTrackIndices);
         for (int selectedTrackIndex = 0; selectedTrackIndex < selectedTracks.size(); selectedTrackIndex++) {
-            const auto& selectedTrack = selectedTracks.getUnchecked(selectedTrackIndex);
+            const auto &selectedTrack = selectedTracks.getUnchecked(selectedTrackIndex);
             int duplicatedTrackIndex = duplicatedTrackIndices[selectedTrackIndex];
             createTrackActions.add(new CreateTrackAction(duplicatedTrackIndex, false, false, selectedTrack, tracks, connections, view));
             createTrackActions.getLast()->perform();
-            for (const auto& processor : selectedTrack) {
+            for (const auto &processor : selectedTrack) {
                 int slot = processor[IDs::processorSlot];
                 addAndPerformCreateProcessorAction(processor, selectedTrackIndex, duplicatedTrackIndex,
                                                    slot, slot, tracks, view, audioProcessorContainer);
             }
         }
-        for (const auto& nonSelectedTrack : nonSelectedTracks) {
+        for (const auto &nonSelectedTrack : nonSelectedTracks) {
             const BigInteger slotsMask = TracksState::getSlotMask(nonSelectedTrack);
 
             std::vector<int> selectedSlots;
@@ -37,7 +37,7 @@ struct DuplicateSelectedItemsAction : public UndoableAction {
 
             auto duplicatedSlots = findDuplicationIndices(selectedSlots);
             for (int i = 0; i < selectedSlots.size(); i++) {
-                const auto& processor = TracksState::getProcessorAtSlot(nonSelectedTrack, selectedSlots[i]);
+                const auto &processor = TracksState::getProcessorAtSlot(nonSelectedTrack, selectedSlots[i]);
                 int trackIndex = tracks.indexOf(nonSelectedTrack);
                 addAndPerformCreateProcessorAction(processor, trackIndex, trackIndex, selectedSlots[i], duplicatedSlots[i],
                                                    tracks, view, audioProcessorContainer);
@@ -81,13 +81,13 @@ struct DuplicateSelectedItemsAction : public UndoableAction {
     }
 
     int getSizeInUnits() override {
-        return (int)sizeof(*this); //xxx should be more accurate
+        return (int) sizeof(*this); //xxx should be more accurate
     }
 
 private:
     struct MoveSelectionsAction : public SelectAction {
-        MoveSelectionsAction(const OwnedArray<CreateTrackAction>& createTrackActions,
-                             const OwnedArray<CreateProcessorAction>& createProcessorActions,
+        MoveSelectionsAction(const OwnedArray<CreateTrackAction> &createTrackActions,
+                             const OwnedArray<CreateProcessorAction> &createProcessorActions,
                              TracksState &tracks, ConnectionsState &connections, ViewState &view,
                              InputState &input, StatefulAudioProcessorContainer &audioProcessorContainer)
                 : SelectAction(tracks, connections, view, input, audioProcessorContainer) {
@@ -95,16 +95,16 @@ private:
                 newTrackSelections.setUnchecked(i, false);
                 newSelectedSlotsMasks.setUnchecked(i, BigInteger().toString(2));
             }
-            for (auto* createProcessorAction : createProcessorActions) {
+            for (auto *createProcessorAction : createProcessorActions) {
                 String maskString = newSelectedSlotsMasks.getUnchecked(createProcessorAction->trackIndex);
                 BigInteger mask;
                 mask.parseString(maskString, 2);
                 mask.setBit(createProcessorAction->slot, true);
                 newSelectedSlotsMasks.setUnchecked(createProcessorAction->trackIndex, mask.toString(2));
             }
-            for (auto* createTrackAction : createTrackActions) {
+            for (auto *createTrackAction : createTrackActions) {
                 newTrackSelections.setUnchecked(createTrackAction->insertIndex, true);
-                const auto& track = tracks.getTrack(createTrackAction->insertIndex);
+                const auto &track = tracks.getTrack(createTrackAction->insertIndex);
                 newSelectedSlotsMasks.setUnchecked(createTrackAction->insertIndex, tracks.createFullSelectionBitmask(track));
             }
         }
@@ -126,7 +126,7 @@ private:
             newFocusedSlot = {toTrackIndex, toSlot};
     }
 
-    static ValueTree createProcessor(ValueTree& fromProcessor, StatefulAudioProcessorContainer &audioProcessorContainer) {
+    static ValueTree createProcessor(ValueTree &fromProcessor, StatefulAudioProcessorContainer &audioProcessorContainer) {
         audioProcessorContainer.saveProcessorStateInformationToState(fromProcessor);
         auto duplicatedProcessor = fromProcessor.createCopy();
         duplicatedProcessor.removeProperty(IDs::nodeId, nullptr);

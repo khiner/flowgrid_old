@@ -6,7 +6,7 @@
 
 class ParametersPanel : public Component {
 public:
-    explicit ParametersPanel(int maxRows, int numColumns=8) : maxRows(maxRows), numColumns(numColumns) {
+    explicit ParametersPanel(int maxRows, int numColumns = 8) : maxRows(maxRows), numColumns(numColumns) {
         for (int paramIndex = 0; paramIndex < numColumns * maxRows; paramIndex++) {
             addChildComponent(paramComponents.add(new ParameterDisplayComponent()));
         }
@@ -19,7 +19,7 @@ public:
     // This allows the parent to capture click events when clicking on non-interactive elements like param labels.
     // For example, this allows dragging a processor with inline param UI in the graph
     bool hitTest(int x, int y) override {
-        for (auto* paramComponent : paramComponents) {
+        for (auto *paramComponent : paramComponents) {
             auto localPoint = juce::Point(x, y) - paramComponent->getBoundsInParent().getTopLeft();
             if (paramComponent->hitTest(localPoint.x, localPoint.y))
                 return true;
@@ -47,7 +47,7 @@ public:
         return processorWrapper != nullptr ? processorWrapper->state : ValueTree();
     }
 
-    void addParameter(StatefulAudioProcessorWrapper::Parameter* parameter) {
+    void addParameter(StatefulAudioProcessorWrapper::Parameter *parameter) {
         processorWrapper = nullptr; // manual changes mean this is no longer 1:1 with a single processor
         parameters.add(parameter);
         updateParameterComponents();
@@ -58,11 +58,11 @@ public:
         updateParameterComponents();
     }
 
-    StatefulAudioProcessorWrapper::Parameter* getParameterOnCurrentPageAt(int parameterIndex) const {
+    StatefulAudioProcessorWrapper::Parameter *getParameterOnCurrentPageAt(int parameterIndex) const {
         int pageCorrectedParameterIndex = currentPage * maxRows * numColumns + parameterIndex;
         return parameters[pageCorrectedParameterIndex];
     }
-    
+
     void pageLeft() {
         if (canPageLeft()) {
             currentPage--;
@@ -96,7 +96,7 @@ public:
         repaint();
     }
 
-    void paint(Graphics& g) override {
+    void paint(Graphics &g) override {
         auto r = getLocalBounds();
         g.setColour(backgroundColour);
         g.fillRect(r);

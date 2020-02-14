@@ -7,8 +7,8 @@
 #include "DisconnectProcessorAction.h"
 
 struct DeleteProcessorAction : public UndoableAction {
-    DeleteProcessorAction(const ValueTree& processorToDelete, TracksState &tracks, ConnectionsState &connections,
-            StatefulAudioProcessorContainer &audioProcessorContainer)
+    DeleteProcessorAction(const ValueTree &processorToDelete, TracksState &tracks, ConnectionsState &connections,
+                          StatefulAudioProcessorContainer &audioProcessorContainer)
             : parentTrack(processorToDelete.getParent()), processorToDelete(processorToDelete),
               processorIndex(parentTrack.indexOf(processorToDelete)),
               disconnectProcessorAction(DisconnectProcessorAction(connections, processorToDelete, all, true, true, true, true)),
@@ -30,7 +30,7 @@ struct DeleteProcessorAction : public UndoableAction {
     }
 
     int getSizeInUnits() override {
-        return (int)sizeof(*this); //xxx should be more accurate
+        return (int) sizeof(*this); //xxx should be more accurate
     }
 
 private:

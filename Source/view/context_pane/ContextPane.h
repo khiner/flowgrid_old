@@ -40,7 +40,7 @@ public:
         tracksBounds.removeFromLeft(jmax(0, masterViewSlotOffset - trackViewOffset) * cellWidth);
 
         if (!masterTrackGridCells.isEmpty()) {
-            for (auto* processorGridCell : masterTrackGridCells) {
+            for (auto *processorGridCell : masterTrackGridCells) {
                 processorGridCell->setRectangle(masterRowBounds.removeFromLeft(cellWidth).reduced(2).toFloat());
             }
         }
@@ -58,15 +58,15 @@ public:
 private:
     class GridCell : public DrawableRectangle {
     public:
-        explicit GridCell(Component* parent) {
+        explicit GridCell(Component *parent) {
             setTrackAndProcessor({}, {}, true, false, false, false);
             setCornerSize({3, 3});
             parent->addAndMakeVisible(this);
         }
-        
+
         void setTrackAndProcessor(const ValueTree &track, const ValueTree &processor,
                                   bool inView, bool trackSelected, bool slotSelected, bool slotFocused) {
-            const static auto& baseColour = findColour(ResizableWindow::backgroundColourId).brighter(0.4);
+            const static auto &baseColour = findColour(ResizableWindow::backgroundColourId).brighter(0.4);
 
             // this is the only part different than GraphEditorProcessors
             auto colour = processor.isValid() ? findColour(TextEditor::backgroundColourId) : baseColour;
@@ -97,7 +97,7 @@ private:
         if (gridCells.isEmpty())
             return;
 
-        const auto& masterTrack = tracks.getMasterTrack();
+        const auto &masterTrack = tracks.getMasterTrack();
         bool trackSelected = TracksState::doesTrackHaveSelections(masterTrack);
         for (auto processorSlot = 0; processorSlot < masterTrackGridCells.size(); processorSlot++) {
             auto *cell = masterTrackGridCells.getUnchecked(processorSlot);
@@ -108,12 +108,12 @@ private:
         }
 
         for (auto trackIndex = 0; trackIndex < gridCells.size(); trackIndex++) {
-            auto* trackGridCells = gridCells.getUnchecked(trackIndex);
-            const auto& track = tracks.getTrack(trackIndex);
+            auto *trackGridCells = gridCells.getUnchecked(trackIndex);
+            const auto &track = tracks.getTrack(trackIndex);
             trackSelected = TracksState::doesTrackHaveSelections(track);
             for (auto processorSlot = 0; processorSlot < trackGridCells->size(); processorSlot++) {
                 auto *cell = trackGridCells->getUnchecked(processorSlot);
-                const auto& processor = TracksState::getProcessorAtSlot(track, processorSlot);
+                const auto &processor = TracksState::getProcessorAtSlot(track, processorSlot);
                 cell->setTrackAndProcessor(track, processor, tracks.isProcessorSlotInView(track, processorSlot),
                                            trackSelected, TracksState::isSlotSelected(track, processorSlot),
                                            tracks.isSlotFocused(track, processorSlot));
@@ -184,7 +184,7 @@ private:
             } else if (i == IDs::gridViewTrackOffset || i == IDs::masterViewSlotOffset) {
                 resized();
                 updateGridCellColours();
-            } else if (i == IDs::focusedTrackIndex || i == IDs::focusedProcessorSlot ||  i == IDs::gridViewSlotOffset) {
+            } else if (i == IDs::focusedTrackIndex || i == IDs::focusedProcessorSlot || i == IDs::gridViewSlotOffset) {
                 updateGridCellColours();
             }
         } else if (i == IDs::selectedSlotsMask) {

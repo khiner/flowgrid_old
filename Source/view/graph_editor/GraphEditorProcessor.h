@@ -10,7 +10,7 @@
 
 class GraphEditorProcessor : public Component, public ValueTree::Listener {
 public:
-    GraphEditorProcessor(Project& project, TracksState& tracks, const ValueTree& state, ConnectorDragListener &connectorDragListener, ProcessorGraph& graph, bool showChannelLabels=false)
+    GraphEditorProcessor(Project &project, TracksState &tracks, const ValueTree &state, ConnectorDragListener &connectorDragListener, ProcessorGraph &graph, bool showChannelLabels = false)
             : project(project), tracks(tracks), state(state), connectorDragListener(connectorDragListener),
               graph(graph), showChannelLabels(showChannelLabels) {
         this->state.addListener(this);
@@ -39,7 +39,7 @@ public:
         state.removeListener(this);
     }
 
-    const ValueTree& getState() const {
+    const ValueTree &getState() const {
         return state;
     }
 
@@ -113,7 +113,7 @@ public:
                 int centerX = proportionOfWidth((1.0f + indexPos) / (totalSpaces + 1.0f));
                 pin->setBounds(centerX - pinSize / 2, pin->isInput() ? 0 : (getHeight() - pinSize), pinSize, pinSize);
                 if (showChannelLabels) {
-                    auto& channelLabel = pin->channelLabel;
+                    auto &channelLabel = pin->channelLabel;
                     auto textArea = boxBoundsFloat.withWidth(proportionOfWidth(1.0f / totalSpaces)).withCentre({float(centerX), boxBoundsFloat.getCentreY()});
                     channelLabel.setBoundingBox(rotateRectIfNarrow(textArea));
                 }
@@ -201,15 +201,15 @@ private:
     }
 
     // Rotate text to draw vertically if the box is taller than it is wide.
-    static Parallelogram<float> rotateRectIfNarrow(Rectangle<float>& rectangle) {
+    static Parallelogram<float> rotateRectIfNarrow(Rectangle<float> &rectangle) {
         if (rectangle.getWidth() > rectangle.getHeight())
             return rectangle;
         else
             return Parallelogram<float>(rectangle.getBottomLeft(), rectangle.getTopLeft(), rectangle.getBottomRight());
     }
 
-    GraphEditorPin* findPinWithState(const ValueTree& state) {
-        for (auto* pin : pins) {
+    GraphEditorPin *findPinWithState(const ValueTree &state) {
+        for (auto *pin : pins) {
             if (pin->getState() == state)
                 return pin;
         }
@@ -221,8 +221,8 @@ private:
             return;
 
         if (parametersPanel == nullptr) {
-            if (auto* processorWrapper = getProcessorWrapper()) {
-                if (auto* defaultProcessor = dynamic_cast<DefaultAudioProcessor *>(processorWrapper->processor)) {
+            if (auto *processorWrapper = getProcessorWrapper()) {
+                if (auto *defaultProcessor = dynamic_cast<DefaultAudioProcessor *>(processorWrapper->processor)) {
                     if (defaultProcessor->showInlineEditor()) {
                         addAndMakeVisible((parametersPanel = std::make_unique<ParametersPanel>(1, processorWrapper->getNumParameters())).get());
                         parametersPanel->addMouseListener(this, true);
@@ -251,7 +251,7 @@ private:
             addAndMakeVisible(pin);
             pins.add(pin);
             if (showChannelLabels) {
-                auto& channelLabel = pin->channelLabel;
+                auto &channelLabel = pin->channelLabel;
                 channelLabel.setColour(findColour(TextEditor::textColourId));
                 channelLabel.setFontHeight(smallFontHeight);
                 channelLabel.setJustification(Justification::centred);

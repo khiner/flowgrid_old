@@ -5,7 +5,7 @@
 
 class BasicWindow : public DocumentWindow {
 public:
-    explicit BasicWindow(const String &name, Component *contentComponent, bool owned, std::function<void ()> onClose={}) :
+    explicit BasicWindow(const String &name, Component *contentComponent, bool owned, std::function<void()> onClose = {}) :
             DocumentWindow(name, Colours::lightgrey, DocumentWindow::allButtons), onClose(std::move(onClose)) {
         if (owned)
             setContentOwned(contentComponent, true);
@@ -22,7 +22,8 @@ public:
         else
             delete this;
     }
+
 private:
-    std::function<void ()> onClose;
+    std::function<void()> onClose;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (BasicWindow)
 };

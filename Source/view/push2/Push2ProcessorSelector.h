@@ -22,7 +22,7 @@ class Push2ProcessorSelector : public Push2ComponentBase {
             updateLabels();
         }
 
-        KnownPluginList::PluginTree* selectFolder(int index) {
+        KnownPluginList::PluginTree *selectFolder(int index) {
             if (currentTree == nullptr)
                 return nullptr;
             if (index + currentViewOffset < currentTree->subFolders.size()) {
@@ -34,17 +34,17 @@ class Push2ProcessorSelector : public Push2ComponentBase {
             return nullptr;
         }
 
-        void selectFolder(KnownPluginList::PluginTree* subfolder) {
+        void selectFolder(KnownPluginList::PluginTree *subfolder) {
             jassert(currentTree->subFolders.contains(subfolder));
 
-            for (auto* folder : currentTree->subFolders) {
+            for (auto *folder : currentTree->subFolders) {
                 folder->selected = false;
             }
             subfolder->selected = true;
             updateLabels();
         }
 
-        const PluginDescription* selectProcessor(int index) {
+        const PluginDescription *selectProcessor(int index) {
             if (currentTree == nullptr)
                 return nullptr;
 
@@ -58,12 +58,12 @@ class Push2ProcessorSelector : public Push2ComponentBase {
             return nullptr;
         }
 
-        void setCurrentTree(KnownPluginList::PluginTree* tree) {
+        void setCurrentTree(KnownPluginList::PluginTree *tree) {
             if (currentTree == tree)
                 return;
 
             if (currentTree != nullptr && currentTree->subFolders.contains(tree)) {
-                for (auto* folder : currentTree->subFolders) {
+                for (auto *folder : currentTree->subFolders) {
                     folder->selected = false;
                 }
             }
@@ -86,7 +86,7 @@ class Push2ProcessorSelector : public Push2ComponentBase {
             updateLabels();
         }
 
-        KnownPluginList::PluginTree* findSelectedSubfolder() const {
+        KnownPluginList::PluginTree *findSelectedSubfolder() const {
             if (currentTree == nullptr)
                 return nullptr;
 
@@ -104,9 +104,9 @@ class Push2ProcessorSelector : public Push2ComponentBase {
 
             return nullptr;
         }
-        
-        Push2Label* findSelectedLabel() const {
-            auto* selectedSubfolder = findSelectedSubfolder();
+
+        Push2Label *findSelectedLabel() const {
+            auto *selectedSubfolder = findSelectedSubfolder();
             if (selectedSubfolder != nullptr)
                 return labels.getUnchecked(currentTree->subFolders.indexOf(selectedSubfolder) - currentViewOffset);
 
@@ -118,7 +118,7 @@ class Push2ProcessorSelector : public Push2ComponentBase {
                 setCurrentViewOffset(jmax(0, currentViewOffset - NUM_COLUMNS));
             else if (direction == Push2::rightArrowDirection && currentTree != nullptr)
                 setCurrentViewOffset(jmin(currentViewOffset + NUM_COLUMNS,
-                        getTotalNumberOfTreeItems() - getTotalNumberOfTreeItems() % NUM_COLUMNS));
+                                          getTotalNumberOfTreeItems() - getTotalNumberOfTreeItems() % NUM_COLUMNS));
         }
 
         int getTotalNumberOfTreeItems() const {
@@ -133,10 +133,10 @@ class Push2ProcessorSelector : public Push2ComponentBase {
             selectionRectangleOverlay.setRectangle(getLocalBounds().toFloat());
         }
 
-        KnownPluginList::PluginTree* currentTree{};
+        KnownPluginList::PluginTree *currentTree{};
         OwnedArray<Push2Label> labels;
     private:
-        int currentViewOffset { 0 };
+        int currentViewOffset{0};
         Project &project;
         TracksState &tracks;
         DrawableRectangle selectionRectangleOverlay;
@@ -203,11 +203,11 @@ public:
         bottomProcessorSelector->setVisible(visible);
     }
 
-    const PluginDescription* selectTopProcessor(int index) {
+    const PluginDescription *selectTopProcessor(int index) {
         if (const auto *description = topProcessorSelector->selectProcessor(index))
             return description;
 
-        if (auto* subfolder = topProcessorSelector->selectFolder(index)) {
+        if (auto *subfolder = topProcessorSelector->selectFolder(index)) {
             setCurrentTree(bottomProcessorSelector.get(), subfolder);
             selectProcessorRow(bottomProcessorSelector.get());
             updateEnabledPush2Arrows();
@@ -215,11 +215,11 @@ public:
         return nullptr;
     }
 
-    const PluginDescription* selectBottomProcessor(int index) {
+    const PluginDescription *selectBottomProcessor(int index) {
         if (const auto *description = bottomProcessorSelector->selectProcessor(index))
             return description;
 
-        if (auto* subfolder = bottomProcessorSelector->selectFolder(index)) {
+        if (auto *subfolder = bottomProcessorSelector->selectFolder(index)) {
             setCurrentTree(topProcessorSelector.get(), bottomProcessorSelector->currentTree);
             topProcessorSelector->setCurrentViewOffset(bottomProcessorSelector->getCurrentViewOffset());
             setCurrentTree(bottomProcessorSelector.get(), subfolder);
@@ -229,13 +229,13 @@ public:
     }
 
     void aboveScreenButtonPressed(int buttonIndex) override {
-        if (const auto* selectedProcessor = selectTopProcessor(buttonIndex)) {
+        if (const auto *selectedProcessor = selectTopProcessor(buttonIndex)) {
             project.createProcessor(*selectedProcessor);
         }
     }
 
     void belowScreenButtonPressed(int buttonIndex) override {
-        if (const auto* selectedProcessor = selectBottomProcessor(buttonIndex)) {
+        if (const auto *selectedProcessor = selectBottomProcessor(buttonIndex)) {
             project.createProcessor(*selectedProcessor);
         }
     }
@@ -246,7 +246,7 @@ public:
         if (currentProcessorSelector != nullptr && (direction == Push2::leftArrowDirection || direction == Push2::rightArrowDirection)) {
             currentProcessorSelector->arrowPressed(direction);
         } else if (direction == Push2::downArrowDirection) {
-            if (auto* selectedLabel = currentProcessorSelector->findSelectedLabel()) {
+            if (auto *selectedLabel = currentProcessorSelector->findSelectedLabel()) {
                 int selectedIndex = currentProcessorSelector->labels.indexOf(selectedLabel);
                 if (currentProcessorSelector == topProcessorSelector.get()) {
                     selectTopProcessor(selectedIndex);
@@ -257,7 +257,7 @@ public:
         } else if (direction == Push2::upArrowDirection) {
             if (currentProcessorSelector == bottomProcessorSelector.get()) {
                 selectProcessorRow(topProcessorSelector.get());
-            } else if (auto* parent = currentProcessorSelector->currentTree->parent) {
+            } else if (auto *parent = currentProcessorSelector->currentTree->parent) {
                 setCurrentTree(bottomProcessorSelector.get(), topProcessorSelector->currentTree);
                 bottomProcessorSelector->setCurrentViewOffset(topProcessorSelector->getCurrentViewOffset());
                 bottomProcessorSelector->selectFolder(topProcessorSelector->findSelectedSubfolder());
@@ -282,11 +282,11 @@ public:
     }
 
 private:
-    void setCurrentTree(ProcessorSelectorRow *processorSelectorRow, KnownPluginList::PluginTree* tree) {
+    void setCurrentTree(ProcessorSelectorRow *processorSelectorRow, KnownPluginList::PluginTree *tree) {
         processorSelectorRow->setCurrentTree(tree);
     }
 
-    void selectProcessorRow(ProcessorSelectorRow* processorSelectorRow) {
+    void selectProcessorRow(ProcessorSelectorRow *processorSelectorRow) {
         if (currentProcessorSelector != nullptr) {
             currentProcessorSelector->setSelected(false);
         }
@@ -297,7 +297,7 @@ private:
     }
 
     void updateEnabledPush2Arrows() {
-        for (int direction : { Push2::upArrowDirection, Push2::downArrowDirection, Push2::leftArrowDirection, Push2::rightArrowDirection }) {
+        for (int direction : {Push2::upArrowDirection, Push2::downArrowDirection, Push2::leftArrowDirection, Push2::rightArrowDirection}) {
             if (isVisible() && currentProcessorSelector != nullptr && canNavigateInDirection(direction))
                 push2.activateWhiteLedButton(Push2::ccNumberForArrowButton(direction));
             else
@@ -307,22 +307,30 @@ private:
 
     bool canNavigateInDirection(int direction) {
         switch (direction) {
-            case Push2::rightArrowDirection: return canNavigateRight();
-            case Push2::downArrowDirection: return canNavigateDown();
-            case Push2::leftArrowDirection: return canNavigateLeft();
-            case Push2::upArrowDirection: return canNavigateUp();
-            default: return false;
+            case Push2::rightArrowDirection:
+                return canNavigateRight();
+            case Push2::downArrowDirection:
+                return canNavigateDown();
+            case Push2::leftArrowDirection:
+                return canNavigateLeft();
+            case Push2::upArrowDirection:
+                return canNavigateUp();
+            default:
+                return false;
         }
     }
 
     bool canNavigateRight() const { return currentProcessorSelector->getCurrentViewOffset() + NUM_COLUMNS < currentProcessorSelector->getTotalNumberOfTreeItems(); }
+
     bool canNavigateDown() const { return currentProcessorSelector->findSelectedLabel() != nullptr; }
+
     bool canNavigateLeft() const { return currentProcessorSelector->getCurrentViewOffset() > 0; }
+
     bool canNavigateUp() const { return bottomProcessorSelector.get() == currentProcessorSelector || currentProcessorSelector->currentTree->parent != nullptr; }
 
     KnownPluginList::PluginTree rootTree;
     std::unique_ptr<ProcessorSelectorRow> topProcessorSelector;
     std::unique_ptr<ProcessorSelectorRow> bottomProcessorSelector;
-    
-    ProcessorSelectorRow* currentProcessorSelector{};
+
+    ProcessorSelectorRow *currentProcessorSelector{};
 };

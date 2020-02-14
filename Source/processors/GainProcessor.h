@@ -32,11 +32,11 @@ public:
         }
     }
 
-    void processBlock(AudioSampleBuffer& buffer, MidiBuffer& midiMessages) override {
+    void processBlock(AudioSampleBuffer &buffer, MidiBuffer &midiMessages) override {
         gain.applyGain(buffer, buffer.getNumSamples());
     }
 
 private:
-    LinearSmoothedValue<float> gain { Decibels::decibelsToGain(0.0f) };
+    LinearSmoothedValue<float> gain{Decibels::decibelsToGain(0.0f)};
     AudioParameterFloat *gainParameter;
 };

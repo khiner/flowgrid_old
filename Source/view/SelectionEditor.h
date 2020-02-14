@@ -11,7 +11,7 @@ class SelectionEditor : public Component,
                         private Button::Listener,
                         private ValueTree::Listener {
 public:
-    SelectionEditor(Project& project, ProcessorGraph &audioGraphBuilder)
+    SelectionEditor(Project &project, ProcessorGraph &audioGraphBuilder)
             : project(project), tracks(project.getTracks()),
               view(project.getView()),
               audioGraphBuilder(audioGraphBuilder), contextPane(project) {
@@ -35,14 +35,14 @@ public:
         project.removeListener(this);
     }
 
-    void mouseDown(const MouseEvent& event) override {
+    void mouseDown(const MouseEvent &event) override {
         view.focusOnEditorPane();
-        if (auto* processorEditor = dynamic_cast<ProcessorEditor*>(event.originalComponent)) {
+        if (auto *processorEditor = dynamic_cast<ProcessorEditor *>(event.originalComponent)) {
             project.selectProcessor(processorEditor->getProcessorState());
         }
     }
 
-    void paint(Graphics& g) override {
+    void paint(Graphics &g) override {
         g.setColour(findColour(TextEditor::backgroundColourId));
         g.drawLine(1, 0, 1, getHeight(), 2);
         g.drawLine(0, contextPaneViewport.getY(), getWidth(), contextPaneViewport.getY(), 2);
@@ -59,9 +59,9 @@ public:
 
         r.removeFromRight(8);
         processorEditorsComponent.setBounds(0, 0, r.getWidth(), PROCESSOR_EDITOR_HEIGHT *
-                tracks.getFocusedTrack().getNumChildren());
+                                                                tracks.getFocusedTrack().getNumChildren());
         r = processorEditorsComponent.getBounds();
-        for (auto* editor : processorEditors) {
+        for (auto *editor : processorEditors) {
             if (editor->isVisible())
                 editor->setBounds(r.removeFromTop(PROCESSOR_EDITOR_HEIGHT).reduced(4));
         }
@@ -69,7 +69,7 @@ public:
 
     void buttonClicked(Button *b) override {
         if (b == &addProcessorButton) {
-            const auto& focusedTrack = tracks.getFocusedTrack();
+            const auto &focusedTrack = tracks.getFocusedTrack();
             if (focusedTrack.isValid()) {
                 addProcessorMenu = std::make_unique<PopupMenu>();
                 project.addPluginsToMenu(*addProcessorMenu, focusedTrack);
@@ -99,10 +99,10 @@ private:
     DrawableRectangle unfocusOverlay;
     std::unique_ptr<PopupMenu> addProcessorMenu;
 
-    void refreshProcessors(const ValueTree& singleProcessorToRefresh={}, bool onlyUpdateFocusState=false) {
+    void refreshProcessors(const ValueTree &singleProcessorToRefresh = {}, bool onlyUpdateFocusState = false) {
         const ValueTree &focusedTrack = tracks.getFocusedTrack();
         if (!focusedTrack.isValid()) {
-            for (auto* editor : processorEditors) {
+            for (auto *editor : processorEditors) {
                 editor->setVisible(false);
                 editor->setProcessor(nullptr);
             }
@@ -117,8 +117,8 @@ private:
         resized();
     }
 
-    void assignProcessorToEditor(const ValueTree &processor, int processorSlot=-1, bool onlyUpdateFocusState=false) const {
-        auto* processorEditor = processorEditors.getUnchecked(processorSlot != -1 ? processorSlot : int(processor[IDs::processorSlot]));
+    void assignProcessorToEditor(const ValueTree &processor, int processorSlot = -1, bool onlyUpdateFocusState = false) const {
+        auto *processorEditor = processorEditors.getUnchecked(processorSlot != -1 ? processorSlot : int(processor[IDs::processorSlot]));
         if (processor.isValid()) {
             if (auto *processorWrapper = audioGraphBuilder.getProcessorWrapperForState(processor)) {
                 if (!onlyUpdateFocusState) {
@@ -151,7 +151,7 @@ private:
         } else if (i == IDs::numProcessorSlots || i == IDs::numMasterProcessorSlots) {
             int numProcessorSlots = jmax(int(tree[IDs::numProcessorSlots]), int(tree[IDs::numMasterProcessorSlots]));
             while (processorEditors.size() < numProcessorSlots) {
-                auto* processorEditor = new ProcessorEditor();
+                auto *processorEditor = new ProcessorEditor();
                 processorEditorsComponent.addChildComponent(processorEditor);
                 processorEditors.add(processorEditor);
             }

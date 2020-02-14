@@ -15,7 +15,7 @@
 // (Note that it is possible for the same focused track to have a default audio-input processor different
 // from its default midi-input processor.)
 struct UpdateProcessorDefaultConnectionsAction : public CreateOrDeleteConnectionsAction {
-    
+
     UpdateProcessorDefaultConnectionsAction(const ValueTree &processor, bool makeInvalidDefaultsIntoCustom,
                                             ConnectionsState &connections, OutputState &output,
                                             StatefulAudioProcessorContainer &audioProcessorContainer)
@@ -29,7 +29,7 @@ struct UpdateProcessorDefaultConnectionsAction : public CreateOrDeleteConnection
             auto disconnectDefaultsAction = DisconnectProcessorAction(connections, processor, connectionType, true, false, false, true, nodeIdToConnectTo);
             coalesceWith(disconnectDefaultsAction);
             if (makeInvalidDefaultsIntoCustom && !disconnectDefaultsAction.connectionsToDelete.isEmpty()) {
-                for (const auto& connectionToConvert : disconnectDefaultsAction.connectionsToDelete) {
+                for (const auto &connectionToConvert : disconnectDefaultsAction.connectionsToDelete) {
                     auto customConnection = connectionToConvert.createCopy();
                     customConnection.setProperty(IDs::isCustomConnection, true, nullptr);
                     connectionsToCreate.add(customConnection);

@@ -83,7 +83,7 @@ public:
         int gainControlY = int(getHeight() * (1.0f - gainValue));
         gainValueControl.setBounds(getLocalBounds().withHeight(10).withY(gainControlY - 5));
     }
-    
+
     void timerCallback() override { repaint(); }
 
     void setMeterSource(LevelMeterSource *source) {
@@ -101,7 +101,7 @@ public:
     public:
         virtual ~Listener() {}
 
-        virtual void levelMeterValueChanged(LevelMeter*) = 0;
+        virtual void levelMeterValueChanged(LevelMeter *) = 0;
     };
 
     void addListener(Listener *listener) { listeners.add(listener); }
@@ -116,10 +116,10 @@ private:
     ListenerList<Listener> listeners;
 
     TextButton gainValueControl;
-    
+
     int refreshRate;
 
-    float gainValue {0.5f};
+    float gainValue{0.5f};
     NormalisableRange<float> normalisableRange;
 
     void updateMeterGradients() {

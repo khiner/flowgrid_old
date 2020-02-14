@@ -10,7 +10,7 @@ public:
         midiKeyboardState.addListener(&messageCollector);
     }
 
-    MidiKeyboardComponent* createKeyboard() {
+    MidiKeyboardComponent *createKeyboard() {
         return new MidiKeyboardComponent(midiKeyboardState, MidiKeyboardComponent::horizontalKeyboard);
     }
 
@@ -21,17 +21,21 @@ public:
     }
 
     bool acceptsMidi() const override { return false; }
+
     bool producesMidi() const override { return true; }
+
     bool isMidiEffect() const override { return false; }
+
     bool hasEditor() const override { return true; }
 
     void prepareToPlay(double sampleRate, int maximumExpectedSamplesPerBlock) override {
         messageCollector.reset(sampleRate);
     }
 
-    void processBlock(AudioSampleBuffer& buffer, MidiBuffer& midiMessages) override {
+    void processBlock(AudioSampleBuffer &buffer, MidiBuffer &midiMessages) override {
         messageCollector.removeNextBlockOfMessages(midiMessages, buffer.getNumSamples());
     }
+
 private:
     MidiMessageCollector messageCollector;
     MidiKeyboardState midiKeyboardState;

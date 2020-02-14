@@ -68,7 +68,7 @@ public:
 private:
     Push2Label volumesLabel, pansLabel;
     ParametersPanel volumeParametersPanel, panParametersPanel;
-    ParametersPanel *selectedParametersPanel {};
+    ParametersPanel *selectedParametersPanel{};
 
     void trackAdded(const ValueTree &track) override {
         Push2TrackManagingView::trackAdded(track);
@@ -86,7 +86,7 @@ private:
             updateParameters();
     }
 
-    void valueTreeChildRemoved(ValueTree &exParent, ValueTree& child, int index) override {
+    void valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int index) override {
         Push2TrackManagingView::valueTreeChildRemoved(exParent, child, index);
         if (child.hasType(IDs::PROCESSOR)) {
             updateParameters();
@@ -98,13 +98,13 @@ private:
         panParametersPanel.clearParameters();
 
         if (tracks.doesTrackHaveSelections(tracks.getMasterTrack())) {
-            const auto& mixerChannel = tracks.getMixerChannelProcessorForFocusedTrack();
-            if (auto* processorWrapper = project.getProcessorWrapperForState(mixerChannel)) {
+            const auto &mixerChannel = tracks.getMixerChannelProcessorForFocusedTrack();
+            if (auto *processorWrapper = project.getProcessorWrapperForState(mixerChannel)) {
                 volumeParametersPanel.addParameter(processorWrapper->getParameter(1));
                 panParametersPanel.addParameter(processorWrapper->getParameter(0));
             }
         } else {
-            for (const auto& track : project.getTracks().getState()) {
+            for (const auto &track : project.getTracks().getState()) {
                 if (TracksState::isMasterTrack(track))
                     continue;
                 const auto &mixerChannel = tracks.getMixerChannelProcessorForTrack(track);

@@ -35,7 +35,7 @@ struct DeleteSelectedItemsAction : public UndoableAction {
     }
 
     int getSizeInUnits() override {
-        return (int)sizeof(*this); //xxx should be more accurate
+        return (int) sizeof(*this); //xxx should be more accurate
     }
 
 private:

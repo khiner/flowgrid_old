@@ -26,7 +26,7 @@
 class Project : public Stateful, public FileBasedDocument, public StatefulAudioProcessorContainer,
                 private ChangeListener, private ValueTree::Listener {
 public:
-    Project(UndoManager &undoManager, PluginManager& pluginManager, AudioDeviceManager& deviceManager)
+    Project(UndoManager &undoManager, PluginManager &pluginManager, AudioDeviceManager &deviceManager)
             : FileBasedDocument(getFilenameSuffix(), "*" + getFilenameSuffix(), "Load a project", "Save project"),
               undoManager(undoManager),
               pluginManager(pluginManager),
@@ -50,18 +50,18 @@ public:
         tracks.removeListener(this);
     }
 
-    ValueTree& getState() override { return state; }
+    ValueTree &getState() override { return state; }
 
-    void loadFromState(const ValueTree& newState) override {
+    void loadFromState(const ValueTree &newState) override {
         clear();
 
         view.loadFromState(newState.getChildWithName(IDs::VIEW_STATE));
 
-        const String& inputDeviceName = newState.getChildWithName(IDs::INPUT)[IDs::deviceName];
-        const String& outputDeviceName = newState.getChildWithName(IDs::OUTPUT)[IDs::deviceName];
+        const String &inputDeviceName = newState.getChildWithName(IDs::INPUT)[IDs::deviceName];
+        const String &outputDeviceName = newState.getChildWithName(IDs::OUTPUT)[IDs::deviceName];
 
         // TODO this should be replaced with the greyed-out IO processor behavior (keeping connections)
-        static const String& failureMessage = TRANS("Could not open an Audio IO device used by this project.  "
+        static const String &failureMessage = TRANS("Could not open an Audio IO device used by this project.  "
                                                     "All connections with the missing device will be gone.  "
                                                     "If you want this project to look like it did when you saved it, "
                                                     "the best thing to do is to reconnect the missing device and "
@@ -112,7 +112,7 @@ public:
         undoManager.redo();
     }
 
-    void setStatefulAudioProcessorContainer(StatefulAudioProcessorContainer* statefulAudioProcessorContainer) {
+    void setStatefulAudioProcessorContainer(StatefulAudioProcessorContainer *statefulAudioProcessorContainer) {
         this->statefulAudioProcessorContainer = statefulAudioProcessorContainer;
     }
 
@@ -123,36 +123,36 @@ public:
         return nullptr;
     }
 
-    AudioProcessorGraph::Node* getNodeForId(AudioProcessorGraph::NodeID nodeId) const override {
+    AudioProcessorGraph::Node *getNodeForId(AudioProcessorGraph::NodeID nodeId) const override {
         if (statefulAudioProcessorContainer != nullptr)
             return statefulAudioProcessorContainer->getNodeForId(nodeId);
 
         return nullptr;
     }
 
-    void onProcessorCreated(const ValueTree& processor) override {
+    void onProcessorCreated(const ValueTree &processor) override {
         if (statefulAudioProcessorContainer != nullptr)
             statefulAudioProcessorContainer->onProcessorCreated(processor);
     }
 
-    void onProcessorDestroyed(const ValueTree& processor) override {
+    void onProcessorDestroyed(const ValueTree &processor) override {
         if (statefulAudioProcessorContainer != nullptr)
             statefulAudioProcessorContainer->onProcessorDestroyed(processor);
     }
 
-    TracksState& getTracks() { return tracks; }
+    TracksState &getTracks() { return tracks; }
 
-    ConnectionsState& getConnections() { return connections; }
+    ConnectionsState &getConnections() { return connections; }
 
-    ViewState& getView() { return view; }
+    ViewState &getView() { return view; }
 
-    InputState& getInput() { return input; }
+    InputState &getInput() { return input; }
 
-    OutputState& getOutput() { return output; }
+    OutputState &getOutput() { return output; }
 
-    UndoManager& getUndoManager() { return undoManager; }
+    UndoManager &getUndoManager() { return undoManager; }
 
-    AudioDeviceManager& getDeviceManager() { return deviceManager; }
+    AudioDeviceManager &getDeviceManager() { return deviceManager; }
 
     bool isPush2MidiInputProcessorConnected() const {
         return connections.isNodeConnected(getNodeIdForState(input.getPush2MidiInputProcessor()));
@@ -182,7 +182,7 @@ public:
     }
 
     // Assumes we're always creating processors to the currently focused track (which is true as of now!)
-    void createProcessor(const PluginDescription& description, int slot= -1) {
+    void createProcessor(const PluginDescription &description, int slot = -1) {
         undoManager.beginNewTransaction();
         auto focusedTrack = tracks.getFocusedTrack();
         if (focusedTrack.isValid()) {
@@ -263,7 +263,7 @@ public:
         return initialDraggingTrackAndSlot != TracksState::INVALID_TRACK_AND_SLOT;
     }
 
-    void setProcessorSlotSelected(const ValueTree& track, int slot, bool selected, bool deselectOthers=true) {
+    void setProcessorSlotSelected(const ValueTree &track, int slot, bool selected, bool deselectOthers = true) {
         if (!track.isValid())
             return;
 
@@ -284,18 +284,18 @@ public:
         undoManager.perform(selectAction);
     }
 
-    void setTrackSelected(const ValueTree& track, bool selected, bool deselectOthers=true) {
+    void setTrackSelected(const ValueTree &track, bool selected, bool deselectOthers = true) {
         setProcessorSlotSelected(track, -1, selected, deselectOthers);
     }
 
-    void selectProcessor(const ValueTree& processor) {
+    void selectProcessor(const ValueTree &processor) {
         setProcessorSlotSelected(processor.getParent(), processor[IDs::processorSlot], true);
     }
 
-    bool addConnection(const AudioProcessorGraph::Connection& connection) {
+    bool addConnection(const AudioProcessorGraph::Connection &connection) {
         undoManager.beginNewTransaction();
         ConnectionType connectionType = connection.source.isMIDI() ? midi : audio;
-        const auto& sourceProcessor = getProcessorStateForNodeId(connection.source.nodeID);
+        const auto &sourceProcessor = getProcessorStateForNodeId(connection.source.nodeID);
         // disconnect default outgoing
         undoManager.perform(new DisconnectProcessorAction(connections, sourceProcessor, connectionType, true, false, false, true));
         if (undoManager.perform(new CreateConnectionAction(connection, false, connections, *this))) {
@@ -305,7 +305,7 @@ public:
         return false;
     }
 
-    bool removeConnection(const AudioProcessorGraph::Connection& connection) {
+    bool removeConnection(const AudioProcessorGraph::Connection &connection) {
         undoManager.beginNewTransaction();
         const ValueTree &connectionState = connections.getConnectionMatching(connection);
         if (!connectionState[IDs::isCustomConnection] && isShiftHeld())
@@ -313,26 +313,26 @@ public:
 
         bool removed = undoManager.perform(new DeleteConnectionAction(connectionState, true, true, connections));
         if (removed && connectionState.hasProperty(IDs::isCustomConnection)) {
-            const auto& sourceState = connectionState.getChildWithName(IDs::SOURCE);
+            const auto &sourceState = connectionState.getChildWithName(IDs::SOURCE);
             auto sourceNodeId = StatefulAudioProcessorContainer::getNodeIdForState(sourceState);
-            const auto& processor = getProcessorStateForNodeId(sourceNodeId);
+            const auto &processor = getProcessorStateForNodeId(sourceNodeId);
             updateDefaultConnectionsForProcessor(processor);
             resetDefaultExternalInputs();
         }
         return removed;
     }
 
-    bool disconnectCustom(const ValueTree& processor) {
+    bool disconnectCustom(const ValueTree &processor) {
         undoManager.beginNewTransaction();
         return doDisconnectNode(processor, all, false, true, true, true);
     }
 
-    bool disconnectProcessor(const ValueTree& processor) {
+    bool disconnectProcessor(const ValueTree &processor) {
         undoManager.beginNewTransaction();
         doDisconnectNode(processor, all, true, true, true, true);
     }
 
-    void setDefaultConnectionsAllowed(const ValueTree& processor, bool defaultConnectionsAllowed) {
+    void setDefaultConnectionsAllowed(const ValueTree &processor, bool defaultConnectionsAllowed) {
         undoManager.beginNewTransaction();
         undoManager.perform(new SetDefaultConnectionsAllowedAction(processor, defaultConnectionsAllowed, connections));
         resetDefaultExternalInputs();
@@ -363,7 +363,7 @@ public:
         if (trackAndSlot.x < 0 || trackAndSlot.x >= tracks.getNumTracks())
             return;
 
-        const auto& track = tracks.getTrack(trackAndSlot.x);
+        const auto &track = tracks.getTrack(trackAndSlot.x);
         const int slot = trackAndSlot.y;
         if (slot != -1)
             setProcessorSlotSelected(track, slot, true);
@@ -383,7 +383,7 @@ public:
         sendChangeMessage();
     }
 
-    void addPluginsToMenu(PopupMenu& menu, const ValueTree& track) const {
+    void addPluginsToMenu(PopupMenu &menu, const ValueTree &track) const {
         StringArray disabledPluginIds;
 
         PopupMenu internalSubMenu;
@@ -409,11 +409,11 @@ public:
         return pluginManager.getPluginSortMethod();
     }
 
-    AudioPluginFormatManager& getFormatManager() const {
+    AudioPluginFormatManager &getFormatManager() const {
         return pluginManager.getFormatManager();
     }
 
-    const PluginDescription* getChosenType(const int menuId) const {
+    const PluginDescription *getChosenType(const int menuId) const {
         return pluginManager.getChosenType(menuId);
     }
 
@@ -436,7 +436,7 @@ public:
     }
 
     Result loadDocument(const File &file) override {
-        const ValueTree& newState = Utilities::loadValueTree(file, true);
+        const ValueTree &newState = Utilities::loadValueTree(file, true);
         if (!newState.isValid() || !newState.hasType(IDs::PROJECT))
             return Result::fail(TRANS("Not a valid project file"));
 
@@ -444,15 +444,15 @@ public:
         return Result::ok();
     }
 
-    bool isDeviceWithNamePresent(const String& deviceName) const {
-        for (auto* deviceType : deviceManager.getAvailableDeviceTypes()) {
+    bool isDeviceWithNamePresent(const String &deviceName) const {
+        for (auto *deviceType : deviceManager.getAvailableDeviceTypes()) {
             // Input devices
-            for (const auto& existingDeviceName : deviceType->getDeviceNames(true)) {
+            for (const auto &existingDeviceName : deviceType->getDeviceNames(true)) {
                 if (deviceName == existingDeviceName)
                     return true;
             }
             // Output devices
-            for (const auto& existingDeviceName : deviceType->getDeviceNames()) {
+            for (const auto &existingDeviceName : deviceType->getDeviceNames()) {
                 if (deviceName == existingDeviceName)
                     return true;
             }
@@ -461,7 +461,7 @@ public:
     }
 
     Result saveDocument(const File &file) override {
-        for (const auto& track : tracks.getState())
+        for (const auto &track : tracks.getState())
             for (auto processorState : track)
                 saveProcessorStateInformationToState(processorState);
 
@@ -498,19 +498,19 @@ private:
     InputState input;
     OutputState output;
 
-    AudioDeviceManager& deviceManager;
+    AudioDeviceManager &deviceManager;
 
-    StatefulAudioProcessorContainer* statefulAudioProcessorContainer {};
+    StatefulAudioProcessorContainer *statefulAudioProcessorContainer{};
     juce::Point<int> selectionStartTrackAndSlot = {0, 0};
 
-    bool shiftHeld { false }, push2ShiftHeld { false };
+    bool shiftHeld{false}, push2ShiftHeld{false};
 
     juce::Point<int> initialDraggingTrackAndSlot = TracksState::INVALID_TRACK_AND_SLOT,
             currentlyDraggingTrackAndSlot = TracksState::INVALID_TRACK_AND_SLOT;
 
     ValueTree mostRecentlyCreatedTrack, mostRecentlyCreatedProcessor;
 
-    void doCreateAndAddProcessor(const PluginDescription &description, ValueTree& track, int slot=-1) {
+    void doCreateAndAddProcessor(const PluginDescription &description, ValueTree &track, int slot = -1) {
         if (PluginManager::isGeneratorOrInstrument(&description) &&
             pluginManager.doesTrackAlreadyHaveGeneratorOrInstrument(track)) {
             undoManager.perform(new CreateTrackAction(false, false, track, tracks, connections, view));
@@ -525,21 +525,21 @@ private:
         selectProcessor(mostRecentlyCreatedProcessor);
         updateAllDefaultConnections();
     }
-    
-    void changeListenerCallback(ChangeBroadcaster* source) override {
+
+    void changeListenerCallback(ChangeBroadcaster *source) override {
         if (source == &undoManager) {
             // if there is nothing to undo, there is nothing to save!
             setChangedFlag(undoManager.canUndo());
         }
     }
 
-    bool doDisconnectNode(const ValueTree& processor, ConnectionType connectionType,
-                          bool defaults, bool custom, bool incoming, bool outgoing, AudioProcessorGraph::NodeID excludingRemovalTo={}) {
+    bool doDisconnectNode(const ValueTree &processor, ConnectionType connectionType,
+                          bool defaults, bool custom, bool incoming, bool outgoing, AudioProcessorGraph::NodeID excludingRemovalTo = {}) {
         return undoManager.perform(new DisconnectProcessorAction(connections, processor, connectionType, defaults,
                                                                  custom, incoming, outgoing, excludingRemovalTo));
     }
 
-    void updateAllDefaultConnections(bool makeInvalidDefaultsIntoCustom=false) {
+    void updateAllDefaultConnections(bool makeInvalidDefaultsIntoCustom = false) {
         undoManager.perform(new UpdateAllDefaultConnectionsAction(makeInvalidDefaultsIntoCustom, true, tracks, connections, input, output, *this));
     }
 
@@ -547,7 +547,7 @@ private:
         undoManager.perform(new ResetDefaultExternalInputConnectionsAction(connections, tracks, input, *this));
     }
 
-    void updateDefaultConnectionsForProcessor(const ValueTree &processor, bool makeInvalidDefaultsIntoCustom=false) {
+    void updateDefaultConnectionsForProcessor(const ValueTree &processor, bool makeInvalidDefaultsIntoCustom = false) {
         undoManager.perform(new UpdateProcessorDefaultConnectionsAction(processor, makeInvalidDefaultsIntoCustom, connections, output, *this));
     }
 

@@ -10,7 +10,7 @@ using Push2 = Push2MidiCommunicator;
 
 class Push2ComponentBase : public Component, public Push2Listener, public Push2Colours::Listener {
 public:
-    Push2ComponentBase(Project& project, Push2MidiCommunicator& push2)
+    Push2ComponentBase(Project &project, Push2MidiCommunicator &push2)
             : project(project), tracks(project.getTracks()), view(project.getView()),
               push2(push2) {
         push2.getPush2Colours().addListener(this);
@@ -28,23 +28,39 @@ public:
     void handleIncomingMidiMessage(MidiInput *source, const MidiMessage &message) override {}
 
     void trackColourChanged(const String &trackUuid, const Colour &colour) override {}
-    void colourAdded(const Colour& colour, uint8 index) override {}
+
+    void colourAdded(const Colour &colour, uint8 index) override {}
 
     void shiftPressed() override { isShiftHeld = true; }
+
     void shiftReleased() override { isShiftHeld = false; }
+
     void masterEncoderRotated(float changeAmount) override {}
+
     void encoderRotated(int encoderIndex, float changeAmount) override {}
+
     void undoButtonPressed() override {}
+
     void addTrackButtonPressed() override {}
+
     void duplicateButtonPressed() override {}
+
     void deleteButtonPressed() override {}
+
     void addDeviceButtonPressed() override {}
+
     void mixButtonPressed() override {}
+
     void masterButtonPressed() override {}
+
     void aboveScreenButtonPressed(int buttonIndex) override {}
+
     void belowScreenButtonPressed(int buttonIndex) override {}
+
     void arrowPressed(int direction) override {}
+
     void noteButtonPressed() override {}
+
     void sessionButtonPressed() override {}
 
     void setVisible(bool visible) override {
@@ -56,10 +72,10 @@ protected:
     const static int NUM_COLUMNS = 8;
     const static int HEADER_FOOTER_HEIGHT = 20;
 
-    bool isShiftHeld { false };
+    bool isShiftHeld{false};
 
-    Project& project;
-    TracksState& tracks;
-    ViewState& view;
-    Push2MidiCommunicator& push2;
+    Project &project;
+    TracksState &tracks;
+    ViewState &view;
+    Push2MidiCommunicator &push2;
 };

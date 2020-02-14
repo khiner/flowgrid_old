@@ -11,7 +11,7 @@ struct DeleteConnectionAction : public CreateOrDeleteConnectionsAction {
             removeConnection(connection);
     }
 
-    static bool canRemoveConnection(const ValueTree& connection, bool allowDefaults, bool allowCustom) {
+    static bool canRemoveConnection(const ValueTree &connection, bool allowDefaults, bool allowCustom) {
         return (allowCustom && connection.hasProperty(IDs::isCustomConnection)) ||
                (allowDefaults && !connection.hasProperty(IDs::isCustomConnection));
     }

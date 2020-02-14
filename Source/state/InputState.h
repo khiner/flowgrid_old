@@ -9,8 +9,8 @@
 
 class InputState : public Stateful, private ChangeListener, private ValueTree::Listener {
 public:
-    InputState(TracksState &tracks, ConnectionsState &connections, StatefulAudioProcessorContainer& audioProcessorContainer,
-                        PluginManager& pluginManager, UndoManager &undoManager, AudioDeviceManager& deviceManager)
+    InputState(TracksState &tracks, ConnectionsState &connections, StatefulAudioProcessorContainer &audioProcessorContainer,
+               PluginManager &pluginManager, UndoManager &undoManager, AudioDeviceManager &deviceManager)
             : tracks(tracks), connections(connections), audioProcessorContainer(audioProcessorContainer),
               pluginManager(pluginManager), undoManager(undoManager), deviceManager(deviceManager) {
         input = ValueTree(IDs::INPUT);
@@ -23,16 +23,16 @@ public:
         input.removeListener(this);
     }
 
-    ValueTree& getState() override { return input; }
+    ValueTree &getState() override { return input; }
 
-    void loadFromState(const ValueTree& state) override {
+    void loadFromState(const ValueTree &state) override {
         input.copyPropertiesFrom(state, nullptr);
         Utilities::moveAllChildren(state, input, nullptr);
     }
 
     void initializeDefault() {
         auto inputProcessor = CreateProcessorAction::createProcessor(pluginManager.getAudioInputDescription());
-        input.appendChild(inputProcessor,  &undoManager);
+        input.appendChild(inputProcessor, &undoManager);
     }
 
     ValueTree getAudioInputProcessorState() const {
@@ -58,15 +58,15 @@ private:
 
     TracksState &tracks;
     ConnectionsState &connections;
-    StatefulAudioProcessorContainer& audioProcessorContainer;
+    StatefulAudioProcessorContainer &audioProcessorContainer;
     PluginManager &pluginManager;
 
     UndoManager &undoManager;
-    AudioDeviceManager& deviceManager;
+    AudioDeviceManager &deviceManager;
 
     void syncInputDevicesWithDeviceManager() {
         Array<ValueTree> inputProcessorsToDelete;
-        for (const auto& inputProcessor : input) {
+        for (const auto &inputProcessor : input) {
             if (inputProcessor.hasProperty(IDs::deviceName)) {
                 const String &deviceName = inputProcessor[IDs::deviceName];
                 if (!MidiInput::getDevices().contains(deviceName) || !deviceManager.isMidiInputEnabled(deviceName)) {
@@ -74,10 +74,10 @@ private:
                 }
             }
         }
-        for (const auto& inputProcessor : inputProcessorsToDelete) {
+        for (const auto &inputProcessor : inputProcessorsToDelete) {
             undoManager.perform(new DeleteProcessorAction(inputProcessor, tracks, connections, audioProcessorContainer));
         }
-        for (const auto& deviceName : MidiInput::getDevices()) {
+        for (const auto &deviceName : MidiInput::getDevices()) {
             if (deviceManager.isMidiInputEnabled(deviceName) &&
                 !input.getChildWithProperty(IDs::deviceName, deviceName).isValid()) {
                 auto midiInputProcessor = CreateProcessorAction::createProcessor(MidiInputProcessor::getPluginDescription());
@@ -87,7 +87,7 @@ private:
         }
     }
 
-    void changeListenerCallback(ChangeBroadcaster* source) override {
+    void changeListenerCallback(ChangeBroadcaster *source) override {
         if (source == &deviceManager) {
             deviceManager.updateEnabledMidiInputsAndOutputs();
             syncInputDevicesWithDeviceManager();

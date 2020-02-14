@@ -17,10 +17,11 @@ public:
         class Listener {
         public:
             virtual ~Listener() = default;
-            virtual void parameterWillBeDestroyed(Parameter* parameter) = 0;
+
+            virtual void parameterWillBeDestroyed(Parameter *parameter) = 0;
         };
 
-        explicit Parameter(AudioProcessorParameter *parameter, StatefulAudioProcessorWrapper* processorWrapper)
+        explicit Parameter(AudioProcessorParameter *parameter, StatefulAudioProcessorWrapper *processorWrapper)
                 : AudioProcessorParameterWithID(parameter->getName(32), parameter->getName(32),
                                                 parameter->getLabel(), parameter->getCategory()),
                   sourceParameter(parameter),
@@ -30,7 +31,7 @@ public:
                              (sourceParameter->getLabel().isEmpty() ? "" : " " + sourceParameter->getLabel());
                   }),
                   textToValueFunction([this](const String &text) {
-                      const String& trimmedText = sourceParameter->getLabel().isEmpty()
+                      const String &trimmedText = sourceParameter->getLabel().isEmpty()
                                                   ? text
                                                   : text.upToFirstOccurrenceOf(sourceParameter->getLabel(), false, true).trim();
                       return range.snapToLegalValue(sourceParameter->getValueForText(trimmedText));
@@ -57,35 +58,35 @@ public:
             if (state.isValid())
                 state.removeListener(this);
             sourceParameter->removeListener(this);
-            for (auto* label : attachedLabels) {
+            for (auto *label : attachedLabels) {
                 label->onTextChange = nullptr;
             }
             attachedLabels.clear(false);
-            for (auto* slider : attachedSliders) {
+            for (auto *slider : attachedSliders) {
                 slider->removeListener(this);
             }
             attachedSliders.clear(false);
-            for (auto* button : attachedButtons) {
+            for (auto *button : attachedButtons) {
                 button->removeListener(this);
             }
             attachedButtons.clear(false);
-            for (auto* comboBox : attachedComboBoxes) {
+            for (auto *comboBox : attachedComboBoxes) {
                 comboBox->removeListener(this);
             }
             attachedComboBoxes.clear(false);
-            for (auto* parameterSwitch : attachedSwitches) {
+            for (auto *parameterSwitch : attachedSwitches) {
                 parameterSwitch->removeListener(this);
             }
             attachedSwitches.clear(false);
-            for (auto* levelMeter : attachedLevelMeters) {
+            for (auto *levelMeter : attachedLevelMeters) {
                 levelMeter->removeListener(this);
             }
             attachedLevelMeters.clear(false);
         }
 
-        void addListener(Listener* listener) { listeners.add(listener); }
+        void addListener(Listener *listener) { listeners.add(listener); }
 
-        void removeListener(Listener* listener) { listeners.remove(listener); }
+        void removeListener(Listener *listener) { listeners.remove(listener); }
 
         String getText(float v, int length) const override {
             return valueToTextFunction != nullptr ?
@@ -128,24 +129,24 @@ public:
             const ScopedLock selfCallbackLock(selfCallbackMutex);
             {
                 ScopedValueSetter<bool> svs(ignoreCallbacks, true);
-                for (auto* label : attachedLabels) {
+                for (auto *label : attachedLabels) {
                     label->setText(valueToTextFunction(newValue), dontSendNotification);
                 }
-                for (auto* slider : attachedSliders) {
+                for (auto *slider : attachedSliders) {
                     slider->setValue(newValue, sendNotificationSync);
                 }
-                for (auto* button : attachedButtons) {
+                for (auto *button : attachedButtons) {
                     button->setToggleState(newValue >= 0.5f, sendNotificationSync);
                 }
-                for (auto* comboBox : attachedComboBoxes) {
+                for (auto *comboBox : attachedComboBoxes) {
                     auto index = roundToInt(newValue * (comboBox->getNumItems() - 1));
                     comboBox->setSelectedItemIndex(index, sendNotificationSync);
                 }
-                for (auto* parameterSwitch : attachedSwitches) {
+                for (auto *parameterSwitch : attachedSwitches) {
                     auto index = roundToInt(newValue * (parameterSwitch->getNumItems() - 1));
                     parameterSwitch->setSelectedItemIndex(index, sendNotificationSync);
                 }
-                for (auto* levelMeter : attachedLevelMeters) {
+                for (auto *levelMeter : attachedLevelMeters) {
                     levelMeter->setValue(newValue, sendNotificationSync);
                 }
             }
@@ -180,7 +181,7 @@ public:
 
                     // TODO uncomment and make it work
 //                    if (!processorWrapper->isSelected()) {
-                        // If we're looking at something else, change the focus so we know what's changing.
+                    // If we're looking at something else, change the focus so we know what's changing.
 //                        processorWrapper->select();
 //                    }
                 }
@@ -300,8 +301,8 @@ public:
                     textToValueFunction != nullptr ? textToValueFunction(text) : text.getFloatValue());
         }
 
-        LevelMeterSource* getLevelMeterSource() {
-            if (auto* mixerChannelProcessor = dynamic_cast<MixerChannelProcessor *>(processorWrapper->processor)) {
+        LevelMeterSource *getLevelMeterSource() {
+            if (auto *mixerChannelProcessor = dynamic_cast<MixerChannelProcessor *>(processorWrapper->processor)) {
                 if (sourceParameter == mixerChannelProcessor->getGainParameter()) {
                     return mixerChannelProcessor->getMeterSource();
                 }
@@ -331,15 +332,15 @@ public:
         bool listenersNeedCalling{true};
         bool ignoreParameterChangedCallbacks = false;
 
-        bool ignoreCallbacks { false };
+        bool ignoreCallbacks{false};
         CriticalSection selfCallbackMutex;
 
-        OwnedArray<Label> attachedLabels {};
-        OwnedArray<Slider> attachedSliders {};
-        OwnedArray<Button> attachedButtons {};
-        OwnedArray<ComboBox> attachedComboBoxes {};
-        OwnedArray<SwitchParameterComponent> attachedSwitches {};
-        OwnedArray<LevelMeter> attachedLevelMeters {};
+        OwnedArray<Label> attachedLabels{};
+        OwnedArray<Slider> attachedSliders{};
+        OwnedArray<Button> attachedButtons{};
+        OwnedArray<ComboBox> attachedComboBoxes{};
+        OwnedArray<SwitchParameterComponent> attachedSwitches{};
+        OwnedArray<LevelMeter> attachedLevelMeters{};
 
         void valueTreePropertyChanged(ValueTree &tree, const Identifier &p) override {
             if (ignoreParameterChangedCallbacks)
@@ -361,15 +362,15 @@ public:
             }
         }
 
-        void sliderValueChanged(Slider* slider) override {
+        void sliderValueChanged(Slider *slider) override {
             const ScopedLock selfCallbackLock(selfCallbackMutex);
 
             if (!ignoreCallbacks)
                 setUnnormalizedValue((float) slider->getValue());
         }
 
-        void buttonClicked(Button* button) override {
-            const ScopedLock selfCallbackLock (selfCallbackMutex);
+        void buttonClicked(Button *button) override {
+            const ScopedLock selfCallbackLock(selfCallbackMutex);
 
             if (!ignoreCallbacks) {
                 beginParameterChange();
@@ -378,7 +379,7 @@ public:
             }
         }
 
-        void comboBoxChanged(ComboBox* comboBox) override {
+        void comboBoxChanged(ComboBox *comboBox) override {
             const ScopedLock selfCallbackLock(selfCallbackMutex);
 
             if (!ignoreCallbacks) {
@@ -390,7 +391,7 @@ public:
             }
         }
 
-        void switchChanged(SwitchParameterComponent* parameterSwitch) override {
+        void switchChanged(SwitchParameterComponent *parameterSwitch) override {
             const ScopedLock selfCallbackLock(selfCallbackMutex);
 
             if (!ignoreCallbacks) {
@@ -401,7 +402,7 @@ public:
             }
         }
 
-        void levelMeterValueChanged(LevelMeter* levelMeter) override {
+        void levelMeterValueChanged(LevelMeter *levelMeter) override {
             const ScopedLock selfCallbackLock(selfCallbackMutex);
 
             if (!ignoreCallbacks)
@@ -418,17 +419,18 @@ public:
             sourceParameter->endChangeGesture();
         }
 
-        void sliderDragStarted (Slider* slider) override { beginParameterChange(); }
-        void sliderDragEnded   (Slider* slider) override { endParameterChange();   }
+        void sliderDragStarted(Slider *slider) override { beginParameterChange(); }
+
+        void sliderDragEnded(Slider *slider) override { endParameterChange(); }
 
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(Parameter)
     };
 
-    StatefulAudioProcessorWrapper(AudioPluginInstance *processor, AudioProcessorGraph::NodeID nodeId, ValueTree state, UndoManager &undoManager, AudioDeviceManager& deviceManager) :
+    StatefulAudioProcessorWrapper(AudioPluginInstance *processor, AudioProcessorGraph::NodeID nodeId, ValueTree state, UndoManager &undoManager, AudioDeviceManager &deviceManager) :
             processor(processor), state(std::move(state)), undoManager(undoManager), deviceManager(deviceManager) {
         this->state.setProperty(IDs::nodeId, int(nodeId.uid), nullptr);
         processor->enableAllBuses();
-        if (auto* ioProcessor = dynamic_cast<AudioProcessorGraph::AudioGraphIOProcessor*> (processor)) {
+        if (auto *ioProcessor = dynamic_cast<AudioProcessorGraph::AudioGraphIOProcessor *> (processor)) {
             if (ioProcessor->isInput()) {
                 processor->setPlayConfigDetails(0, processor->getTotalNumOutputChannels(), processor->getSampleRate(), processor->getBlockSize());
             } else if (ioProcessor->isOutput()) {
@@ -533,11 +535,11 @@ private:
 
         Array<String> oldInputs, oldOutputs;
         for (int i = 0; i < inputChannels.getNumChildren(); i++) {
-            const auto& channel = inputChannels.getChild(i);
+            const auto &channel = inputChannels.getChild(i);
             oldInputs.add(channel[IDs::name]);
         }
         for (int i = 0; i < outputChannels.getNumChildren(); i++) {
-            const auto& channel = outputChannels.getChild(i);
+            const auto &channel = outputChannels.getChild(i);
             oldOutputs.add(channel[IDs::name]);
         }
 
@@ -550,15 +552,15 @@ private:
         updateChannels(oldOutputs, newOutputs, outputChannels, false);
     }
 
-    void updateChannels(Array<String>& oldChannels, Array<String>& newChannels, ValueTree& channelsState, bool isInput) {
+    void updateChannels(Array<String> &oldChannels, Array<String> &newChannels, ValueTree &channelsState, bool isInput) {
         for (int i = 0; i < oldChannels.size(); i++) {
-            const auto& oldChannel = oldChannels.getUnchecked(i);
+            const auto &oldChannel = oldChannels.getUnchecked(i);
             if (!newChannels.contains(oldChannel)) {
                 channelsState.removeChild(channelsState.getChildWithProperty(IDs::name, oldChannel), &undoManager);
             }
         }
         for (int i = 0; i < newChannels.size(); i++) {
-            const auto& newChannel = newChannels.getUnchecked(i);
+            const auto &newChannel = newChannels.getUnchecked(i);
             if (!oldChannels.contains(newChannel)) {
                 ValueTree channelState(IDs::CHANNEL);
                 channelState.setProperty(IDs::name, newChannel, nullptr);

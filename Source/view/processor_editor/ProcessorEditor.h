@@ -7,7 +7,7 @@
 
 class ProcessorEditor : public Component {
 public:
-    explicit ProcessorEditor(int maxRows=1) :
+    explicit ProcessorEditor(int maxRows = 1) :
             pageLeftButton("Page left", 0.5, findColour(ResizableWindow::backgroundColourId).brighter(0.75)),
             pageRightButton("Page right", 0.0, findColour(ResizableWindow::backgroundColourId).brighter(0.75)) {
         addAndMakeVisible(titleLabel);
@@ -45,7 +45,7 @@ public:
         return parametersPanel->getProcessorState();
     }
 
-    void paint(Graphics& g) override {
+    void paint(Graphics &g) override {
         auto r = getLocalBounds();
         g.setColour(findColour(TextEditor::backgroundColourId));
         g.fillRect(r.removeFromTop(38));

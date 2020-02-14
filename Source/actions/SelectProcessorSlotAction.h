@@ -4,7 +4,7 @@
 #include "SelectAction.h"
 
 struct SelectProcessorSlotAction : public SelectAction {
-    SelectProcessorSlotAction(const ValueTree& track, int slot, bool selected, bool deselectOthers,
+    SelectProcessorSlotAction(const ValueTree &track, int slot, bool selected, bool deselectOthers,
                               TracksState &tracks, ConnectionsState &connections, ViewState &view,
                               InputState &input, StatefulAudioProcessorContainer &audioProcessorContainer)
             : SelectAction(tracks, connections, view, input, audioProcessorContainer) {

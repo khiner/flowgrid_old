@@ -26,14 +26,14 @@ public:
     void prepareToPlay(double sampleRate, int maximumExpectedSamplesPerBlock) override {
         balance.reset(getSampleRate(), 0.05);
     }
-    
+
     void parameterChanged(AudioProcessorParameter *parameter, float newValue) override {
         if (parameter == balanceParameter) {
             balance.setValue(newValue);
         }
     }
 
-    void processBlock(AudioSampleBuffer& buffer, MidiBuffer& midiMessages) override {
+    void processBlock(AudioSampleBuffer &buffer, MidiBuffer &midiMessages) override {
         if (buffer.getNumChannels() == 2) {
             // 0db at center, linear stereo balance control
             // http://www.kvraudio.com/forum/viewtopic.php?t=148865
@@ -56,6 +56,6 @@ public:
     }
 
 private:
-    LinearSmoothedValue<float> balance { 0.0f };
+    LinearSmoothedValue<float> balance{0.0f};
     AudioParameterFloat *balanceParameter;
 };

@@ -5,9 +5,9 @@
 
 class Stateful {
 public:
-    virtual void loadFromState(const ValueTree& state) = 0;
+    virtual void loadFromState(const ValueTree &state) = 0;
 
-    virtual ValueTree& getState() = 0;
+    virtual ValueTree &getState() = 0;
 
     virtual void clear() {
         getState().removeAllChildren(nullptr);
@@ -21,10 +21,11 @@ public:
         getState().removeListener(listener);
     }
 
-    static void resetVarToInt(ValueTree& tree, const Identifier& id, ValueTree::Listener* listenerToExclude) {
+    static void resetVarToInt(ValueTree &tree, const Identifier &id, ValueTree::Listener *listenerToExclude) {
         tree.setPropertyExcludingListener(listenerToExclude, id, int(tree.getProperty(id)), nullptr);
     };
-    static void resetVarToBool(ValueTree& tree, const Identifier& id, ValueTree::Listener* listenerToExclude) {
+
+    static void resetVarToBool(ValueTree &tree, const Identifier &id, ValueTree::Listener *listenerToExclude) {
         tree.setPropertyExcludingListener(listenerToExclude, id, bool(tree.getProperty(id)), nullptr);
     };
 };

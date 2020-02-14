@@ -22,27 +22,37 @@ public:
     PluginDescription audioInDesc, audioOutDesc;
 
     String getName() const override { return "Internal"; }
-    bool fileMightContainThisPluginType(const String&) override { return true; }
+
+    bool fileMightContainThisPluginType(const String &) override { return true; }
+
     FileSearchPath getDefaultLocationsToSearch() override { return {}; }
+
     bool canScanForPlugins() const override { return false; }
-    void findAllTypesForFile(OwnedArray <PluginDescription>&, const String&) override  {}
-    bool doesPluginStillExist(const PluginDescription&) override { return true; }
-    String getNameOfPluginFromIdentifier(const String& fileOrIdentifier) override { return fileOrIdentifier; }
-    bool pluginNeedsRescanning(const PluginDescription&) override { return false; }
-    StringArray searchPathsForPlugins(const FileSearchPath&, bool, bool) override { return {}; }
+
+    void findAllTypesForFile(OwnedArray<PluginDescription> &, const String &) override {}
+
+    bool doesPluginStillExist(const PluginDescription &) override { return true; }
+
+    String getNameOfPluginFromIdentifier(const String &fileOrIdentifier) override { return fileOrIdentifier; }
+
+    bool pluginNeedsRescanning(const PluginDescription &) override { return false; }
+
+    StringArray searchPathsForPlugins(const FileSearchPath &, bool, bool) override { return {}; }
+
     bool isTrivialToScan() const override { return true; }
 
-    const static bool isIoProcessorName(const String& name) {
+    const static bool isIoProcessorName(const String &name) {
         return name == "Audio Output" || name == "Audio Input" || name == MidiInputProcessor::name() || name == MidiOutputProcessor::name();
     }
+
 private:
-    void createPluginInstance(const PluginDescription& desc, double initialSampleRate, int initialBufferSize,
-                               PluginCreationCallback callback) override {
+    void createPluginInstance(const PluginDescription &desc, double initialSampleRate, int initialBufferSize,
+                              PluginCreationCallback callback) override {
         auto p = createInstance(desc.name);
         callback(std::move(p), p == nullptr ? NEEDS_TRANS("Invalid internal filter name") : String());
     }
 
-    std::unique_ptr<AudioPluginInstance> createInstance(const String& name) {
+    std::unique_ptr<AudioPluginInstance> createInstance(const String &name) {
         if (name == audioOutDesc.name) return std::make_unique<AudioProcessorGraph::AudioGraphIOProcessor>(AudioProcessorGraph::AudioGraphIOProcessor::audioOutputNode);
         if (name == audioInDesc.name) return std::make_unique<AudioProcessorGraph::AudioGraphIOProcessor>(AudioProcessorGraph::AudioGraphIOProcessor::audioInputNode);
         if (name == MidiInputProcessor::name()) return std::make_unique<MidiInputProcessor>();
@@ -58,7 +68,7 @@ private:
         return nullptr;
     }
 
-    bool requiresUnblockedMessageThreadDuringCreation(const PluginDescription&) const noexcept override {
+    bool requiresUnblockedMessageThreadDuringCreation(const PluginDescription &) const noexcept override {
         return false;
     }
 };

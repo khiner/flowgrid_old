@@ -9,14 +9,14 @@ using SAPC = StatefulAudioProcessorContainer;
 
 class ConnectionsState : public Stateful {
 public:
-    explicit ConnectionsState(StatefulAudioProcessorContainer& audioProcessorContainer, TracksState& tracks)
+    explicit ConnectionsState(StatefulAudioProcessorContainer &audioProcessorContainer, TracksState &tracks)
             : audioProcessorContainer(audioProcessorContainer), tracks(tracks) {
         connections = ValueTree(IDs::CONNECTIONS);
     }
 
-    ValueTree& getState() override { return connections; }
+    ValueTree &getState() override { return connections; }
 
-    void loadFromState(const ValueTree& state) override {
+    void loadFromState(const ValueTree &state) override {
         Utilities::moveAllChildren(state, getState(), nullptr);
     }
 
@@ -46,18 +46,18 @@ public:
     }
 
     bool isNodeConnected(AudioProcessorGraph::NodeID nodeId) const {
-        for (const auto& connection : connections)
+        for (const auto &connection : connections)
             if (SAPC::getNodeIdForState(connection.getChildWithName(IDs::SOURCE)) == nodeId)
                 return true;
 
         return false;
     }
 
-    Array<ValueTree> getConnectionsForNode(const ValueTree& processor, ConnectionType connectionType,
-                                           bool incoming=true, bool outgoing=true,
-                                           bool includeCustom=true, bool includeDefault=true) {
+    Array<ValueTree> getConnectionsForNode(const ValueTree &processor, ConnectionType connectionType,
+                                           bool incoming = true, bool outgoing = true,
+                                           bool includeCustom = true, bool includeDefault = true) {
         Array<ValueTree> nodeConnections;
-        for (const auto& connection : connections) {
+        for (const auto &connection : connections) {
             if ((connection[IDs::isCustomConnection] && !includeCustom) || (!connection[IDs::isCustomConnection] && !includeDefault))
                 continue;
 
@@ -75,10 +75,11 @@ public:
         return nodeConnections;
     }
 
-    static AudioProcessorGraph::Connection stateToConnection(const ValueTree& connectionState) {
-        const auto& sourceState = connectionState.getChildWithName(IDs::SOURCE);
-        const auto& destState = connectionState.getChildWithName(IDs::DESTINATION);
-        return {{SAPC::getNodeIdForState(sourceState), int(sourceState[IDs::channel])}, {SAPC::getNodeIdForState(destState), int(destState[IDs::channel])}};
+    static AudioProcessorGraph::Connection stateToConnection(const ValueTree &connectionState) {
+        const auto &sourceState = connectionState.getChildWithName(IDs::SOURCE);
+        const auto &destState = connectionState.getChildWithName(IDs::DESTINATION);
+        return {{SAPC::getNodeIdForState(sourceState), int(sourceState[IDs::channel])},
+                {SAPC::getNodeIdForState(destState),   int(destState[IDs::channel])}};
     }
 
     ValueTree getConnectionMatching(const AudioProcessorGraph::Connection &connection) const {
@@ -118,6 +119,6 @@ public:
 
 private:
     ValueTree connections;
-    StatefulAudioProcessorContainer& audioProcessorContainer;
-    TracksState& tracks;
+    StatefulAudioProcessorContainer &audioProcessorContainer;
+    TracksState &tracks;
 };

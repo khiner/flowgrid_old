@@ -24,7 +24,7 @@ public:
         auto r = getLocalBounds();
         auto labelWidth = getWidth() / NUM_COLUMNS;
         auto bottom = r.removeFromBottom(HEADER_FOOTER_HEIGHT);
-        for (auto* trackLabel : trackLabels) {
+        for (auto *trackLabel : trackLabels) {
             trackLabel->setBounds(bottom.removeFromLeft(labelWidth));
         }
     }
@@ -38,7 +38,7 @@ public:
 
     void updateEnabledPush2Buttons() override {
         auto focusedTrack = tracks.getFocusedTrack();
-        for (auto* label : trackLabels) {
+        for (auto *label : trackLabels) {
             label->setVisible(false);
         }
         if (!isVisible())
@@ -46,7 +46,7 @@ public:
         int labelIndex = 0;
         for (int i = 0; i < jmin(trackLabels.size(), tracks.getNumNonMasterTracks()); i++) {
             auto *label = trackLabels.getUnchecked(labelIndex++);
-            const auto& track = tracks.getTrackWithViewIndex(i);
+            const auto &track = tracks.getTrackWithViewIndex(i);
             // TODO left/right buttons
             label->setVisible(true);
             label->setMainColour(TracksState::getTrackColour(track));
@@ -57,16 +57,18 @@ public:
 
 protected:
     virtual void trackAdded(const ValueTree &track) { updateEnabledPush2Buttons(); }
+
     virtual void trackRemoved(const ValueTree &track) { updateEnabledPush2Buttons(); }
+
     virtual void trackSelected(const ValueTree &track) { updateEnabledPush2Buttons(); }
 
-    void valueTreeChildAdded(ValueTree &parent, ValueTree& child) override {
+    void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override {
         if (child.hasType(IDs::TRACK)) {
             trackAdded(child);
         }
     }
 
-    void valueTreeChildRemoved(ValueTree &exParent, ValueTree& child, int index) override {
+    void valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int index) override {
         if (child.hasType(IDs::TRACK)) {
             trackRemoved(child);
         }

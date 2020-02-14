@@ -5,7 +5,7 @@
 
 class Push2Label : public Label {
 public:
-    Push2Label(int position, bool top, Push2MidiCommunicator& push2MidiCommunicator) :
+    Push2Label(int position, bool top, Push2MidiCommunicator &push2MidiCommunicator) :
             Label(), position(position), top(top), push2MidiCommunicator(push2MidiCommunicator) {
         updateColours();
     }
@@ -40,7 +40,7 @@ public:
         this->underlined = underlined;
     }
 
-    void paint(Graphics& g) override {
+    void paint(Graphics &g) override {
         Label::paint(g);
         if (underlined) {
             g.setColour(colour);
@@ -51,10 +51,10 @@ public:
 private:
     int position;
     bool top;
-    bool selected { false }, underlined { false };
-    Colour colour { Colours::white };
+    bool selected{false}, underlined{false};
+    Colour colour{Colours::white};
 
-    Push2MidiCommunicator& push2MidiCommunicator;
+    Push2MidiCommunicator &push2MidiCommunicator;
 
     void updateColours() {
         if (selected) {
@@ -68,7 +68,7 @@ private:
     }
 
     void updatePush2Button() {
-        const Colour& buttonColour = selected ? Colours::white : colour;
+        const Colour &buttonColour = selected ? Colours::white : colour;
         if (top) {
             if (isVisible())
                 push2MidiCommunicator.setAboveScreenButtonColour(position, buttonColour);

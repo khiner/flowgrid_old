@@ -36,7 +36,7 @@ public:
                 BinaryData::AbletonSansMediumRegular_otf, BinaryData::AbletonSansMediumRegular_otfSize));
         lookAndFeel.setColour(CustomColourIds::unfocusedOverlayColourId, Colours::black.withAlpha(0.15f));
         lookAndFeel.setColour(Slider::rotarySliderOutlineColourId,
-                lookAndFeel.findColour(Slider::rotarySliderOutlineColourId).brighter(0.06));
+                              lookAndFeel.findColour(Slider::rotarySliderOutlineColourId).brighter(0.06));
 
         pluginListComponent = std::unique_ptr<PluginListComponent>(pluginManager.makePluginListComponent());
 
@@ -89,7 +89,7 @@ public:
     }
 
     StringArray getMenuBarNames() override {
-        StringArray names {"File", "Edit", "Create", "View", "Options"};
+        StringArray names{"File", "Edit", "Create", "View", "Options"};
         return names;
     }
 
@@ -129,15 +129,15 @@ public:
             menu.addCommandItem(&getCommandManager(), CommandIDs::showAudioMidiSettings);
             menu.addCommandItem(&getCommandManager(), CommandIDs::showPluginListEditor);
 
-            const auto& pluginSortMethod = pluginManager.getPluginSortMethod();
+            const auto &pluginSortMethod = pluginManager.getPluginSortMethod();
 
             PopupMenu sortTypeMenu;
-            sortTypeMenu.addItem(200, "List plugins in default order",      true, pluginSortMethod == KnownPluginList::defaultOrder);
+            sortTypeMenu.addItem(200, "List plugins in default order", true, pluginSortMethod == KnownPluginList::defaultOrder);
             sortTypeMenu.addItem(201, "List plugins in alphabetical order", true, pluginSortMethod == KnownPluginList::sortAlphabetically);
-            sortTypeMenu.addItem(202, "List plugins by category",           true, pluginSortMethod == KnownPluginList::sortByCategory);
-            sortTypeMenu.addItem(203, "List plugins by manufacturer",       true, pluginSortMethod == KnownPluginList::sortByManufacturer);
+            sortTypeMenu.addItem(202, "List plugins by category", true, pluginSortMethod == KnownPluginList::sortByCategory);
+            sortTypeMenu.addItem(203, "List plugins by manufacturer", true, pluginSortMethod == KnownPluginList::sortByManufacturer);
             sortTypeMenu.addItem(204, "List plugins based on the directory structure", true, pluginSortMethod == KnownPluginList::sortByFileSystemLocation);
-            menu.addSubMenu ("Plugin menu type", sortTypeMenu);
+            menu.addSubMenu("Plugin menu type", sortTypeMenu);
         }
 
         return menu;
@@ -174,7 +174,7 @@ public:
 
     void menuBarActivated(bool isActivated) override {}
 
-    void getAllCommands(Array<CommandID>& commands) override {
+    void getAllCommands(Array<CommandID> &commands) override {
         const CommandID ids[] = {
                 CommandIDs::newFile,
                 CommandIDs::open,
@@ -203,7 +203,7 @@ public:
         commands.addArray(ids, numElementsInArray(ids));
     }
 
-    void getCommandInfo(const CommandID commandID, ApplicationCommandInfo& result) override {
+    void getCommandInfo(const CommandID commandID, ApplicationCommandInfo &result) override {
         const String category("General");
 
         switch (commandID) {
@@ -311,7 +311,7 @@ public:
         }
     }
 
-    bool perform(const InvocationInfo& info) override {
+    bool perform(const InvocationInfo &info) override {
         switch (info.commandID) {
             case CommandIDs::newFile:
                 if (project.saveIfNeededAndUserAgrees() == FileBasedDocument::savedOk)
@@ -396,7 +396,7 @@ public:
 
     class MainWindow : public DocumentWindow, public FileDragAndDropTarget {
     public:
-        explicit MainWindow(SoundMachineApplication& owner, const String &name, Component *contentComponent) :
+        explicit MainWindow(SoundMachineApplication &owner, const String &name, Component *contentComponent) :
                 DocumentWindow(name, Colours::lightgrey, DocumentWindow::allButtons), owner(owner) {
             contentComponent->setSize(1, 1); // nonzero size to avoid warnings
             setContentOwned(contentComponent, true);
@@ -408,7 +408,7 @@ public:
             addKeyListener(getCommandManager().getKeyMappings());
         }
 
-        void modifierKeysChanged(const ModifierKeys& modifiers) override {
+        void modifierKeysChanged(const ModifierKeys &modifiers) override {
             DocumentWindow::modifierKeysChanged(modifiers);
             owner.project.setShiftHeld(modifiers.isShiftDown());
         }
@@ -417,12 +417,12 @@ public:
             tryToQuitApplication();
         }
 
-        KeyboardFocusTraverser* createFocusTraverser() override {
+        KeyboardFocusTraverser *createFocusTraverser() override {
             return nullptr;
         }
 
         struct AsyncQuitRetrier : private Timer {
-            AsyncQuitRetrier() { startTimer (500); }
+            AsyncQuitRetrier() { startTimer(500); }
 
             void timerCallback() override {
                 stopTimer();
@@ -450,20 +450,22 @@ public:
             }
         }
 
-        bool isInterestedInFileDrag(const StringArray& files) override {
+        bool isInterestedInFileDrag(const StringArray &files) override {
             return true;
         }
 
-        void filesDropped(const StringArray& files, int x, int y) override {
+        void filesDropped(const StringArray &files, int x, int y) override {
             if (files.size() == 1 && File(files[0]).hasFileExtension(Project::getFilenameSuffix())) {
                 if (owner.project.saveIfNeededAndUserAgrees() == FileBasedDocument::savedOk)
                     owner.project.loadFrom(File(files[0]), true);
             }
         }
 
-        void fileDragEnter(const StringArray& files, int, int) override {}
-        void fileDragMove(const StringArray& files, int, int) override {}
-        void fileDragExit(const StringArray& files) override {}
+        void fileDragEnter(const StringArray &files, int, int) override {}
+
+        void fileDragMove(const StringArray &files, int, int) override {}
+
+        void fileDragExit(const StringArray &files) override {}
 
     private:
         SoundMachineApplication &owner;
@@ -483,7 +485,7 @@ private:
     AudioDeviceManager deviceManager;
 
     Project project;
-    TracksState& tracks;
+    TracksState &tracks;
     Push2Colours push2Colours;
     Push2MidiCommunicator push2MidiCommunicator;
     ProcessorGraph processorGraph;
@@ -492,7 +494,7 @@ private:
     std::unique_ptr<DeviceChangeMonitor> deviceChangeMonitor;
 
     void showAudioMidiSettings() {
-        auto* audioSettingsComponent = new AudioDeviceSelectorComponent(deviceManager, 2, 256, 2, 256, true, true, true, false);
+        auto *audioSettingsComponent = new AudioDeviceSelectorComponent(deviceManager, 2, 256, 2, 256, true, true, true, false);
         audioSettingsComponent->setSize(500, 450);
 
         DialogWindow::LaunchOptions o;
@@ -532,7 +534,7 @@ private:
         }
     }
 
-    void changeListenerCallback(ChangeBroadcaster* source) override {
+    void changeListenerCallback(ChangeBroadcaster *source) override {
         if (source == &project) {
             mainWindow->setName(project.getDocumentTitle());
             applicationCommandListChanged();
@@ -554,7 +556,7 @@ private:
         }
     }
 
-    void valueTreePropertyChanged(ValueTree& child, const Identifier& i) override {
+    void valueTreePropertyChanged(ValueTree &child, const Identifier &i) override {
         if ((child.hasType(IDs::TRACK) && i == IDs::selected) || i == IDs::focusedProcessorSlot) {
             applicationCommandListChanged(); // TODO same - wasteful
         } else if (i == IDs::processorInitialized && child[i]) {
@@ -562,17 +564,20 @@ private:
         }
     }
 
-    void valueTreeChildRemoved(ValueTree& parent, ValueTree& child, int) override {
+    void valueTreeChildRemoved(ValueTree &parent, ValueTree &child, int) override {
         if (child.hasType(IDs::PROCESSOR)) {
             applicationCommandListChanged();
         }
     }
 };
 
-static SoundMachineApplication& getApp() { return *dynamic_cast<SoundMachineApplication*>(JUCEApplication::getInstance()); }
-ApplicationProperties& getApplicationProperties() { return getApp().applicationPropertiesAndCommandManager.applicationProperties; }
-PropertiesFile* getUserSettings() { return getApplicationProperties().getUserSettings(); }
-ApplicationCommandManager& getCommandManager()    { return getApp().applicationPropertiesAndCommandManager.commandManager; }
+static SoundMachineApplication &getApp() { return *dynamic_cast<SoundMachineApplication *>(JUCEApplication::getInstance()); }
+
+ApplicationProperties &getApplicationProperties() { return getApp().applicationPropertiesAndCommandManager.applicationProperties; }
+
+PropertiesFile *getUserSettings() { return getApplicationProperties().getUserSettings(); }
+
+ApplicationCommandManager &getCommandManager() { return getApp().applicationPropertiesAndCommandManager.commandManager; }
 
 // This macro generates the main() routine that launches the app.
 START_JUCE_APPLICATION (SoundMachineApplication)

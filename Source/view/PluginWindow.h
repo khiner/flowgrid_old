@@ -22,7 +22,7 @@ public:
               node(n), type(t) {
         setSize(400, 300);
 
-        Component* keyboardComponent {};
+        Component *keyboardComponent{};
         if (auto *midiKeyboardProcessor = dynamic_cast<MidiKeyboardProcessor *>(n->getProcessor())) {
             keyboardComponent = midiKeyboardProcessor->createKeyboard();
             keyboardComponent->setSize(800, 1);

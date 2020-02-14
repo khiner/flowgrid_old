@@ -11,7 +11,7 @@
 #include "SineBank.h"
 #include "SineSynth.h"
 
-Array<PluginDescription> internalPluginDescriptions {
+Array<PluginDescription> internalPluginDescriptions{
         Arpeggiator::getPluginDescription(),
         BalanceProcessor::getPluginDescription(),
         GainProcessor::getPluginDescription(),

@@ -14,7 +14,7 @@ struct GraphEditorPin : public Component, public SettableTooltipClient, private 
         this->state.addListener(this);
     }
 
-    const ValueTree& getState() { return state; }
+    const ValueTree &getState() { return state; }
 
     int getChannel() {
         return getName().contains("MIDI") ? AudioProcessorGraph::midiChannelIndex : state.getParent().indexOf(state);

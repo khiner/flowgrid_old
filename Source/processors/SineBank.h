@@ -7,10 +7,10 @@
 class SineBank : public DefaultAudioProcessor {
 public:
     explicit SineBank() : DefaultAudioProcessor(getPluginDescription()),
-            toneSource1("1", defaultStringFromValue, defaultValueFromString, createDefaultGainParameter),
-            toneSource2("2", defaultStringFromValue, defaultValueFromString, createDefaultGainParameter),
-            toneSource3("3", defaultStringFromValue, defaultValueFromString, createDefaultGainParameter),
-            toneSource4("4", defaultStringFromValue, defaultValueFromString, createDefaultGainParameter) {
+                          toneSource1("1", defaultStringFromValue, defaultValueFromString, createDefaultGainParameter),
+                          toneSource2("2", defaultStringFromValue, defaultValueFromString, createDefaultGainParameter),
+                          toneSource3("3", defaultStringFromValue, defaultValueFromString, createDefaultGainParameter),
+                          toneSource4("4", defaultStringFromValue, defaultValueFromString, createDefaultGainParameter) {
 
         addParameter(toneSource1.getAmpParameter());
         addParameter(toneSource1.getFreqParameter());
@@ -77,7 +77,7 @@ public:
         }
     }
 
-    void processBlock(AudioSampleBuffer& buffer, MidiBuffer& midiMessages) override {
+    void processBlock(AudioSampleBuffer &buffer, MidiBuffer &midiMessages) override {
         const AudioSourceChannelInfo &channelInfo = AudioSourceChannelInfo(buffer);
         mixerAudioSource.getNextAudioBlock(channelInfo);
     }

@@ -7,7 +7,7 @@
 
 class Push2MidiCommunicator : public MidiCommunicator, private Push2Colours::Listener, private Timer {
 public:
-    explicit Push2MidiCommunicator(Project& project, Push2Colours& push2Colours) :
+    explicit Push2MidiCommunicator(Project &project, Push2Colours &push2Colours) :
             project(project), view(project.getView()), push2Colours(push2Colours) {};
 
     void initialize() override {
@@ -23,7 +23,7 @@ public:
          * In polyphonic key pressure mode, aftertouch for each pressed key is sent individually.
          * The value is defined by the pad velocity curve and in range 1…​127. See Velocity Curve.
          */
-        static const uint8 setAftertouchModePolyphonic[] { 0x00, 0x21, 0x1D, 0x01, 0x01, 0x1E, 0x01 };
+        static const uint8 setAftertouchModePolyphonic[]{0x00, 0x21, 0x1D, 0x01, 0x01, 0x1E, 0x01};
         auto polyphonicAftertouchSysExMessage = MidiMessage::createSysExMessage(setAftertouchModePolyphonic, 7);
         sendMessageChecked(polyphonicAftertouchSysExMessage);
 
@@ -34,7 +34,7 @@ public:
         push2Colours.removeListener(this);
     }
 
-    Push2Colours& getPush2Colours() { return push2Colours; }
+    Push2Colours &getPush2Colours() { return push2Colours; }
 
     void setPush2Listener(Push2Listener *push2Listener) {
         this->push2Listener = push2Listener;
@@ -65,15 +65,14 @@ public:
                 }
 
                 if (isButtonPressControlMessage(message)) {
-                    static const Array<int> repeatableButtonCcNumbers { undo, up, down, left, right };
+                    static const Array<int> repeatableButtonCcNumbers{undo, up, down, left, right};
                     if (repeatableButtonCcNumbers.contains(ccNumber)) {
                         buttonHoldStopped();
                         currentlyHeldRepeatableButtonCcNumber = ccNumber;
                         startTimer(BUTTON_HOLD_WAIT_FOR_REPEAT_MS);
                     }
                     return handleButtonPressMidiCcNumber(ccNumber);
-                }
-                else if (isButtonReleaseControlMessage(message)) {
+                } else if (isButtonReleaseControlMessage(message)) {
                     buttonHoldStopped();
                     return handleButtonReleaseMidiCcNumber(ccNumber);
                 }
@@ -155,7 +154,7 @@ public:
     //
     // This function returns a value between -1 and 1 normalized so that (roughly) the magnitude of a full rotation would sum to 1.
     // i.e. Turning 210 'steps' to the left would total to ~-1, and turning 210 steps to the right would total ~1.
-    static float encoderCcMessageToRotationChange(const MidiMessage& message) {
+    static float encoderCcMessageToRotationChange(const MidiMessage &message) {
         auto value = float(message.getControllerValue());
         if (value <= 63)
             return value / 210.0f;
@@ -165,25 +164,39 @@ public:
 
     static uint8 ccNumberForTopKnobIndex(int topKnobIndex) {
         switch (topKnobIndex) {
-            case 0: return topKnob3;
-            case 1: return topKnob4;
-            case 2: return topKnob5;
-            case 3: return topKnob6;
-            case 4: return topKnob7;
-            case 5: return topKnob8;
-            case 6: return topKnob9;
-            case 7: return topKnob10;
-            default: return 0;
+            case 0:
+                return topKnob3;
+            case 1:
+                return topKnob4;
+            case 2:
+                return topKnob5;
+            case 3:
+                return topKnob6;
+            case 4:
+                return topKnob7;
+            case 5:
+                return topKnob8;
+            case 6:
+                return topKnob9;
+            case 7:
+                return topKnob10;
+            default:
+                return 0;
         }
     }
 
     static uint8 ccNumberForArrowButton(int direction) {
-        switch(direction) {
-            case upArrowDirection: return up;
-            case downArrowDirection: return down;
-            case leftArrowDirection: return left;
-            case rightArrowDirection: return right;
-            default: return 0;
+        switch (direction) {
+            case upArrowDirection:
+                return up;
+            case downArrowDirection:
+                return down;
+            case leftArrowDirection:
+                return left;
+            case rightArrowDirection:
+                return right;
+            default:
+                return 0;
         }
     }
 
@@ -191,10 +204,14 @@ public:
         jassert(isArrowButtonCcNumber(ccNumber));
 
         switch (ccNumber) {
-            case left: return leftArrowDirection;
-            case right: return rightArrowDirection;
-            case up: return upArrowDirection;
-            default: return downArrowDirection;
+            case left:
+                return leftArrowDirection;
+            case right:
+                return rightArrowDirection;
+            case up:
+                return upArrowDirection;
+            default:
+                return downArrowDirection;
         }
     }
 
@@ -290,16 +307,16 @@ private:
     static constexpr int BUTTON_HOLD_REPEAT_HZ = 10; // how often to repeat a repeatable button press when it is held
     static constexpr int BUTTON_HOLD_WAIT_FOR_REPEAT_MS = 500; // how long to wait before starting held button message repeats
 
-    Project& project;
-    ViewState& view;
-    Push2Colours& push2Colours;
-    Push2Listener *push2Listener {};
+    Project &project;
+    ViewState &view;
+    Push2Colours &push2Colours;
+    Push2Listener *push2Listener{};
 
-    int currentlyHeldRepeatableButtonCcNumber {0};
+    int currentlyHeldRepeatableButtonCcNumber{0};
 
-    bool holdRepeatIsHappeningNow { false };
+    bool holdRepeatIsHappeningNow{false};
 
-    void sendMessageChecked(const MidiMessage& message) const {
+    void sendMessageChecked(const MidiMessage &message) const {
         if (isOutputConnected()) {
             midiOutput->sendMessageNow(message);
         }
@@ -311,7 +328,7 @@ private:
         }
     }
 
-    void colourAdded(const Colour& colour, uint8 colourIndex) override {
+    void colourAdded(const Colour &colour, uint8 colourIndex) override {
         jassert(colourIndex > 0 && colourIndex < CHAR_MAX - 1);
 
         uint32 argb = colour.getARGB();
@@ -324,11 +341,11 @@ private:
             bgra[i * 2 + 1] = static_cast<uint8>(c & 0x80) >> 7;
         }
 
-        const uint8 setLedColourPaletteEntryCommand[] { 0x00, 0x21, 0x1D, 0x01, 0x01, 0x03, colourIndex,
-                                                        bgra[4], bgra[5], bgra[2], bgra[3], bgra[0], bgra[1], bgra[6], bgra[7] };
+        const uint8 setLedColourPaletteEntryCommand[]{0x00, 0x21, 0x1D, 0x01, 0x01, 0x03, colourIndex,
+                                                      bgra[4], bgra[5], bgra[2], bgra[3], bgra[0], bgra[1], bgra[6], bgra[7]};
         auto setLedColourPaletteEntryMessage = MidiMessage::createSysExMessage(setLedColourPaletteEntryCommand, 15);
         sendMessageChecked(setLedColourPaletteEntryMessage);
-        static const uint8 reapplyColorPaletteCommand[] { 0x00, 0x21, 0x1D, 0x01, 0x01, 0x05 };
+        static const uint8 reapplyColorPaletteCommand[]{0x00, 0x21, 0x1D, 0x01, 0x01, 0x05};
         sendMessageChecked(MidiMessage::createSysExMessage(reapplyColorPaletteCommand, 6));
     }
 

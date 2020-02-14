@@ -11,7 +11,7 @@ class GraphEditorTracks : public Component,
                           private Utilities::ValueTreeObjectList<GraphEditorTrack>,
                           public GraphEditorProcessorContainer {
 public:
-    explicit GraphEditorTracks(Project& project, TracksState &tracks, ConnectorDragListener &connectorDragListener, ProcessorGraph& graph)
+    explicit GraphEditorTracks(Project &project, TracksState &tracks, ConnectorDragListener &connectorDragListener, ProcessorGraph &graph)
             : Utilities::ValueTreeObjectList<GraphEditorTrack>(tracks.getState()), project(project),
               tracks(tracks), view(project.getView()),
               connectorDragListener(connectorDragListener), graph(graph) {
@@ -35,16 +35,16 @@ public:
             track->setBounds(trackBounds.removeFromLeft(view.getTrackWidth()));
         }
 
-        if (auto* masterTrack = findMasterTrack()) {
+        if (auto *masterTrack = findMasterTrack()) {
             masterTrack->setBounds(
                     r.removeFromTop(view.getProcessorHeight())
-                     .withX(view.getTrackWidth() * jmax(0, view.getGridViewTrackOffset() - view.getMasterViewSlotOffset()))
-                     .withWidth(ViewState::TRACK_LABEL_HEIGHT + view.getTrackWidth() * view.getNumMasterProcessorSlots())
+                            .withX(view.getTrackWidth() * jmax(0, view.getGridViewTrackOffset() - view.getMasterViewSlotOffset()))
+                            .withWidth(ViewState::TRACK_LABEL_HEIGHT + view.getTrackWidth() * view.getNumMasterProcessorSlots())
             );
         }
     }
 
-    GraphEditorTrack* findMasterTrack() const {
+    GraphEditorTrack *findMasterTrack() const {
         for (auto *track : objects) {
             if (track->isMasterTrack())
                 return track;
@@ -86,11 +86,11 @@ public:
         return nullptr;
     }
 
-    GraphEditorProcessor *getProcessorForState(const ValueTree& state) const {
+    GraphEditorProcessor *getProcessorForState(const ValueTree &state) const {
         return getProcessorForNodeId(ProcessorGraph::getNodeIdForState(state));
     }
 
-    GraphEditorTrack *getTrackForState(const ValueTree& state) const {
+    GraphEditorTrack *getTrackForState(const ValueTree &state) const {
         for (auto *track : objects) {
             if (track->getState() == state)
                 return track;
@@ -106,7 +106,7 @@ public:
         }
         return nullptr;
     }
-    
+
     void mouseDown(const MouseEvent &e) override {
         if (!e.mods.isRightButtonDown()) {
             const auto trackAndSlot = trackAndSlotAt(e);
@@ -127,14 +127,14 @@ public:
     }
 
 private:
-    Project& project;
-    TracksState& tracks;
-    ViewState& view;
+    Project &project;
+    TracksState &tracks;
+    ViewState &view;
     ConnectorDragListener &connectorDragListener;
     ProcessorGraph &graph;
 
     juce::Point<int> trackAndSlotAt(const MouseEvent &e) {
-        for (auto* track : objects)
+        for (auto *track : objects)
             if (track->contains(e.getEventRelativeTo(track).getPosition()))
                 return {track->getTrackIndex(), track->findSlotAt(e)};
         return TracksState::INVALID_TRACK_AND_SLOT;
@@ -146,7 +146,7 @@ private:
     }
 
     // TODO I think we can avoid all this nonsense and just destroy and recreate the graph children. Probably not worth the complexity
-    void valueTreeChildWillBeMovedToNewParent(ValueTree child, ValueTree& oldParent, int oldIndex, ValueTree& newParent, int newIndex) override {
+    void valueTreeChildWillBeMovedToNewParent(ValueTree child, ValueTree &oldParent, int oldIndex, ValueTree &newParent, int newIndex) override {
         if (child.hasType(IDs::PROCESSOR)) {
             auto *fromTrack = getTrackForState(oldParent);
             auto *toTrack = getTrackForState(newParent);
@@ -156,7 +156,7 @@ private:
         }
     }
 
-    void valueTreeChildHasMovedToNewParent(ValueTree child, ValueTree& oldParent, int oldIndex, ValueTree& newParent, int newIndex) override {
+    void valueTreeChildHasMovedToNewParent(ValueTree child, ValueTree &oldParent, int oldIndex, ValueTree &newParent, int newIndex) override {
         if (child.hasType(IDs::PROCESSOR)) {
             auto *fromTrack = getTrackForState(oldParent);
             auto *toTrack = getTrackForState(newParent);

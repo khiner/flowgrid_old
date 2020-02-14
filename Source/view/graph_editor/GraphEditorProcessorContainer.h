@@ -5,5 +5,6 @@
 class GraphEditorProcessorContainer {
 public:
     virtual GraphEditorProcessor *getProcessorForNodeId(AudioProcessorGraph::NodeID) const = 0;
+
     virtual ~GraphEditorProcessorContainer() = default;;
 };

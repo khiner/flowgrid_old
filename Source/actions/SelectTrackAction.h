@@ -4,7 +4,7 @@
 #include "SelectAction.h"
 
 struct SelectTrackAction : public SelectAction {
-    SelectTrackAction(const ValueTree& track, bool selected, bool deselectOthers,
+    SelectTrackAction(const ValueTree &track, bool selected, bool deselectOthers,
                       TracksState &tracks, ConnectionsState &connections, ViewState &view,
                       InputState &input, StatefulAudioProcessorContainer &audioProcessorContainer)
             : SelectAction(tracks, connections, view, input, audioProcessorContainer) {

@@ -19,7 +19,7 @@ struct SelectAction : public UndoableAction {
         this->newFocusedSlot = oldFocusedSlot;
     }
 
-    SelectAction(SelectAction* coalesceLeft, SelectAction* coalesceRight,
+    SelectAction(SelectAction *coalesceLeft, SelectAction *coalesceRight,
                  TracksState &tracks, ConnectionsState &connections, ViewState &view, InputState &input,
                  StatefulAudioProcessorContainer &audioProcessorContainer)
             : tracks(tracks), connections(connections), view(view),
@@ -43,7 +43,7 @@ struct SelectAction : public UndoableAction {
         }
     }
 
-    void setNewFocusedSlot(juce::Point<int> newFocusedSlot, bool resetDefaultExternalInputs=true) {
+    void setNewFocusedSlot(juce::Point<int> newFocusedSlot, bool resetDefaultExternalInputs = true) {
         this->newFocusedSlot = newFocusedSlot;
         if (resetDefaultExternalInputs && oldFocusedSlot.x != this->newFocusedSlot.x) {
             resetInputsAction = std::make_unique<ResetDefaultExternalInputConnectionsAction>(connections, tracks, input, audioProcessorContainer, getNewFocusedTrack());
@@ -82,11 +82,11 @@ struct SelectAction : public UndoableAction {
     }
 
     int getSizeInUnits() override {
-        return (int)sizeof(*this); //xxx should be more accurate
+        return (int) sizeof(*this); //xxx should be more accurate
     }
 
-    UndoableAction* createCoalescedAction(UndoableAction* nextAction) override {
-        if (auto* nextSelect = dynamic_cast<SelectAction*>(nextAction))
+    UndoableAction *createCoalescedAction(UndoableAction *nextAction) override {
+        if (auto *nextSelect = dynamic_cast<SelectAction *>(nextAction))
             if (canCoalesceWith(nextSelect))
                 return new SelectAction(this, nextSelect, tracks, connections, view, input, audioProcessorContainer);
 
@@ -101,7 +101,7 @@ protected:
 
     void updateViewFocus(const juce::Point<int> focusedSlot) {
         view.focusOnProcessorSlot(focusedSlot);
-        const auto& focusedTrack = tracks.getTrack(focusedSlot.x);
+        const auto &focusedTrack = tracks.getTrack(focusedSlot.x);
         bool isMaster = TracksState::isMasterTrack(focusedTrack);
         if (!isMaster)
             view.updateViewTrackOffsetToInclude(focusedSlot.x, tracks.getNumNonMasterTracks());

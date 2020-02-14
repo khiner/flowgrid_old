@@ -14,7 +14,7 @@ public:
             knownPluginListExternal.recreateFromXml(*savedPluginList);
         }
 
-        for (auto& pluginType : internalPluginDescriptions) {
+        for (auto &pluginType : internalPluginDescriptions) {
             knownPluginListInternal.addType(pluginType);
             if (!InternalPluginFormat::isIoProcessorName(pluginType.name))
                 userCreatablePluginListInternal.addType(pluginType);
@@ -27,7 +27,7 @@ public:
         formatManager.addFormat(new InternalPluginFormat());
     }
 
-    PluginListComponent* makePluginListComponent() {
+    PluginListComponent *makePluginListComponent() {
         const File &deadMansPedalFile = getUserSettings()->getFile().getSiblingFile("RecentlyCrashedPluginsList");
         return new PluginListComponent(formatManager, knownPluginListExternal, deadMansPedalFile, getUserSettings(), true);
     }
@@ -45,11 +45,11 @@ public:
         return internalFormat.audioOutDesc;
     }
 
-    KnownPluginList& getKnownPluginListExternal() {
+    KnownPluginList &getKnownPluginListExternal() {
         return knownPluginListExternal;
     }
 
-    KnownPluginList& getUserCreatablePluginListInternal() {
+    KnownPluginList &getUserCreatablePluginListInternal() {
         return userCreatablePluginListInternal;
     }
 
@@ -57,7 +57,7 @@ public:
         return pluginSortMethod;
     }
 
-    AudioPluginFormatManager& getFormatManager() {
+    AudioPluginFormatManager &getFormatManager() {
         return formatManager;
     }
 
@@ -65,7 +65,7 @@ public:
         this->pluginSortMethod = pluginSortMethod;
     }
 
-    const PluginDescription* getChosenType(const int menuId) const {
+    const PluginDescription *getChosenType(const int menuId) const {
         // TODO use `getTypes()[i]` instead (`getType` is deprecated)
         int internalPluginListIndex = userCreatablePluginListInternal.getIndexChosenByMenu(menuId);
         if (internalPluginListIndex != -1)
@@ -80,8 +80,8 @@ public:
         return description->isInstrument || description->category.equalsIgnoreCase("generator") || description->category.equalsIgnoreCase("synth");
     }
 
-    bool doesTrackAlreadyHaveGeneratorOrInstrument(const ValueTree& track) {
-        for (const auto& child : track)
+    bool doesTrackAlreadyHaveGeneratorOrInstrument(const ValueTree &track) {
+        for (const auto &child : track)
             if (auto existingDescription = getDescriptionForIdentifier(child.getProperty(IDs::id)))
                 if (isGeneratorOrInstrument(existingDescription.get()))
                     return true;
@@ -95,11 +95,11 @@ private:
     KnownPluginList knownPluginListExternal;
     KnownPluginList knownPluginListInternal;
     KnownPluginList userCreatablePluginListInternal;
-    
+
     KnownPluginList::SortMethod pluginSortMethod;
     AudioPluginFormatManager formatManager;
 
-    void changeListenerCallback(ChangeBroadcaster* changed) override {
+    void changeListenerCallback(ChangeBroadcaster *changed) override {
         if (changed == &knownPluginListExternal) {
             // save the plugin list every time it gets changed, so that if we're scanning
             // and it crashes, we've still saved the previous ones

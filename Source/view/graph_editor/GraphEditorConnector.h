@@ -12,16 +12,16 @@ struct GraphEditorConnector : public Component, public SettableTooltipClient {
         if (this->state.isValid()) {
             const ValueTree &source = state.getChildWithName(IDs::SOURCE);
             const ValueTree &destination = state.getChildWithName(IDs::DESTINATION);
-            connection = {{ProcessorGraph::getNodeIdForState(source), source[IDs::channel]},
+            connection = {{ProcessorGraph::getNodeIdForState(source),      source[IDs::channel]},
                           {ProcessorGraph::getNodeIdForState(destination), destination[IDs::channel]}};
         }
     }
-    
+
     AudioProcessorGraph::Connection getConnection() {
         return connection;
     }
 
-    const ValueTree& getState() const {
+    const ValueTree &getState() const {
         return state;
     }
 
@@ -80,17 +80,17 @@ struct GraphEditorConnector : public Component, public SettableTooltipClient {
         p2 = lastOutputPos;
 
         const Component &rootComponent = dynamic_cast<Component &>(connectorDragListener);
-        
+
         auto *sourceComponent = graphEditorProcessorContainer.getProcessorForNodeId(connection.source.nodeID);
         if (sourceComponent != nullptr) {
             p1 = rootComponent.getLocalPoint(sourceComponent,
-                    sourceComponent->getPinPos(connection.source.channelIndex, false));
+                                             sourceComponent->getPinPos(connection.source.channelIndex, false));
         }
 
         auto *destinationComponent = graphEditorProcessorContainer.getProcessorForNodeId(connection.destination.nodeID);
         if (destinationComponent != nullptr) {
             p2 = rootComponent.getLocalPoint(destinationComponent,
-                    destinationComponent->getPinPos(connection.destination.channelIndex, true));
+                                             destinationComponent->getPinPos(connection.destination.channelIndex, true));
         }
     }
 
@@ -200,8 +200,8 @@ private:
     bool dragging = false;
 
     AudioProcessorGraph::Connection connection{
-        {ProcessorGraph::NodeID(0), 0},
-        {ProcessorGraph::NodeID(0), 0}
+            {ProcessorGraph::NodeID(0), 0},
+            {ProcessorGraph::NodeID(0), 0}
     };
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (GraphEditorConnector)

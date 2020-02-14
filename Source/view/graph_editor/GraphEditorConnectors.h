@@ -10,7 +10,7 @@
 
 class GraphEditorConnectors : public Component, public Utilities::ValueTreeObjectList<GraphEditorConnector> {
 public:
-    explicit GraphEditorConnectors(ConnectionsState &connections, ConnectorDragListener &connectorDragListener, GraphEditorProcessorContainer& graphEditorProcessorContainer, ProcessorGraph& graph)
+    explicit GraphEditorConnectors(ConnectionsState &connections, ConnectorDragListener &connectorDragListener, GraphEditorProcessorContainer &graphEditorProcessorContainer, ProcessorGraph &graph)
             : Utilities::ValueTreeObjectList<GraphEditorConnector>(connections.getState()), connectorDragListener(connectorDragListener), graphEditorProcessorContainer(graphEditorProcessorContainer), graph(graph) {
         rebuildObjects();
     }

@@ -3,7 +3,7 @@
 #include "JuceHeader.h"
 
 namespace DeviceManagerUtilities {
-    static String getAudioChannelName(AudioDeviceManager& deviceManager, int channelIndex, bool input) {
+    static String getAudioChannelName(AudioDeviceManager &deviceManager, int channelIndex, bool input) {
         if (auto *audioDevice = deviceManager.getCurrentAudioDevice()) {
             auto channelNames = input ? audioDevice->getInputChannelNames() : audioDevice->getOutputChannelNames();
             auto activeChannels = input ? audioDevice->getActiveInputChannels()

@@ -13,7 +13,7 @@ class GraphEditorProcessors : public Component,
                               public Utilities::ValueTreeObjectList<GraphEditorProcessor>,
                               public GraphEditorProcessorContainer {
 public:
-    explicit GraphEditorProcessors(Project& project, const ValueTree& state, ConnectorDragListener &connectorDragListener, ProcessorGraph& graph)
+    explicit GraphEditorProcessors(Project &project, const ValueTree &state, ConnectorDragListener &connectorDragListener, ProcessorGraph &graph)
             : Utilities::ValueTreeObjectList<GraphEditorProcessor>(state),
               project(project), tracks(project.getTracks()), view(project.getView()),
               connections(project.getConnections()),
@@ -70,7 +70,7 @@ public:
     }
 
     void updateProcessorSlotColours() {
-        const static auto& baseColour = findColour(ResizableWindow::backgroundColourId).brighter(0.4);
+        const static auto &baseColour = findColour(ResizableWindow::backgroundColourId).brighter(0.4);
 
         for (int slot = 0; slot < processorSlotRectangles.size(); slot++) {
             auto fillColour = baseColour;
@@ -105,9 +105,15 @@ public:
             removeChildComponent(processor);
     }
 
-    void newObjectAdded(GraphEditorProcessor *processor) override { processor->addMouseListener(this, true); resized(); }
+    void newObjectAdded(GraphEditorProcessor *processor) override {
+        processor->addMouseListener(this, true);
+        resized();
+    }
 
-    void objectRemoved(GraphEditorProcessor *processor) override { processor->removeMouseListener(this); resized(); }
+    void objectRemoved(GraphEditorProcessor *processor) override {
+        processor->removeMouseListener(this);
+        resized();
+    }
 
     void objectOrderChanged() override { resized(); }
 
@@ -120,7 +126,7 @@ public:
 
     GraphEditorPin *findPinAt(const MouseEvent &e) const {
         for (auto *processor : objects)
-            if (auto* pin = processor->findPinAt(e))
+            if (auto *pin = processor->findPinAt(e))
                 return pin;
         return nullptr;
     }
@@ -153,12 +159,12 @@ private:
 
     ConnectorDragListener &connectorDragListener;
     ProcessorGraph &graph;
-    GraphEditorProcessor *currentlyMovingProcessor {};
+    GraphEditorProcessor *currentlyMovingProcessor{};
 
     OwnedArray<DrawableRectangle> processorSlotRectangles;
 
-    GraphEditorProcessor* findProcessorAtSlot(int slot) const {
-        for (auto* processor : objects)
+    GraphEditorProcessor *findProcessorAtSlot(int slot) const {
+        for (auto *processor : objects)
             if (processor->getSlot() == slot)
                 return processor;
         return nullptr;
@@ -166,7 +172,7 @@ private:
 
     void showPopupMenu(int slot) {
         PopupMenu menu;
-        auto* processor = findProcessorAtSlot(slot);
+        auto *processor = findProcessorAtSlot(slot);
         bool isMixerChannel = slot == tracks.getMixerChannelSlotForTrack(parent);
 
         if (processor != nullptr) {
@@ -270,7 +276,7 @@ private:
         if (isSuitableType(tree) && i == IDs::processorSlot) {
             resized();
         } else if (i == IDs::selected || i == IDs::colour ||
-                   i == IDs::selectedSlotsMask  || i == IDs::focusedTrackIndex || i == IDs::focusedProcessorSlot ||
+                   i == IDs::selectedSlotsMask || i == IDs::focusedTrackIndex || i == IDs::focusedProcessorSlot ||
                    i == IDs::gridViewTrackOffset) {
             updateProcessorSlotColours();
         } else if (i == IDs::gridViewSlotOffset || (i == IDs::masterViewSlotOffset && isMasterTrack())) {
@@ -279,7 +285,7 @@ private:
         } else if (i == IDs::numProcessorSlots || (i == IDs::numMasterProcessorSlots && isMasterTrack())) {
             auto numSlots = getNumAvailableSlots();
             while (processorSlotRectangles.size() < numSlots) {
-                auto* rect = new DrawableRectangle();
+                auto *rect = new DrawableRectangle();
                 processorSlotRectangles.add(rect);
                 addAndMakeVisible(rect);
                 rect->setCornerSize({3, 3});

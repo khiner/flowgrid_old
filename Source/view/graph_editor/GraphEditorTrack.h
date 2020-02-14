@@ -7,7 +7,7 @@
 
 class GraphEditorTrack : public Component, public Utilities::ValueTreePropertyChangeListener, public GraphEditorProcessorContainer, private ChangeListener {
 public:
-    explicit GraphEditorTrack(Project& project, TracksState& tracks, const ValueTree& state, ConnectorDragListener &connectorDragListener, ProcessorGraph& graph)
+    explicit GraphEditorTrack(Project &project, TracksState &tracks, const ValueTree &state, ConnectorDragListener &connectorDragListener, ProcessorGraph &graph)
             : project(project), tracks(tracks), view(project.getView()), state(state),
               connectorDragListener(connectorDragListener), processors(project, state, connectorDragListener, graph) {
         nameLabel.setJustificationType(Justification::centred);
@@ -62,7 +62,7 @@ public:
         }
     }
 
-    const ValueTree& getState() const { return state; }
+    const ValueTree &getState() const { return state; }
 
     bool isMasterTrack() const { return TracksState::isMasterTrack(state); }
 
@@ -82,13 +82,13 @@ public:
         processors.setBounds(r);
         const auto &nameLabelBounds = isMasterTrack()
                                       ? r.removeFromLeft(ViewState::TRACK_LABEL_HEIGHT)
-                                         .withX(view.getTrackWidth() * processors.getSlotOffset())
+                                              .withX(view.getTrackWidth() * processors.getSlotOffset())
                                       : r.removeFromTop(ViewState::TRACK_LABEL_HEIGHT)
-                                         .withY(view.getProcessorHeight() * processors.getSlotOffset());
+                                              .withY(view.getProcessorHeight() * processors.getSlotOffset());
         nameLabel.setBounds(nameLabelBounds);
         nameLabel.toFront(false);
         if (isMasterTrack()) {
-            const auto& labelBoundsFloat = nameLabelBounds.toFloat();
+            const auto &labelBoundsFloat = nameLabelBounds.toFloat();
             masterTrackName.setBoundingBox(Parallelogram<float>(labelBoundsFloat.getBottomLeft(), labelBoundsFloat.getTopLeft(), labelBoundsFloat.getBottomRight()));
             masterTrackName.setFontHeight(3 * ViewState::TRACK_LABEL_HEIGHT / 4);
             masterTrackName.toFront(false);
@@ -117,9 +117,9 @@ public:
     }
 
 private:
-    Project& project;
-    TracksState& tracks;
-    ViewState& view;
+    Project &project;
+    TracksState &tracks;
+    ViewState &view;
     ValueTree state;
 
     Label nameLabel;

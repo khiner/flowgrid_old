@@ -15,15 +15,16 @@ struct DefaultConnectProcessorAction : public CreateOrDeleteConnectionsAction {
         if (fromProcessor.isValid() && toNodeId.isValid()) {
             const auto &defaultConnectionChannels = getDefaultConnectionChannels(connectionType);
             for (auto channel : defaultConnectionChannels) {
-                AudioProcessorGraph::Connection connection = {{fromNodeId, channel}, {toNodeId, channel}};
+                AudioProcessorGraph::Connection connection = {{fromNodeId, channel},
+                                                              {toNodeId,   channel}};
                 coalesceWith(CreateConnectionAction(connection, true, connections, audioProcessorContainer));
             }
         }
     }
 
-    static const Array<int>& getDefaultConnectionChannels(ConnectionType connectionType) {
-        static Array<int> defaultAudioConnectionChannels {0, 1};
-        static Array<int> defaultMidiConnectionChannels {AudioProcessorGraph::midiChannelIndex};
+    static const Array<int> &getDefaultConnectionChannels(ConnectionType connectionType) {
+        static Array<int> defaultAudioConnectionChannels{0, 1};
+        static Array<int> defaultMidiConnectionChannels{AudioProcessorGraph::midiChannelIndex};
         return connectionType == audio ? defaultAudioConnectionChannels : defaultMidiConnectionChannels;
     }
 

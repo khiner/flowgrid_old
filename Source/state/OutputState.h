@@ -10,8 +10,8 @@
 class OutputState : public Stateful, private ChangeListener, private ValueTree::Listener {
 public:
     OutputState(TracksState &tracks, ConnectionsState &connections,
-                         StatefulAudioProcessorContainer& audioProcessorContainer, PluginManager& pluginManager,
-                         UndoManager &undoManager, AudioDeviceManager& deviceManager)
+                StatefulAudioProcessorContainer &audioProcessorContainer, PluginManager &pluginManager,
+                UndoManager &undoManager, AudioDeviceManager &deviceManager)
             : tracks(tracks), connections(connections),
               audioProcessorContainer(audioProcessorContainer), pluginManager(pluginManager),
               undoManager(undoManager), deviceManager(deviceManager) {
@@ -25,9 +25,9 @@ public:
         output.removeListener(this);
     }
 
-    ValueTree& getState() override { return output; }
+    ValueTree &getState() override { return output; }
 
-    void loadFromState(const ValueTree& state) override {
+    void loadFromState(const ValueTree &state) override {
         output.copyPropertiesFrom(state, nullptr);
         Utilities::moveAllChildren(state, output, nullptr);
     }
@@ -46,15 +46,15 @@ private:
 
     TracksState &tracks;
     ConnectionsState &connections;
-    StatefulAudioProcessorContainer& audioProcessorContainer;
+    StatefulAudioProcessorContainer &audioProcessorContainer;
     PluginManager &pluginManager;
 
     UndoManager &undoManager;
-    AudioDeviceManager& deviceManager;
+    AudioDeviceManager &deviceManager;
 
     void syncOutputDevicesWithDeviceManager() {
         Array<ValueTree> outputProcessorsToDelete;
-        for (const auto& outputProcessor : output) {
+        for (const auto &outputProcessor : output) {
             if (outputProcessor.hasProperty(IDs::deviceName)) {
                 const String &deviceName = outputProcessor[IDs::deviceName];
                 if (!MidiOutput::getDevices().contains(deviceName) || !deviceManager.isMidiOutputEnabled(deviceName)) {
@@ -62,10 +62,10 @@ private:
                 }
             }
         }
-        for (const auto& outputProcessor : outputProcessorsToDelete) {
+        for (const auto &outputProcessor : outputProcessorsToDelete) {
             undoManager.perform(new DeleteProcessorAction(outputProcessor, tracks, connections, audioProcessorContainer));
         }
-        for (const auto& deviceName : MidiOutput::getDevices()) {
+        for (const auto &deviceName : MidiOutput::getDevices()) {
             if (deviceManager.isMidiOutputEnabled(deviceName) &&
                 !output.getChildWithProperty(IDs::deviceName, deviceName).isValid()) {
                 auto midiOutputProcessor = CreateProcessorAction::createProcessor(MidiOutputProcessor::getPluginDescription());
@@ -75,7 +75,7 @@ private:
         }
     }
 
-    void changeListenerCallback(ChangeBroadcaster* source) override {
+    void changeListenerCallback(ChangeBroadcaster *source) override {
         if (source == &deviceManager) {
             deviceManager.updateEnabledMidiInputsAndOutputs();
             syncOutputDevicesWithDeviceManager();

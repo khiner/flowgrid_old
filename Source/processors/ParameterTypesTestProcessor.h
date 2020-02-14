@@ -32,7 +32,7 @@ public:
         return DefaultAudioProcessor::getPluginDescription(name(), false, false);
     }
 
-    void processBlock(AudioSampleBuffer& buffer, MidiBuffer& midiMessages) override {}
+    void processBlock(AudioSampleBuffer &buffer, MidiBuffer &midiMessages) override {}
 
 private:
     AudioParameterBool *boolParameter;
