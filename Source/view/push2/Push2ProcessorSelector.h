@@ -183,9 +183,10 @@ public:
 
         rootTree = KnownPluginList::PluginTree();
 
-        auto internalPluginTree = project.getUserCreatablePluginListInternal().createTree(project.getPluginSortMethod());
+        PluginManager &pluginManager = project.getPluginManager();
+        auto internalPluginTree = pluginManager.getUserCreatablePluginListInternal().createTree(pluginManager.getPluginSortMethod());
         internalPluginTree->folder = "Internal";
-        auto externalPluginTree = project.getPluginListExternal().createTree(project.getPluginSortMethod());
+        auto externalPluginTree = pluginManager.getKnownPluginListExternal().createTree(pluginManager.getPluginSortMethod());
         externalPluginTree->folder = "External";
         internalPluginTree->parent = &rootTree;
         externalPluginTree->parent = &rootTree;

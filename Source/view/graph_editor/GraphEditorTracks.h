@@ -2,7 +2,6 @@
 
 #include <ValueTreeObjectList.h>
 #include <state/Project.h>
-#include <ProcessorGraph.h>
 #include "JuceHeader.h"
 #include "GraphEditorTrack.h"
 #include "ConnectorDragListener.h"
@@ -11,10 +10,10 @@ class GraphEditorTracks : public Component,
                           private Utilities::ValueTreeObjectList<GraphEditorTrack>,
                           public GraphEditorProcessorContainer {
 public:
-    explicit GraphEditorTracks(Project &project, TracksState &tracks, ConnectorDragListener &connectorDragListener, ProcessorGraph &graph)
+    explicit GraphEditorTracks(Project &project, TracksState &tracks, ConnectorDragListener &connectorDragListener)
             : Utilities::ValueTreeObjectList<GraphEditorTrack>(tracks.getState()), project(project),
               tracks(tracks), view(project.getView()),
-              connectorDragListener(connectorDragListener), graph(graph) {
+              connectorDragListener(connectorDragListener) {
         rebuildObjects();
         view.addListener(this);
     }
@@ -57,7 +56,7 @@ public:
     }
 
     GraphEditorTrack *createNewObject(const ValueTree &tree) override {
-        auto *track = new GraphEditorTrack(project, tracks, tree, connectorDragListener, graph);
+        auto *track = new GraphEditorTrack(project, tracks, tree, connectorDragListener);
         addAndMakeVisible(track);
         track->addMouseListener(this, true);
         return track;
@@ -86,15 +85,11 @@ public:
         return nullptr;
     }
 
-    GraphEditorProcessor *getProcessorForState(const ValueTree &state) const {
-        return getProcessorForNodeId(ProcessorGraph::getNodeIdForState(state));
-    }
-
     GraphEditorTrack *getTrackForState(const ValueTree &state) const {
-        for (auto *track : objects) {
+        for (auto *track : objects)
             if (track->getState() == state)
                 return track;
-        }
+
         return nullptr;
     }
 
@@ -131,7 +126,6 @@ private:
     TracksState &tracks;
     ViewState &view;
     ConnectorDragListener &connectorDragListener;
-    ProcessorGraph &graph;
 
     juce::Point<int> trackAndSlotAt(const MouseEvent &e) {
         for (auto *track : objects)

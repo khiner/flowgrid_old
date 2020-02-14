@@ -4,7 +4,6 @@
 #include "ConnectorDragListener.h"
 #include "Utilities.h"
 #include "state/Identifiers.h"
-#include "ProcessorGraph.h"
 
 struct GraphEditorPin : public Component, public SettableTooltipClient, private Utilities::ValueTreePropertyChangeListener {
     GraphEditorPin(ValueTree state, ConnectorDragListener &connectorDragListener)

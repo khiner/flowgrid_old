@@ -5,7 +5,6 @@
 #include "GraphEditorProcessor.h"
 #include "GraphEditorProcessorContainer.h"
 #include "ConnectorDragListener.h"
-#include "ProcessorGraph.h"
 #include "GraphEditorPin.h"
 #include "view/CustomColourIds.h"
 
@@ -13,11 +12,11 @@ class GraphEditorProcessors : public Component,
                               public Utilities::ValueTreeObjectList<GraphEditorProcessor>,
                               public GraphEditorProcessorContainer {
 public:
-    explicit GraphEditorProcessors(Project &project, const ValueTree &state, ConnectorDragListener &connectorDragListener, ProcessorGraph &graph)
+    explicit GraphEditorProcessors(Project &project, const ValueTree &state, ConnectorDragListener &connectorDragListener)
             : Utilities::ValueTreeObjectList<GraphEditorProcessor>(state),
               project(project), tracks(project.getTracks()), view(project.getView()),
               connections(project.getConnections()),
-              viewState(view.getState()), connectorDragListener(connectorDragListener), graph(graph) {
+              viewState(view.getState()), pluginManager(project.getPluginManager()), connectorDragListener(connectorDragListener) {
         rebuildObjects();
         viewState.addListener(this);
         valueTreePropertyChanged(viewState, isMasterTrack() ? IDs::numMasterProcessorSlots : IDs::numProcessorSlots);
@@ -93,7 +92,7 @@ public:
     GraphEditorProcessor *createNewObject(const ValueTree &tree) override {
         GraphEditorProcessor *processor = currentlyMovingProcessor != nullptr
                                           ? currentlyMovingProcessor
-                                          : new GraphEditorProcessor(project, tracks, tree, connectorDragListener, graph);
+                                          : new GraphEditorProcessor(project, tracks, tree, connectorDragListener);
         addAndMakeVisible(processor);
         return processor;
     }
@@ -157,8 +156,8 @@ private:
     ConnectionsState &connections;
     ValueTree viewState;
 
+    PluginManager &pluginManager;
     ConnectorDragListener &connectorDragListener;
-    ProcessorGraph &graph;
     GraphEditorProcessor *currentlyMovingProcessor{};
 
     OwnedArray<DrawableRectangle> processorSlotRectangles;
@@ -178,7 +177,7 @@ private:
         if (processor != nullptr) {
             if (!isMixerChannel) {
                 PopupMenu processorSelectorSubmenu;
-                project.addPluginsToMenu(processorSelectorSubmenu, parent);
+                pluginManager.addPluginsToMenu(processorSelectorSubmenu, parent);
                 menu.addSubMenu("Insert new processor", processorSelectorSubmenu);
                 menu.addSeparator();
             }
@@ -205,7 +204,7 @@ private:
 
             menu.showMenuAsync({}, ModalCallbackFunction::create
                     ([this, processor, slot](int result) {
-                        if (auto *description = project.getChosenType(result)) {
+                        if (auto *description = pluginManager.getChosenType(result)) {
                             project.createProcessor(*description, slot);
                             return;
                         }
@@ -246,14 +245,14 @@ private:
             if (isMixerChannel)
                 menu.addItem(ADD_MIXER_CHANNEL_MENU_ID, "Add mixer channel");
             else
-                project.addPluginsToMenu(menu, parent);
+                pluginManager.addPluginsToMenu(menu, parent);
 
             menu.showMenuAsync({}, ModalCallbackFunction::create([this, slot, isMixerChannel](int result) {
                 if (isMixerChannel) {
                     if (result == ADD_MIXER_CHANNEL_MENU_ID) {
                         getCommandManager().invokeDirectly(CommandIDs::addMixerChannel, false);
                     }
-                } else if (auto *description = project.getChosenType(result)) {
+                } else if (auto *description = pluginManager.getChosenType(result)) {
                     project.createProcessor(*description, slot);
                 }
             }));

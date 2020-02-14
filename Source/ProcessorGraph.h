@@ -1,7 +1,6 @@
 #pragma once
 
 #include <state/Identifiers.h>
-#include <view/PluginWindow.h>
 #include <processors/StatefulAudioProcessorWrapper.h>
 
 #include "JuceHeader.h"
@@ -15,12 +14,10 @@ class ProcessorGraph : public AudioProcessorGraph, public StatefulAudioProcessor
                        private ValueTree::Listener, private Timer {
 public:
     explicit ProcessorGraph(Project &project, TracksState &tracks, ConnectionsState &connections,
-                            InputState &input, OutputState &output,
-                            UndoManager &undoManager, AudioDeviceManager &deviceManager,
+                            InputState &input, OutputState &output, UndoManager &undoManager, AudioDeviceManager &deviceManager,
                             Push2MidiCommunicator &push2MidiCommunicator)
-            : undoManager(undoManager), project(project),
-              tracks(tracks), connections(connections), input(input), output(output),
-              deviceManager(deviceManager), push2MidiCommunicator(push2MidiCommunicator) {
+            : project(project), tracks(tracks), connections(connections), input(input), output(output),
+              undoManager(undoManager), deviceManager(deviceManager), pluginManager(project.getPluginManager()), push2MidiCommunicator(push2MidiCommunicator) {
         enableAllBuses();
 
         tracks.addListener(this);
@@ -88,26 +85,6 @@ public:
         return getProcessorWrapperForState(gain);
     }
 
-    ResizableWindow *getOrCreateWindowFor(Node *node, PluginWindow::Type type) {
-        jassert(node != nullptr);
-
-        for (auto *w : activePluginWindows)
-            if (w->node->nodeID == node->nodeID && w->type == type)
-                return w;
-
-        if (auto *processor = node->getProcessor())
-            return activePluginWindows.add(new PluginWindow(node, type, activePluginWindows));
-
-        return nullptr;
-    }
-
-    bool closeAnyOpenPluginWindows() {
-        bool wasEmpty = activePluginWindows.isEmpty();
-        activePluginWindows.clear();
-        return !wasEmpty;
-    }
-
-    UndoManager &undoManager;
 private:
     std::map<NodeID, std::unique_ptr<StatefulAudioProcessorWrapper> > processorWrapperForNodeId;
 
@@ -117,10 +94,10 @@ private:
     InputState &input;
     OutputState &output;
 
+    UndoManager &undoManager;
     AudioDeviceManager &deviceManager;
+    PluginManager &pluginManager;
     Push2MidiCommunicator &push2MidiCommunicator;
-
-    OwnedArray<PluginWindow> activePluginWindows;
 
     bool graphUpdatesArePaused{false};
 
@@ -130,8 +107,8 @@ private:
 
     void addProcessor(const ValueTree &processorState) {
         static String errorMessage = "Could not create processor";
-        auto description = project.getDescriptionForIdentifier(processorState[IDs::id]);
-        auto processor = project.getFormatManager().createPluginInstance(*description, getSampleRate(), getBlockSize(), errorMessage);
+        auto description = pluginManager.getDescriptionForIdentifier(processorState[IDs::id]);
+        auto processor = pluginManager.getFormatManager().createPluginInstance(*description, getSampleRate(), getBlockSize(), errorMessage);
         if (processorState.hasProperty(IDs::state)) {
             MemoryBlock memoryBlock;
             memoryBlock.fromBase64Encoding(processorState[IDs::state].toString());
@@ -170,7 +147,6 @@ private:
 
     void removeProcessor(const ValueTree &processor) {
         auto *processorWrapper = getProcessorWrapperForState(processor);
-        jassert(processorWrapper);
         const NodeID nodeId = getNodeIdForState(processor);
 
         // disconnect should have already been called before delete! (to avoid nested undo actions)
@@ -187,12 +163,6 @@ private:
         processorWrapperForNodeId.erase(nodeId);
         nodes.removeObject(AudioProcessorGraph::getNodeForId(nodeId));
         topologyChanged();
-
-        for (int i = activePluginWindows.size(); --i >= 0;) {
-            if (!nodes.contains(activePluginWindows.getUnchecked(i)->node)) {
-                activePluginWindows.remove(i);
-            }
-        }
     }
 
     void recursivelyAddProcessors(const ValueTree &state) {
@@ -200,9 +170,8 @@ private:
             addProcessor(state);
             return;
         }
-        for (const ValueTree &child : state) {
+        for (const ValueTree &child : state)
             recursivelyAddProcessors(child);
-        }
     }
 
     void updateIoChannelEnabled(const ValueTree &parent, const ValueTree &channel, bool enabled) {

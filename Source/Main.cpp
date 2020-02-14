@@ -434,7 +434,7 @@ public:
         };
 
         void tryToQuitApplication() {
-            if (owner.processorGraph.closeAnyOpenPluginWindows()) {
+            if (owner.project.getPluginManager().closeAnyOpenPluginWindows()) {
                 // Really important thing to note here: if the last call just deleted any plugin windows,
                 // we won't exit immediately - instead we'll use our AsyncQuitRetrier to let the message
                 // loop run for another brief moment, then try again. This will give any plugins a chance

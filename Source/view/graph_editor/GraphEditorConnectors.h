@@ -4,14 +4,13 @@
 
 #include <ValueTreeObjectList.h>
 #include <state/Project.h>
-#include <ProcessorGraph.h>
 #include "JuceHeader.h"
 #include "GraphEditorConnector.h"
 
 class GraphEditorConnectors : public Component, public Utilities::ValueTreeObjectList<GraphEditorConnector> {
 public:
     explicit GraphEditorConnectors(ConnectionsState &connections, ConnectorDragListener &connectorDragListener, GraphEditorProcessorContainer &graphEditorProcessorContainer, ProcessorGraph &graph)
-            : Utilities::ValueTreeObjectList<GraphEditorConnector>(connections.getState()), connectorDragListener(connectorDragListener), graphEditorProcessorContainer(graphEditorProcessorContainer), graph(graph) {
+            : Utilities::ValueTreeObjectList<GraphEditorConnector>(connections.getState()), connectorDragListener(connectorDragListener), graphEditorProcessorContainer(graphEditorProcessorContainer) {
         rebuildObjects();
     }
 
@@ -23,7 +22,7 @@ public:
         {
             const ScopedLockType sl(arrayLock);
             for (auto *connector : objects) {
-                const Point<int> &localPoint = connector->getLocalPoint(this, juce::Point<int>(x, y));
+                const juce::Point<int> &localPoint = connector->getLocalPoint(this, juce::Point<int>(x, y));
                 if (connector->hitTest(localPoint.x, localPoint.y))
                     return true;
             }
@@ -65,5 +64,4 @@ public:
 private:
     ConnectorDragListener &connectorDragListener;
     GraphEditorProcessorContainer &graphEditorProcessorContainer;
-    ProcessorGraph &graph;
 };

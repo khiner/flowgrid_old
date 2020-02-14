@@ -8,11 +8,11 @@
 
 struct DeleteTrackAction : public UndoableAction {
     DeleteTrackAction(const ValueTree &trackToDelete, TracksState &tracks, ConnectionsState &connections,
-                      StatefulAudioProcessorContainer &audioProcessorContainer)
+                      StatefulAudioProcessorContainer &audioProcessorContainer, PluginManager &pluginManager)
             : trackToDelete(trackToDelete), trackIndex(trackToDelete.getParent().indexOf(trackToDelete)),
               tracks(tracks) {
         for (const auto &processor : trackToDelete)
-            deleteProcessorActions.add(new DeleteProcessorAction(processor, tracks, connections, audioProcessorContainer));
+            deleteProcessorActions.add(new DeleteProcessorAction(processor, tracks, connections, audioProcessorContainer, pluginManager));
     }
 
     bool perform() override {

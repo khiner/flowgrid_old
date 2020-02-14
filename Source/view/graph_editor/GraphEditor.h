@@ -9,7 +9,7 @@
 class GraphEditor : public Component {
 public:
     GraphEditor(ProcessorGraph &graph, Project &project)
-            : graph(graph), project(project),
+            : project(project),
               graphPanel(graph, project, graphPanelViewport),
               selectionEditor(project, graph) {
         addAndMakeVisible(statusBar);
@@ -28,7 +28,6 @@ public:
     }
 
 private:
-    ProcessorGraph &graph;
     Project &project;
     Viewport graphPanelViewport;
     GraphEditorPanel graphPanel;

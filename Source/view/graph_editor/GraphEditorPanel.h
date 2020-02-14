@@ -10,12 +10,12 @@ class GraphEditorPanel
         : public Component, public ConnectorDragListener, public GraphEditorProcessorContainer,
           private ValueTree::Listener {
 public:
-    GraphEditorPanel(ProcessorGraph &g, Project &project, Viewport &parentViewport)
-            : graph(g), project(project), tracks(project.getTracks()),
+    GraphEditorPanel(ProcessorGraph &graph, Project &project, Viewport &parentViewport)
+            : graph(graph), project(project), tracks(project.getTracks()),
               view(project.getView()), parentViewport(parentViewport) {
         project.addListener(this);
 
-        addAndMakeVisible(*(graphEditorTracks = std::make_unique<GraphEditorTracks>(project, project.getTracks(), *this, graph)));
+        addAndMakeVisible(*(graphEditorTracks = std::make_unique<GraphEditorTracks>(project, project.getTracks(), *this)));
         addAndMakeVisible(*(connectors = std::make_unique<GraphEditorConnectors>(project.getConnections(), *this, *this, graph)));
         unfocusOverlay.setFill(findColour(CustomColourIds::unfocusedOverlayColourId));
         addChildComponent(unfocusOverlay);
@@ -286,20 +286,20 @@ private:
             // TODO this should use the project-listener methods (only ProcessorGraph should listen to this directly),
             //  but currently this is an order-dependent snowflake
             if (child[IDs::name] == MidiInputProcessor::name()) {
-                auto *midiInputProcessor = new GraphEditorProcessor(project, tracks, child, *this, graph);
+                auto *midiInputProcessor = new GraphEditorProcessor(project, tracks, child, *this);
                 addAndMakeVisible(midiInputProcessor);
                 midiInputProcessors.addSorted(processorComparator, midiInputProcessor);
                 resized();
             } else if (child[IDs::name] == MidiOutputProcessor::name()) {
-                auto *midiOutputProcessor = new GraphEditorProcessor(project, tracks, child, *this, graph);
+                auto *midiOutputProcessor = new GraphEditorProcessor(project, tracks, child, *this);
                 addAndMakeVisible(midiOutputProcessor);
                 midiOutputProcessors.addSorted(processorComparator, midiOutputProcessor);
                 resized();
             } else if (child[IDs::name] == "Audio Input") {
-                addAndMakeVisible(*(audioInputProcessor = std::make_unique<GraphEditorProcessor>(project, tracks, child, *this, graph, true)));
+                addAndMakeVisible(*(audioInputProcessor = std::make_unique<GraphEditorProcessor>(project, tracks, child, *this, true)));
                 resized();
             } else if (child[IDs::name] == "Audio Output") {
-                addAndMakeVisible(*(audioOutputProcessor = std::make_unique<GraphEditorProcessor>(project, tracks, child, *this, graph, true)));
+                addAndMakeVisible(*(audioOutputProcessor = std::make_unique<GraphEditorProcessor>(project, tracks, child, *this, true)));
                 resized();
             }
             connectors->updateConnectors();

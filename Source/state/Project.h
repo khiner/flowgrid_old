@@ -176,7 +176,7 @@ public:
         undoManager.perform(new CreateTrackAction(isMaster, addMixer, {}, tracks, connections, view));
         if (addMixer)
             undoManager.perform(new CreateProcessorAction(MixerChannelProcessor::getPluginDescription(),
-                                                          tracks.indexOf(mostRecentlyCreatedTrack), tracks, view, *this));
+                                                          tracks.indexOf(mostRecentlyCreatedTrack), tracks, view, *this, pluginManager));
         setTrackSelected(mostRecentlyCreatedTrack, true);
         updateAllDefaultConnections();
     }
@@ -195,7 +195,7 @@ public:
             endDraggingProcessor();
 
         undoManager.beginNewTransaction();
-        undoManager.perform(new DeleteSelectedItemsAction(tracks, connections, *this));
+        undoManager.perform(new DeleteSelectedItemsAction(tracks, connections, *statefulAudioProcessorContainer, pluginManager));
         if (view.getFocusedTrackIndex() >= tracks.getNumTracks() && tracks.getNumTracks() > 0)
             setTrackSelected(tracks.getTrack(tracks.getNumTracks() - 1), true);
         updateAllDefaultConnections(false);
@@ -205,7 +205,7 @@ public:
         if (isCurrentlyDraggingProcessor())
             endDraggingProcessor();
         undoManager.beginNewTransaction();
-        undoManager.perform(new DuplicateSelectedItemsAction(tracks, connections, view, input, *this));
+        undoManager.perform(new DuplicateSelectedItemsAction(tracks, connections, view, input, *statefulAudioProcessorContainer, pluginManager));
         updateAllDefaultConnections(false);
     }
 
@@ -246,7 +246,7 @@ public:
 
         if (trackAndSlot == initialDraggingTrackAndSlot ||
             undoManager.perform(new MoveSelectedItemsAction(initialDraggingTrackAndSlot, trackAndSlot, isShiftHeld(),
-                                                            tracks, connections, view, input, output, *this))) {
+                                                            tracks, connections, view, input, output, *statefulAudioProcessorContainer))) {
             currentlyDraggingTrackAndSlot = trackAndSlot;
         }
     }
@@ -271,7 +271,7 @@ public:
         if (selected) {
             const juce::Point<int> trackAndSlot(tracks.indexOf(track), slot);
             if (push2ShiftHeld || shiftHeld)
-                selectAction = new SelectRectangleAction(selectionStartTrackAndSlot, trackAndSlot, tracks, connections, view, input, *this);
+                selectAction = new SelectRectangleAction(selectionStartTrackAndSlot, trackAndSlot, tracks, connections, view, input, *statefulAudioProcessorContainer);
             else
                 selectionStartTrackAndSlot = trackAndSlot;
         }
@@ -279,7 +279,7 @@ public:
             if (slot == -1)
                 selectAction = new SelectTrackAction(track, selected, deselectOthers, tracks, connections, view, input, *this);
             else
-                selectAction = new SelectProcessorSlotAction(track, slot, selected, selected && deselectOthers, tracks, connections, view, input, *this);
+                selectAction = new SelectProcessorSlotAction(track, slot, selected, selected && deselectOthers, tracks, connections, view, input, *statefulAudioProcessorContainer);
         }
         undoManager.perform(selectAction);
     }
@@ -383,43 +383,7 @@ public:
         sendChangeMessage();
     }
 
-    void addPluginsToMenu(PopupMenu &menu, const ValueTree &track) const {
-        StringArray disabledPluginIds;
-
-        PopupMenu internalSubMenu;
-        PopupMenu externalSubMenu;
-
-        getUserCreatablePluginListInternal().addToMenu(internalSubMenu, pluginManager.getPluginSortMethod(), disabledPluginIds);
-        getPluginListExternal().addToMenu(externalSubMenu, pluginManager.getPluginSortMethod(), {}, String(), getUserCreatablePluginListInternal().getNumTypes());
-
-        menu.addSubMenu("Internal", internalSubMenu, true);
-        menu.addSeparator();
-        menu.addSubMenu("External", externalSubMenu, true);
-    }
-
-    KnownPluginList &getUserCreatablePluginListInternal() const {
-        return pluginManager.getUserCreatablePluginListInternal();
-    }
-
-    KnownPluginList &getPluginListExternal() const {
-        return pluginManager.getKnownPluginListExternal();
-    }
-
-    KnownPluginList::SortMethod getPluginSortMethod() const {
-        return pluginManager.getPluginSortMethod();
-    }
-
-    AudioPluginFormatManager &getFormatManager() const {
-        return pluginManager.getFormatManager();
-    }
-
-    const PluginDescription *getChosenType(const int menuId) const {
-        return pluginManager.getChosenType(menuId);
-    }
-
-    std::unique_ptr<PluginDescription> getDescriptionForIdentifier(const String &identifier) const {
-        return pluginManager.getDescriptionForIdentifier(identifier);
-    }
+    PluginManager &getPluginManager() const { return pluginManager; }
 
     //==============================================================================================================
     void newDocument() {
@@ -518,9 +482,9 @@ private:
         }
 
         if (slot == -1)
-            undoManager.perform(new CreateProcessorAction(description, tracks.indexOf(track), tracks, view, *this));
+            undoManager.perform(new CreateProcessorAction(description, tracks.indexOf(track), tracks, view, *statefulAudioProcessorContainer, pluginManager));
         else
-            undoManager.perform(new CreateProcessorAction(description, tracks.indexOf(track), slot, tracks, view, *this));
+            undoManager.perform(new CreateProcessorAction(description, tracks.indexOf(track), slot, tracks, view, *statefulAudioProcessorContainer, pluginManager));
 
         selectProcessor(mostRecentlyCreatedProcessor);
         updateAllDefaultConnections();
@@ -540,15 +504,15 @@ private:
     }
 
     void updateAllDefaultConnections(bool makeInvalidDefaultsIntoCustom = false) {
-        undoManager.perform(new UpdateAllDefaultConnectionsAction(makeInvalidDefaultsIntoCustom, true, tracks, connections, input, output, *this));
+        undoManager.perform(new UpdateAllDefaultConnectionsAction(makeInvalidDefaultsIntoCustom, true, tracks, connections, input, output, *statefulAudioProcessorContainer));
     }
 
     void resetDefaultExternalInputs() {
-        undoManager.perform(new ResetDefaultExternalInputConnectionsAction(connections, tracks, input, *this));
+        undoManager.perform(new ResetDefaultExternalInputConnectionsAction(connections, tracks, input, *statefulAudioProcessorContainer));
     }
 
     void updateDefaultConnectionsForProcessor(const ValueTree &processor, bool makeInvalidDefaultsIntoCustom = false) {
-        undoManager.perform(new UpdateProcessorDefaultConnectionsAction(processor, makeInvalidDefaultsIntoCustom, connections, output, *this));
+        undoManager.perform(new UpdateProcessorDefaultConnectionsAction(processor, makeInvalidDefaultsIntoCustom, connections, output, *statefulAudioProcessorContainer));
     }
 
     void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override {

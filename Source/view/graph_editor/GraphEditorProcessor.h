@@ -4,15 +4,14 @@
 #include <view/BasicWindow.h>
 #include "JuceHeader.h"
 #include "ConnectorDragListener.h"
-#include "ProcessorGraph.h"
 #include "GraphEditorPin.h"
 #include "view/processor_editor/ParametersPanel.h"
 
 class GraphEditorProcessor : public Component, public ValueTree::Listener {
 public:
-    GraphEditorProcessor(Project &project, TracksState &tracks, const ValueTree &state, ConnectorDragListener &connectorDragListener, ProcessorGraph &graph, bool showChannelLabels = false)
+    GraphEditorProcessor(Project &project, TracksState &tracks, const ValueTree &state, ConnectorDragListener &connectorDragListener, bool showChannelLabels = false)
             : project(project), tracks(tracks), state(state), connectorDragListener(connectorDragListener),
-              graph(graph), showChannelLabels(showChannelLabels) {
+              audioProcessorContainer(project), pluginManager(project.getPluginManager()), showChannelLabels(showChannelLabels) {
         this->state.addListener(this);
         valueTreePropertyChanged(this->state, IDs::name);
         if (this->state.hasProperty(IDs::deviceName))
@@ -131,7 +130,7 @@ public:
         }
     }
 
-    Point<float> getPinPos(int index, bool isInput) const {
+    juce::Point<float> getPinPos(int index, bool isInput) const {
         for (auto *pin : pins)
             if (pin->getChannel() == index && isInput == pin->isInput())
                 return pin->getBounds().getCentre().toFloat();
@@ -149,23 +148,23 @@ public:
     }
 
     AudioProcessorGraph::Node::Ptr getNode() const {
-        return graph.getNodeForState(state);
+        return audioProcessorContainer.getNodeForId(StatefulAudioProcessorContainer::getNodeIdForState(state));
     }
 
-    StatefulAudioProcessorWrapper *getProcessorWrapper() {
-        return graph.getProcessorWrapperForState(state);
+    StatefulAudioProcessorWrapper *getProcessorWrapper() const {
+        return audioProcessorContainer.getProcessorWrapperForState(state);
     }
 
     AudioProcessor *getAudioProcessor() const {
-        if (auto node = getNode())
-            return node->getProcessor();
+        if (auto *processorWrapper = getProcessorWrapper())
+            return processorWrapper->processor;
 
         return {};
     }
 
     void showWindow(PluginWindow::Type type) {
         if (auto node = getNode())
-            if (auto *w = graph.getOrCreateWindowFor(node, type))
+            if (auto *w = pluginManager.getOrCreateWindowFor(node, type))
                 w->toFront(true);
     }
 
@@ -184,7 +183,9 @@ private:
     DrawableText nameLabel;
     std::unique_ptr<ParametersPanel> parametersPanel;
     ConnectorDragListener &connectorDragListener;
-    ProcessorGraph &graph;
+    StatefulAudioProcessorContainer &audioProcessorContainer;
+    PluginManager &pluginManager;
+
     OwnedArray<GraphEditorPin> pins;
     const bool showChannelLabels;
     int pinSize = 16;
@@ -209,10 +210,10 @@ private:
     }
 
     GraphEditorPin *findPinWithState(const ValueTree &state) {
-        for (auto *pin : pins) {
+        for (auto *pin : pins)
             if (pin->getState() == state)
                 return pin;
-        }
+
         return nullptr;
     }
 
@@ -268,10 +269,4 @@ private:
             pins.removeObject(pinToRemove);
         }
     }
-
-    void valueTreeChildOrderChanged(ValueTree &, int, int) override {}
-
-    void valueTreeParentChanged(ValueTree &) override {}
-
-    void valueTreeRedirected(ValueTree &) override {}
 };

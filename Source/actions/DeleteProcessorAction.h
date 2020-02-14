@@ -8,15 +8,16 @@
 
 struct DeleteProcessorAction : public UndoableAction {
     DeleteProcessorAction(const ValueTree &processorToDelete, TracksState &tracks, ConnectionsState &connections,
-                          StatefulAudioProcessorContainer &audioProcessorContainer)
+                          StatefulAudioProcessorContainer &audioProcessorContainer, PluginManager &pluginManager)
             : parentTrack(processorToDelete.getParent()), processorToDelete(processorToDelete),
               processorIndex(parentTrack.indexOf(processorToDelete)),
               disconnectProcessorAction(DisconnectProcessorAction(connections, processorToDelete, all, true, true, true, true)),
-              audioProcessorContainer(audioProcessorContainer) {}
+              audioProcessorContainer(audioProcessorContainer), pluginManager(pluginManager) {}
 
     bool perform() override {
         disconnectProcessorAction.perform();
         parentTrack.removeChild(processorToDelete, nullptr);
+        pluginManager.closeWindowFor(StatefulAudioProcessorContainer::getNodeIdForState(processorToDelete));
         audioProcessorContainer.onProcessorDestroyed(processorToDelete);
         return true;
     }
@@ -40,6 +41,7 @@ private:
     DisconnectProcessorAction disconnectProcessorAction;
 
     StatefulAudioProcessorContainer &audioProcessorContainer;
+    PluginManager &pluginManager;
 
     JUCE_DECLARE_NON_COPYABLE(DeleteProcessorAction)
 };

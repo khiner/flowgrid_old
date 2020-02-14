@@ -7,19 +7,19 @@
 
 struct CreateProcessorAction : public UndoableAction {
     CreateProcessorAction(ValueTree processorToCreate, int trackIndex, int slot,
-                          TracksState &tracks, ViewState &view, StatefulAudioProcessorContainer &audioProcessorContainer)
+                          TracksState &tracks, ViewState &view, StatefulAudioProcessorContainer &audioProcessorContainer, PluginManager &pluginManager)
             : trackIndex(trackIndex), slot(slot), processorToCreate(std::move(processorToCreate)),
               insertAction(this->processorToCreate, trackIndex, slot, tracks, view),
-              audioProcessorContainer(audioProcessorContainer) {}
+              audioProcessorContainer(audioProcessorContainer), pluginManager(pluginManager) {}
 
     CreateProcessorAction(const PluginDescription &description, int trackIndex, int slot,
-                          TracksState &tracks, ViewState &view, StatefulAudioProcessorContainer &audioProcessorContainer)
-            : CreateProcessorAction(createProcessor(description), trackIndex, slot, tracks, view, audioProcessorContainer) {}
+                          TracksState &tracks, ViewState &view, StatefulAudioProcessorContainer &audioProcessorContainer, PluginManager &pluginManager)
+            : CreateProcessorAction(createProcessor(description), trackIndex, slot, tracks, view, audioProcessorContainer, pluginManager) {}
 
     CreateProcessorAction(const PluginDescription &description, int trackIndex,
-                          TracksState &tracks, ViewState &view, StatefulAudioProcessorContainer &audioProcessorContainer)
+                          TracksState &tracks, ViewState &view, StatefulAudioProcessorContainer &audioProcessorContainer, PluginManager &pluginManager)
             : CreateProcessorAction(createProcessor(description), trackIndex, getInsertSlot(description, trackIndex, tracks),
-                                    tracks, view, audioProcessorContainer) {}
+                                    tracks, view, audioProcessorContainer, pluginManager) {}
 
     bool perform() override {
         insertAction.perform();
@@ -30,8 +30,10 @@ struct CreateProcessorAction : public UndoableAction {
 
     bool undo() override {
         insertAction.undo();
-        if (processorToCreate.isValid())
+        if (processorToCreate.isValid()) {
+            pluginManager.closeWindowFor(StatefulAudioProcessorContainer::getNodeIdForState(processorToCreate));
             audioProcessorContainer.onProcessorDestroyed(processorToCreate);
+        }
         return true;
     }
 
@@ -60,6 +62,7 @@ private:
     InsertProcessorAction insertAction;
 
     StatefulAudioProcessorContainer &audioProcessorContainer;
+    PluginManager &pluginManager;
 
     static int getInsertSlot(const PluginDescription &description, int trackIndex, TracksState &tracks) {
         const auto &track = tracks.getTrack(trackIndex);

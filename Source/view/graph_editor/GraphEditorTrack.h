@@ -7,9 +7,9 @@
 
 class GraphEditorTrack : public Component, public Utilities::ValueTreePropertyChangeListener, public GraphEditorProcessorContainer, private ChangeListener {
 public:
-    explicit GraphEditorTrack(Project &project, TracksState &tracks, const ValueTree &state, ConnectorDragListener &connectorDragListener, ProcessorGraph &graph)
+    explicit GraphEditorTrack(Project &project, TracksState &tracks, const ValueTree &state, ConnectorDragListener &connectorDragListener)
             : project(project), tracks(tracks), view(project.getView()), state(state),
-              connectorDragListener(connectorDragListener), processors(project, state, connectorDragListener, graph) {
+              connectorDragListener(connectorDragListener), processors(project, state, connectorDragListener) {
         nameLabel.setJustificationType(Justification::centred);
         updateLabelColour();
         addAndMakeVisible(nameLabel);

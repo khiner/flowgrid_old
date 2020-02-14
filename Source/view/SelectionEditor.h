@@ -12,9 +12,8 @@ class SelectionEditor : public Component,
                         private ValueTree::Listener {
 public:
     SelectionEditor(Project &project, ProcessorGraph &audioGraphBuilder)
-            : project(project), tracks(project.getTracks()),
-              view(project.getView()),
-              audioGraphBuilder(audioGraphBuilder), contextPane(project) {
+            : project(project), tracks(project.getTracks()), view(project.getView()),
+              pluginManager(project.getPluginManager()), audioGraphBuilder(audioGraphBuilder), contextPane(project) {
         this->project.addListener(this);
 
         addAndMakeVisible(addProcessorButton);
@@ -72,9 +71,9 @@ public:
             const auto &focusedTrack = tracks.getFocusedTrack();
             if (focusedTrack.isValid()) {
                 addProcessorMenu = std::make_unique<PopupMenu>();
-                project.addPluginsToMenu(*addProcessorMenu, focusedTrack);
+                pluginManager.addPluginsToMenu(*addProcessorMenu, focusedTrack);
                 addProcessorMenu->showMenuAsync({}, ModalCallbackFunction::create([this](int r) {
-                    if (auto *description = project.getChosenType(r)) {
+                    if (auto *description = pluginManager.getChosenType(r)) {
                         project.createProcessor(*description);
                     }
                 }));
@@ -90,6 +89,8 @@ private:
     Project &project;
     TracksState &tracks;
     ViewState &view;
+
+    PluginManager &pluginManager;
     ProcessorGraph &audioGraphBuilder;
 
     Viewport contextPaneViewport, processorEditorsViewport;
