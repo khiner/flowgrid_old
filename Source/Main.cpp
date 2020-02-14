@@ -25,7 +25,7 @@ public:
         Process::makeForegroundProcess();
 
         project.addChangeListener(this);
-        project.addListener(this);
+        undoManager.addChangeListener(this);
 
         deviceChangeMonitor = std::make_unique<DeviceChangeMonitor>(deviceManager);
 
@@ -68,8 +68,8 @@ public:
         push2Window = nullptr;
         deviceChangeMonitor = nullptr;
         deviceManager.removeAudioCallback(&player);
+        undoManager.removeChangeListener(this);
         project.removeChangeListener(this);
-        project.removeListener(this);
         setMacMainMenu(nullptr);
     }
 
@@ -537,6 +537,7 @@ private:
     void changeListenerCallback(ChangeBroadcaster *source) override {
         if (source == &project) {
             mainWindow->setName(project.getDocumentTitle());
+        } else if (source == &undoManager) {
             applicationCommandListChanged();
         } else if (source == &deviceManager) {
             if (!push2MidiCommunicator.isInitialized() && MidiInput::getDevices().contains(push2MidiDeviceName, true)) {
@@ -553,20 +554,6 @@ private:
             std::unique_ptr<XmlElement> audioState(deviceManager.createStateXml());
             getUserSettings()->setValue("audioDeviceState", audioState.get());
             getUserSettings()->saveIfNeeded();
-        }
-    }
-
-    void valueTreePropertyChanged(ValueTree &child, const Identifier &i) override {
-        if ((child.hasType(IDs::TRACK) && i == IDs::selected) || i == IDs::focusedProcessorSlot) {
-            applicationCommandListChanged(); // TODO same - wasteful
-        } else if (i == IDs::processorInitialized && child[i]) {
-            applicationCommandListChanged(); // TODO same - wasteful
-        }
-    }
-
-    void valueTreeChildRemoved(ValueTree &parent, ValueTree &child, int) override {
-        if (child.hasType(IDs::PROCESSOR)) {
-            applicationCommandListChanged();
         }
     }
 };
