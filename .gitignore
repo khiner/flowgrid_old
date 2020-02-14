@@ -1,7 +1,8 @@
 Builds/CLion/cmake-build-debug/
-Builds/CLion/.idea/
+Builds/CLion/.idea/*
+!Builds/CLion/.idea/codeStyles
 Builds/MacOSX/
 Builds/VisualStudio2013/Debug/
 Builds/VisualStudio2013/Release/
 */*.DS_Store
-.idea
+/.idea
