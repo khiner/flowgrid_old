@@ -11,12 +11,16 @@ class GraphEditorPanel
           private ValueTree::Listener {
 public:
     GraphEditorPanel(ProcessorGraph &graph, Project &project, Viewport &parentViewport)
-            : graph(graph), project(project), tracks(project.getTracks()),
-              view(project.getView()), parentViewport(parentViewport) {
-        project.addListener(this);
+            : graph(graph), project(project), tracks(project.getTracks()), connections(project.getConnections()),
+              view(project.getView()), input(project.getInput()), output(project.getOutput()), parentViewport(parentViewport) {
+        tracks.addListener(this);
+        view.addListener(this);
+        connections.addListener(this);
+        input.addListener(this);
+        output.addListener(this);
 
-        addAndMakeVisible(*(graphEditorTracks = std::make_unique<GraphEditorTracks>(project, project.getTracks(), *this)));
-        addAndMakeVisible(*(connectors = std::make_unique<GraphEditorConnectors>(project.getConnections(), *this, *this, graph)));
+        addAndMakeVisible(*(graphEditorTracks = std::make_unique<GraphEditorTracks>(project, tracks, *this)));
+        addAndMakeVisible(*(connectors = std::make_unique<GraphEditorConnectors>(connections, *this, *this, graph)));
         unfocusOverlay.setFill(findColour(CustomColourIds::unfocusedOverlayColourId));
         addChildComponent(unfocusOverlay);
         addMouseListener(this, true);
@@ -25,6 +29,12 @@ public:
     ~GraphEditorPanel() override {
         removeMouseListener(this);
         draggingConnector = nullptr;
+
+        output.removeListener(this);
+        input.removeListener(this);
+        connections.removeListener(this);
+        view.removeListener(this);
+        tracks.removeListener(this);
     }
 
     void mouseDown(const MouseEvent &event) override {
@@ -193,8 +203,12 @@ public:
 private:
     ProcessorGraph &graph;
     Project &project;
+
     TracksState &tracks;
+    ConnectionsState &connections;
     ViewState &view;
+    InputState &input;
+    OutputState &output;
 
     const AudioProcessorGraph::Connection EMPTY_CONNECTION{{ProcessorGraph::NodeID(0), 0},
                                                            {ProcessorGraph::NodeID(0), 0}};
@@ -283,8 +297,6 @@ private:
         if (child.hasType(IDs::TRACK)) {
             resize();
         } else if (child.hasType(IDs::PROCESSOR)) {
-            // TODO this should use the project-listener methods (only ProcessorGraph should listen to this directly),
-            //  but currently this is an order-dependent snowflake
             if (child[IDs::name] == MidiInputProcessor::name()) {
                 auto *midiInputProcessor = new GraphEditorProcessor(project, tracks, child, *this);
                 addAndMakeVisible(midiInputProcessor);
@@ -330,14 +342,9 @@ private:
     }
 
     void valueTreeChildOrderChanged(ValueTree &parent, int oldIndex, int newIndex) override {
-        if (parent.hasType(IDs::TRACKS)) {
+        if (parent.hasType(IDs::TRACKS))
             connectors->updateConnectors();
-        }
     }
-
-    void valueTreeParentChanged(ValueTree &treeWhoseParentHasChanged) override {}
-
-    void valueTreeRedirected(ValueTree &treeWhichHasBeenChanged) override {}
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (GraphEditorPanel)
 };

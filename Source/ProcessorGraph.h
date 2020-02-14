@@ -80,11 +80,6 @@ public:
         return AudioProcessorGraph::getNodeForId(getNodeIdForState(processorState));
     }
 
-    StatefulAudioProcessorWrapper *getMasterGainProcessor() {
-        const ValueTree &gain = tracks.getMixerChannelProcessorForTrack(tracks.getMasterTrack());
-        return getProcessorWrapperForState(gain);
-    }
-
 private:
     std::map<NodeID, std::unique_ptr<StatefulAudioProcessorWrapper> > processorWrapperForNodeId;
 

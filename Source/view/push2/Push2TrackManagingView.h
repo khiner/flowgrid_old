@@ -8,41 +8,41 @@ class Push2TrackManagingView : public Push2ComponentBase, protected ValueTree::L
 public:
     explicit Push2TrackManagingView(Project &project, Push2MidiCommunicator &push2)
             : Push2ComponentBase(project, push2) {
-        project.addListener(this);
+        tracks.addListener(this);
+        view.addListener(this);
 
-        for (int i = 0; i < NUM_COLUMNS; i++) {
+        for (int i = 0; i < NUM_COLUMNS; i++)
             addChildComponent(trackLabels.add(new Push2Label(i, false, push2)));
-        }
     }
 
     ~Push2TrackManagingView() override {
         push2.getPush2Colours().removeListener(this);
-        project.removeListener(this);
+        view.removeListener(this);
+        tracks.removeListener(this);
     }
 
     void resized() override {
         auto r = getLocalBounds();
         auto labelWidth = getWidth() / NUM_COLUMNS;
         auto bottom = r.removeFromBottom(HEADER_FOOTER_HEIGHT);
-        for (auto *trackLabel : trackLabels) {
+        for (auto *trackLabel : trackLabels)
             trackLabel->setBounds(bottom.removeFromLeft(labelWidth));
-        }
     }
 
     void belowScreenButtonPressed(int buttonIndex) override {
         auto track = tracks.getTrackWithViewIndex(buttonIndex);
-        if (track.isValid() && !TracksState::isMasterTrack(track)) {
+        if (track.isValid() && !TracksState::isMasterTrack(track))
             project.setTrackSelected(track, true);
-        }
     }
 
     void updateEnabledPush2Buttons() override {
         auto focusedTrack = tracks.getFocusedTrack();
-        for (auto *label : trackLabels) {
+        for (auto *label : trackLabels)
             label->setVisible(false);
-        }
+
         if (!isVisible())
             return;
+
         int labelIndex = 0;
         for (int i = 0; i < jmin(trackLabels.size(), tracks.getNumNonMasterTracks()); i++) {
             auto *label = trackLabels.getUnchecked(labelIndex++);
@@ -63,15 +63,13 @@ protected:
     virtual void trackSelected(const ValueTree &track) { updateEnabledPush2Buttons(); }
 
     void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override {
-        if (child.hasType(IDs::TRACK)) {
+        if (child.hasType(IDs::TRACK))
             trackAdded(child);
-        }
     }
 
     void valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int index) override {
-        if (child.hasType(IDs::TRACK)) {
+        if (child.hasType(IDs::TRACK))
             trackRemoved(child);
-        }
     }
 
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {
@@ -80,9 +78,8 @@ protected:
                 int trackIndex = tracks.getViewIndexForTrack(tree);
                 if (trackIndex < 0 || trackIndex >= trackLabels.size())
                     return;
-                if (i == IDs::name && !TracksState::isMasterTrack(tree)) {
+                if (i == IDs::name && !TracksState::isMasterTrack(tree))
                     trackLabels.getUnchecked(trackIndex)->setText(tree[IDs::name], dontSendNotification);
-                }
             } else if (i == IDs::selected && tree[IDs::selected]) {
                 trackSelected(tree);
             }
@@ -92,23 +89,16 @@ protected:
     }
 
     void valueTreeChildOrderChanged(ValueTree &tree, int, int) override {
-        if (tree.hasType(IDs::TRACKS)) {
+        if (tree.hasType(IDs::TRACKS))
             updateEnabledPush2Buttons();
-        }
     }
-
-    void valueTreeParentChanged(ValueTree &) override {}
-
-    void valueTreeRedirected(ValueTree &) override {}
 
 protected:
     void trackColourChanged(const String &trackUuid, const Colour &colour) override {
         auto track = tracks.findTrackWithUuid(trackUuid);
-        if (!TracksState::isMasterTrack(track)) {
-            if (auto *trackLabel = trackLabels[tracks.getViewIndexForTrack(track)]) {
+        if (!TracksState::isMasterTrack(track))
+            if (auto *trackLabel = trackLabels[tracks.getViewIndexForTrack(track)])
                 trackLabel->setMainColour(colour);
-            }
-        }
     }
 
 private:

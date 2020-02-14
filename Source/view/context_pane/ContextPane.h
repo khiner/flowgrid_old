@@ -9,13 +9,14 @@ class ContextPane :
         private ValueTree::Listener {
 public:
     explicit ContextPane(Project &project)
-            : project(project), tracks(project.getTracks()),
-              view(project.getView()) {
-        this->project.addListener(this);
+            : tracks(project.getTracks()), view(project.getView()) {
+        tracks.addListener(this);
+        view.addListener(this);
     }
 
     ~ContextPane() override {
-        project.removeListener(this);
+        view.removeListener(this);
+        tracks.removeListener(this);
     }
 
     void resized() override {
@@ -84,7 +85,6 @@ private:
         }
     };
 
-    Project &project;
     TracksState &tracks;
     ViewState &view;
 
@@ -124,7 +124,7 @@ private:
     void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override {
         if (child.hasType(IDs::TRACK)) {
             if (TracksState::isMasterTrack(child)) {
-                return valueTreePropertyChanged(project.getView().getState(), IDs::numMasterProcessorSlots);
+                return valueTreePropertyChanged(view.getState(), IDs::numMasterProcessorSlots);
             } else {
                 auto *newGridCellColumn = new OwnedArray<GridCell>();
                 int numProcessorSlots = view.getNumTrackProcessorSlots();

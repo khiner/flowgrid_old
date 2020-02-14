@@ -14,7 +14,8 @@ public:
     SelectionEditor(Project &project, ProcessorGraph &audioGraphBuilder)
             : project(project), tracks(project.getTracks()), view(project.getView()),
               pluginManager(project.getPluginManager()), audioGraphBuilder(audioGraphBuilder), contextPane(project) {
-        this->project.addListener(this);
+        tracks.addListener(this);
+        view.addListener(this);
 
         addAndMakeVisible(addProcessorButton);
         addAndMakeVisible(processorEditorsViewport);
@@ -31,7 +32,8 @@ public:
 
     ~SelectionEditor() override {
         removeMouseListener(this);
-        project.removeListener(this);
+        tracks.removeListener(this);
+        view.removeListener(this);
     }
 
     void mouseDown(const MouseEvent &event) override {
@@ -164,12 +166,6 @@ private:
             unfocusOverlay.toFront(false);
         }
     }
-
-    void valueTreeChildOrderChanged(ValueTree &tree, int, int) override {}
-
-    void valueTreeParentChanged(ValueTree &) override {}
-
-    void valueTreeRedirected(ValueTree &) override {}
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SelectionEditor)
 };

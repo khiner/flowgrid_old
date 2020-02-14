@@ -16,8 +16,9 @@ class Push2Component :
         private ChangeListener,
         private Utilities::ValueTreePropertyChangeListener {
 public:
-    explicit Push2Component(Project &project, Push2MidiCommunicator &push2MidiCommunicator, ProcessorGraph &audioGraphBuilder)
-            : Push2ComponentBase(project, push2MidiCommunicator), graph(audioGraphBuilder),
+    explicit Push2Component(Project &project, Push2MidiCommunicator &push2MidiCommunicator)
+            : Push2ComponentBase(project, push2MidiCommunicator),
+              tracks(project.getTracks()), connections(project.getConnections()), view(project.getView()), audioProcessorContainer(project),
               processorView(project, push2MidiCommunicator), processorSelector(project, push2MidiCommunicator),
               mixerView(project, push2MidiCommunicator), push2NoteModePadLedManager(project, push2MidiCommunicator) {
         startTimer(60);
@@ -26,7 +27,9 @@ public:
         addChildComponent(processorSelector);
         addChildComponent(mixerView);
 
-        this->project.addListener(this);
+        tracks.addListener(this);
+        connections.addListener(this);
+        view.addListener(this);
         this->project.getUndoManager().addChangeListener(this);
 
         setBounds(0, 0, Push2Display::WIDTH, Push2Display::HEIGHT);
@@ -40,7 +43,9 @@ public:
     ~Push2Component() override {
         setVisible(false);
         project.getUndoManager().removeChangeListener(this);
-        project.removeListener(this);
+        view.removeListener(this);
+        connections.removeListener(this);
+        tracks.removeListener(this);
     }
 
     void handleIncomingMidiMessage(MidiInput *source, const MidiMessage &message) override {
@@ -70,9 +75,10 @@ public:
     }
 
     void masterEncoderRotated(float changeAmount) override {
-        auto *masterGainParameter = graph.getMasterGainProcessor()->getParameter(1);
-        if (masterGainParameter != nullptr)
-            masterGainParameter->setValue(masterGainParameter->getValue() + changeAmount);
+        const ValueTree &gain = tracks.getMixerChannelProcessorForTrack(tracks.getMasterTrack());
+        if (auto *masterGainProcessor = audioProcessorContainer.getProcessorWrapperForState(gain))
+            if (auto *masterGainParameter = masterGainProcessor->getParameter(1))
+                masterGainParameter->setValue(masterGainParameter->getValue() + changeAmount);
     }
 
     void encoderRotated(int encoderIndex, float changeAmount) override {
@@ -169,8 +175,12 @@ public:
     }
 
 private:
+    TracksState &tracks;
+    ConnectionsState &connections;
+    ViewState &view;
+
     Push2DisplayBridge displayBridge;
-    ProcessorGraph &graph;
+    StatefulAudioProcessorContainer &audioProcessorContainer;
 
     Push2ProcessorView processorView;
     Push2ProcessorSelector processorSelector;
@@ -242,7 +252,7 @@ private:
     }
 
     void updateFocusedProcessor() {
-        auto *focusedProcessorWrapper = graph.getProcessorWrapperForState(tracks.getFocusedProcessor());
+        auto *focusedProcessorWrapper = audioProcessorContainer.getProcessorWrapperForState(tracks.getFocusedProcessor());
         if (currentlyViewingChild != &mixerView || !dynamic_cast<MixerChannelProcessor *>(focusedProcessorWrapper->processor)) {
             processorView.processorFocused(focusedProcessorWrapper);
             showChild(&processorView);
