@@ -41,7 +41,10 @@ struct ResetDefaultExternalInputConnectionsAction : public CreateOrDeleteConnect
 
             const ValueTree &inputProcessor = audioProcessorContainer.getProcessorStateForNodeId(sourceNodeId);
             AudioProcessorGraph::NodeID destinationNodeId;
-            destinationNodeId = SAPC::getNodeIdForState(findEffectProcessorToReceiveDefaultExternalInput(connectionType, tracks, input, trackToTreatAsFocused));
+
+            const ValueTree &topmostEffectProcessor = findTopmostEffectProcessor(trackToTreatAsFocused, connectionType);
+            const auto &destinationProcessor = findMostUpstreamAvailableProcessorConnectedTo(topmostEffectProcessor, connectionType, tracks, input);
+            destinationNodeId = SAPC::getNodeIdForState(destinationProcessor);
 
             if (destinationNodeId.isValid()) {
                 coalesceWith(DefaultConnectProcessorAction(inputProcessor, destinationNodeId, connectionType, connections, audioProcessorContainer));
@@ -51,11 +54,6 @@ struct ResetDefaultExternalInputConnectionsAction : public CreateOrDeleteConnect
     }
 
 private:
-
-    ValueTree findEffectProcessorToReceiveDefaultExternalInput(ConnectionType connectionType, TracksState &tracks, InputState &input, const ValueTree &focusedTrack) {
-        const ValueTree &topmostEffectProcessor = findTopmostEffectProcessor(focusedTrack, connectionType);
-        return findMostUpstreamAvailableProcessorConnectedTo(topmostEffectProcessor, connectionType, tracks, input);
-    }
 
     ValueTree findTopmostEffectProcessor(const ValueTree &track, ConnectionType connectionType) {
         for (const auto &processor : track)
