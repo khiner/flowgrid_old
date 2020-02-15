@@ -29,13 +29,7 @@ public:
         midiCallbacks.removeAllInstancesOf(callbackToRemove);
     }
 
-    inline bool isInputConnected() const {
-        return midiInput && midiInput->getDevices().contains(deviceName);
-    }
-
-    inline bool isOutputConnected() const {
-        return midiOutput != nullptr;
-    }
+    bool isOutputConnected() const { return midiOutput != nullptr; }
 
     void handleIncomingMidiMessage(MidiInput *source, const MidiMessage &message) override {
         if (!message.isActiveSense()) {

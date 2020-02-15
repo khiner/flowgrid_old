@@ -37,10 +37,10 @@ public:
     }
 
     int getSelectedItemIndex() const {
-        for (int i = 0; i < buttons.size(); i++) {
+        for (int i = 0; i < buttons.size(); i++)
             if (buttons.getUnchecked(i)->getToggleState())
                 return i;
-        }
+
         return 0;
     }
 
@@ -60,10 +60,10 @@ public:
     }
 
     String getText() const {
-        for (auto *button : buttons) {
+        for (auto *button : buttons)
             if (button->getToggleState())
                 return button->getButtonText();
-        }
+
         return "";
     }
 

@@ -10,29 +10,17 @@ public:
                                       const std::function<AudioParameterFloat *(const String &, const String &, float)> &createDefaultGainParameter) :
             source(new ToneGeneratorAudioSource),
             ampParameter(createDefaultGainParameter("amp_" + idSuffix, "Amp" + idSuffix, -10.0f)),
-            freqParameter(
-                    new AudioParameterFloat("freq_" + idSuffix, "Freq" + idSuffix, NormalisableRange<float>(110.0f, 8000.0f, 0.0f, 0.3f, false), 880.0f, "Hz", AudioProcessorParameter::genericParameter, stringFromValue,
-                                            valueFromString)) {}
+            freqParameter(new AudioParameterFloat("freq_" + idSuffix, "Freq" + idSuffix, NormalisableRange<float>(110.0f, 8000.0f, 0.0f, 0.3f, false), 880.0f, "Hz", AudioProcessorParameter::genericParameter, stringFromValue, valueFromString)) {}
 
-    AudioParameterFloat *getAmpParameter() {
-        return ampParameter;
-    }
+    AudioParameterFloat *getAmpParameter() { return ampParameter; }
 
-    AudioParameterFloat *getFreqParameter() {
-        return freqParameter;
-    }
+    AudioParameterFloat *getFreqParameter() { return freqParameter; }
 
-    void setAmplitude(float valueInDb) {
-        source->setAmplitude(Decibels::decibelsToGain(valueInDb));
-    }
+    void setAmplitude(float valueInDb) { source->setAmplitude(Decibels::decibelsToGain(valueInDb)); }
 
-    void setFrequency(float value) {
-        source->setFrequency(value);
-    }
+    void setFrequency(float value) { source->setFrequency(value); }
 
-    inline ToneGeneratorAudioSource *get() {
-        return source.get();
-    }
+    ToneGeneratorAudioSource *get() { return source.get(); }
 
 private:
     std::unique_ptr<ToneGeneratorAudioSource> source;

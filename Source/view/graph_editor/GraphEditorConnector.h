@@ -43,12 +43,12 @@ struct GraphEditorConnector : public Component, public SettableTooltipClient {
         }
     }
 
-    void dragStart(const Point<float> &pos) {
+    void dragStart(const juce::Point<float> &pos) {
         lastInputPos = pos;
         resizeToFit();
     }
 
-    void dragEnd(const Point<float> &pos) {
+    void dragEnd(const juce::Point<float> &pos) {
         lastOutputPos = pos;
         resizeToFit();
     }
@@ -75,7 +75,7 @@ struct GraphEditorConnector : public Component, public SettableTooltipClient {
         repaint();
     }
 
-    void getPoints(Point<float> &p1, Point<float> &p2) const {
+    void getPoints(juce::Point<float> &p1, juce::Point<float> &p2) const {
         p1 = lastInputPos;
         p2 = lastOutputPos;
 
@@ -144,7 +144,7 @@ struct GraphEditorConnector : public Component, public SettableTooltipClient {
     }
 
     void resized() override {
-        Point<float> p1, p2;
+        juce::Point<float> p1, p2;
         getPoints(p1, p2);
 
         lastInputPos = p1;
@@ -181,8 +181,8 @@ struct GraphEditorConnector : public Component, public SettableTooltipClient {
         linePath.setUsingNonZeroWinding(true);
     }
 
-    void getDistancesFromEnds(const Point<float> &p, double &distanceFromStart, double &distanceFromEnd) const {
-        Point<float> p1, p2;
+    void getDistancesFromEnds(const juce::Point<float> &p, double &distanceFromStart, double &distanceFromEnd) const {
+        juce::Point<float> p1, p2;
         getPoints(p1, p2);
 
         distanceFromStart = p1.getDistanceFrom(p);
@@ -195,7 +195,7 @@ private:
     ConnectorDragListener &connectorDragListener;
     GraphEditorProcessorContainer &graphEditorProcessorContainer;
 
-    Point<float> lastInputPos, lastOutputPos;
+    juce::Point<float> lastInputPos, lastOutputPos;
     Path linePath, hitPath;
     bool dragging = false;
 

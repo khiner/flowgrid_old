@@ -17,4 +17,4 @@ namespace DeviceManagerUtilities {
         }
         return "";
     }
-};
+}

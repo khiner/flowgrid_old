@@ -20,9 +20,8 @@ struct SelectProcessorSlotAction : public SelectAction {
         newSlotMask.setBit(slot, selected);
         auto trackIndex = tracks.indexOf(track);
         newSelectedSlotsMasks.setUnchecked(trackIndex, newSlotMask.toString(2));
-        if (selected) {
+        if (selected)
             setNewFocusedSlot({trackIndex, slot});
-        }
     }
 
 private:

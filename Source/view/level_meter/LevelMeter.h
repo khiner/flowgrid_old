@@ -47,8 +47,6 @@ public:
 
     float getValue() const { return normalisableRange.convertFrom0to1(gainValue); }
 
-    float getRawValue() const { return gainValue; }
-
     void setValue(float newUnnormalizedValue, NotificationType notification) {
         jassert(notification == dontSendNotification || notification == sendNotificationSync);
 
@@ -59,10 +57,6 @@ public:
                 listeners.call([this](Listener &l) { l.levelMeterValueChanged(this); });
             resized();
         }
-    }
-
-    void setRawValue(float newNormalizedValue, NotificationType notificationType) {
-        setValue(normalisableRange.convertFrom0to1(newNormalizedValue), notificationType);
     }
 
     void setNormalisableRange(NormalisableRange<float> newRange) {

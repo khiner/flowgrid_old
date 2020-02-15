@@ -16,7 +16,7 @@ public:
         gainParameter->removeListener(this);
     }
 
-    static const String name() { return "Gain"; }
+    static String name() { return "Gain"; }
 
     static PluginDescription getPluginDescription() {
         return DefaultAudioProcessor::getPluginDescription(name(), false, false);

@@ -5,6 +5,8 @@
 
 class Stateful {
 public:
+    virtual ~Stateful() = default;
+
     virtual void loadFromState(const ValueTree &state) = 0;
 
     virtual ValueTree &getState() = 0;

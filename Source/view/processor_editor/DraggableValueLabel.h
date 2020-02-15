@@ -8,7 +8,6 @@ public:
 
     void paint(Graphics &g) override {
             auto textArea = getLocalBounds().withSizeKeepingCentre(getWidth(), jmin(getHeight(), 32));
-//        g.setColour(findColour(Slider::rotarySliderOutlineColourId));
             g.setColour(Colours::darkgrey);
             g.fillRect(textArea);
             g.setColour(findColour(ToggleButton::textColourId));

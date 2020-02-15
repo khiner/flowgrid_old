@@ -194,7 +194,8 @@ public:
         rootTree.subFolders.add(std::move(internalPluginTree));
         rootTree.subFolders.add(std::move(externalPluginTree));
 
-        setCurrentTree(topProcessorSelector.get(), &rootTree);
+        ProcessorSelectorRow *processorSelectorRow = topProcessorSelector.get();
+        processorSelectorRow->setCurrentTree(&rootTree);
         selectProcessorRow(topProcessorSelector.get());
     }
 
@@ -209,7 +210,8 @@ public:
             return description;
 
         if (auto *subfolder = topProcessorSelector->selectFolder(index)) {
-            setCurrentTree(bottomProcessorSelector.get(), subfolder);
+            ProcessorSelectorRow *processorSelectorRow = bottomProcessorSelector.get();
+            processorSelectorRow->setCurrentTree(subfolder);
             selectProcessorRow(bottomProcessorSelector.get());
             updateEnabledPush2Arrows();
         }
@@ -221,9 +223,11 @@ public:
             return description;
 
         if (auto *subfolder = bottomProcessorSelector->selectFolder(index)) {
-            setCurrentTree(topProcessorSelector.get(), bottomProcessorSelector->currentTree);
+            ProcessorSelectorRow *processorSelectorRow = topProcessorSelector.get();
+            processorSelectorRow->setCurrentTree(bottomProcessorSelector->currentTree);
             topProcessorSelector->setCurrentViewOffset(bottomProcessorSelector->getCurrentViewOffset());
-            setCurrentTree(bottomProcessorSelector.get(), subfolder);
+            ProcessorSelectorRow *processorSelectorRow1 = bottomProcessorSelector.get();
+            processorSelectorRow1->setCurrentTree(subfolder);
             updateEnabledPush2Arrows();
         }
         return nullptr;
@@ -259,10 +263,12 @@ public:
             if (currentProcessorSelector == bottomProcessorSelector.get()) {
                 selectProcessorRow(topProcessorSelector.get());
             } else if (auto *parent = currentProcessorSelector->currentTree->parent) {
-                setCurrentTree(bottomProcessorSelector.get(), topProcessorSelector->currentTree);
+                ProcessorSelectorRow *processorSelectorRow = bottomProcessorSelector.get();
+                processorSelectorRow->setCurrentTree(topProcessorSelector->currentTree);
                 bottomProcessorSelector->setCurrentViewOffset(topProcessorSelector->getCurrentViewOffset());
                 bottomProcessorSelector->selectFolder(topProcessorSelector->findSelectedSubfolder());
-                setCurrentTree(topProcessorSelector.get(), parent);
+                ProcessorSelectorRow *processorSelectorRow1 = topProcessorSelector.get();
+                processorSelectorRow1->setCurrentTree(parent);
             }
         }
         updateEnabledPush2Arrows();
@@ -283,9 +289,6 @@ public:
     }
 
 private:
-    void setCurrentTree(ProcessorSelectorRow *processorSelectorRow, KnownPluginList::PluginTree *tree) {
-        processorSelectorRow->setCurrentTree(tree);
-    }
 
     void selectProcessorRow(ProcessorSelectorRow *processorSelectorRow) {
         if (currentProcessorSelector != nullptr) {

@@ -40,15 +40,13 @@ protected:
         };
 
         static const unsigned char push2BulkEPOut = 0x01;
-        frameHeaderTransfer =
-                allocateAndPrepareTransferChunk(handle, this, frameHeader, sizeof(frameHeader), push2BulkEPOut);
+        frameHeaderTransfer = allocateAndPrepareTransferChunk(handle, this, frameHeader, sizeof(frameHeader), push2BulkEPOut);
 
         for (int i = 0; i < SEND_BUFFER_COUNT; i++) {
             unsigned char *buffer = (sendBuffers + i * SEND_BUFFER_SIZE);
 
             // Allocates a transfer struct for the send buffers
-            libusb_transfer *transfer =
-                    allocateAndPrepareTransferChunk(handle, this, buffer, SEND_BUFFER_SIZE, push2BulkEPOut);
+            auto *transfer = allocateAndPrepareTransferChunk(handle, this, buffer, SEND_BUFFER_SIZE, push2BulkEPOut);
 
             // Start a request for this buffer
             sendNextSlice(transfer);

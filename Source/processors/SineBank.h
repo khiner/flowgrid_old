@@ -51,7 +51,7 @@ public:
         toneSource4.getFreqParameter()->removeListener(this);
     }
 
-    static const String name() { return "Sine Bank"; }
+    static String name() { return "Sine Bank"; }
 
     static PluginDescription getPluginDescription() {
         return DefaultAudioProcessor::getPluginDescription(name(), true, false);

@@ -17,13 +17,13 @@ public:
 
     virtual void parameterChanged(AudioProcessorParameter *parameter, float newValue) {}
 
-    virtual void parameterValueChanged(int parameterIndex, float newValue) override {
+    void parameterValueChanged(int parameterIndex, float newValue) override {
         AudioProcessorParameter *parameter = getParameters().getUnchecked(parameterIndex);
         if (auto *floatParameter = dynamic_cast<AudioParameterFloat *>(parameter))
             parameterChanged(parameter, floatParameter->range.convertFrom0to1(newValue));
     }
 
-    virtual void parameterGestureChanged(int parameterIndex, bool gestureIsStarting) override {}
+    void parameterGestureChanged(int parameterIndex, bool gestureIsStarting) override {}
 
     // TODO can remove?
     void prepareToPlay(double sampleRate, int estimatedSamplesPerBlock) override {

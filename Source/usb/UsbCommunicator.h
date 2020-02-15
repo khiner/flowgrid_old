@@ -15,7 +15,7 @@ public:
             vendorId(vendorId), productId(productId), frameHeaderTransfer(nullptr), terminate(false) {
         auto errorCode = libusb_init(nullptr);
         if (errorCode < 0)
-            throw std::runtime_error("Failed to initialize usblib");
+            throw std::runtime_error("Failed to initialize libusb");
 
         startTimer(1000); // check back every second
     }
@@ -93,9 +93,8 @@ public:
 protected:
     // Allocate a libusb_transfer mapped to a transfer buffer. It also sets
     // up the callback needed to communicate the transfer is done
-    libusb_transfer *allocateAndPrepareTransferChunk(libusb_device_handle *handle, UsbCommunicator *instance,
-                                                     unsigned char *buffer, int bufferSize,
-                                                     const unsigned char endpoint) {
+    static libusb_transfer *allocateAndPrepareTransferChunk(libusb_device_handle *handle, UsbCommunicator *instance,
+                                                            unsigned char *buffer, int bufferSize, const unsigned char endpoint) {
         // Allocate a transfer structure
         auto transfer = libusb_alloc_transfer(0);
         if (!transfer)

@@ -317,9 +317,8 @@ private:
     bool holdRepeatIsHappeningNow{false};
 
     void sendMessageChecked(const MidiMessage &message) const {
-        if (isOutputConnected()) {
+        if (isOutputConnected())
             midiOutput->sendMessageNow(message);
-        }
     }
 
     void registerAllIndexedColours() {

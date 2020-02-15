@@ -329,7 +329,7 @@ public:
 
     bool disconnectProcessor(const ValueTree &processor) {
         undoManager.beginNewTransaction();
-        doDisconnectNode(processor, all, true, true, true, true);
+        return doDisconnectNode(processor, all, true, true, true, true);
     }
 
     void setDefaultConnectionsAllowed(const ValueTree &processor, bool defaultConnectionsAllowed) {

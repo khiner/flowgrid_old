@@ -17,7 +17,7 @@ public:
         balanceParameter->removeListener(this);
     }
 
-    static const String name() { return "Balance"; }
+    static String name() { return "Balance"; }
 
     static PluginDescription getPluginDescription() {
         return DefaultAudioProcessor::getPluginDescription(name(), false, false);

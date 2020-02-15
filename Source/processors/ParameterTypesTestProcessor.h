@@ -26,7 +26,7 @@ public:
         addParameter(floatParameter);
     }
 
-    static const String name() { return "Parameter Types Test"; }
+    static String name() { return "Parameter Types Test"; }
 
     static PluginDescription getPluginDescription() {
         return DefaultAudioProcessor::getPluginDescription(name(), false, false);

@@ -11,7 +11,7 @@ public:
 
     ~Arpeggiator() override = default;
 
-    static const String name() { return "Arpeggiator"; }
+    static String name() { return "Arpeggiator"; }
 
     static PluginDescription getPluginDescription() {
         return DefaultAudioProcessor::getPluginDescription(name(), false, true, AudioChannelSet::disabled());
@@ -68,9 +68,9 @@ public:
 
 private:
     AudioParameterFloat *speed;
-    int currentNote, lastNoteValue;
-    int time;
-    float rate;
+    int currentNote{0}, lastNoteValue{0};
+    int time{0};
+    float rate{0};
     SortedSet<int> notes;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Arpeggiator)
