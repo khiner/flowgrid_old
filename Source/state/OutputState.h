@@ -63,7 +63,7 @@ private:
             }
         }
         for (const auto &outputProcessor : outputProcessorsToDelete) {
-            undoManager.perform(new DeleteProcessorAction(outputProcessor, tracks, connections, audioProcessorContainer, pluginManager));
+            undoManager.perform(new DeleteProcessorAction(outputProcessor, tracks, connections, audioProcessorContainer));
         }
         for (const auto &deviceName : MidiOutput::getDevices()) {
             if (deviceManager.isMidiOutputEnabled(deviceName) &&

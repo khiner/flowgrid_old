@@ -5,13 +5,14 @@
 #include "GraphEditorTracks.h"
 #include "GraphEditorConnectors.h"
 #include "view/CustomColourIds.h"
+#include <view/PluginWindow.h>
 
 class GraphEditorPanel
         : public Component, public ConnectorDragListener, public GraphEditorProcessorContainer,
           private ValueTree::Listener {
 public:
     GraphEditorPanel(ProcessorGraph &graph, Project &project, Viewport &parentViewport)
-            : graph(graph), project(project), tracks(project.getTracks()), connections(project.getConnections()),
+            : graph(graph), project(project), audioProcessorContainer(project), tracks(project.getTracks()), connections(project.getConnections()),
               view(project.getView()), input(project.getInput()), output(project.getOutput()), parentViewport(parentViewport) {
         tracks.addListener(this);
         view.addListener(this);
@@ -200,9 +201,16 @@ public:
         else return graphEditorTracks->getProcessorForNodeId(nodeId);
     }
 
+    bool closeAnyOpenPluginWindows() {
+        bool wasEmpty = activePluginWindows.isEmpty();
+        activePluginWindows.clear();
+        return !wasEmpty;
+    }
+
 private:
     ProcessorGraph &graph;
     Project &project;
+    StatefulAudioProcessorContainer &audioProcessorContainer;
 
     TracksState &tracks;
     ConnectionsState &connections;
@@ -230,6 +238,7 @@ private:
     // all of this stuff on its own. However, I don't think that cleanliness is quite worth adding yet another
     // project state listener.
     Viewport &parentViewport;
+    OwnedArray<PluginWindow> activePluginWindows;
 
     int getTrackWidth() { return (parentViewport.getWidth() - ViewState::TRACK_LABEL_HEIGHT * 2) / ViewState::NUM_VISIBLE_TRACKS; }
 
@@ -276,6 +285,25 @@ private:
         );
     }
 
+    ResizableWindow *getOrCreateWindowFor(ValueTree &processorState, PluginWindow::Type type) {
+        auto nodeId = audioProcessorContainer.getNodeIdForState(processorState);
+        for (auto *pluginWindow : activePluginWindows)
+            if (audioProcessorContainer.getNodeIdForState(pluginWindow->processor) == nodeId && pluginWindow->type == type)
+                return pluginWindow;
+
+        if (auto *processor = audioProcessorContainer.getProcessorWrapperForNodeId(nodeId)->processor)
+            return activePluginWindows.add(new PluginWindow(processorState, processor, type));
+
+        return nullptr;
+    }
+
+    void closeWindowFor(ValueTree &processor) {
+        auto nodeId = audioProcessorContainer.getNodeIdForState(processor);
+        for (int i = activePluginWindows.size(); --i >= 0;)
+            if (audioProcessorContainer.getNodeIdForState(activePluginWindows.getUnchecked(i)->processor) == nodeId)
+                activePluginWindows.remove(i);
+    }
+
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {
         if (tree.hasType(IDs::PROCESSOR) && i == IDs::processorSlot) {
             connectors->updateConnectors();
@@ -290,6 +318,12 @@ private:
         } else if (i == IDs::focusedPane) {
             unfocusOverlay.setVisible(!view.isGridPaneFocused());
             unfocusOverlay.toFront(false);
+        } else if (i == IDs::pluginWindowType) {
+            const auto type = static_cast<PluginWindow::Type>(int(tree[i]));
+            if (type == PluginWindow::Type::none)
+                closeWindowFor(tree);
+            else if (auto *w = getOrCreateWindowFor(tree, type))
+                w->toFront(true);
         }
     }
 

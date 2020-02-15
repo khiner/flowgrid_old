@@ -1,45 +1,43 @@
 #pragma once
 
 #include "JuceHeader.h"
+
+#include <ApplicationPropertiesAndCommandManager.h>
 #include "processors/MidiKeyboardProcessor.h"
 
-/**
-    A desktop window containing a plugin's GUI.
-*/
 class PluginWindow : public DocumentWindow {
 public:
     enum class Type {
+        none = -1,
         normal = 0,
         programs,
         audioIO,
     };
 
-    PluginWindow(AudioProcessorGraph::Node *n, Type t, OwnedArray<PluginWindow> &windowList)
-            : DocumentWindow(n->getProcessor()->getName(),
+    PluginWindow(ValueTree &processorState, AudioProcessor *processor, Type type)
+            : DocumentWindow(processorState[IDs::name],
                              LookAndFeel::getDefaultLookAndFeel().findColour(ResizableWindow::backgroundColourId),
                              DocumentWindow::minimiseButton | DocumentWindow::closeButton),
-              activeWindowList(windowList),
-              node(n), type(t) {
+              processor(processorState), type(type) {
         setSize(400, 300);
 
         Component *keyboardComponent{};
-        if (auto *midiKeyboardProcessor = dynamic_cast<MidiKeyboardProcessor *>(n->getProcessor())) {
+        if (auto *midiKeyboardProcessor = dynamic_cast<MidiKeyboardProcessor *>(processor)) {
             keyboardComponent = midiKeyboardProcessor->createKeyboard();
             keyboardComponent->setSize(800, 1);
             setContentOwned(keyboardComponent, true);
-            keyboardComponent->grabKeyboardFocus();
-        } else if (auto *ui = createProcessorEditor(*node->getProcessor(), type))
+        } else if (auto *ui = createProcessorEditor(*processor, type)) {
             setContentOwned(ui, true);
+        }
 
-        setTopLeftPosition(node->properties.getWithDefault(getLastXProp(type), Random::getSystemRandom().nextInt(500)),
-                           node->properties.getWithDefault(getLastYProp(type), Random::getSystemRandom().nextInt(500)));
-
-        node->properties.set(getOpenProp(type), true);
-
+        int xPosition = processorState.hasProperty(IDs::pluginWindowX) ? int(processorState[IDs::pluginWindowX]) : Random::getSystemRandom().nextInt(500);
+        int yPosition = processorState.hasProperty(IDs::pluginWindowX) ? int(processorState[IDs::pluginWindowY]) : Random::getSystemRandom().nextInt(500);
+        setTopLeftPosition(xPosition, yPosition);
         setAlwaysOnTop(true);
         setVisible(true);
         if (keyboardComponent != nullptr)
             keyboardComponent->grabKeyboardFocus();
+        addKeyListener(getCommandManager().getKeyMappings());
     }
 
     ~PluginWindow() override {
@@ -47,33 +45,25 @@ public:
     }
 
     void moved() override {
-        node->properties.set(getLastXProp(type), getX());
-        node->properties.set(getLastYProp(type), getY());
+        processor.setProperty(IDs::pluginWindowX, getX(), nullptr);
+        processor.setProperty(IDs::pluginWindowY, getY(), nullptr);
     }
 
     void closeButtonPressed() override {
-        node->properties.set(getOpenProp(type), false);
-        activeWindowList.removeObject(this);
+        processor.setProperty(IDs::pluginWindowType, static_cast<int>(Type::none), nullptr);
     }
 
-    static String getLastXProp(Type type) { return "uiLastX_" + getTypeName(type); }
-
-    static String getLastYProp(Type type) { return "uiLastY_" + getTypeName(type); }
-
-    static String getOpenProp(Type type) { return "uiopen_" + getTypeName(type); }
-
-    OwnedArray<PluginWindow> &activeWindowList;
-    const AudioProcessorGraph::Node::Ptr node;
+    ValueTree processor;
     const Type type;
 
 private:
+
     float getDesktopScaleFactor() const override { return 1.0f; }
 
     static AudioProcessorEditor *createProcessorEditor(AudioProcessor &processor, PluginWindow::Type type) {
-        if (type == PluginWindow::Type::normal) {
+        if (type == PluginWindow::Type::normal)
             if (auto *ui = processor.createEditorIfNeeded())
                 return ui;
-        }
 
         if (type == PluginWindow::Type::programs)
             return new ProgramAudioProcessorEditor(processor);

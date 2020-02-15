@@ -27,6 +27,10 @@ public:
         selectionEditor.setBounds(r);
     }
 
+    bool closeAnyOpenPluginWindows() {
+        return graphPanel.closeAnyOpenPluginWindows();
+    }
+
 private:
     Project &project;
     Viewport graphPanelViewport;

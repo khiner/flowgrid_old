@@ -45,8 +45,8 @@ struct ResetDefaultExternalInputConnectionsAction : public CreateOrDeleteConnect
 
             if (destinationNodeId.isValid()) {
                 coalesceWith(DefaultConnectProcessorAction(inputProcessor, destinationNodeId, connectionType, connections, audioProcessorContainer));
-                coalesceWith(DisconnectProcessorAction(connections, inputProcessor, connectionType, true, false, false, true, destinationNodeId));
             }
+            coalesceWith(DisconnectProcessorAction(connections, inputProcessor, connectionType, true, false, false, true, destinationNodeId));
         }
     }
 

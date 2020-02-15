@@ -2,22 +2,24 @@
 
 #include <state/ConnectionsState.h>
 #include <state/TracksState.h>
+#include <view/PluginWindow.h>
 
 #include "JuceHeader.h"
 #include "DisconnectProcessorAction.h"
 
 struct DeleteProcessorAction : public UndoableAction {
     DeleteProcessorAction(const ValueTree &processorToDelete, TracksState &tracks, ConnectionsState &connections,
-                          StatefulAudioProcessorContainer &audioProcessorContainer, PluginManager &pluginManager)
+                          StatefulAudioProcessorContainer &audioProcessorContainer)
             : parentTrack(processorToDelete.getParent()), processorToDelete(processorToDelete),
-              processorIndex(parentTrack.indexOf(processorToDelete)),
+              processorIndex(parentTrack.indexOf(processorToDelete)), pluginWindowType(processorToDelete[IDs::pluginWindowType]),
               disconnectProcessorAction(DisconnectProcessorAction(connections, processorToDelete, all, true, true, true, true)),
-              audioProcessorContainer(audioProcessorContainer), pluginManager(pluginManager) {}
+              audioProcessorContainer(audioProcessorContainer) {}
 
     bool perform() override {
+        audioProcessorContainer.saveProcessorStateInformationToState(processorToDelete);
+        processorToDelete.setProperty(IDs::pluginWindowType, static_cast<int>(PluginWindow::Type::none), nullptr);
         disconnectProcessorAction.perform();
         parentTrack.removeChild(processorToDelete, nullptr);
-        pluginManager.closeWindowFor(StatefulAudioProcessorContainer::getNodeIdForState(processorToDelete));
         audioProcessorContainer.onProcessorDestroyed(processorToDelete);
         return true;
     }
@@ -26,6 +28,7 @@ struct DeleteProcessorAction : public UndoableAction {
         parentTrack.addChild(processorToDelete, processorIndex, nullptr);
         audioProcessorContainer.onProcessorCreated(processorToDelete);
         disconnectProcessorAction.undo();
+        processorToDelete.setProperty(IDs::pluginWindowType, pluginWindowType, nullptr);
 
         return true;
     }
@@ -37,11 +40,10 @@ struct DeleteProcessorAction : public UndoableAction {
 private:
     ValueTree parentTrack;
     ValueTree processorToDelete;
-    int processorIndex;
+    int processorIndex, pluginWindowType;
     DisconnectProcessorAction disconnectProcessorAction;
 
     StatefulAudioProcessorContainer &audioProcessorContainer;
-    PluginManager &pluginManager;
 
     JUCE_DECLARE_NON_COPYABLE(DeleteProcessorAction)
 };

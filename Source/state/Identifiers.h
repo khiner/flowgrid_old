@@ -36,6 +36,9 @@ namespace IDs {
     DECLARE_ID(deviceName)
     DECLARE_ID(state)
     DECLARE_ID(allowDefaultConnections)
+    DECLARE_ID(pluginWindowType)
+    DECLARE_ID(pluginWindowX)
+    DECLARE_ID(pluginWindowY)
 
     DECLARE_ID(INPUT_CHANNELS)
     DECLARE_ID(OUTPUT_CHANNELS)

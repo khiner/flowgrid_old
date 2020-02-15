@@ -66,7 +66,6 @@ private:
                 auto moveTrackSelections = [&](int fromTrackIndex) {
                     int toTrackIndex = fromTrackIndex + trackAndSlotDelta.x;
                     if (toTrackIndex >= 0 && toTrackIndex < newSelectedSlotsMasks.size()) {
-                        const auto &toTrack = tracks.getTrack(toTrackIndex);
                         newTrackSelections.setUnchecked(toTrackIndex, newTrackSelections.getUnchecked(fromTrackIndex));
                         newTrackSelections.setUnchecked(fromTrackIndex, false);
                         newSelectedSlotsMasks.setUnchecked(toTrackIndex, newSelectedSlotsMasks.getUnchecked(fromTrackIndex));

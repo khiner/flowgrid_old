@@ -396,10 +396,10 @@ public:
 
     class MainWindow : public DocumentWindow, public FileDragAndDropTarget {
     public:
-        explicit MainWindow(SoundMachineApplication &owner, const String &name, Component *contentComponent) :
-                DocumentWindow(name, Colours::lightgrey, DocumentWindow::allButtons), owner(owner) {
-            contentComponent->setSize(1, 1); // nonzero size to avoid warnings
-            setContentOwned(contentComponent, true);
+        explicit MainWindow(SoundMachineApplication &owner, const String &name, GraphEditor *graphEditor) :
+                DocumentWindow(name, Colours::lightgrey, DocumentWindow::allButtons), owner(owner), graphEditor(graphEditor) {
+            graphEditor->setSize(1, 1); // nonzero size to avoid warnings
+            setContentOwned(graphEditor, true);
             setResizable(true, true);
 
             centreWithSize(getWidth(), getHeight());
@@ -434,7 +434,10 @@ public:
         };
 
         void tryToQuitApplication() {
-            if (owner.project.getPluginManager().closeAnyOpenPluginWindows()) {
+            if (owner.project.saveIfNeededAndUserAgrees() != FileBasedDocument::savedOk)
+                return;
+
+            if (graphEditor->closeAnyOpenPluginWindows()) {
                 // Really important thing to note here: if the last call just deleted any plugin windows,
                 // we won't exit immediately - instead we'll use our AsyncQuitRetrier to let the message
                 // loop run for another brief moment, then try again. This will give any plugins a chance
@@ -442,7 +445,7 @@ public:
                 new AsyncQuitRetrier();
             } else if (ModalComponentManager::getInstance()->cancelAllModalComponents()) {
                 new AsyncQuitRetrier();
-            } else if (owner.project.saveIfNeededAndUserAgrees() == FileBasedDocument::savedOk) {
+            } else {
                 // Some plug-ins do not want [NSApp stop] to be called
                 // before the plug-ins are deallocated.
 //                owner.releaseGraph();
@@ -469,6 +472,7 @@ public:
 
     private:
         SoundMachineApplication &owner;
+        GraphEditor *graphEditor;
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainWindow)
     };
 
@@ -481,6 +485,7 @@ private:
     std::unique_ptr<MainWindow> mainWindow;
     std::unique_ptr<DocumentWindow> push2Window;
     std::unique_ptr<PluginListComponent> pluginListComponent;
+
     UndoManager undoManager;
     AudioDeviceManager deviceManager;
 

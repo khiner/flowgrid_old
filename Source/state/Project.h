@@ -176,7 +176,7 @@ public:
         undoManager.perform(new CreateTrackAction(isMaster, addMixer, {}, tracks, connections, view));
         if (addMixer)
             undoManager.perform(new CreateProcessorAction(MixerChannelProcessor::getPluginDescription(),
-                                                          tracks.indexOf(mostRecentlyCreatedTrack), tracks, view, *this, pluginManager));
+                                                          tracks.indexOf(mostRecentlyCreatedTrack), tracks, view, *this));
         setTrackSelected(mostRecentlyCreatedTrack, true);
         updateAllDefaultConnections();
     }
@@ -195,7 +195,7 @@ public:
             endDraggingProcessor();
 
         undoManager.beginNewTransaction();
-        undoManager.perform(new DeleteSelectedItemsAction(tracks, connections, *statefulAudioProcessorContainer, pluginManager));
+        undoManager.perform(new DeleteSelectedItemsAction(tracks, connections, *statefulAudioProcessorContainer));
         if (view.getFocusedTrackIndex() >= tracks.getNumTracks() && tracks.getNumTracks() > 0)
             setTrackSelected(tracks.getTrack(tracks.getNumTracks() - 1), true);
         updateAllDefaultConnections(false);
@@ -205,12 +205,13 @@ public:
         if (isCurrentlyDraggingProcessor())
             endDraggingProcessor();
         undoManager.beginNewTransaction();
-        undoManager.perform(new DuplicateSelectedItemsAction(tracks, connections, view, input, *statefulAudioProcessorContainer, pluginManager));
+        undoManager.perform(new DuplicateSelectedItemsAction(tracks, connections, view, input, *statefulAudioProcessorContainer));
         updateAllDefaultConnections(false);
     }
 
     void beginDragging(const juce::Point<int> trackAndSlot) {
-        if (trackAndSlot == TracksState::INVALID_TRACK_AND_SLOT || TracksState::isMasterTrack(tracks.getTrack(trackAndSlot.x)))
+        if (trackAndSlot == TracksState::INVALID_TRACK_AND_SLOT ||
+            (trackAndSlot.y == -1 && TracksState::isMasterTrack(tracks.getTrack(trackAndSlot.x))))
             return;
 
         initialDraggingTrackAndSlot = trackAndSlot;
@@ -482,9 +483,9 @@ private:
         }
 
         if (slot == -1)
-            undoManager.perform(new CreateProcessorAction(description, tracks.indexOf(track), tracks, view, *statefulAudioProcessorContainer, pluginManager));
+            undoManager.perform(new CreateProcessorAction(description, tracks.indexOf(track), tracks, view, *statefulAudioProcessorContainer));
         else
-            undoManager.perform(new CreateProcessorAction(description, tracks.indexOf(track), slot, tracks, view, *statefulAudioProcessorContainer, pluginManager));
+            undoManager.perform(new CreateProcessorAction(description, tracks.indexOf(track), slot, tracks, view, *statefulAudioProcessorContainer));
 
         selectProcessor(mostRecentlyCreatedProcessor);
         updateAllDefaultConnections();

@@ -7,13 +7,12 @@
 #include "DeleteTrackAction.h"
 
 struct DeleteSelectedItemsAction : public UndoableAction {
-    DeleteSelectedItemsAction(TracksState &tracks, ConnectionsState &connections,
-                              StatefulAudioProcessorContainer &audioProcessorContainer, PluginManager &pluginManager) {
+    DeleteSelectedItemsAction(TracksState &tracks, ConnectionsState &connections, StatefulAudioProcessorContainer &audioProcessorContainer) {
         for (const auto &selectedItem : tracks.findAllSelectedItems()) {
             if (selectedItem.hasType(IDs::TRACK))
-                deleteTrackActions.add(new DeleteTrackAction(selectedItem, tracks, connections, audioProcessorContainer, pluginManager));
+                deleteTrackActions.add(new DeleteTrackAction(selectedItem, tracks, connections, audioProcessorContainer));
             else if (selectedItem.hasType(IDs::PROCESSOR))
-                deleteProcessorActions.add(new DeleteProcessorAction(selectedItem, tracks, connections, audioProcessorContainer, pluginManager));
+                deleteProcessorActions.add(new DeleteProcessorAction(selectedItem, tracks, connections, audioProcessorContainer));
         }
     }
 

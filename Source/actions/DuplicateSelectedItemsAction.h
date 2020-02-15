@@ -7,7 +7,7 @@
 
 struct DuplicateSelectedItemsAction : public UndoableAction {
     DuplicateSelectedItemsAction(TracksState &tracks, ConnectionsState &connections, ViewState &view,
-                                 InputState &input, StatefulAudioProcessorContainer &audioProcessorContainer, PluginManager &pluginManager) {
+                                 InputState &input, StatefulAudioProcessorContainer &audioProcessorContainer) {
         oldFocusedSlot = view.getFocusedTrackAndSlot();
         auto selectedTracks = tracks.findSelectedNonMasterTracks();
         auto nonSelectedTracks = tracks.findNonSelectedTracks();
@@ -24,7 +24,7 @@ struct DuplicateSelectedItemsAction : public UndoableAction {
             for (const auto &processor : selectedTrack) {
                 int slot = processor[IDs::processorSlot];
                 addAndPerformCreateProcessorAction(processor, selectedTrackIndex, duplicatedTrackIndex,
-                                                   slot, slot, tracks, view, audioProcessorContainer, pluginManager);
+                                                   slot, slot, tracks, view, audioProcessorContainer);
             }
         }
         for (const auto &nonSelectedTrack : nonSelectedTracks) {
@@ -40,7 +40,7 @@ struct DuplicateSelectedItemsAction : public UndoableAction {
                 const auto &processor = TracksState::getProcessorAtSlot(nonSelectedTrack, selectedSlots[i]);
                 int trackIndex = tracks.indexOf(nonSelectedTrack);
                 addAndPerformCreateProcessorAction(processor, trackIndex, trackIndex, selectedSlots[i], duplicatedSlots[i],
-                                                   tracks, view, audioProcessorContainer, pluginManager);
+                                                   tracks, view, audioProcessorContainer);
             }
         }
 
@@ -119,8 +119,8 @@ private:
     // Insert indexes will depend on how many processors are in the track at action creation time,
     // so we actually need to perform as we go and undo all of these afterward.
     void addAndPerformCreateProcessorAction(ValueTree processor, int fromTrackIndex, int toTrackIndex, int fromSlot, int toSlot,
-                                            TracksState &tracks, ViewState &view, StatefulAudioProcessorContainer &audioProcessorContainer, PluginManager &pluginManager) {
-        createProcessorActions.add(new CreateProcessorAction(createProcessor(processor, audioProcessorContainer), toTrackIndex, toSlot, tracks, view, audioProcessorContainer, pluginManager));
+                                            TracksState &tracks, ViewState &view, StatefulAudioProcessorContainer &audioProcessorContainer) {
+        createProcessorActions.add(new CreateProcessorAction(createProcessor(processor, audioProcessorContainer), toTrackIndex, toSlot, tracks, view, audioProcessorContainer));
         createProcessorActions.getLast()->performTemporary();
         if (oldFocusedSlot.x == fromTrackIndex && oldFocusedSlot.y == fromSlot)
             newFocusedSlot = {toTrackIndex, toSlot};

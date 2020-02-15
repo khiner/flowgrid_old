@@ -1,6 +1,5 @@
 #pragma once
 
-#include <view/PluginWindow.h>
 #include "JuceHeader.h"
 #include "processors/InternalPluginFormat.h"
 #include "state/Identifiers.h"
@@ -103,31 +102,6 @@ public:
         return false;
     }
 
-    ResizableWindow *getOrCreateWindowFor(AudioProcessorGraph::Node *node, PluginWindow::Type type) {
-        jassert(node != nullptr);
-
-        for (auto *w : activePluginWindows)
-            if (w->node->nodeID == node->nodeID && w->type == type)
-                return w;
-
-        if (auto *processor = node->getProcessor())
-            return activePluginWindows.add(new PluginWindow(node, type, activePluginWindows));
-
-        return nullptr;
-    }
-
-    void closeWindowFor(AudioProcessorGraph::NodeID nodeID) {
-        for (int i = activePluginWindows.size(); --i >= 0;)
-            if (activePluginWindows.getUnchecked(i)->node->nodeID == nodeID)
-                activePluginWindows.remove(i);
-    }
-
-    bool closeAnyOpenPluginWindows() {
-        bool wasEmpty = activePluginWindows.isEmpty();
-        activePluginWindows.clear();
-        return !wasEmpty;
-    }
-
 private:
     const String PLUGIN_LIST_FILE_NAME = "pluginList";
 
@@ -138,8 +112,6 @@ private:
 
     KnownPluginList::SortMethod pluginSortMethod;
     AudioPluginFormatManager formatManager;
-
-    OwnedArray<PluginWindow> activePluginWindows;
 
     void changeListenerCallback(ChangeBroadcaster *changed) override {
         if (changed == &knownPluginListExternal) {

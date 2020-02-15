@@ -163,11 +163,8 @@ public:
     }
 
     void showWindow(PluginWindow::Type type) {
-        if (auto node = getNode())
-            if (auto *w = pluginManager.getOrCreateWindowFor(node, type))
-                w->toFront(true);
+        state.setProperty(IDs::pluginWindowType, int(type),  &project.getUndoManager());
     }
-
 
     class ElementComparator {
     public:
