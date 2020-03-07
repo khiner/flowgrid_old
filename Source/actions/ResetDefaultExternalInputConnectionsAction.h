@@ -20,7 +20,7 @@
 // TODO should receive a processor rather than using state to find the current focused processor
 // That way, we can deterministically find all the added/removed connections resulting from
 // changing default connections before and after a focus change, without needing to actually
-// change the focus state temporarily
+// change the focus state temporarily (see perform/undo in constructor of UpdateAllDefaultConnectionsAction)
 struct ResetDefaultExternalInputConnectionsAction : public CreateOrDeleteConnectionsAction {
 
     ResetDefaultExternalInputConnectionsAction(ConnectionsState &connections, TracksState &tracks, InputState &input,
