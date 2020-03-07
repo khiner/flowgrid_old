@@ -47,4 +47,11 @@ public:
             }
         }
     }
+
+    ValueTree duplicateProcessor(ValueTree &fromProcessor) {
+        saveProcessorStateInformationToState(fromProcessor);
+        auto duplicatedProcessor = fromProcessor.createCopy();
+        duplicatedProcessor.removeProperty(IDs::nodeId, nullptr);
+        return duplicatedProcessor;
+    }
 };

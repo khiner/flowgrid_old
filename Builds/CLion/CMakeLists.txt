@@ -31,6 +31,7 @@ add_executable (APP
     "../../Source/actions/DeleteTrackAction.h"
     "../../Source/actions/DisconnectProcessorAction.h"
     "../../Source/actions/DuplicateSelectedItemsAction.h"
+    "../../Source/actions/InsertAction.h"
     "../../Source/actions/InsertProcessorAction.h"
     "../../Source/actions/MoveSelectedItemsAction.h"
     "../../Source/actions/ResetDefaultExternalInputConnectionsAction.h"
@@ -63,6 +64,7 @@ add_executable (APP
     "../../Source/push2/Push2MidiCommunicator.h"
     "../../Source/push2/Push2UsbCommunicator.h"
     "../../Source/state/ConnectionsState.h"
+    "../../Source/state/CopiedState.h"
     "../../Source/state/Identifiers.h"
     "../../Source/state/InputState.h"
     "../../Source/state/OutputState.h"
@@ -1496,6 +1498,7 @@ set_source_files_properties ("../../Source/actions/DeleteSelectedItemsAction.h" 
 set_source_files_properties ("../../Source/actions/DeleteTrackAction.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/actions/DisconnectProcessorAction.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/actions/DuplicateSelectedItemsAction.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/actions/InsertAction.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/actions/InsertProcessorAction.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/actions/MoveSelectedItemsAction.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/actions/ResetDefaultExternalInputConnectionsAction.h" PROPERTIES HEADER_FILE_ONLY TRUE)
@@ -1527,6 +1530,7 @@ set_source_files_properties ("../../Source/push2/Push2DisplayBridge.h" PROPERTIE
 set_source_files_properties ("../../Source/push2/Push2MidiCommunicator.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/push2/Push2UsbCommunicator.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/state/ConnectionsState.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/state/CopiedState.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/state/Identifiers.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/state/InputState.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/state/OutputState.h" PROPERTIES HEADER_FILE_ONLY TRUE)

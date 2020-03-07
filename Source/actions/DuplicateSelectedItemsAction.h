@@ -120,17 +120,10 @@ private:
     // so we actually need to perform as we go and undo all of these afterward.
     void addAndPerformCreateProcessorAction(ValueTree processor, int fromTrackIndex, int toTrackIndex, int fromSlot, int toSlot,
                                             TracksState &tracks, ViewState &view, StatefulAudioProcessorContainer &audioProcessorContainer) {
-        createProcessorActions.add(new CreateProcessorAction(createProcessor(processor, audioProcessorContainer), toTrackIndex, toSlot, tracks, view, audioProcessorContainer));
+        createProcessorActions.add(new CreateProcessorAction(audioProcessorContainer.duplicateProcessor(processor), toTrackIndex, toSlot, tracks, view, audioProcessorContainer));
         createProcessorActions.getLast()->performTemporary();
         if (oldFocusedSlot.x == fromTrackIndex && oldFocusedSlot.y == fromSlot)
             newFocusedSlot = {toTrackIndex, toSlot};
-    }
-
-    static ValueTree createProcessor(ValueTree &fromProcessor, StatefulAudioProcessorContainer &audioProcessorContainer) {
-        audioProcessorContainer.saveProcessorStateInformationToState(fromProcessor);
-        auto duplicatedProcessor = fromProcessor.createCopy();
-        duplicatedProcessor.removeProperty(IDs::nodeId, nullptr);
-        return duplicatedProcessor;
     }
 
     static std::vector<int> findDuplicationIndices(std::vector<int> currentIndices) {

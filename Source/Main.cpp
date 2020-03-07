@@ -115,6 +115,8 @@ public:
             menu.addCommandItem(&getCommandManager(), CommandIDs::undo);
             menu.addCommandItem(&getCommandManager(), CommandIDs::redo);
             menu.addSeparator();
+            menu.addCommandItem(&getCommandManager(), CommandIDs::copySelected);
+            menu.addCommandItem(&getCommandManager(), CommandIDs::insert);
             menu.addCommandItem(&getCommandManager(), CommandIDs::duplicateSelected);
             menu.addSeparator();
             menu.addCommandItem(&getCommandManager(), CommandIDs::deleteSelected);
@@ -175,7 +177,7 @@ public:
     void menuBarActivated(bool isActivated) override {}
 
     void getAllCommands(Array<CommandID> &commands) override {
-        const CommandID ids[] = {
+        static const CommandID ids[] = {
                 CommandIDs::newFile,
                 CommandIDs::open,
                 CommandIDs::save,
@@ -183,6 +185,8 @@ public:
                 CommandIDs::undo,
                 CommandIDs::redo,
                 CommandIDs::deleteSelected,
+                CommandIDs::copySelected,
+                CommandIDs::insert,
                 CommandIDs::duplicateSelected,
                 CommandIDs::insertTrack,
                 CommandIDs::insertTrackWithoutMixer,
@@ -234,6 +238,27 @@ public:
                 result.addDefaultKeypress('z', ModifierKeys::commandModifier | ModifierKeys::shiftModifier);
                 result.setActive(undoManager.canRedo());
                 break;
+            case CommandIDs::copySelected:
+                result.setInfo("Copy", String(), category, 0);
+                result.addDefaultKeypress('c', ModifierKeys::commandModifier);
+                result.setActive(tracks.anyTrackHasSelections());
+                break;
+            case CommandIDs::insert:
+                result.setInfo("Insert", String(), category, 0);
+                result.addDefaultKeypress('v', ModifierKeys::commandModifier);
+                result.setActive(project.hasCopy());
+                break;
+            case CommandIDs::duplicateSelected:
+                result.setInfo("Duplicate selected item(s)", String(), category, 0);
+                result.addDefaultKeypress('d', ModifierKeys::commandModifier);
+                result.setActive(tracks.anyTrackHasSelections());
+                break;
+            case CommandIDs::deleteSelected:
+                result.setInfo("Delete selected item(s)", String(), category, 0);
+                result.addDefaultKeypress(KeyPress::deleteKey, ModifierKeys::noModifiers);
+                result.addDefaultKeypress(KeyPress::backspaceKey, ModifierKeys::noModifiers);
+                result.setActive(tracks.getFocusedTrack().isValid());
+                break;
             case CommandIDs::insertTrack:
                 result.setInfo("Insert track (with mixer)", String(), category, 0);
                 result.addDefaultKeypress('t', ModifierKeys::commandModifier);
@@ -252,17 +277,6 @@ public:
                 result.addDefaultKeypress('m', ModifierKeys::commandModifier);
                 result.setActive(tracks.getFocusedTrack().isValid() &&
                                  !tracks.getMixerChannelProcessorForFocusedTrack().isValid());
-                break;
-            case CommandIDs::duplicateSelected:
-                result.setInfo("Duplicate selected item(s)", String(), category, 0);
-                result.addDefaultKeypress('d', ModifierKeys::commandModifier);
-                result.setActive(tracks.anyTrackHasSelections());
-                break;
-            case CommandIDs::deleteSelected:
-                result.setInfo("Delete selected item(s)", String(), category, 0);
-                result.addDefaultKeypress(KeyPress::deleteKey, ModifierKeys::noModifiers);
-                result.addDefaultKeypress(KeyPress::backspaceKey, ModifierKeys::noModifiers);
-                result.setActive(tracks.getFocusedTrack().isValid());
                 break;
             case CommandIDs::showPush2MirrorWindow:
                 result.setInfo("Open a window mirroring a Push 2 display", String(), category, 0);
@@ -332,6 +346,13 @@ public:
                 break;
             case CommandIDs::redo:
                 project.redo();
+                break;
+            case CommandIDs::copySelected:
+                project.copySelectedItems();
+                applicationCommandListChanged(); // enable paste menu item
+                break;
+            case CommandIDs::insert:
+                project.insert();
                 break;
             case CommandIDs::duplicateSelected:
                 project.duplicateSelectedItems();

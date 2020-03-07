@@ -14,6 +14,7 @@
 #include <actions/MoveSelectedItemsAction.h>
 #include <actions/DuplicateSelectedItemsAction.h>
 #include <actions/SelectRectangleAction.h>
+#include <actions/InsertAction.h>
 
 #include "PluginManager.h"
 #include "Utilities.h"
@@ -22,6 +23,7 @@
 #include "state/ConnectionsState.h"
 #include "state/ViewState.h"
 #include "actions/SelectTrackAction.h"
+#include "CopiedState.h"
 
 class Project : public Stateful, public FileBasedDocument, public StatefulAudioProcessorContainer,
                 private ChangeListener, private ValueTree::Listener {
@@ -34,7 +36,8 @@ public:
               connections(*this, tracks),
               input(tracks, connections, *this, pluginManager, undoManager, deviceManager),
               output(tracks, connections, *this, pluginManager, undoManager, deviceManager),
-              deviceManager(deviceManager) {
+              deviceManager(deviceManager),
+              copiedState(tracks, connections, *this) {
         state = ValueTree(IDs::PROJECT);
         state.setProperty(IDs::name, "My First Project", nullptr);
         state.appendChild(input.getState(), nullptr);
@@ -207,6 +210,19 @@ public:
         undoManager.beginNewTransaction();
         undoManager.perform(new DuplicateSelectedItemsAction(tracks, connections, view, input, *statefulAudioProcessorContainer));
         updateAllDefaultConnections(false);
+    }
+
+    void copySelectedItems() {
+        copiedState.copySelectedItems();
+    }
+
+    bool hasCopy() {
+        return copiedState.getState().isValid();
+    }
+
+    void insert() {
+        undoManager.perform(new InsertAction(copiedState.getState(), view.getFocusedTrackAndSlot(), tracks, view, *this));
+        updateAllDefaultConnections();
     }
 
     void beginDragging(const juce::Point<int> trackAndSlot) {
@@ -474,6 +490,8 @@ private:
             currentlyDraggingTrackAndSlot = TracksState::INVALID_TRACK_AND_SLOT;
 
     ValueTree mostRecentlyCreatedTrack, mostRecentlyCreatedProcessor;
+
+    CopiedState copiedState;
 
     void doCreateAndAddProcessor(const PluginDescription &description, ValueTree &track, int slot = -1) {
         if (PluginManager::isGeneratorOrInstrument(&description) &&
