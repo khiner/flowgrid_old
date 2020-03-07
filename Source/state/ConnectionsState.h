@@ -117,6 +117,15 @@ public:
         return audioProcessorContainer.getProcessorStateForNodeId(SAPC::getNodeIdForState(outgoingConnections.getFirst().getChildWithName(IDs::DESTINATION)));
     }
 
+    bool anyNonMasterTrackHasEffectProcessor(ConnectionType connectionType) {
+        for (const auto &track : tracks.getState())
+            if (!tracks.isMasterTrack(track))
+                for (const auto &processor : track)
+                    if (isProcessorAnEffect(processor, connectionType))
+                        return true;
+        return false;
+    }
+
 private:
     ValueTree connections;
     StatefulAudioProcessorContainer &audioProcessorContainer;

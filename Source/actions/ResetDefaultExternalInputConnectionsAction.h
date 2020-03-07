@@ -32,10 +32,9 @@ struct ResetDefaultExternalInputConnectionsAction : public CreateOrDeleteConnect
         for (auto connectionType : {audio, midi}) {
             const auto sourceNodeId = input.getDefaultInputNodeIdForConnectionType(connectionType);
 
-            // Don't change default input connections if master received focus but a non-master processor already has default inputs connected.
+            // If master track received focus, only change the default connections if no other tracks have effect processors
             if (TracksState::isMasterTrack(trackToTreatAsFocused)) {
-                const auto &alreadyReceivingDefaults = connections.findFirstProcessorReceivingDefaultConnectionsFrom(sourceNodeId, connectionType);
-                if (alreadyReceivingDefaults.isValid() && !TracksState::isMasterTrack(alreadyReceivingDefaults.getParent()))
+                if (connections.anyNonMasterTrackHasEffectProcessor(connectionType))
                     continue;
             }
 
