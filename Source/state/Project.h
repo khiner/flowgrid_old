@@ -221,6 +221,7 @@ public:
     }
 
     void insert() {
+        undoManager.beginNewTransaction();
         undoManager.perform(new InsertAction(copiedState.getState(), view.getFocusedTrackAndSlot(), tracks, view, *this));
         updateAllDefaultConnections();
     }

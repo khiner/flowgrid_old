@@ -15,15 +15,19 @@ struct InsertAction : UndoableAction {
 
     bool perform() override {
         const auto trackAndSlotDiff = toTrackAndSlot - fromTrackAndSlot;
+
         // First pass: copy processors that are selected without their parent track also selected.
         // This is done because adding new tracks changes the track indices relative to the past position.
-        // TODO could be done in one pass pretty easily by adding to indices appropriately after track creation
         for (const auto &track : copiedState) {
             if (!track[IDs::selected]) {
                 int toTrackIndex = copiedState.indexOf(track) + trackAndSlotDiff.x;
-                for (auto processor : track) {
+                if (track.getNumChildren() > 0)
+                    while (toTrackIndex >= tracks.getNumNonMasterTracks())
+                        // TODO assumes since there is no mixer channel that it is "derived". Should have a unique track number
+                        CreateTrackAction(false, false, {}, tracks, view).perform();
+                for (const auto &processor : track) {
                     int toSlot = int(processor[IDs::processorSlot]) + trackAndSlotDiff.y;
-                    CreateProcessorAction(processor, toTrackIndex, toSlot,
+                    CreateProcessorAction(processor.createCopy(), toTrackIndex, toSlot,
                                           tracks, view, audioProcessorContainer).perform();
                 }
             }
@@ -33,9 +37,9 @@ struct InsertAction : UndoableAction {
             if (track[IDs::selected]) {
                 int toTrackIndex = copiedState.indexOf(track) + trackAndSlotDiff.x + 1;
                 CreateTrackAction(toTrackIndex, false, false, track, tracks, view).perform();
-                for (auto processor : track) {
+                for (const auto &processor : track) {
                     int toSlot = processor[IDs::processorSlot];
-                    CreateProcessorAction(processor, toTrackIndex, toSlot,
+                    CreateProcessorAction(processor.createCopy(), toTrackIndex, toSlot,
                                           tracks, view, audioProcessorContainer).perform();
                 }
             }
