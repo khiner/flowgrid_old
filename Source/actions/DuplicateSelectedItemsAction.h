@@ -19,7 +19,7 @@ struct DuplicateSelectedItemsAction : public UndoableAction {
         for (int selectedTrackIndex = 0; selectedTrackIndex < selectedTracks.size(); selectedTrackIndex++) {
             const auto &selectedTrack = selectedTracks.getUnchecked(selectedTrackIndex);
             int duplicatedTrackIndex = duplicatedTrackIndices[selectedTrackIndex];
-            createTrackActions.add(new CreateTrackAction(duplicatedTrackIndex, false, false, selectedTrack, tracks, connections, view));
+            createTrackActions.add(new CreateTrackAction(duplicatedTrackIndex, false, false, selectedTrack, tracks, view));
             createTrackActions.getLast()->perform();
             for (const auto &processor : selectedTrack) {
                 int slot = processor[IDs::processorSlot];
@@ -120,7 +120,7 @@ private:
     // so we actually need to perform as we go and undo all of these afterward.
     void addAndPerformCreateProcessorAction(ValueTree processor, int fromTrackIndex, int toTrackIndex, int fromSlot, int toSlot,
                                             TracksState &tracks, ViewState &view, StatefulAudioProcessorContainer &audioProcessorContainer) {
-        createProcessorActions.add(new CreateProcessorAction(audioProcessorContainer.duplicateProcessor(processor), toTrackIndex, toSlot, tracks, view, audioProcessorContainer));
+        createProcessorActions.add(new CreateProcessorAction(audioProcessorContainer.copyProcessor(processor), toTrackIndex, toSlot, tracks, view, audioProcessorContainer));
         createProcessorActions.getLast()->performTemporary();
         if (oldFocusedSlot.x == fromTrackIndex && oldFocusedSlot.y == fromSlot)
             newFocusedSlot = {toTrackIndex, toSlot};

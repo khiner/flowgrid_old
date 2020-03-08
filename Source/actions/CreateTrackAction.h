@@ -6,11 +6,11 @@
 #include "JuceHeader.h"
 
 struct CreateTrackAction : public UndoableAction {
-    CreateTrackAction(bool isMaster, bool addMixer, const ValueTree &derivedFromTrack, TracksState &tracks, ConnectionsState &connections, ViewState &view)
+    CreateTrackAction(bool isMaster, bool addMixer, const ValueTree &derivedFromTrack, TracksState &tracks, ViewState &view)
             : CreateTrackAction(calculateInsertIndex(isMaster, addMixer, derivedFromTrack, tracks),
-                                isMaster, addMixer, derivedFromTrack, tracks, connections, view) {}
+                                isMaster, addMixer, derivedFromTrack, tracks, view) {}
 
-    CreateTrackAction(int insertIndex, bool isMaster, bool addMixer, ValueTree derivedFromTrack, TracksState &tracks, ConnectionsState &connections, ViewState &view)
+    CreateTrackAction(int insertIndex, bool isMaster, bool addMixer, ValueTree derivedFromTrack, TracksState &tracks, ViewState &view)
             : insertIndex(insertIndex), tracks(tracks) {
         const auto &focusedTrack = tracks.getFocusedTrack();
 

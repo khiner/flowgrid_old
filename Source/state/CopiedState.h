@@ -12,16 +12,15 @@ struct CopiedState : public Stateful {
     void loadFromState(const ValueTree &tracksState) override {
         copiedItems = ValueTree(IDs::TRACKS);
         for (const auto &track : tracksState) {
-            ValueTree copiedTrack;
+            auto copiedTrack = ValueTree(IDs::TRACK);
             if (track[IDs::selected]) {
-                copiedTrack = track.createCopy();
+                copiedTrack.copyPropertiesFrom(track, nullptr);
             } else {
-                copiedTrack = ValueTree(IDs::TRACK);
-                copiedTrack.setProperty(IDs::selectedSlotsMask, bool(track[IDs::selectedSlotsMask]), nullptr);
-                for (auto processor : track) {
-                    if (tracks.isProcessorSelected(processor)) {
-                        copiedTrack.appendChild(audioProcessorContainer.duplicateProcessor(processor), nullptr);
-                    }
+                copiedTrack.setProperty(IDs::selectedSlotsMask, track[IDs::selectedSlotsMask].toString(), nullptr);
+            }
+            for (auto processor : track) {
+                if (track[IDs::selected] || tracks.isProcessorSelected(processor)) {
+                    copiedTrack.appendChild(audioProcessorContainer.copyProcessor(processor), nullptr);
                 }
             }
             copiedItems.appendChild(copiedTrack, nullptr);

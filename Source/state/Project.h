@@ -176,7 +176,7 @@ public:
             return; // only one master track allowed!
 
         undoManager.beginNewTransaction();
-        undoManager.perform(new CreateTrackAction(isMaster, addMixer, {}, tracks, connections, view));
+        undoManager.perform(new CreateTrackAction(isMaster, addMixer, {}, tracks, view));
         if (addMixer)
             undoManager.perform(new CreateProcessorAction(MixerChannelProcessor::getPluginDescription(),
                                                           tracks.indexOf(mostRecentlyCreatedTrack), tracks, view, *this));
@@ -496,7 +496,7 @@ private:
     void doCreateAndAddProcessor(const PluginDescription &description, ValueTree &track, int slot = -1) {
         if (PluginManager::isGeneratorOrInstrument(&description) &&
             pluginManager.doesTrackAlreadyHaveGeneratorOrInstrument(track)) {
-            undoManager.perform(new CreateTrackAction(false, false, track, tracks, connections, view));
+            undoManager.perform(new CreateTrackAction(false, false, track, tracks, view));
             return doCreateAndAddProcessor(description, mostRecentlyCreatedTrack, slot);
         }
 

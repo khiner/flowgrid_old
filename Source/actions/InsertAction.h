@@ -15,13 +15,29 @@ struct InsertAction : UndoableAction {
 
     bool perform() override {
         const auto trackAndSlotDiff = toTrackAndSlot - fromTrackAndSlot;
+        // First pass: copy processors that are selected without their parent track also selected.
+        // This is done because adding new tracks changes the track indices relative to the past position.
+        // TODO could be done in one pass pretty easily by adding to indices appropriately after track creation
         for (const auto &track : copiedState) {
-            for (auto processor : track) {
-                juce::Point<int> trackAndSlot = {copiedState.indexOf(track), processor[IDs::processorSlot]};
-                auto toTrackAndSlot = trackAndSlot + trackAndSlotDiff;
-                CreateProcessorAction(audioProcessorContainer.duplicateProcessor(processor), toTrackAndSlot.x, toTrackAndSlot.y,
-                                      tracks, view, audioProcessorContainer)
-                                      .perform();
+            if (!track[IDs::selected]) {
+                int toTrackIndex = copiedState.indexOf(track) + trackAndSlotDiff.x;
+                for (auto processor : track) {
+                    int toSlot = int(processor[IDs::processorSlot]) + trackAndSlotDiff.y;
+                    CreateProcessorAction(processor, toTrackIndex, toSlot,
+                                          tracks, view, audioProcessorContainer).perform();
+                }
+            }
+        }
+        // Second pass: paste selected tracks (along with their processors
+        for (const auto &track : copiedState) {
+            if (track[IDs::selected]) {
+                int toTrackIndex = copiedState.indexOf(track) + trackAndSlotDiff.x + 1;
+                CreateTrackAction(toTrackIndex, false, false, track, tracks, view).perform();
+                for (auto processor : track) {
+                    int toSlot = processor[IDs::processorSlot];
+                    CreateProcessorAction(processor, toTrackIndex, toSlot,
+                                          tracks, view, audioProcessorContainer).perform();
+                }
             }
         }
         return true;
@@ -58,6 +74,8 @@ private:
                     fromTrackAndSlot.y = std::min(fromTrackAndSlot.y, lowestSelectedSlotForTrack);
             }
         }
+        if (fromTrackAndSlot.y == INT_MAX)
+            fromTrackAndSlot.y = 0;
         assert(fromTrackAndSlot.x != INT_MAX); // Copied state must, by definition, have a selection.
         return fromTrackAndSlot;
     }
