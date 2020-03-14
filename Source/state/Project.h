@@ -175,6 +175,7 @@ public:
         if (isMaster && tracks.getMasterTrack().isValid())
             return; // only one master track allowed!
 
+        setShiftHeld(false); // prevent rectangle-select behavior when doing cmd+shift+t
         undoManager.beginNewTransaction();
         undoManager.perform(new CreateTrackAction(isMaster, addMixer, {}, tracks, view));
         if (addMixer)
