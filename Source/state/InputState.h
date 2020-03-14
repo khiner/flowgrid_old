@@ -93,7 +93,9 @@ private:
             syncInputDevicesWithDeviceManager();
             AudioDeviceManager::AudioDeviceSetup config;
             deviceManager.getAudioDeviceSetup(config);
-            input.setProperty(IDs::deviceName, config.inputDeviceName, &undoManager);
+            // TODO the undomanager behavior around this needs more thinking.
+            //  This should be done along with the work to keep disabled IO devices in the graph if they still have connections
+            input.setProperty(IDs::deviceName, config.inputDeviceName, nullptr);
         }
     }
 

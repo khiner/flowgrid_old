@@ -7,6 +7,7 @@
 #include "StatefulAudioProcessorContainer.h"
 #include "Stateful.h"
 
+// TODO Should input/output be combined into a single IOState? (Almost all behavior is symmetrical.)
 class OutputState : public Stateful, private ChangeListener, private ValueTree::Listener {
 public:
     OutputState(TracksState &tracks, ConnectionsState &connections,
@@ -81,7 +82,9 @@ private:
             syncOutputDevicesWithDeviceManager();
             AudioDeviceManager::AudioDeviceSetup config;
             deviceManager.getAudioDeviceSetup(config);
-            output.setProperty(IDs::deviceName, config.outputDeviceName, &undoManager);
+            // TODO the undomanager behavior around this needs more thinking.
+            //  This should be done along with the work to keep disabled IO devices in the graph if they still have connections
+            output.setProperty(IDs::deviceName, config.outputDeviceName, nullptr);
         }
     }
 
