@@ -11,24 +11,26 @@ struct InsertAction : UndoableAction {
                  TracksState &tracks, ViewState &view, StatefulAudioProcessorContainer &audioProcessorContainer)
             : copiedState(copiedState.createCopy()), fromTrackAndSlot(findFromTrackAndSlot()), toTrackAndSlot(toTrackAndSlot),
               tracks(tracks), view(view), audioProcessorContainer(audioProcessorContainer) {
-        const auto trackAndSlotDiff = toTrackAndSlot - fromTrackAndSlot;
-        Array<UndoableAction *> actionsToUndo;
+        auto trackAndSlotDiff = toTrackAndSlot - fromTrackAndSlot;
+        if (anyCopiedTrackSelected())
+            trackAndSlotDiff.y = 0;
 
         // First pass: insert processors that are selected without their parent track also selected.
         // This is done because adding new tracks changes the track indices relative to the past position.
         for (const auto &track : copiedState) {
             if (!track[IDs::selected]) {
                 int toTrackIndex = copiedState.indexOf(track) + trackAndSlotDiff.x;
-                if (track.getNumChildren() > 0)
+                if (track.getNumChildren() > 0) {
                     while (toTrackIndex >= tracks.getNumNonMasterTracks()) {
                         // TODO assumes since there is no mixer channel that it is "derived". Should have a unique track number
                         addAndPerformAction(new CreateTrackAction(false, false, {},
-                                                                  tracks, view), actionsToUndo);
+                                                                  tracks, view));
                     }
+                }
                 for (const auto &processor : track) {
                     int toSlot = int(processor[IDs::processorSlot]) + trackAndSlotDiff.y;
                     addAndPerformAction(new CreateProcessorAction(processor.createCopy(), toTrackIndex, toSlot,
-                                                                  tracks, view, audioProcessorContainer), actionsToUndo);
+                                                                  tracks, view, audioProcessorContainer));
                 }
             }
         }
@@ -37,18 +39,21 @@ struct InsertAction : UndoableAction {
             if (track[IDs::selected]) {
                 int toTrackIndex = copiedState.indexOf(track) + trackAndSlotDiff.x + 1;
                 addAndPerformAction(new CreateTrackAction(toTrackIndex, false, false,
-                                                          track, tracks, view), actionsToUndo);
+                                                          track, tracks, view));
                 for (const auto &processor : track) {
                     int toSlot = processor[IDs::processorSlot];
-                    // This is the only part that doesn't need to be performed for future actions to be consistent.
-                    // (Just inserting new processors into a new track.)
-                    createActions.add(new CreateProcessorAction(processor.createCopy(), toTrackIndex, toSlot,
+                    addAndPerformAction(new CreateProcessorAction(processor.createCopy(), toTrackIndex, toSlot,
                                                                 tracks, view, audioProcessorContainer));
                 }
             }
         }
-        for (int i = actionsToUndo.size() - 1; i >= 0; i--)
-            actionsToUndo.getUnchecked(i)->undo();
+        for (int i = createActions.size() - 1; i >= 0; i--) {
+            auto *action = createActions.getUnchecked(i);
+            if (auto *createProcessorAction = dynamic_cast<CreateProcessorAction *>(action))
+                createProcessorAction->undoTemporary();
+            else
+                action->undo();
+        }
     }
 
     bool perform() override {
@@ -86,28 +91,43 @@ private:
     OwnedArray<UndoableAction> createActions;
 
     juce::Point<int> findFromTrackAndSlot() {
-        juce::Point<int> fromTrackAndSlot = {INT_MAX, INT_MAX};
-        for (int trackIndex = 0; trackIndex < copiedState.getNumChildren(); trackIndex++) {
-            const auto &track = copiedState.getChild(trackIndex);
-            if (fromTrackAndSlot.x == INT_MAX && (track[IDs::selected] || tracks.trackHasAnySlotSelected(track))) {
-                fromTrackAndSlot.x = trackIndex;
-            }
-            if (!track[IDs::selected]) {
-                int lowestSelectedSlotForTrack = tracks.getSlotMask(track).findNextSetBit(0);
-                if (lowestSelectedSlotForTrack != -1)
-                    fromTrackAndSlot.y = std::min(fromTrackAndSlot.y, lowestSelectedSlotForTrack);
-            }
+        int fromTrackIndex = getIndexOfFirstCopiedTrackWithSelections();
+        if (anyCopiedTrackSelected())
+            return {fromTrackIndex, 0};
+
+        int fromSlot = INT_MAX;
+        for (const auto &track : copiedState) {
+            int lowestSelectedSlotForTrack = tracks.getSlotMask(track).findNextSetBit(0);
+            if (lowestSelectedSlotForTrack != -1)
+                fromSlot = std::min(fromSlot, lowestSelectedSlotForTrack);
         }
-        if (fromTrackAndSlot.y == INT_MAX)
-            fromTrackAndSlot.y = 0;
-        assert(fromTrackAndSlot.x != INT_MAX); // Copied state must, by definition, have a selection.
-        return fromTrackAndSlot;
+
+        assert(fromSlot != INT_MAX);
+        return {fromTrackIndex, fromSlot};
     }
 
-    void addAndPerformAction(UndoableAction *action, Array<UndoableAction *> copyTo) {
+    bool anyCopiedTrackSelected() {
+        for (const ValueTree &track : copiedState)
+            if (track[IDs::selected])
+                return true;
+
+        return false;
+    }
+
+    int getIndexOfFirstCopiedTrackWithSelections() {
+        for (const auto &track : copiedState)
+            if (track[IDs::selected] || tracks.trackHasAnySlotSelected(track))
+                return copiedState.indexOf(track);
+
+        assert(false); // Copied state, by definition, must have a selection.
+    }
+
+    void addAndPerformAction(UndoableAction *action) {
+        if (auto *createProcessorAction = dynamic_cast<CreateProcessorAction *>(action))
+            createProcessorAction->performTemporary();
+        else
+            action->perform();
         createActions.add(action);
-        action->perform();
-        copyTo.add(action);
     }
 
     JUCE_DECLARE_NON_COPYABLE(InsertAction)
