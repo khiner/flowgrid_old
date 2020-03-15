@@ -7,20 +7,14 @@
 // Doesn't take care of any select actions! (Caller is responsible for that.)
 struct InsertProcessorAction : UndoableAction {
     InsertProcessorAction(const ValueTree &processor, int toTrackIndex, int toSlot, TracksState &tracks, ViewState &view)
-            : addOrMoveProcessorAction(processor, toTrackIndex, toSlot, tracks, view),
-              makeSlotsValidAction(createMakeSlotsValidAction(toTrackIndex, tracks, view)) {
-        // cleanup - yeah it's ugly but avoids need for some copy/move madness in createMakeSlotsValidAction
-        addOrMoveProcessorAction.undo();
-    }
+            : addOrMoveProcessorAction(processor, toTrackIndex, toSlot, tracks, view) {}
 
     bool perform() override {
         addOrMoveProcessorAction.perform();
-        makeSlotsValidAction.perform();
         return true;
     }
 
     bool undo() override {
-        makeSlotsValidAction.undo();
         addOrMoveProcessorAction.undo();
         return true;
     }
@@ -42,11 +36,18 @@ private:
                 for (int i = 0; i <= this->newSlot - tracks.getMixerChannelSlotForTrack(track); i++)
                     addProcessorRowActions.add(new AddProcessorRowAction(trackIndex, tracks, view));
             }
+            if (addProcessorRowActions.isEmpty()) {
+                const auto &conflictingProcessor = tracks.getProcessorAtSlot(track, newSlot);
+                if (conflictingProcessor.isValid())
+                    pushConflictingProcessorAction = std::make_unique<SetProcessorSlotAction>(trackIndex, conflictingProcessor, newSlot + 1, tracks, view);
+            }
         }
 
         bool perform() override {
             for (auto *addProcessorRowAction : addProcessorRowActions)
                 addProcessorRowAction->perform();
+            if (pushConflictingProcessorAction)
+                pushConflictingProcessorAction->perform();
             if (processor.isValid())
                 processor.setProperty(IDs::processorSlot, newSlot, nullptr);
             return true;
@@ -55,6 +56,8 @@ private:
         bool undo() override {
             if (processor.isValid())
                 processor.setProperty(IDs::processorSlot, oldSlot, nullptr);
+            if (pushConflictingProcessorAction)
+                pushConflictingProcessorAction->undo();
             for (auto *addProcessorRowAction : addProcessorRowActions)
                 addProcessorRowAction->undo();
             return true;
@@ -63,6 +66,7 @@ private:
     private:
         ValueTree processor;
         int oldSlot, newSlot;
+        std::unique_ptr<SetProcessorSlotAction> pushConflictingProcessorAction;
 
         struct AddProcessorRowAction : public UndoableAction {
             AddProcessorRowAction(int trackIndex, TracksState &tracks, ViewState &view)
@@ -175,58 +179,5 @@ private:
         TracksState &tracks;
     };
 
-    struct MakeSlotsValidAction : public UndoableAction {
-        MakeSlotsValidAction(int trackIndex, TracksState &tracks, ViewState &view) : tracks(tracks) {
-            const ValueTree &track = tracks.getTrack(trackIndex);
-            std::vector<int> slots;
-            for (const ValueTree &child : track)
-                slots.push_back(child[IDs::processorSlot]);
-            sort(slots.begin(), slots.end());
-            for (int i = 1; i < slots.size(); i++)
-                while (slots[i] <= slots[i - 1])
-                    slots[i] += 1;
-
-            auto iterator = slots.begin();
-            for (const ValueTree &processor : track) {
-                int newSlot = *(iterator++);
-                // Need to actually _do_ the move for each processor, since this could affect the results of
-                // a later processor slot move. (This action is undone later.)
-                setSlotActions.add(new SetProcessorSlotAction(trackIndex, processor, newSlot, tracks, view));
-                setSlotActions.getLast()->perform();
-            }
-            for (int i = setSlotActions.size() - 1; i >= 0; i--)
-                setSlotActions.getUnchecked(i)->undo();
-        }
-
-        bool perform() override {
-            for (auto *setSlotAction : setSlotActions)
-                setSlotAction->perform();
-            return true;
-        }
-
-        bool undo() override {
-            for (int i = setSlotActions.size() - 1; i >= 0; i--)
-                setSlotActions.getUnchecked(i)->undo();
-            return true;
-        }
-
-        int getSizeInUnits() override {
-            return (int) sizeof(*this); //xxx should be more accurate
-        }
-
-    private:
-        TracksState &tracks;
-
-        OwnedArray<SetProcessorSlotAction> setSlotActions;
-
-        JUCE_DECLARE_NON_COPYABLE(MakeSlotsValidAction)
-    };
-
-    MakeSlotsValidAction createMakeSlotsValidAction(int trackIndex, TracksState &tracks, ViewState &view) {
-        addOrMoveProcessorAction.perform();
-        return {trackIndex, tracks, view};
-    }
-
     AddOrMoveProcessorAction addOrMoveProcessorAction;
-    MakeSlotsValidAction makeSlotsValidAction;
 };

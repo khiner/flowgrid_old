@@ -9,11 +9,9 @@
 struct InsertAction : UndoableAction {
     InsertAction(const ValueTree &copiedState, const juce::Point<int> toTrackAndSlot,
                  TracksState &tracks, ViewState &view, StatefulAudioProcessorContainer &audioProcessorContainer)
-            : copiedState(copiedState.createCopy()), fromTrackAndSlot(findFromTrackAndSlot()), toTrackAndSlot(toTrackAndSlot),
-              tracks(tracks), view(view), audioProcessorContainer(audioProcessorContainer) {
-        auto trackAndSlotDiff = toTrackAndSlot - fromTrackAndSlot;
-        if (anyCopiedTrackSelected())
-            trackAndSlotDiff.y = 0;
+            : copiedState(copiedState.createCopy()), tracks(tracks), view(view), audioProcessorContainer(audioProcessorContainer),
+              fromTrackAndSlot(findFromTrackAndSlot()), toTrackAndSlot(limitToTrackAndSlot(toTrackAndSlot)) {
+        auto trackAndSlotDiff = this->toTrackAndSlot - this->fromTrackAndSlot;
 
         if (tracks.getMasterTrack().isValid() && toTrackAndSlot.x == tracks.getNumNonMasterTracks()) {
             // When inserting into master track, only insert the processors of the first track with selections
@@ -22,12 +20,15 @@ struct InsertAction : UndoableAction {
             // First pass: insert processors that are selected without their parent track also selected.
             // This is done because adding new tracks changes the track indices relative to their current position.
             for (const auto &copiedTrack : copiedState) {
-                if (!copiedTrack[IDs::selected] && copiedTrack.getNumChildren() > 0) {
+                if (!copiedTrack[IDs::selected]) {
                     int toTrackIndex = copiedState.indexOf(copiedTrack) + trackAndSlotDiff.x;
-                    while (toTrackIndex >= tracks.getNumNonMasterTracks()) {
-                        addAndPerformAction(new CreateTrackAction(false, false, {}, tracks, view));
+                    if (copiedTrack.getNumChildren() > 0) {
+                        while (toTrackIndex >= tracks.getNumNonMasterTracks()) {
+                            addAndPerformAction(new CreateTrackAction(false, false, {}, tracks, view));
+                        }
                     }
-                    copyProcessorsFromTrack(copiedTrack, toTrackIndex, trackAndSlotDiff.y);
+                    if (toTrackIndex < tracks.getNumNonMasterTracks())
+                        copyProcessorsFromTrack(copiedTrack, toTrackIndex, trackAndSlotDiff.y);
                 }
             }
             // Second pass: insert selected tracks (along with their processors)
@@ -79,12 +80,13 @@ struct InsertAction : UndoableAction {
 private:
 
     ValueTree copiedState;
-    juce::Point<int> fromTrackAndSlot;
-    juce::Point<int> toTrackAndSlot;
 
     TracksState &tracks;
     ViewState &view;
     StatefulAudioProcessorContainer &audioProcessorContainer;
+
+    juce::Point<int> fromTrackAndSlot;
+    juce::Point<int> toTrackAndSlot;
 
     OwnedArray<UndoableAction> createActions;
 
@@ -104,6 +106,10 @@ private:
         return {fromTrackIndex, fromSlot};
     }
 
+    juce::Point<int> limitToTrackAndSlot(juce::Point<int> toTrackAndSlot) {
+        return {toTrackAndSlot.x, anyCopiedTrackSelected() ? 0 : toTrackAndSlot.y};
+    }
+
     bool anyCopiedTrackSelected() {
         for (const ValueTree &track : copiedState)
             if (track[IDs::selected])
@@ -121,10 +127,13 @@ private:
     }
 
     void copyProcessorsFromTrack(const ValueTree &fromTrack, int toTrackIndex, int slotDiff) {
-        for (const auto &processor : fromTrack) {
-            int toSlot = int(processor[IDs::processorSlot]) + slotDiff;
-            addAndPerformAction(new CreateProcessorAction(processor.createCopy(), toTrackIndex, toSlot,
-                                                          tracks, view, audioProcessorContainer));
+        const BigInteger slotsMask = TracksState::getSlotMask(fromTrack);
+        for (int slot = 0; slot <= slotsMask.getHighestBit(); slot++) {
+            if (slotsMask[slot]) {
+                addAndPerformAction(new CreateProcessorAction(TracksState::getProcessorAtSlot(fromTrack, slot).createCopy(),
+                                                              toTrackIndex, slot + slotDiff,
+                                                              tracks, view, audioProcessorContainer));
+            }
         }
     }
 
