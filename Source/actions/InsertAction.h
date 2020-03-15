@@ -15,38 +15,37 @@ struct InsertAction : UndoableAction {
         if (anyCopiedTrackSelected())
             trackAndSlotDiff.y = 0;
 
-        // First pass: insert processors that are selected without their parent track also selected.
-        // This is done because adding new tracks changes the track indices relative to the past position.
-        for (const auto &track : copiedState) {
-            if (!track[IDs::selected]) {
-                int toTrackIndex = copiedState.indexOf(track) + trackAndSlotDiff.x;
-                if (track.getNumChildren() > 0) {
+        if (tracks.getMasterTrack().isValid() && toTrackAndSlot.x == tracks.getNumNonMasterTracks()) {
+            // When inserting into master track, only insert the processors of the first track with selections
+            copyProcessorsFromTrack(copiedState.getChild(fromTrackAndSlot.x), tracks.getNumNonMasterTracks(), trackAndSlotDiff.y);
+        } else {
+            // First pass: insert processors that are selected without their parent track also selected.
+            // This is done because adding new tracks changes the track indices relative to their current position.
+            for (const auto &copiedTrack : copiedState) {
+                if (!copiedTrack[IDs::selected] && copiedTrack.getNumChildren() > 0) {
+                    int toTrackIndex = copiedState.indexOf(copiedTrack) + trackAndSlotDiff.x;
                     while (toTrackIndex >= tracks.getNumNonMasterTracks()) {
                         // TODO assumes since there is no mixer channel that it is "derived". Should have a unique track number
-                        addAndPerformAction(new CreateTrackAction(false, false, {},
-                                                                  tracks, view));
+                        addAndPerformAction(new CreateTrackAction(false, false, {}, tracks, view));
+                    }
+                    copyProcessorsFromTrack(copiedTrack, toTrackIndex, trackAndSlotDiff.y);
+                }
+            }
+            // Second pass: insert selected tracks (along with their processors)
+            for (const auto &track : copiedState) {
+                if (track[IDs::selected]) {
+                    int toTrackIndex = copiedState.indexOf(track) + trackAndSlotDiff.x + 1;
+                    addAndPerformAction(new CreateTrackAction(toTrackIndex, false, false,
+                                                              track, tracks, view));
+                    for (const auto &processor : track) {
+                        addAndPerformAction(new CreateProcessorAction(processor.createCopy(), toTrackIndex, processor[IDs::processorSlot],
+                                                                      tracks, view, audioProcessorContainer));
                     }
                 }
-                for (const auto &processor : track) {
-                    int toSlot = int(processor[IDs::processorSlot]) + trackAndSlotDiff.y;
-                    addAndPerformAction(new CreateProcessorAction(processor.createCopy(), toTrackIndex, toSlot,
-                                                                  tracks, view, audioProcessorContainer));
-                }
             }
         }
-        // Second pass: insert selected tracks (along with their processors)
-        for (const auto &track : copiedState) {
-            if (track[IDs::selected]) {
-                int toTrackIndex = copiedState.indexOf(track) + trackAndSlotDiff.x + 1;
-                addAndPerformAction(new CreateTrackAction(toTrackIndex, false, false,
-                                                          track, tracks, view));
-                for (const auto &processor : track) {
-                    int toSlot = processor[IDs::processorSlot];
-                    addAndPerformAction(new CreateProcessorAction(processor.createCopy(), toTrackIndex, toSlot,
-                                                                tracks, view, audioProcessorContainer));
-                }
-            }
-        }
+
+        // Cleanup
         for (int i = createActions.size() - 1; i >= 0; i--) {
             auto *action = createActions.getUnchecked(i);
             if (auto *createProcessorAction = dynamic_cast<CreateProcessorAction *>(action))
@@ -120,6 +119,14 @@ private:
                 return copiedState.indexOf(track);
 
         assert(false); // Copied state, by definition, must have a selection.
+    }
+
+    void copyProcessorsFromTrack(const ValueTree &fromTrack, int toTrackIndex, int slotDiff) {
+        for (const auto &processor : fromTrack) {
+            int toSlot = int(processor[IDs::processorSlot]) + slotDiff;
+            addAndPerformAction(new CreateProcessorAction(processor.createCopy(), toTrackIndex, toSlot,
+                                                          tracks, view, audioProcessorContainer));
+        }
     }
 
     void addAndPerformAction(UndoableAction *action) {
