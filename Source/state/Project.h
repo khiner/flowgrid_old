@@ -177,7 +177,12 @@ public:
 
         setShiftHeld(false); // prevent rectangle-select behavior when doing cmd+shift+t
         undoManager.beginNewTransaction();
-        undoManager.perform(new CreateTrackAction(isMaster, addMixer, {}, tracks, view));
+
+        // If a track is focused, insert the new track to the left of it if there's no mixer,
+        // or at the end if the new track has a mixer.
+        auto derivedFromTrack = !isMaster && !addMixer && tracks.getFocusedTrack().isValid() &&
+                                !tracks.isMasterTrack(tracks.getFocusedTrack()) ? tracks.getFocusedTrack() : ValueTree();
+        undoManager.perform(new CreateTrackAction(isMaster, addMixer, derivedFromTrack, tracks, view));
         if (addMixer)
             undoManager.perform(new CreateProcessorAction(MixerChannelProcessor::getPluginDescription(),
                                                           tracks.indexOf(mostRecentlyCreatedTrack), tracks, view, *this));

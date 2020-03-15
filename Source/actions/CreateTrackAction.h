@@ -12,20 +12,6 @@ struct CreateTrackAction : public UndoableAction {
 
     CreateTrackAction(int insertIndex, bool isMaster, bool addMixer, ValueTree derivedFromTrack, TracksState &tracks, ViewState &view)
             : insertIndex(insertIndex), tracks(tracks) {
-        const auto &focusedTrack = tracks.getFocusedTrack();
-
-        if (!isMaster && !derivedFromTrack.isValid() && focusedTrack.isValid()) {
-            // If a track is focused, insert the new track to the left of it if there's no mixer,
-            // or to the right of the first track with a mixer if the new track has a mixer.
-            derivedFromTrack = focusedTrack;
-
-            if (addMixer)
-                while (derivedFromTrack.isValid() && !tracks.getMixerChannelProcessorForTrack(derivedFromTrack).isValid())
-                    derivedFromTrack = derivedFromTrack.getSibling(1);
-        }
-        if (derivedFromTrack == tracks.getMasterTrack())
-            derivedFromTrack = {};
-
         // TODO move into method and construct in initializer list
         int numTracks = tracks.getNumNonMasterTracks();
         trackToCreate = ValueTree(IDs::TRACK);

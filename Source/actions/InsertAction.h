@@ -25,7 +25,6 @@ struct InsertAction : UndoableAction {
                 if (!copiedTrack[IDs::selected] && copiedTrack.getNumChildren() > 0) {
                     int toTrackIndex = copiedState.indexOf(copiedTrack) + trackAndSlotDiff.x;
                     while (toTrackIndex >= tracks.getNumNonMasterTracks()) {
-                        // TODO assumes since there is no mixer channel that it is "derived". Should have a unique track number
                         addAndPerformAction(new CreateTrackAction(false, false, {}, tracks, view));
                     }
                     copyProcessorsFromTrack(copiedTrack, toTrackIndex, trackAndSlotDiff.y);
