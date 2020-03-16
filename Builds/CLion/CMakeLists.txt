@@ -30,8 +30,7 @@ add_executable (APP
     "../../Source/actions/DeleteSelectedItemsAction.h"
     "../../Source/actions/DeleteTrackAction.h"
     "../../Source/actions/DisconnectProcessorAction.h"
-    "../../Source/actions/DuplicateSelectedItemsAction.h"
-    "../../Source/actions/InsertAction.h"
+        "../../Source/actions/InsertAction.h"
     "../../Source/actions/InsertProcessorAction.h"
     "../../Source/actions/MoveSelectedItemsAction.h"
     "../../Source/actions/ResetDefaultExternalInputConnectionsAction.h"
@@ -1497,7 +1496,6 @@ set_source_files_properties ("../../Source/actions/DeleteProcessorAction.h" PROP
 set_source_files_properties ("../../Source/actions/DeleteSelectedItemsAction.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/actions/DeleteTrackAction.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/actions/DisconnectProcessorAction.h" PROPERTIES HEADER_FILE_ONLY TRUE)
-set_source_files_properties ("../../Source/actions/DuplicateSelectedItemsAction.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/actions/InsertAction.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/actions/InsertProcessorAction.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/actions/MoveSelectedItemsAction.h" PROPERTIES HEADER_FILE_ONLY TRUE)

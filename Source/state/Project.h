@@ -12,7 +12,6 @@
 #include <actions/SetDefaultConnectionsAllowedAction.h>
 #include <actions/UpdateAllDefaultConnectionsAction.h>
 #include <actions/MoveSelectedItemsAction.h>
-#include <actions/DuplicateSelectedItemsAction.h>
 #include <actions/SelectRectangleAction.h>
 #include <actions/InsertAction.h>
 
@@ -207,15 +206,7 @@ public:
         undoManager.perform(new DeleteSelectedItemsAction(tracks, connections, *statefulAudioProcessorContainer));
         if (view.getFocusedTrackIndex() >= tracks.getNumTracks() && tracks.getNumTracks() > 0)
             setTrackSelected(tracks.getTrack(tracks.getNumTracks() - 1), true);
-        updateAllDefaultConnections(false);
-    }
-
-    void duplicateSelectedItems() {
-        if (isCurrentlyDraggingProcessor())
-            endDraggingProcessor();
-        undoManager.beginNewTransaction();
-        undoManager.perform(new DuplicateSelectedItemsAction(tracks, connections, view, input, *statefulAudioProcessorContainer));
-        updateAllDefaultConnections(false);
+        updateAllDefaultConnections();
     }
 
     void copySelectedItems() {
@@ -227,8 +218,21 @@ public:
     }
 
     void insert() {
+        if (isCurrentlyDraggingProcessor())
+            endDraggingProcessor();
         undoManager.beginNewTransaction();
-        undoManager.perform(new InsertAction(copiedState.getState(), view.getFocusedTrackAndSlot(), tracks, view, *this));
+        undoManager.perform(new InsertAction(false, copiedState.getState(), view.getFocusedTrackAndSlot(), tracks, connections, view, input, *this));
+        updateAllDefaultConnections();
+    }
+
+    void duplicateSelectedItems() {
+        if (isCurrentlyDraggingProcessor())
+            endDraggingProcessor();
+        CopiedState duplicateState(tracks, connections, *this);
+        duplicateState.copySelectedItems();
+
+        undoManager.beginNewTransaction();
+        undoManager.perform(new InsertAction(true, duplicateState.getState(), view.getFocusedTrackAndSlot(), tracks, connections, view, input, *this));
         updateAllDefaultConnections();
     }
 
@@ -281,6 +285,7 @@ public:
 
         initialDraggingTrackAndSlot = TracksState::INVALID_TRACK_AND_SLOT;
         statefulAudioProcessorContainer->resumeAudioGraphUpdatesAndApplyDiffSincePause();
+        // TODO I think we lost the `updateAllDefaultConnections(makeInvalidDefaultsIntoCustom=true)` behavior here.
     }
 
     bool isCurrentlyDraggingProcessor() {
