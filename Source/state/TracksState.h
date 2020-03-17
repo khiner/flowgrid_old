@@ -276,22 +276,6 @@ public:
         return selectedItems;
     }
 
-    Array<ValueTree> findSelectedNonMasterTracks() const {
-        Array<ValueTree> selectedTracks;
-        for (const auto &track : tracks)
-            if (track[IDs::selected] && !isMasterTrack(track))
-                selectedTracks.add(track);
-        return selectedTracks;
-    }
-
-    Array<ValueTree> findNonSelectedTracks() const {
-        Array<ValueTree> nonSelectedTracks;
-        for (const auto &track : tracks)
-            if (!track[IDs::selected])
-                nonSelectedTracks.add(track);
-        return nonSelectedTracks;
-    }
-
     static Array<ValueTree> findSelectedProcessorsForTrack(const ValueTree &track) {
         Array<ValueTree> selectedProcessors;
         auto selectedSlotsMask = getSlotMask(track);
