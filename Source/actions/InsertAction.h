@@ -10,8 +10,8 @@ struct InsertAction : UndoableAction {
     InsertAction(bool duplicate, const ValueTree &copiedState, const juce::Point<int> toTrackAndSlot,
                  TracksState &tracks, ConnectionsState &connections, ViewState &view, InputState &input,
                  StatefulAudioProcessorContainer &audioProcessorContainer)
-            : copiedState(copiedState), tracks(tracks), view(view), audioProcessorContainer(audioProcessorContainer),
-              fromTrackAndSlot(findFromTrackAndSlot()), toTrackAndSlot(limitToTrackAndSlot(toTrackAndSlot)) {
+            : tracks(tracks), view(view), audioProcessorContainer(audioProcessorContainer),
+              fromTrackAndSlot(findFromTrackAndSlot(copiedState)), toTrackAndSlot(limitToTrackAndSlot(toTrackAndSlot, copiedState)) {
         auto trackAndSlotDiff = this->toTrackAndSlot - this->fromTrackAndSlot;
 
         if (!duplicate && tracks.getMasterTrack().isValid() && toTrackAndSlot.x == tracks.getNumNonMasterTracks()) {
@@ -23,7 +23,7 @@ struct InsertAction : UndoableAction {
             for (const auto &copiedTrack : copiedState) {
                 if (!copiedTrack[IDs::selected]) {
                     if (duplicate) {
-                        duplicateSelectedProcessors(copiedTrack);
+                        duplicateSelectedProcessors(copiedTrack, copiedState);
                     } else if (tracks.isMasterTrack(copiedTrack)) {
                         // Processors copied from master track can only get inserted into master track.
                         const auto &masterTrack = tracks.getMasterTrack();
@@ -42,7 +42,7 @@ struct InsertAction : UndoableAction {
                 }
             }
             // Second pass: insert selected tracks (along with their processors)
-            const auto selectedTrackIndices = findSelectedNonMasterTrackIndices();
+            const auto selectedTrackIndices = findSelectedNonMasterTrackIndices(copiedState);
             if (duplicate) {
                 const auto duplicatedTrackIndices = findDuplicationIndices(selectedTrackIndices);
                 for (int i = 0; i < selectedTrackIndices.size(); i++)
@@ -95,8 +95,6 @@ struct InsertAction : UndoableAction {
 
 private:
 
-    ValueTree copiedState; // todo don't need to store this - pass it around instead to save memory
-
     TracksState &tracks;
     ViewState &view;
     StatefulAudioProcessorContainer &audioProcessorContainer;
@@ -134,9 +132,9 @@ private:
 
     std::unique_ptr<SelectAction> selectAction;
 
-    juce::Point<int> findFromTrackAndSlot() {
-        int fromTrackIndex = getIndexOfFirstCopiedTrackWithSelections();
-        if (anyCopiedTrackSelected())
+    juce::Point<int> findFromTrackAndSlot(const ValueTree &copiedState) {
+        int fromTrackIndex = getIndexOfFirstCopiedTrackWithSelections(copiedState);
+        if (anyCopiedTrackSelected(copiedState))
             return {fromTrackIndex, 0};
 
         int fromSlot = INT_MAX;
@@ -150,11 +148,11 @@ private:
         return {fromTrackIndex, fromSlot};
     }
 
-    juce::Point<int> limitToTrackAndSlot(juce::Point<int> toTrackAndSlot) {
-        return {toTrackAndSlot.x, anyCopiedTrackSelected() ? 0 : toTrackAndSlot.y};
+    static juce::Point<int> limitToTrackAndSlot(juce::Point<int> toTrackAndSlot, const ValueTree &copiedState) {
+        return {toTrackAndSlot.x, anyCopiedTrackSelected(copiedState) ? 0 : toTrackAndSlot.y};
     }
 
-    bool anyCopiedTrackSelected() {
+    static bool anyCopiedTrackSelected(const ValueTree &copiedState) {
         for (const ValueTree &track : copiedState)
             if (track[IDs::selected])
                 return true;
@@ -162,7 +160,7 @@ private:
         return false;
     }
 
-    std::vector<int> findSelectedNonMasterTrackIndices() const {
+    std::vector<int> findSelectedNonMasterTrackIndices(const ValueTree &copiedState) const {
         std::vector<int> selectedTrackIndices;
         for (const auto &track : copiedState)
             if (track[IDs::selected] && !tracks.isMasterTrack(track))
@@ -170,7 +168,7 @@ private:
         return selectedTrackIndices;
     }
 
-    int getIndexOfFirstCopiedTrackWithSelections() {
+    int getIndexOfFirstCopiedTrackWithSelections(const ValueTree &copiedState) {
         for (const auto &track : copiedState)
             if (track[IDs::selected] || tracks.trackHasAnySlotSelected(track))
                 return copiedState.indexOf(track);
@@ -178,7 +176,7 @@ private:
         assert(false); // Copied state, by definition, must have a selection.
     }
 
-    void duplicateSelectedProcessors(const ValueTree &track) {
+    void duplicateSelectedProcessors(const ValueTree &track, const ValueTree &copiedState) {
         const BigInteger slotsMask = TracksState::getSlotMask(track);
         std::vector<int> selectedSlots;
         for (int slot = 0; slot <= std::min(tracks.getMixerChannelSlotForTrack(track) - 1, slotsMask.getHighestBit()); slot++)
