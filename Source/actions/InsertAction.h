@@ -10,27 +10,35 @@ struct InsertAction : UndoableAction {
     InsertAction(bool duplicate, const ValueTree &copiedState, const juce::Point<int> toTrackAndSlot,
                  TracksState &tracks, ConnectionsState &connections, ViewState &view, InputState &input,
                  StatefulAudioProcessorContainer &audioProcessorContainer)
-            : copiedState(copiedState.createCopy()), tracks(tracks), view(view), audioProcessorContainer(audioProcessorContainer),
+            : copiedState(copiedState), tracks(tracks), view(view), audioProcessorContainer(audioProcessorContainer),
               fromTrackAndSlot(findFromTrackAndSlot()), toTrackAndSlot(limitToTrackAndSlot(toTrackAndSlot)) {
         auto trackAndSlotDiff = this->toTrackAndSlot - this->fromTrackAndSlot;
 
-        // todo improvement: can copy/paste processors in both master and non-master tracks, but processors copied from master only insert into master.
-        if (tracks.getMasterTrack().isValid() && toTrackAndSlot.x == tracks.getNumNonMasterTracks()) {
+        if (!duplicate && tracks.getMasterTrack().isValid() && toTrackAndSlot.x == tracks.getNumNonMasterTracks()) {
             // When inserting into master track, only insert the processors of the first track with selections
-            copyProcessorsFromTrack(copiedState.getChild(fromTrackAndSlot.x), tracks.getNumNonMasterTracks(), trackAndSlotDiff.y, duplicate);
+            copyProcessorsFromTrack(copiedState.getChild(fromTrackAndSlot.x), tracks.getNumNonMasterTracks(), trackAndSlotDiff.y);
         } else {
             // First pass: insert processors that are selected without their parent track also selected.
             // This is done because adding new tracks changes the track indices relative to their current position.
             for (const auto &copiedTrack : copiedState) {
                 if (!copiedTrack[IDs::selected]) {
-                    int toTrackIndex = copiedState.indexOf(copiedTrack) + trackAndSlotDiff.x;
-                    if (copiedTrack.getNumChildren() > 0) {
-                        while (toTrackIndex >= tracks.getNumNonMasterTracks()) {
-                            addAndPerformAction(new CreateTrackAction(false, false, {}, tracks, view));
+                    if (duplicate) {
+                        duplicateSelectedProcessors(copiedTrack);
+                    } else if (tracks.isMasterTrack(copiedTrack)) {
+                        // Processors copied from master track can only get inserted into master track.
+                        const auto &masterTrack = tracks.getMasterTrack();
+                        if (masterTrack.isValid())
+                            copyProcessorsFromTrack(copiedTrack, tracks.indexOf(masterTrack), trackAndSlotDiff.y);
+                    } else {
+                        int toTrackIndex = copiedState.indexOf(copiedTrack) + trackAndSlotDiff.x;
+                        if (copiedTrack.getNumChildren() > 0) { // create tracks to make room
+                            while (toTrackIndex >= tracks.getNumNonMasterTracks()) {
+                                addAndPerformAction(new CreateTrackAction(false, false, {}, tracks, view));
+                            }
                         }
+                        if (toTrackIndex < tracks.getNumNonMasterTracks())
+                            copyProcessorsFromTrack(copiedTrack, toTrackIndex, trackAndSlotDiff.y);
                     }
-                    if (toTrackIndex < tracks.getNumNonMasterTracks())
-                        copyProcessorsFromTrack(copiedTrack, toTrackIndex, trackAndSlotDiff.y, duplicate);
                 }
             }
             // Second pass: insert selected tracks (along with their processors)
@@ -170,23 +178,25 @@ private:
         assert(false); // Copied state, by definition, must have a selection.
     }
 
-    void copyProcessorsFromTrack(const ValueTree &fromTrack, int toTrackIndex, int slotDiff, bool duplicate) {
-        const BigInteger slotsMask = TracksState::getSlotMask(fromTrack);
-        if (duplicate) {
-            std::vector<int> selectedSlots;
-            for (int slot = 0; slot <= std::min(tracks.getMixerChannelSlotForTrack(fromTrack) - 1, slotsMask.getHighestBit()); slot++)
-                if (slotsMask[slot])
-                    selectedSlots.push_back(slot);
+    void duplicateSelectedProcessors(const ValueTree &track) {
+        const BigInteger slotsMask = TracksState::getSlotMask(track);
+        std::vector<int> selectedSlots;
+        for (int slot = 0; slot <= std::min(tracks.getMixerChannelSlotForTrack(track) - 1, slotsMask.getHighestBit()); slot++)
+            if (slotsMask[slot])
+                selectedSlots.push_back(slot);
 
-            auto duplicatedSlots = findDuplicationIndices(selectedSlots);
-            int trackIndex = tracks.indexOf(fromTrack);
-            for (int i = 0; i < selectedSlots.size(); i++)
-                addAndPerformCreateProcessorAction(TracksState::getProcessorAtSlot(fromTrack, selectedSlots[i]), toTrackIndex, duplicatedSlots[i]);
-        } else {
-            for (int slot = 0; slot <= slotsMask.getHighestBit(); slot++)
-                if (slotsMask[slot])
-                    addAndPerformCreateProcessorAction(TracksState::getProcessorAtSlot(fromTrack, slot), toTrackIndex, slot + slotDiff);
-        }
+        auto duplicatedSlots = findDuplicationIndices(selectedSlots);
+        int trackIndex = tracks.indexOf(track);
+        for (int i = 0; i < selectedSlots.size(); i++)
+            addAndPerformCreateProcessorAction(TracksState::getProcessorAtSlot(track, selectedSlots[i]),
+                                               copiedState.indexOf(track), duplicatedSlots[i]);
+    }
+
+    void copyProcessorsFromTrack(const ValueTree &fromTrack, int toTrackIndex, int slotDiff) {
+        const BigInteger slotsMask = TracksState::getSlotMask(fromTrack);
+        for (int slot = 0; slot <= slotsMask.getHighestBit(); slot++)
+            if (slotsMask[slot])
+                addAndPerformCreateProcessorAction(TracksState::getProcessorAtSlot(fromTrack, slot), toTrackIndex, slot + slotDiff);
     }
 
     void addAndPerformAction(UndoableAction *action) {

@@ -16,6 +16,7 @@ struct CopiedState : public Stateful {
             if (track[IDs::selected]) {
                 copiedTrack.copyPropertiesFrom(track, nullptr);
             } else {
+                copiedTrack.setProperty(IDs::isMasterTrack, track[IDs::isMasterTrack], nullptr);
                 copiedTrack.setProperty(IDs::selectedSlotsMask, track[IDs::selectedSlotsMask].toString(), nullptr);
             }
             for (auto processor : track) {
