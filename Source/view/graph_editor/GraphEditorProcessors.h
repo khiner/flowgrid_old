@@ -16,13 +16,15 @@ public:
             : Utilities::ValueTreeObjectList<GraphEditorProcessor>(state),
               project(project), tracks(project.getTracks()), view(project.getView()),
               connections(project.getConnections()),
-              viewState(view.getState()), pluginManager(project.getPluginManager()), connectorDragListener(connectorDragListener) {
+              pluginManager(project.getPluginManager()), connectorDragListener(connectorDragListener) {
         rebuildObjects();
-        viewState.addListener(this);
-        valueTreePropertyChanged(viewState, isMasterTrack() ? IDs::numMasterProcessorSlots : IDs::numProcessorSlots);
+        view.addListener(this);
+        // TODO shouldn't need to do this
+        valueTreePropertyChanged(view.getState(), isMasterTrack() ? IDs::numMasterProcessorSlots : IDs::numProcessorSlots);
     }
 
     ~GraphEditorProcessors() override {
+        view.removeListener(this);
         freeObjects();
     }
 
@@ -154,7 +156,6 @@ private:
     TracksState &tracks;
     ViewState &view;
     ConnectionsState &connections;
-    ValueTree viewState;
 
     PluginManager &pluginManager;
     ConnectorDragListener &connectorDragListener;

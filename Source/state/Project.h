@@ -31,6 +31,7 @@ public:
             : FileBasedDocument(getFilenameSuffix(), "*" + getFilenameSuffix(), "Load a project", "Save project"),
               undoManager(undoManager),
               pluginManager(pluginManager),
+              view(undoManager),
               tracks(view, pluginManager, undoManager),
               connections(*this, tracks),
               input(tracks, connections, *this, pluginManager, undoManager, deviceManager),

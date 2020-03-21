@@ -6,7 +6,7 @@
 
 class ViewState : public Stateful {
 public:
-    ViewState() {
+    ViewState(UndoManager &undoManager) : undoManager(undoManager) {
         viewState = ValueTree(IDs::VIEW_STATE);
     };
 
@@ -30,15 +30,15 @@ public:
     }
 
     void setMasterViewSlotOffset(int masterViewSlotOffset) {
-        viewState.setProperty(IDs::masterViewSlotOffset, masterViewSlotOffset, nullptr);
+        viewState.setProperty(IDs::masterViewSlotOffset, masterViewSlotOffset, &undoManager);
     }
 
     void setGridViewSlotOffset(int gridViewSlotOffset) {
-        viewState.setProperty(IDs::gridViewSlotOffset, gridViewSlotOffset, nullptr);
+        viewState.setProperty(IDs::gridViewSlotOffset, gridViewSlotOffset, &undoManager);
     }
 
     void setGridViewTrackOffset(int gridViewTrackOffset) {
-        viewState.setProperty(IDs::gridViewTrackOffset, gridViewTrackOffset, nullptr);
+        viewState.setProperty(IDs::gridViewTrackOffset, gridViewTrackOffset, &undoManager);
     }
 
     void updateViewTrackOffsetToInclude(int trackIndex, int numNonMasterTracks) {
@@ -149,6 +149,7 @@ public:
     static constexpr int TRACK_LABEL_HEIGHT = 32;
 private:
     ValueTree viewState;
+    UndoManager &undoManager;
 
     int trackWidth{0}, processorHeight{0};
 };
