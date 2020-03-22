@@ -7,13 +7,6 @@
 #include <StatefulAudioProcessorContainer.h>
 #include <state/InputState.h>
 
-// Disconnect external audio/midi inputs (unless `addDefaultConnections` is true and
-// the default connection would stay the same).
-// If `addDefaultConnections` is true, then for both audio and midi connection types:
-//   * Find the topmost effect processor (receiving audio/midi) in the focused track
-//   * Connect external device inputs to its most-upstream connected processor (including itself)
-// (Note that it is possible for the same focused track to have a default audio-input processor different
-// from its default midi-input processor.)
 struct UpdateProcessorDefaultConnectionsAction : public CreateOrDeleteConnectionsAction {
 
     UpdateProcessorDefaultConnectionsAction(const ValueTree &processor, bool makeInvalidDefaultsIntoCustom,
@@ -21,6 +14,9 @@ struct UpdateProcessorDefaultConnectionsAction : public CreateOrDeleteConnection
                                             StatefulAudioProcessorContainer &audioProcessorContainer)
             : CreateOrDeleteConnectionsAction(connections) {
         for (auto connectionType : {audio, midi}) {
+            auto customOutgoingConnections = connections.getConnectionsForNode(processor, connectionType, false, true, true, false);
+            if (!customOutgoingConnections.isEmpty())
+                continue;
             auto processorToConnectTo = connections.findProcessorToFlowInto(processor.getParent(), processor, connectionType);
             if (!processorToConnectTo.isValid())
                 processorToConnectTo = output.getAudioOutputProcessorState();

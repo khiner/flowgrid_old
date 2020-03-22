@@ -110,13 +110,6 @@ public:
         return false;
     }
 
-    ValueTree findFirstProcessorReceivingDefaultConnectionsFrom(AudioProcessorGraph::NodeID sourceNodeId, ConnectionType connectionType) {
-        const auto outgoingConnections = getConnectionsForNode(audioProcessorContainer.getProcessorStateForNodeId(sourceNodeId), connectionType, false, true, false, true);
-        if (outgoingConnections.isEmpty())
-            return {};
-        return audioProcessorContainer.getProcessorStateForNodeId(SAPC::getNodeIdForState(outgoingConnections.getFirst().getChildWithName(IDs::DESTINATION)));
-    }
-
     bool anyNonMasterTrackHasEffectProcessor(ConnectionType connectionType) {
         for (const auto &track : tracks.getState())
             if (!tracks.isMasterTrack(track))
