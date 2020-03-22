@@ -163,8 +163,14 @@ public:
 
     bool isShiftHeld() const { return shiftHeld || push2ShiftHeld; }
 
+    bool isAltHeld() const { return altHeld; }
+
     void setShiftHeld(bool shiftHeld) {
         this->shiftHeld = shiftHeld;
+    }
+
+    void setAltHeld(bool altHeld) {
+        this->altHeld = altHeld;
     }
 
     void setPush2ShiftHeld(bool push2ShiftHeld) {
@@ -274,7 +280,7 @@ public:
         }
 
         if (trackAndSlot == initialDraggingTrackAndSlot ||
-            undoManager.perform(new MoveSelectedItemsAction(initialDraggingTrackAndSlot, trackAndSlot, isShiftHeld(),
+            undoManager.perform(new MoveSelectedItemsAction(initialDraggingTrackAndSlot, trackAndSlot, isAltHeld(),
                                                             tracks, connections, view, input, output, *statefulAudioProcessorContainer))) {
             currentlyDraggingTrackAndSlot = trackAndSlot;
         }
@@ -497,7 +503,7 @@ private:
     StatefulAudioProcessorContainer *statefulAudioProcessorContainer{};
     juce::Point<int> selectionStartTrackAndSlot = {0, 0};
 
-    bool shiftHeld{false}, push2ShiftHeld{false};
+    bool shiftHeld{false}, altHeld{false}, push2ShiftHeld{false};
 
     juce::Point<int> initialDraggingTrackAndSlot = TracksState::INVALID_TRACK_AND_SLOT,
             currentlyDraggingTrackAndSlot = TracksState::INVALID_TRACK_AND_SLOT;

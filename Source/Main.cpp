@@ -432,6 +432,7 @@ public:
         void modifierKeysChanged(const ModifierKeys &modifiers) override {
             DocumentWindow::modifierKeysChanged(modifiers);
             owner.project.setShiftHeld(modifiers.isShiftDown());
+            owner.project.setAltHeld(modifiers.isAltDown());
         }
 
         void closeButtonPressed() override {
