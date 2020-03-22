@@ -52,12 +52,12 @@ public:
 
     void resumeAudioGraphUpdatesAndApplyDiffSincePause() override {
         graphUpdatesArePaused = false;
-        for (auto &connection : connectionsSincePause.connectionsToCreate)
-            valueTreeChildAdded(connections.getState(), connection);
         for (auto &connection : connectionsSincePause.connectionsToDelete)
             valueTreeChildRemoved(connections.getState(), connection, 0);
-        connectionsSincePause.connectionsToCreate.clearQuick();
+        for (auto &connection : connectionsSincePause.connectionsToCreate)
+            valueTreeChildAdded(connections.getState(), connection);
         connectionsSincePause.connectionsToDelete.clearQuick();
+        connectionsSincePause.connectionsToCreate.clearQuick();
     }
 
     AudioProcessorGraph::Node *getNodeForId(AudioProcessorGraph::NodeID nodeId) const override {

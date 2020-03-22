@@ -292,7 +292,6 @@ public:
 
         initialDraggingTrackAndSlot = TracksState::INVALID_TRACK_AND_SLOT;
         statefulAudioProcessorContainer->resumeAudioGraphUpdatesAndApplyDiffSincePause();
-        // TODO I think we lost the `updateAllDefaultConnections(makeInvalidDefaultsIntoCustom=true)` behavior here.
     }
 
     bool isCurrentlyDraggingProcessor() {
