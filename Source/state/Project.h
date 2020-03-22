@@ -540,8 +540,8 @@ private:
                                                                  custom, incoming, outgoing, excludingRemovalTo));
     }
 
-    void updateAllDefaultConnections(bool makeInvalidDefaultsIntoCustom = false) {
-        undoManager.perform(new UpdateAllDefaultConnectionsAction(makeInvalidDefaultsIntoCustom, true, tracks, connections, input, output, *statefulAudioProcessorContainer));
+    void updateAllDefaultConnections() {
+        undoManager.perform(new UpdateAllDefaultConnectionsAction(false, true, tracks, connections, input, output, *statefulAudioProcessorContainer));
     }
 
     void resetDefaultExternalInputs() {
