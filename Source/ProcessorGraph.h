@@ -212,24 +212,10 @@ private:
 
     void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override {
         if (child.hasType(IDs::CONNECTION)) {
-            if (graphUpdatesArePaused) {
+            if (graphUpdatesArePaused)
                 connectionsSincePause.addConnection(child);
-            } else {
-                const ValueTree &sourceState = child.getChildWithName(IDs::SOURCE);
-                const ValueTree &destState = child.getChildWithName(IDs::DESTINATION);
-
-                // TODO just use AudioProcessorGraph::addConnection(connections.stateToConnection(child) ?
-                if (auto *source = getNodeForState(sourceState)) {
-                    if (auto *dest = getNodeForState(destState)) {
-                        int destChannel = destState[IDs::channel];
-                        int sourceChannel = sourceState[IDs::channel];
-
-                        source->outputs.add({dest, destChannel, sourceChannel});
-                        dest->inputs.add({source, sourceChannel, destChannel});
-                        topologyChanged();
-                    }
-                }
-            }
+            else
+                AudioProcessorGraph::addConnection(connections.stateToConnection(child));
         } else if (child.hasType(IDs::TRACK) || parent.hasType(IDs::INPUT) || parent.hasType(IDs::OUTPUT)) {
             recursivelyAddProcessors(child); // TODO might be a problem for moving tracks
         } else if (child.hasType(IDs::CHANNEL)) {
@@ -241,24 +227,10 @@ private:
 
     void valueTreeChildRemoved(ValueTree &parent, ValueTree &child, int indexFromWhichChildWasRemoved) override {
         if (child.hasType(IDs::CONNECTION)) {
-            if (graphUpdatesArePaused) {
+            if (graphUpdatesArePaused)
                 connectionsSincePause.removeConnection(child);
-            } else {
-                const ValueTree &sourceState = child.getChildWithName(IDs::SOURCE);
-                const ValueTree &destState = child.getChildWithName(IDs::DESTINATION);
-
-                // TODO just use AudioProcessorGraph::removeConnection(connections.stateToConnection(child) ?
-                if (auto *source = getNodeForState(sourceState)) {
-                    if (auto *dest = getNodeForState(destState)) {
-                        int destChannel = destState[IDs::channel];
-                        int sourceChannel = sourceState[IDs::channel];
-
-                        source->outputs.removeAllInstancesOf({dest, destChannel, sourceChannel});
-                        dest->inputs.removeAllInstancesOf({source, sourceChannel, destChannel});
-                        topologyChanged();
-                    }
-                }
-            }
+            else
+                AudioProcessorGraph::removeConnection(connections.stateToConnection(child));
         } else if (child.hasType(IDs::CHANNEL)) {
             updateIoChannelEnabled(parent, child, false);
             removeIllegalConnections(); // TODO shouldn't affect state in state listeners - trace back to specific user actions and do this in the action method
