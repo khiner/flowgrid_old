@@ -9,18 +9,12 @@
 #include <StatefulAudioProcessorContainer.h>
 #include <state/InputState.h>
 
-// Disconnect external audio/midi inputs (unless `addDefaultConnections` is true and
-// the default connection would stay the same).
-// If `addDefaultConnections` is true, then for both audio and midi connection types:
+// For both audio and midi connection types:
 //   * Find the topmost effect processor (receiving audio/midi) in the focused track
-//   * Connect external device inputs to its most-upstream connected processor (including itself)
+//   * Connect external device inputs to its most-upstream connected processor (including itself) that doesn't already have incoming connections
 // (Note that it is possible for the same focused track to have a default audio-input processor different
 // from its default midi-input processor.)
 
-// TODO should receive a processor rather than using state to find the current focused processor
-// That way, we can deterministically find all the added/removed connections resulting from
-// changing default connections before and after a focus change, without needing to actually
-// change the focus state temporarily (see perform/undo in constructor of UpdateAllDefaultConnectionsAction)
 struct ResetDefaultExternalInputConnectionsAction : public CreateOrDeleteConnectionsAction {
 
     ResetDefaultExternalInputConnectionsAction(ConnectionsState &connections, TracksState &tracks, InputState &input,
@@ -33,10 +27,7 @@ struct ResetDefaultExternalInputConnectionsAction : public CreateOrDeleteConnect
             const auto sourceNodeId = input.getDefaultInputNodeIdForConnectionType(connectionType);
 
             // If master track received focus, only change the default connections if no other tracks have effect processors
-            if (TracksState::isMasterTrack(trackToTreatAsFocused)) {
-                if (connections.anyNonMasterTrackHasEffectProcessor(connectionType))
-                    continue;
-            }
+            if (TracksState::isMasterTrack(trackToTreatAsFocused) && connections.anyNonMasterTrackHasEffectProcessor(connectionType)) continue;
 
             const ValueTree &inputProcessor = audioProcessorContainer.getProcessorStateForNodeId(sourceNodeId);
             AudioProcessorGraph::NodeID destinationNodeId;
