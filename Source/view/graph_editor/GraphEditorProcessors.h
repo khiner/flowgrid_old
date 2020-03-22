@@ -209,7 +209,7 @@ private:
                             project.createProcessor(*description, slot);
                             return;
                         }
-                        // TODO remove direct graph dependency and do everything through state managers instead
+
                         switch (result) {
                             case DELETE_MENU_ID:
                                 getCommandManager().invokeDirectly(CommandIDs::deleteSelected, false);

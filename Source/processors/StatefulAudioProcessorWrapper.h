@@ -177,8 +177,6 @@ public:
                 if ((float) *valueProperty != value) {
                     ScopedValueSetter<bool> svs(ignoreParameterChangedCallbacks, true);
                     state.setProperty(IDs::value, value, undoManager);
-                    // TODO start new undo transaction when mouse-down on param, or when touching Push 2 knob
-
                     // TODO uncomment and make it work
 //                    if (!processorWrapper->isSelected()) {
                     // If we're looking at something else, change the focus so we know what's changing.
