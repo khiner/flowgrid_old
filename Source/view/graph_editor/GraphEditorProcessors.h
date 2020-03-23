@@ -205,8 +205,9 @@ private:
 
             menu.showMenuAsync({}, ModalCallbackFunction::create
                     ([this, processor, slot](int result) {
-                        if (auto *description = pluginManager.getChosenType(result)) {
-                            project.createProcessor(*description, slot);
+                        const auto &description = pluginManager.getChosenType(result);
+                        if (!description.name.isEmpty()) {
+                            project.createProcessor(description, slot);
                             return;
                         }
 
@@ -253,8 +254,11 @@ private:
                     if (result == ADD_MIXER_CHANNEL_MENU_ID) {
                         getCommandManager().invokeDirectly(CommandIDs::addMixerChannel, false);
                     }
-                } else if (auto *description = pluginManager.getChosenType(result)) {
-                    project.createProcessor(*description, slot);
+                } else {
+                    auto &description = pluginManager.getChosenType(result);
+                    if (!description.name.isEmpty()) {
+                        project.createProcessor(description, slot);
+                    }
                 }
             }));
         }

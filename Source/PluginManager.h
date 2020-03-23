@@ -8,11 +8,8 @@
 class PluginManager : private ChangeListener {
 public:
     PluginManager() {
-        std::unique_ptr<XmlElement> savedPluginList(getUserSettings()->getXmlValue(PLUGIN_LIST_FILE_NAME));
-
-        if (savedPluginList != nullptr) {
+        if (auto savedPluginList = getUserSettings()->getXmlValue(PLUGIN_LIST_FILE_NAME))
             knownPluginListExternal.recreateFromXml(*savedPluginList);
-        }
 
         for (auto &pluginType : internalPluginDescriptions) {
             knownPluginListInternal.addType(pluginType);
@@ -65,6 +62,7 @@ public:
         this->pluginSortMethod = pluginSortMethod;
     }
 
+    // TODO https://github.com/WeAreROLI/JUCE/commit/c88611e5c8e4449012cfdf523177ed50922b9bcc#diff-9353bec3542b3a3f80210989f8a0ac2b
     void addPluginsToMenu(PopupMenu &menu, const ValueTree &track) const {
         StringArray disabledPluginIds;
 
@@ -79,15 +77,14 @@ public:
         menu.addSubMenu("External", externalSubMenu, true);
     }
 
-    const PluginDescription *getChosenType(const int menuId) const {
-        // TODO use `getTypes()[i]` instead (`getType` is deprecated)
+    const PluginDescription getChosenType(const int menuId) const {
         int internalPluginListIndex = userCreatablePluginListInternal.getIndexChosenByMenu(menuId);
         if (internalPluginListIndex != -1)
-            return userCreatablePluginListInternal.getType(internalPluginListIndex);
+            return userCreatablePluginListInternal.getTypes()[internalPluginListIndex];
         int externalPluginListIndex = knownPluginListExternal.getIndexChosenByMenu(menuId - userCreatablePluginListInternal.getNumTypes());
         if (externalPluginListIndex != -1)
-            return knownPluginListExternal.getType(externalPluginListIndex);
-        return nullptr;
+            return knownPluginListExternal.getTypes()[externalPluginListIndex];
+        return {};
     }
 
     static bool isGeneratorOrInstrument(const PluginDescription *description) {
@@ -117,9 +114,7 @@ private:
         if (changed == &knownPluginListExternal) {
             // save the plugin list every time it gets changed, so that if we're scanning
             // and it crashes, we've still saved the previous ones
-            std::unique_ptr<XmlElement> savedPluginList(knownPluginListExternal.createXml());
-
-            if (savedPluginList != nullptr) {
+            if (auto savedPluginList = knownPluginListExternal.createXml()) {
                 getUserSettings()->setValue(PLUGIN_LIST_FILE_NAME, savedPluginList.get());
                 getApplicationProperties().saveIfNeeded();
             }

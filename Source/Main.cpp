@@ -578,7 +578,7 @@ private:
             } else if (push2MidiCommunicator.isInitialized() && !MidiInput::getDevices().contains(push2MidiDeviceName, true)) {
                 push2MidiCommunicator.setMidiInputAndOutput(nullptr, nullptr);
             }
-            std::unique_ptr<XmlElement> audioState(deviceManager.createStateXml());
+            auto audioState = deviceManager.createStateXml();
             getUserSettings()->setValue("audioDeviceState", audioState.get());
             getUserSettings()->saveIfNeeded();
         }

@@ -34,8 +34,7 @@ public:
     }
 
 private:
-    class SineWaveSound : public SynthesiserSound {
-    public:
+    struct SineWaveSound : public SynthesiserSound {
         SineWaveSound() = default;
 
         bool appliesToNote(int /*midiNoteNumber*/) override { return true; }
@@ -43,8 +42,7 @@ private:
         bool appliesToChannel(int /*midiChannel*/) override { return true; }
     };
 
-    class SineWaveVoice : public SynthesiserVoice {
-    public:
+    struct SineWaveVoice : public SynthesiserVoice {
         SineWaveVoice()
                 : currentAngle(0), angleDelta(0), level(0), tailOff(0) {
         }
@@ -125,7 +123,7 @@ private:
         }
 
     private:
-        double currentAngle, angleDelta, level, tailOff;
+        double currentAngle = 0, angleDelta = 0, level = 0, tailOff = 0;
     };
 
     Synthesiser synth;

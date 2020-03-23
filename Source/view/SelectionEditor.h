@@ -75,8 +75,9 @@ public:
                 addProcessorMenu = std::make_unique<PopupMenu>();
                 pluginManager.addPluginsToMenu(*addProcessorMenu, focusedTrack);
                 addProcessorMenu->showMenuAsync({}, ModalCallbackFunction::create([this](int r) {
-                    if (auto *description = pluginManager.getChosenType(r)) {
-                        project.createProcessor(*description);
+                    auto &description = pluginManager.getChosenType(r);
+                    if (!description.name.isEmpty()) {
+                        project.createProcessor(description);
                     }
                 }));
             }

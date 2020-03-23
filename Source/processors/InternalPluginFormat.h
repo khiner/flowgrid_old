@@ -48,8 +48,10 @@ public:
 private:
     void createPluginInstance(const PluginDescription &desc, double initialSampleRate, int initialBufferSize,
                               PluginCreationCallback callback) override {
-        auto p = createInstance(desc.name);
-        callback(std::move(p), p == nullptr ? NEEDS_TRANS("Invalid internal filter name") : String());
+        if (auto pluginInstance = createInstance(desc.name))
+            callback(std::move(pluginInstance), {});
+        else
+            callback(nullptr, NEEDS_TRANS("Invalid internal plugin name"));
     }
 
     std::unique_ptr<AudioPluginInstance> createInstance(const String &name) {
@@ -65,7 +67,8 @@ private:
         if (name == ParameterTypesTestProcessor::name()) return std::make_unique<ParameterTypesTestProcessor>();
         if (name == SineBank::name()) return std::make_unique<SineBank>();
         if (name == SineSynth::name()) return std::make_unique<SineSynth>();
-        return nullptr;
+
+        return {};
     }
 
     bool requiresUnblockedMessageThreadDuringCreation(const PluginDescription &) const noexcept override {
