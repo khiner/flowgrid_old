@@ -64,13 +64,11 @@ public:
 
     // TODO https://github.com/WeAreROLI/JUCE/commit/c88611e5c8e4449012cfdf523177ed50922b9bcc#diff-9353bec3542b3a3f80210989f8a0ac2b
     void addPluginsToMenu(PopupMenu &menu, const ValueTree &track) const {
-        StringArray disabledPluginIds;
-
         PopupMenu internalSubMenu;
         PopupMenu externalSubMenu;
 
-        userCreatablePluginListInternal.addToMenu(internalSubMenu, getPluginSortMethod(), disabledPluginIds);
-        knownPluginListExternal.addToMenu(externalSubMenu, getPluginSortMethod(), {}, String(), userCreatablePluginListInternal.getNumTypes());
+        userCreatablePluginListInternal.addToMenu(internalSubMenu, getPluginSortMethod());
+        knownPluginListExternal.addToMenu(externalSubMenu, getPluginSortMethod(), String(), userCreatablePluginListInternal.getNumTypes());
 
         menu.addSubMenu("Internal", internalSubMenu, true);
         menu.addSeparator();
