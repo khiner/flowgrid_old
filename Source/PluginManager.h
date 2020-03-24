@@ -62,13 +62,14 @@ public:
         this->pluginSortMethod = pluginSortMethod;
     }
 
-    // TODO https://github.com/WeAreROLI/JUCE/commit/c88611e5c8e4449012cfdf523177ed50922b9bcc#diff-9353bec3542b3a3f80210989f8a0ac2b
-    void addPluginsToMenu(PopupMenu &menu, const ValueTree &track) const {
+    void addPluginsToMenu(PopupMenu &menu, const ValueTree &track) {
         PopupMenu internalSubMenu;
         PopupMenu externalSubMenu;
 
-        userCreatablePluginListInternal.addToMenu(internalSubMenu, getPluginSortMethod());
-        knownPluginListExternal.addToMenu(externalSubMenu, getPluginSortMethod(), String(), userCreatablePluginListInternal.getNumTypes());
+        externalPluginDescriptions = knownPluginListExternal.getTypes();
+
+        KnownPluginList::addToMenu (internalSubMenu, internalPluginDescriptions, pluginSortMethod);
+        KnownPluginList::addToMenu (externalSubMenu, externalPluginDescriptions, pluginSortMethod, String(), internalPluginDescriptions.size());
 
         menu.addSubMenu("Internal", internalSubMenu, true);
         menu.addSeparator();
@@ -76,12 +77,12 @@ public:
     }
 
     const PluginDescription getChosenType(const int menuId) const {
-        int internalPluginListIndex = userCreatablePluginListInternal.getIndexChosenByMenu(menuId);
+        int internalPluginListIndex = KnownPluginList::getIndexChosenByMenu(internalPluginDescriptions, menuId);
         if (internalPluginListIndex != -1)
-            return userCreatablePluginListInternal.getTypes()[internalPluginListIndex];
-        int externalPluginListIndex = knownPluginListExternal.getIndexChosenByMenu(menuId - userCreatablePluginListInternal.getNumTypes());
+            return internalPluginDescriptions[internalPluginListIndex];
+        int externalPluginListIndex = KnownPluginList::getIndexChosenByMenu(externalPluginDescriptions, menuId - internalPluginDescriptions.size());
         if (externalPluginListIndex != -1)
-            return knownPluginListExternal.getTypes()[externalPluginListIndex];
+            return externalPluginDescriptions[externalPluginListIndex];
         return {};
     }
 
@@ -107,6 +108,8 @@ private:
 
     KnownPluginList::SortMethod pluginSortMethod;
     AudioPluginFormatManager formatManager;
+
+    Array<PluginDescription> externalPluginDescriptions;
 
     void changeListenerCallback(ChangeBroadcaster *changed) override {
         if (changed == &knownPluginListExternal) {
