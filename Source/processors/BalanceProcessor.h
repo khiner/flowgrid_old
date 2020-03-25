@@ -29,7 +29,7 @@ public:
 
     void parameterChanged(AudioProcessorParameter *parameter, float newValue) override {
         if (parameter == balanceParameter) {
-            balance.setValue(newValue);
+            balance.setTargetValue(newValue);
         }
     }
 

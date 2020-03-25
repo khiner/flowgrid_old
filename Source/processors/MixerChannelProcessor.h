@@ -38,9 +38,9 @@ public:
 
     void parameterChanged(AudioProcessorParameter *parameter, float newValue) override {
         if (parameter == balanceParameter) {
-            balance.setValue(newValue);
+            balance.setTargetValue(newValue);
         } else if (parameter == gainParameter) {
-            gain.setValue(Decibels::decibelsToGain(newValue));
+            gain.setTargetValue(Decibels::decibelsToGain(newValue));
         }
     }
 
