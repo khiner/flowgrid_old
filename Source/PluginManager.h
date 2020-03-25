@@ -42,12 +42,12 @@ public:
         return internalFormat.audioOutDesc;
     }
 
-    KnownPluginList &getKnownPluginListExternal() {
-        return knownPluginListExternal;
+    Array<PluginDescription> &getInternalPluginDescriptions() {
+        return internalPluginDescriptions;
     }
 
-    KnownPluginList &getUserCreatablePluginListInternal() {
-        return userCreatablePluginListInternal;
+    Array<PluginDescription> &getExternalPluginDescriptions() {
+        return externalPluginDescriptions;
     }
 
     KnownPluginList::SortMethod getPluginSortMethod() const {
