@@ -464,10 +464,11 @@ public:
             for (auto processorState : track)
                 saveProcessorStateInformationToState(processorState);
 
-        if (Utilities::saveValueTree(state, file, true))
-            return Result::ok();
+        if (auto xml = state.createXml())
+            if (!xml->writeTo(file))
+                return Result::fail(TRANS("Could not save the project file"));
 
-        return Result::fail(TRANS("Could not save the project file"));
+        return Result::ok();
     }
 
     File getLastDocumentOpened() override {

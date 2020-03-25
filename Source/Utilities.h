@@ -31,30 +31,6 @@ namespace Utilities {
         return {};
     }
 
-/** Saves a ValueTree to a File. */
-    static inline bool saveValueTree(const ValueTree &v, const File &file, bool asXml) {
-        const TemporaryFile temp(file);
-
-        {
-            FileOutputStream os(temp.getFile());
-
-            if (!os.getStatus().wasOk())
-                return false;
-
-            if (asXml) {
-                if (auto xml = std::unique_ptr<XmlElement>(v.createXml()))
-                    xml->writeToStream(os, StringRef());
-            } else {
-                v.writeToStream(os);
-            }
-        }
-
-        if (temp.getFile().existsAsFile())
-            return temp.overwriteTargetFileWithTemporary();
-
-        return false;
-    }
-
     static inline void moveAllChildren(ValueTree fromParent, ValueTree &toParent, UndoManager *undoManager) {
         while (fromParent.getNumChildren() > 0) {
             const auto &child = fromParent.getChild(0);
