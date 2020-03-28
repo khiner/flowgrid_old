@@ -10,22 +10,13 @@ public:
         for (int paramIndex = 0; paramIndex < numColumns * maxRows; paramIndex++) {
             addChildComponent(paramComponents.add(new ParameterDisplayComponent()));
         }
+        // This allows the parent to capture click events when clicking on non-interactive elements like param labels.
+        // For example, this allows dragging a processor with inline param UI in the graph
+        setInterceptsMouseClicks(false, true);
     }
 
     ~ParametersPanel() override {
         clearParameters();
-    }
-
-    // This allows the parent to capture click events when clicking on non-interactive elements like param labels.
-    // For example, this allows dragging a processor with inline param UI in the graph
-    bool hitTest(int x, int y) override {
-        for (auto *paramComponent : paramComponents) {
-            auto localPoint = juce::Point(x, y) - paramComponent->getBoundsInParent().getTopLeft();
-            if (paramComponent->hitTest(localPoint.x, localPoint.y))
-                return true;
-        }
-
-        return false;
     }
 
     void setProcessorWrapper(StatefulAudioProcessorWrapper *processorWrapper) {

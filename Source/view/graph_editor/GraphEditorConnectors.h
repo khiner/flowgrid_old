@@ -12,22 +12,11 @@ public:
     explicit GraphEditorConnectors(ConnectionsState &connections, ConnectorDragListener &connectorDragListener, GraphEditorProcessorContainer &graphEditorProcessorContainer, ProcessorGraph &graph)
             : Utilities::ValueTreeObjectList<GraphEditorConnector>(connections.getState()), connectorDragListener(connectorDragListener), graphEditorProcessorContainer(graphEditorProcessorContainer) {
         rebuildObjects();
+        setInterceptsMouseClicks(false, true);
     }
 
     ~GraphEditorConnectors() override {
         freeObjects();
-    }
-
-    bool hitTest(int x, int y) override {
-        {
-            const ScopedLockType sl(arrayLock);
-            for (auto *connector : objects) {
-                const juce::Point<int> &localPoint = connector->getLocalPoint(this, juce::Point<int>(x, y));
-                if (connector->hitTest(localPoint.x, localPoint.y))
-                    return true;
-            }
-        }
-        return false;
     }
 
     void resized() override {}
