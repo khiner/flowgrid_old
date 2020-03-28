@@ -1,7 +1,5 @@
 #pragma once
 
-#pragma once
-
 #include <ValueTreeObjectList.h>
 #include <state/Project.h>
 #include "JuceHeader.h"
