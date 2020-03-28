@@ -24,11 +24,13 @@ struct UpdateProcessorDefaultConnectionsAction : public CreateOrDeleteConnection
 
             auto disconnectDefaultsAction = DisconnectProcessorAction(connections, processor, connectionType, true, false, false, true, nodeIdToConnectTo);
             coalesceWith(disconnectDefaultsAction);
-            if (makeInvalidDefaultsIntoCustom && !disconnectDefaultsAction.connectionsToDelete.isEmpty()) {
-                for (const auto &connectionToConvert : disconnectDefaultsAction.connectionsToDelete) {
-                    auto customConnection = connectionToConvert.createCopy();
-                    customConnection.setProperty(IDs::isCustomConnection, true, nullptr);
-                    connectionsToCreate.add(customConnection);
+            if (makeInvalidDefaultsIntoCustom) {
+                if (!disconnectDefaultsAction.connectionsToDelete.isEmpty()) {
+                    for (const auto &connectionToConvert : disconnectDefaultsAction.connectionsToDelete) {
+                        auto customConnection = connectionToConvert.createCopy();
+                        customConnection.setProperty(IDs::isCustomConnection, true, nullptr);
+                        connectionsToCreate.add(customConnection);
+                    }
                 }
             } else {
                 coalesceWith(DefaultConnectProcessorAction(processor, nodeIdToConnectTo, connectionType, connections, audioProcessorContainer));
