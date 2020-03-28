@@ -44,10 +44,10 @@ public:
     }
 
     GraphEditorTrack *findMasterTrack() const {
-        for (auto *track : objects) {
+        for (auto *track : objects)
             if (track->isMasterTrack())
                 return track;
-        }
+
         return nullptr;
     }
 
@@ -77,11 +77,10 @@ public:
     }
 
     GraphEditorProcessor *getProcessorForNodeId(AudioProcessorGraph::NodeID nodeId) const override {
-        for (auto *track : objects) {
-            auto *processor = track->getProcessorForNodeId(nodeId);
-            if (processor != nullptr)
+        for (auto *track : objects)
+            if (auto *processor = track->getProcessorForNodeId(nodeId))
                 return processor;
-        }
+
         return nullptr;
     }
 
@@ -94,21 +93,19 @@ public:
     }
 
     GraphEditorPin *findPinAt(const MouseEvent &e) const {
-        for (auto *track : objects) {
-            auto *pin = track->findPinAt(e);
-            if (pin != nullptr)
+        for (auto *track : objects)
+            if (auto *pin = track->findPinAt(e))
                 return pin;
-        }
+
         return nullptr;
     }
 
     void mouseDown(const MouseEvent &e) override {
         if (!e.mods.isRightButtonDown()) {
-            const auto trackAndSlot = trackAndSlotAt(e);
+            auto trackAndSlot = trackAndSlotAt(e);
             if (const auto *trackLabel = dynamic_cast<Label *>(e.originalComponent))
-                project.beginDragging({trackAndSlot.x, -1}); // initiated at track label
-            else
-                project.beginDragging(trackAndSlot);
+                trackAndSlot.y = -1;  // initiated at track label -> dragging track
+            project.beginDragging(trackAndSlot);
         }
     }
 
@@ -131,6 +128,7 @@ private:
         for (auto *track : objects)
             if (track->contains(e.getEventRelativeTo(track).getPosition()))
                 return {track->getTrackIndex(), track->findSlotAt(e)};
+
         return TracksState::INVALID_TRACK_AND_SLOT;
     }
 
