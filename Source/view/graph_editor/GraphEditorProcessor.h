@@ -147,10 +147,6 @@ public:
         return nullptr;
     }
 
-    AudioProcessorGraph::Node::Ptr getNode() const {
-        return audioProcessorContainer.getNodeForId(StatefulAudioProcessorContainer::getNodeIdForState(state));
-    }
-
     StatefulAudioProcessorWrapper *getProcessorWrapper() const {
         return audioProcessorContainer.getProcessorWrapperForState(state);
     }
