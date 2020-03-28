@@ -108,10 +108,6 @@ public:
         return processors.findPinAt(e);
     }
 
-    int findSlotAt(const MouseEvent &e) {
-        return processors.findSlotAt(e);
-    }
-
     void setCurrentlyMovingProcessor(GraphEditorProcessor *currentlyMovingProcessor) {
         processors.setCurrentlyMovingProcessor(currentlyMovingProcessor);
     }

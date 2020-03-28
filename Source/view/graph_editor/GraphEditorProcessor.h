@@ -48,6 +48,8 @@ public:
         return ProcessorGraph::getNodeIdForState(state);
     }
 
+    inline int getTrackIndex() const { return tracks.indexOf(state.getParent()); }
+
     inline int getSlot() const { return state[IDs::processorSlot]; }
 
     inline int getNumInputChannels() const { return state.getChildWithName(IDs::INPUT_CHANNELS).getNumChildren(); }
@@ -63,16 +65,18 @@ public:
     inline bool isSelected() { return tracks.isProcessorSelected(state); }
 
     void paint(Graphics &g) override {
-        bool selected = isSelected();
-
         auto boxColour = findColour(TextEditor::backgroundColourId);
         if (state[IDs::bypassed])
             boxColour = boxColour.brighter();
-        else if (selected)
+        else if (isSelected())
             boxColour = boxColour.brighter(0.02);
 
         g.setColour(boxColour);
         g.fillRect(getBoxBounds());
+    }
+
+    void mouseDown(const MouseEvent &e) override {
+        project.beginDragging({getTrackIndex(), getSlot()});
     }
 
     void mouseUp(const MouseEvent &e) override {
@@ -139,12 +143,8 @@ public:
     }
 
     GraphEditorPin *findPinAt(const MouseEvent &e) {
-        auto e2 = e.getEventRelativeTo(this);
-        auto *comp = getComponentAt(e2.position.toInt());
-        if (auto *pin = dynamic_cast<GraphEditorPin *> (comp)) {
-            return pin;
-        }
-        return nullptr;
+        auto *comp = getComponentAt(e.getEventRelativeTo(this).position.toInt());
+        return dynamic_cast<GraphEditorPin *> (comp);
     }
 
     StatefulAudioProcessorWrapper *getProcessorWrapper() const {

@@ -38,8 +38,17 @@ public:
         tracks.removeListener(this);
     }
 
-    void mouseDown(const MouseEvent &event) override {
+    void mouseDown(const MouseEvent &e) override {
         view.focusOnGridPane();
+    }
+
+    void mouseDrag(const MouseEvent &e) override {
+        if (project.isCurrentlyDraggingProcessor() && !e.mods.isRightButtonDown())
+            project.dragToPosition(trackAndSlotAt(e));
+    }
+
+    void mouseUp(const MouseEvent &e) override {
+        project.endDraggingProcessor();
     }
 
     // Call this method when the parent viewport size has changed or when the number of tracks has changed.
@@ -302,6 +311,11 @@ private:
         for (int i = activePluginWindows.size(); --i >= 0;)
             if (audioProcessorContainer.getNodeIdForState(activePluginWindows.getUnchecked(i)->processor) == nodeId)
                 activePluginWindows.remove(i);
+    }
+
+    juce::Point<int> trackAndSlotAt(const MouseEvent &e) {
+        return view.findTrackAndSlotAt(e.getEventRelativeTo(graphEditorTracks.get()).position.toInt(),
+                                       tracks.getNumNonMasterTracks());
     }
 
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {

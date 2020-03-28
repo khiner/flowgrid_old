@@ -100,37 +100,12 @@ public:
         return nullptr;
     }
 
-    void mouseDown(const MouseEvent &e) override {
-        if (!e.mods.isRightButtonDown()) {
-            auto trackAndSlot = trackAndSlotAt(e);
-            if (const auto *trackLabel = dynamic_cast<Label *>(e.originalComponent))
-                trackAndSlot.y = -1;  // initiated at track label -> dragging track
-            project.beginDragging(trackAndSlot);
-        }
-    }
-
-    void mouseDrag(const MouseEvent &e) override {
-        if (project.isCurrentlyDraggingProcessor() && !e.mods.isRightButtonDown())
-            project.dragToPosition(trackAndSlotAt(e));
-    }
-
-    void mouseUp(const MouseEvent &e) override {
-        project.endDraggingProcessor();
-    }
-
 private:
     Project &project;
     TracksState &tracks;
     ViewState &view;
     ConnectorDragListener &connectorDragListener;
 
-    juce::Point<int> trackAndSlotAt(const MouseEvent &e) {
-        for (auto *track : objects)
-            if (track->contains(e.getEventRelativeTo(track).getPosition()))
-                return {track->getTrackIndex(), track->findSlotAt(e)};
-
-        return TracksState::INVALID_TRACK_AND_SLOT;
-    }
 
     void valueTreePropertyChanged(ValueTree &tree, const juce::Identifier &i) override {
         if (i == IDs::gridViewTrackOffset || i == IDs::masterViewSlotOffset)

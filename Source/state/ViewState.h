@@ -138,9 +138,35 @@ public:
 
     void setProcessorHeight(int processorHeight) { this->processorHeight = processorHeight; }
 
-    int getTrackWidth() { return trackWidth; }
+    int getTrackWidth() const { return trackWidth; }
 
-    int getProcessorHeight() { return processorHeight; }
+    int getProcessorHeight() const { return processorHeight; }
+
+    juce::Point<int> findTrackAndSlotAt(const juce::Point<int> position, int numNonMasterTracks) {
+        bool isNonMasterTrack = numNonMasterTracks > 0 && position.y < TRACK_LABEL_HEIGHT + getNumTrackProcessorSlots() * getProcessorHeight();
+        int trackIndex, slot;
+        if (isNonMasterTrack) {
+            trackIndex = std::clamp((position.x - TRACK_LABEL_HEIGHT) / getTrackWidth(), 0, numNonMasterTracks - 1);
+            slot = (position.y - TRACK_LABEL_HEIGHT) / getProcessorHeight();
+        } else {
+            trackIndex = numNonMasterTracks;
+            slot = (position.x - TRACK_LABEL_HEIGHT) / getTrackWidth();
+        }
+        int numAvailableSlots = isNonMasterTrack ? getNumTrackProcessorSlots() : getNumMasterProcessorSlots();
+        return {trackIndex, std::clamp(slot, -1, numAvailableSlots - 1)};
+    }
+
+    int findSlotAt(const juce::Point<int> position, const ValueTree &track) {
+        bool isMasterTrack = track.isValid() && track[IDs::isMasterTrack];
+        int length = isMasterTrack ? position.x : position.y;
+        if (length < TRACK_LABEL_HEIGHT)
+            return -1;
+
+        int nonMixerCellSize = isMasterTrack ? getTrackWidth() : getProcessorHeight();
+        int numAvailableSlots = isMasterTrack ? getNumMasterProcessorSlots() : getNumTrackProcessorSlots();
+        int slot = (length - TRACK_LABEL_HEIGHT) / nonMixerCellSize;
+        return std::clamp(slot, 0, numAvailableSlots - 1);
+    }
 
     const String sessionControlMode = "session", noteControlMode = "note";
     const String gridPaneName = "grid", editorPaneName = "editor";

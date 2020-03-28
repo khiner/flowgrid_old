@@ -55,14 +55,17 @@ public:
 
     int getMixerChannelSlotForTrack(const ValueTree &track) const { return getNumAvailableSlotsForTrack(track) - 1; }
 
+    // TODO move to view (share masterTrack ID knowledge)
     int getNumAvailableSlotsForTrack(const ValueTree &track) const {
         return isMasterTrack(track) ? view.getNumMasterProcessorSlots() : view.getNumTrackProcessorSlots();
     }
 
+    // TODO move to view (share masterTrack ID knowledge)
     int getSlotOffsetForTrack(const ValueTree &track) const {
         return isMasterTrack(track) ? view.getMasterViewSlotOffset() : view.getGridViewSlotOffset();
     }
 
+    // TODO move to view (share masterTrack ID knowledge)
     bool isProcessorSlotInView(const ValueTree &track, int correctedSlot) {
         bool inView = correctedSlot >= getSlotOffsetForTrack(track) &&
                       correctedSlot < getSlotOffsetForTrack(track) + ViewState::NUM_VISIBLE_TRACKS;

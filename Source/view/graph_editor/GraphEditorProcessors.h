@@ -133,8 +133,7 @@ public:
     }
 
     int findSlotAt(const MouseEvent &e) {
-        const MouseEvent &relative = e.getEventRelativeTo(this);
-        return findSlotAt(relative.getPosition());
+        return view.findSlotAt(e.getEventRelativeTo(this).getPosition(), parent);
     }
 
     GraphEditorProcessor *getCurrentlyMovingProcessor() const {
@@ -266,14 +265,6 @@ private:
 
     int getNonMixerCellSize() const {
         return isMasterTrack() ? view.getTrackWidth() : view.getProcessorHeight();
-    }
-
-    int findSlotAt(const juce::Point<int> relativePosition) const {
-        int length = isMasterTrack() ? relativePosition.x : relativePosition.y;
-        if (length < ViewState::TRACK_LABEL_HEIGHT)
-            return -1;
-        int slot = (length - ViewState::TRACK_LABEL_HEIGHT) / getNonMixerCellSize();
-        return std::clamp(slot, 0, getNumAvailableSlots() - 1);
     }
 
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {
