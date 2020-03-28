@@ -55,6 +55,8 @@ struct SelectAction : public UndoableAction {
     }
 
     bool perform() override {
+        if (!changed()) return false;
+
         for (int i = 0; i < newTrackSelections.size(); i++) {
             auto track = tracks.getTrack(i);
             track.setProperty(IDs::selected, newTrackSelections.getUnchecked(i), nullptr);
@@ -69,6 +71,8 @@ struct SelectAction : public UndoableAction {
     }
 
     bool undo() override {
+        if (!changed()) return false;
+
         if (resetInputsAction != nullptr)
             resetInputsAction->undo();
         for (int i = 0; i < oldTrackSelections.size(); i++) {
@@ -106,6 +110,18 @@ protected:
         if (!isMaster)
             view.updateViewTrackOffsetToInclude(focusedSlot.x, tracks.getNumNonMasterTracks());
         view.updateViewSlotOffsetToInclude(focusedSlot.y, isMaster);
+    }
+
+    bool changed() {
+        if (resetInputsAction != nullptr || oldFocusedSlot != newFocusedSlot)
+            return true;
+        for (int i = 0; i < oldSelectedSlotsMasks.size(); i++) {
+            if (oldSelectedSlotsMasks.getUnchecked(i) != newSelectedSlotsMasks.getUnchecked(i) ||
+                oldTrackSelections.getUnchecked(i) != newTrackSelections.getUnchecked(i))
+                return true;
+        }
+
+        return false;
     }
 
     TracksState &tracks;
