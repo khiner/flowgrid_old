@@ -98,8 +98,10 @@ struct GraphEditorConnector : public Component, public SettableTooltipClient {
         Colour pathColour = connection.source.isMIDI() || connection.destination.isMIDI()
                             ? (isCustom() ? Colours::orange : Colours::red)
                             : (isCustom() ? Colours::greenyellow : Colours::green);
-        g.setColour(pathColour.withAlpha(0.75f));
-        g.fillPath(linePath);
+        pathColour = pathColour.withAlpha(0.75f);
+        bool mouseOver = isMouseOver(false);
+        g.setColour(mouseOver ? pathColour.brighter(0.1f) : pathColour);
+        g.fillPath(mouseOver ? hoverPath : linePath);
     }
 
     bool hitTest(int x, int y) override {
@@ -114,6 +116,14 @@ struct GraphEditorConnector : public Component, public SettableTooltipClient {
         }
 
         return false;
+    }
+
+    void mouseEnter(const MouseEvent & e) override {
+        repaint();
+    }
+
+    void mouseExit(const MouseEvent & e) override {
+        repaint();
     }
 
     void mouseDown(const MouseEvent &) override {
@@ -159,11 +169,9 @@ struct GraphEditorConnector : public Component, public SettableTooltipClient {
                          p2.x, p1.y + (p2.y - p1.y) * 0.66f,
                          p2.x, p2.y);
 
-        PathStrokeType wideStroke(8.0f);
-        wideStroke.createStrokedPath(hitPath, linePath);
-
-        PathStrokeType stroke(3.0f);
-        stroke.createStrokedPath(linePath, linePath);
+        PathStrokeType(8.0f).createStrokedPath(hitPath, linePath);
+        PathStrokeType(5.0f).createStrokedPath(hoverPath, linePath);
+        PathStrokeType(3.0f).createStrokedPath(linePath, linePath);
 
         auto arrowW = 5.0f;
         auto arrowL = 4.0f;
@@ -196,7 +204,7 @@ private:
     GraphEditorProcessorContainer &graphEditorProcessorContainer;
 
     juce::Point<float> lastInputPos, lastOutputPos;
-    Path linePath, hitPath;
+    Path linePath, hitPath, hoverPath;
     bool dragging = false;
 
     AudioProcessorGraph::Connection connection{

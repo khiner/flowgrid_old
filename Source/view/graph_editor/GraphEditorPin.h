@@ -33,16 +33,29 @@ struct GraphEditorPin : public Component, public SettableTooltipClient, private 
         auto w = (float) getWidth();
         auto h = (float) getHeight();
 
+        bool mouseOver = isMouseOver(false);
+        auto circleRatio = mouseOver ? 0.8f : 0.5f;
         Path p;
-        p.addEllipse(w * 0.25f, h * 0.25f, w * 0.5f, h * 0.5f);
+        p.addEllipse(w * (0.5f - circleRatio / 2), h * (0.5f - circleRatio / 2), w * circleRatio, h * circleRatio);
         p.addRectangle(w * 0.4f, isInput() ? (0.5f * h) : 0.0f, w * 0.2f, h * 0.5f);
 
         auto colour = isMidi() ?
                       (allowDefaultConnections() ? Colours::red : Colours::orange) :
                       (allowDefaultConnections() ? Colours::green : Colours::greenyellow);
 
-        g.setColour(colour.withRotatedHue(busIdx / 5.0f));
+        auto pathColour = colour.withRotatedHue(busIdx / 5.0f);
+        if (mouseOver)
+            pathColour = pathColour.brighter(0.15f);
+        g.setColour(pathColour);
         g.fillPath(p);
+    }
+
+    void mouseEnter(const MouseEvent & e) override {
+        repaint();
+    }
+
+    void mouseExit(const MouseEvent & e) override {
+        repaint();
     }
 
     void mouseDown(const MouseEvent &e) override {
