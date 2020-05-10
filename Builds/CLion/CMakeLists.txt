@@ -30,7 +30,7 @@ add_executable (APP
     "../../Source/actions/DeleteSelectedItemsAction.h"
     "../../Source/actions/DeleteTrackAction.h"
     "../../Source/actions/DisconnectProcessorAction.h"
-        "../../Source/actions/InsertAction.h"
+    "../../Source/actions/InsertAction.h"
     "../../Source/actions/InsertProcessorAction.h"
     "../../Source/actions/MoveSelectedItemsAction.h"
     "../../Source/actions/ResetDefaultExternalInputConnectionsAction.h"
@@ -654,8 +654,6 @@ add_executable (APP
     "../../modules/JUCE/modules/juce_core/misc/juce_Result.h"
     "../../modules/JUCE/modules/juce_core/misc/juce_RuntimePermissions.cpp"
     "../../modules/JUCE/modules/juce_core/misc/juce_RuntimePermissions.h"
-    "../../modules/JUCE/modules/juce_core/misc/juce_StdFunctionCompat.cpp"
-    "../../modules/JUCE/modules/juce_core/misc/juce_StdFunctionCompat.h"
     "../../modules/JUCE/modules/juce_core/misc/juce_Uuid.cpp"
     "../../modules/JUCE/modules/juce_core/misc/juce_Uuid.h"
     "../../modules/JUCE/modules/juce_core/misc/juce_WindowsRegistry.h"
@@ -771,6 +769,7 @@ add_executable (APP
     "../../modules/JUCE/modules/juce_core/threads/juce_ThreadPool.h"
     "../../modules/JUCE/modules/juce_core/threads/juce_TimeSliceThread.cpp"
     "../../modules/JUCE/modules/juce_core/threads/juce_TimeSliceThread.h"
+    "../../modules/JUCE/modules/juce_core/threads/juce_WaitableEvent.cpp"
     "../../modules/JUCE/modules/juce_core/threads/juce_WaitableEvent.h"
     "../../modules/JUCE/modules/juce_core/time/juce_PerformanceCounter.cpp"
     "../../modules/JUCE/modules/juce_core/time/juce_PerformanceCounter.h"
@@ -2117,8 +2116,6 @@ set_source_files_properties ("../../modules/JUCE/modules/juce_core/misc/juce_Res
 set_source_files_properties ("../../modules/JUCE/modules/juce_core/misc/juce_Result.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../modules/JUCE/modules/juce_core/misc/juce_RuntimePermissions.cpp" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../modules/JUCE/modules/juce_core/misc/juce_RuntimePermissions.h" PROPERTIES HEADER_FILE_ONLY TRUE)
-set_source_files_properties ("../../modules/JUCE/modules/juce_core/misc/juce_StdFunctionCompat.cpp" PROPERTIES HEADER_FILE_ONLY TRUE)
-set_source_files_properties ("../../modules/JUCE/modules/juce_core/misc/juce_StdFunctionCompat.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../modules/JUCE/modules/juce_core/misc/juce_Uuid.cpp" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../modules/JUCE/modules/juce_core/misc/juce_Uuid.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../modules/JUCE/modules/juce_core/misc/juce_WindowsRegistry.h" PROPERTIES HEADER_FILE_ONLY TRUE)
@@ -2234,6 +2231,7 @@ set_source_files_properties ("../../modules/JUCE/modules/juce_core/threads/juce_
 set_source_files_properties ("../../modules/JUCE/modules/juce_core/threads/juce_ThreadPool.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../modules/JUCE/modules/juce_core/threads/juce_TimeSliceThread.cpp" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../modules/JUCE/modules/juce_core/threads/juce_TimeSliceThread.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../modules/JUCE/modules/juce_core/threads/juce_WaitableEvent.cpp" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../modules/JUCE/modules/juce_core/threads/juce_WaitableEvent.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../modules/JUCE/modules/juce_core/time/juce_PerformanceCounter.cpp" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../modules/JUCE/modules/juce_core/time/juce_PerformanceCounter.h" PROPERTIES HEADER_FILE_ONLY TRUE)
@@ -2993,9 +2991,9 @@ set_target_properties (APP PROPERTIES
 )
 
 target_link_libraries (APP PRIVATE
+    "-framework AudioUnit"
     "-framework Accelerate"
     "-framework AudioToolbox"
-    "-framework AudioUnit"
     "-framework Carbon"
     "-framework Cocoa"
     "-framework CoreAudio"
@@ -3077,9 +3075,9 @@ set_target_properties (APP PROPERTIES
 )
 
 target_link_libraries (APP PRIVATE
+    "-framework AudioUnit"
     "-framework Accelerate"
     "-framework AudioToolbox"
-    "-framework AudioUnit"
     "-framework Carbon"
     "-framework Cocoa"
     "-framework CoreAudio"
