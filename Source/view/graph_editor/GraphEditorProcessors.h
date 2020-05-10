@@ -52,18 +52,16 @@ public:
     void resized() override {
         auto r = getLocalBounds();
         auto slotOffset = getSlotOffset();
-        auto nonMixerCellSize = getNonMixerCellSize();
+        auto processorSlotSize = getProcessorSlotSize();
 
         for (int slot = 0; slot < processorSlotRectangles.size(); slot++) {
-            bool isMixerChannel = slot == processorSlotRectangles.size() - 1;
             if (slot == slotOffset) {
                 if (isMasterTrack())
                     r.removeFromLeft(ViewState::TRACK_LABEL_HEIGHT);
                 else
                     r.removeFromTop(ViewState::TRACK_LABEL_HEIGHT);
             }
-            auto cellSize = isMixerChannel ? nonMixerCellSize * 2 : nonMixerCellSize;
-            auto processorBounds = isMasterTrack() ? r.removeFromLeft(cellSize) : r.removeFromTop(cellSize);
+            auto processorBounds = isMasterTrack() ? r.removeFromLeft(processorSlotSize) : r.removeFromTop(processorSlotSize);
             processorSlotRectangles.getUnchecked(slot)->setRectangle(processorBounds.reduced(1).toFloat());
             if (auto *processor = findProcessorAtSlot(slot))
                 processor->setBounds(processorBounds);
@@ -263,7 +261,7 @@ private:
         }
     }
 
-    int getNonMixerCellSize() const {
+    int getProcessorSlotSize() const {
         return isMasterTrack() ? view.getTrackWidth() : view.getProcessorHeight();
     }
 

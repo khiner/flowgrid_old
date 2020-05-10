@@ -75,7 +75,7 @@ public:
         auto processorHeight = getProcessorHeight();
         auto top = r.removeFromTop(processorHeight);
 
-        graphEditorTracks->setBounds(r.removeFromTop(processorHeight * (view.getNumTrackProcessorSlots() + 2) + ViewState::TRACK_LABEL_HEIGHT));
+        graphEditorTracks->setBounds(r.removeFromTop(processorHeight * (view.getNumTrackProcessorSlots() + 1) + ViewState::TRACK_LABEL_HEIGHT));
 
         auto ioProcessorWidth = parentViewport.getWidth() - ViewState::TRACK_LABEL_HEIGHT * 2;
         int trackXOffset = parentViewport.getViewPositionX() + ViewState::TRACK_LABEL_HEIGHT;
@@ -251,7 +251,7 @@ private:
 
     int getTrackWidth() { return (parentViewport.getWidth() - ViewState::TRACK_LABEL_HEIGHT * 2) / ViewState::NUM_VISIBLE_TRACKS; }
 
-    int getProcessorHeight() { return (parentViewport.getHeight() - ViewState::TRACK_LABEL_HEIGHT) / (ViewState::NUM_VISIBLE_PROCESSOR_SLOTS + 1); }
+    int getProcessorHeight() { return (parentViewport.getHeight() - ViewState::TRACK_LABEL_HEIGHT) / ViewState::NUM_VISIBLE_PROCESSOR_SLOTS; }
 
     GraphEditorPin *findPinAt(const MouseEvent &e) const {
         if (auto *pin = audioInputProcessor->findPinAt(e))
