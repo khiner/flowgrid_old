@@ -10,20 +10,17 @@ class GraphEditor : public Component {
 public:
     GraphEditor(ProcessorGraph &graph, Project &project)
             : project(project),
-              graphPanel(graph, project, graphPanelViewport),
+              graphPanel(graph, project),
               selectionEditor(project, graph) {
         addAndMakeVisible(statusBar);
-        graphPanelViewport.setScrollBarsShown(false, false);
-        graphPanelViewport.setViewedComponent(&graphPanel, false);
-        addAndMakeVisible(graphPanelViewport);
+        addAndMakeVisible(graphPanel);
         addAndMakeVisible(selectionEditor);
     }
 
     void resized() override {
         auto r = getLocalBounds();
         statusBar.setBounds(r.removeFromBottom(20));
-        graphPanelViewport.setBounds(r.removeFromLeft(int(r.getWidth() * 0.6f)));
-        graphPanel.resize();
+        graphPanel.setBounds(r.removeFromLeft(int(r.getWidth() * 0.6f)));
         selectionEditor.setBounds(r);
     }
 
@@ -33,7 +30,6 @@ public:
 
 private:
     Project &project;
-    Viewport graphPanelViewport;
     GraphEditorPanel graphPanel;
     SelectionEditor selectionEditor;
 

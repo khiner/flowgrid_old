@@ -20,8 +20,7 @@ public:
         setNoteMode();
         focusOnEditorPane();
         focusOnProcessorSlot({}, -1);
-        // - 3 to make room for: Input row, Output row, master track.
-        viewState.setProperty(IDs::numProcessorSlots, NUM_VISIBLE_PROCESSOR_SLOTS - 3, nullptr);
+        viewState.setProperty(IDs::numProcessorSlots, NUM_VISIBLE_NON_MASTER_TRACK_SLOTS, nullptr);
         // the number of processors in the master track aligns with the number of tracks
         viewState.setProperty(IDs::numMasterProcessorSlots, NUM_VISIBLE_TRACKS, nullptr);
         setGridViewTrackOffset(0);
@@ -54,6 +53,7 @@ public:
             setGridViewTrackOffset(numNonMasterTracks - NUM_VISIBLE_TRACKS);
     }
 
+    // TODO This and TracksState::isProcessorSlitInView are similar
     void updateViewSlotOffsetToInclude(int processorSlot, bool isMasterTrack) {
         if (processorSlot < 0)
             return; // invalid
@@ -63,14 +63,14 @@ public:
                 setMasterViewSlotOffset(processorSlot - NUM_VISIBLE_TRACKS + 1);
             else if (processorSlot < viewSlotOffset)
                 setMasterViewSlotOffset(processorSlot);
-            processorSlot = getNumTrackProcessorSlots();
+            return;
+        } else {
+            auto viewSlotOffset = getGridViewSlotOffset();
+            if (processorSlot >= viewSlotOffset + NUM_VISIBLE_NON_MASTER_TRACK_SLOTS)
+                setGridViewSlotOffset(processorSlot - NUM_VISIBLE_NON_MASTER_TRACK_SLOTS + 1);
+            else if (processorSlot < viewSlotOffset)
+                setGridViewSlotOffset(processorSlot);
         }
-
-        auto viewSlotOffset = getGridViewSlotOffset();
-        if (processorSlot >= viewSlotOffset + NUM_VISIBLE_TRACKS)
-            setGridViewSlotOffset(processorSlot - NUM_VISIBLE_TRACKS + 1);
-        else if (processorSlot < viewSlotOffset)
-            setGridViewSlotOffset(processorSlot);
     }
 
     int getFocusedTrackIndex() const { return viewState[IDs::focusedTrackIndex]; }
@@ -143,10 +143,10 @@ public:
     int getProcessorHeight() const { return processorHeight; }
 
     juce::Point<int> findTrackAndSlotAt(const juce::Point<int> position, int numNonMasterTracks) {
-        bool isNonMasterTrack = numNonMasterTracks > 0 && position.y < TRACK_LABEL_HEIGHT + getNumTrackProcessorSlots() * getProcessorHeight();
+        bool isNonMasterTrack = numNonMasterTracks > 0 && position.y < TRACK_LABEL_HEIGHT + TRACK_OUTPUT_HEIGHT + ViewState::NUM_VISIBLE_NON_MASTER_TRACK_SLOTS * getProcessorHeight();
         int trackIndex, slot;
         if (isNonMasterTrack) {
-            trackIndex = std::clamp((position.x - TRACK_LABEL_HEIGHT) / getTrackWidth(), 0, numNonMasterTracks - 1);
+            trackIndex = std::clamp((position.x - TRACK_LABEL_HEIGHT - TRACK_OUTPUT_HEIGHT) / getTrackWidth(), 0, numNonMasterTracks - 1);
             slot = (position.y - TRACK_LABEL_HEIGHT) / getProcessorHeight();
         } else {
             trackIndex = numNonMasterTracks;
@@ -162,17 +162,20 @@ public:
         if (length < TRACK_LABEL_HEIGHT)
             return -1;
 
-        int nonMixerCellSize = isMasterTrack ? getTrackWidth() : getProcessorHeight();
+        int processorSlotSize = isMasterTrack ? getTrackWidth() : getProcessorHeight();
         int numAvailableSlots = isMasterTrack ? getNumMasterProcessorSlots() : getNumTrackProcessorSlots();
-        int slot = (length - TRACK_LABEL_HEIGHT) / nonMixerCellSize;
+        int slot = (isMasterTrack ? getMasterViewSlotOffset() : getGridViewSlotOffset()) + (length - TRACK_LABEL_HEIGHT) / processorSlotSize;
         return std::clamp(slot, 0, numAvailableSlots - 1);
     }
 
     const String sessionControlMode = "session", noteControlMode = "note";
     const String gridPaneName = "grid", editorPaneName = "editor";
 
-    static constexpr int NUM_VISIBLE_TRACKS = 8, NUM_VISIBLE_PROCESSOR_SLOTS = 10;
-    static constexpr int TRACK_LABEL_HEIGHT = 32;
+    static constexpr int NUM_VISIBLE_TRACKS = 8,
+            NUM_VISIBLE_NON_MASTER_TRACK_SLOTS = 7,
+            NUM_VISIBLE_PROCESSOR_SLOTS = NUM_VISIBLE_NON_MASTER_TRACK_SLOTS + 3;  // + input row, output row, master track
+
+    static constexpr int TRACK_LABEL_HEIGHT = 32, TRACK_OUTPUT_HEIGHT = 54;
 private:
     ValueTree viewState;
     UndoManager &undoManager;

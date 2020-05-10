@@ -68,13 +68,14 @@ public:
     // TODO move to view (share masterTrack ID knowledge)
     bool isProcessorSlotInView(const ValueTree &track, int correctedSlot) {
         bool inView = correctedSlot >= getSlotOffsetForTrack(track) &&
-                      correctedSlot < getSlotOffsetForTrack(track) + ViewState::NUM_VISIBLE_TRACKS;
+                      correctedSlot < getSlotOffsetForTrack(track) + ViewState::NUM_VISIBLE_NON_MASTER_TRACK_SLOTS + (isMasterTrack(track) ? 1 : 0);
+        if (!inView) return false;
         if (isMasterTrack(track)) {
-            return inView && view.getGridViewSlotOffset() + ViewState::NUM_VISIBLE_TRACKS > view.getNumTrackProcessorSlots();
+            return true;
         } else {
             auto trackIndex = track.getParent().indexOf(track);
             auto trackViewOffset = view.getGridViewTrackOffset();
-            return inView && trackIndex >= trackViewOffset && trackIndex < trackViewOffset + ViewState::NUM_VISIBLE_TRACKS;
+            return trackIndex >= trackViewOffset && trackIndex < trackViewOffset + ViewState::NUM_VISIBLE_TRACKS;
         }
     }
 
@@ -413,7 +414,7 @@ public:
                 else
                     return INVALID_TRACK_AND_SLOT;
             }
-            slot = gridPosition.y + view.getGridViewSlotOffset();
+            slot = gridPosition.y;
         }
 
         if (trackIndex < 0 || slot < -1 || slot >= getNumAvailableSlotsForTrack(getTrack(trackIndex)))

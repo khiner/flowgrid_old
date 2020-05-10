@@ -11,8 +11,10 @@ public:
             : project(project), tracks(tracks), view(project.getView()), state(state),
               connectorDragListener(connectorDragListener), processors(project, state, connectorDragListener) {
         nameLabel.setJustificationType(Justification::centred);
-        updateLabelColour();
+        temporaryOutputLabel.setJustificationType(Justification::centred);
+        onColourChanged();
         addAndMakeVisible(nameLabel);
+        addAndMakeVisible(temporaryOutputLabel);
         addAndMakeVisible(processors);
         if (!isMasterTrack()) {
             nameLabel.setText(getTrackName(), dontSendNotification);
@@ -82,11 +84,13 @@ public:
         processors.setBounds(r);
         const auto &nameLabelBounds = isMasterTrack()
                                       ? r.removeFromLeft(ViewState::TRACK_LABEL_HEIGHT)
-                                              .withX(view.getTrackWidth() * processors.getSlotOffset())
-                                      : r.removeFromTop(ViewState::TRACK_LABEL_HEIGHT)
-                                              .withY(view.getProcessorHeight() * processors.getSlotOffset());
+                                      : r.removeFromTop(ViewState::TRACK_LABEL_HEIGHT);
         nameLabel.setBounds(nameLabelBounds);
         nameLabel.toFront(false);
+        const auto &temporaryOutputLabelBounds = isMasterTrack()
+                                                 ? r.removeFromRight(ViewState::TRACK_OUTPUT_HEIGHT)
+                                                 : r.removeFromBottom(ViewState::TRACK_OUTPUT_HEIGHT);
+        temporaryOutputLabel.setBounds(temporaryOutputLabelBounds);
         if (isMasterTrack()) {
             const auto &labelBoundsFloat = nameLabelBounds.toFloat();
             masterTrackName.setBoundingBox(Parallelogram<float>(labelBoundsFloat.getBottomLeft(), labelBoundsFloat.getTopLeft(), labelBoundsFloat.getBottomRight()));
@@ -118,13 +122,14 @@ private:
     ViewState &view;
     ValueTree state;
 
-    Label nameLabel;
+    Label nameLabel, temporaryOutputLabel;
     DrawableText masterTrackName;
     ConnectorDragListener &connectorDragListener;
     GraphEditorProcessors processors;
 
-    void updateLabelColour() {
+    void onColourChanged() {
         nameLabel.setColour(Label::backgroundColourId, getColour());
+        temporaryOutputLabel.setColour(Label::backgroundColourId, getColour());
     }
 
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {
@@ -137,7 +142,7 @@ private:
         if (i == IDs::name) {
             nameLabel.setText(tree[IDs::name].toString(), dontSendNotification);
         } else if (i == IDs::colour || i == IDs::selected) {
-            updateLabelColour();
+            onColourChanged();
         }
     }
 

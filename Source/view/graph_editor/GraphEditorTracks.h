@@ -25,20 +25,21 @@ public:
 
     void resized() override {
         auto r = getLocalBounds();
-        auto trackBounds = r.removeFromTop(view.getProcessorHeight() * view.getNumTrackProcessorSlots() + ViewState::TRACK_LABEL_HEIGHT);
-        trackBounds.removeFromLeft(jmax(0, view.getMasterViewSlotOffset() - view.getGridViewTrackOffset()) * view.getTrackWidth() + ViewState::TRACK_LABEL_HEIGHT);
+        auto trackBounds = r.removeFromTop(ViewState::TRACK_LABEL_HEIGHT +  view.getProcessorHeight() * ViewState::NUM_VISIBLE_NON_MASTER_TRACK_SLOTS + ViewState::TRACK_OUTPUT_HEIGHT);
+        trackBounds.setWidth(view.getTrackWidth());
+        trackBounds.setX(- view.getGridViewTrackOffset() * view.getTrackWidth() + ViewState::TRACK_LABEL_HEIGHT);
 
         for (auto *track : objects) {
             if (track->isMasterTrack())
                 continue;
-            track->setBounds(trackBounds.removeFromLeft(view.getTrackWidth()));
+            track->setBounds(trackBounds);
+            trackBounds.setX(trackBounds.getX() + view.getTrackWidth());
         }
 
         if (auto *masterTrack = findMasterTrack()) {
             masterTrack->setBounds(
                     r.removeFromTop(view.getProcessorHeight())
-                            .withX(view.getTrackWidth() * jmax(0, view.getGridViewTrackOffset() - view.getMasterViewSlotOffset()))
-                            .withWidth(ViewState::TRACK_LABEL_HEIGHT + view.getTrackWidth() * view.getNumMasterProcessorSlots())
+                            .withWidth(ViewState::TRACK_LABEL_HEIGHT + view.getTrackWidth() * view.getNumMasterProcessorSlots() + ViewState::TRACK_OUTPUT_HEIGHT)
             );
         }
     }

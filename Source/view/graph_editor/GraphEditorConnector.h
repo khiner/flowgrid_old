@@ -6,7 +6,8 @@
 #include "GraphEditorProcessorContainer.h"
 
 struct GraphEditorConnector : public Component, public SettableTooltipClient {
-    explicit GraphEditorConnector(const ValueTree &state, ConnectorDragListener &connectorDragListener, GraphEditorProcessorContainer &graphEditorProcessorContainer)
+    explicit GraphEditorConnector(const ValueTree &state, ConnectorDragListener &connectorDragListener,
+                                  GraphEditorProcessorContainer &graphEditorProcessorContainer)
             : state(state), connectorDragListener(connectorDragListener), graphEditorProcessorContainer(graphEditorProcessorContainer) {
         setAlwaysOnTop(true);
         if (this->state.isValid()) {
@@ -95,12 +96,38 @@ struct GraphEditorConnector : public Component, public SettableTooltipClient {
     }
 
     void paint(Graphics &g) override {
-        Colour pathColour = connection.source.isMIDI() || connection.destination.isMIDI()
+        auto pathColour = connection.source.isMIDI() || connection.destination.isMIDI()
                             ? (isCustom() ? Colours::orange : Colours::red)
                             : (isCustom() ? Colours::greenyellow : Colours::green);
-        pathColour = pathColour.withAlpha(0.75f);
+
         bool mouseOver = isMouseOver(false);
         g.setColour(mouseOver ? pathColour.brighter(0.1f) : pathColour);
+        auto *sourceComponent = graphEditorProcessorContainer.getProcessorForNodeId(connection.source.nodeID);
+        auto *destinationComponent = graphEditorProcessorContainer.getProcessorForNodeId(connection.destination.nodeID);
+        bool isSourceInView = sourceComponent == nullptr || sourceComponent->isInView();
+        bool isDestinationInView = destinationComponent == nullptr || destinationComponent->isInView();
+
+        juce::Point<float> p1, p2;
+        getPoints(p1, p2);
+        p1 -= getPosition().toFloat();
+        p2 -= getPosition().toFloat();
+
+        ColourGradient colourGradient = ColourGradient(pathColour, p1, pathColour, p2, false);
+        if (isSourceInView && isDestinationInView) {
+            colourGradient.addColour(0.5f, pathColour.withAlpha(0.1f));
+        } else if (isSourceInView) {
+            colourGradient.setColour(1, pathColour.withAlpha(0.0f));
+            colourGradient.addColour(0.25f, pathColour.withAlpha(0.0f));
+        } else if (isDestinationInView) {
+            colourGradient.setColour(0, pathColour.withAlpha(0.0f));
+            colourGradient.addColour(0.75f, pathColour.withAlpha(0.0f));
+        } else {
+            // TODO or just don't draw
+            colourGradient.setColour(0, pathColour.withAlpha(0.0f));
+            colourGradient.setColour(1, pathColour.withAlpha(0.0f));
+        }
+
+        g.setGradientFill(colourGradient);
         g.fillPath(mouseOver ? hoverPath : linePath);
     }
 
@@ -169,6 +196,7 @@ struct GraphEditorConnector : public Component, public SettableTooltipClient {
                          p2.x, p1.y + (p2.y - p1.y) * 0.66f,
                          p2.x, p2.y);
 
+        // TODO don't think I need all these
         PathStrokeType(8.0f).createStrokedPath(hitPath, linePath);
         PathStrokeType(5.0f).createStrokedPath(hoverPath, linePath);
         PathStrokeType(3.0f).createStrokedPath(linePath, linePath);

@@ -50,21 +50,36 @@ public:
     }
 
     void resized() override {
-        auto r = getLocalBounds();
         auto slotOffset = getSlotOffset();
         auto processorSlotSize = getProcessorSlotSize();
+        auto r = getLocalBounds();
+        if (isMasterTrack()) {
+            r.setWidth(processorSlotSize);
+            r.setX(-slotOffset * processorSlotSize);
+        } else {
+            r.setHeight(processorSlotSize);
+            r.setY(-slotOffset * processorSlotSize);
+        }
 
         for (int slot = 0; slot < processorSlotRectangles.size(); slot++) {
             if (slot == slotOffset) {
                 if (isMasterTrack())
-                    r.removeFromLeft(ViewState::TRACK_LABEL_HEIGHT);
+                    r.setX(r.getX() + ViewState::TRACK_LABEL_HEIGHT);
                 else
-                    r.removeFromTop(ViewState::TRACK_LABEL_HEIGHT);
+                    r.setY(r.getY() + ViewState::TRACK_LABEL_HEIGHT);
+            } else if (slot == slotOffset + ViewState::NUM_VISIBLE_NON_MASTER_TRACK_SLOTS + (isMasterTrack() ? 1 : 0)) {
+                if (isMasterTrack())
+                    r.setX(r.getX() + ViewState::TRACK_OUTPUT_HEIGHT);
+                else
+                    r.setY(r.getY() + ViewState::TRACK_OUTPUT_HEIGHT);
             }
-            auto processorBounds = isMasterTrack() ? r.removeFromLeft(processorSlotSize) : r.removeFromTop(processorSlotSize);
-            processorSlotRectangles.getUnchecked(slot)->setRectangle(processorBounds.reduced(1).toFloat());
+            processorSlotRectangles.getUnchecked(slot)->setRectangle(r.reduced(1).toFloat());
             if (auto *processor = findProcessorAtSlot(slot))
-                processor->setBounds(processorBounds);
+                processor->setBounds(r);
+            if (isMasterTrack())
+                r.setX(r.getX() + processorSlotSize);
+            else
+                r.setY(r.getY() + processorSlotSize);
         }
     }
 
@@ -265,6 +280,8 @@ private:
         return isMasterTrack() ? view.getTrackWidth() : view.getProcessorHeight();
     }
 
+    // TODO only instantiate 64 slot rects (and maybe another set for the boundary perimeter)
+    //  might be an over-early optimization though
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {
         if (isSuitableType(tree) && i == IDs::processorSlot) {
             resized();

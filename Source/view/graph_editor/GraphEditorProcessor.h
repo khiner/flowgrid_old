@@ -64,6 +64,10 @@ public:
 
     inline bool isSelected() { return tracks.isProcessorSelected(state); }
 
+    bool isInView() {
+        return tracks.isProcessorSlotInView(state.getParent(), getSlot());
+    }
+
     void paint(Graphics &g) override {
         auto boxColour = findColour(TextEditor::backgroundColourId);
         if (state[IDs::bypassed])
