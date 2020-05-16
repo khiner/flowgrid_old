@@ -67,7 +67,7 @@ public:
     inline bool isSelected() { return tracks.isProcessorSelected(state); }
 
     bool isInView() {
-        return view.isProcessorSlotInView(state.getParent(), getSlot());
+        return isIoProcessor() || view.isProcessorSlotInView(state.getParent(), getSlot());
     }
 
     void paint(Graphics &g) override {
