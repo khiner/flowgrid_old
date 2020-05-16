@@ -20,7 +20,7 @@ struct SelectRectangleAction : public SelectAction {
                 newSelectedSlotsMasks.setUnchecked(trackIndex, tracks.createFullSelectionBitmask(track));
             } else {
                 BigInteger newSlotsMask;
-                for (int otherSlot = 0; otherSlot < tracks.getNumAvailableSlotsForTrack(track); otherSlot++)
+                for (int otherSlot = 0; otherSlot < view.getNumSlotsForTrack(track); otherSlot++)
                     newSlotsMask.setBit(otherSlot, selectionRectangle.contains(tracks.trackAndSlotToGridPosition({trackIndex, otherSlot})));
                 newSelectedSlotsMasks.setUnchecked(trackIndex, newSlotsMask.toString(2));
             }

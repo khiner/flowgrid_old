@@ -28,6 +28,18 @@ public:
         setMasterViewSlotOffset(0);
     }
 
+    static inline bool isMasterTrack(const ValueTree &track) {
+        return track.isValid() && track[IDs::isMasterTrack];
+    }
+
+    int getSlotOffsetForTrack(const ValueTree &track) const {
+        return isMasterTrack(track) ? getMasterViewSlotOffset() : getGridViewSlotOffset();
+    }
+
+    int getNumSlotsForTrack(const ValueTree &track) const {
+        return isMasterTrack(track) ? getNumMasterProcessorSlots() : getNumTrackProcessorSlots();
+    }
+
     void setMasterViewSlotOffset(int masterViewSlotOffset) {
         viewState.setProperty(IDs::masterViewSlotOffset, masterViewSlotOffset, &undoManager);
     }
@@ -142,30 +154,37 @@ public:
 
     int getProcessorHeight() const { return processorHeight; }
 
-    juce::Point<int> findTrackAndSlotAt(const juce::Point<int> position, int numNonMasterTracks) {
+    int findTrackIndexAt(const juce::Point<int> position, int numNonMasterTracks) {
         bool isNonMasterTrack = numNonMasterTracks > 0 && position.y < TRACK_LABEL_HEIGHT + TRACK_OUTPUT_HEIGHT + ViewState::NUM_VISIBLE_NON_MASTER_TRACK_SLOTS * getProcessorHeight();
-        int trackIndex, slot;
         if (isNonMasterTrack) {
-            trackIndex = std::clamp((position.x - TRACK_LABEL_HEIGHT - TRACK_OUTPUT_HEIGHT) / getTrackWidth(), 0, numNonMasterTracks - 1);
-            slot = (position.y - TRACK_LABEL_HEIGHT) / getProcessorHeight();
+            return std::clamp((position.x - TRACK_LABEL_HEIGHT + getTrackWidth() * getGridViewTrackOffset()) / getTrackWidth(), 0, numNonMasterTracks - 1);
         } else {
-            trackIndex = numNonMasterTracks;
-            slot = (position.x - TRACK_LABEL_HEIGHT) / getTrackWidth();
+            return numNonMasterTracks;
         }
-        int numAvailableSlots = isNonMasterTrack ? getNumTrackProcessorSlots() : getNumMasterProcessorSlots();
-        return {trackIndex, std::clamp(slot, -1, numAvailableSlots - 1)};
     }
 
-    int findSlotAt(const juce::Point<int> position, const ValueTree &track) {
-        bool isMasterTrack = track.isValid() && track[IDs::isMasterTrack];
-        int length = isMasterTrack ? position.x : position.y;
+    int findSlotAt(const juce::Point<int> position, const ValueTree &track) const {
+        bool isMaster = isMasterTrack(track);
+        int length = isMaster ? position.x : position.y;
         if (length < TRACK_LABEL_HEIGHT)
             return -1;
 
-        int processorSlotSize = isMasterTrack ? getTrackWidth() : getProcessorHeight();
-        int numAvailableSlots = isMasterTrack ? getNumMasterProcessorSlots() : getNumTrackProcessorSlots();
-        int slot = (isMasterTrack ? getMasterViewSlotOffset() : getGridViewSlotOffset()) + (length - TRACK_LABEL_HEIGHT) / processorSlotSize;
-        return std::clamp(slot, 0, numAvailableSlots - 1);
+        int processorSlotSize = isMaster ? getTrackWidth() : getProcessorHeight();
+        int slot = getSlotOffsetForTrack(track) + (length - TRACK_LABEL_HEIGHT) / processorSlotSize;
+        return std::clamp(slot, 0, getNumSlotsForTrack(track) - 1);
+    }
+
+    bool isProcessorSlotInView(const ValueTree &track, int correctedSlot) {
+        bool inView = correctedSlot >= getSlotOffsetForTrack(track) &&
+                      correctedSlot < getSlotOffsetForTrack(track) + NUM_VISIBLE_NON_MASTER_TRACK_SLOTS + (isMasterTrack(track) ? 1 : 0);
+        if (!inView) return false;
+        if (isMasterTrack(track)) {
+            return true;
+        } else {
+            auto trackIndex = track.getParent().indexOf(track);
+            auto trackViewOffset = getGridViewTrackOffset();
+            return trackIndex >= trackViewOffset && trackIndex < trackViewOffset + NUM_VISIBLE_TRACKS;
+        }
     }
 
     const String sessionControlMode = "session", noteControlMode = "note";

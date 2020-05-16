@@ -53,31 +53,7 @@ public:
 
     int getViewIndexForTrack(const ValueTree &track) const { return indexOf(track) - view.getGridViewTrackOffset(); }
 
-    int getMixerChannelSlotForTrack(const ValueTree &track) const { return getNumAvailableSlotsForTrack(track) - 1; }
-
-    // TODO move to view (share masterTrack ID knowledge)
-    int getNumAvailableSlotsForTrack(const ValueTree &track) const {
-        return isMasterTrack(track) ? view.getNumMasterProcessorSlots() : view.getNumTrackProcessorSlots();
-    }
-
-    // TODO move to view (share masterTrack ID knowledge)
-    int getSlotOffsetForTrack(const ValueTree &track) const {
-        return isMasterTrack(track) ? view.getMasterViewSlotOffset() : view.getGridViewSlotOffset();
-    }
-
-    // TODO move to view (share masterTrack ID knowledge)
-    bool isProcessorSlotInView(const ValueTree &track, int correctedSlot) {
-        bool inView = correctedSlot >= getSlotOffsetForTrack(track) &&
-                      correctedSlot < getSlotOffsetForTrack(track) + ViewState::NUM_VISIBLE_NON_MASTER_TRACK_SLOTS + (isMasterTrack(track) ? 1 : 0);
-        if (!inView) return false;
-        if (isMasterTrack(track)) {
-            return true;
-        } else {
-            auto trackIndex = track.getParent().indexOf(track);
-            auto trackViewOffset = view.getGridViewTrackOffset();
-            return trackIndex >= trackViewOffset && trackIndex < trackViewOffset + ViewState::NUM_VISIBLE_TRACKS;
-        }
-    }
+    int getMixerChannelSlotForTrack(const ValueTree &track) const { return view.getNumSlotsForTrack(track) - 1; }
 
     ValueTree getTrackWithViewIndex(int trackViewIndex) const {
         return getTrack(trackViewIndex + view.getGridViewTrackOffset());
@@ -244,7 +220,7 @@ public:
 
     String createFullSelectionBitmask(const ValueTree &track) {
         BigInteger selectedSlotsMask;
-        selectedSlotsMask.setRange(0, getNumAvailableSlotsForTrack(track), true);
+        selectedSlotsMask.setRange(0, view.getNumSlotsForTrack(track), true);
         return selectedSlotsMask.toString(2);
     }
 
@@ -349,7 +325,7 @@ public:
         if (focusedProcessor.isValid()) {
             siblingProcessorToSelect = focusedProcessor.getSibling(delta);
         } else { // no focused processor - selection is on empty slot
-            for (int slot = focusedTrackAndSlot.y + delta; (delta < 0 ? slot >= 0 : slot < getNumAvailableSlotsForTrack(focusedTrack)); slot += delta) {
+            for (int slot = focusedTrackAndSlot.y + delta; (delta < 0 ? slot >= 0 : slot < view.getNumSlotsForTrack(focusedTrack)); slot += delta) {
                 siblingProcessorToSelect = TracksState::getProcessorAtSlot(focusedTrack, slot);
                 if (siblingProcessorToSelect.isValid())
                     break;
@@ -417,7 +393,7 @@ public:
             slot = gridPosition.y;
         }
 
-        if (trackIndex < 0 || slot < -1 || slot >= getNumAvailableSlotsForTrack(getTrack(trackIndex)))
+        if (trackIndex < 0 || slot < -1 || slot >= view.getNumSlotsForTrack(getTrack(trackIndex)))
             return INVALID_TRACK_AND_SLOT;
 
         return {trackIndex, slot};

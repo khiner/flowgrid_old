@@ -288,8 +288,10 @@ private:
     }
 
     juce::Point<int> trackAndSlotAt(const MouseEvent &e) {
-        return view.findTrackAndSlotAt(e.getEventRelativeTo(graphEditorTracks.get()).position.toInt(),
-                                       tracks.getNumNonMasterTracks());
+        auto position = e.getEventRelativeTo(graphEditorTracks.get()).position.toInt();
+        int trackIndex = view.findTrackIndexAt(position, tracks.getNumNonMasterTracks());
+        const auto &track = tracks.getTrack(trackIndex);
+        return {trackIndex, view.findSlotAt(position, track)};
     }
 
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {
@@ -314,20 +316,20 @@ private:
     void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override {
         if (child.hasType(IDs::PROCESSOR)) {
             if (child[IDs::name] == MidiInputProcessor::name()) {
-                auto *midiInputProcessor = new GraphEditorProcessor(project, tracks, child, *this);
+                auto *midiInputProcessor = new GraphEditorProcessor(project, tracks, view, child, *this);
                 addAndMakeVisible(midiInputProcessor);
                 midiInputProcessors.addSorted(processorComparator, midiInputProcessor);
                 resized();
             } else if (child[IDs::name] == MidiOutputProcessor::name()) {
-                auto *midiOutputProcessor = new GraphEditorProcessor(project, tracks, child, *this);
+                auto *midiOutputProcessor = new GraphEditorProcessor(project, tracks, view, child, *this);
                 addAndMakeVisible(midiOutputProcessor);
                 midiOutputProcessors.addSorted(processorComparator, midiOutputProcessor);
                 resized();
             } else if (child[IDs::name] == "Audio Input") {
-                addAndMakeVisible(*(audioInputProcessor = std::make_unique<GraphEditorProcessor>(project, tracks, child, *this, true)));
+                addAndMakeVisible(*(audioInputProcessor = std::make_unique<GraphEditorProcessor>(project, tracks, view, child, *this, true)));
                 resized();
             } else if (child[IDs::name] == "Audio Output") {
-                addAndMakeVisible(*(audioOutputProcessor = std::make_unique<GraphEditorProcessor>(project, tracks, child, *this, true)));
+                addAndMakeVisible(*(audioOutputProcessor = std::make_unique<GraphEditorProcessor>(project, tracks, view, child, *this, true)));
                 resized();
             }
             connectors->updateConnectors();

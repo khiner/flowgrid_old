@@ -103,7 +103,7 @@ private:
                 auto *cell = trackGridCells->getUnchecked(processorSlot);
                 const auto &processor = TracksState::getProcessorAtSlot(track, processorSlot);
                 cell->setTrackAndProcessor(track, processor,
-                                           tracks.isProcessorSlotInView(track, processorSlot),
+                                           view.isProcessorSlotInView(track, processorSlot),
                                            TracksState::isSlotSelected(track, processorSlot),
                                            tracks.isSlotFocused(track, processorSlot));
             }

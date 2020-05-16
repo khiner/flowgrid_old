@@ -9,8 +9,10 @@
 
 class GraphEditorProcessor : public Component, public ValueTree::Listener {
 public:
-    GraphEditorProcessor(Project &project, TracksState &tracks, const ValueTree &state, ConnectorDragListener &connectorDragListener, bool showChannelLabels = false)
-            : project(project), tracks(tracks), state(state), connectorDragListener(connectorDragListener),
+    GraphEditorProcessor(Project &project, TracksState &tracks, ViewState &view,
+                         const ValueTree &state, ConnectorDragListener &connectorDragListener,
+                         bool showChannelLabels = false)
+            : project(project), tracks(tracks), view(view), state(state), connectorDragListener(connectorDragListener),
               audioProcessorContainer(project), pluginManager(project.getPluginManager()), showChannelLabels(showChannelLabels) {
         this->state.addListener(this);
         valueTreePropertyChanged(this->state, IDs::name);
@@ -65,7 +67,7 @@ public:
     inline bool isSelected() { return tracks.isProcessorSelected(state); }
 
     bool isInView() {
-        return tracks.isProcessorSlotInView(state.getParent(), getSlot());
+        return view.isProcessorSlotInView(state.getParent(), getSlot());
     }
 
     void paint(Graphics &g) override {
@@ -176,6 +178,7 @@ public:
 private:
     Project &project;
     TracksState &tracks;
+    ViewState &view;
     ValueTree state;
     DrawableText nameLabel;
     std::unique_ptr<ParametersPanel> parametersPanel;

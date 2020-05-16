@@ -30,9 +30,9 @@ public:
 
     bool isMasterTrack() const { return TracksState::isMasterTrack(parent); }
 
-    int getNumAvailableSlots() const { return tracks.getNumAvailableSlotsForTrack(parent); }
+    int getNumSlots() const { return view.getNumSlotsForTrack(parent); }
 
-    int getSlotOffset() const { return tracks.getSlotOffsetForTrack(parent); }
+    int getSlotOffset() const { return view.getSlotOffsetForTrack(parent); }
 
     void mouseDown(const MouseEvent &e) override {
         int slot = findSlotAt(e.getEventRelativeTo(this));
@@ -94,7 +94,7 @@ public:
                 fillColour = TracksState::getTrackColour(parent);
             if (tracks.isSlotFocused(parent, slot))
                 fillColour = fillColour.brighter(0.16);
-            if (!tracks.isProcessorSlotInView(parent, slot))
+            if (!view.isProcessorSlotInView(parent, slot))
                 fillColour = fillColour.darker(0.3);
             processorSlotRectangles.getUnchecked(slot)->setFill(fillColour);
         }
@@ -107,7 +107,7 @@ public:
     GraphEditorProcessor *createNewObject(const ValueTree &tree) override {
         GraphEditorProcessor *processor = currentlyMovingProcessor != nullptr
                                           ? currentlyMovingProcessor
-                                          : new GraphEditorProcessor(project, tracks, tree, connectorDragListener);
+                                          : new GraphEditorProcessor(project, tracks, view, tree, connectorDragListener);
         addAndMakeVisible(processor);
         return processor;
     }
@@ -293,7 +293,7 @@ private:
             resized();
             updateProcessorSlotColours();
         } else if (i == IDs::numProcessorSlots || (i == IDs::numMasterProcessorSlots && isMasterTrack())) {
-            auto numSlots = getNumAvailableSlots();
+            auto numSlots = getNumSlots();
             while (processorSlotRectangles.size() < numSlots) {
                 auto *rect = new DrawableRectangle();
                 processorSlotRectangles.add(rect);
