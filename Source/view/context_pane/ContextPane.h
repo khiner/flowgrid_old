@@ -72,7 +72,7 @@ private:
             auto colour = processor.isValid() ? findColour(TextEditor::backgroundColourId) : baseColour;
 
             if (TracksState::doesTrackHaveSelections(track))
-                colour = colour.brighter(0.2);
+                colour = colour.brighter(processor.isValid() ? 0.04 : 0.15);
             if (slotSelected)
                 colour = TracksState::getTrackColour(track);
             if (slotFocused)
