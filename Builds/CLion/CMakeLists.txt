@@ -58,6 +58,7 @@ add_executable (APP
     "../../Source/processors/SineBank.h"
     "../../Source/processors/SineSynth.h"
     "../../Source/processors/StatefulAudioProcessorWrapper.h"
+    "../../Source/processors/TrackOutputProcessor.h"
     "../../Source/push2/Push2Display.h"
     "../../Source/push2/Push2DisplayBridge.h"
     "../../Source/push2/Push2MidiCommunicator.h"
@@ -87,6 +88,7 @@ add_executable (APP
     "../../Source/view/graph_editor/GraphEditorProcessors.h"
     "../../Source/view/graph_editor/GraphEditorTrack.h"
     "../../Source/view/graph_editor/GraphEditorTracks.h"
+    "../../Source/view/graph_editor/TrackOutputProcessorView.h"
     "../../Source/view/level_meter/LevelMeter.h"
     "../../Source/view/level_meter/LevelMeterSource.h"
     "../../Source/view/processor_editor/DraggableValueLabel.h"
@@ -1522,6 +1524,7 @@ set_source_files_properties ("../../Source/processors/ParameterTypesTestProcesso
 set_source_files_properties ("../../Source/processors/SineBank.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/processors/SineSynth.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/processors/StatefulAudioProcessorWrapper.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/processors/TrackOutputProcessor.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/push2/Push2Display.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/push2/Push2DisplayBridge.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/push2/Push2MidiCommunicator.h" PROPERTIES HEADER_FILE_ONLY TRUE)
@@ -1550,6 +1553,7 @@ set_source_files_properties ("../../Source/view/graph_editor/GraphEditorProcesso
 set_source_files_properties ("../../Source/view/graph_editor/GraphEditorProcessors.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/view/graph_editor/GraphEditorTrack.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/view/graph_editor/GraphEditorTracks.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/view/graph_editor/TrackOutputProcessorView.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/view/level_meter/LevelMeter.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/view/level_meter/LevelMeterSource.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/view/processor_editor/DraggableValueLabel.h" PROPERTIES HEADER_FILE_ONLY TRUE)

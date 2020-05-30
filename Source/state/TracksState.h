@@ -1,6 +1,7 @@
 #pragma once
 
 
+#include <processors/TrackOutputProcessor.h>
 #include "JuceHeader.h"
 #include "Identifiers.h"
 #include "unordered_map"
@@ -62,6 +63,10 @@ public:
     ValueTree getMasterTrack() const { return tracks.getChildWithProperty(IDs::isMasterTrack, true); }
 
     static bool isMasterTrack(const ValueTree &track) { return track[IDs::isMasterTrack]; }
+
+    ValueTree getOutputProcessorForTrack(const ValueTree &track) const {
+        return track.getChildWithName(TrackOutputProcessor::getPluginDescription().name);
+    }
 
     ValueTree getMixerChannelProcessorForTrack(const ValueTree &track) const {
         return getProcessorAtSlot(track, getMixerChannelSlotForTrack(track));

@@ -2,6 +2,8 @@
 
 #include <state/ConnectionsState.h>
 #include <state/TracksState.h>
+#include <actions/CreateProcessorAction.h>
+#include <processors/TrackOutputProcessor.h>
 
 #include "JuceHeader.h"
 
@@ -27,6 +29,8 @@ struct CreateTrackAction : public UndoableAction {
         }
         trackToCreate.setProperty(IDs::selectedSlotsMask, BigInteger().toString(2), nullptr);
         trackToCreate.setProperty(IDs::selected, false, nullptr);
+        auto trackOutputProcessor = CreateProcessorAction::createProcessor(TrackOutputProcessor::getPluginDescription());
+        trackToCreate.appendChild(trackOutputProcessor, nullptr);
     }
 
     bool perform() override {

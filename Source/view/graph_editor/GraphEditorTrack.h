@@ -4,17 +4,18 @@
 #include <state/Identifiers.h>
 #include "JuceHeader.h"
 #include "GraphEditorProcessors.h"
+#include "TrackOutputProcessorView.h"
 
 class GraphEditorTrack : public Component, public Utilities::ValueTreePropertyChangeListener, public GraphEditorProcessorContainer, private ChangeListener {
 public:
     explicit GraphEditorTrack(Project &project, TracksState &tracks, const ValueTree &state, ConnectorDragListener &connectorDragListener)
             : project(project), tracks(tracks), view(project.getView()), state(state),
+              trackOutputProcessorView(project, tracks, view, tracks.getOutputProcessorForTrack(state), connectorDragListener),
               connectorDragListener(connectorDragListener), processors(project, state, connectorDragListener) {
         nameLabel.setJustificationType(Justification::centred);
-        temporaryOutputLabel.setJustificationType(Justification::centred);
         onColourChanged();
         addAndMakeVisible(nameLabel);
-        addAndMakeVisible(temporaryOutputLabel);
+        addAndMakeVisible(trackOutputProcessorView);
         addAndMakeVisible(processors);
         if (!isMasterTrack()) {
             nameLabel.setText(getTrackName(), dontSendNotification);
@@ -87,10 +88,10 @@ public:
                                       : r.removeFromTop(ViewState::TRACK_LABEL_HEIGHT);
         nameLabel.setBounds(nameLabelBounds);
         nameLabel.toFront(false);
-        const auto &temporaryOutputLabelBounds = isMasterTrack()
-                                                 ? r.removeFromRight(ViewState::TRACK_OUTPUT_HEIGHT)
-                                                 : r.removeFromBottom(ViewState::TRACK_OUTPUT_HEIGHT);
-        temporaryOutputLabel.setBounds(temporaryOutputLabelBounds);
+        const auto &trackOutputBounds = isMasterTrack()
+                                        ? r.removeFromRight(ViewState::TRACK_OUTPUT_HEIGHT)
+                                        : r.removeFromBottom(ViewState::TRACK_OUTPUT_HEIGHT);
+        trackOutputProcessorView.setBounds(trackOutputBounds);
         if (isMasterTrack()) {
             const auto &labelBoundsFloat = nameLabelBounds.toFloat();
             masterTrackName.setBoundingBox(Parallelogram<float>(labelBoundsFloat.getBottomLeft(), labelBoundsFloat.getTopLeft(), labelBoundsFloat.getBottomRight()));
@@ -108,8 +109,9 @@ public:
         return processors.getProcessorForNodeId(nodeId);
     }
 
-    GraphEditorPin *findPinAt(const MouseEvent &e) const {
-        return processors.findPinAt(e);
+    GraphEditorPin *findPinAt(const MouseEvent &e) {
+        auto *pin = processors.findPinAt(e);
+        return pin != nullptr ? pin : trackOutputProcessorView.findPinAt(e);
     }
 
     void setCurrentlyMovingProcessor(GraphEditorProcessor *currentlyMovingProcessor) {
@@ -122,14 +124,15 @@ private:
     ViewState &view;
     ValueTree state;
 
-    Label nameLabel, temporaryOutputLabel;
+    Label nameLabel;
+    TrackOutputProcessorView trackOutputProcessorView;
     DrawableText masterTrackName;
     ConnectorDragListener &connectorDragListener;
     GraphEditorProcessors processors;
 
     void onColourChanged() {
         nameLabel.setColour(Label::backgroundColourId, getColour());
-        temporaryOutputLabel.setColour(Label::backgroundColourId, getColour());
+        trackOutputProcessorView.setColour(Label::backgroundColourId, getColour());
     }
 
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {
