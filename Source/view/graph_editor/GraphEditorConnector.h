@@ -95,6 +95,7 @@ struct GraphEditorConnector : public Component, public SettableTooltipClient {
         }
     }
 
+    // TODO this should all be done in resize
     void paint(Graphics &g) override {
         auto pathColour = connection.source.isMIDI() || connection.destination.isMIDI()
                             ? (isCustom() ? Colours::orange : Colours::red)

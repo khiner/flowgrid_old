@@ -25,7 +25,7 @@ public:
 
         int cellWidth = 20;
         int cellHeight = 20;
-        int newWidth = cellWidth * jmax(tracks.getNumNonMasterTracks(), view.getNumMasterProcessorSlots());
+        int newWidth = cellWidth * jmax(tracks.getNumNonMasterTracks(), view.getNumMasterProcessorSlots() + view.getGridViewTrackOffset());
         int newHeight = cellHeight * (view.getNumTrackProcessorSlots() + 2);
         setSize(newWidth, newHeight);
 
