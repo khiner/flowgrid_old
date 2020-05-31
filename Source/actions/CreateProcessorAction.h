@@ -24,7 +24,7 @@ struct CreateProcessorAction : public UndoableAction {
                                     tracks, view, audioProcessorContainer) {}
 
     bool perform() override {
-        insertAction.perform();
+        performTemporary();
         if (processorToCreate.isValid()) {
             audioProcessorContainer.onProcessorCreated(processorToCreate);
             processorToCreate.setProperty(IDs::pluginWindowType, pluginWindowType, nullptr);
@@ -33,7 +33,7 @@ struct CreateProcessorAction : public UndoableAction {
     }
 
     bool undo() override {
-        insertAction.undo();
+        undoTemporary();
         if (processorToCreate.isValid()) {
             processorToCreate.setProperty(IDs::pluginWindowType, static_cast<int>(PluginWindow::Type::none), nullptr);
             audioProcessorContainer.onProcessorDestroyed(processorToCreate);

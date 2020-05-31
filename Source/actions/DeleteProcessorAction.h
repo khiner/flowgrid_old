@@ -19,29 +19,42 @@ struct DeleteProcessorAction : public UndoableAction {
 
     bool perform() override {
         audioProcessorContainer.saveProcessorStateInformationToState(processorToDelete);
+        performTemporary();
         processorToDelete.setProperty(IDs::pluginWindowType, static_cast<int>(PluginWindow::Type::none), nullptr);
-        disconnectProcessorAction.perform();
-        auto track = tracks.getTrack(trackIndex);
-        if (TracksState::isTrackIOProcessor(processorToDelete)) {
-            track.removeChild(processorToDelete, nullptr);
-        } else {
-            TracksState::getProcessorLaneForTrack(track).removeChild(processorToDelete, nullptr);
-        }
         audioProcessorContainer.onProcessorDestroyed(processorToDelete);
         return true;
     }
 
     bool undo() override {
         auto track = tracks.getTrack(trackIndex);
-        if (TracksState::isTrackIOProcessor(processorToDelete)) {
+        if (TracksState::isTrackIOProcessor(processorToDelete))
             track.appendChild(processorToDelete, nullptr);
-        } else {
+        else
             TracksState::getProcessorLaneForTrack(track).addChild(processorToDelete, processorIndex, nullptr);
-        }
         audioProcessorContainer.onProcessorCreated(processorToDelete);
-        disconnectProcessorAction.undo();
         processorToDelete.setProperty(IDs::pluginWindowType, pluginWindowType, nullptr);
+        disconnectProcessorAction.undo();
 
+        return true;
+    }
+
+    bool performTemporary() {
+        disconnectProcessorAction.perform();
+        auto track = tracks.getTrack(trackIndex);
+        if (TracksState::isTrackIOProcessor(processorToDelete))
+            track.removeChild(processorToDelete, nullptr);
+        else
+            TracksState::getProcessorLaneForTrack(track).removeChild(processorToDelete, nullptr);
+        return true;
+    }
+
+    bool undoTemporary() {
+        auto track = tracks.getTrack(trackIndex);
+        if (TracksState::isTrackIOProcessor(processorToDelete))
+            track.appendChild(processorToDelete, nullptr);
+        else
+            TracksState::getProcessorLaneForTrack(track).addChild(processorToDelete, processorIndex, nullptr);
+        disconnectProcessorAction.undo();
         return true;
     }
 

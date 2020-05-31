@@ -11,8 +11,12 @@ struct DeleteTrackAction : public UndoableAction {
                       StatefulAudioProcessorContainer &audioProcessorContainer)
             : trackToDelete(trackToDelete), trackIndex(trackToDelete.getParent().indexOf(trackToDelete)),
               tracks(tracks) {
-        for (const auto &processor : TracksState::getAllProcessorsForTrack(trackToDelete))
+        for (const auto &processor : TracksState::getAllProcessorsForTrack(trackToDelete)) {
             deleteProcessorActions.add(new DeleteProcessorAction(processor, tracks, connections, audioProcessorContainer));
+            deleteProcessorActions.getLast()->performTemporary();
+        }
+        for (int i = deleteProcessorActions.size() - 1; i >= 0; i--)
+            deleteProcessorActions.getUnchecked(i)->undoTemporary();
     }
 
     bool perform() override {
