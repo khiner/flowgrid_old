@@ -6,17 +6,16 @@
 // (The new processor always "wins" by keeping its given slot.)
 // Doesn't take care of any select actions! (Caller is responsible for that.)
 struct InsertProcessorAction : UndoableAction {
+    // slot of -1 used for track-level processors (track IO processors that aren't in a lane).
     InsertProcessorAction(const ValueTree &processor, int toTrackIndex, int toSlot, TracksState &tracks, ViewState &view)
             : addOrMoveProcessorAction(processor, toTrackIndex, toSlot, tracks, view) {}
 
     bool perform() override {
-        addOrMoveProcessorAction.perform();
-        return true;
+        return addOrMoveProcessorAction.perform();
     }
 
     bool undo() override {
-        addOrMoveProcessorAction.undo();
-        return true;
+        return addOrMoveProcessorAction.undo();
     }
 
     int getSizeInUnits() override {
@@ -130,13 +129,18 @@ private:
                   oldSlot(processor[IDs::processorSlot]), newSlot(newSlot),
                   oldIndex(processor.getParent().indexOf(processor)),
                   newIndex(tracks.getInsertIndexForProcessor(tracks.getTrack(newTrackIndex), processor, this->newSlot)),
-                  setProcessorSlotAction(newTrackIndex, processor, newSlot, tracks, view),
+                  setProcessorSlotAction(std::make_unique<SetProcessorSlotAction>(newTrackIndex, processor, newSlot, tracks, view)),
                   tracks(tracks) {}
 
         bool perform() override {
             if (processor.isValid()) {
-                const ValueTree &oldTrack = tracks.getTrack(oldTrackIndex);
-                const ValueTree newTrack = tracks.getTrack(newTrackIndex);
+                auto newTrack = tracks.getTrack(newTrackIndex);
+                if (newSlot == -1) {
+                    newTrack.appendChild(processor, nullptr);
+                    return true;
+                }
+
+                const auto &oldTrack = tracks.getTrack(oldTrackIndex);
                 const auto oldLane = TracksState::getProcessorLaneForTrack(oldTrack);
                 auto newLane = TracksState::getProcessorLaneForTrack(newTrack);
 
@@ -147,17 +151,24 @@ private:
                 else
                     newLane.moveChildFromParent(oldLane, oldIndex, newIndex, nullptr);
             }
-            setProcessorSlotAction.perform();
+            if (setProcessorSlotAction != nullptr)
+                setProcessorSlotAction->perform();
 
             return true;
         }
 
         bool undo() override {
-            setProcessorSlotAction.undo();
+            if (setProcessorSlotAction != nullptr)
+                setProcessorSlotAction->undo();
 
             if (processor.isValid()) {
+                auto newTrack = tracks.getTrack(newTrackIndex);
+                if (newSlot == -1) {
+                    newTrack.removeChild(processor, nullptr);
+                    return true;
+                }
+
                 const auto &oldTrack = tracks.getTrack(oldTrackIndex);
-                const auto &newTrack = tracks.getTrack(newTrackIndex);
                 auto oldLane = TracksState::getProcessorLaneForTrack(oldTrack);
                 auto newLane = TracksState::getProcessorLaneForTrack(newTrack);
 
@@ -178,7 +189,7 @@ private:
         int oldSlot, newSlot;
         int oldIndex, newIndex;
 
-        SetProcessorSlotAction setProcessorSlotAction;
+        std::unique_ptr<SetProcessorSlotAction> setProcessorSlotAction;
 
         TracksState &tracks;
     };

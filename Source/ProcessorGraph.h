@@ -216,7 +216,7 @@ private:
                 connectionsSincePause.addConnection(child);
             else
                 AudioProcessorGraph::addConnection(connections.stateToConnection(child));
-        } else if (child.hasType(IDs::PROCESSOR_LANE) || parent.hasType(IDs::INPUT) || parent.hasType(IDs::OUTPUT)) {
+        } else if (child.hasType(IDs::TRACK) || parent.hasType(IDs::INPUT) || parent.hasType(IDs::OUTPUT)) {
             recursivelyAddProcessors(child); // TODO might be a problem for moving tracks
         } else if (child.hasType(IDs::CHANNEL)) {
             updateIoChannelEnabled(parent, child, true);

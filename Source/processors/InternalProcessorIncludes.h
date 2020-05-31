@@ -10,8 +10,10 @@
 #include "ParameterTypesTestProcessor.h"
 #include "SineBank.h"
 #include "SineSynth.h"
+#include "TrackOutputProcessor.h"
 
 Array<PluginDescription> internalPluginDescriptions{
+        TrackOutputProcessor::getPluginDescription(),
         Arpeggiator::getPluginDescription(),
         BalanceProcessor::getPluginDescription(),
         GainProcessor::getPluginDescription(),

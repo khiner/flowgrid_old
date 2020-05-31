@@ -9,7 +9,8 @@
 struct CreateProcessorAction : public UndoableAction {
     CreateProcessorAction(ValueTree processorToCreate, int trackIndex, int slot,
                           TracksState &tracks, ViewState &view, StatefulAudioProcessorContainer &audioProcessorContainer)
-            : trackIndex(trackIndex), slot(slot), processorToCreate(std::move(processorToCreate)), pluginWindowType(this->processorToCreate[IDs::pluginWindowType]),
+            : trackIndex(trackIndex), slot(slot), processorToCreate(std::move(processorToCreate)),
+            pluginWindowType(this->processorToCreate[IDs::pluginWindowType]),
               insertAction(this->processorToCreate, trackIndex, slot, tracks, view),
               audioProcessorContainer(audioProcessorContainer) {}
 
@@ -70,6 +71,9 @@ private:
 
     static int getInsertSlot(const PluginDescription &description, int trackIndex, TracksState &tracks) {
         const auto &track = tracks.getTrack(trackIndex);
+
+        if (description.name == TrackOutputProcessor::name())
+            return -1;
 
         int slot;
         if (description.name == MixerChannelProcessor::name() && !tracks.getMixerChannelProcessorForTrack(track).isValid()) {

@@ -10,8 +10,10 @@
 struct DeleteProcessorAction : public UndoableAction {
     DeleteProcessorAction(const ValueTree &processorToDelete, TracksState &tracks, ConnectionsState &connections,
                           StatefulAudioProcessorContainer &audioProcessorContainer)
-            : parentLane(TracksState::getProcessorLaneForProcessor(processorToDelete)), processorToDelete(processorToDelete),
-              processorIndex(parentLane.indexOf(processorToDelete)), pluginWindowType(processorToDelete[IDs::pluginWindowType]),
+            : tracks(tracks), trackIndex(tracks.indexOf(TracksState::getTrackForProcessor(processorToDelete))),
+              processorToDelete(processorToDelete),
+              processorIndex(processorToDelete.getParent().indexOf(processorToDelete)),
+              pluginWindowType(processorToDelete[IDs::pluginWindowType]),
               disconnectProcessorAction(DisconnectProcessorAction(connections, processorToDelete, all, true, true, true, true)),
               audioProcessorContainer(audioProcessorContainer) {}
 
@@ -19,13 +21,23 @@ struct DeleteProcessorAction : public UndoableAction {
         audioProcessorContainer.saveProcessorStateInformationToState(processorToDelete);
         processorToDelete.setProperty(IDs::pluginWindowType, static_cast<int>(PluginWindow::Type::none), nullptr);
         disconnectProcessorAction.perform();
-        parentLane.removeChild(processorToDelete, nullptr);
+        auto track = tracks.getTrack(trackIndex);
+        if (TracksState::isTrackIOProcessor(processorToDelete)) {
+            track.removeChild(processorToDelete, nullptr);
+        } else {
+            TracksState::getProcessorLaneForTrack(track).removeChild(processorToDelete, nullptr);
+        }
         audioProcessorContainer.onProcessorDestroyed(processorToDelete);
         return true;
     }
 
     bool undo() override {
-        parentLane.addChild(processorToDelete, processorIndex, nullptr);
+        auto track = tracks.getTrack(trackIndex);
+        if (TracksState::isTrackIOProcessor(processorToDelete)) {
+            track.appendChild(processorToDelete, nullptr);
+        } else {
+            TracksState::getProcessorLaneForTrack(track).addChild(processorToDelete, processorIndex, nullptr);
+        }
         audioProcessorContainer.onProcessorCreated(processorToDelete);
         disconnectProcessorAction.undo();
         processorToDelete.setProperty(IDs::pluginWindowType, pluginWindowType, nullptr);
@@ -38,7 +50,8 @@ struct DeleteProcessorAction : public UndoableAction {
     }
 
 private:
-    ValueTree parentLane;
+    TracksState &tracks;
+    int trackIndex;
     ValueTree processorToDelete;
     int processorIndex, pluginWindowType;
     DisconnectProcessorAction disconnectProcessorAction;

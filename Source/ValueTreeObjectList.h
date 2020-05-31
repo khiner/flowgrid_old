@@ -58,8 +58,9 @@ namespace Utilities {
                     }
 
                     newObjectAdded(newObject);
-                } else
+                } else {
                     jassertfalse;
+                }
             }
         }
 

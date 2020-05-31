@@ -15,24 +15,37 @@ class TrackOutputProcessorView : public Component, public ValueTree::Listener {
 public:
     TrackOutputProcessorView(Project &project, TracksState &tracks, ViewState &view,
                          const ValueTree &state, ConnectorDragListener &connectorDragListener)
-            : project(project), tracks(tracks), view(view), state(state), connectorDragListener(connectorDragListener),
+            : project(project), tracks(tracks), view(view), connectorDragListener(connectorDragListener),
               audioProcessorContainer(project), pluginManager(project.getPluginManager()) {
-        this->state.addListener(this);
+        setState(state);
+
+        for (auto child : state) {
+            if (child.hasType(IDs::INPUT_CHANNELS) || child.hasType(IDs::OUTPUT_CHANNELS)) {
+                for (auto channel : child) {
+                    valueTreeChildAdded(child, channel);
+                }
+            }
+        }
     }
 
     ~TrackOutputProcessorView() override {
         if (parametersPanel != nullptr)
             parametersPanel->removeMouseListener(this);
-        state.removeListener(this);
+        if (this->state.isValid())
+            state.removeListener(this);
     }
 
     const ValueTree &getState() const {
         return state;
     }
 
+    void setState(const ValueTree &state) {
+        this->state = state;
+        if (this->state.isValid())
+            this->state.addListener(this);
+    }
+
     AudioProcessorGraph::NodeID getNodeId() const {
-        if (!state.isValid())
-            return {};
         return ProcessorGraph::getNodeIdForState(state);
     }
 
@@ -53,7 +66,7 @@ public:
 
     void mouseDown(const MouseEvent &e) override {
         bool isTrackSelected = state.getParent()[IDs::selected];
-        project.setTrackSelected(state, !(isTrackSelected && e.mods.isCommandDown()), !(isTrackSelected || e.mods.isCommandDown()));
+        project.setTrackSelected(state.getParent(), !(isTrackSelected && e.mods.isCommandDown()), !(isTrackSelected || e.mods.isCommandDown()));
     }
 
     void mouseUp(const MouseEvent &e) override {

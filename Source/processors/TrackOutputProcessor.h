@@ -23,9 +23,9 @@ public:
         balanceParameter->removeListener(this);
     }
 
-    bool showInlineEditor() override { return true; }
+    bool showInlineEditor() override { return false; }
 
-    static const String name() { return "Mixer Channel"; }
+    static const String name() { return "Track Output"; }
 
     static PluginDescription getPluginDescription() {
         return DefaultAudioProcessor::getPluginDescription(name(), false, false);

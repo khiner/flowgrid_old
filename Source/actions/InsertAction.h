@@ -219,6 +219,12 @@ private:
 
     void addAndPerformCreateTrackAction(const ValueTree &track, int fromTrackIndex, int toTrackIndex) {
         addAndPerformAction(new CreateTrackAction(toTrackIndex, false, false, track, tracks, view));
+        // Create track-level processors
+        for (const auto &processor : track)
+            if (processor.hasType(IDs::PROCESSOR))
+                addAndPerformAction(new CreateProcessorAction(processor.createCopy(), toTrackIndex, -1, tracks, view, audioProcessorContainer));
+
+        // Create in-lane processors
         for (const auto &processor : TracksState::getProcessorLaneForTrack(track)) {
             int slot = processor[IDs::processorSlot];
             addAndPerformCreateProcessorAction(processor, fromTrackIndex, slot, toTrackIndex, slot);

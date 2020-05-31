@@ -55,11 +55,11 @@ public:
     }
 
     static ValueTree getTrackForProcessor(const ValueTree &processor) {
-        return processor.getParent().getParent();
+        return processor.getParent().hasType(IDs::TRACK) ? processor.getParent() : processor.getParent().getParent();
     }
 
     static ValueTree getOutputProcessorForTrack(const ValueTree &track) {
-        return track.getChildWithName(TrackOutputProcessor::getPluginDescription().name);
+        return track.getChildWithProperty(IDs::name, TrackOutputProcessor::getPluginDescription().name);
     }
 
     static Array<ValueTree> getAllProcessorsForTrack(const ValueTree &track) {
@@ -69,6 +69,10 @@ public:
         }
         allProcessors.add(getOutputProcessorForTrack(track));
         return allProcessors;
+    }
+
+    static bool isTrackIOProcessor(const ValueTree &processor) {
+        return processor.getProperty(IDs::name) == TrackOutputProcessor::name();
     }
 
     int getNumTracks() const { return tracks.getNumChildren(); }

@@ -314,9 +314,9 @@ private:
         Utilities::ValueTreeObjectList<GraphEditorProcessor>::valueTreePropertyChanged(tree, i);
     }
 
-    void valueTreeChildAdded(ValueTree &parent, ValueTree &tree) override {
-        ValueTreeObjectList::valueTreeChildAdded(parent, tree);
-        if (this->parent == parent && isSuitableType(tree))
+    void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override {
+        ValueTreeObjectList::valueTreeChildAdded(parent, child);
+        if (this->parent == parent && isSuitableType(child))
             resized();
     }
 };

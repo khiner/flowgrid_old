@@ -189,6 +189,9 @@ public:
         auto derivedFromTrack = !isMaster && !addMixer && tracks.getFocusedTrack().isValid() &&
                                 !tracks.isMasterTrack(tracks.getFocusedTrack()) ? tracks.getFocusedTrack() : ValueTree();
         undoManager.perform(new CreateTrackAction(isMaster, addMixer, derivedFromTrack, tracks, view));
+        undoManager.perform(new CreateProcessorAction(TrackOutputProcessor::getPluginDescription(),
+                                                      tracks.indexOf(mostRecentlyCreatedTrack), tracks, view, *this));
+
         if (addMixer)
             undoManager.perform(new CreateProcessorAction(MixerChannelProcessor::getPluginDescription(),
                                                           tracks.indexOf(mostRecentlyCreatedTrack), tracks, view, *this));

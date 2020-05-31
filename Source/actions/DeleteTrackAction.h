@@ -25,9 +25,8 @@ struct DeleteTrackAction : public UndoableAction {
 
     bool undo() override {
         tracks.getState().addChild(trackToDelete, trackIndex, nullptr);
-        for (auto *deleteProcessorAction : deleteProcessorActions)
-            deleteProcessorAction->undo();
-
+        for (int i = deleteProcessorActions.size() - 1; i >= 0; i--)
+            deleteProcessorActions.getUnchecked(i)->undo();
         return true;
     }
 

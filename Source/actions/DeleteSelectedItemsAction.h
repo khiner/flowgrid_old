@@ -26,10 +26,14 @@ struct DeleteSelectedItemsAction : public UndoableAction {
     }
 
     bool undo() override {
-        for (auto *deleteTrackAction : deleteTrackActions)
+        for (int i = deleteTrackActions.size() - 1; i >= 0; i--) {
+            auto *deleteTrackAction = deleteTrackActions.getUnchecked(i);
             deleteTrackAction->undo();
-        for (auto *deleteProcessorAction : deleteProcessorActions)
+        }
+        for (int i = deleteProcessorActions.size() - 1; i >= 0; i--) {
+            auto *deleteProcessorAction = deleteProcessorActions.getUnchecked(i);
             deleteProcessorAction->undo();
+        }
 
         return !deleteProcessorActions.isEmpty() || !deleteTrackActions.isEmpty();
     }

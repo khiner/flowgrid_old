@@ -34,10 +34,10 @@ struct CreateOrDeleteConnectionsAction : public UndoableAction {
         if (connectionsToCreate.isEmpty() && connectionsToDelete.isEmpty())
             return false;
 
-        for (const auto &connectionToCreate : connectionsToCreate)
-            connections.getState().removeChild(connectionToCreate, nullptr);
-        for (const auto &connectionToDelete : connectionsToDelete)
-            connections.getState().appendChild(connectionToDelete, nullptr);
+        for (int i = connectionsToCreate.size() - 1; i >= 0; i--)
+            connections.getState().removeChild(connectionsToCreate.getUnchecked(i), nullptr);
+        for (int i = connectionsToDelete.size() - 1; i >= 0; i--)
+            connections.getState().appendChild(connectionsToDelete.getUnchecked(i), nullptr);
         return true;
     }
 

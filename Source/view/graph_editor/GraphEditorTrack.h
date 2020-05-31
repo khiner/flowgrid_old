@@ -10,13 +10,12 @@ class GraphEditorTrack : public Component, public Utilities::ValueTreePropertyCh
 public:
     explicit GraphEditorTrack(Project &project, TracksState &tracks, const ValueTree &state, ConnectorDragListener &connectorDragListener)
             : project(project), tracks(tracks), view(project.getView()), state(state),
-              trackOutputProcessorView(project, tracks, view, TracksState::getOutputProcessorForTrack(state), connectorDragListener),
               connectorDragListener(connectorDragListener), lane(project, TracksState::getProcessorLaneForTrack(state), connectorDragListener) {
         nameLabel.setJustificationType(Justification::centred);
-        onColourChanged();
         addAndMakeVisible(nameLabel);
-        addAndMakeVisible(trackOutputProcessorView);
         addAndMakeVisible(lane);
+        trackOutputProcessorChanged();
+
         if (!isMasterTrack()) {
             nameLabel.setText(getTrackName(), dontSendNotification);
             nameLabel.setEditable(false, true);
@@ -91,7 +90,8 @@ public:
         const auto &trackOutputBounds = isMasterTrack()
                                         ? r.removeFromRight(ViewState::TRACK_OUTPUT_HEIGHT)
                                         : r.removeFromBottom(ViewState::TRACK_OUTPUT_HEIGHT);
-        trackOutputProcessorView.setBounds(trackOutputBounds);
+        if (trackOutputProcessorView != nullptr)
+            trackOutputProcessorView->setBounds(trackOutputBounds);
         if (isMasterTrack()) {
             const auto &labelBoundsFloat = nameLabelBounds.toFloat();
             masterTrackName.setBoundingBox(Parallelogram<float>(labelBoundsFloat.getBottomLeft(), labelBoundsFloat.getTopLeft(), labelBoundsFloat.getBottomRight()));
@@ -111,7 +111,7 @@ public:
 
     GraphEditorPin *findPinAt(const MouseEvent &e) {
         auto *pin = lane.findPinAt(e);
-        return pin != nullptr ? pin : trackOutputProcessorView.findPinAt(e);
+        return pin != nullptr ? pin : (trackOutputProcessorView != nullptr ? trackOutputProcessorView->findPinAt(e) : nullptr);
     }
 
     void setCurrentlyMovingProcessor(GraphEditorProcessor *currentlyMovingProcessor) {
@@ -125,14 +125,40 @@ private:
     ValueTree state;
 
     Label nameLabel;
-    TrackOutputProcessorView trackOutputProcessorView;
+    std::unique_ptr<TrackOutputProcessorView> trackOutputProcessorView;
     DrawableText masterTrackName;
     ConnectorDragListener &connectorDragListener;
     GraphEditorProcessorLane lane;
 
     void onColourChanged() {
         nameLabel.setColour(Label::backgroundColourId, getColour());
-        trackOutputProcessorView.setColour(Label::backgroundColourId, getColour());
+        if (trackOutputProcessorView != nullptr)
+            trackOutputProcessorView->setColour(Label::backgroundColourId, getColour());
+    }
+
+    void trackOutputProcessorChanged() {
+        const ValueTree &trackOutputProcessor = TracksState::getOutputProcessorForTrack(state);
+        if (trackOutputProcessor.isValid()) {
+            trackOutputProcessorView = std::make_unique<TrackOutputProcessorView>(project, tracks, view, trackOutputProcessor, connectorDragListener);
+            addAndMakeVisible(trackOutputProcessorView.get());
+            resized();
+        } else {
+            removeChildComponent(trackOutputProcessorView.get());
+            trackOutputProcessorView = nullptr;
+        }
+        onColourChanged();
+    }
+
+    void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override {
+        if (child.hasType(IDs::PROCESSOR) && child.getProperty(IDs::name) == TrackOutputProcessor::name()) {
+            trackOutputProcessorChanged();
+        }
+    }
+
+    void valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int) override {
+        if (child.hasType(IDs::PROCESSOR) && child.getProperty(IDs::name) == TrackOutputProcessor::name()) {
+            trackOutputProcessorChanged();
+        }
     }
 
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {
