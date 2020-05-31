@@ -90,14 +90,6 @@ public:
         return description->isInstrument || description->category.equalsIgnoreCase("generator") || description->category.equalsIgnoreCase("synth");
     }
 
-    bool doesTrackAlreadyHaveGeneratorOrInstrument(const ValueTree &track) {
-        for (const auto &child : track)
-            if (auto existingDescription = getDescriptionForIdentifier(child.getProperty(IDs::id)))
-                if (isGeneratorOrInstrument(existingDescription.get()))
-                    return true;
-        return false;
-    }
-
 private:
     const String PLUGIN_LIST_FILE_NAME = "pluginList";
 

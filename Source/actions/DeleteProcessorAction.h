@@ -10,8 +10,8 @@
 struct DeleteProcessorAction : public UndoableAction {
     DeleteProcessorAction(const ValueTree &processorToDelete, TracksState &tracks, ConnectionsState &connections,
                           StatefulAudioProcessorContainer &audioProcessorContainer)
-            : parentTrack(processorToDelete.getParent()), processorToDelete(processorToDelete),
-              processorIndex(parentTrack.indexOf(processorToDelete)), pluginWindowType(processorToDelete[IDs::pluginWindowType]),
+            : parentLane(TracksState::getProcessorLaneForProcessor(processorToDelete)), processorToDelete(processorToDelete),
+              processorIndex(parentLane.indexOf(processorToDelete)), pluginWindowType(processorToDelete[IDs::pluginWindowType]),
               disconnectProcessorAction(DisconnectProcessorAction(connections, processorToDelete, all, true, true, true, true)),
               audioProcessorContainer(audioProcessorContainer) {}
 
@@ -19,13 +19,13 @@ struct DeleteProcessorAction : public UndoableAction {
         audioProcessorContainer.saveProcessorStateInformationToState(processorToDelete);
         processorToDelete.setProperty(IDs::pluginWindowType, static_cast<int>(PluginWindow::Type::none), nullptr);
         disconnectProcessorAction.perform();
-        parentTrack.removeChild(processorToDelete, nullptr);
+        parentLane.removeChild(processorToDelete, nullptr);
         audioProcessorContainer.onProcessorDestroyed(processorToDelete);
         return true;
     }
 
     bool undo() override {
-        parentTrack.addChild(processorToDelete, processorIndex, nullptr);
+        parentLane.addChild(processorToDelete, processorIndex, nullptr);
         audioProcessorContainer.onProcessorCreated(processorToDelete);
         disconnectProcessorAction.undo();
         processorToDelete.setProperty(IDs::pluginWindowType, pluginWindowType, nullptr);
@@ -38,7 +38,7 @@ struct DeleteProcessorAction : public UndoableAction {
     }
 
 private:
-    ValueTree parentTrack;
+    ValueTree parentLane;
     ValueTree processorToDelete;
     int processorIndex, pluginWindowType;
     DisconnectProcessorAction disconnectProcessorAction;

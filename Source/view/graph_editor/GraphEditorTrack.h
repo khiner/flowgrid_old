@@ -3,20 +3,20 @@
 #include <Utilities.h>
 #include <state/Identifiers.h>
 #include "JuceHeader.h"
-#include "GraphEditorProcessors.h"
+#include "GraphEditorProcessorLane.h"
 #include "TrackOutputProcessorView.h"
 
 class GraphEditorTrack : public Component, public Utilities::ValueTreePropertyChangeListener, public GraphEditorProcessorContainer, private ChangeListener {
 public:
     explicit GraphEditorTrack(Project &project, TracksState &tracks, const ValueTree &state, ConnectorDragListener &connectorDragListener)
             : project(project), tracks(tracks), view(project.getView()), state(state),
-              trackOutputProcessorView(project, tracks, view, tracks.getOutputProcessorForTrack(state), connectorDragListener),
-              connectorDragListener(connectorDragListener), processors(project, state, connectorDragListener) {
+              trackOutputProcessorView(project, tracks, view, TracksState::getOutputProcessorForTrack(state), connectorDragListener),
+              connectorDragListener(connectorDragListener), lane(project, TracksState::getProcessorLaneForTrack(state), connectorDragListener) {
         nameLabel.setJustificationType(Justification::centred);
         onColourChanged();
         addAndMakeVisible(nameLabel);
         addAndMakeVisible(trackOutputProcessorView);
-        addAndMakeVisible(processors);
+        addAndMakeVisible(lane);
         if (!isMasterTrack()) {
             nameLabel.setText(getTrackName(), dontSendNotification);
             nameLabel.setEditable(false, true);
@@ -82,7 +82,7 @@ public:
 
     void resized() override {
         auto r = getLocalBounds();
-        processors.setBounds(r);
+        lane.setBounds(r);
         const auto &nameLabelBounds = isMasterTrack()
                                       ? r.removeFromLeft(ViewState::TRACK_LABEL_HEIGHT)
                                       : r.removeFromTop(ViewState::TRACK_LABEL_HEIGHT);
@@ -101,21 +101,21 @@ public:
     }
 
     GraphEditorProcessor *getProcessorForNodeId(const AudioProcessorGraph::NodeID nodeId) const override {
-        if (auto *currentlyMovingProcessor = processors.getCurrentlyMovingProcessor()) {
+        if (auto *currentlyMovingProcessor = lane.getCurrentlyMovingProcessor()) {
             if (currentlyMovingProcessor->getNodeId() == nodeId) {
                 return currentlyMovingProcessor;
             }
         }
-        return processors.getProcessorForNodeId(nodeId);
+        return lane.getProcessorForNodeId(nodeId);
     }
 
     GraphEditorPin *findPinAt(const MouseEvent &e) {
-        auto *pin = processors.findPinAt(e);
+        auto *pin = lane.findPinAt(e);
         return pin != nullptr ? pin : trackOutputProcessorView.findPinAt(e);
     }
 
     void setCurrentlyMovingProcessor(GraphEditorProcessor *currentlyMovingProcessor) {
-        processors.setCurrentlyMovingProcessor(currentlyMovingProcessor);
+        lane.setCurrentlyMovingProcessor(currentlyMovingProcessor);
     }
 
 private:
@@ -128,7 +128,7 @@ private:
     TrackOutputProcessorView trackOutputProcessorView;
     DrawableText masterTrackName;
     ConnectorDragListener &connectorDragListener;
-    GraphEditorProcessors processors;
+    GraphEditorProcessorLane lane;
 
     void onColourChanged() {
         nameLabel.setColour(Label::backgroundColourId, getColour());

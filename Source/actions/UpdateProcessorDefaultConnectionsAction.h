@@ -17,7 +17,7 @@ struct UpdateProcessorDefaultConnectionsAction : public CreateOrDeleteConnection
             auto customOutgoingConnections = connections.getConnectionsForNode(processor, connectionType, false, true, true, false);
             if (!customOutgoingConnections.isEmpty())
                 continue;
-            auto processorToConnectTo = connections.findProcessorToFlowInto(processor.getParent(), processor, connectionType);
+            auto processorToConnectTo = connections.findProcessorToFlowInto(TracksState::getTrackForProcessor(processor), processor, connectionType);
             if (!processorToConnectTo.isValid())
                 processorToConnectTo = output.getAudioOutputProcessorState();
             auto nodeIdToConnectTo = StatefulAudioProcessorContainer::getNodeIdForState(processorToConnectTo);

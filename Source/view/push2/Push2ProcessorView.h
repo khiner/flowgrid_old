@@ -51,7 +51,7 @@ public:
 
     void trackSelected(const ValueTree &track) override {
         Push2TrackManagingView::trackSelected(track);
-        if (track.getNumChildren() == 0) {
+        if (TracksState::getProcessorLaneForTrack(track).getNumChildren() == 0) {
             parametersPanel->setProcessorWrapper(nullptr);
         }
     }
@@ -168,6 +168,8 @@ private:
 
     void updateProcessorButtons() {
         const auto &focusedTrack = tracks.getFocusedTrack();
+        const auto &focusedProcessorLane = TracksState::getProcessorLaneForTrack(focusedTrack);
+
         if (processorHasFocus || !focusedTrack.isValid()) { // TODO reset when processor changes
             for (auto *label : processorLabels)
                 label->setVisible(false);
@@ -178,14 +180,14 @@ private:
                 if ((buttonIndex == 0 && canPageProcessorsLeft()) ||
                     (buttonIndex == NUM_COLUMNS - 1 && canPageProcessorsRight())) {
                     label->setVisible(false);
-                } else if (processorIndex < focusedTrack.getNumChildren()) {
-                    const auto &processor = focusedTrack.getChild(processorIndex);
+                } else if (processorIndex < focusedProcessorLane.getNumChildren()) {
+                    const auto &processor = focusedProcessorLane.getChild(processorIndex);
                     if (processor.hasType(IDs::PROCESSOR)) {
                         label->setVisible(true);
                         label->setText(processor[IDs::name], dontSendNotification);
                         label->setSelected(tracks.isProcessorFocused(processor));
                     }
-                } else if (buttonIndex == 0 && focusedTrack.getNumChildren() == 0) {
+                } else if (buttonIndex == 0 && focusedProcessorLane.getNumChildren() == 0) {
                     label->setVisible(true);
                     label->setText("No processors", dontSendNotification);
                     label->setSelected(false);
@@ -243,14 +245,14 @@ private:
     }
 
     bool canPageProcessorsRight() const {
-        const auto &focusedTrack = tracks.getFocusedTrack();
-        return focusedTrack.getNumChildren() > processorLabelOffset + (canPageProcessorsLeft() ? NUM_COLUMNS - 1 : NUM_COLUMNS);
+        const auto &focusedLane = TracksState::getProcessorLaneForTrack(tracks.getFocusedTrack());
+        return focusedLane.getNumChildren() > processorLabelOffset + (canPageProcessorsLeft() ? NUM_COLUMNS - 1 : NUM_COLUMNS);
     }
 
     void selectProcessor(int processorIndex) {
-        const auto &focusedTrack = tracks.getFocusedTrack();
-        if (focusedTrack.isValid() && processorIndex < focusedTrack.getNumChildren()) {
-            project.selectProcessor(focusedTrack.getChild(processorIndex));
+        const auto &focusedLane = TracksState::getProcessorLaneForTrack(tracks.getFocusedTrack());
+        if (focusedLane.isValid() && processorIndex < focusedLane.getNumChildren()) {
+            project.selectProcessor(focusedLane.getChild(processorIndex));
         }
     }
 

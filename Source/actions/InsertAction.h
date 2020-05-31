@@ -33,7 +33,8 @@ struct InsertAction : UndoableAction {
                             copyProcessorsFromTrack(copiedTrack, fromTrackIndex, tracks.indexOf(masterTrack), trackAndSlotDiff.y);
                     } else {
                         int toTrackIndex = copiedState.indexOf(copiedTrack) + trackAndSlotDiff.x;
-                        if (copiedTrack.getNumChildren() > 0) { // create tracks to make room
+                        const auto &lane = TracksState::getProcessorLaneForTrack(copiedTrack);
+                        if (lane.getNumChildren() > 0) { // create tracks to make room
                             while (toTrackIndex >= tracks.getNumNonMasterTracks()) {
                                 addAndPerformAction(new CreateTrackAction(false, false, {}, tracks, view));
                             }
@@ -218,7 +219,7 @@ private:
 
     void addAndPerformCreateTrackAction(const ValueTree &track, int fromTrackIndex, int toTrackIndex) {
         addAndPerformAction(new CreateTrackAction(toTrackIndex, false, false, track, tracks, view));
-        for (const auto &processor : track) {
+        for (const auto &processor : TracksState::getProcessorLaneForTrack(track)) {
             int slot = processor[IDs::processorSlot];
             addAndPerformCreateProcessorAction(processor, fromTrackIndex, slot, toTrackIndex, slot);
         }

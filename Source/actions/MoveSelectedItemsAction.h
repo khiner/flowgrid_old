@@ -56,8 +56,9 @@ private:
                     if (oldTrackSelections.getUnchecked(i))
                         continue; // track itself is being moved, so don't move its selected slots
                     const auto &track = tracks.getTrack(i);
+                    const auto &lane = TracksState::getProcessorLaneForTrack(track);
                     BigInteger selectedSlotsMask;
-                    selectedSlotsMask.parseString(track[IDs::selectedSlotsMask].toString(), 2);
+                    selectedSlotsMask.parseString(lane[IDs::selectedSlotsMask].toString(), 2);
                     selectedSlotsMask.shiftBits(trackAndSlotDelta.y, 0);
                     newSelectedSlotsMasks.setUnchecked(i, selectedSlotsMask.toString(2));
                 }
@@ -259,8 +260,9 @@ private:
     }
 
     static ValueTree lastNonSelectedNonMixerProcessorWithSlotLessThan(const ValueTree &track, int slot) {
-        for (int i = track.getNumChildren() - 1; i >= 0; i--) {
-            const auto &processor = track.getChild(i);
+        const auto &lane = TracksState::getProcessorLaneForTrack(track);
+        for (int i = lane.getNumChildren() - 1; i >= 0; i--) {
+            const auto &processor = lane.getChild(i);
             if (int(processor[IDs::processorSlot]) < slot &&
                 !TracksState::isMixerChannelProcessor(processor) &&
                 !TracksState::isProcessorSelected(processor))
@@ -272,7 +274,7 @@ private:
     static Array<ValueTree> getFirstProcessorInEachContiguousSelectedGroup(const ValueTree &track) {
         Array<ValueTree> firstProcessorInEachContiguousSelectedGroup;
         int lastSelectedProcessorSlot = -2;
-        for (const auto &processor : track) {
+        for (const auto &processor : TracksState::getProcessorLaneForTrack(track)) {
             int slot = processor[IDs::processorSlot];
             if (slot > lastSelectedProcessorSlot + 1 && TracksState::isSlotSelected(track, slot)) {
                 lastSelectedProcessorSlot = slot;

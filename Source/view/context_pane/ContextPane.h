@@ -68,7 +68,7 @@ private:
         void setTrackAndProcessor(const ValueTree &track, const ValueTree &processor, bool inView, bool slotSelected, bool slotFocused) {
             const static auto &baseColour = findColour(ResizableWindow::backgroundColourId).brighter(0.4);
 
-            // this is the only part different than GraphEditorProcessors
+            // this is the only part different than GraphEditorProcessorLane
             auto colour = processor.isValid() ? findColour(TextEditor::backgroundColourId) : baseColour;
 
             if (TracksState::doesTrackHaveSelections(track))

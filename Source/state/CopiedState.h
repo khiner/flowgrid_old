@@ -17,13 +17,17 @@ struct CopiedState : public Stateful {
                 copiedTrack.copyPropertiesFrom(track, nullptr);
             } else {
                 copiedTrack.setProperty(IDs::isMasterTrack, track[IDs::isMasterTrack], nullptr);
-                copiedTrack.setProperty(IDs::selectedSlotsMask, track[IDs::selectedSlotsMask].toString(), nullptr);
             }
-            for (auto processor : track) {
+
+            auto copiedLane = ValueTree(IDs::PROCESSOR_LANE);
+            copiedLane.setProperty(IDs::selectedSlotsMask, track[IDs::selectedSlotsMask].toString(), nullptr);
+
+            for (auto processor : TracksState::getProcessorLaneForTrack(track)) {
                 if (track[IDs::selected] || tracks.isProcessorSelected(processor)) {
-                    copiedTrack.appendChild(audioProcessorContainer.copyProcessor(processor), nullptr);
+                    copiedLane.appendChild(audioProcessorContainer.copyProcessor(processor), nullptr);
                 }
             }
+            copiedTrack.appendChild(copiedLane, nullptr);
             copiedItems.appendChild(copiedTrack, nullptr);
         }
     }

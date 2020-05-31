@@ -46,7 +46,7 @@ struct ResetDefaultExternalInputConnectionsAction : public CreateOrDeleteConnect
 private:
 
     ValueTree findTopmostEffectProcessor(const ValueTree &track, ConnectionType connectionType) {
-        for (const auto &processor : track)
+        for (const auto &processor : TracksState::getProcessorLaneForTrack(track))
             if (connections.isProcessorAnEffect(processor, connectionType))
                 return processor;
         return {};
@@ -67,11 +67,11 @@ private:
 
         // TODO performance improvement: only iterate over connected processors
         for (int i = tracks.getNumTracks() - 1; i >= 0; i--) {
-            const auto &track = tracks.getTrack(i);
-            if (track.getNumChildren() == 0)
+            const auto &lane = TracksState::getProcessorLaneForTrack(tracks.getTrack(i));
+            if (lane.getNumChildren() == 0)
                 continue;
 
-            const auto &firstProcessor = track.getChild(0);
+            const auto &firstProcessor = lane.getChild(0);
             auto firstProcessorNodeId = SAPC::getNodeIdForState(firstProcessor);
             int slot = firstProcessor[IDs::processorSlot];
             if (slot < lowestSlot &&

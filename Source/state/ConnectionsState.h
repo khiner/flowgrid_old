@@ -27,7 +27,8 @@ public:
         int siblingDelta = 0;
         ValueTree otherTrack;
         while ((otherTrack = track.getSibling(siblingDelta++)).isValid()) {
-            for (const auto &otherProcessor : otherTrack) {
+            const auto &otherLane = TracksState::getProcessorLaneForTrack(otherTrack);
+            for (const auto &otherProcessor : otherLane) {
                 if (otherProcessor == processor) continue;
                 bool isOtherProcessorBelow = int(otherProcessor[IDs::processorSlot]) > int(processor[IDs::processorSlot]) ||
                                              (track != otherTrack && TracksState::isMasterTrack(otherTrack));
@@ -113,7 +114,7 @@ public:
     bool anyNonMasterTrackHasEffectProcessor(ConnectionType connectionType) {
         for (const auto &track : tracks.getState())
             if (!tracks.isMasterTrack(track))
-                for (const auto &processor : track)
+                for (const auto &processor : TracksState::getProcessorLaneForTrack(track))
                     if (isProcessorAnEffect(processor, connectionType))
                         return true;
         return false;

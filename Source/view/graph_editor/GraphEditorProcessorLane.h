@@ -8,11 +8,11 @@
 #include "GraphEditorPin.h"
 #include "view/CustomColourIds.h"
 
-class GraphEditorProcessors : public Component,
-                              public Utilities::ValueTreeObjectList<GraphEditorProcessor>,
-                              public GraphEditorProcessorContainer {
+class GraphEditorProcessorLane : public Component,
+                                 public Utilities::ValueTreeObjectList<GraphEditorProcessor>,
+                                 public GraphEditorProcessorContainer {
 public:
-    explicit GraphEditorProcessors(Project &project, const ValueTree &state, ConnectorDragListener &connectorDragListener)
+    explicit GraphEditorProcessorLane(Project &project, const ValueTree &state, ConnectorDragListener &connectorDragListener)
             : Utilities::ValueTreeObjectList<GraphEditorProcessor>(state),
               project(project), tracks(project.getTracks()), view(project.getView()),
               connections(project.getConnections()),
@@ -23,21 +23,25 @@ public:
         valueTreePropertyChanged(view.getState(), isMasterTrack() ? IDs::numMasterProcessorSlots : IDs::numProcessorSlots);
     }
 
-    ~GraphEditorProcessors() override {
+    ~GraphEditorProcessorLane() override {
         view.removeListener(this);
         freeObjects();
     }
 
-    bool isMasterTrack() const { return TracksState::isMasterTrack(parent); }
+    ValueTree getTrack() const {
+        return parent.getParent();
+    }
 
-    int getNumSlots() const { return view.getNumSlotsForTrack(parent); }
+    bool isMasterTrack() const { return TracksState::isMasterTrack(getTrack()); }
 
-    int getSlotOffset() const { return view.getSlotOffsetForTrack(parent); }
+    int getNumSlots() const { return view.getNumSlotsForTrack(getTrack()); }
+
+    int getSlotOffset() const { return view.getSlotOffsetForTrack(getTrack()); }
 
     void mouseDown(const MouseEvent &e) override {
         int slot = findSlotAt(e.getEventRelativeTo(this));
-        bool isSlotSelected = TracksState::isSlotSelected(parent, slot);
-        project.setProcessorSlotSelected(parent, slot, !(isSlotSelected && e.mods.isCommandDown()), !(isSlotSelected || e.mods.isCommandDown()));
+        bool isSlotSelected = TracksState::isSlotSelected(getTrack(), slot);
+        project.setProcessorSlotSelected(getTrack(), slot, !(isSlotSelected && e.mods.isCommandDown()), !(isSlotSelected || e.mods.isCommandDown()));
         if (e.mods.isPopupMenu() || e.getNumberOfClicks() == 2)
             showPopupMenu(slot);
     }
@@ -45,7 +49,7 @@ public:
     void mouseUp(const MouseEvent &e) override {
         if (e.mouseWasClicked() && !e.mods.isCommandDown()) {
             // single click deselects other tracks/processors
-            project.setProcessorSlotSelected(parent, findSlotAt(e.getEventRelativeTo(this)), true);
+            project.setProcessorSlotSelected(getTrack(), findSlotAt(e.getEventRelativeTo(this)), true);
         }
     }
 
@@ -85,16 +89,17 @@ public:
 
     void updateProcessorSlotColours() {
         const static auto &baseColour = findColour(ResizableWindow::backgroundColourId).brighter(0.4);
+        const auto &track = getTrack();
 
         for (int slot = 0; slot < processorSlotRectangles.size(); slot++) {
             auto fillColour = baseColour;
-            if (TracksState::doesTrackHaveSelections(parent))
+            if (TracksState::doesTrackHaveSelections(track))
                 fillColour = fillColour.brighter(0.2);
-            if (TracksState::isSlotSelected(parent, slot))
-                fillColour = TracksState::getTrackColour(parent);
-            if (tracks.isSlotFocused(parent, slot))
+            if (TracksState::isSlotSelected(track, slot))
+                fillColour = TracksState::getTrackColour(track);
+            if (tracks.isSlotFocused(track, slot))
                 fillColour = fillColour.brighter(0.16);
-            if (!view.isProcessorSlotInView(parent, slot))
+            if (!view.isProcessorSlotInView(track, slot))
                 fillColour = fillColour.darker(0.3);
             processorSlotRectangles.getUnchecked(slot)->setFill(fillColour);
         }
@@ -146,7 +151,7 @@ public:
     }
 
     int findSlotAt(const MouseEvent &e) {
-        return view.findSlotAt(e.getEventRelativeTo(this).getPosition(), parent);
+        return view.findSlotAt(e.getEventRelativeTo(this).getPosition(), getTrack());
     }
 
     GraphEditorProcessor *getCurrentlyMovingProcessor() const {
@@ -184,13 +189,14 @@ private:
 
     void showPopupMenu(int slot) {
         PopupMenu menu;
+        const auto &track = getTrack();
         auto *processor = findProcessorAtSlot(slot);
-        bool isMixerChannel = slot == tracks.getMixerChannelSlotForTrack(parent);
+        bool isMixerChannel = slot == tracks.getMixerChannelSlotForTrack(track);
 
         if (processor != nullptr) {
             if (!isMixerChannel) {
                 PopupMenu processorSelectorSubmenu;
-                pluginManager.addPluginsToMenu(processorSelectorSubmenu, parent);
+                pluginManager.addPluginsToMenu(processorSelectorSubmenu, track);
                 menu.addSubMenu("Insert new processor", processorSelectorSubmenu);
                 menu.addSeparator();
             }
@@ -259,7 +265,7 @@ private:
             if (isMixerChannel)
                 menu.addItem(ADD_MIXER_CHANNEL_MENU_ID, "Add mixer channel");
             else
-                pluginManager.addPluginsToMenu(menu, parent);
+                pluginManager.addPluginsToMenu(menu, track);
 
             menu.showMenuAsync({}, ModalCallbackFunction::create([this, slot, isMixerChannel](int result) {
                 if (isMixerChannel) {

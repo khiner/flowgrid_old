@@ -44,13 +44,21 @@ public:
         return state;
     }
 
+    ValueTree getProcessorLane() const {
+        return getState().getParent();
+    }
+
+    ValueTree getTrack() const {
+        return getProcessorLane().getParent();
+    }
+
     AudioProcessorGraph::NodeID getNodeId() const {
         if (!state.isValid())
             return {};
         return ProcessorGraph::getNodeIdForState(state);
     }
 
-    inline int getTrackIndex() const { return tracks.indexOf(state.getParent()); }
+    inline int getTrackIndex() const { return tracks.indexOf(getTrack()); }
 
     inline int getSlot() const { return state[IDs::processorSlot]; }
 
@@ -67,7 +75,7 @@ public:
     inline bool isSelected() { return tracks.isProcessorSelected(state); }
 
     bool isInView() {
-        return isIoProcessor() || view.isProcessorSlotInView(state.getParent(), getSlot());
+        return isIoProcessor() || view.isProcessorSlotInView(getTrack(), getSlot());
     }
 
     void paint(Graphics &g) override {

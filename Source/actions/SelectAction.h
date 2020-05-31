@@ -59,8 +59,9 @@ struct SelectAction : public UndoableAction {
 
         for (int i = 0; i < newTrackSelections.size(); i++) {
             auto track = tracks.getTrack(i);
+            auto lane = TracksState::getProcessorLaneForTrack(track);
             track.setProperty(IDs::selected, newTrackSelections.getUnchecked(i), nullptr);
-            track.setProperty(IDs::selectedSlotsMask, newSelectedSlotsMasks.getUnchecked(i), nullptr);
+            lane.setProperty(IDs::selectedSlotsMask, newSelectedSlotsMasks.getUnchecked(i), nullptr);
         }
         if (newFocusedSlot != oldFocusedSlot)
             updateViewFocus(newFocusedSlot);
@@ -77,8 +78,9 @@ struct SelectAction : public UndoableAction {
             resetInputsAction->undo();
         for (int i = 0; i < oldTrackSelections.size(); i++) {
             auto track = tracks.getTrack(i);
+            auto lane = TracksState::getProcessorLaneForTrack(track);
             track.setProperty(IDs::selected, oldTrackSelections.getUnchecked(i), nullptr);
-            track.setProperty(IDs::selectedSlotsMask, oldSelectedSlotsMasks.getUnchecked(i), nullptr);
+            lane.setProperty(IDs::selectedSlotsMask, oldSelectedSlotsMasks.getUnchecked(i), nullptr);
         }
         if (oldFocusedSlot != newFocusedSlot)
             updateViewFocus(oldFocusedSlot);

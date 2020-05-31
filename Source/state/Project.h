@@ -324,7 +324,7 @@ public:
     }
 
     void selectProcessor(const ValueTree &processor) {
-        setProcessorSlotSelected(processor.getParent(), processor[IDs::processorSlot], true);
+        setProcessorSlotSelected(TracksState::getTrackForProcessor(processor), processor[IDs::processorSlot], true);
     }
 
     bool addConnection(const AudioProcessorGraph::Connection &connection) {
@@ -461,7 +461,7 @@ public:
 
     Result saveDocument(const File &file) override {
         for (const auto &track : tracks.getState())
-            for (auto processorState : track)
+            for (auto processorState : TracksState::getProcessorLaneForTrack(track))
                 saveProcessorStateInformationToState(processorState);
 
         if (auto xml = state.createXml())
@@ -514,7 +514,7 @@ private:
 
     void doCreateAndAddProcessor(const PluginDescription &description, ValueTree &track, int slot = -1) {
         if (PluginManager::isGeneratorOrInstrument(&description) &&
-            pluginManager.doesTrackAlreadyHaveGeneratorOrInstrument(track)) {
+            tracks.doesTrackAlreadyHaveGeneratorOrInstrument(track)) {
             undoManager.perform(new CreateTrackAction(false, false, track, tracks, view));
             return doCreateAndAddProcessor(description, mostRecentlyCreatedTrack, slot);
         }

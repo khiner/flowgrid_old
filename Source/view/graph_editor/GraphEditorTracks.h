@@ -116,8 +116,8 @@ private:
     // TODO I think we can avoid all this nonsense and just destroy and recreate the graph children. Probably not worth the complexity
     void valueTreeChildWillBeMovedToNewParent(ValueTree child, ValueTree &oldParent, int oldIndex, ValueTree &newParent, int newIndex) override {
         if (child.hasType(IDs::PROCESSOR)) {
-            auto *fromTrack = getTrackForState(oldParent);
-            auto *toTrack = getTrackForState(newParent);
+            auto *fromTrack = getTrackForState(oldParent.getParent());
+            auto *toTrack = getTrackForState(newParent.getParent());
             auto *processor = fromTrack->getProcessorForNodeId(ProcessorGraph::getNodeIdForState(child));
             fromTrack->setCurrentlyMovingProcessor(processor);
             toTrack->setCurrentlyMovingProcessor(processor);
@@ -126,8 +126,8 @@ private:
 
     void valueTreeChildHasMovedToNewParent(ValueTree child, ValueTree &oldParent, int oldIndex, ValueTree &newParent, int newIndex) override {
         if (child.hasType(IDs::PROCESSOR)) {
-            auto *fromTrack = getTrackForState(oldParent);
-            auto *toTrack = getTrackForState(newParent);
+            auto *fromTrack = getTrackForState(oldParent.getParent());
+            auto *toTrack = getTrackForState(newParent.getParent());
             fromTrack->setCurrentlyMovingProcessor(nullptr);
             toTrack->setCurrentlyMovingProcessor(nullptr);
         }

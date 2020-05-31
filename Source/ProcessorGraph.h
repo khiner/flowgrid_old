@@ -169,23 +169,23 @@ private:
             recursivelyAddProcessors(child);
     }
 
-    void updateIoChannelEnabled(const ValueTree &parent, const ValueTree &channel, bool enabled) {
-        String processorName = parent.getParent()[IDs::name];
+    void updateIoChannelEnabled(const ValueTree &channels, const ValueTree &channel, bool enabled) {
+        String processorName = channels.getParent()[IDs::name];
         bool isInput;
-        if (processorName == "Audio Input" && parent.hasType(IDs::OUTPUT_CHANNELS))
+        if (processorName == "Audio Input" && channels.hasType(IDs::OUTPUT_CHANNELS))
             isInput = true;
-        else if (processorName == "Audio Output" && parent.hasType(IDs::INPUT_CHANNELS))
+        else if (processorName == "Audio Output" && channels.hasType(IDs::INPUT_CHANNELS))
             isInput = false;
         else
             return;
         if (auto *audioDevice = deviceManager.getCurrentAudioDevice()) {
             AudioDeviceManager::AudioDeviceSetup config;
             deviceManager.getAudioDeviceSetup(config);
-            auto &channels = isInput ? config.inputChannels : config.outputChannels;
+            auto &configChannels = isInput ? config.inputChannels : config.outputChannels;
             const auto &channelNames = isInput ? audioDevice->getInputChannelNames() : audioDevice->getOutputChannelNames();
             auto channelIndex = channelNames.indexOf(channel[IDs::name].toString());
-            if (channelIndex != -1 && ((enabled && !channels[channelIndex]) || (!enabled && channels[channelIndex]))) {
-                channels.setBit(channelIndex, enabled);
+            if (channelIndex != -1 && ((enabled && !configChannels[channelIndex]) || (!enabled && configChannels[channelIndex]))) {
+                configChannels.setBit(channelIndex, enabled);
                 deviceManager.setAudioDeviceSetup(config, true);
             }
         }
@@ -216,7 +216,7 @@ private:
                 connectionsSincePause.addConnection(child);
             else
                 AudioProcessorGraph::addConnection(connections.stateToConnection(child));
-        } else if (child.hasType(IDs::TRACK) || parent.hasType(IDs::INPUT) || parent.hasType(IDs::OUTPUT)) {
+        } else if (child.hasType(IDs::PROCESSOR_LANE) || parent.hasType(IDs::INPUT) || parent.hasType(IDs::OUTPUT)) {
             recursivelyAddProcessors(child); // TODO might be a problem for moving tracks
         } else if (child.hasType(IDs::CHANNEL)) {
             updateIoChannelEnabled(parent, child, true);

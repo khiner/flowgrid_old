@@ -17,7 +17,7 @@ struct SelectTrackAction : public SelectAction {
         if (selected) {
             newSelectedSlotsMasks.setUnchecked(trackIndex, tracks.createFullSelectionBitmask(track));
 
-            const ValueTree &firstProcessor = track.getChild(0);
+            const ValueTree &firstProcessor = TracksState::getProcessorLaneForTrack(track).getChild(0);
             int slot = firstProcessor.isValid() ? int(firstProcessor[IDs::processorSlot]) : 0;
             setNewFocusedSlot({trackIndex, slot});
         } else {

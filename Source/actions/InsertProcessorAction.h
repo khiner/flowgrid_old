@@ -126,9 +126,9 @@ private:
 
     struct AddOrMoveProcessorAction : public UndoableAction {
         AddOrMoveProcessorAction(const ValueTree &processor, int newTrackIndex, int newSlot, TracksState &tracks, ViewState &view)
-                : processor(processor), oldTrackIndex(tracks.indexOf(processor.getParent())), newTrackIndex(newTrackIndex),
+                : processor(processor), oldTrackIndex(tracks.indexOf(TracksState::getTrackForProcessor(processor))), newTrackIndex(newTrackIndex),
                   oldSlot(processor[IDs::processorSlot]), newSlot(newSlot),
-                  oldIndex(tracks.getTrack(oldTrackIndex).indexOf(processor)),
+                  oldIndex(processor.getParent().indexOf(processor)),
                   newIndex(tracks.getInsertIndexForProcessor(tracks.getTrack(newTrackIndex), processor, this->newSlot)),
                   setProcessorSlotAction(newTrackIndex, processor, newSlot, tracks, view),
                   tracks(tracks) {}
@@ -136,14 +136,16 @@ private:
         bool perform() override {
             if (processor.isValid()) {
                 const ValueTree &oldTrack = tracks.getTrack(oldTrackIndex);
-                ValueTree newTrack = tracks.getTrack(newTrackIndex);
+                const ValueTree newTrack = tracks.getTrack(newTrackIndex);
+                const auto oldLane = TracksState::getProcessorLaneForTrack(oldTrack);
+                auto newLane = TracksState::getProcessorLaneForTrack(newTrack);
 
-                if (!oldTrack.isValid()) // only inserting, not moving from another track
-                    newTrack.addChild(processor, newIndex, nullptr);
-                else if (oldTrack == newTrack)
-                    newTrack.moveChild(oldIndex, newIndex, nullptr);
+                if (!oldLane.isValid()) // only inserting, not moving from another track
+                    newLane.addChild(processor, newIndex, nullptr);
+                else if (oldLane == newTrack)
+                    newLane.moveChild(oldIndex, newIndex, nullptr);
                 else
-                    newTrack.moveChildFromParent(oldTrack, oldIndex, newIndex, nullptr);
+                    newLane.moveChildFromParent(oldLane, oldIndex, newIndex, nullptr);
             }
             setProcessorSlotAction.perform();
 
@@ -154,15 +156,17 @@ private:
             setProcessorSlotAction.undo();
 
             if (processor.isValid()) {
-                ValueTree oldTrack = tracks.getTrack(oldTrackIndex);
-                ValueTree newTrack = tracks.getTrack(newTrackIndex);
+                const auto &oldTrack = tracks.getTrack(oldTrackIndex);
+                const auto &newTrack = tracks.getTrack(newTrackIndex);
+                auto oldLane = TracksState::getProcessorLaneForTrack(oldTrack);
+                auto newLane = TracksState::getProcessorLaneForTrack(newTrack);
 
                 if (!oldTrack.isValid()) // only inserting, not moving from another track
-                    newTrack.removeChild(processor, nullptr);
+                    newLane.removeChild(processor, nullptr);
                 else if (oldTrack == newTrack)
-                    newTrack.moveChild(newIndex, oldIndex, nullptr);
+                    newLane.moveChild(newIndex, oldIndex, nullptr);
                 else
-                    oldTrack.moveChildFromParent(newTrack, newIndex, oldIndex, nullptr);
+                    oldLane.moveChildFromParent(newLane, newIndex, oldIndex, nullptr);
             }
 
             return true;

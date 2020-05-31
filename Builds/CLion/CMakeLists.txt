@@ -85,7 +85,7 @@ add_executable (APP
     "../../Source/view/graph_editor/GraphEditorPin.h"
     "../../Source/view/graph_editor/GraphEditorProcessor.h"
     "../../Source/view/graph_editor/GraphEditorProcessorContainer.h"
-    "../../Source/view/graph_editor/GraphEditorProcessors.h"
+    "../../Source/view/graph_editor/GraphEditorProcessorLane.h"
     "../../Source/view/graph_editor/GraphEditorTrack.h"
     "../../Source/view/graph_editor/GraphEditorTracks.h"
     "../../Source/view/graph_editor/TrackOutputProcessorView.h"
@@ -1550,7 +1550,7 @@ set_source_files_properties ("../../Source/view/graph_editor/GraphEditorPanel.h"
 set_source_files_properties ("../../Source/view/graph_editor/GraphEditorPin.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/view/graph_editor/GraphEditorProcessor.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/view/graph_editor/GraphEditorProcessorContainer.h" PROPERTIES HEADER_FILE_ONLY TRUE)
-set_source_files_properties ("../../Source/view/graph_editor/GraphEditorProcessors.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/view/graph_editor/GraphEditorProcessorLane.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/view/graph_editor/GraphEditorTrack.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/view/graph_editor/GraphEditorTracks.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/view/graph_editor/TrackOutputProcessorView.h" PROPERTIES HEADER_FILE_ONLY TRUE)
