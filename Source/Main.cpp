@@ -122,9 +122,8 @@ public:
             menu.addCommandItem(&getCommandManager(), CommandIDs::deleteSelected);
         } else if (topLevelMenuIndex == 2) { // Create menu
             menu.addCommandItem(&getCommandManager(), CommandIDs::insertTrack);
-            menu.addCommandItem(&getCommandManager(), CommandIDs::insertTrackWithoutMixer);
+            menu.addCommandItem(&getCommandManager(), CommandIDs::insertProcessorLane);
             menu.addCommandItem(&getCommandManager(), CommandIDs::createMasterTrack);
-            menu.addCommandItem(&getCommandManager(), CommandIDs::addMixerChannel);
         } else if (topLevelMenuIndex == 3) { // View menu
             menu.addCommandItem(&getCommandManager(), CommandIDs::showPush2MirrorWindow);
         } else if (topLevelMenuIndex == 4) { // Options menu
@@ -189,9 +188,8 @@ public:
                 CommandIDs::insert,
                 CommandIDs::duplicateSelected,
                 CommandIDs::insertTrack,
-                CommandIDs::insertTrackWithoutMixer,
+                CommandIDs::insertProcessorLane,
                 CommandIDs::createMasterTrack,
-                CommandIDs::addMixerChannel,
                 CommandIDs::showPush2MirrorWindow,
                 CommandIDs::navigateLeft,
                 CommandIDs::navigateRight,
@@ -260,23 +258,17 @@ public:
                 result.setActive(tracks.getFocusedTrack().isValid());
                 break;
             case CommandIDs::insertTrack:
-                result.setInfo("Insert track (with mixer)", String(), category, 0);
+                result.setInfo("Insert track", String(), category, 0);
                 result.addDefaultKeypress('t', ModifierKeys::commandModifier);
                 break;
-            case CommandIDs::insertTrackWithoutMixer:
-                result.setInfo("Insert track (without mixer)", String(), category, 0);
+            case CommandIDs::insertProcessorLane:
+                result.setInfo("Insert processor lane", String(), category, 0);
                 result.addDefaultKeypress('t', ModifierKeys::commandModifier | ModifierKeys::shiftModifier);
                 break;
             case CommandIDs::createMasterTrack:
                 result.setInfo("Create master track", String(), category, 0);
                 result.addDefaultKeypress('m', ModifierKeys::commandModifier | ModifierKeys::shiftModifier);
                 result.setActive(!tracks.getMasterTrack().isValid());
-                break;
-            case CommandIDs::addMixerChannel:
-                result.setInfo("Add mixer channel", String(), category, 0);
-                result.addDefaultKeypress('m', ModifierKeys::commandModifier);
-                result.setActive(tracks.getFocusedTrack().isValid() &&
-                                 !tracks.getMixerChannelProcessorForFocusedTrack().isValid());
                 break;
             case CommandIDs::showPush2MirrorWindow:
                 result.setInfo("Open a window mirroring a Push 2 display", String(), category, 0);
@@ -361,16 +353,13 @@ public:
                 project.deleteSelectedItems();
                 break;
             case CommandIDs::insertTrack:
-                project.createTrack(false, true);
+                project.createTrack(false);
                 break;
-            case CommandIDs::insertTrackWithoutMixer:
-                project.createTrack(false, false);
+            case CommandIDs::insertProcessorLane:
+                // TODO
                 break;
             case CommandIDs::createMasterTrack:
-                project.createTrack(true, true);
-                break;
-            case CommandIDs::addMixerChannel:
-                project.createProcessor(MixerChannelProcessor::getPluginDescription());
+                project.createTrack(true);
                 break;
             case CommandIDs::showPush2MirrorWindow:
                 showPush2MirrorWindow();

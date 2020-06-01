@@ -75,21 +75,14 @@ private:
         if (description.name == TrackOutputProcessor::name())
             return -1;
 
-        int slot;
-        if (description.name == MixerChannelProcessor::name() && !tracks.getMixerChannelProcessorForTrack(track).isValid()) {
-            slot = tracks.getMixerChannelSlotForTrack(track);
+        if (description.numInputChannels == 0) {
+            return 0;
         } else {
-            if (description.numInputChannels == 0) {
-                slot = 0;
-            } else {
-                // Insert new effect processors _right before_ the first MixerChannel processor.
-                const ValueTree &mixerChannelProcessor = tracks.getMixerChannelProcessorForTrack(track);
-                const auto &lane = TracksState::getProcessorLaneForTrack(track);
-                int indexToInsertProcessor = mixerChannelProcessor.isValid() ? lane.indexOf(mixerChannelProcessor) : lane.getNumChildren();
-                slot = indexToInsertProcessor <= 0 ? 0 : int(lane.getChild(indexToInsertProcessor - 1)[IDs::processorSlot]) + 1;
-            }
+            // Insert new effect processors right after the lane's last processor
+            const auto &lane = TracksState::getProcessorLaneForTrack(track);
+            int indexToInsertProcessor = lane.getNumChildren();
+            return indexToInsertProcessor <= 0 ? 0 : int(lane.getChild(indexToInsertProcessor - 1)[IDs::processorSlot]) + 1;
         }
-        return slot;
     }
 
     JUCE_DECLARE_NON_COPYABLE(CreateProcessorAction)

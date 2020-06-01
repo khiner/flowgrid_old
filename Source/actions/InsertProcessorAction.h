@@ -29,12 +29,8 @@ private:
                                TracksState &tracks, ViewState &view)
                 : processor(processor), oldSlot(processor[IDs::processorSlot]), newSlot(newSlot) {
             const auto &track = tracks.getTrack(trackIndex);
-            const auto &mixerChannel = tracks.getMixerChannelProcessorForTrack(track);
-            if ((mixerChannel.isValid() && mixerChannel != this->processor) ||
-                (!mixerChannel.isValid() && !TracksState::isMixerChannelProcessor(this->processor))) {
-                for (int i = 0; i <= this->newSlot - tracks.getMixerChannelSlotForTrack(track); i++)
-                    addProcessorRowActions.add(new AddProcessorRowAction(trackIndex, tracks, view));
-            }
+            for (int i = 0; i <= this->newSlot - view.getNumSlotsForTrack(track) - 1; i++)
+                addProcessorRowActions.add(new AddProcessorRowAction(trackIndex, tracks, view));
             if (addProcessorRowActions.isEmpty()) {
                 const auto &conflictingProcessor = tracks.getProcessorAtSlot(track, newSlot);
                 if (conflictingProcessor.isValid())
@@ -73,42 +69,20 @@ private:
 
             bool perform() override {
                 const auto &track = tracks.getTrack(trackIndex);
-                Array<ValueTree> processorsNeedingSlotIncrement;
-                if (TracksState::isMasterTrack(track)) {
-                    processorsNeedingSlotIncrement.add(tracks.getMixerChannelProcessorForTrack(track));
+                if (TracksState::isMasterTrack(track))
                     view.getState().setProperty(IDs::numMasterProcessorSlots, view.getNumMasterProcessorSlots() + 1, nullptr);
-                } else {
-                    for (const auto &nonMasterTrack : tracks.getState()) {
-                        if (!TracksState::isMasterTrack(nonMasterTrack))
-                            processorsNeedingSlotIncrement.add(tracks.getMixerChannelProcessorForTrack(nonMasterTrack));
-                    }
+                else
                     view.getState().setProperty(IDs::numProcessorSlots, view.getNumTrackProcessorSlots() + 1, nullptr);
-                }
-
-                for (auto &processorToIncrement : processorsNeedingSlotIncrement)
-                    if (processorToIncrement.isValid())
-                        processorToIncrement.setProperty(IDs::processorSlot, int(processorToIncrement[IDs::processorSlot]) + 1, nullptr);
 
                 return true;
             }
 
             bool undo() override {
                 const auto &track = tracks.getTrack(trackIndex);
-                Array<ValueTree> processorsNeedingSlotDecrement;
-                if (TracksState::isMasterTrack(track)) {
-                    processorsNeedingSlotDecrement.add(tracks.getMixerChannelProcessorForTrack(track));
+                if (TracksState::isMasterTrack(track))
                     view.getState().setProperty(IDs::numMasterProcessorSlots, view.getNumMasterProcessorSlots() - 1, nullptr);
-                } else {
-                    for (const auto &nonMasterTrack : tracks.getState()) {
-                        if (!TracksState::isMasterTrack(nonMasterTrack))
-                            processorsNeedingSlotDecrement.add(tracks.getMixerChannelProcessorForTrack(nonMasterTrack));
-                    }
+                else
                     view.getState().setProperty(IDs::numProcessorSlots, view.getNumTrackProcessorSlots() - 1, nullptr);
-                }
-                for (auto &processorToDecrement : processorsNeedingSlotDecrement) {
-                    if (processorToDecrement.isValid())
-                        processorToDecrement.setProperty(IDs::processorSlot, int(processorToDecrement[IDs::processorSlot]) - 1, nullptr);
-                }
 
                 return true;
             }

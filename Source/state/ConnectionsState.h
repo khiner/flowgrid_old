@@ -34,7 +34,7 @@ public:
                 for (const auto &masterTrackProcessor : TracksState::getProcessorLaneForTrack(masterTrack))
                     if (isProcessorAnEffect(masterTrackProcessor, connectionType))
                         return masterTrackProcessor;
-                return {};
+                return TracksState::getOutputProcessorForTrack(masterTrack);
             }
             return {};
         }

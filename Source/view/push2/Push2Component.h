@@ -75,8 +75,8 @@ public:
     }
 
     void masterEncoderRotated(float changeAmount) override {
-        const ValueTree &gain = tracks.getMixerChannelProcessorForTrack(tracks.getMasterTrack());
-        if (auto *masterGainProcessor = audioProcessorContainer.getProcessorWrapperForState(gain))
+        const ValueTree &trackOutputProcessor = TracksState::getOutputProcessorForTrack(tracks.getMasterTrack());
+        if (auto *masterGainProcessor = audioProcessorContainer.getProcessorWrapperForState(trackOutputProcessor))
             if (auto *masterGainParameter = masterGainProcessor->getParameter(1))
                 masterGainParameter->setValue(masterGainParameter->getValue() + changeAmount);
     }
@@ -92,7 +92,7 @@ public:
     }
 
     void addTrackButtonPressed() override {
-        getCommandManager().invokeDirectly(isShiftHeld ? CommandIDs::insertTrackWithoutMixer : CommandIDs::insertTrack, false);
+        getCommandManager().invokeDirectly(isShiftHeld ? CommandIDs::insertProcessorLane : CommandIDs::insertTrack, false);
     }
 
     void deleteButtonPressed() override {
@@ -253,7 +253,7 @@ private:
 
     void updateFocusedProcessor() {
         auto *focusedProcessorWrapper = audioProcessorContainer.getProcessorWrapperForState(tracks.getFocusedProcessor());
-        if (currentlyViewingChild != &mixerView || !dynamic_cast<MixerChannelProcessor *>(focusedProcessorWrapper->processor)) {
+        if (currentlyViewingChild != &mixerView || !dynamic_cast<TrackOutputProcessor *>(focusedProcessorWrapper->processor)) {
             processorView.processorFocused(focusedProcessorWrapper);
             showChild(&processorView);
         }

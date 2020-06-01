@@ -2,7 +2,6 @@
 
 #include "JuceHeader.h"
 #include "processors/StatefulAudioProcessorWrapper.h"
-#include "processors/MixerChannelProcessor.h"
 #include "DraggableValueLabel.h"
 
 class ParameterDisplayComponent : public Component, public StatefulAudioProcessorWrapper::Parameter::Listener {

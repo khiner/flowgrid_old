@@ -7,11 +7,10 @@
 #include "JuceHeader.h"
 
 struct CreateTrackAction : public UndoableAction {
-    CreateTrackAction(bool isMaster, bool addMixer, const ValueTree &derivedFromTrack, TracksState &tracks, ViewState &view)
-            : CreateTrackAction(calculateInsertIndex(isMaster, addMixer, derivedFromTrack, tracks),
-                                isMaster, addMixer, derivedFromTrack, tracks, view) {}
+    CreateTrackAction(bool isMaster, const ValueTree &derivedFromTrack, TracksState &tracks, ViewState &view)
+            : CreateTrackAction(calculateInsertIndex(isMaster, derivedFromTrack, tracks), isMaster, derivedFromTrack, tracks, view) {}
 
-    CreateTrackAction(int insertIndex, bool isMaster, bool addMixer, ValueTree derivedFromTrack, TracksState &tracks, ViewState &view)
+    CreateTrackAction(int insertIndex, bool isMaster, ValueTree derivedFromTrack, TracksState &tracks, ViewState &view)
             : insertIndex(insertIndex), tracks(tracks) {
         // TODO move into method and construct in initializer list
         int numTracks = tracks.getNumNonMasterTracks();
@@ -22,7 +21,7 @@ struct CreateTrackAction : public UndoableAction {
             newTrack.setProperty(IDs::name, "Master", nullptr);
             newTrack.setProperty(IDs::colour, Colours::darkslateblue.toString(), nullptr);
         } else {
-            bool isSubTrack = derivedFromTrack.isValid() && !addMixer;
+            bool isSubTrack = derivedFromTrack.isValid();
             newTrack.setProperty(IDs::name, isSubTrack ? makeTrackNameUnique(derivedFromTrack[IDs::name]) : ("Track " + String(numTracks + 1)), nullptr);
             newTrack.setProperty(IDs::colour, isSubTrack ? derivedFromTrack[IDs::colour].toString() : Colour::fromHSV((1.0f / 8.0f) * numTracks, 0.65f, 0.65f, 1.0f).toString(), nullptr);
         }
@@ -73,12 +72,10 @@ protected:
 
 private:
 
-    static int calculateInsertIndex(bool isMaster, bool addMixer, const ValueTree &derivedFromTrack, TracksState &tracks) {
+    static int calculateInsertIndex(bool isMaster, const ValueTree &derivedFromTrack, TracksState &tracks) {
         if (isMaster)
             return tracks.getNumNonMasterTracks();
-        return derivedFromTrack.isValid() ?
-               derivedFromTrack.getParent().indexOf(derivedFromTrack) + (addMixer ? 1 : 0) :
-               tracks.getNumNonMasterTracks();
+        return derivedFromTrack.isValid() ? derivedFromTrack.getParent().indexOf(derivedFromTrack) : tracks.getNumNonMasterTracks();
     }
 
     JUCE_DECLARE_NON_COPYABLE(CreateTrackAction)

@@ -87,8 +87,6 @@ public:
 
     int getViewIndexForTrack(const ValueTree &track) const { return indexOf(track) - view.getGridViewTrackOffset(); }
 
-    int getMixerChannelSlotForTrack(const ValueTree &track) const { return view.getNumSlotsForTrack(track) - 1; }
-
     ValueTree getTrackWithViewIndex(int trackViewIndex) const {
         return getTrack(trackViewIndex + view.getGridViewTrackOffset());
     }
@@ -97,24 +95,8 @@ public:
 
     static bool isMasterTrack(const ValueTree &track) { return track[IDs::isMasterTrack]; }
 
-    ValueTree getMixerChannelProcessorForTrack(const ValueTree &track) const {
-        return getProcessorAtSlot(track, getMixerChannelSlotForTrack(track));
-    }
-
-    ValueTree getMixerChannelProcessorForFocusedTrack() const {
-        return getMixerChannelProcessorForTrack(getFocusedTrack());
-    }
-
-    bool focusedTrackHasMixerChannel() const {
-        return getMixerChannelProcessorForFocusedTrack().isValid();
-    }
-
     int getNumNonMasterTracks() const {
         return getMasterTrack().isValid() ? tracks.getNumChildren() - 1 : tracks.getNumChildren();
-    }
-
-    static bool isMixerChannelProcessor(const ValueTree &processor) {
-        return processor[IDs::name] == MixerChannelProcessor::name();
     }
 
     static bool doesTrackHaveSelections(const ValueTree &track) {
@@ -282,8 +264,7 @@ public:
                     return otherIndex;
             }
         }
-        const ValueTree &mixerChannel = getMixerChannelProcessorForTrack(track);
-        return handleSameLane(mixerChannel.isValid() && processor != mixerChannel ? lane.getNumChildren() - 1 : lane.getNumChildren());
+        return handleSameLane(lane.getNumChildren());
     }
 
     Array<ValueTree> findAllSelectedItems() const {

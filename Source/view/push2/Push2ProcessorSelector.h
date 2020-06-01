@@ -142,8 +142,6 @@ class Push2ProcessorSelector : public Push2ComponentBase {
         DrawableRectangle selectionRectangleOverlay;
 
         void updateLabels() {
-            const bool trackHasMixerAlready = tracks.focusedTrackHasMixerChannel();
-
             for (int i = 0; i < labels.size(); i++) {
                 Push2Label *label = labels.getUnchecked(i);
                 label->setSelected(false);
@@ -163,7 +161,6 @@ class Push2ProcessorSelector : public Push2ComponentBase {
                 } else if (i + currentViewOffset < getTotalNumberOfTreeItems()) {
                     const PluginDescription *plugin = &currentTree->plugins.getReference(i + currentViewOffset - currentTree->subFolders.size());
                     label->setText(plugin->name, dontSendNotification);
-                    label->setEnabled(!trackHasMixerAlready || plugin->name != MixerChannelProcessor::name());
                     label->setUnderlined(false);
                 }
             }

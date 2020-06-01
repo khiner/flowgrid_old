@@ -97,18 +97,19 @@ private:
         volumeParametersPanel.clearParameters();
         panParametersPanel.clearParameters();
 
-        if (tracks.doesTrackHaveSelections(tracks.getMasterTrack())) {
-            const auto &mixerChannel = tracks.getMixerChannelProcessorForFocusedTrack();
-            if (auto *processorWrapper = project.getProcessorWrapperForState(mixerChannel)) {
+        const auto &focusedTrack = tracks.getFocusedTrack();
+        if (TracksState::isMasterTrack(focusedTrack)) {
+            const auto &trackOutputProcessor = TracksState::getOutputProcessorForTrack(focusedTrack);
+            if (auto *processorWrapper = project.getProcessorWrapperForState(trackOutputProcessor)) {
                 volumeParametersPanel.addParameter(processorWrapper->getParameter(1));
                 panParametersPanel.addParameter(processorWrapper->getParameter(0));
             }
         } else {
-            for (const auto &track : project.getTracks().getState()) {
+            for (const auto &track : tracks.getState()) {
                 if (TracksState::isMasterTrack(track))
                     continue;
-                const auto &mixerChannel = tracks.getMixerChannelProcessorForTrack(track);
-                if (auto *processorWrapper = project.getProcessorWrapperForState(mixerChannel)) {
+                const auto &trackOutputProcessor = tracks.getOutputProcessorForTrack(track);
+                if (auto *processorWrapper = project.getProcessorWrapperForState(trackOutputProcessor)) {
                     // TODO use param identifiers instead of indexes
                     volumeParametersPanel.addParameter(processorWrapper->getParameter(1));
                     panParametersPanel.addParameter(processorWrapper->getParameter(0));

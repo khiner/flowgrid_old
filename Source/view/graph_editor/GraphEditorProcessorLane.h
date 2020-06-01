@@ -111,7 +111,7 @@ public:
     }
 
     BaseGraphEditorProcessor *createEditorForProcessor(const ValueTree &processor) {
-        if (TracksState::isMixerChannelProcessor(processor)) {
+        if (processor[IDs::name] == MixerChannelProcessor::name()) {
             return new ParameterPanelGraphEditorProcessor(project, tracks, view, processor, connectorDragListener);
         }
         return new LabelGraphEditorProcessor(project, tracks, view, processor, connectorDragListener);
@@ -172,8 +172,7 @@ private:
     static constexpr int
             DELETE_MENU_ID = 1, TOGGLE_BYPASS_MENU_ID = 2, ENABLE_DEFAULTS_MENU_ID = 3, DISCONNECT_ALL_MENU_ID = 4,
             DISABLE_DEFAULTS_MENU_ID = 5, DISCONNECT_CUSTOM_MENU_ID = 6,
-            SHOW_PLUGIN_GUI_MENU_ID = 10, SHOW_ALL_PROGRAMS_MENU_ID = 11, CONFIGURE_AUDIO_MIDI_MENU_ID = 12,
-            ADD_MIXER_CHANNEL_MENU_ID = 13;
+            SHOW_PLUGIN_GUI_MENU_ID = 10, SHOW_ALL_PROGRAMS_MENU_ID = 11, CONFIGURE_AUDIO_MIDI_MENU_ID = 12;
 
     Project &project;
     TracksState &tracks;
@@ -197,15 +196,12 @@ private:
         PopupMenu menu;
         const auto &track = getTrack();
         auto *processor = findProcessorAtSlot(slot);
-        bool isMixerChannel = slot == tracks.getMixerChannelSlotForTrack(track);
 
         if (processor != nullptr) {
-            if (!isMixerChannel) {
-                PopupMenu processorSelectorSubmenu;
-                pluginManager.addPluginsToMenu(processorSelectorSubmenu, track);
-                menu.addSubMenu("Insert new processor", processorSelectorSubmenu);
-                menu.addSeparator();
-            }
+            PopupMenu processorSelectorSubmenu;
+            pluginManager.addPluginsToMenu(processorSelectorSubmenu, track);
+            menu.addSubMenu("Insert new processor", processorSelectorSubmenu);
+            menu.addSeparator();
 
             if (processor->isIoProcessor()) {
                 menu.addItem(CONFIGURE_AUDIO_MIDI_MENU_ID, "Configure audio/MIDI IO");
@@ -268,21 +264,12 @@ private:
                         }
                     }));
         } else { // no processor in this slot
-            if (isMixerChannel)
-                menu.addItem(ADD_MIXER_CHANNEL_MENU_ID, "Add mixer channel");
-            else
-                pluginManager.addPluginsToMenu(menu, track);
+            pluginManager.addPluginsToMenu(menu, track);
 
-            menu.showMenuAsync({}, ModalCallbackFunction::create([this, slot, isMixerChannel](int result) {
-                if (isMixerChannel) {
-                    if (result == ADD_MIXER_CHANNEL_MENU_ID) {
-                        getCommandManager().invokeDirectly(CommandIDs::addMixerChannel, false);
-                    }
-                } else {
-                    auto &description = pluginManager.getChosenType(result);
-                    if (!description.name.isEmpty()) {
-                        project.createProcessor(description, slot);
-                    }
+            menu.showMenuAsync({}, ModalCallbackFunction::create([this, slot](int result) {
+                auto &description = pluginManager.getChosenType(result);
+                if (!description.name.isEmpty()) {
+                    project.createProcessor(description, slot);
                 }
             }));
         }

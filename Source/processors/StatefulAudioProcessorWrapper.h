@@ -5,7 +5,7 @@
 #include "view/processor_editor/SwitchParameterComponent.h"
 #include "view/level_meter/LevelMeter.h"
 #include "DeviceManagerUtilities.h"
-#include "MixerChannelProcessor.h"
+#include "TrackOutputProcessor.h"
 
 class StatefulAudioProcessorWrapper : private AudioProcessorListener {
 public:
@@ -300,11 +300,9 @@ public:
         }
 
         LevelMeterSource *getLevelMeterSource() {
-            if (auto *mixerChannelProcessor = dynamic_cast<MixerChannelProcessor *>(processorWrapper->processor)) {
-                if (sourceParameter == mixerChannelProcessor->getGainParameter()) {
-                    return mixerChannelProcessor->getMeterSource();
-                }
-            }
+            if (auto *trackOutputProcessor = dynamic_cast<TrackOutputProcessor *>(processorWrapper->processor))
+                if (sourceParameter == trackOutputProcessor->getGainParameter())
+                    return trackOutputProcessor->getMeterSource();
 
             return nullptr;
         }

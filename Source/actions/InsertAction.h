@@ -36,7 +36,7 @@ struct InsertAction : UndoableAction {
                         const auto &lane = TracksState::getProcessorLaneForTrack(copiedTrack);
                         if (lane.getNumChildren() > 0) { // create tracks to make room
                             while (toTrackIndex >= tracks.getNumNonMasterTracks()) {
-                                addAndPerformAction(new CreateTrackAction(false, false, {}, tracks, view));
+                                addAndPerformAction(new CreateTrackAction(false, {}, tracks, view));
                             }
                         }
                         if (toTrackIndex < tracks.getNumNonMasterTracks())
@@ -183,7 +183,7 @@ private:
     void duplicateSelectedProcessors(const ValueTree &track, const ValueTree &copiedState) {
         const BigInteger slotsMask = TracksState::getSlotMask(track);
         std::vector<int> selectedSlots;
-        for (int slot = 0; slot <= std::min(tracks.getMixerChannelSlotForTrack(track) - 1, slotsMask.getHighestBit()); slot++)
+        for (int slot = 0; slot <= std::min(view.getNumSlotsForTrack(track) - 1, slotsMask.getHighestBit()); slot++)
             if (slotsMask[slot])
                 selectedSlots.push_back(slot);
 
@@ -218,7 +218,7 @@ private:
     }
 
     void addAndPerformCreateTrackAction(const ValueTree &track, int fromTrackIndex, int toTrackIndex) {
-        addAndPerformAction(new CreateTrackAction(toTrackIndex, false, false, track, tracks, view));
+        addAndPerformAction(new CreateTrackAction(toTrackIndex, false, track, tracks, view));
         // Create track-level processors
         for (const auto &processor : track)
             if (processor.hasType(IDs::PROCESSOR))

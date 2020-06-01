@@ -177,7 +177,7 @@ public:
         this->push2ShiftHeld = push2ShiftHeld;
     }
 
-    void createTrack(bool isMaster, bool addMixer) {
+    void createTrack(bool isMaster) {
         if (isMaster && tracks.getMasterTrack().isValid())
             return; // only one master track allowed!
 
@@ -186,15 +186,12 @@ public:
 
         // If a track is focused, insert the new track to the left of it if there's no mixer,
         // or at the end if the new track has a mixer.
-        auto derivedFromTrack = !isMaster && !addMixer && tracks.getFocusedTrack().isValid() &&
+        auto derivedFromTrack = !isMaster && tracks.getFocusedTrack().isValid() &&
                                 !tracks.isMasterTrack(tracks.getFocusedTrack()) ? tracks.getFocusedTrack() : ValueTree();
-        undoManager.perform(new CreateTrackAction(isMaster, addMixer, derivedFromTrack, tracks, view));
+        undoManager.perform(new CreateTrackAction(isMaster, derivedFromTrack, tracks, view));
         undoManager.perform(new CreateProcessorAction(TrackOutputProcessor::getPluginDescription(),
                                                       tracks.indexOf(mostRecentlyCreatedTrack), tracks, view, *this));
 
-        if (addMixer)
-            undoManager.perform(new CreateProcessorAction(MixerChannelProcessor::getPluginDescription(),
-                                                          tracks.indexOf(mostRecentlyCreatedTrack), tracks, view, *this));
         setTrackSelected(mostRecentlyCreatedTrack, true);
         updateAllDefaultConnections();
     }
@@ -413,8 +410,8 @@ public:
         view.initializeDefault();
         input.initializeDefault();
         output.initializeDefault();
-        createTrack(true, true);
-        createTrack(false, true);
+        createTrack(true);
+        createTrack(false);
         doCreateAndAddProcessor(SineBank::getPluginDescription(), mostRecentlyCreatedTrack, 0);
         resetDefaultExternalInputs(); // Select action only does this if the focused track changes, so we just need to do this once ourselves
         undoManager.clearUndoHistory();
@@ -518,7 +515,7 @@ private:
     void doCreateAndAddProcessor(const PluginDescription &description, ValueTree &track, int slot = -1) {
         if (PluginManager::isGeneratorOrInstrument(&description) &&
             tracks.doesTrackAlreadyHaveGeneratorOrInstrument(track)) {
-            undoManager.perform(new CreateTrackAction(false, false, track, tracks, view));
+            undoManager.perform(new CreateTrackAction(false, track, tracks, view));
             return doCreateAndAddProcessor(description, mostRecentlyCreatedTrack, slot);
         }
 
