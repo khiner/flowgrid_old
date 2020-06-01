@@ -180,17 +180,17 @@ public:
         return indexOf(track) == trackAndSlot.x && slot == trackAndSlot.y;
     }
 
-    ValueTree findFirstTrackWithSelectedProcessors() {
+    ValueTree findFirstTrackWithSelections() {
         for (const auto &track : tracks)
-            if (findFirstSelectedProcessor(track).isValid())
+            if (doesTrackHaveSelections(track))
                 return track;
         return {};
     }
 
-    ValueTree findLastTrackWithSelectedProcessors() {
+    ValueTree findLastTrackWithSelections() {
         for (int i = getNumTracks() - 1; i >= 0; i--) {
             const auto &track = getTrack(i);
-            if (findFirstSelectedProcessor(track).isValid())
+            if (doesTrackHaveSelections(track))
                 return track;
         }
         return {};

@@ -207,10 +207,11 @@ private:
         // a full track into the master track slot.
         int maxAllowedTrackIndex = anyTrackSelected || multipleTracksWithSelections ? tracks.getNumNonMasterTracks() - 1 : tracks.getNumTracks() - 1;
 
-        const auto &firstTrackWithSelectedProcessors = tracks.findFirstTrackWithSelectedProcessors();
-        const auto &lastTrackWithSelectedProcessors = tracks.findLastTrackWithSelectedProcessors();
-        return std::clamp(originalTrackDelta, -tracks.indexOf(firstTrackWithSelectedProcessors),
-                          maxAllowedTrackIndex - tracks.indexOf(lastTrackWithSelectedProcessors));
+        const auto &firstTrackWithSelections = tracks.findFirstTrackWithSelections();
+        const auto &lastTrackWithSelections = tracks.findLastTrackWithSelections();
+
+        return std::clamp(originalTrackDelta, -tracks.indexOf(firstTrackWithSelections),
+                          maxAllowedTrackIndex - tracks.indexOf(lastTrackWithSelections));
     }
 
     static int limitSlotDelta(int originalSlotDelta, int limitedTrackDelta, TracksState &tracks, ViewState &view) {

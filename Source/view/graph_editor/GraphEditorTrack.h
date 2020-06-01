@@ -51,6 +51,7 @@ public:
             } else {
                 bool isTrackSelected = isSelected();
                 project.setTrackSelected(state, !(isTrackSelected && e.mods.isCommandDown()), !(isTrackSelected || e.mods.isCommandDown()));
+                project.beginDragging({getTrackIndex(), -1});
             }
         }
     }
