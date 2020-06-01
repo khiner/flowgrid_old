@@ -54,6 +54,10 @@ public:
         return processor.getParent();
     }
 
+    static ValueTree getTrackForProcessorLane(const ValueTree &processorLane) {
+        return processorLane.getParent();
+    }
+
     static ValueTree getTrackForProcessor(const ValueTree &processor) {
         return processor.getParent().hasType(IDs::TRACK) ? processor.getParent() : processor.getParent().getParent();
     }
@@ -71,7 +75,7 @@ public:
         return allProcessors;
     }
 
-    static bool isTrackIOProcessor(const ValueTree &processor) {
+    static bool isTrackOutputProcessor(const ValueTree &processor) {
         return processor.getProperty(IDs::name) == TrackOutputProcessor::name();
     }
 

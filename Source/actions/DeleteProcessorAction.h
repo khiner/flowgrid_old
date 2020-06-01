@@ -27,7 +27,7 @@ struct DeleteProcessorAction : public UndoableAction {
 
     bool undo() override {
         auto track = tracks.getTrack(trackIndex);
-        if (TracksState::isTrackIOProcessor(processorToDelete))
+        if (TracksState::isTrackOutputProcessor(processorToDelete))
             track.appendChild(processorToDelete, nullptr);
         else
             TracksState::getProcessorLaneForTrack(track).addChild(processorToDelete, processorIndex, nullptr);
@@ -41,7 +41,7 @@ struct DeleteProcessorAction : public UndoableAction {
     bool performTemporary() {
         disconnectProcessorAction.perform();
         auto track = tracks.getTrack(trackIndex);
-        if (TracksState::isTrackIOProcessor(processorToDelete))
+        if (TracksState::isTrackOutputProcessor(processorToDelete))
             track.removeChild(processorToDelete, nullptr);
         else
             TracksState::getProcessorLaneForTrack(track).removeChild(processorToDelete, nullptr);
@@ -50,7 +50,7 @@ struct DeleteProcessorAction : public UndoableAction {
 
     bool undoTemporary() {
         auto track = tracks.getTrack(trackIndex);
-        if (TracksState::isTrackIOProcessor(processorToDelete))
+        if (TracksState::isTrackOutputProcessor(processorToDelete))
             track.appendChild(processorToDelete, nullptr);
         else
             TracksState::getProcessorLaneForTrack(track).addChild(processorToDelete, processorIndex, nullptr);

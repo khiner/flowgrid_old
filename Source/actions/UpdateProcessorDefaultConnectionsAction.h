@@ -13,13 +13,11 @@ struct UpdateProcessorDefaultConnectionsAction : public CreateOrDeleteConnection
                                             ConnectionsState &connections, OutputState &output,
                                             StatefulAudioProcessorContainer &audioProcessorContainer)
             : CreateOrDeleteConnectionsAction(connections) {
-        if (TracksState::isTrackIOProcessor(processor))
-            return;
         for (auto connectionType : {audio, midi}) {
             auto customOutgoingConnections = connections.getConnectionsForNode(processor, connectionType, false, true, true, false);
             if (!customOutgoingConnections.isEmpty())
                 continue;
-            auto processorToConnectTo = connections.findProcessorToFlowInto(TracksState::getTrackForProcessor(processor), processor, connectionType);
+            auto processorToConnectTo = connections.findDefaultDestinationProcessor(processor, connectionType);
             if (!processorToConnectTo.isValid())
                 processorToConnectTo = output.getAudioOutputProcessorState();
             auto nodeIdToConnectTo = StatefulAudioProcessorContainer::getNodeIdForState(processorToConnectTo);

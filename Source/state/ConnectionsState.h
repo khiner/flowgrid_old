@@ -20,27 +20,43 @@ public:
         Utilities::moveAllChildren(state, getState(), nullptr);
     }
 
-    ValueTree findProcessorToFlowInto(const ValueTree &track, const ValueTree &processor, ConnectionType connectionType) {
-        if (!isProcessorAProducer(processor, connectionType))
+    ValueTree findDefaultDestinationProcessor(const ValueTree &sourceProcessor, ConnectionType connectionType) {
+        if (!isProcessorAProducer(sourceProcessor, connectionType))
             return {};
 
+        const ValueTree &track = TracksState::getTrackForProcessor(sourceProcessor);
+        const auto &masterTrack = tracks.getMasterTrack();
+        if (TracksState::isTrackOutputProcessor(sourceProcessor)) {
+            if (track == masterTrack)
+                return {};
+            // TODO after adding track input processors, this will just be master track input
+            if (masterTrack.isValid()) {
+                for (const auto &masterTrackProcessor : TracksState::getProcessorLaneForTrack(masterTrack))
+                    if (isProcessorAnEffect(masterTrackProcessor, connectionType))
+                        return masterTrackProcessor;
+                return {};
+            }
+            return {};
+        }
+
+        const auto &lane = TracksState::getProcessorLaneForProcessor(sourceProcessor);
         int siblingDelta = 0;
-        ValueTree otherTrack;
-        while ((otherTrack = track.getSibling(siblingDelta++)).isValid()) {
-            const auto &otherLane = TracksState::getProcessorLaneForTrack(otherTrack);
+        ValueTree otherLane;
+        while ((otherLane = lane.getSibling(siblingDelta++)).isValid()) {
             for (const auto &otherProcessor : otherLane) {
-                if (otherProcessor == processor) continue;
-                bool isOtherProcessorBelow = int(otherProcessor[IDs::processorSlot]) > int(processor[IDs::processorSlot]) ||
-                                             (track != otherTrack && TracksState::isMasterTrack(otherTrack));
+                if (otherProcessor == sourceProcessor) continue;
+                bool isOtherProcessorBelow = int(otherProcessor[IDs::processorSlot]) > int(sourceProcessor[IDs::processorSlot]);
                 if (!isOtherProcessorBelow) continue;
-                if (canProcessorDefaultConnectTo(processor, otherProcessor, connectionType) ||
+                if (canProcessorDefaultConnectTo(sourceProcessor, otherProcessor, connectionType) ||
                     // If a non-effect (another producer) is under this processor in the same track, and no effect processors
                     // to the right have a lower slot, block this producer's output by the other producer,
                     // effectively replacing it.
-                    track == otherTrack) {
+                    lane == otherLane) {
                     return otherProcessor;
                 }
             }
+            // TODO adapt this when there are multiple lanes
+            return TracksState::getOutputProcessorForTrack(track);
         }
 
         return {};
