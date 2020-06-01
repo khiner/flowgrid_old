@@ -13,18 +13,10 @@ public:
     BaseGraphEditorProcessor(Project &project, TracksState &tracks, ViewState &view,
                          const ValueTree &state, ConnectorDragListener &connectorDragListener,
                          bool showChannelLabels = false)
-            : project(project), tracks(tracks), view(view), state(state), connectorDragListener(connectorDragListener),
-              audioProcessorContainer(project), pluginManager(project.getPluginManager()), showChannelLabels(showChannelLabels) {
+            : state(state), showChannelLabels(showChannelLabels),
+              project(project), tracks(tracks), view(view), connectorDragListener(connectorDragListener),
+              audioProcessorContainer(project), pluginManager(project.getPluginManager()) {
         this->state.addListener(this);
-        valueTreePropertyChanged(this->state, IDs::name);
-        if (this->state.hasProperty(IDs::deviceName))
-            valueTreePropertyChanged(this->state, IDs::deviceName);
-        if (!showChannelLabels) {
-            nameLabel.setColour(findColour(TextEditor::textColourId));
-            nameLabel.setFontHeight(largeFontHeight);
-            nameLabel.setJustification(Justification::centred);
-            addAndMakeVisible(nameLabel);
-        }
 
         for (auto child : state) {
             if (child.hasType(IDs::INPUT_CHANNELS) || child.hasType(IDs::OUTPUT_CHANNELS)) {
@@ -36,8 +28,6 @@ public:
     }
 
     ~BaseGraphEditorProcessor() override {
-        if (parametersPanel != nullptr)
-            parametersPanel->removeMouseListener(this);
         state.removeListener(this);
     }
 
@@ -77,6 +67,21 @@ public:
 
     bool isInView() {
         return isIoProcessor() || view.isProcessorSlotInView(getTrack(), getSlot());
+    }
+
+    StatefulAudioProcessorWrapper *getProcessorWrapper() const {
+        return audioProcessorContainer.getProcessorWrapperForState(state);
+    }
+
+    AudioProcessor *getAudioProcessor() const {
+        if (auto *processorWrapper = getProcessorWrapper())
+            return processorWrapper->processor;
+
+        return {};
+    }
+
+    void showWindow(PluginWindow::Type type) {
+        state.setProperty(IDs::pluginWindowType, int(type),  &project.getUndoManager());
     }
 
     void paint(Graphics &g) override {
@@ -136,14 +141,6 @@ public:
                     channelLabel.setBoundingBox(rotateRectIfNarrow(textArea));
                 }
             }
-
-            if (!showChannelLabels) {
-                nameLabel.setBoundingBox(rotateRectIfNarrow(boxBoundsFloat));
-            }
-
-            if (parametersPanel != nullptr) {
-                parametersPanel->setBounds(boxBoundsFloat.toNearestInt());
-            }
             repaint();
             connectorDragListener.update();
         }
@@ -162,21 +159,6 @@ public:
         return dynamic_cast<GraphEditorPin *> (comp);
     }
 
-    StatefulAudioProcessorWrapper *getProcessorWrapper() const {
-        return audioProcessorContainer.getProcessorWrapperForState(state);
-    }
-
-    AudioProcessor *getAudioProcessor() const {
-        if (auto *processorWrapper = getProcessorWrapper())
-            return processorWrapper->processor;
-
-        return {};
-    }
-
-    void showWindow(PluginWindow::Type type) {
-        state.setProperty(IDs::pluginWindowType, int(type),  &project.getUndoManager());
-    }
-
     class ElementComparator {
     public:
         static int compareElements(BaseGraphEditorProcessor *first, BaseGraphEditorProcessor *second) {
@@ -184,20 +166,9 @@ public:
         }
     };
 
-private:
-    Project &project;
-    TracksState &tracks;
-    ViewState &view;
+protected:
     ValueTree state;
-    DrawableText nameLabel;
-    std::unique_ptr<ParametersPanel> parametersPanel;
-    ConnectorDragListener &connectorDragListener;
-    StatefulAudioProcessorContainer &audioProcessorContainer;
-    PluginManager &pluginManager;
-
-    OwnedArray<GraphEditorPin> pins;
     const bool showChannelLabels;
-    int pinSize = 16;
     float largeFontHeight = 18.0f;
     float smallFontHeight = 15.0f;
 
@@ -218,43 +189,6 @@ private:
             return Parallelogram<float>(rectangle.getBottomLeft(), rectangle.getTopLeft(), rectangle.getBottomRight());
     }
 
-    GraphEditorPin *findPinWithState(const ValueTree &state) {
-        for (auto *pin : pins)
-            if (pin->getState() == state)
-                return pin;
-
-        return nullptr;
-    }
-
-    void valueTreePropertyChanged(ValueTree &v, const Identifier &i) override {
-        if (v != state)
-            return;
-
-        if (parametersPanel == nullptr) {
-            if (auto *processorWrapper = getProcessorWrapper()) {
-                if (auto *defaultProcessor = dynamic_cast<DefaultAudioProcessor *>(processorWrapper->processor)) {
-                    if (defaultProcessor->showInlineEditor()) {
-                        addAndMakeVisible((parametersPanel = std::make_unique<ParametersPanel>(1, processorWrapper->getNumParameters())).get());
-                        parametersPanel->addMouseListener(this, true);
-                        parametersPanel->addParameter(processorWrapper->getParameter(0));
-                        parametersPanel->addParameter(processorWrapper->getParameter(1));
-                        removeChildComponent(&nameLabel);
-                        resized();
-                    }
-                }
-            }
-        }
-        if (i == IDs::deviceName) {
-            setName(v[IDs::deviceName]);
-            nameLabel.setText(getName());
-        } else if (i == IDs::name) {
-            setName(v[IDs::name]);
-            nameLabel.setText(getName());
-        }
-
-        resized();
-    }
-
     void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override {
         if (child.hasType(IDs::CHANNEL)) {
             auto *pin = new GraphEditorPin(child, connectorDragListener);
@@ -267,6 +201,7 @@ private:
                 channelLabel.setJustification(Justification::centred);
                 addAndMakeVisible(channelLabel);
             }
+            resized();
         }
     }
 
@@ -276,6 +211,34 @@ private:
             if (showChannelLabels)
                 removeChildComponent(&pinToRemove->channelLabel);
             pins.removeObject(pinToRemove);
+            resized();
         }
+    }
+
+    void valueTreePropertyChanged(ValueTree &v, const Identifier &i) override {
+        if (v != state)
+            return;
+
+        if (i == IDs::processorInitialized)
+            resized();
+    }
+
+private:
+    Project &project;
+    TracksState &tracks;
+    ViewState &view;
+    ConnectorDragListener &connectorDragListener;
+    StatefulAudioProcessorContainer &audioProcessorContainer;
+    PluginManager &pluginManager;
+
+    OwnedArray<GraphEditorPin> pins;
+    int pinSize = 16;
+
+    GraphEditorPin *findPinWithState(const ValueTree &state) {
+        for (auto *pin : pins)
+            if (pin->getState() == state)
+                return pin;
+
+        return nullptr;
     }
 };
