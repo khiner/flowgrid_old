@@ -77,6 +77,7 @@ add_executable (APP
     "../../Source/usb/libusb/libusb_platform_wrapper.c"
     "../../Source/usb/UsbCommunicator.h"
     "../../Source/view/context_pane/ContextPane.h"
+    "../../Source/view/graph_editor/BaseGraphEditorProcessor.h"
     "../../Source/view/graph_editor/ConnectorDragListener.h"
     "../../Source/view/graph_editor/GraphEditor.h"
     "../../Source/view/graph_editor/GraphEditorConnector.h"
@@ -88,7 +89,7 @@ add_executable (APP
     "../../Source/view/graph_editor/GraphEditorProcessorLane.h"
     "../../Source/view/graph_editor/GraphEditorTrack.h"
     "../../Source/view/graph_editor/GraphEditorTracks.h"
-    "../../Source/view/graph_editor/TrackOutputProcessorView.h"
+    "../../Source/view/graph_editor/TrackOutputGraphEditorProcessor.h"
     "../../Source/view/level_meter/LevelMeter.h"
     "../../Source/view/level_meter/LevelMeterSource.h"
     "../../Source/view/processor_editor/DraggableValueLabel.h"
@@ -1542,6 +1543,7 @@ set_source_files_properties ("../../Source/usb/libusb/config_msvc.h" PROPERTIES 
 set_source_files_properties ("../../Source/usb/libusb/config_xcode.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/usb/UsbCommunicator.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/view/context_pane/ContextPane.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/view/graph_editor/BaseGraphEditorProcessor.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/view/graph_editor/ConnectorDragListener.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/view/graph_editor/GraphEditor.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/view/graph_editor/GraphEditorConnector.h" PROPERTIES HEADER_FILE_ONLY TRUE)
@@ -1553,7 +1555,7 @@ set_source_files_properties ("../../Source/view/graph_editor/GraphEditorProcesso
 set_source_files_properties ("../../Source/view/graph_editor/GraphEditorProcessorLane.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/view/graph_editor/GraphEditorTrack.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/view/graph_editor/GraphEditorTracks.h" PROPERTIES HEADER_FILE_ONLY TRUE)
-set_source_files_properties ("../../Source/view/graph_editor/TrackOutputProcessorView.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/view/graph_editor/TrackOutputGraphEditorProcessor.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/view/level_meter/LevelMeter.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/view/level_meter/LevelMeterSource.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/view/processor_editor/DraggableValueLabel.h" PROPERTIES HEADER_FILE_ONLY TRUE)

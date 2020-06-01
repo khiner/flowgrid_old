@@ -9,11 +9,11 @@
 #include "view/CustomColourIds.h"
 
 class GraphEditorProcessorLane : public Component,
-                                 public Utilities::ValueTreeObjectList<GraphEditorProcessor>,
+                                 public Utilities::ValueTreeObjectList<BaseGraphEditorProcessor>,
                                  public GraphEditorProcessorContainer {
 public:
     explicit GraphEditorProcessorLane(Project &project, const ValueTree &state, ConnectorDragListener &connectorDragListener)
-            : Utilities::ValueTreeObjectList<GraphEditorProcessor>(state),
+            : Utilities::ValueTreeObjectList<BaseGraphEditorProcessor>(state),
               project(project), tracks(project.getTracks()), view(project.getView()),
               connections(project.getConnections()),
               pluginManager(project.getPluginManager()), connectorDragListener(connectorDragListener) {
@@ -109,34 +109,34 @@ public:
         return v.hasType(IDs::PROCESSOR);
     }
 
-    GraphEditorProcessor *createNewObject(const ValueTree &tree) override {
-        GraphEditorProcessor *processor = currentlyMovingProcessor != nullptr
+    BaseGraphEditorProcessor *createNewObject(const ValueTree &tree) override {
+        BaseGraphEditorProcessor *processor = currentlyMovingProcessor != nullptr
                                           ? currentlyMovingProcessor
                                           : new GraphEditorProcessor(project, tracks, view, tree, connectorDragListener);
         addAndMakeVisible(processor);
         return processor;
     }
 
-    void deleteObject(GraphEditorProcessor *processor) override {
+    void deleteObject(BaseGraphEditorProcessor *processor) override {
         if (currentlyMovingProcessor == nullptr)
             delete processor;
         else
             removeChildComponent(processor);
     }
 
-    void newObjectAdded(GraphEditorProcessor *processor) override {
+    void newObjectAdded(BaseGraphEditorProcessor *processor) override {
         processor->addMouseListener(this, true);
         resized();
     }
 
-    void objectRemoved(GraphEditorProcessor *processor) override {
+    void objectRemoved(BaseGraphEditorProcessor *processor) override {
         processor->removeMouseListener(this);
         resized();
     }
 
     void objectOrderChanged() override { resized(); }
 
-    GraphEditorProcessor *getProcessorForNodeId(AudioProcessorGraph::NodeID nodeId) const override {
+    BaseGraphEditorProcessor *getProcessorForNodeId(AudioProcessorGraph::NodeID nodeId) const override {
         for (auto *processor : objects)
             if (processor->getNodeId() == nodeId)
                 return processor;
@@ -154,11 +154,11 @@ public:
         return view.findSlotAt(e.getEventRelativeTo(this).getPosition(), getTrack());
     }
 
-    GraphEditorProcessor *getCurrentlyMovingProcessor() const {
+    BaseGraphEditorProcessor *getCurrentlyMovingProcessor() const {
         return currentlyMovingProcessor;
     }
 
-    void setCurrentlyMovingProcessor(GraphEditorProcessor *currentlyMovingProcessor) {
+    void setCurrentlyMovingProcessor(BaseGraphEditorProcessor *currentlyMovingProcessor) {
         this->currentlyMovingProcessor = currentlyMovingProcessor;
     }
 
@@ -176,11 +176,11 @@ private:
 
     PluginManager &pluginManager;
     ConnectorDragListener &connectorDragListener;
-    GraphEditorProcessor *currentlyMovingProcessor{};
+    BaseGraphEditorProcessor *currentlyMovingProcessor{};
 
     OwnedArray<DrawableRectangle> processorSlotRectangles;
 
-    GraphEditorProcessor *findProcessorAtSlot(int slot) const {
+    BaseGraphEditorProcessor *findProcessorAtSlot(int slot) const {
         for (auto *processor : objects)
             if (processor->getSlot() == slot)
                 return processor;
@@ -311,7 +311,7 @@ private:
             resized();
             updateProcessorSlotColours();
         }
-        Utilities::ValueTreeObjectList<GraphEditorProcessor>::valueTreePropertyChanged(tree, i);
+        Utilities::ValueTreeObjectList<BaseGraphEditorProcessor>::valueTreePropertyChanged(tree, i);
     }
 
     void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override {

@@ -1,10 +1,10 @@
 #pragma once
 
-#include "GraphEditorProcessor.h"
+#include "BaseGraphEditorProcessor.h"
 
 class GraphEditorProcessorContainer {
 public:
-    virtual GraphEditorProcessor *getProcessorForNodeId(AudioProcessorGraph::NodeID) const = 0;
+    virtual BaseGraphEditorProcessor *getProcessorForNodeId(AudioProcessorGraph::NodeID) const = 0;
 
-    virtual ~GraphEditorProcessorContainer() = default;;
+    virtual ~GraphEditorProcessorContainer() = default;
 };

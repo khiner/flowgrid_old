@@ -77,7 +77,7 @@ public:
         connectorDragListener.update();
     }
 
-    GraphEditorProcessor *getProcessorForNodeId(AudioProcessorGraph::NodeID nodeId) const override {
+    BaseGraphEditorProcessor *getProcessorForNodeId(AudioProcessorGraph::NodeID nodeId) const override {
         for (auto *track : objects)
             if (auto *processor = track->getProcessorForNodeId(nodeId))
                 return processor;

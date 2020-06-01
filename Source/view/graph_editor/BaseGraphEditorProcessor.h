@@ -1,23 +1,30 @@
 #pragma once
 
 #include <Utilities.h>
-#include <view/BasicWindow.h>
 #include <state/Project.h>
-#include <ProcessorGraph.h>
 #include <StatefulAudioProcessorContainer.h>
 #include "JuceHeader.h"
 #include "ConnectorDragListener.h"
 #include "GraphEditorPin.h"
 #include "view/processor_editor/ParametersPanel.h"
-#include "GraphEditorProcessor.h"
 
-class TrackOutputProcessorView : public Component, public ValueTree::Listener {
+class BaseGraphEditorProcessor : public Component, public ValueTree::Listener {
 public:
-    TrackOutputProcessorView(Project &project, TracksState &tracks, ViewState &view,
-                         const ValueTree &state, ConnectorDragListener &connectorDragListener)
-            : project(project), tracks(tracks), view(view), connectorDragListener(connectorDragListener),
-              audioProcessorContainer(project), pluginManager(project.getPluginManager()) {
-        setState(state);
+    BaseGraphEditorProcessor(Project &project, TracksState &tracks, ViewState &view,
+                         const ValueTree &state, ConnectorDragListener &connectorDragListener,
+                         bool showChannelLabels = false)
+            : project(project), tracks(tracks), view(view), state(state), connectorDragListener(connectorDragListener),
+              audioProcessorContainer(project), pluginManager(project.getPluginManager()), showChannelLabels(showChannelLabels) {
+        this->state.addListener(this);
+        valueTreePropertyChanged(this->state, IDs::name);
+        if (this->state.hasProperty(IDs::deviceName))
+            valueTreePropertyChanged(this->state, IDs::deviceName);
+        if (!showChannelLabels) {
+            nameLabel.setColour(findColour(TextEditor::textColourId));
+            nameLabel.setFontHeight(largeFontHeight);
+            nameLabel.setJustification(Justification::centred);
+            addAndMakeVisible(nameLabel);
+        }
 
         for (auto child : state) {
             if (child.hasType(IDs::INPUT_CHANNELS) || child.hasType(IDs::OUTPUT_CHANNELS)) {
@@ -28,28 +35,33 @@ public:
         }
     }
 
-    ~TrackOutputProcessorView() override {
+    ~BaseGraphEditorProcessor() override {
         if (parametersPanel != nullptr)
             parametersPanel->removeMouseListener(this);
-        if (this->state.isValid())
-            state.removeListener(this);
+        state.removeListener(this);
     }
 
     const ValueTree &getState() const {
         return state;
     }
 
-    void setState(const ValueTree &state) {
-        this->state = state;
-        if (this->state.isValid())
-            this->state.addListener(this);
+    ValueTree getProcessorLane() const {
+        return getState().getParent();
+    }
+
+    ValueTree getTrack() const {
+        return getProcessorLane().getParent();
     }
 
     AudioProcessorGraph::NodeID getNodeId() const {
+        if (!state.isValid())
+            return {};
         return ProcessorGraph::getNodeIdForState(state);
     }
 
-    inline int getTrackIndex() const { return tracks.indexOf(state.getParent()); }
+    inline int getTrackIndex() const { return tracks.indexOf(getTrack()); }
+
+    inline int getSlot() const { return state[IDs::processorSlot]; }
 
     inline int getNumInputChannels() const { return state.getChildWithName(IDs::INPUT_CHANNELS).getNumChildren(); }
 
@@ -59,17 +71,36 @@ public:
 
     inline bool producesMidi() const { return state[IDs::producesMidi]; }
 
+    inline bool isIoProcessor() const { return InternalPluginFormat::isIoProcessorName(state[IDs::name]); }
+
+    inline bool isSelected() { return tracks.isProcessorSelected(state); }
+
+    bool isInView() {
+        return isIoProcessor() || view.isProcessorSlotInView(getTrack(), getSlot());
+    }
+
     void paint(Graphics &g) override {
-        g.setColour(findColour(Label::backgroundColourId));
+        auto boxColour = findColour(TextEditor::backgroundColourId);
+        if (state[IDs::bypassed])
+            boxColour = boxColour.brighter();
+        else if (isSelected())
+            boxColour = boxColour.brighter(0.02);
+
+        g.setColour(boxColour);
         g.fillRect(getBoxBounds());
     }
 
     void mouseDown(const MouseEvent &e) override {
-        bool isTrackSelected = state.getParent()[IDs::selected];
-        project.setTrackSelected(state.getParent(), !(isTrackSelected && e.mods.isCommandDown()), !(isTrackSelected || e.mods.isCommandDown()));
+        project.beginDragging({getTrackIndex(), getSlot()});
     }
 
     void mouseUp(const MouseEvent &e) override {
+        if (e.mouseWasDraggedSinceMouseDown()) {
+        } else if (e.getNumberOfClicks() == 2) {
+            if (getAudioProcessor()->hasEditor()) {
+                showWindow(PluginWindow::Type::normal);
+            }
+        }
     }
 
     bool hitTest(int x, int y) override {
@@ -99,6 +130,15 @@ public:
 
                 int centerX = proportionOfWidth((1.0f + indexPos) / (totalSpaces + 1.0f));
                 pin->setBounds(centerX - pinSize / 2, pin->isInput() ? 0 : (getHeight() - pinSize), pinSize, pinSize);
+                if (showChannelLabels) {
+                    auto &channelLabel = pin->channelLabel;
+                    auto textArea = boxBoundsFloat.withWidth(proportionOfWidth(1.0f / totalSpaces)).withCentre({float(centerX), boxBoundsFloat.getCentreY()});
+                    channelLabel.setBoundingBox(rotateRectIfNarrow(textArea));
+                }
+            }
+
+            if (!showChannelLabels) {
+                nameLabel.setBoundingBox(rotateRectIfNarrow(boxBoundsFloat));
             }
 
             if (parametersPanel != nullptr) {
@@ -137,18 +177,29 @@ public:
         state.setProperty(IDs::pluginWindowType, int(type),  &project.getUndoManager());
     }
 
+    class ElementComparator {
+    public:
+        static int compareElements(BaseGraphEditorProcessor *first, BaseGraphEditorProcessor *second) {
+            return first->getName().compare(second->getName());
+        }
+    };
+
 private:
     Project &project;
     TracksState &tracks;
     ViewState &view;
     ValueTree state;
+    DrawableText nameLabel;
     std::unique_ptr<ParametersPanel> parametersPanel;
     ConnectorDragListener &connectorDragListener;
     StatefulAudioProcessorContainer &audioProcessorContainer;
     PluginManager &pluginManager;
 
     OwnedArray<GraphEditorPin> pins;
+    const bool showChannelLabels;
     int pinSize = 16;
+    float largeFontHeight = 18.0f;
+    float smallFontHeight = 15.0f;
 
     Rectangle<int> getBoxBounds() {
         auto r = getLocalBounds().reduced(1);
@@ -157,6 +208,14 @@ private:
         if (getNumOutputChannels() > 0)
             r.setBottom(getHeight() - pinSize);
         return r;
+    }
+
+    // Rotate text to draw vertically if the box is taller than it is wide.
+    static Parallelogram<float> rotateRectIfNarrow(Rectangle<float> &rectangle) {
+        if (rectangle.getWidth() > rectangle.getHeight())
+            return rectangle;
+        else
+            return Parallelogram<float>(rectangle.getBottomLeft(), rectangle.getTopLeft(), rectangle.getBottomRight());
     }
 
     GraphEditorPin *findPinWithState(const ValueTree &state) {
@@ -179,10 +238,18 @@ private:
                         parametersPanel->addMouseListener(this, true);
                         parametersPanel->addParameter(processorWrapper->getParameter(0));
                         parametersPanel->addParameter(processorWrapper->getParameter(1));
+                        removeChildComponent(&nameLabel);
                         resized();
                     }
                 }
             }
+        }
+        if (i == IDs::deviceName) {
+            setName(v[IDs::deviceName]);
+            nameLabel.setText(getName());
+        } else if (i == IDs::name) {
+            setName(v[IDs::name]);
+            nameLabel.setText(getName());
         }
 
         resized();
@@ -193,12 +260,21 @@ private:
             auto *pin = new GraphEditorPin(child, connectorDragListener);
             addAndMakeVisible(pin);
             pins.add(pin);
+            if (showChannelLabels) {
+                auto &channelLabel = pin->channelLabel;
+                channelLabel.setColour(findColour(TextEditor::textColourId));
+                channelLabel.setFontHeight(smallFontHeight);
+                channelLabel.setJustification(Justification::centred);
+                addAndMakeVisible(channelLabel);
+            }
         }
     }
 
     void valueTreeChildRemoved(ValueTree &parent, ValueTree &child, int) override {
         if (child.hasType(IDs::CHANNEL)) {
             auto *pinToRemove = findPinWithState(child);
+            if (showChannelLabels)
+                removeChildComponent(&pinToRemove->channelLabel);
             pins.removeObject(pinToRemove);
         }
     }

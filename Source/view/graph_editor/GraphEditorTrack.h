@@ -4,7 +4,7 @@
 #include <state/Identifiers.h>
 #include "JuceHeader.h"
 #include "GraphEditorProcessorLane.h"
-#include "TrackOutputProcessorView.h"
+#include "TrackOutputGraphEditorProcessor.h"
 
 class GraphEditorTrack : public Component, public Utilities::ValueTreePropertyChangeListener, public GraphEditorProcessorContainer, private ChangeListener {
 public:
@@ -100,7 +100,9 @@ public:
         }
     }
 
-    GraphEditorProcessor *getProcessorForNodeId(const AudioProcessorGraph::NodeID nodeId) const override {
+    BaseGraphEditorProcessor *getProcessorForNodeId(const AudioProcessorGraph::NodeID nodeId) const override {
+        if (trackOutputProcessorView != nullptr && trackOutputProcessorView->getNodeId() == nodeId)
+            return trackOutputProcessorView.get();
         if (auto *currentlyMovingProcessor = lane.getCurrentlyMovingProcessor()) {
             if (currentlyMovingProcessor->getNodeId() == nodeId) {
                 return currentlyMovingProcessor;
@@ -114,7 +116,7 @@ public:
         return pin != nullptr ? pin : (trackOutputProcessorView != nullptr ? trackOutputProcessorView->findPinAt(e) : nullptr);
     }
 
-    void setCurrentlyMovingProcessor(GraphEditorProcessor *currentlyMovingProcessor) {
+    void setCurrentlyMovingProcessor(BaseGraphEditorProcessor *currentlyMovingProcessor) {
         lane.setCurrentlyMovingProcessor(currentlyMovingProcessor);
     }
 
@@ -125,7 +127,7 @@ private:
     ValueTree state;
 
     Label nameLabel;
-    std::unique_ptr<TrackOutputProcessorView> trackOutputProcessorView;
+    std::unique_ptr<TrackOutputGraphEditorProcessor> trackOutputProcessorView;
     DrawableText masterTrackName;
     ConnectorDragListener &connectorDragListener;
     GraphEditorProcessorLane lane;
@@ -139,7 +141,7 @@ private:
     void trackOutputProcessorChanged() {
         const ValueTree &trackOutputProcessor = TracksState::getOutputProcessorForTrack(state);
         if (trackOutputProcessor.isValid()) {
-            trackOutputProcessorView = std::make_unique<TrackOutputProcessorView>(project, tracks, view, trackOutputProcessor, connectorDragListener);
+            trackOutputProcessorView = std::make_unique<TrackOutputGraphEditorProcessor>(project, tracks, view, trackOutputProcessor, connectorDragListener);
             addAndMakeVisible(trackOutputProcessorView.get());
             resized();
         } else {
