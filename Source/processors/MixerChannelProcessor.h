@@ -23,8 +23,6 @@ public:
         balanceParameter->removeListener(this);
     }
 
-    bool showInlineEditor() override { return true; }
-
     static const String name() { return "Mixer Channel"; }
 
     static PluginDescription getPluginDescription() {

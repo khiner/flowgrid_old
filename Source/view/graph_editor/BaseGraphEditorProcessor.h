@@ -6,7 +6,6 @@
 #include "JuceHeader.h"
 #include "ConnectorDragListener.h"
 #include "GraphEditorPin.h"
-#include "view/processor_editor/ParametersPanel.h"
 
 class BaseGraphEditorProcessor : public Component, public ValueTree::Listener {
 public:

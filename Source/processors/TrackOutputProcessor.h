@@ -23,8 +23,6 @@ public:
         balanceParameter->removeListener(this);
     }
 
-    bool showInlineEditor() override { return false; }
-
     static const String name() { return "Track Output"; }
 
     static PluginDescription getPluginDescription() {

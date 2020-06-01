@@ -30,8 +30,6 @@ public:
         this->setPlayConfigDetails(getTotalNumInputChannels(), getTotalNumOutputChannels(), sampleRate, estimatedSamplesPerBlock);
     }
 
-    virtual bool showInlineEditor() { return false; }
-
     const String getName() const override { return name; }
 
     int getNumParameters() override { return getParameters().size(); }

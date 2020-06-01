@@ -1,7 +1,7 @@
 #pragma once
 
 #include "JuceHeader.h"
-#include "GraphEditorProcessor.h"
+#include "LabelGraphEditorProcessor.h"
 #include "ConnectorDragListener.h"
 #include "GraphEditorProcessorContainer.h"
 

@@ -219,14 +219,14 @@ private:
     std::unique_ptr<GraphEditorConnectors> connectors;
     GraphEditorConnector *draggingConnector{};
     std::unique_ptr<GraphEditorTracks> graphEditorTracks;
-    std::unique_ptr<GraphEditorProcessor> audioInputProcessor;
-    std::unique_ptr<GraphEditorProcessor> audioOutputProcessor;
-    OwnedArray<GraphEditorProcessor> midiInputProcessors;
-    OwnedArray<GraphEditorProcessor> midiOutputProcessors;
+    std::unique_ptr<LabelGraphEditorProcessor> audioInputProcessor;
+    std::unique_ptr<LabelGraphEditorProcessor> audioOutputProcessor;
+    OwnedArray<LabelGraphEditorProcessor> midiInputProcessors;
+    OwnedArray<LabelGraphEditorProcessor> midiOutputProcessors;
 
     AudioProcessorGraph::Connection initialDraggingConnection{EMPTY_CONNECTION};
 
-    GraphEditorProcessor::ElementComparator processorComparator;
+    LabelGraphEditorProcessor::ElementComparator processorComparator;
 
     DrawableRectangle unfocusOverlay;
 
@@ -252,7 +252,7 @@ private:
         return graphEditorTracks->findPinAt(e);
     }
 
-    GraphEditorProcessor *findMidiInputProcessorForNodeId(const AudioProcessorGraph::NodeID nodeId) const {
+    LabelGraphEditorProcessor *findMidiInputProcessorForNodeId(const AudioProcessorGraph::NodeID nodeId) const {
         for (auto *midiInputProcessor : midiInputProcessors) {
             if (midiInputProcessor->getNodeId() == nodeId)
                 return midiInputProcessor;
@@ -260,7 +260,7 @@ private:
         return nullptr;
     }
 
-    GraphEditorProcessor *findMidiOutputProcessorForNodeId(const AudioProcessorGraph::NodeID nodeId) const {
+    LabelGraphEditorProcessor *findMidiOutputProcessorForNodeId(const AudioProcessorGraph::NodeID nodeId) const {
         for (auto *midiOutputProcessor : midiOutputProcessors) {
             if (midiOutputProcessor->getNodeId() == nodeId)
                 return midiOutputProcessor;
@@ -316,20 +316,20 @@ private:
     void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override {
         if (child.hasType(IDs::PROCESSOR)) {
             if (child[IDs::name] == MidiInputProcessor::name()) {
-                auto *midiInputProcessor = new GraphEditorProcessor(project, tracks, view, child, *this);
+                auto *midiInputProcessor = new LabelGraphEditorProcessor(project, tracks, view, child, *this);
                 addAndMakeVisible(midiInputProcessor);
                 midiInputProcessors.addSorted(processorComparator, midiInputProcessor);
                 resized();
             } else if (child[IDs::name] == MidiOutputProcessor::name()) {
-                auto *midiOutputProcessor = new GraphEditorProcessor(project, tracks, view, child, *this);
+                auto *midiOutputProcessor = new LabelGraphEditorProcessor(project, tracks, view, child, *this);
                 addAndMakeVisible(midiOutputProcessor);
                 midiOutputProcessors.addSorted(processorComparator, midiOutputProcessor);
                 resized();
             } else if (child[IDs::name] == "Audio Input") {
-                addAndMakeVisible(*(audioInputProcessor = std::make_unique<GraphEditorProcessor>(project, tracks, view, child, *this, true)));
+                addAndMakeVisible(*(audioInputProcessor = std::make_unique<LabelGraphEditorProcessor>(project, tracks, view, child, *this, true)));
                 resized();
             } else if (child[IDs::name] == "Audio Output") {
-                addAndMakeVisible(*(audioOutputProcessor = std::make_unique<GraphEditorProcessor>(project, tracks, view, child, *this, true)));
+                addAndMakeVisible(*(audioOutputProcessor = std::make_unique<LabelGraphEditorProcessor>(project, tracks, view, child, *this, true)));
                 resized();
             }
             connectors->updateConnectors();

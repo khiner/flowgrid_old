@@ -2,11 +2,12 @@
 
 #include <ValueTreeObjectList.h>
 #include <state/Project.h>
-#include "GraphEditorProcessor.h"
+#include "LabelGraphEditorProcessor.h"
 #include "GraphEditorProcessorContainer.h"
 #include "ConnectorDragListener.h"
 #include "GraphEditorPin.h"
 #include "view/CustomColourIds.h"
+#include "ParameterPanelGraphEditorProcessor.h"
 
 class GraphEditorProcessorLane : public Component,
                                  public Utilities::ValueTreeObjectList<BaseGraphEditorProcessor>,
@@ -109,19 +110,24 @@ public:
         return v.hasType(IDs::PROCESSOR);
     }
 
-    BaseGraphEditorProcessor *createNewObject(const ValueTree &tree) override {
-        BaseGraphEditorProcessor *processor = currentlyMovingProcessor != nullptr
-                                          ? currentlyMovingProcessor
-                                          : new GraphEditorProcessor(project, tracks, view, tree, connectorDragListener);
-        addAndMakeVisible(processor);
-        return processor;
+    BaseGraphEditorProcessor *createEditorForProcessor(const ValueTree &processor) {
+        if (TracksState::isMixerChannelProcessor(processor)) {
+            return new ParameterPanelGraphEditorProcessor(project, tracks, view, processor, connectorDragListener);
+        }
+        return new LabelGraphEditorProcessor(project, tracks, view, processor, connectorDragListener);
     }
 
-    void deleteObject(BaseGraphEditorProcessor *processor) override {
+    BaseGraphEditorProcessor *createNewObject(const ValueTree &processor) override {
+        auto *graphEditorProcessor = currentlyMovingProcessor != nullptr ? currentlyMovingProcessor : createEditorForProcessor(processor);
+        addAndMakeVisible(graphEditorProcessor);
+        return graphEditorProcessor;
+    }
+
+    void deleteObject(BaseGraphEditorProcessor *graphEditorProcessor) override {
         if (currentlyMovingProcessor == nullptr)
-            delete processor;
+            delete graphEditorProcessor;
         else
-            removeChildComponent(processor);
+            removeChildComponent(graphEditorProcessor);
     }
 
     void newObjectAdded(BaseGraphEditorProcessor *processor) override {
