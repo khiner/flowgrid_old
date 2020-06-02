@@ -1,5 +1,6 @@
 #pragma once
 
+#include <view/level_meter/SegmentedLevelMeter.h>
 #include "JuceHeader.h"
 #include "processors/StatefulAudioProcessorWrapper.h"
 #include "DraggableValueLabel.h"
@@ -72,7 +73,7 @@ public:
             parameterWrapper->attachSwitch(parameterSwitch);
             parameterComponent.reset(parameterSwitch);
         } else if (auto *levelMeterSource = parameterWrapper->getLevelMeterSource()) {
-            auto *levelMeter = new LevelMeter();
+            auto *levelMeter = new SegmentedLevelMeter();
             levelMeter->setMeterSource(levelMeterSource);
             parameterWrapper->attachLevelMeter(levelMeter);
             parameterWrapper->attachLabel(&valueLabel);
