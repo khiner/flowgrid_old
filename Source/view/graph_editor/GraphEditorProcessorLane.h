@@ -39,6 +39,10 @@ public:
 
     int getSlotOffset() const { return view.getSlotOffsetForTrack(getTrack()); }
 
+    int getProcessorSlotSize() const {
+        return isMasterTrack() ? view.getTrackWidth() : view.getProcessorHeight();
+    }
+
     void mouseDown(const MouseEvent &e) override {
         int slot = findSlotAt(e.getEventRelativeTo(this));
         bool isSlotSelected = TracksState::isSlotSelected(getTrack(), slot);
@@ -60,10 +64,10 @@ public:
         auto r = getLocalBounds();
         if (isMasterTrack()) {
             r.setWidth(processorSlotSize);
-            r.setX(-slotOffset * processorSlotSize);
+            r.setX(-slotOffset * processorSlotSize - ViewState::TRACK_LABEL_HEIGHT);
         } else {
             r.setHeight(processorSlotSize);
-            r.setY(-slotOffset * processorSlotSize);
+            r.setY(-slotOffset * processorSlotSize - ViewState::TRACK_LABEL_HEIGHT);
         }
 
         for (int slot = 0; slot < processorSlotRectangles.size(); slot++) {
@@ -74,17 +78,17 @@ public:
                     r.setY(r.getY() + ViewState::TRACK_LABEL_HEIGHT);
             } else if (slot == slotOffset + ViewState::NUM_VISIBLE_NON_MASTER_TRACK_SLOTS + (isMasterTrack() ? 1 : 0)) {
                 if (isMasterTrack())
-                    r.setX(r.getX() + ViewState::TRACK_OUTPUT_HEIGHT);
+                    r.setX(r.getRight());
                 else
-                    r.setY(r.getY() + ViewState::TRACK_OUTPUT_HEIGHT);
+                    r.setY(r.getBottom());
             }
             processorSlotRectangles.getUnchecked(slot)->setRectangle(r.reduced(1).toFloat());
             if (auto *processor = findProcessorAtSlot(slot))
                 processor->setBounds(r);
             if (isMasterTrack())
-                r.setX(r.getX() + processorSlotSize);
+                r.setX(r.getRight());
             else
-                r.setY(r.getY() + processorSlotSize);
+                r.setY(r.getBottom());
         }
     }
 
@@ -157,7 +161,7 @@ public:
     }
 
     int findSlotAt(const MouseEvent &e) {
-        return view.findSlotAt(e.getEventRelativeTo(this).getPosition(), getTrack());
+        return view.findSlotAt(e.getEventRelativeTo(this->getParentComponent()).getPosition(), getTrack());
     }
 
     BaseGraphEditorProcessor *getCurrentlyMovingProcessor() const {
@@ -273,10 +277,6 @@ private:
                 }
             }));
         }
-    }
-
-    int getProcessorSlotSize() const {
-        return isMasterTrack() ? view.getTrackWidth() : view.getProcessorHeight();
     }
 
     // TODO only instantiate 64 slot rects (and maybe another set for the boundary perimeter)

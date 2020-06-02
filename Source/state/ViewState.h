@@ -22,7 +22,7 @@ public:
         focusOnProcessorSlot({}, -1);
         viewState.setProperty(IDs::numProcessorSlots, NUM_VISIBLE_NON_MASTER_TRACK_SLOTS, nullptr);
         // the number of processors in the master track aligns with the number of tracks
-        viewState.setProperty(IDs::numMasterProcessorSlots, NUM_VISIBLE_TRACKS, nullptr);
+        viewState.setProperty(IDs::numMasterProcessorSlots, NUM_VISIBLE_MASTER_TRACK_SLOTS, nullptr);
         setGridViewTrackOffset(0);
         setGridViewSlotOffset(0);
         setMasterViewSlotOffset(0);
@@ -71,11 +71,10 @@ public:
             return; // invalid
         if (isMasterTrack) {
             auto viewSlotOffset = getMasterViewSlotOffset();
-            if (processorSlot >= viewSlotOffset + NUM_VISIBLE_TRACKS)
-                setMasterViewSlotOffset(processorSlot - NUM_VISIBLE_TRACKS + 1);
+            if (processorSlot >= viewSlotOffset + NUM_VISIBLE_MASTER_TRACK_SLOTS)
+                setMasterViewSlotOffset(processorSlot - NUM_VISIBLE_MASTER_TRACK_SLOTS + 1);
             else if (processorSlot < viewSlotOffset)
                 setMasterViewSlotOffset(processorSlot);
-            return;
         } else {
             auto viewSlotOffset = getGridViewSlotOffset();
             if (processorSlot >= viewSlotOffset + NUM_VISIBLE_NON_MASTER_TRACK_SLOTS)
@@ -155,7 +154,7 @@ public:
     int getProcessorHeight() const { return processorHeight; }
 
     int findTrackIndexAt(const juce::Point<int> position, int numNonMasterTracks) {
-        bool isNonMasterTrack = numNonMasterTracks > 0 && position.y < TRACK_LABEL_HEIGHT + TRACK_OUTPUT_HEIGHT + ViewState::NUM_VISIBLE_NON_MASTER_TRACK_SLOTS * getProcessorHeight();
+        bool isNonMasterTrack = numNonMasterTracks > 0 && position.y < TRACK_LABEL_HEIGHT + (ViewState::NUM_VISIBLE_NON_MASTER_TRACK_SLOTS + 1) * getProcessorHeight();
         if (isNonMasterTrack) {
             return std::clamp((position.x - TRACK_LABEL_HEIGHT + getTrackWidth() * getGridViewTrackOffset()) / getTrackWidth(), 0, numNonMasterTracks - 1);
         } else {
@@ -191,10 +190,11 @@ public:
     const String gridPaneName = "grid", editorPaneName = "editor";
 
     static constexpr int NUM_VISIBLE_TRACKS = 8,
-            NUM_VISIBLE_NON_MASTER_TRACK_SLOTS = 7,
+            NUM_VISIBLE_NON_MASTER_TRACK_SLOTS = 6,
+            NUM_VISIBLE_MASTER_TRACK_SLOTS = NUM_VISIBLE_NON_MASTER_TRACK_SLOTS + 1,
             NUM_VISIBLE_PROCESSOR_SLOTS = NUM_VISIBLE_NON_MASTER_TRACK_SLOTS + 3;  // + input row, output row, master track
 
-    static constexpr int TRACK_LABEL_HEIGHT = 32, TRACK_OUTPUT_HEIGHT = 54;
+    static constexpr int TRACK_LABEL_HEIGHT = 32;
 private:
     ValueTree viewState;
     UndoManager &undoManager;

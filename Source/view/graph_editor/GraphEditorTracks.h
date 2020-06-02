@@ -25,7 +25,7 @@ public:
 
     void resized() override {
         auto r = getLocalBounds();
-        auto trackBounds = r.removeFromTop(ViewState::TRACK_LABEL_HEIGHT +  view.getProcessorHeight() * ViewState::NUM_VISIBLE_NON_MASTER_TRACK_SLOTS + ViewState::TRACK_OUTPUT_HEIGHT);
+        auto trackBounds = r.removeFromTop(ViewState::TRACK_LABEL_HEIGHT +  view.getProcessorHeight() * (ViewState::NUM_VISIBLE_NON_MASTER_TRACK_SLOTS + 1));
         trackBounds.setWidth(view.getTrackWidth());
         trackBounds.setX(- view.getGridViewTrackOffset() * view.getTrackWidth() + ViewState::TRACK_LABEL_HEIGHT);
 
@@ -39,7 +39,7 @@ public:
         if (auto *masterTrack = findMasterTrack()) {
             masterTrack->setBounds(
                     r.removeFromTop(view.getProcessorHeight())
-                            .withWidth(ViewState::TRACK_LABEL_HEIGHT + view.getTrackWidth() * view.getNumMasterProcessorSlots() + ViewState::TRACK_OUTPUT_HEIGHT)
+                            .withWidth(ViewState::TRACK_LABEL_HEIGHT + view.getTrackWidth() * (ViewState::NUM_VISIBLE_MASTER_TRACK_SLOTS + 1))
             );
         }
     }

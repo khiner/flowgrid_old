@@ -82,15 +82,14 @@ public:
 
     void resized() override {
         auto r = getLocalBounds();
-        lane.setBounds(r);
         const auto &nameLabelBounds = isMasterTrack()
                                       ? r.removeFromLeft(ViewState::TRACK_LABEL_HEIGHT)
                                       : r.removeFromTop(ViewState::TRACK_LABEL_HEIGHT);
         nameLabel.setBounds(nameLabelBounds);
         nameLabel.toFront(false);
         const auto &trackOutputBounds = isMasterTrack()
-                                        ? r.removeFromRight(ViewState::TRACK_OUTPUT_HEIGHT)
-                                        : r.removeFromBottom(ViewState::TRACK_OUTPUT_HEIGHT);
+                                        ? r.removeFromRight(lane.getProcessorSlotSize())
+                                        : r.removeFromBottom(lane.getProcessorSlotSize());
         if (trackOutputProcessorView != nullptr)
             trackOutputProcessorView->setBounds(trackOutputBounds);
         if (isMasterTrack()) {
@@ -99,6 +98,7 @@ public:
             masterTrackName.setFontHeight(3 * ViewState::TRACK_LABEL_HEIGHT / 4);
             masterTrackName.toFront(false);
         }
+        lane.setBounds(r);
     }
 
     BaseGraphEditorProcessor *getProcessorForNodeId(const AudioProcessorGraph::NodeID nodeId) const override {

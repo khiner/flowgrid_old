@@ -29,7 +29,8 @@ private:
                                TracksState &tracks, ViewState &view)
                 : processor(processor), oldSlot(processor[IDs::processorSlot]), newSlot(newSlot) {
             const auto &track = tracks.getTrack(trackIndex);
-            for (int i = 0; i <= this->newSlot - view.getNumSlotsForTrack(track) - 1; i++)
+            int numNewRows = this->newSlot + 1 - view.getNumSlotsForTrack(track);
+            for (int i = 0; i < numNewRows; i++)
                 addProcessorRowActions.add(new AddProcessorRowAction(trackIndex, tracks, view));
             if (addProcessorRowActions.isEmpty()) {
                 const auto &conflictingProcessor = tracks.getProcessorAtSlot(track, newSlot);
