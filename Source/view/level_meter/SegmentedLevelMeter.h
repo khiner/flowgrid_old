@@ -16,11 +16,16 @@ public:
         setColour(LevelMeter::meterGradientLowColour, Colours::green);
         setColour(LevelMeter::meterGradientMidColour, Colours::yellow);
         setColour(LevelMeter::meterGradientMaxColour, Colours::red);
-        setColour(LevelMeter::gainControlColour, Colours::lightgrey.withAlpha(0.75f));
+
+        setColour(LevelMeter::gainControlColour, findColour(Slider::thumbColourId).withAlpha(0.8f));
+
+//        gainControl.setFill(findColour(LevelMeter::gainControlColour));
+//        gainControl.setStrokeThickness(0);
     }
 
     void resized() override {
-        LevelMeter::resized();
+//        int gainControlY = int(getHeight() * (1.0f - gainValue));
+//        gainControl.setTransformToFit(getLocalBounds().toFloat().withHeight(10).withY(gainControlY - 5), RectanglePlacement::stretchToFit);
         verticalGradient.clearColours();
     }
 

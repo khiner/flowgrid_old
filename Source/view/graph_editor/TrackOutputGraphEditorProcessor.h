@@ -15,7 +15,7 @@ public:
         if (levelMeter != nullptr) {
             if (auto *processorWrapper = getProcessorWrapper()) {
                 addAndMakeVisible((levelMeter = std::make_unique<MinimalLevelMeter>(LevelMeter::horizontal)).get());
-                const auto &parameterWrapper = processorWrapper->getParameter(0);
+                const auto &parameterWrapper = processorWrapper->getParameter(1);
                 parameterWrapper->detachLevelMeter(levelMeter.get());
             }
         }
@@ -46,8 +46,8 @@ private:
                 if (auto *trackOutputProcessor = dynamic_cast<TrackOutputProcessor *>(processorWrapper->processor)) {
                     if (auto *levelMeterSource = trackOutputProcessor->getMeterSource()) {
                         addAndMakeVisible((levelMeter = std::make_unique<MinimalLevelMeter>(LevelMeter::horizontal)).get());
-                        const auto &parameterWrapper = processorWrapper->getParameter(0);
                         levelMeter->setMeterSource(levelMeterSource);
+                        const auto &parameterWrapper = processorWrapper->getParameter(1);
                         parameterWrapper->attachLevelMeter(levelMeter.get());
 //                        parameterWrapper->attachLabel(&valueLabel);
                     }

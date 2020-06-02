@@ -24,27 +24,23 @@ public:
         gainControlColour,
     };
 
-    LevelMeter() : source(nullptr), refreshRate(24) {
-        gainValueControl.addMouseListener(this, false);
-        gainValueControl.setColour(ComboBox::outlineColourId, Colours::transparentBlack);
-        gainValueControl.setColour(TextButton::buttonColourId, findColour(Slider::thumbColourId).withAlpha(0.8f));
+    LevelMeter() : gainControl("gain", {}, {}, {}), source(nullptr), refreshRate(24) {
+        gainControl.addMouseListener(this, false);
 
-        addAndMakeVisible(gainValueControl);
+        addAndMakeVisible(gainControl);
 
         startTimerHz(refreshRate);
     }
 
     ~LevelMeter() override {
-        gainValueControl.removeMouseListener(this);
+        gainControl.removeMouseListener(this);
         stopTimer();
     }
 
     float getValue() const { return normalisableRange.convertFrom0to1(gainValue); }
 
-    void setValue(float newUnnormalizedValue, NotificationType notification) {
-        jassert(notification == dontSendNotification || notification == sendNotificationSync);
-
-        float newValue = normalisableRange.convertTo0to1(newUnnormalizedValue);
+    void setValue(float newUnnormalisedValue, NotificationType notification) {
+        float newValue = normalisableRange.convertTo0to1(newUnnormalisedValue);
         if (gainValue != newValue) {
             gainValue = newValue;
             if (notification == sendNotificationSync)
@@ -66,11 +62,6 @@ public:
             source->decayIfNeeded();
     }
 
-    void resized() override {
-        int gainControlY = int(getHeight() * (1.0f - gainValue));
-        gainValueControl.setBounds(getLocalBounds().withHeight(10).withY(gainControlY - 5));
-    }
-
     void timerCallback() override { repaint(); }
 
     void setMeterSource(LevelMeterSource *source) {
@@ -78,8 +69,8 @@ public:
     }
 
     void mouseDrag(const MouseEvent &event) override {
-        if (event.originalComponent == &gainValueControl) {
-            float newValue = std::clamp(1.0f - float(event.getEventRelativeTo(this).getPosition().y) / float(getHeight()), 0.0f, 1.0f);
+        if (event.originalComponent == &gainControl) {
+            float newValue = getValueForRelativePosition(event.getEventRelativeTo(this).getPosition());
             setValue(normalisableRange.convertFrom0to1(newValue), sendNotificationSync);
         }
     }
@@ -96,8 +87,12 @@ public:
     void removeListener(Listener *listener) { listeners.remove(listener); }
 
 protected:
-    TextButton gainValueControl;
+    ShapeButton gainControl;
+    float gainValue{0.5f};
 
+    virtual float getValueForRelativePosition(juce::Point<int> relativePosition) {
+        return std::clamp(1.0f - float(relativePosition.y) / float(getHeight()), 0.0f, 1.0f);
+    }
 private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (LevelMeter)
 
@@ -106,7 +101,6 @@ private:
 
     int refreshRate;
 
-    float gainValue{0.5f};
     NormalisableRange<float> normalisableRange;
 
     virtual void drawMeterBars(Graphics &g, const LevelMeterSource *source) = 0;
