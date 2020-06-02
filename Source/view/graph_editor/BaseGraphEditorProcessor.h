@@ -125,15 +125,12 @@ public:
                 processor->getOffsetInBusBufferForAbsoluteChannelIndex(isInput, channelIndex, busIdx);
 
                 int total = isInput ? getNumInputChannels() : getNumOutputChannels();
-
                 const int index = pin->isMidi() ? (total - 1) : channelIndex;
-
                 auto totalSpaces = static_cast<float> (total) +
                                    (static_cast<float> (jmax(0, processor->getBusCount(isInput) - 1)) * 0.5f);
                 auto indexPos = static_cast<float> (index) + (static_cast<float> (busIdx) * 0.5f);
-
                 int centerX = proportionOfWidth((1.0f + indexPos) / (totalSpaces + 1.0f));
-                pin->setBounds(centerX - pinSize / 2, pin->isInput() ? 0 : (getHeight() - pinSize), pinSize, pinSize);
+                pin->setBounds(centerX - pinSize / 2, pin->isInput() ? pinSize * 0.5f : (getHeight() - pinSize * 1.5f), pinSize, pinSize);
                 if (showChannelLabels) {
                     auto &channelLabel = pin->channelLabel;
                     auto textArea = boxBoundsFloat.withWidth(proportionOfWidth(1.0f / totalSpaces)).withCentre({float(centerX), boxBoundsFloat.getCentreY()});
@@ -231,7 +228,7 @@ private:
     PluginManager &pluginManager;
 
     OwnedArray<GraphEditorPin> pins;
-    int pinSize = 16;
+    int pinSize = 10;
 
     GraphEditorPin *findPinWithState(const ValueTree &state) {
         for (auto *pin : pins)
