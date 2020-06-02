@@ -90,6 +90,7 @@ add_executable (APP
     "../../Source/view/graph_editor/GraphEditorTracks.h"
     "../../Source/view/graph_editor/LabelGraphEditorProcessor.h"
     "../../Source/view/graph_editor/ParameterPanelGraphEditorProcessor.h"
+    "../../Source/view/graph_editor/TooltipBar.h"
     "../../Source/view/graph_editor/TrackOutputGraphEditorProcessor.h"
     "../../Source/view/level_meter/LevelMeter.h"
     "../../Source/view/level_meter/LevelMeterSource.h"
@@ -1559,6 +1560,7 @@ set_source_files_properties ("../../Source/view/graph_editor/GraphEditorTrack.h"
 set_source_files_properties ("../../Source/view/graph_editor/GraphEditorTracks.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/view/graph_editor/LabelGraphEditorProcessor.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/view/graph_editor/ParameterPanelGraphEditorProcessor.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/view/graph_editor/TooltipBar.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/view/graph_editor/TrackOutputGraphEditorProcessor.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/view/level_meter/LevelMeter.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/view/level_meter/LevelMeterSource.h" PROPERTIES HEADER_FILE_ONLY TRUE)

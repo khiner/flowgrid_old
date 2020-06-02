@@ -2,6 +2,7 @@
 #include <Utilities.h>
 #include <state/Identifiers.h>
 #include <PluginManager.h>
+#include <view/graph_editor/TooltipBar.h>
 #include "processor_editor/ProcessorEditor.h"
 #include "view/context_pane/ContextPane.h"
 #include "view/CustomColourIds.h"
@@ -20,6 +21,7 @@ public:
         addAndMakeVisible(addProcessorButton);
         addAndMakeVisible(processorEditorsViewport);
         addAndMakeVisible(contextPaneViewport);
+        addAndMakeVisible(statusBar);
         unfocusOverlay.setFill(findColour(CustomColourIds::unfocusedOverlayColourId));
         addChildComponent(unfocusOverlay);
 
@@ -51,6 +53,7 @@ public:
 
     void resized() override {
         auto r = getLocalBounds().reduced(4);
+        statusBar.setBounds(r.removeFromBottom(20));
         auto buttons = r.removeFromTop(22);
         buttons.removeFromLeft(4);
         addProcessorButton.setBounds(buttons.removeFromLeft(120));
@@ -98,6 +101,8 @@ private:
 
     Viewport contextPaneViewport, processorEditorsViewport;
     ContextPane contextPane;
+    TooltipBar statusBar;
+
     OwnedArray<ProcessorEditor> processorEditors;
     Component processorEditorsComponent;
     DrawableRectangle unfocusOverlay;
