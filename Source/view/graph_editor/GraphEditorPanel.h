@@ -317,19 +317,19 @@ private:
         if (child.hasType(IDs::PROCESSOR)) {
             if (child[IDs::name] == MidiInputProcessor::name()) {
                 auto *midiInputProcessor = new LabelGraphEditorProcessor(project, tracks, view, child, *this);
-                addAndMakeVisible(midiInputProcessor);
+                addAndMakeVisible(midiInputProcessor, 0);
                 midiInputProcessors.addSorted(processorComparator, midiInputProcessor);
                 resized();
             } else if (child[IDs::name] == MidiOutputProcessor::name()) {
                 auto *midiOutputProcessor = new LabelGraphEditorProcessor(project, tracks, view, child, *this);
-                addAndMakeVisible(midiOutputProcessor);
+                addAndMakeVisible(midiOutputProcessor, 0);
                 midiOutputProcessors.addSorted(processorComparator, midiOutputProcessor);
                 resized();
             } else if (child[IDs::name] == "Audio Input") {
-                addAndMakeVisible(*(audioInputProcessor = std::make_unique<LabelGraphEditorProcessor>(project, tracks, view, child, *this, true)));
+                addAndMakeVisible(*(audioInputProcessor = std::make_unique<LabelGraphEditorProcessor>(project, tracks, view, child, *this, true)), 0);
                 resized();
             } else if (child[IDs::name] == "Audio Output") {
-                addAndMakeVisible(*(audioOutputProcessor = std::make_unique<LabelGraphEditorProcessor>(project, tracks, view, child, *this, true)));
+                addAndMakeVisible(*(audioOutputProcessor = std::make_unique<LabelGraphEditorProcessor>(project, tracks, view, child, *this, true)), 0);
                 resized();
             }
             connectors->updateConnectors();

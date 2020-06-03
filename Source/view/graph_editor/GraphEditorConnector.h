@@ -45,12 +45,12 @@ struct GraphEditorConnector : public Component, public SettableTooltipClient {
     }
 
     void dragStart(const juce::Point<float> &pos) {
-        lastInputPos = pos;
+        lastInputPos = pos - getPosition().toFloat();
         resizeToFit();
     }
 
     void dragEnd(const juce::Point<float> &pos) {
-        lastOutputPos = pos;
+        lastOutputPos = pos - getPosition().toFloat();
         resizeToFit();
     }
 
@@ -66,7 +66,7 @@ struct GraphEditorConnector : public Component, public SettableTooltipClient {
         juce::Point<float> p1, p2;
         getPoints(p1, p2);
 
-        auto newBounds = Rectangle<float>(p1, p2).expanded(4.0f).getSmallestIntegerContainer();
+        auto newBounds = Rectangle<float>(p1 + getPosition().toFloat(), p2 + getPosition().toFloat()).expanded(4.0f).getSmallestIntegerContainer();
 
         if (newBounds != getBounds())
             setBounds(newBounds);
@@ -85,13 +85,13 @@ struct GraphEditorConnector : public Component, public SettableTooltipClient {
         auto *sourceComponent = graphEditorProcessorContainer.getProcessorForNodeId(connection.source.nodeID);
         if (sourceComponent != nullptr) {
             p1 = rootComponent.getLocalPoint(sourceComponent,
-                                             sourceComponent->getPinPos(connection.source.channelIndex, false));
+                                             sourceComponent->getPinPos(connection.source.channelIndex, false)) - getPosition().toFloat();
         }
 
         auto *destinationComponent = graphEditorProcessorContainer.getProcessorForNodeId(connection.destination.nodeID);
         if (destinationComponent != nullptr) {
             p2 = rootComponent.getLocalPoint(destinationComponent,
-                                             destinationComponent->getPinPos(connection.destination.channelIndex, true));
+                                             destinationComponent->getPinPos(connection.destination.channelIndex, true)) - getPosition().toFloat();
         }
     }
 
@@ -103,32 +103,13 @@ struct GraphEditorConnector : public Component, public SettableTooltipClient {
 
         bool mouseOver = isMouseOver(false);
         g.setColour(mouseOver ? pathColour.brighter(0.1f) : pathColour);
-        auto *sourceComponent = graphEditorProcessorContainer.getProcessorForNodeId(connection.source.nodeID);
-        auto *destinationComponent = graphEditorProcessorContainer.getProcessorForNodeId(connection.destination.nodeID);
-        bool isSourceInView = sourceComponent == nullptr || sourceComponent->isInView();
-        bool isDestinationInView = destinationComponent == nullptr || destinationComponent->isInView();
 
-        juce::Point<float> p1, p2;
-        getPoints(p1, p2);
-        p1 -= getPosition().toFloat();
-        p2 -= getPosition().toFloat();
-
-        ColourGradient colourGradient = ColourGradient(pathColour, p1, pathColour, p2, false);
-        if (isSourceInView && isDestinationInView) {
+        if (bothInView) {
+            ColourGradient colourGradient = ColourGradient(pathColour, lastInputPos, pathColour, lastOutputPos, false);
             colourGradient.addColour(0.5f, pathColour.withAlpha(0.1f));
-        } else if (isSourceInView) {
-            colourGradient.setColour(1, pathColour.withAlpha(0.0f));
-            colourGradient.addColour(0.25f, pathColour.withAlpha(0.0f));
-        } else if (isDestinationInView) {
-            colourGradient.setColour(0, pathColour.withAlpha(0.0f));
-            colourGradient.addColour(0.75f, pathColour.withAlpha(0.0f));
-        } else {
-            // TODO or just don't draw
-            colourGradient.setColour(0, pathColour.withAlpha(0.0f));
-            colourGradient.setColour(1, pathColour.withAlpha(0.0f));
+            g.setGradientFill(colourGradient);
         }
 
-        g.setGradientFill(colourGradient);
         g.fillPath(mouseOver ? hoverPath : linePath);
     }
 
@@ -182,39 +163,46 @@ struct GraphEditorConnector : public Component, public SettableTooltipClient {
     }
 
     void resized() override {
-        juce::Point<float> p1, p2;
-        getPoints(p1, p2);
+        const static auto arrowW = 5.0f;
+        const static auto arrowL = 4.0f;
 
-        lastInputPos = p1;
-        lastOutputPos = p2;
+        juce::Point<float> sourcePos, destinationPos;
+        getPoints(sourcePos, destinationPos);
 
-        p1 -= getPosition().toFloat();
-        p2 -= getPosition().toFloat();
+        lastInputPos = sourcePos;
+        lastOutputPos = destinationPos;
 
+        const auto toDestinationVec = destinationPos - sourcePos;
+        const auto toSourceVec = sourcePos - destinationPos;
+
+        auto *sourceComponent = graphEditorProcessorContainer.getProcessorForNodeId(connection.source.nodeID);
+        auto *destinationComponent = graphEditorProcessorContainer.getProcessorForNodeId(connection.destination.nodeID);
+        bool isSourceInView = sourceComponent == nullptr || sourceComponent->isInView();
+        bool isDestinationInView = destinationComponent == nullptr || destinationComponent->isInView();
+
+        bothInView = false;
         linePath.clear();
-        linePath.startNewSubPath(p1);
-        linePath.cubicTo(p1.x, p1.y + (p2.y - p1.y) * 0.33f,
-                         p2.x, p1.y + (p2.y - p1.y) * 0.66f,
-                         p2.x, p2.y);
+        if (isSourceInView && isDestinationInView) {
+            bothInView = true;
+            linePath.startNewSubPath(sourcePos);
+            linePath.cubicTo(sourcePos.x, sourcePos.y + toDestinationVec.y * 0.33f,
+                             destinationPos.x, sourcePos.y + toDestinationVec.y * 0.66f,
+                             destinationPos.x, destinationPos.y);
+        } else if (isSourceInView && !isDestinationInView) {
+            const auto &toDestinationUnitVec = toDestinationVec / toDestinationVec.getDistanceFromOrigin();
+            Line line(sourcePos, sourcePos + 24.0f * toDestinationUnitVec);
+            linePath.addArrow(line, 0.0f, arrowW, arrowL);
+        } else if (isDestinationInView && !isSourceInView) {
+            const auto &toSourceUnitVec = toSourceVec / toSourceVec.getDistanceFromOrigin();
+            Line line(destinationPos + 24.0f * toSourceUnitVec, destinationPos + 5.0f * toSourceUnitVec);
+            linePath.addArrow(line, 0.0f, arrowW, arrowL);
+        }
 
         // TODO don't think I need all these
         PathStrokeType(8.0f).createStrokedPath(hitPath, linePath);
         PathStrokeType(5.0f).createStrokedPath(hoverPath, linePath);
         PathStrokeType(3.0f).createStrokedPath(linePath, linePath);
 
-        auto arrowW = 5.0f;
-        auto arrowL = 4.0f;
-
-        Path arrow;
-        arrow.addTriangle(-arrowL, arrowW,
-                          -arrowL, -arrowW,
-                          arrowL, 0.0f);
-
-        arrow.applyTransform(AffineTransform()
-                                     .rotated(MathConstants<float>::halfPi - atan2(p2.x - p1.x, p2.y - p1.y))
-                                     .translated((p1 + p2) * 0.5f));
-
-        linePath.addPath(arrow);
         linePath.setUsingNonZeroWinding(true);
     }
 
@@ -234,7 +222,7 @@ private:
 
     juce::Point<float> lastInputPos, lastOutputPos;
     Path linePath, hitPath, hoverPath;
-    bool dragging = false;
+    bool dragging = false, bothInView = false;
 
     AudioProcessorGraph::Connection connection{
             {ProcessorGraph::NodeID(0), 0},

@@ -173,9 +173,9 @@ public:
         return std::clamp(slot, 0, getNumSlotsForTrack(track) - 1);
     }
 
-    bool isProcessorSlotInView(const ValueTree &track, int correctedSlot) {
-        bool inView = correctedSlot >= getSlotOffsetForTrack(track) &&
-                      correctedSlot < getSlotOffsetForTrack(track) + NUM_VISIBLE_NON_MASTER_TRACK_SLOTS + (isMasterTrack(track) ? 1 : 0);
+    bool isProcessorSlotInView(const ValueTree &track, int slot) {
+        bool inView = slot >= getSlotOffsetForTrack(track) &&
+                      slot < getSlotOffsetForTrack(track) + NUM_VISIBLE_NON_MASTER_TRACK_SLOTS + (isMasterTrack(track) ? 1 : 0);
         if (!inView) return false;
         if (isMasterTrack(track)) {
             return true;

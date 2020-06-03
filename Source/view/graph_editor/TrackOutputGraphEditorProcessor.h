@@ -34,6 +34,9 @@ public:
         }
     }
 
+    bool isInView() override {
+        return true;
+    }
 private:
     std::unique_ptr<MinimalLevelMeter> levelMeter;
 

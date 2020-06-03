@@ -48,6 +48,10 @@ public:
         return ProcessorGraph::getNodeIdForState(state);
     }
 
+    virtual bool isInView() {
+        return isIoProcessor() || view.isProcessorSlotInView(getTrack(), getSlot());
+    }
+
     inline int getTrackIndex() const { return tracks.indexOf(getTrack()); }
 
     inline int getSlot() const { return state[IDs::processorSlot]; }
@@ -63,10 +67,6 @@ public:
     inline bool isIoProcessor() const { return InternalPluginFormat::isIoProcessorName(state[IDs::name]); }
 
     inline bool isSelected() { return tracks.isProcessorSelected(state); }
-
-    bool isInView() {
-        return isIoProcessor() || view.isProcessorSlotInView(getTrack(), getSlot());
-    }
 
     StatefulAudioProcessorWrapper *getProcessorWrapper() const {
         return audioProcessorContainer.getProcessorWrapperForState(state);
