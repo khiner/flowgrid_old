@@ -299,9 +299,9 @@ public:
         }
 
         LevelMeterSource *getLevelMeterSource() {
-            if (auto *trackOutputProcessor = dynamic_cast<TrackOutputProcessor *>(processorWrapper->processor))
-                if (sourceParameter == trackOutputProcessor->getGainParameter())
-                    return trackOutputProcessor->getMeterSource();
+            if (auto *defaultProcessor = dynamic_cast<DefaultAudioProcessor *>(processorWrapper->processor))
+                if (sourceParameter == defaultProcessor->getMeteredParameter())
+                    return defaultProcessor->getMeterSource();
 
             return nullptr;
         }

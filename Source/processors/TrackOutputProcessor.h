@@ -66,16 +66,12 @@ public:
         meterSource.measureBlock(buffer);
     }
 
-    LevelMeterSource *getMeterSource() {
+    LevelMeterSource *getMeterSource() override {
         return &meterSource;
     }
 
-    AudioParameterFloat *getGainParameter() {
+    AudioProcessorParameter *getMeteredParameter() override {
         return gainParameter;
-    }
-
-    AudioParameterFloat *getBalanceParameter() {
-        return balanceParameter;
     }
 
 private:

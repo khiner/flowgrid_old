@@ -1,5 +1,6 @@
 #pragma once
 
+#include <view/parameter_control/level_meter/LevelMeterSource.h>
 #include "JuceHeader.h"
 
 class DefaultAudioProcessor : public AudioPluginInstance, public AudioProcessorParameter::Listener {
@@ -24,6 +25,9 @@ public:
     }
 
     void parameterGestureChanged(int parameterIndex, bool gestureIsStarting) override {}
+
+    virtual LevelMeterSource *getMeterSource() { return nullptr; }
+    virtual AudioProcessorParameter *getMeteredParameter() { return nullptr; } // TODO should be a new MeteredParameter type
 
     // TODO can remove?
     void prepareToPlay(double sampleRate, int estimatedSamplesPerBlock) override {
