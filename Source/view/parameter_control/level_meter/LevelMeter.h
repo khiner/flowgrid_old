@@ -25,15 +25,11 @@ public:
     };
 
     LevelMeter() : gainControl("gain", {}, {}, {}), source(nullptr), refreshRate(24) {
-        gainControl.addMouseListener(this, false);
-
         addAndMakeVisible(gainControl);
-
         startTimerHz(refreshRate);
     }
 
     ~LevelMeter() override {
-        gainControl.removeMouseListener(this);
         stopTimer();
     }
 
@@ -69,10 +65,8 @@ public:
     }
 
     void mouseDrag(const MouseEvent &event) override {
-        if (event.originalComponent == &gainControl) {
-            float newValue = getValueForRelativePosition(event.getEventRelativeTo(this).getPosition());
-            setValue(normalisableRange.convertFrom0to1(newValue), sendNotificationSync);
-        }
+        float newValue = getValueForRelativePosition(event.getEventRelativeTo(this).getPosition());
+        setValue(normalisableRange.convertFrom0to1(newValue), sendNotificationSync);
     }
 
     class Listener {
