@@ -26,10 +26,12 @@ public:
 
     LevelMeter() : gainControl("gain", {}, {}, {}), source(nullptr), refreshRate(24) {
         addAndMakeVisible(gainControl);
+        gainControl.addMouseListener(this, true);
         startTimerHz(refreshRate);
     }
 
     ~LevelMeter() override {
+        gainControl.removeMouseListener(this);
         stopTimer();
     }
 

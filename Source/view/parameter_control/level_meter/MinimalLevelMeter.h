@@ -7,14 +7,15 @@
 class MinimalLevelMeter : public LevelMeter {
 public:
     MinimalLevelMeter(LevelMeter::Orientation orientation) : LevelMeter(), orientation(orientation) {
-        setColour(LevelMeter::meterForegroundColour, Colours::whitesmoke);
-        setColour(LevelMeter::meterBackgroundColour, Colours::darkgrey);
+        setColour(LevelMeter::meterForegroundColour, Colours::black);
+        setColour(LevelMeter::meterBackgroundColour, Colours::lightgrey.darker(0.2f));
 
         setColour(LevelMeter::meterMaxNormalColour, Colours::lightgrey);
         setColour(LevelMeter::meterMaxWarnColour, Colours::orange);
         setColour(LevelMeter::meterMaxOverColour, Colours::darkred);
 
-        setColour(LevelMeter::gainControlColour, findColour(Slider::thumbColourId));
+//        setColour(LevelMeter::gainControlColour, findColour(Slider::thumbColourId));
+        setColour(LevelMeter::gainControlColour, Colours::white);
 
         gainControl.setColours(findColour(LevelMeter::gainControlColour), findColour(LevelMeter::gainControlColour), findColour(LevelMeter::gainControlColour));
         gainControl.setOutline(findColour(LevelMeter::gainControlColour), 0);

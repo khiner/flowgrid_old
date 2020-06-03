@@ -9,7 +9,7 @@ struct TooltipBar : public Component, private Timer {
 
     void paint(Graphics &g) override {
         g.setColour(findColour(ResizableWindow::backgroundColourId));
-        g.drawRect(getBounds().withZeroOrigin(), 2);
+        g.drawRect(getLocalBounds(), 2);
         g.setFont(Font(getHeight() * 0.7f, Font::bold));
         const auto &textColour = findColour(TextEditor::textColourId);
         g.setColour(tip == DEFAULT_TOOLTIP ? textColour.withAlpha(0.5f) : textColour);

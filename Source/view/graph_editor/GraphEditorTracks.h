@@ -25,7 +25,7 @@ public:
 
     void resized() override {
         auto r = getLocalBounds();
-        auto trackBounds = r.removeFromTop(ViewState::TRACK_LABEL_HEIGHT +  view.getProcessorHeight() * (ViewState::NUM_VISIBLE_NON_MASTER_TRACK_SLOTS + 1));
+        auto trackBounds = r.removeFromTop(ViewState::TRACK_LABEL_HEIGHT + view.getProcessorHeight() * (ViewState::NUM_VISIBLE_NON_MASTER_TRACK_SLOTS + 1));
         trackBounds.setWidth(view.getTrackWidth());
         trackBounds.setX(- view.getGridViewTrackOffset() * view.getTrackWidth() + ViewState::TRACK_LABEL_HEIGHT);
 

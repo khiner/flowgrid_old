@@ -6,9 +6,8 @@
 class TrackOutputGraphEditorProcessor : public BaseGraphEditorProcessor {
 public:
     TrackOutputGraphEditorProcessor(Project &project, TracksState &tracks, ViewState &view,
-                                    const ValueTree &state, ConnectorDragListener &connectorDragListener,
-                                    bool showChannelLabels = false) :
-    BaseGraphEditorProcessor(project, tracks, view, state, connectorDragListener, showChannelLabels) {
+                                    const ValueTree &state, ConnectorDragListener &connectorDragListener) :
+            BaseGraphEditorProcessor(project, tracks, view, state, connectorDragListener, false) {
     }
 
     ~TrackOutputGraphEditorProcessor() {
@@ -39,12 +38,27 @@ public:
         }
     }
 
+    void paint(Graphics &g) override {
+        auto r = getBoxBounds();
+        const auto &boxColour = findColour(ResizableWindow::backgroundColourId);
+//        auto boxColour = findColour(TextEditor::backgroundColourId);
+        g.setColour(boxColour);
+        // hack to get rounded corners only on bottom:
+        // draw two overlapping rects, one with rounded corners
+        g.fillRect(r.withHeight(getHeight() / 4));
+        g.fillRoundedRectangle(r.toFloat(), 6.0f);
+    }
+
     bool isInView() override {
         return true;
     }
 private:
     std::unique_ptr<MinimalLevelMeter> levelMeter;
     std::unique_ptr<Slider> panSlider;
+
+    Rectangle<int> getBoxBounds() override {
+        return getLocalBounds().withTop(pinSize).withTrimmedBottom(ViewState::TRACK_BOTTOM_MARGIN);
+    }
 
     void valueTreePropertyChanged(ValueTree &v, const Identifier &i) override {
         if (v != state)

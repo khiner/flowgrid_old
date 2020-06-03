@@ -185,7 +185,7 @@ public:
             NUM_VISIBLE_MASTER_TRACK_SLOTS = NUM_VISIBLE_NON_MASTER_TRACK_SLOTS + 1,
             NUM_VISIBLE_PROCESSOR_SLOTS = NUM_VISIBLE_NON_MASTER_TRACK_SLOTS + 3;  // + input row, output row, master track
 
-    static constexpr int TRACK_LABEL_HEIGHT = 32;
+    static constexpr int TRACK_LABEL_HEIGHT = 32, TRACK_BOTTOM_MARGIN = 10;
 private:
     ValueTree viewState;
     UndoManager &undoManager;

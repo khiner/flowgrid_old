@@ -12,6 +12,11 @@ public:
             : project(project), tracks(tracks), view(project.getView()), state(state),
               connectorDragListener(connectorDragListener), lane(project, TracksState::getProcessorLaneForTrack(state), connectorDragListener) {
         nameLabel.setJustificationType(Justification::centred);
+        trackBorder.setFill(Colours::transparentBlack);
+        trackBorder.setStrokeThickness(2);
+        trackBorder.setCornerSize({8, 8});
+
+        addAndMakeVisible(trackBorder);
         addAndMakeVisible(nameLabel);
         addAndMakeVisible(lane);
         trackOutputProcessorChanged();
@@ -82,6 +87,9 @@ public:
 
     void resized() override {
         auto r = getLocalBounds();
+
+        trackBorder.setRectangle(r.toFloat().withTrimmedBottom(ViewState::TRACK_BOTTOM_MARGIN));
+
         const auto &nameLabelBounds = isMasterTrack()
                                       ? r.removeFromLeft(ViewState::TRACK_LABEL_HEIGHT)
                                       : r.removeFromTop(ViewState::TRACK_LABEL_HEIGHT);
@@ -98,7 +106,7 @@ public:
             masterTrackName.setFontHeight(3 * ViewState::TRACK_LABEL_HEIGHT / 4);
             masterTrackName.toFront(false);
         }
-        lane.setBounds(r);
+        lane.setBounds(r.reduced(2, 0));
     }
 
     BaseGraphEditorProcessor *getProcessorForNodeId(const AudioProcessorGraph::NodeID nodeId) const override {
@@ -132,11 +140,14 @@ private:
     DrawableText masterTrackName;
     ConnectorDragListener &connectorDragListener;
     GraphEditorProcessorLane lane;
+    DrawableRectangle trackBorder;
 
     void onColourChanged() {
-        nameLabel.setColour(Label::backgroundColourId, getColour());
+        const auto &colour = getColour();
+        trackBorder.setStrokeFill(colour);
+        nameLabel.setColour(Label::backgroundColourId, colour);
         if (trackOutputProcessorView != nullptr)
-            trackOutputProcessorView->setColour(Label::backgroundColourId, getColour());
+            trackOutputProcessorView->setColour(ResizableWindow::backgroundColourId, colour);
     }
 
     void trackOutputProcessorChanged() {

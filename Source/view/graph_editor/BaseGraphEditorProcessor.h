@@ -117,7 +117,7 @@ public:
 
     void resized() override {
         if (auto *processor = getAudioProcessor()) {
-            auto boxBoundsFloat = getBoxBounds().reduced(4).toFloat();
+            auto boxBoundsFloat = getBoxBounds().toFloat();
             for (auto *pin : pins) {
                 const bool isInput = pin->isInput();
                 auto channelIndex = pin->getChannel();
@@ -126,11 +126,11 @@ public:
 
                 int total = isInput ? getNumInputChannels() : getNumOutputChannels();
                 const int index = pin->isMidi() ? (total - 1) : channelIndex;
-                auto totalSpaces = static_cast<float> (total) +
-                                   (static_cast<float> (jmax(0, processor->getBusCount(isInput) - 1)) * 0.5f);
-                auto indexPos = static_cast<float> (index) + (static_cast<float> (busIdx) * 0.5f);
-                int centerX = proportionOfWidth((1.0f + indexPos) / (totalSpaces + 1.0f));
-                pin->setBounds(centerX - pinSize / 2, pin->isInput() ? pinSize * 0.5f : (getHeight() - pinSize * 1.5f), pinSize, pinSize);
+                auto totalSpaces = total + std::max(0.0f, processor->getBusCount(isInput) - 1.0f) * 0.5f;
+                auto indexPos = index + busIdx * 0.5f;
+                int centerX = proportionOfWidth((indexPos + 1.0f) / (totalSpaces + 1.0f));
+                int centerY = pin->isInput() ? boxBoundsFloat.getY() : boxBoundsFloat.getBottom();
+                pin->setBounds(centerX - pinSize / 2, centerY - pinSize / 2, pinSize, pinSize);
                 if (showChannelLabels) {
                     auto &channelLabel = pin->channelLabel;
                     auto textArea = boxBoundsFloat.withWidth(proportionOfWidth(1.0f / totalSpaces)).withCentre({float(centerX), boxBoundsFloat.getCentreY()});
@@ -165,10 +165,11 @@ public:
 protected:
     ValueTree state;
     const bool showChannelLabels;
-    float largeFontHeight = 18.0f;
-    float smallFontHeight = 15.0f;
+    static constexpr float largeFontHeight = 18.0f;
+    static constexpr float smallFontHeight = 15.0f;
+    static constexpr int pinSize = 10;
 
-    Rectangle<int> getBoxBounds() {
+    virtual Rectangle<int> getBoxBounds() {
         auto r = getLocalBounds().reduced(1);
         if (getNumInputChannels() > 0)
             r.setTop(pinSize);
@@ -226,9 +227,7 @@ private:
     ConnectorDragListener &connectorDragListener;
     StatefulAudioProcessorContainer &audioProcessorContainer;
     PluginManager &pluginManager;
-
     OwnedArray<GraphEditorPin> pins;
-    int pinSize = 10;
 
     GraphEditorPin *findPinWithState(const ValueTree &state) {
         for (auto *pin : pins)

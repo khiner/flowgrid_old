@@ -234,7 +234,7 @@ private:
 
     int getTrackWidth() { return (getWidth() - ViewState::TRACK_LABEL_HEIGHT) / ViewState::NUM_VISIBLE_TRACKS; }
 
-    int getProcessorHeight() { return (getHeight() - ViewState::TRACK_LABEL_HEIGHT) / (ViewState::NUM_VISIBLE_PROCESSOR_SLOTS + 1); }
+    int getProcessorHeight() { return (getHeight() - ViewState::TRACK_LABEL_HEIGHT - ViewState::TRACK_BOTTOM_MARGIN) / (ViewState::NUM_VISIBLE_PROCESSOR_SLOTS + 1); }
 
     GraphEditorPin *findPinAt(const MouseEvent &e) const {
         if (auto *pin = audioInputProcessor->findPinAt(e))

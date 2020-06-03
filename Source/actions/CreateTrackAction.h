@@ -13,18 +13,16 @@ struct CreateTrackAction : public UndoableAction {
     CreateTrackAction(int insertIndex, bool isMaster, ValueTree derivedFromTrack, TracksState &tracks, ViewState &view)
             : insertIndex(insertIndex), tracks(tracks) {
         // TODO move into method and construct in initializer list
-        int numTracks = tracks.getNumNonMasterTracks();
         newTrack = ValueTree(IDs::TRACK);
         newTrack.setProperty(IDs::isMasterTrack, isMaster, nullptr);
         newTrack.setProperty(IDs::uuid, Uuid().toString(), nullptr);
+        bool isSubTrack = !isMaster && derivedFromTrack.isValid();
         if (isMaster) {
             newTrack.setProperty(IDs::name, "Master", nullptr);
-            newTrack.setProperty(IDs::colour, Colours::darkslateblue.toString(), nullptr);
         } else {
-            bool isSubTrack = derivedFromTrack.isValid();
-            newTrack.setProperty(IDs::name, isSubTrack ? makeTrackNameUnique(derivedFromTrack[IDs::name]) : ("Track " + String(numTracks + 1)), nullptr);
-            newTrack.setProperty(IDs::colour, isSubTrack ? derivedFromTrack[IDs::colour].toString() : Colour::fromHSV((1.0f / 8.0f) * numTracks, 0.65f, 0.65f, 1.0f).toString(), nullptr);
+            newTrack.setProperty(IDs::name, isSubTrack ? makeTrackNameUnique(derivedFromTrack[IDs::name]) : ("Track " + String(tracks.getNumNonMasterTracks() + 1)), nullptr);
         }
+        newTrack.setProperty(IDs::colour, isSubTrack ? derivedFromTrack[IDs::colour].toString() : Colour::fromHSV((1.0f / 8.0f) * tracks.getNumTracks(), 0.65f, 0.65f, 1.0f).toString(), nullptr);
         newTrack.setProperty(IDs::selected, false, nullptr);
 
         auto lane = ValueTree(IDs::PROCESSOR_LANE);
