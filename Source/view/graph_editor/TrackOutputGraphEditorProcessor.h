@@ -12,9 +12,12 @@ public:
     }
 
     ~TrackOutputGraphEditorProcessor() {
-        if (levelMeter != nullptr) {
-            if (auto *processorWrapper = getProcessorWrapper()) {
-                addAndMakeVisible((levelMeter = std::make_unique<MinimalLevelMeter>(LevelMeter::horizontal)).get());
+        if (auto *processorWrapper = getProcessorWrapper()) {
+            if (panSlider != nullptr) {
+                const auto &parameterWrapper = processorWrapper->getParameter(0);
+                parameterWrapper->detachSlider(panSlider.get());
+            }
+            if (levelMeter != nullptr) {
                 const auto &parameterWrapper = processorWrapper->getParameter(1);
                 parameterWrapper->detachLevelMeter(levelMeter.get());
             }
@@ -25,11 +28,13 @@ public:
         BaseGraphEditorProcessor::resized();
         auto remainingBounds = getBoxBounds().reduced(5).toFloat();
 
-        const auto panBounds = remainingBounds.removeFromTop(remainingBounds.getHeight() / 2).toNearestInt();
-//        panControl->setBounds(panBounds);
+        if (panSlider != nullptr) {
+            const auto panBounds = remainingBounds.removeFromTop(remainingBounds.getHeight() / 2).toNearestInt();
+            panSlider->setBounds(panBounds);
+        }
 
         if (levelMeter != nullptr) {
-            const auto levelMeterBounds = remainingBounds.toNearestInt();
+            const auto levelMeterBounds = remainingBounds.removeFromTop(remainingBounds.getHeight() / 2).toNearestInt();
             levelMeter->setBounds(levelMeterBounds);
         }
     }
@@ -39,6 +44,7 @@ public:
     }
 private:
     std::unique_ptr<MinimalLevelMeter> levelMeter;
+    std::unique_ptr<Slider> panSlider;
 
     void valueTreePropertyChanged(ValueTree &v, const Identifier &i) override {
         if (v != state)
@@ -48,11 +54,15 @@ private:
             if (auto *processorWrapper = getProcessorWrapper()) {
                 if (auto *trackOutputProcessor = dynamic_cast<TrackOutputProcessor *>(processorWrapper->processor)) {
                     if (auto *levelMeterSource = trackOutputProcessor->getMeterSource()) {
+                        addAndMakeVisible((panSlider = std::make_unique<Slider>(Slider::LinearHorizontal, Slider::TextEntryBoxPosition::NoTextBox)).get());
+                        const auto &panParameter = processorWrapper->getParameter(0);
+                        panParameter->attachSlider(panSlider.get());
+                        panSlider->getProperties().set("fromCentre", true);
+
                         addAndMakeVisible((levelMeter = std::make_unique<MinimalLevelMeter>(LevelMeter::horizontal)).get());
                         levelMeter->setMeterSource(levelMeterSource);
-                        const auto &parameterWrapper = processorWrapper->getParameter(1);
-                        parameterWrapper->attachLevelMeter(levelMeter.get());
-//                        parameterWrapper->attachLabel(&valueLabel);
+                        const auto &gainParameter = processorWrapper->getParameter(1);
+                        gainParameter->attachLevelMeter(levelMeter.get());
                     }
                 }
             }
