@@ -153,15 +153,6 @@ public:
 
     int getProcessorHeight() const { return processorHeight; }
 
-    int findTrackIndexAt(const juce::Point<int> position, int numNonMasterTracks) {
-        bool isNonMasterTrack = numNonMasterTracks > 0 && position.y < TRACK_LABEL_HEIGHT + (ViewState::NUM_VISIBLE_NON_MASTER_TRACK_SLOTS + 1) * getProcessorHeight();
-        if (isNonMasterTrack) {
-            return std::clamp((position.x - TRACK_LABEL_HEIGHT + getTrackWidth() * getGridViewTrackOffset()) / getTrackWidth(), 0, numNonMasterTracks - 1);
-        } else {
-            return numNonMasterTracks;
-        }
-    }
-
     int findSlotAt(const juce::Point<int> position, const ValueTree &track) const {
         bool isMaster = isMasterTrack(track);
         int length = isMaster ? position.x : position.y;

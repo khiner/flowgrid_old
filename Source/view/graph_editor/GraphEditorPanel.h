@@ -289,9 +289,8 @@ private:
 
     juce::Point<int> trackAndSlotAt(const MouseEvent &e) {
         auto position = e.getEventRelativeTo(graphEditorTracks.get()).position.toInt();
-        int trackIndex = view.findTrackIndexAt(position, tracks.getNumNonMasterTracks());
-        const auto &track = tracks.getTrack(trackIndex);
-        return {trackIndex, view.findSlotAt(position, track)};
+        const auto &track = graphEditorTracks->findTrackAt(position);
+        return {tracks.indexOf(track), view.findSlotAt(position, track)};
     }
 
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {

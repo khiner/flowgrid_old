@@ -252,6 +252,8 @@ public:
     }
 
     void dragToPosition(juce::Point<int> trackAndSlot) {
+        if (isCurrentlyDraggingProcessor() && currentlyDraggingTrackAndSlot.y > -1 && trackAndSlot.y <= -1)
+            trackAndSlot.y = 0;
         if (!isCurrentlyDraggingProcessor() || trackAndSlot == currentlyDraggingTrackAndSlot ||
             (currentlyDraggingTrackAndSlot.y == -1 && trackAndSlot.x == currentlyDraggingTrackAndSlot.x) ||
             trackAndSlot == TracksState::INVALID_TRACK_AND_SLOT)

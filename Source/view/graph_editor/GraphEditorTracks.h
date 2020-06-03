@@ -101,6 +101,23 @@ public:
         return nullptr;
     }
 
+    ValueTree findTrackAt(const juce::Point<int> position) {
+        auto *masterTrack = findMasterTrack();
+        if (masterTrack != nullptr && masterTrack->getPosition().y <= position.y)
+            return masterTrack->getState();
+
+        const auto &nonMasterTrackObjects = getNonMasterTrackObjects();
+        for (auto *track : nonMasterTrackObjects)
+            if (position.x <= track->getRight())
+                return track->getState();
+
+        auto *lastNonMasterTrack = nonMasterTrackObjects.getLast();
+        if (lastNonMasterTrack != nullptr)
+            return lastNonMasterTrack->getState();
+
+        return {};
+    }
+
 private:
     Project &project;
     TracksState &tracks;
@@ -131,5 +148,13 @@ private:
             fromTrack->setCurrentlyMovingProcessor(nullptr);
             toTrack->setCurrentlyMovingProcessor(nullptr);
         }
+    }
+
+    Array<GraphEditorTrack *> getNonMasterTrackObjects() {
+        Array<GraphEditorTrack *> nonMasterTrackObjects;
+        for (auto *trackObject : objects)
+            if (!trackObject->isMasterTrack())
+                nonMasterTrackObjects.add(trackObject);
+        return nonMasterTrackObjects;
     }
 };
