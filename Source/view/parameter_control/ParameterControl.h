@@ -36,9 +36,17 @@ public:
         normalisableRange = std::move(newRange);
     }
 
+    void mouseDown(const MouseEvent &event) override {
+        listeners.call([this](Listener &l) { l.parameterControlDragStarted(this); });
+    }
+
     void mouseDrag(const MouseEvent &event) override {
         float newValue = getValueForPosition(event.getEventRelativeTo(this).getPosition());
         setValue(normalisableRange.convertFrom0to1(newValue), sendNotificationSync);
+    }
+
+    void mouseUp(const MouseEvent &event) override {
+        listeners.call([this](Listener &l) { l.parameterControlDragEnded(this); });
     }
 
     class Listener {
@@ -46,6 +54,8 @@ public:
         virtual ~Listener() {}
 
         virtual void parameterControlValueChanged(ParameterControl *) = 0;
+        virtual void parameterControlDragStarted(ParameterControl *) = 0;
+        virtual void parameterControlDragEnded(ParameterControl *) = 0;
     };
 
     void addListener(Listener *listener) { listeners.add(listener); }

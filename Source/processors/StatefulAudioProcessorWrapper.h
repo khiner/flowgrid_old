@@ -364,6 +364,10 @@ public:
                 setUnnormalizedValue((float) slider->getValue());
         }
 
+        void sliderDragStarted(Slider *slider) override { beginParameterChange(); }
+
+        void sliderDragEnded(Slider *slider) override { endParameterChange(); }
+
         void buttonClicked(Button *button) override {
             const ScopedLock selfCallbackLock(selfCallbackMutex);
 
@@ -397,12 +401,18 @@ public:
             }
         }
 
-        void parameterControlValueChanged(ParameterControl *parameterControl) override {
+        void parameterControlValueChanged(ParameterControl *control) override {
             const ScopedLock selfCallbackLock(selfCallbackMutex);
 
             if (!ignoreCallbacks)
-                setUnnormalizedValue(parameterControl->getValue());
+                setUnnormalizedValue(control->getValue());
         }
+
+
+        void parameterControlDragStarted(ParameterControl *control) override { beginParameterChange(); }
+
+        void parameterControlDragEnded(ParameterControl *control) override { endParameterChange(); }
+
 
         void beginParameterChange() {
             if (undoManager != nullptr)
@@ -413,10 +423,6 @@ public:
         void endParameterChange() {
             sourceParameter->endChangeGesture();
         }
-
-        void sliderDragStarted(Slider *slider) override { beginParameterChange(); }
-
-        void sliderDragEnded(Slider *slider) override { endParameterChange(); }
 
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(Parameter)
     };
