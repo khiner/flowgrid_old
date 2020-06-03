@@ -3,7 +3,6 @@
 #include <Utilities.h>
 #include "state/Identifiers.h"
 #include "view/processor_editor/SwitchParameterComponent.h"
-#include "view/parameter_control/level_meter/LevelMeter.h"
 #include "DeviceManagerUtilities.h"
 #include "TrackOutputProcessor.h"
 
@@ -13,7 +12,7 @@ public:
             : public AudioProcessorParameterWithID,
               private Utilities::ValueTreePropertyChangeListener,
               public AudioProcessorParameter::Listener, public Slider::Listener, public Button::Listener,
-              public ComboBox::Listener, public SwitchParameterComponent::Listener, public LevelMeter::Listener {
+              public ComboBox::Listener, public SwitchParameterComponent::Listener, public ParameterControl::Listener {
         class Listener {
         public:
             virtual ~Listener() = default;
@@ -78,10 +77,10 @@ public:
                 parameterSwitch->removeListener(this);
             }
             attachedSwitches.clear(false);
-            for (auto *levelMeter : attachedLevelMeters) {
+            for (auto *levelMeter : attachedParameterControls) {
                 levelMeter->removeListener(this);
             }
-            attachedLevelMeters.clear(false);
+            attachedParameterControls.clear(false);
         }
 
         void addListener(Listener *listener) { listeners.add(listener); }
@@ -146,7 +145,7 @@ public:
                     auto index = roundToInt(newValue * (parameterSwitch->getNumItems() - 1));
                     parameterSwitch->setSelectedItemIndex(index, sendNotificationSync);
                 }
-                for (auto *levelMeter : attachedLevelMeters) {
+                for (auto *levelMeter : attachedParameterControls) {
                     levelMeter->setValue(newValue, sendNotificationSync);
                 }
             }
@@ -273,20 +272,20 @@ public:
             }
         }
 
-        void attachLevelMeter(LevelMeter *levelMeter) {
-            if (levelMeter != nullptr) {
-                levelMeter->setNormalisableRange(range);
-                attachedLevelMeters.add(levelMeter);
-                levelMeter->addListener(this);
+        void attachParameterControl(ParameterControl *parameterControl) {
+            if (parameterControl != nullptr) {
+                parameterControl->setNormalisableRange(range);
+                attachedParameterControls.add(parameterControl);
+                parameterControl->addListener(this);
 
                 setAttachedComponentValues(value);
             }
         }
 
-        void detachLevelMeter(LevelMeter *levelMeter) {
-            if (levelMeter != nullptr) {
-                levelMeter->removeListener(this);
-                attachedLevelMeters.removeObject(levelMeter, false);
+        void detachParameterControl(ParameterControl *parameterControl) {
+            if (parameterControl != nullptr) {
+                parameterControl->removeListener(this);
+                attachedParameterControls.removeObject(parameterControl, false);
             }
         }
 
@@ -336,7 +335,7 @@ public:
         OwnedArray<Button> attachedButtons{};
         OwnedArray<ComboBox> attachedComboBoxes{};
         OwnedArray<SwitchParameterComponent> attachedSwitches{};
-        OwnedArray<LevelMeter> attachedLevelMeters{};
+        OwnedArray<ParameterControl> attachedParameterControls{};
 
         void valueTreePropertyChanged(ValueTree &tree, const Identifier &p) override {
             if (ignoreParameterChangedCallbacks)
@@ -398,11 +397,11 @@ public:
             }
         }
 
-        void levelMeterValueChanged(LevelMeter *levelMeter) override {
+        void parameterControlValueChanged(ParameterControl *parameterControl) override {
             const ScopedLock selfCallbackLock(selfCallbackMutex);
 
             if (!ignoreCallbacks)
-                setUnnormalizedValue(levelMeter->getValue());
+                setUnnormalizedValue(parameterControl->getValue());
         }
 
         void beginParameterChange() {

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <view/parameter_control/slider/MinimalSliderControl.h>
 #include "view/parameter_control/level_meter/MinimalLevelMeter.h"
 #include "BaseGraphEditorProcessor.h"
 
@@ -14,26 +15,27 @@ public:
         if (auto *processorWrapper = getProcessorWrapper()) {
             if (panSlider != nullptr) {
                 const auto &parameterWrapper = processorWrapper->getParameter(0);
-                parameterWrapper->detachSlider(panSlider.get());
+                parameterWrapper->detachParameterControl(panSlider.get());
             }
             if (levelMeter != nullptr) {
                 const auto &parameterWrapper = processorWrapper->getParameter(1);
-                parameterWrapper->detachLevelMeter(levelMeter.get());
+                parameterWrapper->detachParameterControl(levelMeter.get());
             }
         }
     }
 
     void resized() override {
         BaseGraphEditorProcessor::resized();
-        auto remainingBounds = getBoxBounds().reduced(5).toFloat();
+        const auto &boxBounds = getBoxBounds();
+        auto remainingBounds = boxBounds.reduced(5);
 
         if (panSlider != nullptr) {
-            const auto panBounds = remainingBounds.removeFromTop(remainingBounds.getHeight() / 2).toNearestInt();
+            const auto panBounds = remainingBounds.removeFromTop(remainingBounds.getHeight() / 2).reduced(0, boxBounds.getHeight() / 7);
             panSlider->setBounds(panBounds);
         }
 
         if (levelMeter != nullptr) {
-            const auto levelMeterBounds = remainingBounds.removeFromTop(remainingBounds.getHeight() / 2).toNearestInt();
+            const auto levelMeterBounds = remainingBounds.reduced(0, boxBounds.getHeight() / 14);
             levelMeter->setBounds(levelMeterBounds);
         }
     }
@@ -45,19 +47,26 @@ public:
         g.setColour(boxColour);
         // hack to get rounded corners only on bottom:
         // draw two overlapping rects, one with rounded corners
-        g.fillRect(r.withHeight(getHeight() / 4));
-        g.fillRoundedRectangle(r.toFloat(), 6.0f);
+        if (TracksState::isMasterTrack(getTrack())) {
+            g.fillRect(r.withWidth(getWidth() / 4));
+            g.fillRoundedRectangle(r.toFloat(), 6.0f);
+        } else {
+            g.fillRect(r.withHeight(getHeight() / 4));
+            g.fillRoundedRectangle(r.toFloat(), 6.0f);
+        }
     }
 
     bool isInView() override {
         return true;
     }
 private:
-    std::unique_ptr<MinimalLevelMeter> levelMeter;
-    std::unique_ptr<Slider> panSlider;
+    std::unique_ptr<LevelMeter> levelMeter;
+    std::unique_ptr<SliderControl> panSlider;
 
     Rectangle<int> getBoxBounds() override {
-        return getLocalBounds().withTop(pinSize).withTrimmedBottom(ViewState::TRACK_BOTTOM_MARGIN);
+        return TracksState::isMasterTrack(getTrack()) ?
+               getLocalBounds() :
+               getLocalBounds().withTop(pinSize).withTrimmedBottom(ViewState::TRACK_BOTTOM_MARGIN);
     }
 
     void valueTreePropertyChanged(ValueTree &v, const Identifier &i) override {
@@ -68,15 +77,15 @@ private:
             if (auto *processorWrapper = getProcessorWrapper()) {
                 if (auto *trackOutputProcessor = dynamic_cast<TrackOutputProcessor *>(processorWrapper->processor)) {
                     if (auto *levelMeterSource = trackOutputProcessor->getMeterSource()) {
-                        addAndMakeVisible((panSlider = std::make_unique<Slider>(Slider::LinearHorizontal, Slider::TextEntryBoxPosition::NoTextBox)).get());
+                        addAndMakeVisible((panSlider = std::make_unique<MinimalSliderControl>(SliderControl::Orientation::horizontal, true)).get());
                         const auto &panParameter = processorWrapper->getParameter(0);
-                        panParameter->attachSlider(panSlider.get());
+                        panParameter->attachParameterControl(panSlider.get());
                         panSlider->getProperties().set("fromCentre", true);
 
                         addAndMakeVisible((levelMeter = std::make_unique<MinimalLevelMeter>(LevelMeter::horizontal)).get());
                         levelMeter->setMeterSource(levelMeterSource);
                         const auto &gainParameter = processorWrapper->getParameter(1);
-                        gainParameter->attachLevelMeter(levelMeter.get());
+                        gainParameter->attachParameterControl(levelMeter.get());
                     }
                 }
             }

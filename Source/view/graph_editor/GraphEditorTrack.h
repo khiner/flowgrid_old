@@ -88,7 +88,8 @@ public:
     void resized() override {
         auto r = getLocalBounds();
 
-        trackBorder.setRectangle(r.toFloat().withTrimmedBottom(ViewState::TRACK_BOTTOM_MARGIN));
+        const auto &borderBounds = isMasterTrack() ? r.toFloat() : r.toFloat().withTrimmedBottom(ViewState::TRACK_BOTTOM_MARGIN);
+        trackBorder.setRectangle(borderBounds);
 
         const auto &nameLabelBounds = isMasterTrack()
                                       ? r.removeFromLeft(ViewState::TRACK_LABEL_HEIGHT)

@@ -106,7 +106,8 @@ struct GraphEditorConnector : public Component, public SettableTooltipClient {
 
         if (bothInView) {
             ColourGradient colourGradient = ColourGradient(pathColour, lastInputPos, pathColour, lastOutputPos, false);
-            colourGradient.addColour(0.5f, pathColour.withAlpha(0.1f));
+            colourGradient.addColour(0.25f, pathColour.withAlpha(0.2f));
+            colourGradient.addColour(0.75f, pathColour.withAlpha(0.2f));
             g.setGradientFill(colourGradient);
         }
 

@@ -75,7 +75,7 @@ public:
         } else if (auto *levelMeterSource = parameterWrapper->getLevelMeterSource()) {
             auto *levelMeter = new SegmentedLevelMeter();
             levelMeter->setMeterSource(levelMeterSource);
-            parameterWrapper->attachLevelMeter(levelMeter);
+            parameterWrapper->attachParameterControl(levelMeter);
             parameterWrapper->attachLabel(&valueLabel);
             parameterComponent.reset(levelMeter);
         } else {
@@ -182,7 +182,7 @@ private:
         else if (auto *parameterSwitch = getSwitch())
             parameterWrapper->detachSwitch(parameterSwitch);
         else if (auto *levelMeter = getLevelMeter()) {
-            parameterWrapper->detachLevelMeter(levelMeter);
+            parameterWrapper->detachParameterControl(levelMeter);
             parameterWrapper->detachLabel(&valueLabel);
         }
         parameterComponent = nullptr;

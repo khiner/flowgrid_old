@@ -34,12 +34,8 @@ public:
         return state;
     }
 
-    ValueTree getProcessorLane() const {
-        return getState().getParent();
-    }
-
     ValueTree getTrack() const {
-        return getProcessorLane().getParent();
+        return TracksState::getTrackForProcessor(getState());
     }
 
     AudioProcessorGraph::NodeID getNodeId() const {
