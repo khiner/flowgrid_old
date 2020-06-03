@@ -1,10 +1,12 @@
 #pragma once
 
 #include <Utilities.h>
+#include <view/parameter_control/ParameterControl.h>
+#include <view/parameter_control/level_meter/LevelMeterSource.h>
 #include "state/Identifiers.h"
 #include "view/processor_editor/SwitchParameterComponent.h"
 #include "DeviceManagerUtilities.h"
-#include "TrackOutputProcessor.h"
+#include "DefaultAudioProcessor.h"
 
 class StatefulAudioProcessorWrapper : private AudioProcessorListener {
 public:

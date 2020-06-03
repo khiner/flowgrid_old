@@ -20,8 +20,10 @@ public:
 
     void parameterValueChanged(int parameterIndex, float newValue) override {
         AudioProcessorParameter *parameter = getParameters().getUnchecked(parameterIndex);
-        if (auto *floatParameter = dynamic_cast<AudioParameterFloat *>(parameter))
-            parameterChanged(parameter, floatParameter->range.convertFrom0to1(newValue));
+        if (auto *rangedParameter = dynamic_cast<RangedAudioParameter *>(parameter))
+            parameterChanged(parameter, rangedParameter->convertFrom0to1(newValue));
+        else
+            parameterChanged(parameter, newValue);
     }
 
     void parameterGestureChanged(int parameterIndex, bool gestureIsStarting) override {}

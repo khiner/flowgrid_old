@@ -72,7 +72,7 @@ private:
     static int getInsertSlot(const PluginDescription &description, int trackIndex, TracksState &tracks) {
         const auto &track = tracks.getTrack(trackIndex);
 
-        if (description.name == TrackOutputProcessor::name())
+        if (description.name == TrackInputProcessor::name() || description.name == TrackOutputProcessor::name())
             return -1;
 
         if (description.numInputChannels == 0) {

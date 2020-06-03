@@ -1,7 +1,6 @@
 #pragma once
 
 
-#include <processors/TrackOutputProcessor.h>
 #include "JuceHeader.h"
 #include "Identifiers.h"
 #include "unordered_map"
@@ -51,7 +50,8 @@ public:
     }
 
     static ValueTree getProcessorLaneForProcessor(const ValueTree &processor) {
-        return processor.getParent();
+        const auto &track = getTrackForProcessor(processor);
+        return getProcessorLaneForTrack(track);
     }
 
     static ValueTree getTrackForProcessorLane(const ValueTree &processorLane) {
@@ -62,17 +62,30 @@ public:
         return processor.getParent().hasType(IDs::TRACK) ? processor.getParent() : processor.getParent().getParent();
     }
 
+    static ValueTree getInputProcessorForTrack(const ValueTree &track) {
+        return track.getChildWithProperty(IDs::name, TrackInputProcessor::getPluginDescription().name);
+    }
+
     static ValueTree getOutputProcessorForTrack(const ValueTree &track) {
         return track.getChildWithProperty(IDs::name, TrackOutputProcessor::getPluginDescription().name);
     }
 
     static Array<ValueTree> getAllProcessorsForTrack(const ValueTree &track) {
         Array<ValueTree> allProcessors;
+        allProcessors.add(getInputProcessorForTrack(track));
         for (const auto &processor : getProcessorLaneForTrack(track)) {
             allProcessors.add(processor);
         }
         allProcessors.add(getOutputProcessorForTrack(track));
         return allProcessors;
+    }
+
+    static bool isTrackIOProcessor(const ValueTree &processor) {
+        return isTrackInputProcessor(processor) || isTrackOutputProcessor(processor);
+    }
+
+    static bool isTrackInputProcessor(const ValueTree &processor) {
+        return processor.getProperty(IDs::name) == TrackInputProcessor::name();
     }
 
     static bool isTrackOutputProcessor(const ValueTree &processor) {

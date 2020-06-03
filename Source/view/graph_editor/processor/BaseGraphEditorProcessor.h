@@ -4,8 +4,8 @@
 #include <state/Project.h>
 #include <StatefulAudioProcessorContainer.h>
 #include "JuceHeader.h"
-#include "ConnectorDragListener.h"
-#include "GraphEditorPin.h"
+#include "view/graph_editor/ConnectorDragListener.h"
+#include "view/graph_editor/GraphEditorPin.h"
 
 class BaseGraphEditorProcessor : public Component, public ValueTree::Listener {
 public:
@@ -148,7 +148,7 @@ public:
 
     GraphEditorPin *findPinAt(const MouseEvent &e) {
         auto *comp = getComponentAt(e.getEventRelativeTo(this).position.toInt());
-        return dynamic_cast<GraphEditorPin *> (comp);
+        return dynamic_cast<GraphEditorPin *>(comp);
     }
 
     class ElementComparator {

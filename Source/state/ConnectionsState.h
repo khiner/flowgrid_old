@@ -29,23 +29,19 @@ public:
         if (TracksState::isTrackOutputProcessor(sourceProcessor)) {
             if (track == masterTrack)
                 return {};
-            // TODO after adding track input processors, this will just be master track input
-            if (masterTrack.isValid()) {
-                for (const auto &masterTrackProcessor : TracksState::getProcessorLaneForTrack(masterTrack))
-                    if (isProcessorAnEffect(masterTrackProcessor, connectionType))
-                        return masterTrackProcessor;
-                return TracksState::getOutputProcessorForTrack(masterTrack);
-            }
+            if (masterTrack.isValid())
+                return TracksState::getInputProcessorForTrack(masterTrack);
             return {};
         }
 
+        bool isTrackInputProcessor = TracksState::isTrackInputProcessor(sourceProcessor);
         const auto &lane = TracksState::getProcessorLaneForProcessor(sourceProcessor);
         int siblingDelta = 0;
         ValueTree otherLane;
         while ((otherLane = lane.getSibling(siblingDelta++)).isValid()) {
             for (const auto &otherProcessor : otherLane) {
                 if (otherProcessor == sourceProcessor) continue;
-                bool isOtherProcessorBelow = int(otherProcessor[IDs::processorSlot]) > int(sourceProcessor[IDs::processorSlot]);
+                bool isOtherProcessorBelow = isTrackInputProcessor || int(otherProcessor[IDs::processorSlot]) > int(sourceProcessor[IDs::processorSlot]);
                 if (!isOtherProcessorBelow) continue;
                 if (canProcessorDefaultConnectTo(sourceProcessor, otherProcessor, connectionType) ||
                     // If a non-effect (another producer) is under this processor in the same track, and no effect processors

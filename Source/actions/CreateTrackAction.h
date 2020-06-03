@@ -2,7 +2,6 @@
 
 #include <state/ConnectionsState.h>
 #include <state/TracksState.h>
-#include <processors/TrackOutputProcessor.h>
 
 #include "JuceHeader.h"
 

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "JuceHeader.h"
-#include "LabelGraphEditorProcessor.h"
+#include "view/graph_editor/processor/LabelGraphEditorProcessor.h"
 #include "ConnectorDragListener.h"
 #include "GraphEditorProcessorContainer.h"
 
@@ -95,7 +95,6 @@ struct GraphEditorConnector : public Component, public SettableTooltipClient {
         }
     }
 
-    // TODO this should all be done in resize
     void paint(Graphics &g) override {
         auto pathColour = connection.source.isMIDI() || connection.destination.isMIDI()
                             ? (isCustom() ? Colours::orange : Colours::red)

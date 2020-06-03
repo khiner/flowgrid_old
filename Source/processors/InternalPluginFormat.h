@@ -57,6 +57,7 @@ private:
     std::unique_ptr<AudioPluginInstance> createInstance(const String &name) {
         if (name == audioOutDesc.name) return std::make_unique<AudioProcessorGraph::AudioGraphIOProcessor>(AudioProcessorGraph::AudioGraphIOProcessor::audioOutputNode);
         if (name == audioInDesc.name) return std::make_unique<AudioProcessorGraph::AudioGraphIOProcessor>(AudioProcessorGraph::AudioGraphIOProcessor::audioInputNode);
+        if (name == TrackInputProcessor::name()) return std::make_unique<TrackInputProcessor>();
         if (name == TrackOutputProcessor::name()) return std::make_unique<TrackOutputProcessor>();
         if (name == MidiInputProcessor::name()) return std::make_unique<MidiInputProcessor>();
         if (name == MidiKeyboardProcessor::name()) return std::make_unique<MidiKeyboardProcessor>();

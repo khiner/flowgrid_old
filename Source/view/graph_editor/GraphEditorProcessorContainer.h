@@ -1,6 +1,6 @@
 #pragma once
 
-#include "BaseGraphEditorProcessor.h"
+#include "view/graph_editor/processor/BaseGraphEditorProcessor.h"
 
 class GraphEditorProcessorContainer {
 public:

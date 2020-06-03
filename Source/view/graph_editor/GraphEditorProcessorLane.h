@@ -2,12 +2,12 @@
 
 #include <ValueTreeObjectList.h>
 #include <state/Project.h>
-#include "LabelGraphEditorProcessor.h"
+#include "view/graph_editor/processor/LabelGraphEditorProcessor.h"
 #include "GraphEditorProcessorContainer.h"
 #include "ConnectorDragListener.h"
 #include "GraphEditorPin.h"
 #include "view/CustomColourIds.h"
-#include "ParameterPanelGraphEditorProcessor.h"
+#include "view/graph_editor/processor/ParameterPanelGraphEditorProcessor.h"
 
 class GraphEditorProcessorLane : public Component,
                                  public Utilities::ValueTreeObjectList<BaseGraphEditorProcessor>,

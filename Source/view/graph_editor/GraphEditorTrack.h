@@ -2,9 +2,10 @@
 
 #include <Utilities.h>
 #include <state/Identifiers.h>
+#include <view/graph_editor/processor/TrackInputGraphEditorProcessor.h>
 #include "JuceHeader.h"
 #include "GraphEditorProcessorLane.h"
-#include "TrackOutputGraphEditorProcessor.h"
+#include "view/graph_editor/processor/TrackOutputGraphEditorProcessor.h"
 
 class GraphEditorTrack : public Component, public Utilities::ValueTreePropertyChangeListener, public GraphEditorProcessorContainer, private ChangeListener {
 public:
@@ -19,6 +20,7 @@ public:
         addAndMakeVisible(trackBorder);
         addAndMakeVisible(nameLabel);
         addAndMakeVisible(lane);
+        trackInputProcessorChanged();
         trackOutputProcessorChanged();
 
         if (!isMasterTrack()) {
@@ -91,39 +93,55 @@ public:
         const auto &borderBounds = isMasterTrack() ? r.toFloat() : r.toFloat().withTrimmedBottom(ViewState::TRACK_BOTTOM_MARGIN);
         trackBorder.setRectangle(borderBounds);
 
-        const auto &nameLabelBounds = isMasterTrack()
-                                      ? r.removeFromLeft(ViewState::TRACK_LABEL_HEIGHT)
-                                      : r.removeFromTop(ViewState::TRACK_LABEL_HEIGHT);
-        nameLabel.setBounds(nameLabelBounds);
-        nameLabel.toFront(false);
+        const int trackInputProcessorSize = ViewState::TRACK_LABEL_HEIGHT;
+        auto inputAndLabelBounds = isMasterTrack()
+                                          ? r.removeFromLeft(ViewState::TRACK_LABEL_HEIGHT)
+                                          : r.removeFromTop(ViewState::TRACK_LABEL_HEIGHT);
+        const auto &trackInputBounds = isMasterTrack()
+                                       ? inputAndLabelBounds.removeFromTop(trackInputProcessorSize)
+                                       : inputAndLabelBounds.removeFromLeft(trackInputProcessorSize);
         const auto &trackOutputBounds = isMasterTrack()
                                         ? r.removeFromRight(lane.getProcessorSlotSize())
                                         : r.removeFromBottom(lane.getProcessorSlotSize());
+
+        nameLabel.setBounds(inputAndLabelBounds);
+//        nameLabel.toFront(false);
+        if (trackInputProcessorView != nullptr)
+            trackInputProcessorView->setBounds(trackInputBounds);
         if (trackOutputProcessorView != nullptr)
             trackOutputProcessorView->setBounds(trackOutputBounds);
         if (isMasterTrack()) {
-            const auto &labelBoundsFloat = nameLabelBounds.toFloat();
+            const auto &labelBoundsFloat = inputAndLabelBounds.toFloat();
             masterTrackName.setBoundingBox(Parallelogram<float>(labelBoundsFloat.getBottomLeft(), labelBoundsFloat.getTopLeft(), labelBoundsFloat.getBottomRight()));
             masterTrackName.setFontHeight(3 * ViewState::TRACK_LABEL_HEIGHT / 4);
-            masterTrackName.toFront(false);
+//            masterTrackName.toFront(false);
         }
         lane.setBounds(r.reduced(2, 0));
     }
 
     BaseGraphEditorProcessor *getProcessorForNodeId(const AudioProcessorGraph::NodeID nodeId) const override {
+        if (trackInputProcessorView != nullptr && trackInputProcessorView->getNodeId() == nodeId)
+            return trackInputProcessorView.get();
         if (trackOutputProcessorView != nullptr && trackOutputProcessorView->getNodeId() == nodeId)
             return trackOutputProcessorView.get();
-        if (auto *currentlyMovingProcessor = lane.getCurrentlyMovingProcessor()) {
-            if (currentlyMovingProcessor->getNodeId() == nodeId) {
+        if (auto *currentlyMovingProcessor = lane.getCurrentlyMovingProcessor())
+            if (currentlyMovingProcessor->getNodeId() == nodeId)
                 return currentlyMovingProcessor;
-            }
-        }
+
         return lane.getProcessorForNodeId(nodeId);
     }
 
     GraphEditorPin *findPinAt(const MouseEvent &e) {
         auto *pin = lane.findPinAt(e);
-        return pin != nullptr ? pin : (trackOutputProcessorView != nullptr ? trackOutputProcessorView->findPinAt(e) : nullptr);
+        if (pin != nullptr)
+            return pin;
+        if (trackInputProcessorView != nullptr)
+             pin = trackInputProcessorView->findPinAt(e);
+        if (pin != nullptr)
+            return pin;
+        if (trackOutputProcessorView != nullptr)
+            return trackOutputProcessorView->findPinAt(e);
+        return nullptr;
     }
 
     void setCurrentlyMovingProcessor(BaseGraphEditorProcessor *currentlyMovingProcessor) {
@@ -137,6 +155,7 @@ private:
     ValueTree state;
 
     Label nameLabel;
+    std::unique_ptr<TrackInputGraphEditorProcessor> trackInputProcessorView;
     std::unique_ptr<TrackOutputGraphEditorProcessor> trackOutputProcessorView;
     DrawableText masterTrackName;
     ConnectorDragListener &connectorDragListener;
@@ -147,8 +166,23 @@ private:
         const auto &colour = getColour();
         trackBorder.setStrokeFill(colour);
         nameLabel.setColour(Label::backgroundColourId, colour);
+        if (trackInputProcessorView != nullptr)
+            trackInputProcessorView->setColour(ResizableWindow::backgroundColourId, colour);
         if (trackOutputProcessorView != nullptr)
             trackOutputProcessorView->setColour(ResizableWindow::backgroundColourId, colour);
+    }
+
+    void trackInputProcessorChanged() {
+        const ValueTree &trackInputProcessor = TracksState::getInputProcessorForTrack(state);
+        if (trackInputProcessor.isValid()) {
+            trackInputProcessorView = std::make_unique<TrackInputGraphEditorProcessor>(project, tracks, view, trackInputProcessor, connectorDragListener);
+            addAndMakeVisible(trackInputProcessorView.get());
+            resized();
+        } else {
+            removeChildComponent(trackInputProcessorView.get());
+            trackInputProcessorView = nullptr;
+        }
+        onColourChanged();
     }
 
     void trackOutputProcessorChanged() {
@@ -165,14 +199,20 @@ private:
     }
 
     void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override {
-        if (child.hasType(IDs::PROCESSOR) && child.getProperty(IDs::name) == TrackOutputProcessor::name()) {
-            trackOutputProcessorChanged();
+        if (child.hasType(IDs::PROCESSOR)) {
+            if (child.getProperty(IDs::name) == TrackInputProcessor::name())
+                trackInputProcessorChanged();
+            else if (child.getProperty(IDs::name) == TrackOutputProcessor::name())
+                trackOutputProcessorChanged();
         }
     }
 
     void valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int) override {
-        if (child.hasType(IDs::PROCESSOR) && child.getProperty(IDs::name) == TrackOutputProcessor::name()) {
-            trackOutputProcessorChanged();
+        if (child.hasType(IDs::PROCESSOR)) {
+            if (child.getProperty(IDs::name) == TrackInputProcessor::name())
+                trackInputProcessorChanged();
+            else if (child.getProperty(IDs::name) == TrackOutputProcessor::name())
+                trackOutputProcessorChanged();
         }
     }
 

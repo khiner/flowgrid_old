@@ -75,7 +75,7 @@ public:
     }
 
     void masterEncoderRotated(float changeAmount) override {
-        const ValueTree &trackOutputProcessor = TracksState::getOutputProcessorForTrack(tracks.getMasterTrack());
+        const auto &trackOutputProcessor = TracksState::getOutputProcessorForTrack(tracks.getMasterTrack());
         if (auto *masterGainProcessor = audioProcessorContainer.getProcessorWrapperForState(trackOutputProcessor))
             if (auto *masterGainParameter = masterGainProcessor->getParameter(1))
                 masterGainParameter->setValue(masterGainParameter->getValue() + changeAmount);

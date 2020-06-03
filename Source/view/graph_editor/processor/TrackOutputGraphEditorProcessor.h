@@ -41,10 +41,9 @@ public:
     }
 
     void paint(Graphics &g) override {
-        auto r = getBoxBounds();
-        const auto &boxColour = findColour(ResizableWindow::backgroundColourId);
-//        auto boxColour = findColour(TextEditor::backgroundColourId);
-        g.setColour(boxColour);
+        const auto &r = getBoxBounds();
+        const auto &backgroundColour = findColour(ResizableWindow::backgroundColourId);
+        g.setColour(backgroundColour);
         // hack to get rounded corners only on bottom:
         // draw two overlapping rects, one with rounded corners
         if (TracksState::isMasterTrack(getTrack())) {
@@ -59,6 +58,7 @@ public:
     bool isInView() override {
         return true;
     }
+
 private:
     std::unique_ptr<LevelMeter> levelMeter;
     std::unique_ptr<SliderControl> panSlider;

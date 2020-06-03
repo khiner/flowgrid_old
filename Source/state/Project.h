@@ -185,6 +185,8 @@ public:
         undoManager.beginNewTransaction();
 
         undoManager.perform(new CreateTrackAction(isMaster, {}, tracks, view));
+        undoManager.perform(new CreateProcessorAction(TrackInputProcessor::getPluginDescription(),
+                                                      tracks.indexOf(mostRecentlyCreatedTrack), tracks, view, *this));
         undoManager.perform(new CreateProcessorAction(TrackOutputProcessor::getPluginDescription(),
                                                       tracks.indexOf(mostRecentlyCreatedTrack), tracks, view, *this));
 

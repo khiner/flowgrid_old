@@ -58,6 +58,7 @@ add_executable (APP
     "../../Source/processors/SineBank.h"
     "../../Source/processors/SineSynth.h"
     "../../Source/processors/StatefulAudioProcessorWrapper.h"
+    "../../Source/processors/TrackInputProcessor.h"
     "../../Source/processors/TrackOutputProcessor.h"
     "../../Source/push2/Push2Display.h"
     "../../Source/push2/Push2DisplayBridge.h"
@@ -77,7 +78,7 @@ add_executable (APP
     "../../Source/usb/libusb/libusb_platform_wrapper.c"
     "../../Source/usb/UsbCommunicator.h"
     "../../Source/view/context_pane/ContextPane.h"
-    "../../Source/view/graph_editor/BaseGraphEditorProcessor.h"
+    "../../Source/view/graph_editor/processor/BaseGraphEditorProcessor.h"
     "../../Source/view/graph_editor/ConnectorDragListener.h"
     "../../Source/view/graph_editor/GraphEditor.h"
     "../../Source/view/graph_editor/GraphEditorConnector.h"
@@ -88,10 +89,11 @@ add_executable (APP
     "../../Source/view/graph_editor/GraphEditorProcessorLane.h"
     "../../Source/view/graph_editor/GraphEditorTrack.h"
     "../../Source/view/graph_editor/GraphEditorTracks.h"
-    "../../Source/view/graph_editor/LabelGraphEditorProcessor.h"
-    "../../Source/view/graph_editor/ParameterPanelGraphEditorProcessor.h"
+    "../../Source/view/graph_editor/processor/LabelGraphEditorProcessor.h"
+    "../../Source/view/graph_editor/processor/ParameterPanelGraphEditorProcessor.h"
     "../../Source/view/graph_editor/TooltipBar.h"
-    "../../Source/view/graph_editor/TrackOutputGraphEditorProcessor.h"
+    "../../Source/view/graph_editor/processor/TrackInputGraphEditorProcessor.h"
+    "../../Source/view/graph_editor/processor/TrackOutputGraphEditorProcessor.h"
     "../../Source/view/parameter_control/level_meter/LevelMeter.h"
     "../../Source/view/parameter_control/level_meter/LevelMeterSource.h"
     "../../Source/view/parameter_control/level_meter/MinimalLevelMeter.h"
@@ -1532,6 +1534,7 @@ set_source_files_properties ("../../Source/processors/ParameterTypesTestProcesso
 set_source_files_properties ("../../Source/processors/SineBank.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/processors/SineSynth.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/processors/StatefulAudioProcessorWrapper.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/processors/TrackInputProcessor.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/processors/TrackOutputProcessor.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/push2/Push2Display.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/push2/Push2DisplayBridge.h" PROPERTIES HEADER_FILE_ONLY TRUE)
@@ -1550,7 +1553,7 @@ set_source_files_properties ("../../Source/usb/libusb/config_msvc.h" PROPERTIES 
 set_source_files_properties ("../../Source/usb/libusb/config_xcode.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/usb/UsbCommunicator.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/view/context_pane/ContextPane.h" PROPERTIES HEADER_FILE_ONLY TRUE)
-set_source_files_properties ("../../Source/view/graph_editor/BaseGraphEditorProcessor.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/view/graph_editor/processor/BaseGraphEditorProcessor.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/view/graph_editor/ConnectorDragListener.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/view/graph_editor/GraphEditor.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/view/graph_editor/GraphEditorConnector.h" PROPERTIES HEADER_FILE_ONLY TRUE)
@@ -1561,10 +1564,11 @@ set_source_files_properties ("../../Source/view/graph_editor/GraphEditorProcesso
 set_source_files_properties ("../../Source/view/graph_editor/GraphEditorProcessorLane.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/view/graph_editor/GraphEditorTrack.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/view/graph_editor/GraphEditorTracks.h" PROPERTIES HEADER_FILE_ONLY TRUE)
-set_source_files_properties ("../../Source/view/graph_editor/LabelGraphEditorProcessor.h" PROPERTIES HEADER_FILE_ONLY TRUE)
-set_source_files_properties ("../../Source/view/graph_editor/ParameterPanelGraphEditorProcessor.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/view/graph_editor/processor/LabelGraphEditorProcessor.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/view/graph_editor/processor/ParameterPanelGraphEditorProcessor.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/view/graph_editor/TooltipBar.h" PROPERTIES HEADER_FILE_ONLY TRUE)
-set_source_files_properties ("../../Source/view/graph_editor/TrackOutputGraphEditorProcessor.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/view/graph_editor/processor/TrackInputGraphEditorProcessor.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/view/graph_editor/processor/TrackOutputGraphEditorProcessor.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/view/parameter_control/level_meter/LevelMeter.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/view/parameter_control/level_meter/LevelMeterSource.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/view/parameter_control/level_meter/MinimalLevelMeter.h" PROPERTIES HEADER_FILE_ONLY TRUE)
