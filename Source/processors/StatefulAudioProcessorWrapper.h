@@ -3,7 +3,7 @@
 #include <Utilities.h>
 #include "state/Identifiers.h"
 #include "view/processor_editor/SwitchParameterComponent.h"
-#include "view/level_meter/LevelMeter.h"
+#include "view/parameter_control/level_meter/LevelMeter.h"
 #include "DeviceManagerUtilities.h"
 #include "TrackOutputProcessor.h"
 

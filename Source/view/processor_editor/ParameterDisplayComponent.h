@@ -1,6 +1,6 @@
 #pragma once
 
-#include <view/level_meter/SegmentedLevelMeter.h>
+#include "view/parameter_control/level_meter/SegmentedLevelMeter.h"
 #include "JuceHeader.h"
 #include "processors/StatefulAudioProcessorWrapper.h"
 #include "DraggableValueLabel.h"

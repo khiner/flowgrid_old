@@ -1,6 +1,6 @@
 #pragma once
 
-#include <view/level_meter/MinimalLevelMeter.h>
+#include "view/parameter_control/level_meter/MinimalLevelMeter.h"
 #include "BaseGraphEditorProcessor.h"
 
 class TrackOutputGraphEditorProcessor : public BaseGraphEditorProcessor {

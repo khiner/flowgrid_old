@@ -92,10 +92,10 @@ add_executable (APP
     "../../Source/view/graph_editor/ParameterPanelGraphEditorProcessor.h"
     "../../Source/view/graph_editor/TooltipBar.h"
     "../../Source/view/graph_editor/TrackOutputGraphEditorProcessor.h"
-    "../../Source/view/level_meter/LevelMeter.h"
-    "../../Source/view/level_meter/LevelMeterSource.h"
-    "../../Source/view/level_meter/MinimalLevelMeter.h"
-    "../../Source/view/level_meter/SegmentedLevelMeter.h"
+    "../../Source/view/parameter_control/level_meter/LevelMeter.h"
+    "../../Source/view/parameter_control/level_meter/LevelMeterSource.h"
+    "../../Source/view/parameter_control/level_meter/MinimalLevelMeter.h"
+    "../../Source/view/parameter_control/level_meter/SegmentedLevelMeter.h"
     "../../Source/view/processor_editor/DraggableValueLabel.h"
     "../../Source/view/processor_editor/ParameterDisplayComponent.h"
     "../../Source/view/processor_editor/ParametersPanel.h"
@@ -1562,10 +1562,10 @@ set_source_files_properties ("../../Source/view/graph_editor/LabelGraphEditorPro
 set_source_files_properties ("../../Source/view/graph_editor/ParameterPanelGraphEditorProcessor.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/view/graph_editor/TooltipBar.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/view/graph_editor/TrackOutputGraphEditorProcessor.h" PROPERTIES HEADER_FILE_ONLY TRUE)
-set_source_files_properties ("../../Source/view/level_meter/LevelMeter.h" PROPERTIES HEADER_FILE_ONLY TRUE)
-set_source_files_properties ("../../Source/view/level_meter/LevelMeterSource.h" PROPERTIES HEADER_FILE_ONLY TRUE)
-set_source_files_properties ("../../Source/view/level_meter/MinimalLevelMeter.h" PROPERTIES HEADER_FILE_ONLY TRUE)
-set_source_files_properties ("../../Source/view/level_meter/SegmentedLevelMeter.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/view/parameter_control/level_meter/LevelMeter.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/view/parameter_control/level_meter/LevelMeterSource.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/view/parameter_control/level_meter/MinimalLevelMeter.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/view/parameter_control/level_meter/SegmentedLevelMeter.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/view/processor_editor/DraggableValueLabel.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/view/processor_editor/ParameterDisplayComponent.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/view/processor_editor/ParametersPanel.h" PROPERTIES HEADER_FILE_ONLY TRUE)

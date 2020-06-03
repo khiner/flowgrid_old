@@ -2,7 +2,7 @@
 
 #include "JuceHeader.h"
 #include "DefaultAudioProcessor.h"
-#include "view/level_meter/LevelMeter.h"
+#include "view/parameter_control/level_meter/LevelMeter.h"
 
 class TrackOutputProcessor : public DefaultAudioProcessor {
 public:

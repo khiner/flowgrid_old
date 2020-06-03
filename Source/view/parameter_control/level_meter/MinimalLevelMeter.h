@@ -9,24 +9,27 @@ public:
     MinimalLevelMeter(LevelMeter::Orientation orientation) : LevelMeter(), orientation(orientation) {
         setColour(LevelMeter::meterForegroundColour, Colours::whitesmoke);
         setColour(LevelMeter::meterBackgroundColour, Colours::darkgrey);
-        setColour(LevelMeter::gainControlColour, Colours::whitesmoke.withAlpha(0.75f));
 
         setColour(LevelMeter::meterMaxNormalColour, Colours::lightgrey);
         setColour(LevelMeter::meterMaxWarnColour, Colours::orange);
         setColour(LevelMeter::meterMaxOverColour, Colours::darkred);
 
-        setColour(LevelMeter::gainControlColour, Colours::whitesmoke);
+        setColour(LevelMeter::gainControlColour, findColour(Slider::thumbColourId));
 
         gainControl.setColours(findColour(LevelMeter::gainControlColour), findColour(LevelMeter::gainControlColour), findColour(LevelMeter::gainControlColour));
         gainControl.setOutline(findColour(LevelMeter::gainControlColour), 0);
     }
 
     void resized() override {
-        int length = orientation == vertical ? getHeight() : getWidth();
-        int gainPosition = int(length * (orientation == vertical ? 1.0f - gainValue : gainValue));
+        const auto &meterBounds = getMeterBounds();
+        const auto &localBounds = getLocalBounds();
+        int gainPosition = orientation == vertical ?
+                           meterBounds.getRelativePoint(0.0f, 1.0f - gainValue).y :
+                           meterBounds.getRelativePoint(gainValue, 0.0f).x;
+
         const auto &gainControlBounds = orientation == vertical ?
-                                        getLocalBounds().withHeight(4).withY(gainPosition - 2) :
-                                        getLocalBounds().withWidth(4).withX(gainPosition - 2);
+                                        localBounds.withHeight(GAIN_CONTROL_WIDTH).withY(gainPosition - GAIN_CONTROL_WIDTH / 2) :
+                                        localBounds.withWidth(GAIN_CONTROL_WIDTH).withX(gainPosition - GAIN_CONTROL_WIDTH / 2);
         Path p;
         p.addRectangle(gainControlBounds);
         gainControl.setBounds(gainControlBounds);
@@ -36,6 +39,8 @@ public:
 private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MinimalLevelMeter)
 
+    static constexpr int GAIN_CONTROL_WIDTH = 4;
+
     LevelMeter::Orientation orientation;
 
     float getValueForRelativePosition(juce::Point<int> relativePosition) override {
@@ -44,15 +49,22 @@ private:
                std::clamp(float(relativePosition.x) / float(getWidth()), 0.0f, 1.0f);
     }
 
-    void drawMeterBars(Graphics &g, const LevelMeterSource *source) override {
-        int numChannels = source ? source->getNumChannels() : 1;
-        auto remainingBounds = getLocalBounds().toFloat();
-        const float meterWidth = float(orientation == LevelMeter::vertical ? getWidth() : getHeight()) / numChannels;
-        for (unsigned int channel = 0; channel < numChannels; ++channel) {
+    Rectangle<float> getMeterBounds() {
+        const auto &r = getLocalBounds().toFloat();
+        return orientation == vertical ?
+               r.reduced(getWidth() * 0.1f, GAIN_CONTROL_WIDTH) :
+               r.reduced(GAIN_CONTROL_WIDTH, getHeight() * 0.1f);
+    }
 
-            const auto &meterBarBounds = orientation == LevelMeter::vertical ?
-                                         remainingBounds.removeFromLeft(meterWidth).reduced(getWidth() * 0.1f) :
-                                         remainingBounds.removeFromTop(meterWidth).reduced(getHeight() * 0.1f);
+    void drawMeterBars(Graphics &g, const LevelMeterSource *source) override {
+        const int numChannels = source ? source->getNumChannels() : 1;
+        auto meterBounds = getMeterBounds();
+        const float shortDimension = orientation == vertical ? meterBounds.getWidth() : meterBounds.getHeight();
+        const float meterWidth = shortDimension / numChannels;
+        for (unsigned int channel = 0; channel < numChannels; ++channel) {
+            const auto &meterBarBounds = orientation == vertical ?
+                                         meterBounds.removeFromLeft(meterWidth).reduced(shortDimension * 0.1f, 0.0f) :
+                                         meterBounds.removeFromTop(meterWidth).reduced(0.0f, shortDimension * 0.1f);
             g.setColour(findColour(LevelMeter::meterBackgroundColour));
             g.fillRect(meterBarBounds);
             if (source != nullptr) {
@@ -63,20 +75,12 @@ private:
 //                std::cout << "rmsDb: " << rmsDb << std::endl;
                 float rmsDbScaled = (rmsDb - infinity) / -infinity;
 //                std::cout << "rmsDbScaled: " << rmsDbScaled << std::endl;
-                float peakDb = Decibels::gainToDecibels(source->getMaxLevel(channel), infinity);
 
-                const auto &fillBounds = orientation == LevelMeter::vertical ?
+                const auto &fillBounds = orientation == vertical ?
                                          meterBarBounds.withHeight(rmsDbScaled * meterBarBounds.getHeight()) :
                                          meterBarBounds.withWidth(rmsDbScaled * meterBarBounds.getWidth());
                 g.setColour(findColour(LevelMeter::meterForegroundColour));
                 g.fillRect(fillBounds);
-
-//                if (peakDb > -49.0) {
-//                    g.setColour(findColour((peakDb > -0.3f) ? LevelMeter::meterMaxOverColour :
-//                                           ((peakDb > -5.0) ? LevelMeter::meterMaxWarnColour :
-//                                            LevelMeter::meterMaxNormalColour)));
-//                    g.fillEllipse(bounds.getCentreX(), bounds.getCentreY(), bounds.getWidth() / 2, bounds.getHeight() / 2);
-//                }
             }
         }
     }
