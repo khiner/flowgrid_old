@@ -46,13 +46,22 @@ public:
         g.setColour(backgroundColour);
         // hack to get rounded corners only on bottom:
         // draw two overlapping rects, one with rounded corners
-        if (TracksState::isMasterTrack(getTrack())) {
+        if (isMasterTrack()) {
             g.fillRect(r.withWidth(getWidth() / 4));
             g.fillRoundedRectangle(r.toFloat(), 6.0f);
         } else {
             g.fillRect(r.withHeight(getHeight() / 4));
             g.fillRoundedRectangle(r.toFloat(), 6.0f);
         }
+    }
+
+    void layoutPin(GraphEditorPin *pin, float indexPosition, float totalSpaces, const Rectangle<float> &boxBounds) const override {
+        if (!(isMasterTrack() && !pin->isInput()))
+            return BaseGraphEditorProcessor::layoutPin(pin, indexPosition, totalSpaces, boxBounds);
+
+        pin->setSize(pinSize, pinSize);
+        int centerX = (indexPosition + 1) * pinSize;
+        pin->setCentrePosition(centerX, boxBounds.getBottom());
     }
 
     bool isInView() override {
@@ -64,9 +73,9 @@ private:
     std::unique_ptr<SliderControl> panSlider;
 
     Rectangle<int> getBoxBounds() override {
-        return TracksState::isMasterTrack(getTrack()) ?
-               getLocalBounds() :
-               getLocalBounds().withTop(pinSize).withTrimmedBottom(ViewState::TRACK_BOTTOM_MARGIN);
+        return isMasterTrack() ?
+               getLocalBounds().withTrimmedLeft(pinSize / 2).withTrimmedRight(ViewState::TRACKS_VERTICAL_MARGIN) :
+               getLocalBounds().withTrimmedTop(pinSize / 2).withTrimmedBottom(ViewState::TRACKS_VERTICAL_MARGIN);
     }
 
     void valueTreePropertyChanged(ValueTree &v, const Identifier &i) override {

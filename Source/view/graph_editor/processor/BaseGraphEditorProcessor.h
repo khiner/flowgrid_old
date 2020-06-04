@@ -48,6 +48,8 @@ public:
         return isIoProcessor() || view.isProcessorSlotInView(getTrack(), getSlot());
     }
 
+    inline bool isMasterTrack() const { return TracksState::isMasterTrack(getTrack()); }
+
     inline int getTrackIndex() const { return tracks.indexOf(getTrack()); }
 
     inline int getSlot() const { return state[IDs::processorSlot]; }
@@ -117,24 +119,42 @@ public:
             for (auto *pin : pins) {
                 const bool isInput = pin->isInput();
                 auto channelIndex = pin->getChannel();
-                int busIdx = 0;
-                processor->getOffsetInBusBufferForAbsoluteChannelIndex(isInput, channelIndex, busIdx);
+                int busIndex = 0;
+                processor->getOffsetInBusBufferForAbsoluteChannelIndex(isInput, channelIndex, busIndex);
 
                 int total = isInput ? getNumInputChannels() : getNumOutputChannels();
-                const int index = pin->isMidi() ? (total - 1) : channelIndex;
                 auto totalSpaces = total + std::max(0.0f, processor->getBusCount(isInput) - 1.0f) * 0.5f;
-                auto indexPos = index + busIdx * 0.5f;
-                int centerX = proportionOfWidth((indexPos + 1.0f) / (totalSpaces + 1.0f));
-                int centerY = pin->isInput() ? boxBoundsFloat.getY() : boxBoundsFloat.getBottom();
-                pin->setBounds(centerX - pinSize / 2, centerY - pinSize / 2, pinSize, pinSize);
-                if (showChannelLabels) {
-                    auto &channelLabel = pin->channelLabel;
-                    auto textArea = boxBoundsFloat.withWidth(proportionOfWidth(1.0f / totalSpaces)).withCentre({float(centerX), boxBoundsFloat.getCentreY()});
-                    channelLabel.setBoundingBox(rotateRectIfNarrow(textArea));
-                }
+
+                const int index = pin->isMidi() ? (total - 1) : channelIndex;
+                auto indexPosition = index + busIndex * 0.5f;
+
+                layoutPin(pin, indexPosition, totalSpaces, boxBoundsFloat);
             }
             repaint();
             connectorDragListener.update();
+        }
+    }
+
+    virtual void layoutPin(GraphEditorPin *pin, float indexPosition, float totalSpaces, const Rectangle<float> &boxBounds) const {
+        float proportion = (indexPosition + 1.0f) / (totalSpaces + 1.0f);
+        pin->setSize(pinSize, pinSize);
+        int centerX = boxBounds.getX() + (indexPosition + 1) * pinSize;
+        int centerY = boxBounds.getY() + (indexPosition + 1) * pinSize;
+        if (pin->isInput()) {
+            if (isMasterTrack())
+                pin->setCentrePosition(boxBounds.getX(), centerY);
+            else
+                pin->setCentrePosition(centerX, boxBounds.getY());
+        } else {
+            if (isMasterTrack())
+                pin->setCentrePosition(boxBounds.getRight(), centerY);
+            else
+                pin->setCentrePosition(centerX, boxBounds.getBottom());
+        }
+        if (showChannelLabels) {
+            auto &channelLabel = pin->channelLabel;
+            auto textArea = boxBounds.withWidth(proportionOfWidth(1.0f / totalSpaces)).withCentre({float(proportionOfWidth(proportion)), boxBounds.getCentreY()});
+            channelLabel.setBoundingBox(rotateRectIfNarrow(textArea));
         }
     }
 
@@ -167,10 +187,17 @@ protected:
 
     virtual Rectangle<int> getBoxBounds() {
         auto r = getLocalBounds().reduced(1);
-        if (getNumInputChannels() > 0)
-            r.setTop(pinSize);
-        if (getNumOutputChannels() > 0)
-            r.setBottom(getHeight() - pinSize);
+        if (isMasterTrack()) {
+            if (getNumInputChannels() > 0)
+                r.setLeft(pinSize);
+            if (getNumOutputChannels() > 0)
+                r.removeFromRight(pinSize);
+        } else {
+            if (getNumInputChannels() > 0)
+                r.setTop(pinSize);
+            if (getNumOutputChannels() > 0)
+                r.removeFromBottom(pinSize);
+        }
         return r;
     }
 
