@@ -17,11 +17,26 @@ namespace BinaryData
     extern const char*   AbletonSansMediumRegular_otf;
     const int            AbletonSansMediumRegular_otfSize = 43100;
 
+    extern const char*   Audio_png;
+    const int            Audio_pngSize = 3038;
+
+    extern const char*   CircleWithLineDiagonal_png;
+    const int            CircleWithLineDiagonal_pngSize = 27723;
+
+    extern const char*   CircleWithLineHorizontal_png;
+    const int            CircleWithLineHorizontal_pngSize = 27197;
+
+    extern const char*   CircleWithLineVertical_png;
+    const int            CircleWithLineVertical_pngSize = 30564;
+
+    extern const char*   Midi_png;
+    const int            Midi_pngSize = 825;
+
     extern const char*   PushStartup_png;
     const int            PushStartup_pngSize = 16112;
 
     // Number of elements in the namedResourceList and originalFileNames arrays.
-    const int namedResourceListSize = 4;
+    const int namedResourceListSize = 9;
 
     // Points to the start of a list of resource names.
     extern const char* namedResourceList[];

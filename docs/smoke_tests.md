@@ -40,7 +40,7 @@ For example, to see the verified functionality for release `0.0.1`, check out th
 
 * Loading application for the first time (no `<VALUE name="audioDeviceState">` tag in `~/Library/Preferences/sound-machine.settings`)
   - Default system audio input and output channels should be present
-  - default project master gain processor should have L/R audio pins connected to default audio output pins
+  - default project master gain processor should have L/R audio channels connected to default audio output channels
   - Loading with Push 2 connected and on shows "Ableton Push 2 Live Port" in midi input devices
   - Loading with Push 2 off and then turning on after app makes "Ableton Push 2 Live Port" appear in midi input devices
   - (No other midi inputs are automatically enabled)

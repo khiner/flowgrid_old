@@ -8,7 +8,7 @@ class TrackOutputGraphEditorProcessor : public BaseGraphEditorProcessor {
 public:
     TrackOutputGraphEditorProcessor(Project &project, TracksState &tracks, ViewState &view,
                                     const ValueTree &state, ConnectorDragListener &connectorDragListener) :
-            BaseGraphEditorProcessor(project, tracks, view, state, connectorDragListener, false) {
+            BaseGraphEditorProcessor(project, tracks, view, state, connectorDragListener) {
     }
 
     ~TrackOutputGraphEditorProcessor() {
@@ -55,13 +55,14 @@ public:
         }
     }
 
-    void layoutPin(GraphEditorPin *pin, float indexPosition, float totalSpaces, const Rectangle<float> &boxBounds) const override {
-        if (!(isMasterTrack() && !pin->isInput()))
-            return BaseGraphEditorProcessor::layoutPin(pin, indexPosition, totalSpaces, boxBounds);
+    void layoutChannel(GraphEditorChannel *pin, float indexPosition, float totalSpaces, const Rectangle<float> &boxBounds) const override {
+        if (isMasterTrack() && !pin->isInput()) {
+            pin->setSize(channelSize, channelSize);
+            int x = boxBounds.getX() + indexPosition * channelSize;
+            return pin->setTopLeftPosition(x, boxBounds.getBottom() - channelSize);
+        }
 
-        pin->setSize(pinSize, pinSize);
-        int centerX = (indexPosition + 1) * pinSize;
-        pin->setCentrePosition(centerX, boxBounds.getBottom());
+        return BaseGraphEditorProcessor::layoutChannel(pin, indexPosition, totalSpaces, boxBounds);
     }
 
     bool isInView() override {
@@ -74,8 +75,8 @@ private:
 
     Rectangle<int> getBoxBounds() override {
         return isMasterTrack() ?
-               getLocalBounds().withTrimmedLeft(pinSize / 2).withTrimmedRight(ViewState::TRACKS_VERTICAL_MARGIN) :
-               getLocalBounds().withTrimmedTop(pinSize / 2).withTrimmedBottom(ViewState::TRACKS_VERTICAL_MARGIN);
+               getLocalBounds().withTrimmedLeft(channelSize / 2).withTrimmedRight(ViewState::TRACKS_VERTICAL_MARGIN) :
+               getLocalBounds().withTrimmedTop(channelSize / 2).withTrimmedBottom(ViewState::TRACKS_VERTICAL_MARGIN);
     }
 
     void valueTreePropertyChanged(ValueTree &v, const Identifier &i) override {

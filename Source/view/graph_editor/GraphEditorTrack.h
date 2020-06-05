@@ -79,16 +79,16 @@ public:
         return lane.getProcessorForNodeId(nodeId);
     }
 
-    GraphEditorPin *findPinAt(const MouseEvent &e) {
+    GraphEditorChannel *findPinAt(const MouseEvent &e) {
         auto *pin = lane.findPinAt(e);
         if (pin != nullptr)
             return pin;
         if (trackInputProcessorView != nullptr)
-             pin = trackInputProcessorView->findPinAt(e);
+             pin = trackInputProcessorView->findChannelAt(e);
         if (pin != nullptr)
             return pin;
         if (trackOutputProcessorView != nullptr)
-            return trackOutputProcessorView->findPinAt(e);
+            return trackOutputProcessorView->findChannelAt(e);
         return nullptr;
     }
 

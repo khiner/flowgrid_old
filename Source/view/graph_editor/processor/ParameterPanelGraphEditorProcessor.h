@@ -6,9 +6,8 @@
 class ParameterPanelGraphEditorProcessor : public BaseGraphEditorProcessor {
 public:
     ParameterPanelGraphEditorProcessor(Project &project, TracksState &tracks, ViewState &view,
-                              const ValueTree &state, ConnectorDragListener &connectorDragListener,
-                              bool showChannelLabels = false) :
-            BaseGraphEditorProcessor(project, tracks, view, state, connectorDragListener, showChannelLabels) {
+                              const ValueTree &state, ConnectorDragListener &connectorDragListener) :
+            BaseGraphEditorProcessor(project, tracks, view, state, connectorDragListener) {
 //        parametersPanel->addMouseListener(this);
     }
 

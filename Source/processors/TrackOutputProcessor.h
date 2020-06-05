@@ -26,8 +26,14 @@ public:
     static const String name() { return "Track Output"; }
 
     static PluginDescription getPluginDescription() {
-        return DefaultAudioProcessor::getPluginDescription(name(), false, false);
+        return DefaultAudioProcessor::getPluginDescription(name(), false, true);
     }
+
+    bool acceptsMidi() const override { return true; }
+
+    bool producesMidi() const override { return true; }
+
+    bool isMidiEffect() const override { return true; }
 
     void prepareToPlay(double sampleRate, int maximumExpectedSamplesPerBlock) override {
         balance.reset(getSampleRate(), 0.05);

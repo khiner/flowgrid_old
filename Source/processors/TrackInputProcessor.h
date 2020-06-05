@@ -20,8 +20,14 @@ public:
     static const String name() { return "Track Input"; }
 
     static PluginDescription getPluginDescription() {
-        return DefaultAudioProcessor::getPluginDescription(name(), false, false);
+        return DefaultAudioProcessor::getPluginDescription(name(), false, true);
     }
+
+    bool acceptsMidi() const override { return true; }
+
+    bool producesMidi() const override { return true; }
+
+    bool isMidiEffect() const override { return true; }
 
     void prepareToPlay(double sampleRate, int maximumExpectedSamplesPerBlock) override {
         gain.reset(getSampleRate(), 0.02);

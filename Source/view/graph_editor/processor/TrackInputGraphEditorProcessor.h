@@ -8,7 +8,7 @@ class TrackInputGraphEditorProcessor : public BaseGraphEditorProcessor, private 
 public:
     TrackInputGraphEditorProcessor(Project &project, TracksState &tracks, ViewState &view,
                                     const ValueTree &state, ConnectorDragListener &connectorDragListener) :
-            BaseGraphEditorProcessor(project, tracks, view, state, connectorDragListener, false),
+            BaseGraphEditorProcessor(project, tracks, view, state, connectorDragListener),
             project(project), tracks(tracks) {
         nameLabel.setJustificationType(Justification::centred);
         addAndMakeVisible(nameLabel);
@@ -16,6 +16,7 @@ public:
 
         if (!isMasterTrack()) {
             nameLabel.setText(getTrackName(), dontSendNotification);
+//            nameLabel.setColour(Label::textColourId, Colours::black);
             nameLabel.setEditable(false, true);
             nameLabel.onTextChange = [this] { this->tracks.setTrackName(this->state, nameLabel.getText(false)); };
         } else {
@@ -83,7 +84,7 @@ public:
                                              ? r.removeFromTop(r.getWidth())
                                              : r.removeFromLeft(r.getHeight());
         if (monitoringToggle != nullptr)
-            monitoringToggle->setBounds(monitoringToggleBounds);
+            monitoringToggle->setBounds(monitoringToggleBounds.reduced(monitoringToggleBounds.getHeight() / 4));
         nameLabel.setBounds(r);
         if (isMasterTrack()) {
             const auto &rFloat = r.toFloat();
@@ -92,14 +93,13 @@ public:
         }
     }
 
-    void layoutPin(GraphEditorPin *pin, float indexPosition, float totalSpaces, const Rectangle<float> &boxBounds) const override {
-        if (!(isMasterTrack() && pin->isInput()))
-            return BaseGraphEditorProcessor::layoutPin(pin, indexPosition, totalSpaces, boxBounds);
-
-        pin->setSize(pinSize, pinSize);
-        float proportion = (indexPosition + 1.0f) / (totalSpaces + 1.0f);
-        int centerX = boxBounds.getX() + boxBounds.proportionOfWidth(proportion);
-        pin->setCentrePosition(centerX, boxBounds.getY());
+    void layoutChannel(GraphEditorChannel *pin, float indexPosition, float totalSpaces, const Rectangle<float> &boxBounds) const override {
+        if (isMasterTrack() && pin->isInput()) {
+            pin->setSize(channelSize, channelSize);
+            int x = boxBounds.getX() + indexPosition * channelSize;
+            return pin->setTopLeftPosition(x, boxBounds.getY());
+        }
+        return BaseGraphEditorProcessor::layoutChannel(pin, indexPosition, totalSpaces, boxBounds);
     }
 
     // TODO do we need this? Might just be able to set colour on all child components
@@ -119,12 +119,12 @@ private:
     TracksState &tracks;
     Label nameLabel;
     DrawableText masterTrackName;
-    std::unique_ptr<TextButton> monitoringToggle;
+    std::unique_ptr<ImageButton> monitoringToggle;
 
     Rectangle<int> getBoxBounds() override {
         return isMasterTrack() ?
-               getLocalBounds().withTrimmedLeft(ViewState::TRACKS_VERTICAL_MARGIN).withTrimmedRight(pinSize / 2) :
-               getLocalBounds().withTrimmedTop(ViewState::TRACKS_VERTICAL_MARGIN).withTrimmedBottom(pinSize / 2);
+               getLocalBounds().withTrimmedLeft(ViewState::TRACKS_VERTICAL_MARGIN).withTrimmedRight(channelSize / 2) :
+               getLocalBounds().withTrimmedTop(ViewState::TRACKS_VERTICAL_MARGIN).withTrimmedBottom(channelSize / 2);
     }
 
     void valueTreePropertyChanged(ValueTree &v, const Identifier &i) override {
@@ -134,8 +134,14 @@ private:
         if (monitoringToggle == nullptr) {
             if (auto *processorWrapper = getProcessorWrapper()) {
                 const auto &monitoringParameter = processorWrapper->getParameter(0);
-                addAndMakeVisible((monitoringToggle = std::make_unique<TextButton>()).get(), 0);
+                addAndMakeVisible((monitoringToggle = std::make_unique<ImageButton>()).get(), 0);
                 monitoringToggle->setClickingTogglesState(true);
+                Image audioImage = ImageCache::getFromMemory(BinaryData::Audio_png, BinaryData::Audio_pngSize);
+//                Image monitoringOffImage = ImageCache::getFromMemory(BinaryData::CircleWithLineHorizontal_png, BinaryData::CircleWithLineHorizontal_pngSize);
+                monitoringToggle->setImages(false, true, true,
+                                            audioImage, 1.0, Colours::black,
+                                            {}, 1.0, Colours::transparentBlack,
+                                            audioImage, 1.0, Colours::yellow);
                 monitoringParameter->attachButton(monitoringToggle.get());
             }
         }

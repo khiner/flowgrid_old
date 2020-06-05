@@ -5,7 +5,9 @@
 struct ConnectorDragListener {
     virtual ~ConnectorDragListener() {};
 
-    virtual void beginConnectorDrag(AudioProcessorGraph::NodeAndChannel s, AudioProcessorGraph::NodeAndChannel d, const MouseEvent &) = 0;
+    virtual void beginConnectorDrag(AudioProcessorGraph::NodeAndChannel source,
+                                    AudioProcessorGraph::NodeAndChannel destination,
+                                    const MouseEvent &) = 0;
 
     virtual void dragConnector(const MouseEvent &) = 0;
 

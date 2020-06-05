@@ -5,16 +5,14 @@
 #include <StatefulAudioProcessorContainer.h>
 #include "JuceHeader.h"
 #include "view/graph_editor/ConnectorDragListener.h"
-#include "view/graph_editor/GraphEditorPin.h"
+#include "view/graph_editor/GraphEditorChannel.h"
 
 class BaseGraphEditorProcessor : public Component, public ValueTree::Listener {
 public:
     BaseGraphEditorProcessor(Project &project, TracksState &tracks, ViewState &view,
-                         const ValueTree &state, ConnectorDragListener &connectorDragListener,
-                         bool showChannelLabels = false)
-            : state(state), showChannelLabels(showChannelLabels),
-              project(project), tracks(tracks), view(view), connectorDragListener(connectorDragListener),
-              audioProcessorContainer(project), pluginManager(project.getPluginManager()) {
+                         const ValueTree &state, ConnectorDragListener &connectorDragListener)
+            : state(state), project(project), tracks(tracks), view(view),
+              connectorDragListener(connectorDragListener), audioProcessorContainer(project), pluginManager(project.getPluginManager()) {
         this->state.addListener(this);
 
         for (auto child : state) {
@@ -110,65 +108,63 @@ public:
             if (child->getBounds().contains(x, y))
                 return true;
 
-        return x >= 3 && x < getWidth() - 6 && y >= pinSize && y < getHeight() - pinSize;
+        return x >= 3 && x < getWidth() - 6 && y >= channelSize && y < getHeight() - channelSize;
     }
 
     void resized() override {
         if (auto *processor = getAudioProcessor()) {
             auto boxBoundsFloat = getBoxBounds().toFloat();
-            for (auto *pin : pins) {
-                const bool isInput = pin->isInput();
-                auto channelIndex = pin->getChannel();
+            for (auto *channel : channels) {
+                const bool isInput = channel->isInput();
+                auto channelIndex = channel->getChannelIndex();
                 int busIndex = 0;
                 processor->getOffsetInBusBufferForAbsoluteChannelIndex(isInput, channelIndex, busIndex);
 
                 int total = isInput ? getNumInputChannels() : getNumOutputChannels();
                 auto totalSpaces = total + std::max(0.0f, processor->getBusCount(isInput) - 1.0f) * 0.5f;
 
-                const int index = pin->isMidi() ? (total - 1) : channelIndex;
+                const int index = channel->isMidi() ? (total - 1) : channelIndex;
                 auto indexPosition = index + busIndex * 0.5f;
 
-                layoutPin(pin, indexPosition, totalSpaces, boxBoundsFloat);
+                layoutChannel(channel, indexPosition, totalSpaces, boxBoundsFloat);
             }
             repaint();
             connectorDragListener.update();
         }
     }
 
-    virtual void layoutPin(GraphEditorPin *pin, float indexPosition, float totalSpaces, const Rectangle<float> &boxBounds) const {
-        float proportion = (indexPosition + 1.0f) / (totalSpaces + 1.0f);
-        pin->setSize(pinSize, pinSize);
-        int centerX = boxBounds.getX() + (indexPosition + 1) * pinSize;
-        int centerY = boxBounds.getY() + (indexPosition + 1) * pinSize;
-        if (pin->isInput()) {
+    virtual void layoutChannel(GraphEditorChannel *channel, float indexPosition, float totalSpaces, const Rectangle<float> &boxBounds) const {
+        int x = boxBounds.getX() + indexPosition * channelSize;
+        int y = boxBounds.getY() + indexPosition * channelSize;
+        if (isMasterTrack())
+            channel->setSize(boxBounds.getWidth() / 2, channelSize);
+        else
+            channel->setSize(channelSize, boxBounds.getHeight() / 2);
+
+        if (channel->isInput()) {
             if (isMasterTrack())
-                pin->setCentrePosition(boxBounds.getX(), centerY);
+                channel->setTopLeftPosition(boxBounds.getX(), y);
             else
-                pin->setCentrePosition(centerX, boxBounds.getY());
+                channel->setTopLeftPosition(x, boxBounds.getY());
         } else {
             if (isMasterTrack())
-                pin->setCentrePosition(boxBounds.getRight(), centerY);
+                channel->setTopRightPosition(boxBounds.getRight(), y);
             else
-                pin->setCentrePosition(centerX, boxBounds.getBottom());
-        }
-        if (showChannelLabels) {
-            auto &channelLabel = pin->channelLabel;
-            auto textArea = boxBounds.withWidth(proportionOfWidth(1.0f / totalSpaces)).withCentre({float(proportionOfWidth(proportion)), boxBounds.getCentreY()});
-            channelLabel.setBoundingBox(rotateRectIfNarrow(textArea));
+                channel->setTopLeftPosition(x, boxBounds.getBottom() - channel->getHeight());
         }
     }
 
-    juce::Point<float> getPinPos(int index, bool isInput) const {
-        for (auto *pin : pins)
-            if (pin->getChannel() == index && isInput == pin->isInput())
-                return pin->getBounds().getCentre().toFloat();
+    juce::Point<float> getChannelConnectPosition(int index, bool isInput) const {
+        for (auto *channel : channels)
+            if (channel->getChannelIndex() == index && isInput == channel->isInput())
+                return channel->getConnectPosition();
 
         return {};
     }
 
-    GraphEditorPin *findPinAt(const MouseEvent &e) {
+    GraphEditorChannel *findChannelAt(const MouseEvent &e) {
         auto *comp = getComponentAt(e.getEventRelativeTo(this).position.toInt());
-        return dynamic_cast<GraphEditorPin *>(comp);
+        return dynamic_cast<GraphEditorChannel *>(comp);
     }
 
     class ElementComparator {
@@ -180,57 +176,38 @@ public:
 
 protected:
     ValueTree state;
-    const bool showChannelLabels;
     static constexpr float largeFontHeight = 18.0f;
-    static constexpr float smallFontHeight = 15.0f;
-    static constexpr int pinSize = 10;
+    static constexpr int channelSize = 10;
 
     virtual Rectangle<int> getBoxBounds() {
         auto r = getLocalBounds().reduced(1);
         if (isMasterTrack()) {
             if (getNumInputChannels() > 0)
-                r.setLeft(pinSize);
+                r.setLeft(channelSize);
             if (getNumOutputChannels() > 0)
-                r.removeFromRight(pinSize);
+                r.removeFromRight(channelSize);
         } else {
             if (getNumInputChannels() > 0)
-                r.setTop(pinSize);
+                r.setTop(channelSize);
             if (getNumOutputChannels() > 0)
-                r.removeFromBottom(pinSize);
+                r.removeFromBottom(channelSize);
         }
         return r;
     }
 
-    // Rotate text to draw vertically if the box is taller than it is wide.
-    static Parallelogram<float> rotateRectIfNarrow(Rectangle<float> &rectangle) {
-        if (rectangle.getWidth() > rectangle.getHeight())
-            return rectangle;
-        else
-            return Parallelogram<float>(rectangle.getBottomLeft(), rectangle.getTopLeft(), rectangle.getBottomRight());
-    }
-
     void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override {
         if (child.hasType(IDs::CHANNEL)) {
-            auto *pin = new GraphEditorPin(child, connectorDragListener);
-            addAndMakeVisible(pin);
-            pins.add(pin);
-            if (showChannelLabels) {
-                auto &channelLabel = pin->channelLabel;
-                channelLabel.setColour(findColour(TextEditor::textColourId));
-                channelLabel.setFontHeight(smallFontHeight);
-                channelLabel.setJustification(Justification::centred);
-                addAndMakeVisible(channelLabel);
-            }
+            auto *channel = new GraphEditorChannel(child, connectorDragListener);
+            addAndMakeVisible(channel);
+            channels.add(channel);
             resized();
         }
     }
 
     void valueTreeChildRemoved(ValueTree &parent, ValueTree &child, int) override {
         if (child.hasType(IDs::CHANNEL)) {
-            auto *pinToRemove = findPinWithState(child);
-            if (showChannelLabels)
-                removeChildComponent(&pinToRemove->channelLabel);
-            pins.removeObject(pinToRemove);
+            auto *channelToRemove = findChannelWithState(child);
+            channels.removeObject(channelToRemove);
             resized();
         }
     }
@@ -250,12 +227,12 @@ private:
     ConnectorDragListener &connectorDragListener;
     StatefulAudioProcessorContainer &audioProcessorContainer;
     PluginManager &pluginManager;
-    OwnedArray<GraphEditorPin> pins;
+    OwnedArray<GraphEditorChannel> channels;
 
-    GraphEditorPin *findPinWithState(const ValueTree &state) {
-        for (auto *pin : pins)
-            if (pin->getState() == state)
-                return pin;
+    GraphEditorChannel *findChannelWithState(const ValueTree &state) {
+        for (auto *channel : channels)
+            if (channel->getState() == state)
+                return channel;
 
         return nullptr;
     }

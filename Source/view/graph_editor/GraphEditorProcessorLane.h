@@ -5,7 +5,7 @@
 #include "view/graph_editor/processor/LabelGraphEditorProcessor.h"
 #include "GraphEditorProcessorContainer.h"
 #include "ConnectorDragListener.h"
-#include "GraphEditorPin.h"
+#include "GraphEditorChannel.h"
 #include "view/CustomColourIds.h"
 #include "view/graph_editor/processor/ParameterPanelGraphEditorProcessor.h"
 
@@ -153,9 +153,9 @@ public:
         return nullptr;
     }
 
-    GraphEditorPin *findPinAt(const MouseEvent &e) const {
+    GraphEditorChannel *findPinAt(const MouseEvent &e) const {
         for (auto *processor : objects)
-            if (auto *pin = processor->findPinAt(e))
+            if (auto *pin = processor->findChannelAt(e))
                 return pin;
         return nullptr;
     }

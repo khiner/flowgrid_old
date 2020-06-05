@@ -93,7 +93,7 @@ public:
         return nullptr;
     }
 
-    GraphEditorPin *findPinAt(const MouseEvent &e) const {
+    GraphEditorChannel *findPinAt(const MouseEvent &e) const {
         for (auto *track : objects)
             if (auto *pin = track->findPinAt(e))
                 return pin;

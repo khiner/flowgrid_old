@@ -85,20 +85,20 @@ struct GraphEditorConnector : public Component, public SettableTooltipClient {
         auto *sourceComponent = graphEditorProcessorContainer.getProcessorForNodeId(connection.source.nodeID);
         if (sourceComponent != nullptr) {
             p1 = rootComponent.getLocalPoint(sourceComponent,
-                                             sourceComponent->getPinPos(connection.source.channelIndex, false)) - getPosition().toFloat();
+                                             sourceComponent->getChannelConnectPosition(connection.source.channelIndex, false)) - getPosition().toFloat();
         }
 
         auto *destinationComponent = graphEditorProcessorContainer.getProcessorForNodeId(connection.destination.nodeID);
         if (destinationComponent != nullptr) {
             p2 = rootComponent.getLocalPoint(destinationComponent,
-                                             destinationComponent->getPinPos(connection.destination.channelIndex, true)) - getPosition().toFloat();
+                                             destinationComponent->getChannelConnectPosition(connection.destination.channelIndex, true)) - getPosition().toFloat();
         }
     }
 
     void paint(Graphics &g) override {
         auto pathColour = connection.source.isMIDI() || connection.destination.isMIDI()
-                            ? (isCustom() ? Colours::orange : Colours::red)
-                            : (isCustom() ? Colours::greenyellow : Colours::green);
+                            ? findColour(isCustom() ? customMidiConnectionColourId : defaultMidiConnectionColourId)
+                            : findColour(isCustom() ? customAudioConnectionColourId : defaultAudioConnectionColourId);
 
         bool mouseOver = isMouseOver(false);
         g.setColour(mouseOver ? pathColour.brighter(0.1f) : pathColour);

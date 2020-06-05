@@ -514,36 +514,83 @@ private:
 
     CriticalSection valueTreeChanging;
 
+    struct Channel {
+        Channel(AudioProcessor *processor, AudioDeviceManager &deviceManager, int channelIndex, bool isInput) :
+                channelIndex(channelIndex) {
+            if (processor->getName() == "Audio Input" || processor->getName() == "Audio Output") {
+                name = DeviceManagerUtilities::getAudioChannelName(deviceManager, channelIndex, processor->getName() == "Audio Input");
+                abbreviatedName = name;
+            } else {
+                if (channelIndex == AudioProcessorGraph::midiChannelIndex) {
+                    name = isInput ? "MIDI Input" : "MIDI Output";
+                    abbreviatedName = isInput ? "MIDI In" : "MIDI Out";
+                } else {
+                    int busIndex = 0;
+                    auto channel = processor->getOffsetInBusBufferForAbsoluteChannelIndex(isInput, channelIndex, busIndex);
+                    if (auto *bus = processor->getBus(isInput, busIndex)) {
+                        abbreviatedName = AudioChannelSet::getAbbreviatedChannelTypeName(bus->getCurrentLayout().getTypeOfChannel(channel));
+                        name = bus->getName() + ": " + abbreviatedName;
+                    } else {
+                        name = (isInput ? "Main Input: " : "Main Output: ") + String(channelIndex + 1);
+                        abbreviatedName = (isInput ? "Main In: " : "Main Out: ") + String(channelIndex + 1);
+                    }
+                }
+            }
+        }
+
+        Channel(const ValueTree &channelState) :
+                channelIndex(channelState[IDs::channelIndex]),
+                name(channelState[IDs::name]),
+                abbreviatedName(channelState[IDs::abbreviatedName]) {
+        }
+
+        ValueTree toState() const {
+            ValueTree state(IDs::CHANNEL);
+            state.setProperty(IDs::channelIndex, channelIndex, nullptr);
+            state.setProperty(IDs::name, name, nullptr);
+            state.setProperty(IDs::abbreviatedName, abbreviatedName, nullptr);
+            return state;
+        }
+
+        bool operator== (const Channel& other) const noexcept {
+            return name == other.name;
+        }
+
+        int channelIndex;
+        String name;
+        String abbreviatedName;
+    };
+
     void updateStateForProcessor(AudioProcessor *processor) {
-        Array<String> newInputs, newOutputs;
+        Array<Channel> newInputs, newOutputs;
         for (int i = 0; i < processor->getTotalNumInputChannels(); i++)
-            newInputs.add(getChannelName(i, true));
+            newInputs.add({processor, deviceManager, i, true});
         if (processor->acceptsMidi())
-            newInputs.add(getChannelName(AudioProcessorGraph::midiChannelIndex, true));
+            newInputs.add({processor, deviceManager, AudioProcessorGraph::midiChannelIndex, true});
         for (int i = 0; i < processor->getTotalNumOutputChannels(); i++)
-            newOutputs.add(getChannelName(i, false));
+            newOutputs.add({processor, deviceManager, i, false});
         if (processor->producesMidi())
-            newOutputs.add(getChannelName(AudioProcessorGraph::midiChannelIndex, false));
+            newOutputs.add({processor, deviceManager, AudioProcessorGraph::midiChannelIndex, false});
 
         ValueTree inputChannels = state.getChildWithName(IDs::INPUT_CHANNELS);
         ValueTree outputChannels = state.getChildWithName(IDs::OUTPUT_CHANNELS);
         if (!inputChannels.isValid()) {
             inputChannels = ValueTree(IDs::INPUT_CHANNELS);
-            state.addChild(inputChannels, -1, nullptr);
+            state.appendChild(inputChannels, nullptr);
         }
         if (!outputChannels.isValid()) {
             outputChannels = ValueTree(IDs::OUTPUT_CHANNELS);
-            state.addChild(outputChannels, -1, nullptr);
+            state.appendChild(outputChannels, nullptr);
         }
 
-        Array<String> oldInputs, oldOutputs;
+        Array<Channel> oldInputs, oldOutputs;
         for (int i = 0; i < inputChannels.getNumChildren(); i++) {
             const auto &channel = inputChannels.getChild(i);
-            oldInputs.add(channel[IDs::name]);
+            oldInputs.add({channel});
         }
         for (int i = 0; i < outputChannels.getNumChildren(); i++) {
             const auto &channel = outputChannels.getChild(i);
-            oldOutputs.add(channel[IDs::name]);
+            oldOutputs.add({channel});
         }
 
         if (processor->acceptsMidi())
@@ -551,46 +598,23 @@ private:
         if (processor->producesMidi())
             state.setProperty(IDs::producesMidi, true, nullptr);
 
-        updateChannels(oldInputs, newInputs, inputChannels, true);
-        updateChannels(oldOutputs, newOutputs, outputChannels, false);
+        updateChannels(oldInputs, newInputs, inputChannels);
+        updateChannels(oldOutputs, newOutputs, outputChannels);
     }
 
-    void updateChannels(Array<String> &oldChannels, Array<String> &newChannels, ValueTree &channelsState, bool isInput) {
+    void updateChannels(Array<Channel> &oldChannels, Array<Channel> &newChannels, ValueTree &channelsState) {
         for (int i = 0; i < oldChannels.size(); i++) {
             const auto &oldChannel = oldChannels.getUnchecked(i);
             if (!newChannels.contains(oldChannel)) {
-                channelsState.removeChild(channelsState.getChildWithProperty(IDs::name, oldChannel), &undoManager);
+                channelsState.removeChild(channelsState.getChildWithProperty(IDs::name, oldChannel.name), &undoManager);
             }
         }
         for (int i = 0; i < newChannels.size(); i++) {
             const auto &newChannel = newChannels.getUnchecked(i);
             if (!oldChannels.contains(newChannel)) {
-                ValueTree channelState(IDs::CHANNEL);
-                channelState.setProperty(IDs::name, newChannel, nullptr);
-                channelsState.addChild(channelState, i, &undoManager);
+                channelsState.addChild(newChannel.toState(), i, &undoManager);
             }
         }
-    }
-
-    String getChannelName(int channelIndex, bool isInput) {
-        bool isMidi = channelIndex == AudioProcessorGraph::midiChannelIndex;
-        String channelName;
-        if (processor->getName() == "Audio Input" || processor->getName() == "Audio Output") {
-            channelName = DeviceManagerUtilities::getAudioChannelName(deviceManager, channelIndex, processor->getName() == "Audio Input");
-        } else {
-            int busIndex = 0;
-            if (isMidi) {
-                channelName = isInput ? "MIDI Input" : "MIDI Output";
-            } else {
-                auto channel = processor->getOffsetInBusBufferForAbsoluteChannelIndex(isInput, channelIndex, busIndex);
-                if (auto *bus = processor->getBus(isInput, busIndex))
-                    channelName = bus->getName() + ": " + AudioChannelSet::getAbbreviatedChannelTypeName(
-                            bus->getCurrentLayout().getTypeOfChannel(channel));
-                else
-                    channelName = (isInput ? "Main Input: " : "Main Output: ") + String(channelIndex + 1);
-            }
-        }
-        return channelName;
     }
 
     void audioProcessorParameterChanged(AudioProcessor *processor, int parameterIndex, float newValue) override {}

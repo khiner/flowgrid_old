@@ -1,7 +1,7 @@
 #pragma once
 
 #include <ProcessorGraph.h>
-#include "GraphEditorPin.h"
+#include "GraphEditorChannel.h"
 #include "GraphEditorTracks.h"
 #include "GraphEditorConnectors.h"
 #include "view/CustomColourIds.h"
@@ -130,9 +130,9 @@ public:
 
         if (auto *pin = findPinAt(e)) {
             if (connection.source.nodeID.uid == 0 && !pin->isInput())
-                connection.source = pin->getPin();
+                connection.source = pin->getNodeAndChannel();
             else if (connection.destination.nodeID.uid == 0 && pin->isInput())
-                connection.destination = pin->getPin();
+                connection.destination = pin->getNodeAndChannel();
 
             if (graph.canConnect(connection) || graph.isConnected(connection)) {
                 pos = getLocalPoint(pin->getParentComponent(), pin->getBounds().getCentre()).toFloat();
@@ -157,12 +157,12 @@ public:
                 if (pin->isInput())
                     newConnection = EMPTY_CONNECTION;
                 else
-                    newConnection.source = pin->getPin();
+                    newConnection.source = pin->getNodeAndChannel();
             } else {
                 if (!pin->isInput())
                     newConnection = EMPTY_CONNECTION;
                 else
-                    newConnection.destination = pin->getPin();
+                    newConnection.destination = pin->getNodeAndChannel();
             }
         }
 
@@ -236,17 +236,17 @@ private:
 
     int getProcessorHeight() { return (getHeight() - ViewState::TRACK_LABEL_HEIGHT - ViewState::TRACKS_VERTICAL_MARGIN) / (ViewState::NUM_VISIBLE_PROCESSOR_SLOTS + 1); }
 
-    GraphEditorPin *findPinAt(const MouseEvent &e) const {
-        if (auto *pin = audioInputProcessor->findPinAt(e))
+    GraphEditorChannel *findPinAt(const MouseEvent &e) const {
+        if (auto *pin = audioInputProcessor->findChannelAt(e))
             return pin;
-        else if ((pin = audioOutputProcessor->findPinAt(e)))
+        else if ((pin = audioOutputProcessor->findChannelAt(e)))
             return pin;
         for (auto *midiInputProcessor : midiInputProcessors) {
-            if (auto *pin = midiInputProcessor->findPinAt(e))
+            if (auto *pin = midiInputProcessor->findChannelAt(e))
                 return pin;
         }
         for (auto *midiOutputProcessor : midiOutputProcessors) {
-            if (auto *pin = midiOutputProcessor->findPinAt(e))
+            if (auto *pin = midiOutputProcessor->findChannelAt(e))
                 return pin;
         }
         return graphEditorTracks->findPinAt(e);
@@ -325,10 +325,10 @@ private:
                 midiOutputProcessors.addSorted(processorComparator, midiOutputProcessor);
                 resized();
             } else if (child[IDs::name] == "Audio Input") {
-                addAndMakeVisible(*(audioInputProcessor = std::make_unique<LabelGraphEditorProcessor>(project, tracks, view, child, *this, true)), 0);
+                addAndMakeVisible(*(audioInputProcessor = std::make_unique<LabelGraphEditorProcessor>(project, tracks, view, child, *this)), 0);
                 resized();
             } else if (child[IDs::name] == "Audio Output") {
-                addAndMakeVisible(*(audioOutputProcessor = std::make_unique<LabelGraphEditorProcessor>(project, tracks, view, child, *this, true)), 0);
+                addAndMakeVisible(*(audioOutputProcessor = std::make_unique<LabelGraphEditorProcessor>(project, tracks, view, child, *this)), 0);
                 resized();
             }
             connectors->updateConnectors();
