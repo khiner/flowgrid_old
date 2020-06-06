@@ -153,10 +153,10 @@ public:
         return nullptr;
     }
 
-    GraphEditorChannel *findPinAt(const MouseEvent &e) const {
+    GraphEditorChannel *findChannelAt(const MouseEvent &e) const {
         for (auto *processor : objects)
-            if (auto *pin = processor->findChannelAt(e))
-                return pin;
+            if (auto *channel = processor->findChannelAt(e))
+                return channel;
         return nullptr;
     }
 

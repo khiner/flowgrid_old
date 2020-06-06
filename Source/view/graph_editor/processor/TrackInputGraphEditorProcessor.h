@@ -102,6 +102,13 @@ public:
         return BaseGraphEditorProcessor::layoutChannel(pin, indexPosition, totalSpaces, boxBounds);
     }
 
+    juce::Point<float> getConnectorDirectionVector(bool isInput) const override {
+        if (isMasterTrack() && isInput)
+            return {0, -1};
+
+        return BaseGraphEditorProcessor::getConnectorDirectionVector(isInput);
+    }
+
     // TODO do we need this? Might just be able to set colour on all child components
     void paint(Graphics &g) override {
         auto r = getBoxBounds();

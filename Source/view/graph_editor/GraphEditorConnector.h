@@ -30,14 +30,14 @@ struct GraphEditorConnector : public Component, public SettableTooltipClient {
         return !state.isValid() || state[IDs::isCustomConnection];
     }
 
-    void setInput(AudioProcessorGraph::NodeAndChannel newSource) {
+    void setSource(AudioProcessorGraph::NodeAndChannel newSource) {
         if (connection.source != newSource) {
             connection.source = newSource;
             update();
         }
     }
 
-    void setOutput(AudioProcessorGraph::NodeAndChannel newDestination) {
+    void setDestination(AudioProcessorGraph::NodeAndChannel newDestination) {
         if (connection.destination != newDestination) {
             connection.destination = newDestination;
             update();
@@ -45,11 +45,13 @@ struct GraphEditorConnector : public Component, public SettableTooltipClient {
     }
 
     void dragStart(const juce::Point<float> &pos) {
+        connection.source = {};
         lastInputPos = pos - getPosition().toFloat();
         resizeToFit();
     }
 
     void dragEnd(const juce::Point<float> &pos) {
+        connection.destination = {};
         lastOutputPos = pos - getPosition().toFloat();
         resizeToFit();
     }
@@ -103,7 +105,7 @@ struct GraphEditorConnector : public Component, public SettableTooltipClient {
         bool mouseOver = isMouseOver(false);
         g.setColour(mouseOver ? pathColour.brighter(0.1f) : pathColour);
 
-        if (bothInView) {
+        if (bothInView && linePath.getLength() > 200) {
             ColourGradient colourGradient = ColourGradient(pathColour, lastInputPos, pathColour, lastOutputPos, false);
             colourGradient.addColour(0.25f, pathColour.withAlpha(0.2f));
             colourGradient.addColour(0.75f, pathColour.withAlpha(0.2f));
@@ -180,14 +182,14 @@ struct GraphEditorConnector : public Component, public SettableTooltipClient {
         bool isSourceInView = sourceComponent == nullptr || sourceComponent->isInView();
         bool isDestinationInView = destinationComponent == nullptr || destinationComponent->isInView();
 
-        bothInView = false;
         linePath.clear();
-        if (isSourceInView && isDestinationInView) {
-            bothInView = true;
+        bothInView = isSourceInView && isDestinationInView;
+        if (bothInView) {
             linePath.startNewSubPath(sourcePos);
-            linePath.cubicTo(sourcePos.x, sourcePos.y + toDestinationVec.y * 0.33f,
-                             destinationPos.x, sourcePos.y + toDestinationVec.y * 0.66f,
-                             destinationPos.x, destinationPos.y);
+            auto outgoingDirection = sourceComponent != nullptr ? sourceComponent->getConnectorDirectionVector(false) : juce::Point<float>(0, 1);
+            auto incomingDirection = destinationComponent != nullptr ? destinationComponent->getConnectorDirectionVector(true) : juce::Point<float>(0, -1);
+            static const float controlHeight = 30.0f; // ensure the "cable" comes straight out a bit before curving back
+            linePath.cubicTo(sourcePos + outgoingDirection * controlHeight, destinationPos + incomingDirection * controlHeight, destinationPos);
         } else if (isSourceInView && !isDestinationInView) {
             const auto &toDestinationUnitVec = toDestinationVec / toDestinationVec.getDistanceFromOrigin();
             Line line(sourcePos, sourcePos + 24.0f * toDestinationUnitVec);

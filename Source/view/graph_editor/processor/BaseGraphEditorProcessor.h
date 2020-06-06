@@ -162,6 +162,20 @@ public:
         return {};
     }
 
+    virtual juce::Point<float> getConnectorDirectionVector(bool isInput) const {
+        if (isInput) {
+            if (isMasterTrack())
+                return {-1, 0};
+            else
+                return {0, -1};
+        } else {
+            if (isMasterTrack())
+                return {1, 0};
+            else
+                return {0, 1};
+        }
+    }
+
     GraphEditorChannel *findChannelAt(const MouseEvent &e) {
         auto *comp = getComponentAt(e.getEventRelativeTo(this).position.toInt());
         return dynamic_cast<GraphEditorChannel *>(comp);

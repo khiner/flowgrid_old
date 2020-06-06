@@ -110,8 +110,8 @@ public:
         else
             initialDraggingConnection = draggingConnector->getConnection();
 
-        draggingConnector->setInput(source);
-        draggingConnector->setOutput(destination);
+        draggingConnector->setSource(source);
+        draggingConnector->setDestination(destination);
 
         addAndMakeVisible(draggingConnector);
         draggingConnector->toFront(false);
@@ -125,21 +125,24 @@ public:
 
         draggingConnector->setTooltip({});
 
-        auto pos = e.getEventRelativeTo(this).position;
         auto connection = draggingConnector->getConnection();
 
-        if (auto *pin = findPinAt(e)) {
-            if (connection.source.nodeID.uid == 0 && !pin->isInput())
-                connection.source = pin->getNodeAndChannel();
-            else if (connection.destination.nodeID.uid == 0 && pin->isInput())
-                connection.destination = pin->getNodeAndChannel();
+        if (auto *channel = findChannelAt(e)) {
+            if (connection.source.nodeID.uid == 0 && !channel->isInput())
+                connection.source = channel->getNodeAndChannel();
+            else if (connection.destination.nodeID.uid == 0 && channel->isInput())
+                connection.destination = channel->getNodeAndChannel();
 
             if (graph.canConnect(connection) || graph.isConnected(connection)) {
-                pos = getLocalPoint(pin->getParentComponent(), pin->getBounds().getCentre()).toFloat();
-                draggingConnector->setTooltip(pin->getTooltip());
+                if (channel->isInput())
+                    draggingConnector->setDestination(channel->getNodeAndChannel());
+                else
+                    draggingConnector->setSource(channel->getNodeAndChannel());
+                draggingConnector->setTooltip(channel->getTooltip());
+                return;
             }
         }
-
+        auto pos = e.getEventRelativeTo(this).position;
         if (draggingConnector->getConnection().source.nodeID.uid == 0)
             draggingConnector->dragStart(pos);
         else
@@ -151,18 +154,18 @@ public:
             return;
 
         auto newConnection = EMPTY_CONNECTION;
-        if (auto *pin = findPinAt(e)) {
+        if (auto *channel = findChannelAt(e)) {
             newConnection = draggingConnector->getConnection();
             if (newConnection.source.nodeID.uid == 0) {
-                if (pin->isInput())
+                if (channel->isInput())
                     newConnection = EMPTY_CONNECTION;
                 else
-                    newConnection.source = pin->getNodeAndChannel();
+                    newConnection.source = channel->getNodeAndChannel();
             } else {
-                if (!pin->isInput())
+                if (!channel->isInput())
                     newConnection = EMPTY_CONNECTION;
                 else
-                    newConnection.destination = pin->getNodeAndChannel();
+                    newConnection.destination = channel->getNodeAndChannel();
             }
         }
 
@@ -170,8 +173,8 @@ public:
         if (initialDraggingConnection == EMPTY_CONNECTION)
             delete draggingConnector;
         else {
-            draggingConnector->setInput(initialDraggingConnection.source);
-            draggingConnector->setOutput(initialDraggingConnection.destination);
+            draggingConnector->setSource(initialDraggingConnection.source);
+            draggingConnector->setDestination(initialDraggingConnection.destination);
             draggingConnector = nullptr;
         }
 
@@ -236,20 +239,20 @@ private:
 
     int getProcessorHeight() { return (getHeight() - ViewState::TRACK_LABEL_HEIGHT - ViewState::TRACKS_VERTICAL_MARGIN) / (ViewState::NUM_VISIBLE_PROCESSOR_SLOTS + 1); }
 
-    GraphEditorChannel *findPinAt(const MouseEvent &e) const {
-        if (auto *pin = audioInputProcessor->findChannelAt(e))
-            return pin;
-        else if ((pin = audioOutputProcessor->findChannelAt(e)))
-            return pin;
+    GraphEditorChannel *findChannelAt(const MouseEvent &e) const {
+        if (auto *channel = audioInputProcessor->findChannelAt(e))
+            return channel;
+        else if ((channel = audioOutputProcessor->findChannelAt(e)))
+            return channel;
         for (auto *midiInputProcessor : midiInputProcessors) {
-            if (auto *pin = midiInputProcessor->findChannelAt(e))
-                return pin;
+            if (auto *channel = midiInputProcessor->findChannelAt(e))
+                return channel;
         }
         for (auto *midiOutputProcessor : midiOutputProcessors) {
-            if (auto *pin = midiOutputProcessor->findChannelAt(e))
-                return pin;
+            if (auto *channel = midiOutputProcessor->findChannelAt(e))
+                return channel;
         }
-        return graphEditorTracks->findPinAt(e);
+        return graphEditorTracks->findChannelAt(e);
     }
 
     LabelGraphEditorProcessor *findMidiInputProcessorForNodeId(const AudioProcessorGraph::NodeID nodeId) const {
