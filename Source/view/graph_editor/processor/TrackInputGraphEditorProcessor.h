@@ -14,17 +14,9 @@ public:
         addAndMakeVisible(nameLabel);
         nameLabel.addMouseListener(this, false);
 
-        if (!isMasterTrack()) {
-            nameLabel.setText(getTrackName(), dontSendNotification);
-//            nameLabel.setColour(Label::textColourId, Colours::black);
-            nameLabel.setEditable(false, true);
-            nameLabel.onTextChange = [this] { this->tracks.setTrackName(this->state, nameLabel.getText(false)); };
-        } else {
-            masterTrackName.setText(getTrackName());
-            masterTrackName.setColour(findColour(TextEditor::textColourId));
-            masterTrackName.setJustification(Justification::centred);
-            addAndMakeVisible(masterTrackName);
-        }
+        nameLabel.setText(getTrackName(), dontSendNotification);
+        nameLabel.setEditable(false, true);
+        nameLabel.onTextChange = [this] { this->tracks.setTrackName(this->state, nameLabel.getText(false)); };
     }
 
     ~TrackInputGraphEditorProcessor() {
@@ -80,33 +72,10 @@ public:
         BaseGraphEditorProcessor::resized();
         auto r = getBoxBounds();
 
-        const auto &monitoringToggleBounds = isMasterTrack()
-                                             ? r.removeFromTop(r.getWidth())
-                                             : r.removeFromLeft(r.getHeight());
+        const auto &monitoringToggleBounds = r.removeFromLeft(r.getHeight());
         if (monitoringToggle != nullptr)
             monitoringToggle->setBounds(monitoringToggleBounds.reduced(monitoringToggleBounds.getHeight() / 4));
         nameLabel.setBounds(r);
-        if (isMasterTrack()) {
-            const auto &rFloat = r.toFloat();
-            masterTrackName.setBoundingBox(Parallelogram<float>(rFloat.getBottomLeft(), rFloat.getTopLeft(), rFloat.getBottomRight()));
-            masterTrackName.setFontHeight(0.75f * r.getWidth());
-        }
-    }
-
-    void layoutChannel(GraphEditorChannel *pin, float indexPosition, float totalSpaces, const Rectangle<float> &boxBounds) const override {
-        if (isMasterTrack() && pin->isInput()) {
-            pin->setSize(channelSize, channelSize);
-            int x = boxBounds.getX() + indexPosition * channelSize;
-            return pin->setTopLeftPosition(x, boxBounds.getY());
-        }
-        return BaseGraphEditorProcessor::layoutChannel(pin, indexPosition, totalSpaces, boxBounds);
-    }
-
-    juce::Point<float> getConnectorDirectionVector(bool isInput) const override {
-        if (isMasterTrack() && isInput)
-            return {0, -1};
-
-        return BaseGraphEditorProcessor::getConnectorDirectionVector(isInput);
     }
 
     // TODO do we need this? Might just be able to set colour on all child components
@@ -121,17 +90,16 @@ public:
         return true;
     }
 
+    static constexpr int VERTICAL_MARGIN = channelSize / 2;
+
 private:
     Project &project;
     TracksState &tracks;
     Label nameLabel;
-    DrawableText masterTrackName;
     std::unique_ptr<ImageButton> monitoringToggle;
 
     Rectangle<int> getBoxBounds() override {
-        return isMasterTrack() ?
-               getLocalBounds().withTrimmedLeft(ViewState::TRACKS_VERTICAL_MARGIN).withTrimmedRight(channelSize / 2) :
-               getLocalBounds().withTrimmedTop(ViewState::TRACKS_VERTICAL_MARGIN).withTrimmedBottom(channelSize / 2);
+        return getLocalBounds().withTrimmedTop(VERTICAL_MARGIN).withTrimmedBottom(VERTICAL_MARGIN);
     }
 
     void valueTreePropertyChanged(ValueTree &v, const Identifier &i) override {

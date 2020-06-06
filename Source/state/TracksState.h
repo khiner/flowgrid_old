@@ -92,6 +92,10 @@ public:
         return processor.getProperty(IDs::name) == TrackOutputProcessor::name();
     }
 
+    static bool isProcessorLeftToRightFlowing(const ValueTree &processor) {
+        return isMasterTrack(getTrackForProcessor(processor)) && !isTrackIOProcessor(processor);
+    }
+
     int getNumTracks() const { return tracks.getNumChildren(); }
 
     int indexOf(const ValueTree &track) const { return tracks.indexOf(track); }

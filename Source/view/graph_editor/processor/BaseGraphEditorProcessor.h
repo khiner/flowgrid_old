@@ -114,43 +114,52 @@ public:
     void resized() override {
         if (auto *processor = getAudioProcessor()) {
             auto boxBoundsFloat = getBoxBounds().toFloat();
-            for (auto *channel : channels) {
-                const bool isInput = channel->isInput();
-                auto channelIndex = channel->getChannelIndex();
-                int busIndex = 0;
-                processor->getOffsetInBusBufferForAbsoluteChannelIndex(isInput, channelIndex, busIndex);
-
-                int total = isInput ? getNumInputChannels() : getNumOutputChannels();
-                auto totalSpaces = total + std::max(0.0f, processor->getBusCount(isInput) - 1.0f) * 0.5f;
-
-                const int index = channel->isMidi() ? (total - 1) : channelIndex;
-                auto indexPosition = index + busIndex * 0.5f;
-
-                layoutChannel(channel, indexPosition, totalSpaces, boxBoundsFloat);
-            }
+            for (auto *channel : channels)
+                layoutChannel(processor, channel, boxBoundsFloat);
             repaint();
             connectorDragListener.update();
         }
     }
 
-    virtual void layoutChannel(GraphEditorChannel *channel, float indexPosition, float totalSpaces, const Rectangle<float> &boxBounds) const {
+    virtual void layoutChannel(AudioProcessor *processor, GraphEditorChannel *channel, const Rectangle<float> &boxBounds) const {
+        const bool isInput = channel->isInput();
+        auto channelIndex = channel->getChannelIndex();
+        int busIndex = 0;
+        processor->getOffsetInBusBufferForAbsoluteChannelIndex(isInput, channelIndex, busIndex);
+        int total = isInput ? getNumInputChannels() : getNumOutputChannels();
+        const int index = channel->isMidi() ? (total - 1) : channelIndex;
+        auto indexPosition = index + busIndex * 0.5f;
+
         int x = boxBounds.getX() + indexPosition * channelSize;
         int y = boxBounds.getY() + indexPosition * channelSize;
-        if (isMasterTrack())
+        if (TracksState::isProcessorLeftToRightFlowing(getState()))
             channel->setSize(boxBounds.getWidth() / 2, channelSize);
         else
             channel->setSize(channelSize, boxBounds.getHeight() / 2);
 
-        if (channel->isInput()) {
-            if (isMasterTrack())
-                channel->setTopLeftPosition(boxBounds.getX(), y);
+        const auto &connectionDirection = getConnectorDirectionVector(channel->isInput());
+        if (connectionDirection == juce::Point(-1, 0))
+            channel->setTopLeftPosition(boxBounds.getX(), y);
+        else if (connectionDirection == juce::Point(1, 0))
+            channel->setTopRightPosition(boxBounds.getRight(), y);
+        else if (connectionDirection == juce::Point(0, -1))
+            channel->setTopLeftPosition(x, boxBounds.getY());
+        else
+            channel->setTopLeftPosition(x, boxBounds.getBottom() - channel->getHeight());
+    }
+
+    virtual juce::Point<int> getConnectorDirectionVector(bool isInput) const {
+        bool isLeftToRight = TracksState::isProcessorLeftToRightFlowing(getState());
+        if (isInput) {
+            if (isLeftToRight)
+                return {-1, 0};
             else
-                channel->setTopLeftPosition(x, boxBounds.getY());
+                return {0, -1};
         } else {
-            if (isMasterTrack())
-                channel->setTopRightPosition(boxBounds.getRight(), y);
+            if (isLeftToRight)
+                return {1, 0};
             else
-                channel->setTopLeftPosition(x, boxBounds.getBottom() - channel->getHeight());
+                return {0, 1};
         }
     }
 
@@ -160,20 +169,6 @@ public:
                 return channel->getConnectPosition();
 
         return {};
-    }
-
-    virtual juce::Point<float> getConnectorDirectionVector(bool isInput) const {
-        if (isInput) {
-            if (isMasterTrack())
-                return {-1, 0};
-            else
-                return {0, -1};
-        } else {
-            if (isMasterTrack())
-                return {1, 0};
-            else
-                return {0, 1};
-        }
     }
 
     GraphEditorChannel *findChannelAt(const MouseEvent &e) {
@@ -195,7 +190,8 @@ protected:
 
     virtual Rectangle<int> getBoxBounds() {
         auto r = getLocalBounds().reduced(1);
-        if (isMasterTrack()) {
+        bool isLeftToRight = TracksState::isProcessorLeftToRightFlowing(getState());
+        if (isLeftToRight) {
             if (getNumInputChannels() > 0)
                 r.setLeft(channelSize);
             if (getNumOutputChannels() > 0)

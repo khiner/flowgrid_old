@@ -34,8 +34,6 @@ public:
 
     bool isMasterTrack() const { return TracksState::isMasterTrack(state); }
 
-    int getTrackIndex() const { return state.getParent().indexOf(state); }
-
     Colour getColour() const {
         const Colour &trackColour = TracksState::getTrackColour(state);
         return isSelected() ? trackColour.brighter(0.25) : trackColour;
@@ -47,17 +45,16 @@ public:
         auto r = getLocalBounds();
 
         const auto &borderBounds = isMasterTrack() ?
-                r.toFloat().reduced(ViewState::TRACKS_VERTICAL_MARGIN, 0) :
-                r.toFloat().reduced(0, ViewState::TRACKS_VERTICAL_MARGIN);
+                r.toFloat().withTop(ViewState::TRACK_LABEL_HEIGHT - TrackInputGraphEditorProcessor::VERTICAL_MARGIN) :
+                r.toFloat().reduced(0, ViewState::TRACKS_MARGIN);
         trackBorder.setRectangle(borderBounds);
 
-        const auto &trackInputBounds = isMasterTrack()
-                                          ? r.removeFromLeft(ViewState::TRACK_LABEL_HEIGHT)
-                                          : r.removeFromTop(ViewState::TRACK_LABEL_HEIGHT);
+        auto trackInputBounds = isMasterTrack() ?
+                r.removeFromTop(ViewState::TRACK_LABEL_HEIGHT - TrackInputGraphEditorProcessor::VERTICAL_MARGIN).withWidth(view.getTrackWidth()).withHeight(ViewState::TRACK_LABEL_HEIGHT) :
+                r.removeFromTop(ViewState::TRACK_LABEL_HEIGHT);
         const auto &trackOutputBounds = isMasterTrack()
                                         ? r.removeFromRight(lane.getProcessorSlotSize())
                                         : r.removeFromBottom(lane.getProcessorSlotSize());
-
 
         if (trackInputProcessorView != nullptr)
             trackInputProcessorView->setBounds(trackInputBounds);

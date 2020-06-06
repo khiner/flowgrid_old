@@ -52,20 +52,20 @@ public:
     }
 
     void resized() override {
-        view.setProcessorHeight(getProcessorHeight());
+        auto processorHeight = getProcessorHeight();
+        view.setProcessorHeight(processorHeight);
         view.setTrackWidth(getTrackWidth());
 
         auto r = getLocalBounds();
         unfocusOverlay.setRectangle(r.toFloat());
         connectors->setBounds(r);
 
-        auto processorHeight = getProcessorHeight();
         auto top = r.removeFromTop(processorHeight);
 
-        graphEditorTracks->setBounds(r.removeFromTop(processorHeight * (ViewState::NUM_VISIBLE_NON_MASTER_TRACK_SLOTS + 2) + ViewState::TRACK_LABEL_HEIGHT));
+        graphEditorTracks->setBounds(r.removeFromTop(processorHeight * (ViewState::NUM_VISIBLE_NON_MASTER_TRACK_SLOTS + 2) + ViewState::TRACK_LABEL_HEIGHT * 2 + ViewState::TRACKS_MARGIN));
 
-        auto ioProcessorWidth = getWidth() - ViewState::TRACK_LABEL_HEIGHT - ViewState::TRACKS_VERTICAL_MARGIN;
-        int trackXOffset = ViewState::TRACK_LABEL_HEIGHT;
+        auto ioProcessorWidth = getWidth() - ViewState::TRACKS_MARGIN * 2;
+        int trackXOffset = ViewState::TRACKS_MARGIN;
         top.setX(trackXOffset);
         top.setWidth(ioProcessorWidth);
 
@@ -235,9 +235,9 @@ private:
 
     OwnedArray<PluginWindow> activePluginWindows;
 
-    int getTrackWidth() { return (getWidth() - ViewState::TRACK_LABEL_HEIGHT) / ViewState::NUM_VISIBLE_TRACKS; }
+    int getTrackWidth() { return (getWidth() - ViewState::TRACKS_MARGIN * 2) / ViewState::NUM_VISIBLE_TRACKS; }
 
-    int getProcessorHeight() { return (getHeight() - ViewState::TRACK_LABEL_HEIGHT - ViewState::TRACKS_VERTICAL_MARGIN) / (ViewState::NUM_VISIBLE_PROCESSOR_SLOTS + 1); }
+    int getProcessorHeight() { return (getHeight() - ViewState::TRACK_LABEL_HEIGHT * 2) / (ViewState::NUM_VISIBLE_PROCESSOR_SLOTS + 1); }
 
     GraphEditorChannel *findChannelAt(const MouseEvent &e) const {
         if (auto *channel = audioInputProcessor->findChannelAt(e))

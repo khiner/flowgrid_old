@@ -55,23 +55,6 @@ public:
         }
     }
 
-    void layoutChannel(GraphEditorChannel *pin, float indexPosition, float totalSpaces, const Rectangle<float> &boxBounds) const override {
-        if (isMasterTrack() && !pin->isInput()) {
-            pin->setSize(channelSize, channelSize);
-            int x = boxBounds.getX() + indexPosition * channelSize;
-            return pin->setTopLeftPosition(x, boxBounds.getBottom() - channelSize);
-        }
-
-        return BaseGraphEditorProcessor::layoutChannel(pin, indexPosition, totalSpaces, boxBounds);
-    }
-
-    juce::Point<float> getConnectorDirectionVector(bool isInput) const override {
-        if (isMasterTrack() && !isInput)
-            return {0, 1};
-
-        return BaseGraphEditorProcessor::getConnectorDirectionVector(isInput);
-    }
-
     bool isInView() override {
         return true;
     }
@@ -82,8 +65,8 @@ private:
 
     Rectangle<int> getBoxBounds() override {
         return isMasterTrack() ?
-               getLocalBounds().withTrimmedLeft(channelSize / 2).withTrimmedRight(ViewState::TRACKS_VERTICAL_MARGIN) :
-               getLocalBounds().withTrimmedTop(channelSize / 2).withTrimmedBottom(ViewState::TRACKS_VERTICAL_MARGIN);
+               getLocalBounds() :
+               getLocalBounds().withTrimmedTop(channelSize / 2).withTrimmedBottom(ViewState::TRACKS_MARGIN);
     }
 
     void valueTreePropertyChanged(ValueTree &v, const Identifier &i) override {

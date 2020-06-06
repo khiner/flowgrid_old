@@ -68,7 +68,7 @@ struct GraphEditorConnector : public Component, public SettableTooltipClient {
         juce::Point<float> p1, p2;
         getPoints(p1, p2);
 
-        auto newBounds = Rectangle<float>(p1 + getPosition().toFloat(), p2 + getPosition().toFloat()).expanded(4.0f).getSmallestIntegerContainer();
+        auto newBounds = Rectangle<float>(p1 + getPosition().toFloat(), p2 + getPosition().toFloat()).expanded(20.0f).getSmallestIntegerContainer();
 
         if (newBounds != getBounds())
             setBounds(newBounds);
@@ -186,10 +186,10 @@ struct GraphEditorConnector : public Component, public SettableTooltipClient {
         bothInView = isSourceInView && isDestinationInView;
         if (bothInView) {
             linePath.startNewSubPath(sourcePos);
-            auto outgoingDirection = sourceComponent != nullptr ? sourceComponent->getConnectorDirectionVector(false) : juce::Point<float>(0, 1);
-            auto incomingDirection = destinationComponent != nullptr ? destinationComponent->getConnectorDirectionVector(true) : juce::Point<float>(0, -1);
+            auto outgoingDirection = sourceComponent != nullptr ? sourceComponent->getConnectorDirectionVector(false) : juce::Point<int>(0, 1);
+            auto incomingDirection = destinationComponent != nullptr ? destinationComponent->getConnectorDirectionVector(true) : juce::Point<int>(0, -1);
             static const float controlHeight = 30.0f; // ensure the "cable" comes straight out a bit before curving back
-            linePath.cubicTo(sourcePos + outgoingDirection * controlHeight, destinationPos + incomingDirection * controlHeight, destinationPos);
+            linePath.cubicTo(sourcePos + outgoingDirection.toFloat() * controlHeight, destinationPos + incomingDirection.toFloat() * controlHeight, destinationPos);
         } else if (isSourceInView && !isDestinationInView) {
             const auto &toDestinationUnitVec = toDestinationVec / toDestinationVec.getDistanceFromOrigin();
             Line line(sourcePos, sourcePos + 24.0f * toDestinationUnitVec);

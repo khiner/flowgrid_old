@@ -44,17 +44,18 @@ struct GraphEditorChannel : public Component, public SettableTooltipClient, priv
 
     juce::Point<float> getConnectPosition() const {
         const auto &centre = getBounds().getCentre().toFloat();
+        bool isLeftToRight = TracksState::isProcessorLeftToRightFlowing(getProcessor());
 
         if (isInput()) {
-            if (!isMasterTrack() || TracksState::isTrackInputProcessor(getProcessor()))
-                return centre.withY(getY());
-            else
+            if (isLeftToRight)
                 return centre.withX(getX());
-        } else {
-            if (!isMasterTrack() || TracksState::isTrackOutputProcessor(getProcessor()))
-                return centre.withY(getBottom());
             else
+                return centre.withY(getY());
+        } else {
+            if (isLeftToRight)
                 return centre.withX(getRight());
+            else
+                return centre.withY(getBottom());
         }
     }
 
@@ -69,13 +70,14 @@ struct GraphEditorChannel : public Component, public SettableTooltipClient, priv
         //  make IO processors smaller, left-align input processors and right-align output processors
         //  fix master trackoutput bottom channel label positioning
         if (channelLabel.getText().length() <= 1 || isMidi()) {
+            bool isLeftToRight = TracksState::isProcessorLeftToRightFlowing(getProcessor());
             if (isInput()) {
-                if (isMasterTrack())
+                if (isLeftToRight)
                     channelLabelBounds.setWidth(getHeight());
                 else
                     channelLabelBounds.setHeight(getWidth());
             } else {
-                if (isMasterTrack())
+                if (isLeftToRight)
                     channelLabelBounds = channelLabelBounds.removeFromRight(getHeight());
                 else
                     channelLabelBounds = channelLabelBounds.removeFromBottom(getWidth());

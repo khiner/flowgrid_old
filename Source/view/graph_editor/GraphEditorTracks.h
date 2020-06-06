@@ -27,7 +27,7 @@ public:
         auto r = getLocalBounds();
         auto trackBounds = r.removeFromTop(ViewState::TRACK_LABEL_HEIGHT + view.getProcessorHeight() * (ViewState::NUM_VISIBLE_NON_MASTER_TRACK_SLOTS + 1));
         trackBounds.setWidth(view.getTrackWidth());
-        trackBounds.setX(- view.getGridViewTrackOffset() * view.getTrackWidth() + ViewState::TRACK_LABEL_HEIGHT);
+        trackBounds.setX(- view.getGridViewTrackOffset() * view.getTrackWidth() + ViewState::TRACKS_MARGIN);
 
         for (auto *track : objects) {
             if (track->isMasterTrack())
@@ -38,8 +38,9 @@ public:
 
         if (auto *masterTrack = findMasterTrack()) {
             masterTrack->setBounds(
-                    r.removeFromTop(view.getProcessorHeight())
-                            .withWidth(ViewState::TRACK_LABEL_HEIGHT + view.getTrackWidth() * (ViewState::NUM_VISIBLE_MASTER_TRACK_SLOTS + 1))
+                    r.removeFromTop(view.getProcessorHeight() + ViewState::TRACK_LABEL_HEIGHT)
+                            .withX(ViewState::TRACKS_MARGIN)
+                            .withWidth(view.getTrackWidth() * (ViewState::NUM_VISIBLE_MASTER_TRACK_SLOTS + 1))
             );
         }
     }
