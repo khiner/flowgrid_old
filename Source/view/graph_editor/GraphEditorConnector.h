@@ -39,21 +39,6 @@ struct GraphEditorConnector : public Component, public SettableTooltipClient {
         return !state.isValid() || state[IDs::isCustomConnection];
     }
 
-    void setSource(AudioProcessorGraph::NodeAndChannel newSource) {
-        if (connection.source != newSource) {
-            connection.source = newSource;
-            update();
-        }
-    }
-
-    // TODO might be able to make this private
-    void setDestination(AudioProcessorGraph::NodeAndChannel newDestination) {
-        if (connection.destination != newDestination) {
-            connection.destination = newDestination;
-            update();
-        }
-    }
-
     void dragTo(const juce::Point<float> &position) {
         if (dragAnchor == connection.source) {
             connection.destination = {};
@@ -256,4 +241,18 @@ private:
     };
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (GraphEditorConnector)
+
+    void setSource(AudioProcessorGraph::NodeAndChannel newSource) {
+        if (connection.source != newSource) {
+            connection.source = newSource;
+            update();
+        }
+    }
+
+    void setDestination(AudioProcessorGraph::NodeAndChannel newDestination) {
+        if (connection.destination != newDestination) {
+            connection.destination = newDestination;
+            update();
+        }
+    }
 };
