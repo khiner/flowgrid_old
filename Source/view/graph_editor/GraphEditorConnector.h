@@ -123,17 +123,7 @@ struct GraphEditorConnector : public Component, public SettableTooltipClient {
     }
 
     bool hitTest(int x, int y) override {
-        auto pos = juce::Point<int>(x, y).toFloat();
-
-        if (hitPath.contains(pos)) {
-            double distanceFromStart, distanceFromEnd;
-            getDistancesFromEnds(pos, distanceFromStart, distanceFromEnd);
-
-            // avoid clicking the connector when over a pin
-            return distanceFromStart > 7.0 && distanceFromEnd > 7.0;
-        }
-
-        return false;
+        return hitPath.contains({float(x), float(y)});
     }
 
     void mouseEnter(const MouseEvent & e) override {
