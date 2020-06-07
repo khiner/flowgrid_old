@@ -138,43 +138,21 @@ public:
         if (draggingConnector == nullptr)
             return;
 
-        auto newConnection = EMPTY_CONNECTION;
-        if (auto *channel = findChannelAt(e)) {
-            newConnection = draggingConnector->getConnection();
-            if (newConnection.source.nodeID.uid == 0) {
-                if (channel->isInput())
-                    newConnection = EMPTY_CONNECTION;
-                else
-                    newConnection.source = channel->getNodeAndChannel();
-            } else {
-                if (!channel->isInput())
-                    newConnection = EMPTY_CONNECTION;
-                else
-                    newConnection.destination = channel->getNodeAndChannel();
-            }
-        }
+        auto newConnection = draggingConnector->getConnection();
 
         draggingConnector->setTooltip({});
         if (initialDraggingConnection == EMPTY_CONNECTION)
             delete draggingConnector;
-        else {
-            draggingConnector->setSource(initialDraggingConnection.source);
-            draggingConnector->setDestination(initialDraggingConnection.destination);
+        else
             draggingConnector = nullptr;
-        }
 
-        if (newConnection == initialDraggingConnection) {
-            initialDraggingConnection = EMPTY_CONNECTION;
-            return;
+        if (newConnection != initialDraggingConnection) {
+            if (newConnection.source.nodeID.uid != 0 && newConnection.destination.nodeID.uid != 0)
+                project.addConnection(newConnection);
+            if (initialDraggingConnection != EMPTY_CONNECTION)
+                project.removeConnection(initialDraggingConnection);
         }
-
-        if (newConnection != EMPTY_CONNECTION)
-            project.addConnection(newConnection);
-
-        if (initialDraggingConnection != EMPTY_CONNECTION) {
-            project.removeConnection(initialDraggingConnection);
-            initialDraggingConnection = EMPTY_CONNECTION;
-        }
+        initialDraggingConnection = EMPTY_CONNECTION;
     }
 
     BaseGraphEditorProcessor *getProcessorForNodeId(const AudioProcessorGraph::NodeID nodeId) const override {
