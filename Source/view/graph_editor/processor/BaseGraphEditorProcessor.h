@@ -186,12 +186,6 @@ public:
         }
     };
 
-protected:
-    ValueTree state;
-    static constexpr float largeFontHeight = 18.0f;
-    static constexpr int channelSize = 10;
-    OwnedArray<GraphEditorChannel> channels;
-
     virtual Rectangle<int> getBoxBounds() {
         auto r = getLocalBounds().reduced(1);
         bool isLeftToRight = TracksState::isProcessorLeftToRightFlowing(getState());
@@ -208,6 +202,12 @@ protected:
         }
         return r;
     }
+
+protected:
+    ValueTree state;
+    static constexpr float largeFontHeight = 18.0f;
+    static constexpr int channelSize = 10;
+    OwnedArray<GraphEditorChannel> channels;
 
     void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override {
         if (child.hasType(IDs::CHANNEL)) {

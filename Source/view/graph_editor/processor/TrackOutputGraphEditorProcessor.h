@@ -41,33 +41,31 @@ public:
     }
 
     void paint(Graphics &g) override {
-        const auto &r = getBoxBounds();
         const auto &backgroundColour = findColour(ResizableWindow::backgroundColourId);
         g.setColour(backgroundColour);
-        // hack to get rounded corners only on bottom:
-        // draw two overlapping rects, one with rounded corners
-        if (isMasterTrack()) {
-            g.fillRect(r.withWidth(getWidth() / 4));
-            g.fillRoundedRectangle(r.toFloat(), 4.0f);
-        } else {
-            g.fillRect(r.withHeight(getHeight() / 4));
-            g.fillRoundedRectangle(r.toFloat(), 4.0f);
-        }
+
+        const auto &r = getBoxBounds();
+        bool isMaster = isMasterTrack();
+        bool curveTopLeft = false, curveTopRight = isMaster, curveBottomLeft = !isMaster, curveBottomRight = true;
+        Path p;
+        p.addRoundedRectangle(r.getX(), r.getY(), r.getWidth(), r.getHeight(),
+                              4.0f, 4.0f, curveTopLeft, curveTopRight, curveBottomLeft, curveBottomRight);
+        g.fillPath(p);
     }
 
     bool isInView() override {
         return true;
     }
 
-private:
-    std::unique_ptr<LevelMeter> levelMeter;
-    std::unique_ptr<SliderControl> panSlider;
-
     Rectangle<int> getBoxBounds() override {
         return isMasterTrack() ?
                getLocalBounds() :
                getLocalBounds().withTrimmedTop(channelSize / 2).withTrimmedBottom(ViewState::TRACKS_MARGIN);
     }
+
+private:
+    std::unique_ptr<LevelMeter> levelMeter;
+    std::unique_ptr<SliderControl> panSlider;
 
     void colourChanged() override {
         repaint();

@@ -92,17 +92,22 @@ public:
     }
 
     void paint(Graphics &g) override {
-        const auto &r = getBoxBounds();
         const auto &backgroundColour = findColour(ResizableWindow::backgroundColourId);
         g.setColour(backgroundColour);
-        // hack to get rounded corners only on top:
-        // draw two overlapping rects, one with rounded corners
-        g.fillRoundedRectangle(r.toFloat(), 4.0f);
-        g.fillRect(r.withTop(getHeight() / 2));
+
+        const auto &r = getBoxBounds();
+        Path p;
+        p.addRoundedRectangle(r.getX(), r.getY(), r.getWidth(), r.getHeight(),
+                              4.0f, 4.0f, true, true, false, false);
+        g.fillPath(p);
     }
 
     bool isInView() override {
         return true;
+    }
+
+    Rectangle<int> getBoxBounds() override {
+        return getLocalBounds().withTrimmedTop(VERTICAL_MARGIN).withTrimmedBottom(VERTICAL_MARGIN);
     }
 
     static constexpr int VERTICAL_MARGIN = channelSize / 2;
@@ -112,10 +117,6 @@ private:
     TracksState &tracks;
     Label nameLabel;
     std::unique_ptr<ImageButton> audioMonitorToggle, midiMonitorToggle;
-
-    Rectangle<int> getBoxBounds() override {
-        return getLocalBounds().withTrimmedTop(VERTICAL_MARGIN).withTrimmedBottom(VERTICAL_MARGIN);
-    }
 
     void colourChanged() override {
         repaint();
