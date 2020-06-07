@@ -111,7 +111,7 @@ private:
                 const auto &monitoringParameter = processorWrapper->getParameter(0);
                 addAndMakeVisible((monitoringToggle = std::make_unique<ImageButton>()).get(), 0);
                 monitoringToggle->setClickingTogglesState(true);
-                Image audioImage = ImageCache::getFromMemory(BinaryData::Audio_png, BinaryData::Audio_pngSize);
+                auto audioImage = ImageCache::getFromMemory(BinaryData::Audio_png, BinaryData::Audio_pngSize);
 //                Image monitoringOffImage = ImageCache::getFromMemory(BinaryData::CircleWithLineHorizontal_png, BinaryData::CircleWithLineHorizontal_pngSize);
                 monitoringToggle->setImages(false, true, true,
                                             audioImage, 1.0, Colours::black,

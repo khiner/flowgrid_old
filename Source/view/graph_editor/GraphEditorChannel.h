@@ -8,13 +8,11 @@
 
 struct GraphEditorChannel : public Component, public SettableTooltipClient, private Utilities::ValueTreePropertyChangeListener {
     GraphEditorChannel(ValueTree state, ConnectorDragListener &connectorDragListener)
-            : state(std::move(state)), connectorDragListener(connectorDragListener) {
+            : state(std::move(state)), connectorDragListener(connectorDragListener),
+              channelLabel(isMidi()) {
         valueTreePropertyChanged(this->state, IDs::abbreviatedName);
         this->state.addListener(this);
 
-        channelLabel.setColour(findColour(TextEditor::textColourId));
-        channelLabel.setFontHeight(smallFontHeight);
-        channelLabel.setJustification(Justification::centred);
         addAndMakeVisible(channelLabel);
 
         setSize(16, 16);
@@ -82,9 +80,10 @@ struct GraphEditorChannel : public Component, public SettableTooltipClient, priv
                 else
                     channelLabelBounds = channelLabelBounds.removeFromBottom(getWidth());
             }
-            channelLabel.setBoundingBox(channelLabelBounds.toFloat());
+            channelLabel.setBounds(channelLabelBounds);
         } else {
-            channelLabel.setBoundingBox(rotateRectIfNarrow(channelLabelBounds.toFloat()));
+            channelLabel.rotate = true;
+            channelLabel.setBounds(channelLabelBounds);
         }
     }
 
@@ -128,14 +127,55 @@ struct GraphEditorChannel : public Component, public SettableTooltipClient, priv
         else
             return Parallelogram<float>(rectangle.getBottomLeft(), rectangle.getTopLeft(), rectangle.getBottomRight());
     }
-
-    DrawableText channelLabel;
 private:
     static constexpr float smallFontHeight = 15.0f;
 
     ValueTree state;
     int busIdx = 0;
     ConnectorDragListener &connectorDragListener;
+
+    // Can be either text or an icon
+    struct ChannelLabel : public Component {
+        ChannelLabel(bool isMidi) : isMidi(isMidi) {
+            if (isMidi) {
+                auto midiImage = ImageCache::getFromMemory(BinaryData::Midi_png, BinaryData::Midi_pngSize);
+                image.setImage(midiImage);
+                image.setOverlayColour(findColour(CustomColourIds::customMidiConnectionColourId));
+                addAndMakeVisible(image);
+            } else {
+                text.setColour(findColour(TextEditor::textColourId));
+                text.setFontHeight(smallFontHeight);
+                text.setJustification(Justification::centred);
+                addAndMakeVisible(text);
+            }
+        }
+
+        void resized() override {
+            const auto &r = getLocalBounds().toFloat().reduced(1);
+            const auto &bounds = rotate ? rotateRectIfNarrow(r) : r;
+            if (isMidi) {
+                image.setBoundingBox(bounds);
+            } else {
+                text.setBoundingBox(bounds);
+            }
+        }
+
+        const String &getText() {
+            return text.getText();
+        }
+
+        void setText(const String &text) {
+            this->text.setText(text);
+        }
+
+        bool isMidi;
+
+        DrawableText text;
+        DrawableImage image;
+        bool rotate;
+    };
+
+    ChannelLabel channelLabel;
 
     void valueTreePropertyChanged(ValueTree &v, const Identifier &i) override {
         if (v != state)
