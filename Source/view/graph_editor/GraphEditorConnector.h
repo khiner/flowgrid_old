@@ -50,12 +50,12 @@ struct GraphEditorConnector : public Component, public SettableTooltipClient {
         resizeToFit();
     }
 
-    void dragTo(AudioProcessorGraph::NodeAndChannel nodeAndChannel) {
+    void dragTo(AudioProcessorGraph::NodeAndChannel nodeAndChannel, bool isInput) {
         if (dragAnchor == nodeAndChannel) return;
 
-        if (dragAnchor == connection.source)
+        if (dragAnchor == connection.source && isInput)
             setDestination(nodeAndChannel);
-        else
+        else if (dragAnchor == connection.destination && !isInput)
             setSource(nodeAndChannel);
     }
 

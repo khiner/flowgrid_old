@@ -122,7 +122,7 @@ public:
         draggingConnector->setTooltip({});
 
         if (auto *channel = findChannelAt(e)) {
-            draggingConnector->dragTo(channel->getNodeAndChannel());
+            draggingConnector->dragTo(channel->getNodeAndChannel(), channel->isInput());
 
             auto connection = draggingConnector->getConnection();
             if (graph.canConnect(connection) || graph.isConnected(connection)) {
