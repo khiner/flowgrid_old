@@ -155,12 +155,12 @@ public:
 
     int findSlotAt(const juce::Point<int> position, const ValueTree &track) const {
         bool isMaster = isMasterTrack(track);
-        int length = isMaster ? position.x : position.y;
-        if (length < TRACK_LABEL_HEIGHT)
+        int length = isMaster ? position.x : (position.y - TRACK_LABEL_HEIGHT);
+        if (length < 0)
             return -1;
 
         int processorSlotSize = isMaster ? getTrackWidth() : getProcessorHeight();
-        int slot = getSlotOffsetForTrack(track) + (length - TRACK_LABEL_HEIGHT) / processorSlotSize;
+        int slot = getSlotOffsetForTrack(track) + length / processorSlotSize;
         return std::clamp(slot, 0, getNumSlotsForTrack(track) - 1);
     }
 
