@@ -194,10 +194,12 @@ struct GraphEditorConnector : public Component, public SettableTooltipClient {
         bothInView = isSourceInView && isDestinationInView;
         if (bothInView) {
             linePath.startNewSubPath(sourcePos);
-            auto outgoingDirection = sourceComponent != nullptr ? sourceComponent->getConnectorDirectionVector(false) : juce::Point<int>(0, 1);
-            auto incomingDirection = destinationComponent != nullptr ? destinationComponent->getConnectorDirectionVector(true) : juce::Point<int>(0, -1);
             static const float controlHeight = 30.0f; // ensure the "cable" comes straight out a bit before curving back
-            linePath.cubicTo(sourcePos + outgoingDirection.toFloat() * controlHeight, destinationPos + incomingDirection.toFloat() * controlHeight, destinationPos);
+            const auto &outgoingDirection = sourceComponent != nullptr ? sourceComponent->getConnectorDirectionVector(false) : juce::Point<int>(0, 0);
+            const auto &incomingDirection = destinationComponent != nullptr ? destinationComponent->getConnectorDirectionVector(true) : juce::Point<int>(0, 0);
+            const auto &sourceControlPoint = sourcePos + outgoingDirection.toFloat() * controlHeight;
+            const auto &destinationControlPoint = destinationPos + incomingDirection.toFloat() * controlHeight;
+            linePath.cubicTo(sourceControlPoint, destinationControlPoint, destinationPos);
         } else if (isSourceInView && !isDestinationInView) {
             const auto &toDestinationUnitVec = toDestinationVec / toDestinationVec.getDistanceFromOrigin();
             Line line(sourcePos, sourcePos + 24.0f * toDestinationUnitVec);
