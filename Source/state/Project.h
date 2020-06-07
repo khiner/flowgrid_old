@@ -242,7 +242,7 @@ public:
     }
 
     void beginDragging(const juce::Point<int> trackAndSlot) {
-        if (trackAndSlot == TracksState::INVALID_TRACK_AND_SLOT ||
+        if (trackAndSlot.x == TracksState::INVALID_TRACK_AND_SLOT.x ||
             (trackAndSlot.y == -1 && TracksState::isMasterTrack(tracks.getTrack(trackAndSlot.x))))
             return;
 

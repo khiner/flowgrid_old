@@ -60,12 +60,10 @@ public:
     GraphEditorTrack *createNewObject(const ValueTree &tree) override {
         auto *track = new GraphEditorTrack(project, tracks, tree, connectorDragListener);
         addAndMakeVisible(track);
-        track->addMouseListener(this, true);
         return track;
     }
 
     void deleteObject(GraphEditorTrack *track) override {
-        track->removeMouseListener(this);
         delete track;
     }
 
