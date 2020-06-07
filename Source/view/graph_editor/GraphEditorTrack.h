@@ -12,11 +12,6 @@ public:
     explicit GraphEditorTrack(Project &project, TracksState &tracks, const ValueTree &state, ConnectorDragListener &connectorDragListener)
             : project(project), tracks(tracks), view(project.getView()), state(state),
               connectorDragListener(connectorDragListener), lane(project, TracksState::getProcessorLaneForTrack(state), connectorDragListener) {
-        trackBorder.setFill(Colours::transparentBlack);
-        trackBorder.setStrokeThickness(2);
-        trackBorder.setCornerSize({8, 8});
-
-        addAndMakeVisible(trackBorder);
         addAndMakeVisible(lane);
         trackInputProcessorChanged();
         trackOutputProcessorChanged();
@@ -41,17 +36,38 @@ public:
 
     bool isSelected() const { return state.getProperty(IDs::selected); }
 
+    void paint(Graphics &g) override {
+        const auto &colour = getColour();
+        g.setColour(colour);
+        g.drawLine(borderLine1, BORDER_WIDTH);
+        g.drawLine(borderLine2, BORDER_WIDTH);
+    }
+
     void resized() override {
         auto r = getLocalBounds();
 
-        const auto &borderBounds = isMasterTrack() ?
-                r.toFloat().withTop(ViewState::TRACK_LABEL_HEIGHT - TrackInputGraphEditorProcessor::VERTICAL_MARGIN) :
-                r.toFloat().reduced(0, ViewState::TRACKS_MARGIN);
-        trackBorder.setRectangle(borderBounds);
+        const float startOffset = ViewState::TRACKS_MARGIN;
+        const float endOffset = ViewState::TRACKS_MARGIN * 2;
+
+        if (isMasterTrack()) {
+            const float y = ViewState::TRACK_LABEL_HEIGHT - TrackInputGraphEditorProcessor::VERTICAL_MARGIN + 1;
+            borderLine1.setStart(r.getX(), y);
+            borderLine1.setEnd(r.getRight() - endOffset, y);
+            borderLine2.setStart(r.getX(), r.getBottom());
+            borderLine2.setEnd(r.getRight() - endOffset, r.getBottom());
+        } else {
+            borderLine1.setStart(r.getX(), r.getY() + startOffset);
+            borderLine1.setEnd(r.getX(), r.getBottom() - endOffset);
+            borderLine2.setStart(r.getRight(), r.getY() + startOffset);
+            borderLine2.setEnd(r.getRight(), r.getBottom() - endOffset);
+        }
 
         auto trackInputBounds = isMasterTrack() ?
-                r.removeFromTop(ViewState::TRACK_LABEL_HEIGHT - TrackInputGraphEditorProcessor::VERTICAL_MARGIN).withWidth(view.getTrackWidth()).withHeight(ViewState::TRACK_LABEL_HEIGHT) :
+                r.removeFromTop(ViewState::TRACK_LABEL_HEIGHT - TrackInputGraphEditorProcessor::VERTICAL_MARGIN)
+                        .withSize(view.getTrackWidth(), ViewState::TRACK_LABEL_HEIGHT) :
                 r.removeFromTop(ViewState::TRACK_LABEL_HEIGHT);
+        if (isMasterTrack()) trackInputBounds.setY(trackInputBounds.getY() + BORDER_WIDTH);
+
         const auto &trackOutputBounds = isMasterTrack()
                                         ? r.removeFromRight(lane.getProcessorSlotSize())
                                         : r.removeFromBottom(lane.getProcessorSlotSize());
@@ -94,6 +110,8 @@ public:
     }
 
 private:
+    static constexpr int BORDER_WIDTH = 2;
+
     Project &project;
     TracksState &tracks;
     ViewState &view;
@@ -103,11 +121,10 @@ private:
     std::unique_ptr<TrackOutputGraphEditorProcessor> trackOutputProcessorView;
     ConnectorDragListener &connectorDragListener;
     GraphEditorProcessorLane lane;
-    DrawableRectangle trackBorder;
+    Line<float> borderLine1, borderLine2;
 
     void onColourChanged() {
         const auto &colour = getColour();
-        trackBorder.setStrokeFill(colour);
         if (trackInputProcessorView != nullptr)
             trackInputProcessorView->setColour(ResizableWindow::backgroundColourId, colour);
         if (trackOutputProcessorView != nullptr)

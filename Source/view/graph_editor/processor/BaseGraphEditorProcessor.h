@@ -138,17 +138,17 @@ public:
             channel->setSize(channelSize, boxBounds.getHeight() / 2);
 
         const auto &connectionDirection = getConnectorDirectionVector(channel->isInput());
-        if (connectionDirection == juce::Point(-1, 0))
+        if (connectionDirection == juce::Point(-1.0f, 0.0f))
             channel->setTopLeftPosition(boxBounds.getX(), y);
-        else if (connectionDirection == juce::Point(1, 0))
+        else if (connectionDirection == juce::Point(1.0f, 0.0f))
             channel->setTopRightPosition(boxBounds.getRight(), y);
-        else if (connectionDirection == juce::Point(0, -1))
+        else if (connectionDirection == juce::Point(0.0f, -1.0f))
             channel->setTopLeftPosition(x, boxBounds.getY());
         else
             channel->setTopLeftPosition(x, boxBounds.getBottom() - channel->getHeight());
     }
 
-    virtual juce::Point<int> getConnectorDirectionVector(bool isInput) const {
+    virtual juce::Point<float> getConnectorDirectionVector(bool isInput) const {
         bool isLeftToRight = TracksState::isProcessorLeftToRightFlowing(getState());
         if (isInput) {
             if (isLeftToRight)

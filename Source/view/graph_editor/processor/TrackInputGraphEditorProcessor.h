@@ -39,11 +39,6 @@ public:
         nameLabel.setText(trackName, dontSendNotification);
     }
 
-    void colourChanged() override {
-        const auto &backgroundColour = findColour(ResizableWindow::backgroundColourId);
-        nameLabel.setColour(Label::backgroundColourId, backgroundColour);
-    }
-
     void mouseDown(const MouseEvent &e) override {
         if (e.eventComponent == &nameLabel) {
             if (e.mods.isPopupMenu()) {
@@ -96,12 +91,14 @@ public:
         nameLabel.setBounds(boxBounds.withLeft(midiMonitorToggle != nullptr ? midiMonitorToggle->getRight() : boxBounds.getX()));
     }
 
-    // TODO do we need this? Might just be able to set colour on all child components
     void paint(Graphics &g) override {
-        auto r = getBoxBounds();
+        const auto &r = getBoxBounds();
         const auto &backgroundColour = findColour(ResizableWindow::backgroundColourId);
         g.setColour(backgroundColour);
-        g.fillRect(r);
+        // hack to get rounded corners only on top:
+        // draw two overlapping rects, one with rounded corners
+        g.fillRoundedRectangle(r.toFloat(), 4.0f);
+        g.fillRect(r.withTop(getHeight() / 2));
     }
 
     bool isInView() override {
@@ -118,6 +115,10 @@ private:
 
     Rectangle<int> getBoxBounds() override {
         return getLocalBounds().withTrimmedTop(VERTICAL_MARGIN).withTrimmedBottom(VERTICAL_MARGIN);
+    }
+
+    void colourChanged() override {
+        repaint();
     }
 
     void valueTreePropertyChanged(ValueTree &v, const Identifier &i) override {

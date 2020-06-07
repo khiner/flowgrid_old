@@ -48,10 +48,10 @@ public:
         // draw two overlapping rects, one with rounded corners
         if (isMasterTrack()) {
             g.fillRect(r.withWidth(getWidth() / 4));
-            g.fillRoundedRectangle(r.toFloat(), 6.0f);
+            g.fillRoundedRectangle(r.toFloat(), 4.0f);
         } else {
             g.fillRect(r.withHeight(getHeight() / 4));
-            g.fillRoundedRectangle(r.toFloat(), 6.0f);
+            g.fillRoundedRectangle(r.toFloat(), 4.0f);
         }
     }
 
@@ -67,6 +67,10 @@ private:
         return isMasterTrack() ?
                getLocalBounds() :
                getLocalBounds().withTrimmedTop(channelSize / 2).withTrimmedBottom(ViewState::TRACKS_MARGIN);
+    }
+
+    void colourChanged() override {
+        repaint();
     }
 
     void valueTreePropertyChanged(ValueTree &v, const Identifier &i) override {

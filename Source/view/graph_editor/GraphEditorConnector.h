@@ -183,13 +183,16 @@ struct GraphEditorConnector : public Component, public SettableTooltipClient {
         linePath.clear();
         bothInView = isSourceInView && isDestinationInView;
         if (bothInView) {
-            linePath.startNewSubPath(sourcePos);
             static const float controlHeight = 30.0f; // ensure the "cable" comes straight out a bit before curving back
-            const auto &outgoingDirection = sourceComponent != nullptr ? sourceComponent->getConnectorDirectionVector(false) : juce::Point<int>(0, 0);
-            const auto &incomingDirection = destinationComponent != nullptr ? destinationComponent->getConnectorDirectionVector(true) : juce::Point<int>(0, 0);
-            const auto &sourceControlPoint = sourcePos + outgoingDirection.toFloat() * controlHeight;
-            const auto &destinationControlPoint = destinationPos + incomingDirection.toFloat() * controlHeight;
-            linePath.cubicTo(sourceControlPoint, destinationControlPoint, destinationPos);
+            const auto &outgoingDirection = sourceComponent != nullptr ? sourceComponent->getConnectorDirectionVector(false) : juce::Point<float>(0, 0);
+            const auto &incomingDirection = destinationComponent != nullptr ? destinationComponent->getConnectorDirectionVector(true) : juce::Point<float>(0, 0);
+            const auto &sourceControlPoint = sourcePos + outgoingDirection * controlHeight;
+            const auto &destinationControlPoint = destinationPos + incomingDirection * controlHeight;
+            linePath.startNewSubPath(sourcePos);
+            // To bevel the line ends with processor edges exactly, need to go directly for 1px here before curving.
+            linePath.lineTo(sourcePos + outgoingDirection);
+            linePath.cubicTo(sourceControlPoint, destinationControlPoint, destinationPos + incomingDirection);
+            linePath.lineTo(destinationPos);
         } else if (isSourceInView && !isDestinationInView) {
             const auto &toDestinationUnitVec = toDestinationVec / toDestinationVec.getDistanceFromOrigin();
             Line line(sourcePos, sourcePos + 24.0f * toDestinationUnitVec);
