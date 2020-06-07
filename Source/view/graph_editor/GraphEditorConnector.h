@@ -7,14 +7,23 @@
 
 struct GraphEditorConnector : public Component, public SettableTooltipClient {
     explicit GraphEditorConnector(const ValueTree &state, ConnectorDragListener &connectorDragListener,
-                                  GraphEditorProcessorContainer &graphEditorProcessorContainer)
+                                  GraphEditorProcessorContainer &graphEditorProcessorContainer,
+                                  AudioProcessorGraph::NodeAndChannel source = {},
+                                  AudioProcessorGraph::NodeAndChannel destination = {})
             : state(state), connectorDragListener(connectorDragListener), graphEditorProcessorContainer(graphEditorProcessorContainer) {
         setAlwaysOnTop(true);
         if (this->state.isValid()) {
-            const ValueTree &source = state.getChildWithName(IDs::SOURCE);
-            const ValueTree &destination = state.getChildWithName(IDs::DESTINATION);
-            connection = {{ProcessorGraph::getNodeIdForState(source),      source[IDs::channel]},
-                          {ProcessorGraph::getNodeIdForState(destination), destination[IDs::channel]}};
+            const auto &sourceState = this->state.getChildWithName(IDs::SOURCE);
+            connection.source = {ProcessorGraph::getNodeIdForState(sourceState), sourceState[IDs::channel]};
+            const auto &destinationState = this->state.getChildWithName(IDs::DESTINATION);
+            connection.destination = {ProcessorGraph::getNodeIdForState(destinationState), destinationState[IDs::channel]};
+        } else {
+            connection.source = source;
+            connection.destination = destination;
+            if (connection.source.nodeID.uid != 0)
+                dragAnchor = source;
+            else if (connection.destination.nodeID.uid != 0)
+                dragAnchor = destination;
         }
     }
 
@@ -37,6 +46,7 @@ struct GraphEditorConnector : public Component, public SettableTooltipClient {
         }
     }
 
+    // TODO might be able to make this private
     void setDestination(AudioProcessorGraph::NodeAndChannel newDestination) {
         if (connection.destination != newDestination) {
             connection.destination = newDestination;
@@ -44,23 +54,31 @@ struct GraphEditorConnector : public Component, public SettableTooltipClient {
         }
     }
 
-    void dragStart(const juce::Point<float> &pos) {
-        connection.source = {};
-        lastInputPos = pos - getPosition().toFloat();
+    void dragTo(const juce::Point<float> &position) {
+        if (dragAnchor == connection.source) {
+            connection.destination = {};
+            lastDestinationPos = position - getPosition().toFloat();
+        } else {
+            connection.source = {};
+            lastSourcePos = position - getPosition().toFloat();
+        }
         resizeToFit();
     }
 
-    void dragEnd(const juce::Point<float> &pos) {
-        connection.destination = {};
-        lastOutputPos = pos - getPosition().toFloat();
-        resizeToFit();
+    void dragTo(AudioProcessorGraph::NodeAndChannel nodeAndChannel) {
+        if (dragAnchor == nodeAndChannel) return;
+
+        if (dragAnchor == connection.source)
+            setDestination(nodeAndChannel);
+        else
+            setSource(nodeAndChannel);
     }
 
     void update() {
         juce::Point<float> p1, p2;
         getPoints(p1, p2);
 
-        if (lastInputPos != p1 || lastOutputPos != p2)
+        if (lastSourcePos != p1 || lastDestinationPos != p2)
             resizeToFit();
     }
 
@@ -79,8 +97,8 @@ struct GraphEditorConnector : public Component, public SettableTooltipClient {
     }
 
     void getPoints(juce::Point<float> &p1, juce::Point<float> &p2) const {
-        p1 = lastInputPos;
-        p2 = lastOutputPos;
+        p1 = lastSourcePos;
+        p2 = lastDestinationPos;
 
         const Component &rootComponent = dynamic_cast<Component &>(connectorDragListener);
 
@@ -97,6 +115,10 @@ struct GraphEditorConnector : public Component, public SettableTooltipClient {
         }
     }
 
+    bool isDragging() {
+        return dragAnchor.nodeID.uid != 0;
+    }
+
     void paint(Graphics &g) override {
         auto pathColour = connection.source.isMIDI() || connection.destination.isMIDI()
                             ? findColour(isCustom() ? customMidiConnectionColourId : defaultMidiConnectionColourId)
@@ -106,7 +128,7 @@ struct GraphEditorConnector : public Component, public SettableTooltipClient {
         g.setColour(mouseOver ? pathColour.brighter(0.1f) : pathColour);
 
         if (bothInView && linePath.getLength() > 200) {
-            ColourGradient colourGradient = ColourGradient(pathColour, lastInputPos, pathColour, lastOutputPos, false);
+            ColourGradient colourGradient = ColourGradient(pathColour, lastSourcePos, pathColour, lastDestinationPos, false);
             colourGradient.addColour(0.25f, pathColour.withAlpha(0.2f));
             colourGradient.addColour(0.75f, pathColour.withAlpha(0.2f));
             g.setGradientFill(colourGradient);
@@ -138,20 +160,19 @@ struct GraphEditorConnector : public Component, public SettableTooltipClient {
     }
 
     void mouseDown(const MouseEvent &) override {
-        dragging = false;
+        dragAnchor.nodeID.uid = 0;
     }
 
     void mouseDrag(const MouseEvent &e) override {
-        if (dragging) {
+        if (isDragging()) {
             connectorDragListener.dragConnector(e);
         } else if (e.mouseWasDraggedSinceMouseDown()) {
-            dragging = true;
-
             double distanceFromStart, distanceFromEnd;
             getDistancesFromEnds(getPosition().toFloat() + e.position, distanceFromStart, distanceFromEnd);
             const bool isNearerSource = (distanceFromStart < distanceFromEnd);
 
-            AudioProcessorGraph::NodeAndChannel dummy{ProcessorGraph::NodeID(0), 0};
+            static const AudioProcessorGraph::NodeAndChannel dummy{ProcessorGraph::NodeID(), 0};
+            dragAnchor = isNearerSource ? connection.destination : connection.source;
 
             connectorDragListener.beginConnectorDrag(isNearerSource ? dummy : connection.source,
                                                      isNearerSource ? connection.destination : dummy,
@@ -160,8 +181,10 @@ struct GraphEditorConnector : public Component, public SettableTooltipClient {
     }
 
     void mouseUp(const MouseEvent &e) override {
-        if (dragging)
+        if (isDragging()) {
+            dragAnchor.nodeID.uid = 0;
             connectorDragListener.endDraggingConnector(e);
+        }
     }
 
     void resized() override {
@@ -171,8 +194,8 @@ struct GraphEditorConnector : public Component, public SettableTooltipClient {
         juce::Point<float> sourcePos, destinationPos;
         getPoints(sourcePos, destinationPos);
 
-        lastInputPos = sourcePos;
-        lastOutputPos = destinationPos;
+        lastSourcePos = sourcePos;
+        lastDestinationPos = destinationPos;
 
         const auto toDestinationVec = destinationPos - sourcePos;
         const auto toSourceVec = sourcePos - destinationPos;
@@ -222,9 +245,10 @@ private:
     ConnectorDragListener &connectorDragListener;
     GraphEditorProcessorContainer &graphEditorProcessorContainer;
 
-    juce::Point<float> lastInputPos, lastOutputPos;
+    juce::Point<float> lastSourcePos, lastDestinationPos;
     Path linePath, hitPath, hoverPath;
-    bool dragging = false, bothInView = false;
+    bool bothInView = false;
+    AudioProcessorGraph::NodeAndChannel dragAnchor{ProcessorGraph::NodeID(), 0};
 
     AudioProcessorGraph::Connection connection{
             {ProcessorGraph::NodeID(0), 0},

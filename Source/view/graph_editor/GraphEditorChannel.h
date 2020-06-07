@@ -14,8 +14,13 @@ struct GraphEditorChannel : public Component, public SettableTooltipClient, priv
         this->state.addListener(this);
 
         addAndMakeVisible(channelLabel);
+        channelLabel.addMouseListener(this, true);
 
         setSize(16, 16);
+    }
+
+    ~GraphEditorChannel() {
+        channelLabel.removeMouseListener(this);
     }
 
     const ValueTree &getState() { return state; }
@@ -106,7 +111,7 @@ struct GraphEditorChannel : public Component, public SettableTooltipClient, priv
     }
 
     void mouseDown(const MouseEvent &e) override {
-        AudioProcessorGraph::NodeAndChannel dummy{ProcessorGraph::NodeID(0), 0};
+        static const AudioProcessorGraph::NodeAndChannel dummy{ProcessorGraph::NodeID(), 0};
         AudioProcessorGraph::NodeAndChannel nodeAndChannel = getNodeAndChannel();
         connectorDragListener.beginConnectorDrag(isInput() ? dummy : nodeAndChannel, isInput() ? nodeAndChannel : dummy, e);
     }

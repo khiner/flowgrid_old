@@ -106,15 +106,11 @@ public:
         draggingConnector = c;
 
         if (draggingConnector == nullptr)
-            draggingConnector = new GraphEditorConnector(ValueTree(), *this, *this);
+            draggingConnector = new GraphEditorConnector(ValueTree(), *this, *this, source, destination);
         else
             initialDraggingConnection = draggingConnector->getConnection();
 
-        draggingConnector->setSource(source);
-        draggingConnector->setDestination(destination);
-
         addAndMakeVisible(draggingConnector);
-        draggingConnector->toFront(false);
 
         dragConnector(e);
     }
@@ -125,28 +121,17 @@ public:
 
         draggingConnector->setTooltip({});
 
-        auto connection = draggingConnector->getConnection();
-
         if (auto *channel = findChannelAt(e)) {
-            if (connection.source.nodeID.uid == 0 && !channel->isInput())
-                connection.source = channel->getNodeAndChannel();
-            else if (connection.destination.nodeID.uid == 0 && channel->isInput())
-                connection.destination = channel->getNodeAndChannel();
+            draggingConnector->dragTo(channel->getNodeAndChannel());
 
+            auto connection = draggingConnector->getConnection();
             if (graph.canConnect(connection) || graph.isConnected(connection)) {
-                if (channel->isInput())
-                    draggingConnector->setDestination(channel->getNodeAndChannel());
-                else
-                    draggingConnector->setSource(channel->getNodeAndChannel());
                 draggingConnector->setTooltip(channel->getTooltip());
                 return;
             }
         }
-        auto pos = e.getEventRelativeTo(this).position;
-        if (draggingConnector->getConnection().source.nodeID.uid == 0)
-            draggingConnector->dragStart(pos);
-        else
-            draggingConnector->dragEnd(pos);
+        const auto &position = e.getEventRelativeTo(this).position;
+        draggingConnector->dragTo(position);
     }
 
     void endDraggingConnector(const MouseEvent &e) override {

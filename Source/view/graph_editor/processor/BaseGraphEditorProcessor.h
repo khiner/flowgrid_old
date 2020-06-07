@@ -172,8 +172,11 @@ public:
     }
 
     GraphEditorChannel *findChannelAt(const MouseEvent &e) {
-        auto *comp = getComponentAt(e.getEventRelativeTo(this).position.toInt());
-        return dynamic_cast<GraphEditorChannel *>(comp);
+        for (auto *channel : channels)
+            if (channel->contains(e.getEventRelativeTo(channel).getPosition()))
+                return channel;
+
+        return nullptr;
     }
 
     class ElementComparator {
