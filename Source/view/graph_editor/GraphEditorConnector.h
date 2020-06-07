@@ -143,7 +143,7 @@ struct GraphEditorConnector : public Component, public SettableTooltipClient {
             connectorDragListener.dragConnector(e);
         } else if (e.mouseWasDraggedSinceMouseDown()) {
             double distanceFromStart, distanceFromEnd;
-            getDistancesFromEnds(getPosition().toFloat() + e.position, distanceFromStart, distanceFromEnd);
+            getDistancesFromEnds(e.position, distanceFromStart, distanceFromEnd);
             const bool isNearerSource = (distanceFromStart < distanceFromEnd);
 
             static const AudioProcessorGraph::NodeAndChannel dummy{ProcessorGraph::NodeID(), 0};
