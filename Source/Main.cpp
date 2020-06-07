@@ -37,8 +37,8 @@ public:
         lookAndFeel.setColour(CustomColourIds::unfocusedOverlayColourId, Colours::black.withAlpha(0.15f));
         lookAndFeel.setColour(CustomColourIds::defaultAudioConnectionColourId, Colours::yellow);
         lookAndFeel.setColour(CustomColourIds::customAudioConnectionColourId, Colours::grey); // TODO surround with white instead
-        lookAndFeel.setColour(CustomColourIds::defaultMidiConnectionColourId, Colours::red);
-        lookAndFeel.setColour(CustomColourIds::customMidiConnectionColourId, Colours::orange); // TODO surround with white instead
+        lookAndFeel.setColour(CustomColourIds::defaultMidiConnectionColourId, Colours::orange);
+        lookAndFeel.setColour(CustomColourIds::customMidiConnectionColourId, Colours::red); // TODO surround with white instead
 
         lookAndFeel.setColour(Slider::rotarySliderOutlineColourId,
                               lookAndFeel.findColour(Slider::rotarySliderOutlineColourId).brighter(0.06));

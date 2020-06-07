@@ -7,9 +7,9 @@
 #include "view/CustomColourIds.h"
 
 struct GraphEditorChannel : public Component, public SettableTooltipClient, private Utilities::ValueTreePropertyChangeListener {
-    GraphEditorChannel(ValueTree state, ConnectorDragListener &connectorDragListener)
+    GraphEditorChannel(ValueTree state, ConnectorDragListener &connectorDragListener, bool showChannelText = false)
             : state(std::move(state)), connectorDragListener(connectorDragListener),
-              channelLabel(isMidi()) {
+              channelLabel(isMidi(), showChannelText) {
         valueTreePropertyChanged(this->state, IDs::abbreviatedName);
         this->state.addListener(this);
 
@@ -61,7 +61,6 @@ struct GraphEditorChannel : public Component, public SettableTooltipClient, priv
         auto channelLabelBounds = getLocalBounds();
 
         // TODO:
-        //  show midi icon in Channel instead of label
         //  make master track label into a folder-tab style & remove special casing around master TrackInputProcessor view
         //  remove TRACK_VERTICAL_MARGIN stuff inside track input/output views - now that pins don't extend beyond track processor
         //    bounds, only TRACKS/TRACK should be aware of this margin
@@ -136,13 +135,9 @@ private:
 
     // Can be either text or an icon
     struct ChannelLabel : public Component {
-        ChannelLabel(bool isMidi) : isMidi(isMidi) {
-            if (isMidi) {
-                auto midiImage = ImageCache::getFromMemory(BinaryData::Midi_png, BinaryData::Midi_pngSize);
-                image.setImage(midiImage);
-                image.setOverlayColour(findColour(CustomColourIds::customMidiConnectionColourId));
-                addAndMakeVisible(image);
-            } else {
+        ChannelLabel(bool isMidi, bool showChannelText) :
+                isMidi(isMidi), showChannelText(showChannelText) {
+            if (showChannelText) {
                 text.setColour(findColour(TextEditor::textColourId));
                 text.setFontHeight(smallFontHeight);
                 text.setJustification(Justification::centred);
@@ -150,12 +145,18 @@ private:
             }
         }
 
+        void paint(Graphics &g) override {
+            if (showChannelText) return;
+
+            const auto &r = getLocalBounds().toFloat();
+            g.setColour(findColour(isMidi ? CustomColourIds::defaultMidiConnectionColourId : CustomColourIds::defaultAudioConnectionColourId));
+            g.fillEllipse(r.withSizeKeepingCentre(4, 4));
+        }
+
         void resized() override {
-            const auto &r = getLocalBounds().toFloat().reduced(1);
-            const auto &bounds = rotate ? rotateRectIfNarrow(r) : r;
-            if (isMidi) {
-                image.setBoundingBox(bounds);
-            } else {
+            if (showChannelText) {
+                const auto &r = getLocalBounds().toFloat().reduced(1);
+                const auto &bounds = rotate ? rotateRectIfNarrow(r) : r;
                 text.setBoundingBox(bounds);
             }
         }
@@ -168,7 +169,7 @@ private:
             this->text.setText(text);
         }
 
-        bool isMidi;
+        bool isMidi, showChannelText;
 
         DrawableText text;
         DrawableImage image;

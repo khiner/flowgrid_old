@@ -8,13 +8,16 @@ class TrackInputProcessor : public DefaultAudioProcessor {
 public:
     explicit TrackInputProcessor() :
             DefaultAudioProcessor(getPluginDescription()),
-            monitoringParameter(new AudioParameterBool("monitoring", "Monitoring", true, "Monitoring")) {
-        monitoringParameter->addListener(this);
-        addParameter(monitoringParameter);
+            monitorAudioParameter(new AudioParameterBool("monitorAudio", "Monitor Audio", true, "MonitorAudio")),
+            monitorMidiParameter(new AudioParameterBool("monitorMidi", "Monitor MIDI", true, "MonitorMidi")) {
+        monitorAudioParameter->addListener(this);
+        monitorMidiParameter->addListener(this);
+        addParameter(monitorAudioParameter);
+        addParameter(monitorMidiParameter);
     }
 
     ~TrackInputProcessor() override {
-        monitoringParameter->removeListener(this);
+        monitorAudioParameter->removeListener(this);
     }
 
     static const String name() { return "Track Input"; }
@@ -34,17 +37,18 @@ public:
     }
 
     void parameterChanged(AudioProcessorParameter *parameter, float newValue) override {
-        if (parameter == monitoringParameter) {
+        if (parameter == monitorAudioParameter) {
             gain.setTargetValue(newValue); // boolean param: 0 -> off, 1 -> on
         }
     }
 
     void processBlock(AudioSampleBuffer &buffer, MidiBuffer &midiMessages) override {
         gain.applyGain(buffer, buffer.getNumSamples());
+        if (!monitorMidiParameter->get())
+            midiMessages.clear();
     }
 
 private:
     LinearSmoothedValue<float> gain{1.0f};
-
-    AudioParameterBool *monitoringParameter;
+    AudioParameterBool *monitorAudioParameter, *monitorMidiParameter;
 };

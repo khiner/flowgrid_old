@@ -22,9 +22,13 @@ public:
     ~TrackInputGraphEditorProcessor() {
         nameLabel.removeMouseListener(this);
         if (auto *processorWrapper = getProcessorWrapper()) {
-            if (monitoringToggle != nullptr) {
+            if (audioMonitorToggle != nullptr) {
                 const auto &parameterWrapper = processorWrapper->getParameter(0);
-                parameterWrapper->detachButton(monitoringToggle.get());
+                parameterWrapper->detachButton(audioMonitorToggle.get());
+            }
+            if (midiMonitorToggle != nullptr) {
+                const auto &parameterWrapper = processorWrapper->getParameter(1);
+                parameterWrapper->detachButton(midiMonitorToggle.get());
             }
         }
     }
@@ -70,12 +74,26 @@ public:
 
     void resized() override {
         BaseGraphEditorProcessor::resized();
-        auto r = getBoxBounds();
 
-        const auto &monitoringToggleBounds = r.removeFromLeft(r.getHeight());
-        if (monitoringToggle != nullptr)
-            monitoringToggle->setBounds(monitoringToggleBounds.reduced(monitoringToggleBounds.getHeight() / 4));
-        nameLabel.setBounds(r);
+        const Rectangle<int> &boxBounds = getBoxBounds();
+        int toggleSideLength = boxBounds.getHeight() / 3;
+        juce::Rectangle<int> toggleBounds = boxBounds.withSizeKeepingCentre(toggleSideLength, toggleSideLength);
+
+        // safe assumption with these channel checks but could be better by looking for channels with properties
+        if (audioMonitorToggle != nullptr) {
+            if (channels.size() >= 2) {
+                const auto *leftAudioChannel = channels.getUnchecked(0);
+                audioMonitorToggle->setBounds(toggleBounds.withCentre({leftAudioChannel->getBounds().getRight(), toggleBounds.getCentreY()}));
+            }
+        }
+        if (midiMonitorToggle != nullptr) {
+            if (channels.size() >= 3) {
+                const auto *midiChannel = channels.getUnchecked(2);
+                midiMonitorToggle->setBounds(toggleBounds.withCentre({midiChannel->getBounds().getCentreX(), toggleBounds.getCentreY()}));
+            }
+        }
+
+        nameLabel.setBounds(boxBounds.withLeft(midiMonitorToggle != nullptr ? midiMonitorToggle->getRight() : boxBounds.getX()));
     }
 
     // TODO do we need this? Might just be able to set colour on all child components
@@ -96,7 +114,7 @@ private:
     Project &project;
     TracksState &tracks;
     Label nameLabel;
-    std::unique_ptr<ImageButton> monitoringToggle;
+    std::unique_ptr<ImageButton> audioMonitorToggle, midiMonitorToggle;
 
     Rectangle<int> getBoxBounds() override {
         return getLocalBounds().withTrimmedTop(VERTICAL_MARGIN).withTrimmedBottom(VERTICAL_MARGIN);
@@ -106,18 +124,29 @@ private:
         if (v != state)
             return;
 
-        if (monitoringToggle == nullptr) {
+        if (audioMonitorToggle == nullptr && midiMonitorToggle == nullptr) {
             if (auto *processorWrapper = getProcessorWrapper()) {
-                const auto &monitoringParameter = processorWrapper->getParameter(0);
-                addAndMakeVisible((monitoringToggle = std::make_unique<ImageButton>()).get(), 0);
-                monitoringToggle->setClickingTogglesState(true);
-                auto audioImage = ImageCache::getFromMemory(BinaryData::Audio_png, BinaryData::Audio_pngSize);
-//                Image monitoringOffImage = ImageCache::getFromMemory(BinaryData::CircleWithLineHorizontal_png, BinaryData::CircleWithLineHorizontal_pngSize);
-                monitoringToggle->setImages(false, true, true,
-                                            audioImage, 1.0, Colours::black,
-                                            {}, 1.0, Colours::transparentBlack,
-                                            audioImage, 1.0, Colours::yellow);
-                monitoringParameter->attachButton(monitoringToggle.get());
+                addAndMakeVisible((audioMonitorToggle = std::make_unique<ImageButton>()).get());
+                audioMonitorToggle->setClickingTogglesState(true);
+                const auto &audioImage = ImageCache::getFromMemory(BinaryData::Audio_png, BinaryData::Audio_pngSize);
+                audioMonitorToggle->setImages(false, true, true,
+                                              audioImage, 1.0, Colours::black,
+                                              {}, 1.0, Colours::transparentBlack,
+                                              audioImage, 1.0, findColour(CustomColourIds::defaultAudioConnectionColourId));
+
+                const auto &monitorAudioParameter = processorWrapper->getParameter(0);
+                monitorAudioParameter->attachButton(audioMonitorToggle.get());
+
+                addAndMakeVisible((midiMonitorToggle = std::make_unique<ImageButton>()).get());
+                midiMonitorToggle->setClickingTogglesState(true);
+                const auto &midiImage = ImageCache::getFromMemory(BinaryData::Midi_png, BinaryData::Midi_pngSize);
+                midiMonitorToggle->setImages(false, true, true,
+                                             midiImage, 1.0, Colours::black,
+                                             {}, 1.0, Colours::transparentBlack,
+                                             midiImage, 1.0, findColour(CustomColourIds::defaultMidiConnectionColourId));
+
+                const auto &monitorMidiParameter = processorWrapper->getParameter(1);
+                monitorMidiParameter->attachButton(midiMonitorToggle.get());
             }
         }
 

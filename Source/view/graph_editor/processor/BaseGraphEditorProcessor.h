@@ -187,6 +187,7 @@ protected:
     ValueTree state;
     static constexpr float largeFontHeight = 18.0f;
     static constexpr int channelSize = 10;
+    OwnedArray<GraphEditorChannel> channels;
 
     virtual Rectangle<int> getBoxBounds() {
         auto r = getLocalBounds().reduced(1);
@@ -207,7 +208,7 @@ protected:
 
     void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override {
         if (child.hasType(IDs::CHANNEL)) {
-            auto *channel = new GraphEditorChannel(child, connectorDragListener);
+            auto *channel = new GraphEditorChannel(child, connectorDragListener, isIoProcessor());
             addAndMakeVisible(channel);
             channels.add(channel);
             resized();
@@ -237,7 +238,6 @@ private:
     ConnectorDragListener &connectorDragListener;
     StatefulAudioProcessorContainer &audioProcessorContainer;
     PluginManager &pluginManager;
-    OwnedArray<GraphEditorChannel> channels;
 
     GraphEditorChannel *findChannelWithState(const ValueTree &state) {
         for (auto *channel : channels)
