@@ -279,7 +279,9 @@ private:
     }
 
     void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override {
-        if (child.hasType(IDs::PROCESSOR)) {
+        if (child.hasType(IDs::TRACK)) {
+            connectors->updateConnectors();
+        } else if (child.hasType(IDs::PROCESSOR)) {
             if (child[IDs::name] == MidiInputProcessor::name()) {
                 auto *midiInputProcessor = new LabelGraphEditorProcessor(project, tracks, view, child, *this);
                 addAndMakeVisible(midiInputProcessor, 0);
@@ -296,23 +298,27 @@ private:
             } else if (child[IDs::name] == "Audio Output") {
                 addAndMakeVisible(*(audioOutputProcessor = std::make_unique<LabelGraphEditorProcessor>(project, tracks, view, child, *this)), 0);
                 resized();
+            } else {
+                connectors->updateConnectors();
             }
-            connectors->updateConnectors();
         } else if (child.hasType(IDs::CONNECTION)) {
             connectors->updateConnectors();
         }
     }
 
     void valueTreeChildRemoved(ValueTree &parent, ValueTree &child, int indexFromWhichChildWasRemoved) override {
-        if (child.hasType(IDs::PROCESSOR)) {
+        if (child.hasType(IDs::TRACK)) {
+            connectors->updateConnectors();
+        } else if (child.hasType(IDs::PROCESSOR)) {
             if (child[IDs::name] == MidiInputProcessor::name()) {
                 midiInputProcessors.removeObject(findMidiInputProcessorForNodeId(ProcessorGraph::getNodeIdForState(child)));
                 resized();
             } else if (child[IDs::name] == MidiOutputProcessor::name()) {
                 midiOutputProcessors.removeObject(findMidiOutputProcessorForNodeId(ProcessorGraph::getNodeIdForState(child)));
                 resized();
+            } else {
+                connectors->updateConnectors();
             }
-            connectors->updateConnectors();
         } else if (child.hasType(IDs::CONNECTION)) {
             connectors->updateConnectors();
         }
