@@ -47,7 +47,7 @@ struct GraphEditorConnector : public Component, public SettableTooltipClient {
             connection.source = {};
             lastSourcePos = position - getPosition().toFloat();
         }
-        resizeToFit();
+        resizeToFit(lastSourcePos, lastDestinationPos);
     }
 
     void dragTo(AudioProcessorGraph::NodeAndChannel nodeAndChannel, bool isInput) {
@@ -64,21 +64,7 @@ struct GraphEditorConnector : public Component, public SettableTooltipClient {
         getPoints(p1, p2);
 
         if (lastSourcePos != p1 || lastDestinationPos != p2)
-            resizeToFit();
-    }
-
-    void resizeToFit() {
-        juce::Point<float> p1, p2;
-        getPoints(p1, p2);
-
-        auto newBounds = Rectangle<float>(p1 + getPosition().toFloat(), p2 + getPosition().toFloat()).expanded(20.0f).getSmallestIntegerContainer();
-
-        if (newBounds != getBounds())
-            setBounds(newBounds);
-        else
-            resized();
-
-        repaint();
+            resizeToFit(p1, p2);
     }
 
     void getPoints(juce::Point<float> &p1, juce::Point<float> &p2) const {
@@ -123,7 +109,7 @@ struct GraphEditorConnector : public Component, public SettableTooltipClient {
     }
 
     bool hitTest(int x, int y) override {
-        return hitPath.contains({float(x), float(y)});
+        return hoverPath.contains({float(x), float(y)});
     }
 
     void mouseEnter(const MouseEvent & e) override {
@@ -203,20 +189,10 @@ struct GraphEditorConnector : public Component, public SettableTooltipClient {
             linePath.addArrow(line, 0.0f, arrowW, arrowL);
         }
 
-        // TODO don't think I need all these
-        PathStrokeType(8.0f).createStrokedPath(hitPath, linePath);
         PathStrokeType(5.0f).createStrokedPath(hoverPath, linePath);
         PathStrokeType(3.0f).createStrokedPath(linePath, linePath);
 
         linePath.setUsingNonZeroWinding(true);
-    }
-
-    void getDistancesFromEnds(const juce::Point<float> &p, double &distanceFromStart, double &distanceFromEnd) const {
-        juce::Point<float> p1, p2;
-        getPoints(p1, p2);
-
-        distanceFromStart = p1.getDistanceFrom(p);
-        distanceFromEnd = p2.getDistanceFrom(p);
     }
 
 private:
@@ -226,7 +202,7 @@ private:
     GraphEditorProcessorContainer &graphEditorProcessorContainer;
 
     juce::Point<float> lastSourcePos, lastDestinationPos;
-    Path linePath, hitPath, hoverPath;
+    Path linePath, hoverPath;
     bool bothInView = false;
     AudioProcessorGraph::NodeAndChannel dragAnchor{ProcessorGraph::NodeID(), 0};
 
@@ -249,5 +225,19 @@ private:
             connection.destination = newDestination;
             update();
         }
+    }
+
+    void resizeToFit(juce::Point<float> p1, juce::Point<float> p2) {
+        auto newBounds = Rectangle<float>(p1 + getPosition().toFloat(), p2 + getPosition().toFloat()).expanded(20.0f).getSmallestIntegerContainer();
+        if (newBounds != getBounds())
+            setBounds(newBounds);
+    }
+
+    void getDistancesFromEnds(const juce::Point<float> &p, double &distanceFromStart, double &distanceFromEnd) const {
+        juce::Point<float> p1, p2;
+        getPoints(p1, p2);
+
+        distanceFromStart = p1.getDistanceFrom(p);
+        distanceFromEnd = p2.getDistanceFrom(p);
     }
 };
