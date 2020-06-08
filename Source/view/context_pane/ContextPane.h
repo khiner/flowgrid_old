@@ -12,6 +12,7 @@ public:
             : tracks(project.getTracks()), view(project.getView()) {
         tracks.addListener(this);
         view.addListener(this);
+        cellPath.addRoundedRectangle(Rectangle<int>(cellWidth, cellHeight).reduced(2), 3);
     }
 
     ~ContextPane() override {
@@ -20,14 +21,11 @@ public:
     }
 
     void paint(Graphics &g) override {
-        auto trackViewOffset = view.getGridViewTrackOffset();
-        auto masterViewSlotOffset = view.getMasterViewSlotOffset();
+        juce::Point<int> previousCellPosition(0, 0);
 
         auto r = getLocalBounds();
-        auto masterRowBounds = r.removeFromBottom(cellHeight);
-        masterRowBounds.removeFromLeft(jmax(0, trackViewOffset - masterViewSlotOffset) * cellWidth);
-
-        auto tracksBounds = r.withTrimmedLeft(jmax(0, masterViewSlotOffset - trackViewOffset) * cellWidth);
+        auto masterRowBounds = r.removeFromBottom(cellHeight).withTrimmedLeft(jmax(0, view.getGridViewTrackOffset() - view.getMasterViewSlotOffset()) * cellWidth);
+        auto tracksBounds = r.withTrimmedLeft(jmax(0, view.getMasterViewSlotOffset() - view.getGridViewTrackOffset()) * cellWidth);
 
         for (const auto &track : tracks.getState()) {
             bool isMaster = TracksState::isMasterTrack(track);
@@ -48,16 +46,20 @@ public:
                 }
                 g.setColour(cellColour);
                 const auto &rectangle = isMaster ?
-                        trackBounds.removeFromLeft(cellWidth).reduced(2).toFloat() :
-                        trackBounds.removeFromTop(cellHeight).reduced(2).toFloat();
-                g.fillRoundedRectangle(rectangle, 3);
+                        trackBounds.removeFromLeft(cellWidth).reduced(2) :
+                        trackBounds.removeFromTop(cellHeight).reduced(2);
+                cellPath.applyTransform(AffineTransform::translation(rectangle.getPosition() - previousCellPosition));
+                g.fillPath(cellPath);
+                previousCellPosition = rectangle.getPosition();
             }
         }
+        // Move cell path back to origin for the next draw.
+        cellPath.applyTransform(AffineTransform::translation(-previousCellPosition));
     }
 
     void resized() override {
-        numColumns = jmax(tracks.getNumNonMasterTracks(), view.getNumMasterProcessorSlots() + view.getGridViewTrackOffset() + 1); // + master track output
-        numRows = view.getNumTrackProcessorSlots() + 2;  // + track output row + master track
+        int numColumns = jmax(tracks.getNumNonMasterTracks(), view.getNumMasterProcessorSlots() + view.getGridViewTrackOffset() + 1); // + master track output
+        int numRows = view.getNumTrackProcessorSlots() + 2;  // + track output row + master track
         setSize(cellWidth * numColumns, cellHeight * numRows);
     }
 
@@ -82,9 +84,9 @@ public:
 private:
     static constexpr int cellWidth = 20, cellHeight = 20;
 
-    int numRows, numColumns;
     TracksState &tracks;
     ViewState &view;
+    Path cellPath;
 
     void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override {
         if (child.hasType(IDs::TRACK))
