@@ -13,6 +13,8 @@ public:
         tracks.addListener(this);
         view.addListener(this);
         cellPath.addRoundedRectangle(Rectangle<int>(cellWidth, cellHeight).reduced(2), 3);
+        trackBorderPath.addRoundedRectangle(Rectangle<int>(cellWidth, cellWidth * (ViewState::NUM_VISIBLE_NON_MASTER_TRACK_SLOTS + 1)).reduced(1), 3);
+        masterTrackBorderPath.addRoundedRectangle(Rectangle<int>(cellWidth * (ViewState::NUM_VISIBLE_MASTER_TRACK_SLOTS + 1), cellHeight).reduced(1), 3);
     }
 
     ~ContextPane() override {
@@ -22,48 +24,67 @@ public:
 
     void paint(Graphics &g) override {
         juce::Point<int> previousCellPosition(0, 0);
+        juce::Point<int> previousTrackBorderPosition(0, 0);
+        juce::Point<int> previousMasterTrackBorderPosition(0, 0);
 
-        auto r = getLocalBounds();
-        auto masterRowBounds = r.removeFromBottom(cellHeight).withTrimmedLeft(jmax(0, view.getGridViewTrackOffset() - view.getMasterViewSlotOffset()) * cellWidth);
-        auto tracksBounds = r.withTrimmedLeft(jmax(0, view.getMasterViewSlotOffset() - view.getGridViewTrackOffset()) * cellWidth);
+        auto masterRowY = getHeight() - cellHeight;
+        const int tracksOffset = jmax(0, view.getMasterViewSlotOffset() - view.getGridViewTrackOffset()) * cellWidth;
 
-        for (const auto &track : tracks.getState()) {
+        for (int trackIndex = 0; trackIndex < tracks.getNumTracks(); trackIndex++) {
+            const auto &track = tracks.getTrack(trackIndex);
             bool isMaster = TracksState::isMasterTrack(track);
-            auto trackBounds = isMaster ? masterRowBounds : tracksBounds.removeFromLeft(cellWidth);
+            const int trackX = tracksOffset + trackIndex * cellWidth;
+
+            const auto &trackColour = TracksState::getTrackColour(track);
+            g.setColour(trackColour);
+            if (isMaster) {
+                const int slotOffsetX = view.getMasterViewSlotOffset() * cellWidth;
+                const juce::Point<int> masterTrackBorderPosition(slotOffsetX, masterRowY);
+                masterTrackBorderPath.applyTransform(AffineTransform::translation(masterTrackBorderPosition - previousMasterTrackBorderPosition));
+                g.strokePath(masterTrackBorderPath, PathStrokeType(1.0));
+                previousMasterTrackBorderPosition = masterTrackBorderPosition;
+            } else {
+                const int slotOffsetY = view.getGridViewSlotOffset() * cellHeight;
+                const juce::Point<int> trackBorderPosition(trackX, slotOffsetY);
+                trackBorderPath.applyTransform(AffineTransform::translation(trackBorderPosition - previousTrackBorderPosition));
+                g.strokePath(trackBorderPath, PathStrokeType(1.0));
+                previousTrackBorderPosition = trackBorderPosition;
+            }
+
             const auto &outputProcessor = TracksState::getOutputProcessorForTrack(track);
             auto trackOutputIndex = view.getSlotOffsetForTrack(track) + ViewState::getNumVisibleSlotsForTrack(track);
             for (auto gridCellIndex = 0; gridCellIndex < view.getNumSlotsForTrack(track) + 1; gridCellIndex++) {
                 Colour cellColour;
                 if (gridCellIndex == trackOutputIndex) {
-                    cellColour = getFillColour(track, outputProcessor, view.isTrackInView(track), true, false);
+                    cellColour = getFillColour(trackColour, track, outputProcessor, view.isTrackInView(track), true, false);
                 } else {
                     int slot = gridCellIndex < trackOutputIndex ? gridCellIndex : gridCellIndex - 1;
                     const auto &processor = TracksState::getProcessorAtSlot(track, slot);
-                    cellColour = getFillColour(track, processor,
+                    cellColour = getFillColour(trackColour, track, processor,
                                                view.isProcessorSlotInView(track, slot),
                                                TracksState::isSlotSelected(track, slot),
                                                tracks.isSlotFocused(track, slot));
                 }
                 g.setColour(cellColour);
-                const auto &rectangle = isMaster ?
-                        trackBounds.removeFromLeft(cellWidth).reduced(2) :
-                        trackBounds.removeFromTop(cellHeight).reduced(2);
-                cellPath.applyTransform(AffineTransform::translation(rectangle.getPosition() - previousCellPosition));
+                const auto &cellPosition = isMaster ? juce::Point<int>(gridCellIndex * cellWidth, masterRowY) : juce::Point<int>(trackX, gridCellIndex * cellHeight);
+                cellPath.applyTransform(AffineTransform::translation(cellPosition - previousCellPosition));
                 g.fillPath(cellPath);
-                previousCellPosition = rectangle.getPosition();
+                previousCellPosition = cellPosition;
             }
         }
-        // Move cell path back to origin for the next draw.
+        // Move paths back to origin for the next draw.
         cellPath.applyTransform(AffineTransform::translation(-previousCellPosition));
+        trackBorderPath.applyTransform(AffineTransform::translation(-previousTrackBorderPosition));
+        masterTrackBorderPath.applyTransform(AffineTransform::translation(-previousMasterTrackBorderPosition));
     }
 
     void resized() override {
-        int numColumns = jmax(tracks.getNumNonMasterTracks(), view.getNumMasterProcessorSlots() + view.getGridViewTrackOffset() + 1); // + master track output
+        int numColumns = std::max(tracks.getNumNonMasterTracks(), view.getNumMasterProcessorSlots() + (view.getMasterViewSlotOffset() - view.getGridViewTrackOffset()) + 1); // + master track output
         int numRows = view.getNumTrackProcessorSlots() + 2;  // + track output row + master track
         setSize(cellWidth * numColumns, cellHeight * numRows);
     }
 
-    Colour getFillColour(const ValueTree &track, const ValueTree &processor, bool inView, bool slotSelected, bool slotFocused) {
+    Colour getFillColour(const Colour &trackColour, const ValueTree &track, const ValueTree &processor, bool inView, bool slotSelected, bool slotFocused) {
         const static auto &baseColour = findColour(ResizableWindow::backgroundColourId).brighter(0.4);
 
         // this is the only part different than GraphEditorProcessorLane
@@ -72,7 +93,7 @@ public:
         if (TracksState::doesTrackHaveSelections(track))
             colour = colour.brighter(processor.isValid() ? 0.04 : 0.15);
         if (slotSelected)
-            colour = TracksState::getTrackColour(track);
+            colour = trackColour;
         if (slotFocused)
             colour = colour.brighter(0.16);
         if (!inView)
@@ -86,7 +107,7 @@ private:
 
     TracksState &tracks;
     ViewState &view;
-    Path cellPath;
+    Path cellPath, trackBorderPath, masterTrackBorderPath;
 
     void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override {
         if (child.hasType(IDs::TRACK))
