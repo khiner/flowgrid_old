@@ -20,13 +20,14 @@ public:
     }
 
     void resized() override {
+
         if (gridCells.isEmpty() && masterTrackGridCells.isEmpty())
             return;
 
         int cellWidth = 20;
         int cellHeight = 20;
-        int newWidth = cellWidth * jmax(tracks.getNumNonMasterTracks(), view.getNumMasterProcessorSlots() + view.getGridViewTrackOffset());
-        int newHeight = cellHeight * (view.getNumTrackProcessorSlots() + 2);
+        int newWidth = cellWidth * jmax(tracks.getNumNonMasterTracks(), view.getNumMasterProcessorSlots() + view.getGridViewTrackOffset() + 1); // + master track output
+        int newHeight = cellHeight * (view.getNumTrackProcessorSlots() + 2); // + track output row + master track
         setSize(newWidth, newHeight);
 
         auto r = getLocalBounds();
@@ -40,18 +41,14 @@ public:
         auto tracksBounds = r;
         tracksBounds.removeFromLeft(jmax(0, masterViewSlotOffset - trackViewOffset) * cellWidth);
 
-        if (!masterTrackGridCells.isEmpty()) {
-            for (auto *processorGridCell : masterTrackGridCells) {
-                processorGridCell->setRectangle(masterRowBounds.removeFromLeft(cellWidth).reduced(2).toFloat());
-            }
+        for (auto *processorGridCell : masterTrackGridCells) {
+            processorGridCell->setRectangle(masterRowBounds.removeFromLeft(cellWidth).reduced(2).toFloat());
         }
 
-        if (!gridCells.isEmpty()) {
-            for (auto *trackGridCells : gridCells) {
-                auto column = tracksBounds.removeFromLeft(cellWidth);
-                for (int i = trackGridCells->size() - 1; i >= 0; i--) {
-                    trackGridCells->getUnchecked(i)->setRectangle(column.removeFromBottom(cellHeight).reduced(2).toFloat());
-                }
+        for (auto *trackGridCells : gridCells) {
+            auto column = tracksBounds.removeFromLeft(cellWidth);
+            for (int i = trackGridCells->size() - 1; i >= 0; i--) {
+                trackGridCells->getUnchecked(i)->setRectangle(column.removeFromBottom(cellHeight).reduced(2).toFloat());
             }
         }
     }
@@ -99,13 +96,20 @@ private:
         for (const auto &track : tracks.getState()) {
             auto trackIndex = tracks.indexOf(track);
             const auto &trackGridCells = tracks.isMasterTrack(track) ? &masterTrackGridCells : gridCells.getUnchecked(trackIndex);
-            for (auto processorSlot = 0; processorSlot < trackGridCells->size(); processorSlot++) {
-                auto *cell = trackGridCells->getUnchecked(processorSlot);
-                const auto &processor = TracksState::getProcessorAtSlot(track, processorSlot);
-                cell->setTrackAndProcessor(track, processor,
-                                           view.isProcessorSlotInView(track, processorSlot),
-                                           TracksState::isSlotSelected(track, processorSlot),
-                                           tracks.isSlotFocused(track, processorSlot));
+            auto trackOutputIndex = view.getSlotOffsetForTrack(track) + ViewState::getNumVisibleSlotsForTrack(track);
+            const ValueTree &outputProcessor = TracksState::getOutputProcessorForTrack(track);
+            for (auto gridCellIndex = 0; gridCellIndex < trackGridCells->size(); gridCellIndex++) {
+                auto *cell = trackGridCells->getUnchecked(gridCellIndex);
+                if (gridCellIndex == trackOutputIndex) {
+                    cell->setTrackAndProcessor(track, outputProcessor, view.isTrackInView(track), true, false);
+                } else {
+                    int slot = gridCellIndex < trackOutputIndex ? gridCellIndex : gridCellIndex - 1;
+                    const auto &processor = TracksState::getProcessorAtSlot(track, slot);
+                    cell->setTrackAndProcessor(track, processor,
+                                               view.isProcessorSlotInView(track, slot),
+                                               TracksState::isSlotSelected(track, slot),
+                                               tracks.isSlotFocused(track, slot));
+                }
             }
         }
     }
@@ -116,7 +120,7 @@ private:
                 return valueTreePropertyChanged(view.getState(), IDs::numMasterProcessorSlots);
             } else {
                 auto *newGridCellColumn = new OwnedArray<GridCell>();
-                int numProcessorSlots = view.getNumTrackProcessorSlots();
+                int numProcessorSlots = view.getNumTrackProcessorSlots() + 1; // + track output
                 for (int processorSlot = 0; processorSlot < numProcessorSlots; processorSlot++) {
                     newGridCellColumn->add(new GridCell(this));
                 }
@@ -147,7 +151,7 @@ private:
             if (i == IDs::numProcessorSlots) {
                 if (gridCells.isEmpty())
                     return;
-                int numProcessorSlots = tree[IDs::numProcessorSlots];
+                int numProcessorSlots = int(tree[IDs::numProcessorSlots]) + 1; // + track output
                 while (gridCells.getFirst()->size() < numProcessorSlots) {
                     for (auto trackIndex = 0; trackIndex < gridCells.size(); trackIndex++) {
                         auto *trackGridCells = gridCells.getUnchecked(trackIndex);
@@ -163,7 +167,7 @@ private:
                 resized();
                 updateGridCellColours();
             } else if (i == IDs::numMasterProcessorSlots) {
-                int numProcessorSlots = tree[IDs::numMasterProcessorSlots];
+                int numProcessorSlots = int(tree[IDs::numMasterProcessorSlots]) + 1; // + track output
                 while (masterTrackGridCells.size() < numProcessorSlots) {
                     masterTrackGridCells.add(new GridCell(this));
                 }

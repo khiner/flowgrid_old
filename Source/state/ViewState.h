@@ -32,6 +32,10 @@ public:
         return track.isValid() && track[IDs::isMasterTrack];
     }
 
+    static inline int getNumVisibleSlotsForTrack(const ValueTree &track) {
+        return isMasterTrack(track) ? NUM_VISIBLE_MASTER_TRACK_SLOTS : NUM_VISIBLE_NON_MASTER_TRACK_SLOTS;
+    }
+
     int getSlotOffsetForTrack(const ValueTree &track) const {
         return isMasterTrack(track) ? getMasterViewSlotOffset() : getGridViewSlotOffset();
     }
@@ -164,17 +168,19 @@ public:
         return std::clamp(slot, 0, getNumSlotsForTrack(track) - 1);
     }
 
+    bool isTrackInView(const ValueTree &track) {
+        if (isMasterTrack(track))
+            return true;
+
+        auto trackIndex = track.getParent().indexOf(track);
+        auto trackViewOffset = getGridViewTrackOffset();
+        return trackIndex >= trackViewOffset && trackIndex < trackViewOffset + NUM_VISIBLE_TRACKS;
+    }
+
     bool isProcessorSlotInView(const ValueTree &track, int slot) {
         bool inView = slot >= getSlotOffsetForTrack(track) &&
                       slot < getSlotOffsetForTrack(track) + NUM_VISIBLE_NON_MASTER_TRACK_SLOTS + (isMasterTrack(track) ? 1 : 0);
-        if (!inView) return false;
-        if (isMasterTrack(track)) {
-            return true;
-        } else {
-            auto trackIndex = track.getParent().indexOf(track);
-            auto trackViewOffset = getGridViewTrackOffset();
-            return trackIndex >= trackViewOffset && trackIndex < trackViewOffset + NUM_VISIBLE_TRACKS;
-        }
+        return inView && isTrackInView(track);
     }
 
     const String sessionControlMode = "session", noteControlMode = "note";
