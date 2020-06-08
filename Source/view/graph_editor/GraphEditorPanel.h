@@ -300,8 +300,6 @@ private:
             connectors->updateConnectors();
         } else if (child.hasType(IDs::CONNECTION)) {
             connectors->updateConnectors();
-        } else if (child.hasType(IDs::CHANNEL)) {
-            resized();
         }
     }
 
@@ -317,8 +315,6 @@ private:
             connectors->updateConnectors();
         } else if (child.hasType(IDs::CONNECTION)) {
             connectors->updateConnectors();
-        } else if (child.hasType(IDs::CHANNEL)) {
-            resized();
         }
     }
 
