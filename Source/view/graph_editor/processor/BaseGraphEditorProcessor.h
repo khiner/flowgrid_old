@@ -60,7 +60,7 @@ public:
 
     inline bool producesMidi() const { return state[IDs::producesMidi]; }
 
-    inline bool isIoProcessor() const { return InternalPluginFormat::isIoProcessorName(state[IDs::name]); }
+    inline bool isIoProcessor() const { return InternalPluginFormat::isIoProcessor(state[IDs::name]); }
 
     inline bool isSelected() { return tracks.isProcessorSelected(state); }
 

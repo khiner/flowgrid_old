@@ -81,15 +81,15 @@ public:
     }
 
     static bool isTrackIOProcessor(const ValueTree &processor) {
-        return isTrackInputProcessor(processor) || isTrackOutputProcessor(processor);
+        return InternalPluginFormat::isTrackIOProcessor(processor[IDs::name]);
     }
 
     static bool isTrackInputProcessor(const ValueTree &processor) {
-        return processor.getProperty(IDs::name) == TrackInputProcessor::name();
+        return InternalPluginFormat::isTrackInputProcessor(processor[IDs::name]);
     }
 
     static bool isTrackOutputProcessor(const ValueTree &processor) {
-        return processor.getProperty(IDs::name) == TrackOutputProcessor::name();
+        return InternalPluginFormat::isTrackOutputProcessor(processor[IDs::name]);
     }
 
     static bool isProcessorLeftToRightFlowing(const ValueTree &processor) {

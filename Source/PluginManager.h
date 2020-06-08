@@ -13,7 +13,8 @@ public:
 
         for (auto &pluginType : internalPluginDescriptions) {
             knownPluginListInternal.addType(pluginType);
-            if (!InternalPluginFormat::isIoProcessorName(pluginType.name))
+            if (!InternalPluginFormat::isIoProcessor(pluginType.name) &&
+                !InternalPluginFormat::isTrackIOProcessor(pluginType.name))
                 userCreatablePluginListInternal.addType(pluginType);
         }
 
@@ -67,8 +68,9 @@ public:
         PopupMenu externalSubMenu;
 
         externalPluginDescriptions = knownPluginListExternal.getTypes();
+        userCreatableInternalPluginDescriptions = userCreatablePluginListInternal.getTypes();
 
-        KnownPluginList::addToMenu (internalSubMenu, internalPluginDescriptions, pluginSortMethod);
+        KnownPluginList::addToMenu (internalSubMenu, userCreatableInternalPluginDescriptions, pluginSortMethod);
         KnownPluginList::addToMenu (externalSubMenu, externalPluginDescriptions, pluginSortMethod, String(), internalPluginDescriptions.size());
 
         menu.addSubMenu("Internal", internalSubMenu, true);
@@ -77,9 +79,9 @@ public:
     }
 
     const PluginDescription getChosenType(const int menuId) const {
-        int internalPluginListIndex = KnownPluginList::getIndexChosenByMenu(internalPluginDescriptions, menuId);
+        int internalPluginListIndex = KnownPluginList::getIndexChosenByMenu(userCreatableInternalPluginDescriptions, menuId);
         if (internalPluginListIndex != -1)
-            return internalPluginDescriptions[internalPluginListIndex];
+            return userCreatableInternalPluginDescriptions[internalPluginListIndex];
         int externalPluginListIndex = KnownPluginList::getIndexChosenByMenu(externalPluginDescriptions, menuId - internalPluginDescriptions.size());
         if (externalPluginListIndex != -1)
             return externalPluginDescriptions[externalPluginListIndex];
@@ -102,6 +104,7 @@ private:
     AudioPluginFormatManager formatManager;
 
     Array<PluginDescription> externalPluginDescriptions;
+    Array<PluginDescription> userCreatableInternalPluginDescriptions;
 
     void changeListenerCallback(ChangeBroadcaster *changed) override {
         if (changed == &knownPluginListExternal) {

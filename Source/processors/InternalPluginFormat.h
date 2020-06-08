@@ -41,8 +41,20 @@ public:
 
     bool isTrivialToScan() const override { return true; }
 
-    static bool isIoProcessorName(const String &name) {
+    static bool isIoProcessor(const String &name) {
         return name == "Audio Output" || name == "Audio Input" || name == MidiInputProcessor::name() || name == MidiOutputProcessor::name();
+    }
+
+    static bool isTrackIOProcessor(const String &name) {
+        return isTrackInputProcessor(name) || isTrackOutputProcessor(name);
+    }
+
+    static bool isTrackInputProcessor(const String &name) {
+        return name == TrackInputProcessor::name();
+    }
+
+    static bool isTrackOutputProcessor(const String &name) {
+        return name == TrackOutputProcessor::name();
     }
 
 private:
