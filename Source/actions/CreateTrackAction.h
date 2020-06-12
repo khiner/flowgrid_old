@@ -24,9 +24,11 @@ struct CreateTrackAction : public UndoableAction {
         newTrack.setProperty(IDs::colour, isSubTrack ? derivedFromTrack[IDs::colour].toString() : Colour::fromHSV((1.0f / 8.0f) * tracks.getNumTracks(), 0.65f, 0.65f, 1.0f).toString(), nullptr);
         newTrack.setProperty(IDs::selected, false, nullptr);
 
+        auto lanes = ValueTree(IDs::PROCESSOR_LANES);
         auto lane = ValueTree(IDs::PROCESSOR_LANE);
         lane.setProperty(IDs::selectedSlotsMask, BigInteger().toString(2), nullptr);
-        newTrack.appendChild(lane, nullptr);
+        lanes.appendChild(lane, nullptr);
+        newTrack.appendChild(lanes, nullptr);
     }
 
     bool perform() override {

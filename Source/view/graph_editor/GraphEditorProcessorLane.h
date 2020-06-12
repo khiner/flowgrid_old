@@ -30,7 +30,7 @@ public:
     }
 
     ValueTree getTrack() const {
-        return parent.getParent();
+        return parent.getParent().getParent();
     }
 
     bool isMasterTrack() const { return TracksState::isMasterTrack(getTrack()); }

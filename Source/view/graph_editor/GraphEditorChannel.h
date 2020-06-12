@@ -42,7 +42,7 @@ struct GraphEditorChannel : public Component, public SettableTooltipClient, priv
     bool allowDefaultConnections() const { return getProcessor()[IDs::allowDefaultConnections]; }
 
     AudioProcessorGraph::NodeAndChannel getNodeAndChannel() const {
-        return {ProcessorGraph::getNodeIdForState(state.getParent().getParent()), getChannelIndex()};
+        return {ProcessorGraph::getNodeIdForState(getProcessor()), getChannelIndex()};
     }
 
     juce::Point<float> getConnectPosition() const {

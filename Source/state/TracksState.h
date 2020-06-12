@@ -45,21 +45,25 @@ public:
 
     ValueTree &getState() override { return tracks; }
 
+    static ValueTree getProcessorLanesForTrack(const ValueTree &track) {
+        return track.isValid() ? track.getChildWithName(IDs::PROCESSOR_LANES) : ValueTree();
+    }
+
     static ValueTree getProcessorLaneForTrack(const ValueTree &track) {
-        return track.isValid() ? track.getChildWithName(IDs::PROCESSOR_LANE) : ValueTree();
+        const auto &lanes = getProcessorLanesForTrack(track);
+        return lanes.isValid() ? lanes.getChild(0) : ValueTree();
     }
 
     static ValueTree getProcessorLaneForProcessor(const ValueTree &processor) {
-        const auto &track = getTrackForProcessor(processor);
-        return getProcessorLaneForTrack(track);
-    }
+        const auto &parent = processor.getParent();
+        if (parent.hasType(IDs::PROCESSOR_LANE))
+            return parent;
 
-    static ValueTree getTrackForProcessorLane(const ValueTree &processorLane) {
-        return processorLane.getParent();
+        return getProcessorLaneForTrack(parent);
     }
 
     static ValueTree getTrackForProcessor(const ValueTree &processor) {
-        return processor.getParent().hasType(IDs::TRACK) ? processor.getParent() : processor.getParent().getParent();
+        return processor.getParent().hasType(IDs::TRACK) ? processor.getParent() : processor.getParent().getParent().getParent();
     }
 
     static ValueTree getInputProcessorForTrack(const ValueTree &track) {

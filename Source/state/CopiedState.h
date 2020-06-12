@@ -22,14 +22,17 @@ struct CopiedState : public Stateful {
                 copiedTrack.setProperty(IDs::isMasterTrack, track[IDs::isMasterTrack], nullptr);
             }
 
-            const ValueTree &lane = TracksState::getProcessorLaneForTrack(track);
-            auto copiedLane = ValueTree(IDs::PROCESSOR_LANE);
-            copiedLane.setProperty(IDs::selectedSlotsMask, lane[IDs::selectedSlotsMask].toString(), nullptr);
-            for (auto processor : lane)
-                if (track[IDs::selected] || tracks.isProcessorSelected(processor))
-                    copiedLane.appendChild(audioProcessorContainer.copyProcessor(processor), nullptr);
+            auto copiedLanes = ValueTree(IDs::PROCESSOR_LANES);
+            for (const auto &lane : TracksState::getProcessorLanesForTrack(track)) {
+                auto copiedLane = ValueTree(IDs::PROCESSOR_LANE);
+                copiedLane.setProperty(IDs::selectedSlotsMask, lane[IDs::selectedSlotsMask].toString(), nullptr);
+                for (auto processor : lane)
+                    if (track[IDs::selected] || tracks.isProcessorSelected(processor))
+                        copiedLane.appendChild(audioProcessorContainer.copyProcessor(processor), nullptr);
+                copiedLanes.appendChild(copiedLane, nullptr);
+            }
 
-            copiedTrack.appendChild(copiedLane, nullptr);
+            copiedTrack.appendChild(copiedLanes, nullptr);
             copiedItems.appendChild(copiedTrack, nullptr);
         }
     }

@@ -90,12 +90,13 @@ add_executable (APP
     "../../Source/view/graph_editor/processor/TrackOutputGraphEditorProcessor.h"
     "../../Source/view/graph_editor/ConnectorDragListener.h"
     "../../Source/view/graph_editor/GraphEditor.h"
+    "../../Source/view/graph_editor/GraphEditorChannel.h"
     "../../Source/view/graph_editor/GraphEditorConnector.h"
     "../../Source/view/graph_editor/GraphEditorConnectors.h"
     "../../Source/view/graph_editor/GraphEditorPanel.h"
-    "../../Source/view/graph_editor/GraphEditorChannel.h"
     "../../Source/view/graph_editor/GraphEditorProcessorContainer.h"
     "../../Source/view/graph_editor/GraphEditorProcessorLane.h"
+    "../../Source/view/graph_editor/GraphEditorProcessorLanes.h"
     "../../Source/view/graph_editor/GraphEditorTrack.h"
     "../../Source/view/graph_editor/GraphEditorTracks.h"
     "../../Source/view/graph_editor/TooltipBar.h"
@@ -1570,12 +1571,13 @@ set_source_files_properties ("../../Source/view/graph_editor/processor/TrackInpu
 set_source_files_properties ("../../Source/view/graph_editor/processor/TrackOutputGraphEditorProcessor.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/view/graph_editor/ConnectorDragListener.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/view/graph_editor/GraphEditor.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/view/graph_editor/GraphEditorChannel.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/view/graph_editor/GraphEditorConnector.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/view/graph_editor/GraphEditorConnectors.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/view/graph_editor/GraphEditorPanel.h" PROPERTIES HEADER_FILE_ONLY TRUE)
-set_source_files_properties ("../../Source/view/graph_editor/GraphEditorChannel.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/view/graph_editor/GraphEditorProcessorContainer.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/view/graph_editor/GraphEditorProcessorLane.h" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../Source/view/graph_editor/GraphEditorProcessorLanes.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/view/graph_editor/GraphEditorTrack.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/view/graph_editor/GraphEditorTracks.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../Source/view/graph_editor/TooltipBar.h" PROPERTIES HEADER_FILE_ONLY TRUE)

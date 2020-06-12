@@ -25,6 +25,7 @@ namespace IDs {
     DECLARE_ID(selected)
     DECLARE_ID(isMasterTrack)
 
+    DECLARE_ID(PROCESSOR_LANES)
     DECLARE_ID(PROCESSOR_LANE)
     DECLARE_ID(selectedSlotsMask)
 
