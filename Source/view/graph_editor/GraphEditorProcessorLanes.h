@@ -33,8 +33,8 @@ public:
     }
 
     void setCurrentlyMovingProcessor(BaseGraphEditorProcessor *currentlyMovingProcessor) {
-        for (auto *lane : objects)
-            lane->setCurrentlyMovingProcessor(currentlyMovingProcessor);
+        if (!objects.isEmpty()) // TODO > 1
+            objects.getFirst()->setCurrentlyMovingProcessor(currentlyMovingProcessor);
     }
 
     void resized() override {

@@ -22,6 +22,7 @@ public:
         view.addListener(this);
         // TODO shouldn't need to do this
         valueTreePropertyChanged(view.getState(), isMasterTrack() ? IDs::numMasterProcessorSlots : IDs::numProcessorSlots);
+        addAndMakeVisible(laneDragRectangle);
     }
 
     ~GraphEditorProcessorLane() override {
@@ -64,8 +65,11 @@ public:
             r.setWidth(processorSlotSize);
             r.setX(-slotOffset * processorSlotSize - ViewState::TRACK_LABEL_HEIGHT);
         } else {
+            auto laneHeaderBounds = r.removeFromTop(ViewState::LANE_HEADER_HEIGHT).reduced(0, 2);
+            laneDragRectangle.setRectangle(laneHeaderBounds.toFloat());
+
             r.setHeight(processorSlotSize);
-            r.setY(-slotOffset * processorSlotSize - ViewState::TRACK_LABEL_HEIGHT);
+            r.setY(r.getY() - slotOffset * processorSlotSize - ViewState::TRACK_LABEL_HEIGHT);
         }
 
         for (int slot = 0; slot < processorSlotRectangles.size(); slot++) {
@@ -94,6 +98,7 @@ public:
         const static auto &baseColour = findColour(ResizableWindow::backgroundColourId).brighter(0.4);
         const auto &track = getTrack();
 
+        laneDragRectangle.setFill(TracksState::getTrackColour(track));
         for (int slot = 0; slot < processorSlotRectangles.size(); slot++) {
             auto fillColour = baseColour;
             if (TracksState::doesTrackHaveSelections(track))
@@ -171,8 +176,7 @@ public:
     }
 
     void setCurrentlyMovingProcessor(BaseGraphEditorProcessor *currentlyMovingProcessor) {
-        if (objects.contains(currentlyMovingProcessor))
-            this->currentlyMovingProcessor = currentlyMovingProcessor;
+        this->currentlyMovingProcessor = currentlyMovingProcessor;
     }
 
 private:
@@ -192,6 +196,7 @@ private:
     ConnectorDragListener &connectorDragListener;
     BaseGraphEditorProcessor *currentlyMovingProcessor{};
 
+    DrawableRectangle laneDragRectangle;
     OwnedArray<DrawableRectangle> processorSlotRectangles;
 
     BaseGraphEditorProcessor *findProcessorAtSlot(int slot) const {

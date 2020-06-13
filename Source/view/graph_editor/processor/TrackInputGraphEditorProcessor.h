@@ -107,10 +107,8 @@ public:
     }
 
     Rectangle<int> getBoxBounds() override {
-        return getLocalBounds().withTrimmedTop(VERTICAL_MARGIN).withTrimmedBottom(VERTICAL_MARGIN);
+        return getLocalBounds();
     }
-
-    static constexpr int VERTICAL_MARGIN = channelSize / 2;
 
 private:
     Project &project;

@@ -195,7 +195,9 @@ public:
             NUM_VISIBLE_MASTER_TRACK_SLOTS = NUM_VISIBLE_NON_MASTER_TRACK_SLOTS + 1,
             NUM_VISIBLE_PROCESSOR_SLOTS = NUM_VISIBLE_NON_MASTER_TRACK_SLOTS + 3;  // + input row, output row, master track
 
-    static constexpr int TRACK_LABEL_HEIGHT = 42, TRACKS_MARGIN = 10;
+    static constexpr int TRACK_INPUT_HEIGHT = 34, LANE_HEADER_HEIGHT = 18,
+            TRACK_LABEL_HEIGHT = TRACK_INPUT_HEIGHT + LANE_HEADER_HEIGHT,
+            TRACKS_MARGIN = 10;
 private:
     ValueTree viewState;
     UndoManager &undoManager;
