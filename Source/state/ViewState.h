@@ -44,6 +44,10 @@ public:
         return isMasterTrack(track) ? getNumMasterProcessorSlots() : getNumTrackProcessorSlots();
     }
 
+    int getProcessorSlotSize(const ValueTree &track) const {
+        return isMasterTrack(track) ? getTrackWidth() : getProcessorHeight();
+    }
+
     void setMasterViewSlotOffset(int masterViewSlotOffset) {
         viewState.setProperty(IDs::masterViewSlotOffset, masterViewSlotOffset, &undoManager);
     }

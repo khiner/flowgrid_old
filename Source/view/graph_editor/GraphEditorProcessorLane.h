@@ -15,7 +15,7 @@ class GraphEditorProcessorLane : public Component,
 public:
     explicit GraphEditorProcessorLane(Project &project, const ValueTree &state, ConnectorDragListener &connectorDragListener)
             : Utilities::ValueTreeObjectList<BaseGraphEditorProcessor>(state),
-              project(project), tracks(project.getTracks()), view(project.getView()),
+              project(project), state(state), tracks(project.getTracks()), view(project.getView()),
               connections(project.getConnections()),
               pluginManager(project.getPluginManager()), connectorDragListener(connectorDragListener) {
         rebuildObjects();
@@ -29,6 +29,8 @@ public:
         freeObjects();
     }
 
+    const ValueTree &getState() const { return state; }
+
     ValueTree getTrack() const {
         return parent.getParent().getParent();
     }
@@ -38,10 +40,6 @@ public:
     int getNumSlots() const { return view.getNumSlotsForTrack(getTrack()); }
 
     int getSlotOffset() const { return view.getSlotOffsetForTrack(getTrack()); }
-
-    int getProcessorSlotSize() const {
-        return isMasterTrack() ? view.getTrackWidth() : view.getProcessorHeight();
-    }
 
     void mouseDown(const MouseEvent &e) override {
         int slot = findSlotAt(e.getEventRelativeTo(this));
@@ -60,7 +58,7 @@ public:
 
     void resized() override {
         auto slotOffset = getSlotOffset();
-        auto processorSlotSize = getProcessorSlotSize();
+        auto processorSlotSize = view.getProcessorSlotSize(getTrack());
         auto r = getLocalBounds();
         if (isMasterTrack()) {
             r.setWidth(processorSlotSize);
@@ -147,6 +145,10 @@ public:
     void objectOrderChanged() override { resized(); }
 
     BaseGraphEditorProcessor *getProcessorForNodeId(AudioProcessorGraph::NodeID nodeId) const override {
+        if (auto *currentlyMovingProcessor = getCurrentlyMovingProcessor())
+            if (currentlyMovingProcessor->getNodeId() == nodeId)
+                return currentlyMovingProcessor;
+
         for (auto *processor : objects)
             if (processor->getNodeId() == nodeId)
                 return processor;
@@ -169,7 +171,8 @@ public:
     }
 
     void setCurrentlyMovingProcessor(BaseGraphEditorProcessor *currentlyMovingProcessor) {
-        this->currentlyMovingProcessor = currentlyMovingProcessor;
+        if (objects.contains(currentlyMovingProcessor))
+            this->currentlyMovingProcessor = currentlyMovingProcessor;
     }
 
 private:
@@ -179,6 +182,8 @@ private:
             SHOW_PLUGIN_GUI_MENU_ID = 10, SHOW_ALL_PROGRAMS_MENU_ID = 11, CONFIGURE_AUDIO_MIDI_MENU_ID = 12;
 
     Project &project;
+    ValueTree state;
+
     TracksState &tracks;
     ViewState &view;
     ConnectionsState &connections;

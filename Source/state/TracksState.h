@@ -66,6 +66,10 @@ public:
         return processor.getParent().hasType(IDs::TRACK) ? processor.getParent() : processor.getParent().getParent().getParent();
     }
 
+    static ValueTree getTrackForProcessorLane(const ValueTree &lane) {
+        return lane.getParent().getParent();
+    }
+
     static ValueTree getInputProcessorForTrack(const ValueTree &track) {
         return track.getChildWithProperty(IDs::name, TrackInputProcessor::getPluginDescription().name);
     }

@@ -4,15 +4,15 @@
 #include <state/Identifiers.h>
 #include <view/graph_editor/processor/TrackInputGraphEditorProcessor.h>
 #include "JuceHeader.h"
-#include "GraphEditorProcessorLane.h"
+#include "GraphEditorProcessorLanes.h"
 #include "view/graph_editor/processor/TrackOutputGraphEditorProcessor.h"
 
 class GraphEditorTrack : public Component, public Utilities::ValueTreePropertyChangeListener, public GraphEditorProcessorContainer {
 public:
     explicit GraphEditorTrack(Project &project, TracksState &tracks, const ValueTree &state, ConnectorDragListener &connectorDragListener)
             : project(project), tracks(tracks), view(project.getView()), state(state),
-              connectorDragListener(connectorDragListener), lane(project, TracksState::getProcessorLaneForTrack(state), connectorDragListener) {
-        addAndMakeVisible(lane);
+              connectorDragListener(connectorDragListener), lanes(project, TracksState::getProcessorLanesForTrack(state), connectorDragListener) {
+        addAndMakeVisible(lanes);
         trackInputProcessorChanged();
         trackOutputProcessorChanged();
 
@@ -69,15 +69,15 @@ public:
                 r.removeFromTop(ViewState::TRACK_LABEL_HEIGHT);
 
         const auto &trackOutputBounds = isMasterTrack()
-                                        ? r.removeFromRight(lane.getProcessorSlotSize())
-                                        : r.removeFromBottom(lane.getProcessorSlotSize());
+                                        ? r.removeFromRight(view.getProcessorSlotSize(getState()))
+                                        : r.removeFromBottom(view.getProcessorSlotSize(getState()));
 
         if (trackInputProcessorView != nullptr)
             trackInputProcessorView->setBounds(trackInputBounds);
         if (trackOutputProcessorView != nullptr)
             trackOutputProcessorView->setBounds(trackOutputBounds);
         const auto &laneBounds = isMasterTrack() ? r.reduced(0, 2) : r.reduced(2, 0);
-        lane.setBounds(laneBounds);
+        lanes.setBounds(laneBounds);
     }
 
     BaseGraphEditorProcessor *getProcessorForNodeId(const AudioProcessorGraph::NodeID nodeId) const override {
@@ -85,15 +85,11 @@ public:
             return trackInputProcessorView.get();
         if (trackOutputProcessorView != nullptr && trackOutputProcessorView->getNodeId() == nodeId)
             return trackOutputProcessorView.get();
-        if (auto *currentlyMovingProcessor = lane.getCurrentlyMovingProcessor())
-            if (currentlyMovingProcessor->getNodeId() == nodeId)
-                return currentlyMovingProcessor;
-
-        return lane.getProcessorForNodeId(nodeId);
+        return lanes.getProcessorForNodeId(nodeId);
     }
 
     GraphEditorChannel *findChannelAt(const MouseEvent &e) {
-        auto *channel = lane.findChannelAt(e);
+        auto *channel = lanes.findChannelAt(e);
         if (channel != nullptr)
             return channel;
         if (trackInputProcessorView != nullptr)
@@ -106,7 +102,7 @@ public:
     }
 
     void setCurrentlyMovingProcessor(BaseGraphEditorProcessor *currentlyMovingProcessor) {
-        lane.setCurrentlyMovingProcessor(currentlyMovingProcessor);
+        lanes.setCurrentlyMovingProcessor(currentlyMovingProcessor);
     }
 
 private:
@@ -120,7 +116,7 @@ private:
     std::unique_ptr<TrackInputGraphEditorProcessor> trackInputProcessorView;
     std::unique_ptr<TrackOutputGraphEditorProcessor> trackOutputProcessorView;
     ConnectorDragListener &connectorDragListener;
-    GraphEditorProcessorLane lane;
+    GraphEditorProcessorLanes lanes;
 
     void onColourChanged() {
         const auto &colour = getColour();
