@@ -1,6 +1,7 @@
 #pragma once
 
 
+#include <view/PluginWindow.h>
 #include "JuceHeader.h"
 #include "Identifiers.h"
 #include "unordered_map"
@@ -336,6 +337,10 @@ public:
     void setTrackName(ValueTree track, const String &name) {
         undoManager.beginNewTransaction();
         track.setProperty(IDs::name, name, &undoManager);
+    }
+
+    void showWindow(ValueTree processor, PluginWindow::Type type) {
+        processor.setProperty(IDs::pluginWindowType, int(type),  &undoManager);
     }
 
     bool doesTrackAlreadyHaveGeneratorOrInstrument(const ValueTree &track) {

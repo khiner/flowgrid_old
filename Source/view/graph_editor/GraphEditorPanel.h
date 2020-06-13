@@ -39,7 +39,16 @@ public:
     }
 
     void mouseDown(const MouseEvent &e) override {
+        const auto &trackAndSlot = trackAndSlotAt(e);
+        const auto &track = tracks.getTrack(trackAndSlot.x);
         view.focusOnGridPane();
+
+        bool isSlotSelected = TracksState::isSlotSelected(track, trackAndSlot.y);
+        project.setProcessorSlotSelected(track, trackAndSlot.y, !(isSlotSelected && e.mods.isCommandDown()), !(isSlotSelected || e.mods.isCommandDown()));
+        if (e.mods.isPopupMenu() || e.getNumberOfClicks() == 2)
+            showPopupMenu(track, trackAndSlot.y);
+
+        project.beginDragging(trackAndSlot);
     }
 
     void mouseDrag(const MouseEvent &e) override {
@@ -48,6 +57,20 @@ public:
     }
 
     void mouseUp(const MouseEvent &e) override {
+        const auto &trackAndSlot = trackAndSlotAt(e);
+        const auto &track = tracks.getTrack(trackAndSlot.x);
+        if (e.mouseWasClicked() && !e.mods.isCommandDown()) {
+            // single click deselects other tracks/processors
+            project.setProcessorSlotSelected(track, trackAndSlot.y, true);
+        }
+
+        if (e.getNumberOfClicks() == 2) {
+            const auto &processor = tracks.getProcessorAtSlot(track, trackAndSlot.y);
+            if (processor.isValid() && project.getAudioProcessorForState(processor)->hasEditor()) {
+                tracks.showWindow(processor, PluginWindow::Type::normal);
+            }
+        }
+
         project.endDraggingProcessor();
     }
 
@@ -257,6 +280,94 @@ private:
         auto position = e.getEventRelativeTo(graphEditorTracks.get()).position.toInt();
         const auto &track = graphEditorTracks->findTrackAt(position);
         return {tracks.indexOf(track), view.findSlotAt(position, track)};
+    }
+
+    static constexpr int
+            DELETE_MENU_ID = 1, TOGGLE_BYPASS_MENU_ID = 2, ENABLE_DEFAULTS_MENU_ID = 3, DISCONNECT_ALL_MENU_ID = 4,
+            DISABLE_DEFAULTS_MENU_ID = 5, DISCONNECT_CUSTOM_MENU_ID = 6,
+            SHOW_PLUGIN_GUI_MENU_ID = 10, SHOW_ALL_PROGRAMS_MENU_ID = 11, CONFIGURE_AUDIO_MIDI_MENU_ID = 12;
+
+    void showPopupMenu(const ValueTree &track, int slot) {
+        PopupMenu menu;
+        const auto &processor = tracks.getProcessorAtSlot(track, slot);
+        auto &pluginManager = project.getPluginManager();
+
+        if (processor.isValid()) {
+            PopupMenu processorSelectorSubmenu;
+            pluginManager.addPluginsToMenu(processorSelectorSubmenu, track);
+            menu.addSubMenu("Insert new processor", processorSelectorSubmenu);
+            menu.addSeparator();
+
+            if (InternalPluginFormat::isIoProcessor(processor[IDs::name])) {
+                menu.addItem(CONFIGURE_AUDIO_MIDI_MENU_ID, "Configure audio/MIDI IO");
+            } else {
+                menu.addItem(DELETE_MENU_ID, "Delete this processor");
+                menu.addItem(TOGGLE_BYPASS_MENU_ID, "Toggle Bypass");
+            }
+
+            menu.addSeparator();
+            // todo single, stateful, menu item for enable/disable default connections
+            menu.addItem(ENABLE_DEFAULTS_MENU_ID, "Enable default connections");
+            menu.addItem(DISABLE_DEFAULTS_MENU_ID, "Disable default connections");
+            menu.addItem(DISCONNECT_ALL_MENU_ID, "Disconnect all");
+            menu.addItem(DISCONNECT_CUSTOM_MENU_ID, "Disconnect all custom");
+
+            if (project.getAudioProcessorForState(processor)->hasEditor()) {
+                menu.addSeparator();
+                menu.addItem(SHOW_PLUGIN_GUI_MENU_ID, "Show plugin GUI");
+                menu.addItem(SHOW_ALL_PROGRAMS_MENU_ID, "Show all programs");
+            }
+
+            menu.showMenuAsync({}, ModalCallbackFunction::create
+                    ([this, processor, slot, &pluginManager](int result) {
+                        const auto &description = pluginManager.getChosenType(result);
+                        if (!description.name.isEmpty()) {
+                            project.createProcessor(description, slot);
+                            return;
+                        }
+
+                        switch (result) {
+                            case DELETE_MENU_ID:
+                                getCommandManager().invokeDirectly(CommandIDs::deleteSelected, false);
+                                break;
+                            case TOGGLE_BYPASS_MENU_ID:
+                                project.toggleProcessorBypass(processor);
+                                break;
+                            case ENABLE_DEFAULTS_MENU_ID:
+                                project.setDefaultConnectionsAllowed(processor, true);
+                                break;
+                            case DISABLE_DEFAULTS_MENU_ID:
+                                project.setDefaultConnectionsAllowed(processor, false);
+                                break;
+                            case DISCONNECT_ALL_MENU_ID:
+                                project.disconnectProcessor(processor);
+                                break;
+                            case DISCONNECT_CUSTOM_MENU_ID:
+                                project.disconnectCustom(processor);
+                                break;
+                            case SHOW_PLUGIN_GUI_MENU_ID:
+                                tracks.showWindow(processor, PluginWindow::Type::normal);
+                                break;
+                            case SHOW_ALL_PROGRAMS_MENU_ID:
+                                tracks.showWindow(processor, PluginWindow::Type::programs);
+                                break;
+                            case CONFIGURE_AUDIO_MIDI_MENU_ID:
+                                getCommandManager().invokeDirectly(CommandIDs::showAudioMidiSettings, false);
+                                break;
+                            default:
+                                break;
+                        }
+                    }));
+        } else { // no processor in this slot
+            pluginManager.addPluginsToMenu(menu, track);
+
+            menu.showMenuAsync({}, ModalCallbackFunction::create([this, slot, &pluginManager](int result) {
+                auto &description = pluginManager.getChosenType(result);
+                if (!description.name.isEmpty()) {
+                    project.createProcessor(description, slot);
+                }
+            }));
+        }
     }
 
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {

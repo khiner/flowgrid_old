@@ -32,11 +32,6 @@ public:
         return nullptr;
     }
 
-    void setCurrentlyMovingProcessor(BaseGraphEditorProcessor *currentlyMovingProcessor) {
-        if (!objects.isEmpty()) // TODO > 1
-            objects.getFirst()->setCurrentlyMovingProcessor(currentlyMovingProcessor);
-    }
-
     void resized() override {
         auto r = getLocalBounds();
 

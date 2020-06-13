@@ -84,14 +84,6 @@ public:
         return nullptr;
     }
 
-    GraphEditorTrack *getTrackForState(const ValueTree &state) const {
-        for (auto *track : objects)
-            if (track->getState() == state)
-                return track;
-
-        return nullptr;
-    }
-
     GraphEditorChannel *findChannelAt(const MouseEvent &e) const {
         for (auto *track : objects)
             if (auto *channel = track->findChannelAt(e))
@@ -127,26 +119,6 @@ private:
     void valueTreePropertyChanged(ValueTree &tree, const juce::Identifier &i) override {
         if (i == IDs::gridViewTrackOffset || i == IDs::masterViewSlotOffset)
             resized();
-    }
-
-    // TODO I think we can avoid all this nonsense and just destroy and recreate the graph children. Probably not worth the complexity
-    void valueTreeChildWillBeMovedToNewParent(ValueTree child, ValueTree &oldParent, int oldIndex, ValueTree &newParent, int newIndex) override {
-        if (child.hasType(IDs::PROCESSOR)) {
-            auto *fromTrack = getTrackForState(TracksState::getTrackForProcessorLane(oldParent));
-            auto *toTrack = getTrackForState(TracksState::getTrackForProcessorLane(newParent));
-            auto *processor = fromTrack->getProcessorForNodeId(ProcessorGraph::getNodeIdForState(child));
-            fromTrack->setCurrentlyMovingProcessor(processor);
-            toTrack->setCurrentlyMovingProcessor(processor);
-        }
-    }
-
-    void valueTreeChildHasMovedToNewParent(ValueTree child, ValueTree &oldParent, int oldIndex, ValueTree &newParent, int newIndex) override {
-        if (child.hasType(IDs::PROCESSOR)) {
-            auto *fromTrack = getTrackForState(TracksState::getTrackForProcessorLane(oldParent));
-            auto *toTrack = getTrackForState(TracksState::getTrackForProcessorLane(newParent));
-            fromTrack->setCurrentlyMovingProcessor(nullptr);
-            toTrack->setCurrentlyMovingProcessor(nullptr);
-        }
     }
 
     Array<GraphEditorTrack *> getNonMasterTrackObjects() {

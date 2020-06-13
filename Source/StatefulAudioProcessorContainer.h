@@ -27,6 +27,13 @@ public:
         return processorState.isValid() ? getProcessorWrapperForNodeId(getNodeIdForState(processorState)) : nullptr;
     }
 
+    AudioProcessor *getAudioProcessorForState(const ValueTree &processorState) const {
+        if (auto *processorWrapper = getProcessorWrapperForState(processorState))
+            return processorWrapper->processor;
+
+        return {};
+    }
+
     ValueTree getProcessorStateForNodeId(AudioProcessorGraph::NodeID nodeId) {
         if (auto processorWrapper = getProcessorWrapperForNodeId(nodeId))
             return processorWrapper->state;

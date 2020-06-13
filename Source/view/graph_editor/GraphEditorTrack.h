@@ -101,10 +101,6 @@ public:
         return nullptr;
     }
 
-    void setCurrentlyMovingProcessor(BaseGraphEditorProcessor *currentlyMovingProcessor) {
-        lanes.setCurrentlyMovingProcessor(currentlyMovingProcessor);
-    }
-
 private:
     static constexpr int BORDER_WIDTH = 2;
 

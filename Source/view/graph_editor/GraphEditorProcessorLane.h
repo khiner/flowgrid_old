@@ -23,6 +23,7 @@ public:
         // TODO shouldn't need to do this
         valueTreePropertyChanged(view.getState(), isMasterTrack() ? IDs::numMasterProcessorSlots : IDs::numProcessorSlots);
         addAndMakeVisible(laneDragRectangle);
+        setInterceptsMouseClicks(false, false);
     }
 
     ~GraphEditorProcessorLane() override {
@@ -41,21 +42,6 @@ public:
     int getNumSlots() const { return view.getNumSlotsForTrack(getTrack()); }
 
     int getSlotOffset() const { return view.getSlotOffsetForTrack(getTrack()); }
-
-    void mouseDown(const MouseEvent &e) override {
-        int slot = findSlotAt(e.getEventRelativeTo(this));
-        bool isSlotSelected = TracksState::isSlotSelected(getTrack(), slot);
-        project.setProcessorSlotSelected(getTrack(), slot, !(isSlotSelected && e.mods.isCommandDown()), !(isSlotSelected || e.mods.isCommandDown()));
-        if (e.mods.isPopupMenu() || e.getNumberOfClicks() == 2)
-            showPopupMenu(slot);
-    }
-
-    void mouseUp(const MouseEvent &e) override {
-        if (e.mouseWasClicked() && !e.mods.isCommandDown()) {
-            // single click deselects other tracks/processors
-            project.setProcessorSlotSelected(getTrack(), findSlotAt(e.getEventRelativeTo(this)), true);
-        }
-    }
 
     void resized() override {
         auto slotOffset = getSlotOffset();
@@ -125,16 +111,13 @@ public:
     }
 
     BaseGraphEditorProcessor *createNewObject(const ValueTree &processor) override {
-        auto *graphEditorProcessor = currentlyMovingProcessor != nullptr ? currentlyMovingProcessor : createEditorForProcessor(processor);
+        auto *graphEditorProcessor = createEditorForProcessor(processor);
         addAndMakeVisible(graphEditorProcessor);
         return graphEditorProcessor;
     }
 
     void deleteObject(BaseGraphEditorProcessor *graphEditorProcessor) override {
-        if (currentlyMovingProcessor == nullptr)
-            delete graphEditorProcessor;
-        else
-            removeChildComponent(graphEditorProcessor);
+        delete graphEditorProcessor;
     }
 
     void newObjectAdded(BaseGraphEditorProcessor *processor) override {
@@ -150,10 +133,6 @@ public:
     void objectOrderChanged() override { resized(); }
 
     BaseGraphEditorProcessor *getProcessorForNodeId(AudioProcessorGraph::NodeID nodeId) const override {
-        if (auto *currentlyMovingProcessor = getCurrentlyMovingProcessor())
-            if (currentlyMovingProcessor->getNodeId() == nodeId)
-                return currentlyMovingProcessor;
-
         for (auto *processor : objects)
             if (processor->getNodeId() == nodeId)
                 return processor;
@@ -167,24 +146,7 @@ public:
         return nullptr;
     }
 
-    int findSlotAt(const MouseEvent &e) {
-        return view.findSlotAt(e.getEventRelativeTo(this->getParentComponent()).getPosition(), getTrack());
-    }
-
-    BaseGraphEditorProcessor *getCurrentlyMovingProcessor() const {
-        return currentlyMovingProcessor;
-    }
-
-    void setCurrentlyMovingProcessor(BaseGraphEditorProcessor *currentlyMovingProcessor) {
-        this->currentlyMovingProcessor = currentlyMovingProcessor;
-    }
-
 private:
-    static constexpr int
-            DELETE_MENU_ID = 1, TOGGLE_BYPASS_MENU_ID = 2, ENABLE_DEFAULTS_MENU_ID = 3, DISCONNECT_ALL_MENU_ID = 4,
-            DISABLE_DEFAULTS_MENU_ID = 5, DISCONNECT_CUSTOM_MENU_ID = 6,
-            SHOW_PLUGIN_GUI_MENU_ID = 10, SHOW_ALL_PROGRAMS_MENU_ID = 11, CONFIGURE_AUDIO_MIDI_MENU_ID = 12;
-
     Project &project;
     ValueTree state;
 
@@ -194,7 +156,6 @@ private:
 
     PluginManager &pluginManager;
     ConnectorDragListener &connectorDragListener;
-    BaseGraphEditorProcessor *currentlyMovingProcessor{};
 
     DrawableRectangle laneDragRectangle;
     OwnedArray<DrawableRectangle> processorSlotRectangles;
@@ -204,89 +165,6 @@ private:
             if (processor->getSlot() == slot)
                 return processor;
         return nullptr;
-    }
-
-    void showPopupMenu(int slot) {
-        PopupMenu menu;
-        const auto &track = getTrack();
-        auto *processor = findProcessorAtSlot(slot);
-
-        if (processor != nullptr) {
-            PopupMenu processorSelectorSubmenu;
-            pluginManager.addPluginsToMenu(processorSelectorSubmenu, track);
-            menu.addSubMenu("Insert new processor", processorSelectorSubmenu);
-            menu.addSeparator();
-
-            if (processor->isIoProcessor()) {
-                menu.addItem(CONFIGURE_AUDIO_MIDI_MENU_ID, "Configure audio/MIDI IO");
-            } else {
-                menu.addItem(DELETE_MENU_ID, "Delete this processor");
-                menu.addItem(TOGGLE_BYPASS_MENU_ID, "Toggle Bypass");
-            }
-
-            menu.addSeparator();
-            // todo single, stateful, menu item for enable/disable default connections
-            menu.addItem(ENABLE_DEFAULTS_MENU_ID, "Enable default connections");
-            menu.addItem(DISABLE_DEFAULTS_MENU_ID, "Disable default connections");
-            menu.addItem(DISCONNECT_ALL_MENU_ID, "Disconnect all");
-            menu.addItem(DISCONNECT_CUSTOM_MENU_ID, "Disconnect all custom");
-
-            if (processor->getAudioProcessor()->hasEditor()) {
-                menu.addSeparator();
-                menu.addItem(SHOW_PLUGIN_GUI_MENU_ID, "Show plugin GUI");
-                menu.addItem(SHOW_ALL_PROGRAMS_MENU_ID, "Show all programs");
-            }
-
-            menu.showMenuAsync({}, ModalCallbackFunction::create
-                    ([this, processor, slot](int result) {
-                        const auto &description = pluginManager.getChosenType(result);
-                        if (!description.name.isEmpty()) {
-                            project.createProcessor(description, slot);
-                            return;
-                        }
-
-                        switch (result) {
-                            case DELETE_MENU_ID:
-                                getCommandManager().invokeDirectly(CommandIDs::deleteSelected, false);
-                                break;
-                            case TOGGLE_BYPASS_MENU_ID:
-                                project.toggleProcessorBypass(processor->getState());
-                                break;
-                            case ENABLE_DEFAULTS_MENU_ID:
-                                project.setDefaultConnectionsAllowed(processor->getState(), true);
-                                break;
-                            case DISABLE_DEFAULTS_MENU_ID:
-                                project.setDefaultConnectionsAllowed(processor->getState(), false);
-                                break;
-                            case DISCONNECT_ALL_MENU_ID:
-                                project.disconnectProcessor(processor->getState());
-                                break;
-                            case DISCONNECT_CUSTOM_MENU_ID:
-                                project.disconnectCustom(processor->getState());
-                                break;
-                            case SHOW_PLUGIN_GUI_MENU_ID:
-                                processor->showWindow(PluginWindow::Type::normal);
-                                break;
-                            case SHOW_ALL_PROGRAMS_MENU_ID:
-                                processor->showWindow(PluginWindow::Type::programs);
-                                break;
-                            case CONFIGURE_AUDIO_MIDI_MENU_ID:
-                                getCommandManager().invokeDirectly(CommandIDs::showAudioMidiSettings, false);
-                                break;
-                            default:
-                                break;
-                        }
-                    }));
-        } else { // no processor in this slot
-            pluginManager.addPluginsToMenu(menu, track);
-
-            menu.showMenuAsync({}, ModalCallbackFunction::create([this, slot](int result) {
-                auto &description = pluginManager.getChosenType(result);
-                if (!description.name.isEmpty()) {
-                    project.createProcessor(description, slot);
-                }
-            }));
-        }
     }
 
     // TODO only instantiate 64 slot rects (and maybe another set for the boundary perimeter)

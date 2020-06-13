@@ -68,17 +68,6 @@ public:
         return audioProcessorContainer.getProcessorWrapperForState(state);
     }
 
-    AudioProcessor *getAudioProcessor() const {
-        if (auto *processorWrapper = getProcessorWrapper())
-            return processorWrapper->processor;
-
-        return {};
-    }
-
-    void showWindow(PluginWindow::Type type) {
-        state.setProperty(IDs::pluginWindowType, int(type),  &project.getUndoManager());
-    }
-
     void paint(Graphics &g) override {
         auto boxColour = findColour(TextEditor::backgroundColourId);
         if (state[IDs::bypassed])
@@ -90,19 +79,6 @@ public:
         g.fillRect(getBoxBounds());
     }
 
-    void mouseDown(const MouseEvent &e) override {
-        project.beginDragging({getTrackIndex(), getSlot()});
-    }
-
-    void mouseUp(const MouseEvent &e) override {
-        if (e.mouseWasDraggedSinceMouseDown()) {
-        } else if (e.getNumberOfClicks() == 2) {
-            if (getAudioProcessor()->hasEditor()) {
-                showWindow(PluginWindow::Type::normal);
-            }
-        }
-    }
-
     bool hitTest(int x, int y) override {
         for (auto *child : getChildren())
             if (child->getBounds().contains(x, y))
@@ -112,7 +88,7 @@ public:
     }
 
     void resized() override {
-        if (auto *processor = getAudioProcessor()) {
+        if (auto *processor = audioProcessorContainer.getAudioProcessorForState(state)) {
             auto boxBoundsFloat = getBoxBounds().toFloat();
             for (auto *channel : channels)
                 layoutChannel(processor, channel, boxBoundsFloat);
