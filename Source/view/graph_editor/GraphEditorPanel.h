@@ -386,6 +386,24 @@ private:
                 closeWindowFor(tree);
             else if (auto *w = getOrCreateWindowFor(tree, type))
                 w->toFront(true);
+        } else if (i == IDs::processorInitialized) {
+            if (tree[IDs::name] == MidiInputProcessor::name()) {
+                auto *midiInputProcessor = new LabelGraphEditorProcessor(project, tracks, view, tree, *this);
+                addAndMakeVisible(midiInputProcessor, 0);
+                midiInputProcessors.addSorted(processorComparator, midiInputProcessor);
+                resized();
+            } else if (tree[IDs::name] == MidiOutputProcessor::name()) {
+                auto *midiOutputProcessor = new LabelGraphEditorProcessor(project, tracks, view, tree, *this);
+                addAndMakeVisible(midiOutputProcessor, 0);
+                midiOutputProcessors.addSorted(processorComparator, midiOutputProcessor);
+                resized();
+            } else if (tree[IDs::name] == "Audio Input") {
+                addAndMakeVisible(*(audioInputProcessor = std::make_unique<LabelGraphEditorProcessor>(project, tracks, view, tree, *this)), 0);
+                resized();
+            } else if (tree[IDs::name] == "Audio Output") {
+                addAndMakeVisible(*(audioOutputProcessor = std::make_unique<LabelGraphEditorProcessor>(project, tracks, view, tree, *this)), 0);
+                resized();
+            }
         }
     }
 
@@ -393,25 +411,7 @@ private:
         if (child.hasType(IDs::TRACK)) {
             connectors->updateConnectors();
         } else if (child.hasType(IDs::PROCESSOR)) {
-            if (child[IDs::name] == MidiInputProcessor::name()) {
-                auto *midiInputProcessor = new LabelGraphEditorProcessor(project, tracks, view, child, *this);
-                addAndMakeVisible(midiInputProcessor, 0);
-                midiInputProcessors.addSorted(processorComparator, midiInputProcessor);
-                resized();
-            } else if (child[IDs::name] == MidiOutputProcessor::name()) {
-                auto *midiOutputProcessor = new LabelGraphEditorProcessor(project, tracks, view, child, *this);
-                addAndMakeVisible(midiOutputProcessor, 0);
-                midiOutputProcessors.addSorted(processorComparator, midiOutputProcessor);
-                resized();
-            } else if (child[IDs::name] == "Audio Input") {
-                addAndMakeVisible(*(audioInputProcessor = std::make_unique<LabelGraphEditorProcessor>(project, tracks, view, child, *this)), 0);
-                resized();
-            } else if (child[IDs::name] == "Audio Output") {
-                addAndMakeVisible(*(audioOutputProcessor = std::make_unique<LabelGraphEditorProcessor>(project, tracks, view, child, *this)), 0);
-                resized();
-            } else {
-                connectors->updateConnectors();
-            }
+            connectors->updateConnectors();
         } else if (child.hasType(IDs::CONNECTION)) {
             connectors->updateConnectors();
         }
@@ -436,8 +436,9 @@ private:
     }
 
     void valueTreeChildOrderChanged(ValueTree &parent, int oldIndex, int newIndex) override {
-        if (parent.hasType(IDs::TRACKS))
+        if (parent.hasType(IDs::TRACKS)) {
             connectors->updateConnectors();
+        }
     }
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (GraphEditorPanel)
