@@ -37,11 +37,7 @@ public:
         }
 
         if (auto *masterTrack = findMasterTrack()) {
-            masterTrack->setBounds(
-                    r.removeFromTop(view.getProcessorHeight() + ViewState::TRACK_LABEL_HEIGHT)
-                            .withX(ViewState::TRACKS_MARGIN)
-                            .withWidth(view.getTrackWidth() * (ViewState::NUM_VISIBLE_MASTER_TRACK_SLOTS + 1))
-            );
+            masterTrack->setBounds(r.withX(ViewState::TRACKS_MARGIN).withWidth(view.getTrackWidth() * (ViewState::NUM_VISIBLE_MASTER_TRACK_SLOTS + 1)));
         }
     }
 

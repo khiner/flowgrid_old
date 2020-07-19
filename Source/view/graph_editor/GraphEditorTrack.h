@@ -64,8 +64,8 @@ public:
         auto r = getLocalBounds();
 
         auto trackInputBounds = isMasterTrack() ?
-                r.removeFromTop(ViewState::TRACK_LABEL_HEIGHT)
-                        .withSize(view.getTrackWidth(), ViewState::TRACK_LABEL_HEIGHT) :
+                r.removeFromTop(ViewState::TRACK_INPUT_HEIGHT)
+                        .withSize(view.getTrackWidth(), ViewState::TRACK_INPUT_HEIGHT) :
                 r.removeFromTop(ViewState::TRACK_INPUT_HEIGHT);
 
         const auto &trackOutputBounds = isMasterTrack()
