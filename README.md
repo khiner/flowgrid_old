@@ -289,4 +289,4 @@ OS-type app state, like the application window size and position, and the last o
 
 ## License
 
-This software is distributed under the [MIT License](./LICENSE).
+This software is distributed under the [GPLv3 License](./LICENSE.txt).
