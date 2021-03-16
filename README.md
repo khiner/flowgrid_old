@@ -1,4 +1,4 @@
-# Sound Machine
+# FlowGrid
 
 ![](docs/quick-demo.gif)
 
@@ -16,7 +16,7 @@ _This tool isn't quite there yet - there's still a lot to do!_
 This is a standalone desktop music production application written in C++ using the JUCE framework.
 It can run on any modern Mac, and it is designed to be used with Ableton's _Push 2_ hardware, although it can be used with a plain old mouse and keyboard as well.
 
-Sound-machine (for lack of a better name right now) is a modular patching environment and plugin host.
+FlowGrid is a modular patching environment and plugin host.
 It allows for arbitrary connections between internal processors and 3rd party plugins, as well as external audio and MIDI IO.
 Unlike other modular music software tools, however, it is _opinionated_.
 By default it behaves similar to a DAW, like Ableton, with separate tracks that each have sound producers and effects connected in series, each with a mixer channel that connects to a master track.
@@ -70,7 +70,7 @@ You can undo and redo by:
 
 ## Tracks
 
-Tracks in sound-machine are simply lanes of processors.
+Tracks in FlowGrid are simply lanes of processors.
 Tracks are arranged vertically and at most 8 tracks are in view at any time, but an unlimited number can be created (see [Selection and navigation](#selection-and-navigation)).
 
 Each vertical track has an unlimited number of processors, but only 7 visible visible at any time, including one special processor slot that is reserved for an optional Mixer Channel processor.
@@ -154,7 +154,7 @@ Enabling or disabling a MIDI IO device in the audio/MIDI settings is an _undoabl
 
 ### Default and custom connections
 
-Sound-machine is designed to connect processors to each other in an unsurprising way by default.
+FlowGrid is designed to connect processors to each other in an unsurprising way by default.
 However, default connections can be disabled for any processor by right-clicking on its node in the graph editor and selecting 'Disable default connections', which will disconnect any default connections and prevent them from being made to or from that processor in the future.
 
 When a processor is created, deleted, or moved, the default connections of the graph are updated to reflect the change.
@@ -206,7 +206,7 @@ In the bottom-right of the application window, there is a context-pane showing w
 
 ### Plugins
 
-When you first load sound-machine, no external plugins will be loaded (as this can take a very long time if you have a lot of them!).
+When you first load FlowGrid, no external plugins will be loaded (as this can take a very long time if you have a lot of them!).
 To make external plugins available, select 'Edit the list of available plugins' from the `Options` menu and select from the menu choices to load any available VST, VST3 or AU plugins on your system.
 Once loaded, the application will remember your plugins and make them available for use (as described in [Adding/removing processors](#adding-and-removing-processors)).
 
@@ -217,7 +217,7 @@ The state of all external plugins is saved with the project.
 
 ### Internal processors
 
-Sound-machine is currently lacking in the internal processor department, as the effort has been (and will continue to be for awhile!) on more fundamental aspects of application behavior.
+FlowGrid is currently lacking in the internal processor department, as the effort has been (and will continue to be for awhile!) on more fundamental aspects of application behavior.
 This list will be updated as new processors become available.
 
 * Mixer Channel
@@ -250,7 +250,7 @@ This list will be updated as new processors become available.
 
 Clone the repo (including the submodules for JUCE and libusb):
 
-`git clone --recurse-submodules https://github.com/khiner/sound-machine.git`
+`git clone --recurse-submodules https://github.com/khiner/flow-grid.git`
 
 ### Building and Loading
 
@@ -270,7 +270,7 @@ All development is done in CLion.
 
 * Open the Projucer application (tested with Projucer v5.4.5)
 * Click "Open Existing Project"
-* Select `sound-machine.jucer` at the root of this repo
+* Select `flow-grid.jucer` at the root of this repo
 * Make sure the File Exporter is up-to-date with the current state of the project
   - Select "File Exporter" in the left pane
   - Right-click the top-level `Source` directory
@@ -283,7 +283,7 @@ All development is done in CLion.
 
 ### App settings files
 
-Persistent application-specific settings, like scanned plugin info, and MIDI/audio IO device settings, are stored in `~/Library/Preferences/sound-machine.settings`. This file will be recreated with default settings if it is deleted.
+Persistent application-specific settings, like scanned plugin info, and MIDI/audio IO device settings, are stored in `~/Library/Preferences/flow-grid.settings`. This file will be recreated with default settings if it is deleted.
 
 OS-type app state, like the application window size and position, and the last opened project directory, is stored (on Macs) in the file `~/Library/Preferences/com.odandludo.soundmachine.plist`.
 

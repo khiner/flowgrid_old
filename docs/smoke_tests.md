@@ -38,7 +38,7 @@ For example, to see the verified functionality for release `0.0.1`, check out th
 
 ## Audio and MIDI IO device settings
 
-* Loading application for the first time (no `<VALUE name="audioDeviceState">` tag in `~/Library/Preferences/sound-machine.settings`)
+* Loading application for the first time (no `<VALUE name="audioDeviceState">` tag in `~/Library/Preferences/flow-grid.settings`)
   - Default system audio input and output channels should be present
   - default project master gain processor should have L/R audio channels connected to default audio output channels
   - Loading with Push 2 connected and on shows "Ableton Push 2 Live Port" in midi input devices

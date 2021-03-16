@@ -50,7 +50,7 @@ public:
 
         deviceManager.addChangeListener(this);
 
-        mainWindow = std::make_unique<MainWindow>(*this, "Sound Machine", new GraphEditor(processorGraph, project));
+        mainWindow = std::make_unique<MainWindow>(*this, "FlowGrid", new GraphEditor(processorGraph, project));
         mainWindow->setBoundsRelative(0.02, 0.02, 0.96, 0.96);
 
         push2Component = std::make_unique<Push2Component>(project, push2MidiCommunicator);

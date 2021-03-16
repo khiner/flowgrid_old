@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<JUCERPROJECT id="khUpu8" name="sound-machine" projectType="guiapp" version="0.0.1"
+<JUCERPROJECT id="khUpu8" name="flow-grid" projectType="guiapp" version="0.0.1"
               bundleIdentifier="com.odangludo.soundmachine" includeBinaryInAppConfig="1"
               companyWebsite="www.karlhiner.com" companyName="odangludo" reportAppUsage="1"
               splashScreenColour="Dark" cppLanguageStandard="17" companyCopyright="odangludo"
               companyEmail="karl.hiner@gmail.com" projectLineFeed="&#10;" jucerFormatVersion="1">
-  <MAINGROUP id="zuLs1h" name="sound-machine">
+  <MAINGROUP id="zuLs1h" name="flow-grid">
     <GROUP id="{7AEFA350-79E9-842E-7EF4-ED40351194FD}" name="Resources">
       <FILE id="a4Devn" name="AbletonSansBold-Regular.otf" compile="0" resource="1"
             file="Resources/AbletonSansBold-Regular.otf"/>
@@ -256,11 +256,11 @@
     <XCODE_MAC targetFolder="Builds/MacOSX">
       <CONFIGURATIONS>
         <CONFIGURATION name="Debug" osxCompatibility="10.7 SDK" isDebug="1" optimisation="1"
-                       targetName="sound-machine" cppLanguageStandard="c++11" cppLibType="libc++"
+                       targetName="flow-grid" cppLanguageStandard="c++11" cppLibType="libc++"
                        headerPath="../../Source&#10;../../Source/libusb&#10;../../modules/libusb/libusb&#10;"
                        enablePluginBinaryCopyStep="1"/>
         <CONFIGURATION name="Release" osxSDK="10.7 SDK" isDebug="0" optimisation="3"
-                       targetName="sound-machine" cppLanguageStandard="c++11" cppLibType="libc++"
+                       targetName="flow-grid" cppLanguageStandard="c++11" cppLibType="libc++"
                        headerPath="../../Source&#10;../../Source/libusb&#10;../../modules/libusb/libusb&#10;"
                        enablePluginBinaryCopyStep="1"/>
       </CONFIGURATIONS>
