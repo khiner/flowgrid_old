@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <JUCERPROJECT id="khUpu8" name="flow-grid" projectType="guiapp" version="0.0.1"
-              bundleIdentifier="com.odangludo.soundmachine" includeBinaryInAppConfig="1"
+              bundleIdentifier="com.odangludo.flowgrid" includeBinaryInAppConfig="1"
               companyWebsite="www.karlhiner.com" companyName="odangludo" reportAppUsage="1"
               splashScreenColour="Dark" cppLanguageStandard="17" companyCopyright="odangludo"
               companyEmail="karl.hiner@gmail.com" projectLineFeed="&#10;" jucerFormatVersion="1">

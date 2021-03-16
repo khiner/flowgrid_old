@@ -13,7 +13,7 @@ endif (NOT CMAKE_BUILD_TYPE)
 
 if (APPLE)
 
-project ("sound-machine" C CXX)
+project ("flow-grid" C CXX)
 
 add_executable (APP
     "../../Resources/AbletonSansBold-Regular.otf"
@@ -3307,7 +3307,7 @@ target_compile_options (APP PRIVATE
 )
 
 set_target_properties (APP PROPERTIES
-    OUTPUT_NAME "sound-machine"
+    OUTPUT_NAME "flow-grid"
     CXX_STANDARD 17
     CXX_EXTENSIONS OFF
     XCODE_ATTRIBUTE_CLANG_LINK_OBJC_RUNTIME NO
@@ -3320,11 +3320,11 @@ set_target_properties (APP PROPERTIES
     XCODE_ATTRIBUTE_INFOPLIST_FILE "${CMAKE_CURRENT_SOURCE_DIR}/Debug-Info-App.plist"
     XCODE_ATTRIBUTE_INFOPLIST_PREPROCESS NO
     XCODE_ATTRIBUTE_INSTALL_PATH "$(HOME)/Applications"
-    XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER com.odangludo.soundmachine
-    XCODE_ATTRIBUTE_PRODUCT_NAME "sound-machine"
+    XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER com.odangludo.flowgrid
+    XCODE_ATTRIBUTE_PRODUCT_NAME "flow-grid"
     XCODE_ATTRIBUTE_USE_HEADERMAP NO
     MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/Debug-Info-App.plist"
-    XCODE_ATTRIBUTE_PRODUCT_NAME "sound-machine"
+    XCODE_ATTRIBUTE_PRODUCT_NAME "flow-grid"
     MACOSX_BUNDLE TRUE
 )
 
@@ -3390,7 +3390,7 @@ target_compile_options (APP PRIVATE
 )
 
 set_target_properties (APP PROPERTIES
-    OUTPUT_NAME "sound-machine"
+    OUTPUT_NAME "flow-grid"
     CXX_STANDARD 17
     CXX_EXTENSIONS OFF
     XCODE_ATTRIBUTE_CLANG_LINK_OBJC_RUNTIME NO
@@ -3403,11 +3403,11 @@ set_target_properties (APP PROPERTIES
     XCODE_ATTRIBUTE_INFOPLIST_FILE "${CMAKE_CURRENT_SOURCE_DIR}/Release-Info-App.plist"
     XCODE_ATTRIBUTE_INFOPLIST_PREPROCESS NO
     XCODE_ATTRIBUTE_INSTALL_PATH "$(HOME)/Applications"
-    XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER com.odangludo.soundmachine
-    XCODE_ATTRIBUTE_PRODUCT_NAME "sound-machine"
+    XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER com.odangludo.flowgrid
+    XCODE_ATTRIBUTE_PRODUCT_NAME "flow-grid"
     XCODE_ATTRIBUTE_USE_HEADERMAP NO
     MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/Release-Info-App.plist"
-    XCODE_ATTRIBUTE_PRODUCT_NAME "sound-machine"
+    XCODE_ATTRIBUTE_PRODUCT_NAME "flow-grid"
     MACOSX_BUNDLE TRUE
 )
 

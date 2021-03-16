@@ -4,15 +4,15 @@
 <plist>
   <dict>
     <key>CFBundleExecutable</key>
-    <string>sound-machine</string>
+    <string>flow-grid</string>
     <key>CFBundleIconFile</key>
     <string/>
     <key>CFBundleIdentifier</key>
-    <string>com.odangludo.soundmachine</string>
+    <string>com.odangludo.flowgrid</string>
     <key>CFBundleName</key>
-    <string>sound-machine</string>
+    <string>flow-grid</string>
     <key>CFBundleDisplayName</key>
-    <string>sound-machine</string>
+    <string>flow-grid</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleSignature</key>
