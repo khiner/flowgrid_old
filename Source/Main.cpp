@@ -6,13 +6,13 @@
 #include "view/BasicWindow.h"
 #include "DeviceChangeMonitor.h"
 
-class SoundMachineApplication : public JUCEApplication, public MenuBarModel, private ChangeListener, private Utilities::ValueTreePropertyChangeListener {
+class FlowGridApplication : public JUCEApplication, public MenuBarModel, private ChangeListener, private Utilities::ValueTreePropertyChangeListener {
 public:
-    SoundMachineApplication() : project(undoManager, pluginManager, deviceManager),
-                                tracks(project.getTracks()),
-                                push2Colours(tracks),
-                                push2MidiCommunicator(project, push2Colours),
-                                processorGraph(project, tracks, project.getConnections(), project.getInput(), project.getOutput(),
+    FlowGridApplication() : project(undoManager, pluginManager, deviceManager),
+                            tracks(project.getTracks()),
+                            push2Colours(tracks),
+                            push2MidiCommunicator(project, push2Colours),
+                            processorGraph(project, tracks, project.getConnections(), project.getInput(), project.getOutput(),
                                                undoManager, deviceManager, push2MidiCommunicator) {}
 
     const String getApplicationName() override { return ProjectInfo::projectName; }
@@ -411,7 +411,7 @@ public:
 
     class MainWindow : public DocumentWindow, public FileDragAndDropTarget {
     public:
-        explicit MainWindow(SoundMachineApplication &owner, const String &name, GraphEditor *graphEditor) :
+        explicit MainWindow(FlowGridApplication &owner, const String &name, GraphEditor *graphEditor) :
                 DocumentWindow(name, Colours::lightgrey, DocumentWindow::allButtons), owner(owner), graphEditor(graphEditor) {
             graphEditor->setSize(1, 1); // nonzero size to avoid warnings
             setContentOwned(graphEditor, true);
@@ -487,7 +487,7 @@ public:
         void fileDragExit(const StringArray &files) override {}
 
     private:
-        SoundMachineApplication &owner;
+        FlowGridApplication &owner;
         GraphEditor *graphEditor;
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainWindow)
     };
@@ -579,7 +579,7 @@ private:
     }
 };
 
-static SoundMachineApplication &getApp() { return *dynamic_cast<SoundMachineApplication *>(JUCEApplication::getInstance()); }
+static FlowGridApplication &getApp() { return *dynamic_cast<FlowGridApplication *>(JUCEApplication::getInstance()); }
 
 ApplicationProperties &getApplicationProperties() { return getApp().applicationPropertiesAndCommandManager.applicationProperties; }
 
@@ -588,4 +588,4 @@ PropertiesFile *getUserSettings() { return getApplicationProperties().getUserSet
 ApplicationCommandManager &getCommandManager() { return getApp().applicationPropertiesAndCommandManager.commandManager; }
 
 // This macro generates the main() routine that launches the app.
-START_JUCE_APPLICATION (SoundMachineApplication)
+START_JUCE_APPLICATION (FlowGridApplication)

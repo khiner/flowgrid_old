@@ -8,7 +8,7 @@ if (NOT CMAKE_BUILD_TYPE)
 endif (NOT CMAKE_BUILD_TYPE)
 
 ###############################################################################
-# Xcode (MacOSX)
+# Xcode (macOS)
 ###############################################################################
 
 if (APPLE)
@@ -615,6 +615,7 @@ add_executable (APP
     "../../modules/JUCE/modules/juce_audio_processors/format_types/VST3_SDK/public.sdk/README.md"
     "../../modules/JUCE/modules/juce_audio_processors/format_types/VST3_SDK/LICENSE.txt"
     "../../modules/JUCE/modules/juce_audio_processors/format_types/VST3_SDK/README.md"
+    "../../modules/JUCE/modules/juce_audio_processors/format_types/juce_AU_Shared.h"
     "../../modules/JUCE/modules/juce_audio_processors/format_types/juce_AudioUnitPluginFormat.h"
     "../../modules/JUCE/modules/juce_audio_processors/format_types/juce_AudioUnitPluginFormat.mm"
     "../../modules/JUCE/modules/juce_audio_processors/format_types/juce_LADSPAPluginFormat.cpp"
@@ -2246,6 +2247,7 @@ set_source_files_properties ("../../modules/JUCE/modules/juce_audio_processors/f
 set_source_files_properties ("../../modules/JUCE/modules/juce_audio_processors/format_types/VST3_SDK/public.sdk/README.md" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../modules/JUCE/modules/juce_audio_processors/format_types/VST3_SDK/LICENSE.txt" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../modules/JUCE/modules/juce_audio_processors/format_types/VST3_SDK/README.md" PROPERTIES HEADER_FILE_ONLY TRUE)
+set_source_files_properties ("../../modules/JUCE/modules/juce_audio_processors/format_types/juce_AU_Shared.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../modules/JUCE/modules/juce_audio_processors/format_types/juce_AudioUnitPluginFormat.h" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../modules/JUCE/modules/juce_audio_processors/format_types/juce_AudioUnitPluginFormat.mm" PROPERTIES HEADER_FILE_ONLY TRUE)
 set_source_files_properties ("../../modules/JUCE/modules/juce_audio_processors/format_types/juce_LADSPAPluginFormat.cpp" PROPERTIES HEADER_FILE_ONLY TRUE)
@@ -3275,13 +3277,13 @@ if (CMAKE_BUILD_TYPE STREQUAL Debug)
 execute_process (COMMAND uname -m OUTPUT_VARIABLE JUCE_ARCH_LABEL OUTPUT_STRIP_TRAILING_WHITESPACE)
 
 target_include_directories (APP PRIVATE
-    "../../modules/JUCE/modules/juce_audio_processors/format_types/VST3_SDK"
+    "$(SRCROOT)/../../modules/JUCE/modules/juce_audio_processors/format_types/VST3_SDK"
     "$ENV{HOME}/SDKs/VST_SDK/VST2_SDK"
-    "../../JuceLibraryCode"
-    "../../modules/JUCE/modules"
-    "../../Source"
-    "../../Source/libusb"
-    "../../modules/libusb/libusb"
+    "$(SRCROOT)/../../JuceLibraryCode"
+    "$(SRCROOT)/../../modules/JUCE/modules"
+    "$(SRCROOT)/../../Source"
+    "$(SRCROOT)/../../Source/libusb"
+    "$(SRCROOT)/../../modules/libusb/libusb"
 )
 
 target_compile_definitions (APP PRIVATE
@@ -3310,6 +3312,7 @@ set_target_properties (APP PROPERTIES
     OUTPUT_NAME "flow-grid"
     CXX_STANDARD 17
     CXX_EXTENSIONS OFF
+    XCODE_ATTRIBUTE_MTL_HEADER_SEARCH_PATHS "$(SRCROOT)/../../modules/JUCE/modules/juce_audio_processors/format_types/VST3_SDK $ENV{HOME}/SDKs/VST_SDK/VST2_SDK $(SRCROOT)/../../JuceLibraryCode $(SRCROOT)/../../modules/JUCE/modules $(SRCROOT)/../../Source $(SRCROOT)/../../Source/libusb $(SRCROOT)/../../modules/libusb/libusb"
     XCODE_ATTRIBUTE_CLANG_LINK_OBJC_RUNTIME NO
     XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY ""
     XCODE_ATTRIBUTE_COMBINE_HIDPI_IMAGES YES
@@ -3323,6 +3326,7 @@ set_target_properties (APP PROPERTIES
     XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER com.odangludo.flowgrid
     XCODE_ATTRIBUTE_PRODUCT_NAME "flow-grid"
     XCODE_ATTRIBUTE_USE_HEADERMAP NO
+    XCODE_ATTRIBUTE_VALID_ARCHS "i386 x86_64 arm64 arm64e"
     MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/Debug-Info-App.plist"
     XCODE_ATTRIBUTE_PRODUCT_NAME "flow-grid"
     MACOSX_BUNDLE TRUE
@@ -3357,13 +3361,13 @@ if (CMAKE_BUILD_TYPE STREQUAL Release)
 execute_process (COMMAND uname -m OUTPUT_VARIABLE JUCE_ARCH_LABEL OUTPUT_STRIP_TRAILING_WHITESPACE)
 
 target_include_directories (APP PRIVATE
-    "../../modules/JUCE/modules/juce_audio_processors/format_types/VST3_SDK"
+    "$(SRCROOT)/../../modules/JUCE/modules/juce_audio_processors/format_types/VST3_SDK"
     "$ENV{HOME}/SDKs/VST_SDK/VST2_SDK"
-    "../../JuceLibraryCode"
-    "../../modules/JUCE/modules"
-    "../../Source"
-    "../../Source/libusb"
-    "../../modules/libusb/libusb"
+    "$(SRCROOT)/../../JuceLibraryCode"
+    "$(SRCROOT)/../../modules/JUCE/modules"
+    "$(SRCROOT)/../../Source"
+    "$(SRCROOT)/../../Source/libusb"
+    "$(SRCROOT)/../../modules/libusb/libusb"
 )
 
 target_compile_definitions (APP PRIVATE
@@ -3393,6 +3397,7 @@ set_target_properties (APP PROPERTIES
     OUTPUT_NAME "flow-grid"
     CXX_STANDARD 17
     CXX_EXTENSIONS OFF
+    XCODE_ATTRIBUTE_MTL_HEADER_SEARCH_PATHS "$(SRCROOT)/../../modules/JUCE/modules/juce_audio_processors/format_types/VST3_SDK $ENV{HOME}/SDKs/VST_SDK/VST2_SDK $(SRCROOT)/../../JuceLibraryCode $(SRCROOT)/../../modules/JUCE/modules $(SRCROOT)/../../Source $(SRCROOT)/../../Source/libusb $(SRCROOT)/../../modules/libusb/libusb"
     XCODE_ATTRIBUTE_CLANG_LINK_OBJC_RUNTIME NO
     XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY ""
     XCODE_ATTRIBUTE_COMBINE_HIDPI_IMAGES YES
@@ -3406,6 +3411,7 @@ set_target_properties (APP PROPERTIES
     XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER com.odangludo.flowgrid
     XCODE_ATTRIBUTE_PRODUCT_NAME "flow-grid"
     XCODE_ATTRIBUTE_USE_HEADERMAP NO
+    XCODE_ATTRIBUTE_VALID_ARCHS "i386 x86_64 arm64 arm64e"
     MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/Release-Info-App.plist"
     XCODE_ATTRIBUTE_PRODUCT_NAME "flow-grid"
     MACOSX_BUNDLE TRUE

@@ -285,7 +285,7 @@ All development is done in CLion.
 
 Persistent application-specific settings, like scanned plugin info, and MIDI/audio IO device settings, are stored in `~/Library/Preferences/flow-grid.settings`. This file will be recreated with default settings if it is deleted.
 
-OS-type app state, like the application window size and position, and the last opened project directory, is stored (on Macs) in the file `~/Library/Preferences/com.odandludo.soundmachine.plist`.
+OS-type app state, like the application window size and position, and the last opened project directory, is stored (on Macs) in the file `~/Library/Preferences/com.odandludo.flowgrid.plist`.
 
 ## License
 
