@@ -48,7 +48,7 @@
 #if ! JUCE_DONT_DECLARE_PROJECTINFO
 namespace ProjectInfo
 {
-    const char* const  projectName    = "flow-grid";
+    const char* const  projectName    = "FlowGrid";
     const char* const  companyName    = "odangludo";
     const char* const  versionString  = "0.0.1";
     const int          versionNumber  = 0x1;

@@ -4,15 +4,15 @@
 <plist>
   <dict>
     <key>CFBundleExecutable</key>
-    <string>flow-grid</string>
+    <string>flowgrid</string>
     <key>CFBundleIconFile</key>
     <string/>
     <key>CFBundleIdentifier</key>
     <string>com.odangludo.flowgrid</string>
     <key>CFBundleName</key>
-    <string>flow-grid</string>
+    <string>FlowGrid</string>
     <key>CFBundleDisplayName</key>
-    <string>flow-grid</string>
+    <string>FlowGrid</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleSignature</key>

@@ -250,7 +250,7 @@ This list will be updated as new processors become available.
 
 Clone the repo (including the submodules for JUCE and libusb):
 
-`git clone --recurse-submodules https://github.com/khiner/flow-grid.git`
+`git clone --recurse-submodules https://github.com/khiner/flowgrid.git`
 
 ### Building and Loading
 
@@ -270,7 +270,7 @@ All development is done in CLion.
 
 * Open the Projucer application (tested with Projucer v5.4.5)
 * Click "Open Existing Project"
-* Select `flow-grid.jucer` at the root of this repo
+* Select `flowgrid.jucer` at the root of this repo
 * Make sure the File Exporter is up-to-date with the current state of the project
   - Select "File Exporter" in the left pane
   - Right-click the top-level `Source` directory
@@ -283,7 +283,7 @@ All development is done in CLion.
 
 ### App settings files
 
-Persistent application-specific settings, like scanned plugin info, and MIDI/audio IO device settings, are stored in `~/Library/Preferences/flow-grid.settings`. This file will be recreated with default settings if it is deleted.
+Persistent application-specific settings, like scanned plugin info, and MIDI/audio IO device settings, are stored in `~/Library/Preferences/flowgrid.settings`. This file will be recreated with default settings if it is deleted.
 
 OS-type app state, like the application window size and position, and the last opened project directory, is stored (on Macs) in the file `~/Library/Preferences/com.odandludo.flowgrid.plist`.
 

@@ -13,7 +13,7 @@ endif (NOT CMAKE_BUILD_TYPE)
 
 if (APPLE)
 
-project ("flow-grid" C CXX)
+project ("FlowGrid" C CXX)
 
 add_executable (APP
     "../../Resources/AbletonSansBold-Regular.otf"
@@ -3309,7 +3309,7 @@ target_compile_options (APP PRIVATE
 )
 
 set_target_properties (APP PROPERTIES
-    OUTPUT_NAME "flow-grid"
+    OUTPUT_NAME "flowgrid"
     CXX_STANDARD 17
     CXX_EXTENSIONS OFF
     XCODE_ATTRIBUTE_MTL_HEADER_SEARCH_PATHS "$(SRCROOT)/../../modules/JUCE/modules/juce_audio_processors/format_types/VST3_SDK $ENV{HOME}/SDKs/VST_SDK/VST2_SDK $(SRCROOT)/../../JuceLibraryCode $(SRCROOT)/../../modules/JUCE/modules $(SRCROOT)/../../Source $(SRCROOT)/../../Source/libusb $(SRCROOT)/../../modules/libusb/libusb"
@@ -3324,11 +3324,11 @@ set_target_properties (APP PROPERTIES
     XCODE_ATTRIBUTE_INFOPLIST_PREPROCESS NO
     XCODE_ATTRIBUTE_INSTALL_PATH "$(HOME)/Applications"
     XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER com.odangludo.flowgrid
-    XCODE_ATTRIBUTE_PRODUCT_NAME "flow-grid"
+    XCODE_ATTRIBUTE_PRODUCT_NAME "flowgrid"
     XCODE_ATTRIBUTE_USE_HEADERMAP NO
     XCODE_ATTRIBUTE_VALID_ARCHS "i386 x86_64 arm64 arm64e"
     MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/Debug-Info-App.plist"
-    XCODE_ATTRIBUTE_PRODUCT_NAME "flow-grid"
+    XCODE_ATTRIBUTE_PRODUCT_NAME "flowgrid"
     MACOSX_BUNDLE TRUE
 )
 
@@ -3394,7 +3394,7 @@ target_compile_options (APP PRIVATE
 )
 
 set_target_properties (APP PROPERTIES
-    OUTPUT_NAME "flow-grid"
+    OUTPUT_NAME "flowgrid"
     CXX_STANDARD 17
     CXX_EXTENSIONS OFF
     XCODE_ATTRIBUTE_MTL_HEADER_SEARCH_PATHS "$(SRCROOT)/../../modules/JUCE/modules/juce_audio_processors/format_types/VST3_SDK $ENV{HOME}/SDKs/VST_SDK/VST2_SDK $(SRCROOT)/../../JuceLibraryCode $(SRCROOT)/../../modules/JUCE/modules $(SRCROOT)/../../Source $(SRCROOT)/../../Source/libusb $(SRCROOT)/../../modules/libusb/libusb"
@@ -3409,11 +3409,11 @@ set_target_properties (APP PROPERTIES
     XCODE_ATTRIBUTE_INFOPLIST_PREPROCESS NO
     XCODE_ATTRIBUTE_INSTALL_PATH "$(HOME)/Applications"
     XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER com.odangludo.flowgrid
-    XCODE_ATTRIBUTE_PRODUCT_NAME "flow-grid"
+    XCODE_ATTRIBUTE_PRODUCT_NAME "flowgrid"
     XCODE_ATTRIBUTE_USE_HEADERMAP NO
     XCODE_ATTRIBUTE_VALID_ARCHS "i386 x86_64 arm64 arm64e"
     MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/Release-Info-App.plist"
-    XCODE_ATTRIBUTE_PRODUCT_NAME "flow-grid"
+    XCODE_ATTRIBUTE_PRODUCT_NAME "flowgrid"
     MACOSX_BUNDLE TRUE
 )
 
