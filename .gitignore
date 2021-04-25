@@ -4,5 +4,5 @@ Builds/CLion/.idea/*
 Builds/MacOSX/
 Builds/VisualStudio2013/Debug/
 Builds/VisualStudio2013/Release/
-*/*.DS_Store
+**/*.DS_Store
 **/.idea/workspace.xml **/.idea/tasks.xml
