@@ -1,6 +1,7 @@
 [submodule "modules/JUCE"]
 	path = modules/JUCE
 	url = git@github.com:khiner/JUCE.git
+	branch = flowgrid
 [submodule "modules/libusb"]
 	path = modules/libusb
 	url = https://github.com/libusb/libusb.git
