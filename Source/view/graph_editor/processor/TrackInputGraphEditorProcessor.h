@@ -42,14 +42,14 @@ public:
     void mouseDown(const MouseEvent &e) override {
         if (e.eventComponent == &nameLabel) {
             if (e.mods.isPopupMenu()) {
-                auto *colourSelector = new ColourSelector();
+                auto colourSelector = std::make_unique<ColourSelector>();
                 colourSelector->setName("background");
                 colourSelector->setCurrentColour(findColour(TextButton::buttonColourId));
                 colourSelector->addChangeListener(this);
                 colourSelector->setColour(ColourSelector::backgroundColourId, Colours::transparentBlack);
                 colourSelector->setSize(300, 400);
 
-                CallOutBox::launchAsynchronously(colourSelector, getScreenBounds(), nullptr);
+                CallOutBox::launchAsynchronously(std::move(colourSelector), getScreenBounds(), nullptr);
             } else {
                 bool isTrackSelected = isSelected();
                 project.setTrackSelected(getTrack(), !(isTrackSelected && e.mods.isCommandDown()), !(isTrackSelected || e.mods.isCommandDown()));
