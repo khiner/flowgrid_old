@@ -468,7 +468,7 @@ public:
             if (parameter->isAutomatable())
                 automatableParameters.add(parameterWrapper);
         }
-        audioProcessorChanged(processor);
+        audioProcessorChanged(processor, AudioProcessorListener::ChangeDetails().withParameterInfoChanged(true));
         // Also a little hacky, but maybe the best we can do.
         // If we're loading from state, bypass state needs to make its way to the processor graph to actually mute.
         state.sendPropertyChangeMessage(IDs::bypassed);
@@ -619,7 +619,7 @@ private:
 
     void audioProcessorParameterChanged(AudioProcessor *processor, int parameterIndex, float newValue) override {}
 
-    void audioProcessorChanged(AudioProcessor *processor) override {
+    void audioProcessorChanged(AudioProcessor *processor, const ChangeDetails& details) override {
         if (processor == nullptr)
             return;
         if (MessageManager::getInstance()->isThisTheMessageThread())
