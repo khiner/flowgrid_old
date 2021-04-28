@@ -252,34 +252,12 @@ Clone the repo (including the submodules for JUCE and libusb):
 
 `git clone --recurse-submodules https://github.com/khiner/flowgrid.git`
 
-### Building and Loading
+### Building and running
 
-This project is built using the JUCE framework.
-I use Intellij's CLion editor, and occasionally rebuild the Projucer project to reflect the current development state.
-However I try and alway keep this project in a state where it can easily be rebuilt with the Projucer.
-
-#### Loading in CLion
-
-In CLion, import the project located in the `Builds` directory.
-(You should be able to do this at any time without rebuilding with Projucer.)
-
-#### Building with Projucer
-
-As mentioned above, this is done occasionally, only to keep the project current with the latest JUCE framework and ecosystem.
-All development is done in CLion.
-
-* Open the Projucer application (tested with Projucer v5.4.5)
-* Click "Open Existing Project"
-* Select `flowgrid.jucer` at the root of this repo
-* Make sure the File Exporter is up-to-date with the current state of the project
-  - Select "File Exporter" in the left pane
-  - Right-click the top-level `Source` directory
-  - Select "Delete" in the right-click dropdown
-  - Click the "+" button in the lower-right of the "File Exporter" pane
-  - Select "Add Existing Files..." in the dropdown
-  - Select the `Source` directory at the root of this repo
-* Under "Selected exporter" dropdown, select CLion
-* Hit the CLion logo to build the project and open CLion
+This project uses CMake.
+I use the CLion IDE to configure, build, run and debug the project.
+If you're using CLion, everything should just work if you specify the root CMakeLists.txt file. 
+Theoretically though, it could be built and run using the CMake CLI as well.
 
 ### App settings files
 
