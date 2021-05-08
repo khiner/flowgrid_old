@@ -1,9 +1,8 @@
 #pragma once
 
 #include <state/TracksState.h>
-#include "JuceHeader.h"
-#include "unordered_map"
 #include "state/Identifiers.h"
+#include "unordered_map"
 
 class Push2Colours : ValueTree::Listener {
 public:

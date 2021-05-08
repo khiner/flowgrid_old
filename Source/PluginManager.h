@@ -1,6 +1,5 @@
 #pragma once
 
-#include "JuceHeader.h"
 #include "processors/InternalPluginFormat.h"
 #include "state/Identifiers.h"
 #include "ApplicationPropertiesAndCommandManager.h"

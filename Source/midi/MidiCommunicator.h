@@ -1,7 +1,5 @@
 #pragma once
 
-#include "JuceHeader.h"
-
 class MidiCommunicator : public MidiInputCallback {
 public:
     explicit MidiCommunicator() = default;

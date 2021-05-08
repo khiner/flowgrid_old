@@ -1,7 +1,5 @@
 #pragma once
 
-#include "JuceHeader.h"
-
 class ToneSourceWithParameters {
 public:
     explicit ToneSourceWithParameters(const String &idSuffix,

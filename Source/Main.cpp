@@ -1,10 +1,14 @@
-#include <Utilities.h>
+#include <juce_audio_utils/juce_audio_utils.h>
+
 #include "view/push2/Push2Component.h"
-#include "ApplicationPropertiesAndCommandManager.h"
 #include <view/graph_editor/GraphEditor.h>
 #include <view/CustomColourIds.h>
 #include "view/BasicWindow.h"
+#include "ApplicationPropertiesAndCommandManager.h"
 #include "DeviceChangeMonitor.h"
+#include <Utilities.h>
+
+#include "FlowGridConfig.h"
 
 class FlowGridApplication : public JUCEApplication, public MenuBarModel, private ChangeListener, private Utilities::ValueTreePropertyChangeListener {
 public:
@@ -15,9 +19,9 @@ public:
                             processorGraph(project, tracks, project.getConnections(), project.getInput(), project.getOutput(),
                                                undoManager, deviceManager, push2MidiCommunicator) {}
 
-    const String getApplicationName() override { return ProjectInfo::projectName; }
+    const String getApplicationName() override { return PROJECT_NAME; }
 
-    const String getApplicationVersion() override { return ProjectInfo::versionString; }
+    const String getApplicationVersion() override { return PROJECT_VERSION; }
 
     bool moreThanOneInstanceAllowed() override { return true; }
 

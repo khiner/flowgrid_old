@@ -1,11 +1,11 @@
 #pragma once
 
+#include "view/CustomColourIds.h"
+#include <view/PluginWindow.h>
 #include <ProcessorGraph.h>
 #include "GraphEditorChannel.h"
 #include "GraphEditorTracks.h"
 #include "GraphEditorConnectors.h"
-#include "view/CustomColourIds.h"
-#include <view/PluginWindow.h>
 
 class GraphEditorPanel
         : public Component, public ConnectorDragListener, public GraphEditorProcessorContainer,

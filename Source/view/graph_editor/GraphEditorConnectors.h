@@ -1,8 +1,7 @@
 #pragma once
 
-#include <ValueTreeObjectList.h>
 #include <state/Project.h>
-#include "JuceHeader.h"
+#include <ValueTreeObjectList.h>
 #include "GraphEditorConnector.h"
 
 class GraphEditorConnectors : public Component, public Utilities::ValueTreeObjectList<GraphEditorConnector> {

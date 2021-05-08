@@ -1,6 +1,5 @@
 #pragma once
 
-#include "JuceHeader.h"
 #include "SelectAction.h"
 
 struct SelectProcessorSlotAction : public SelectAction {

@@ -2,7 +2,6 @@
 
 #include <ValueTreeObjectList.h>
 #include <state/Project.h>
-#include "JuceHeader.h"
 #include "GraphEditorProcessorLane.h"
 
 class GraphEditorProcessorLanes : public Component, public Utilities::ValueTreeObjectList<GraphEditorProcessorLane>,

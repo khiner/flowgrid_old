@@ -24,9 +24,12 @@ juce_add_gui_app(FlowGrid
     PLUGINHOST_AU TRUE
 )
 
-juce_generate_juce_header(FlowGrid)
+# Configure a header file to make CMake settings available to the source code
+configure_file(FlowGridConfig.h.in FlowGridConfig.h)
 
+# add the binary tree to the search path for include files so that we will find FlowGridConfig.h
 target_include_directories(FlowGrid PRIVATE
+    "${PROJECT_BINARY_DIR}"
     Source
     modules/libusb/libusb
 )

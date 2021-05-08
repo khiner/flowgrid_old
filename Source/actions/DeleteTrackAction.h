@@ -4,8 +4,6 @@
 #include <state/TracksState.h>
 #include <actions/DeleteProcessorAction.h>
 
-#include "JuceHeader.h"
-
 struct DeleteTrackAction : public UndoableAction {
     DeleteTrackAction(const ValueTree &trackToDelete, TracksState &tracks, ConnectionsState &connections,
                       StatefulAudioProcessorContainer &audioProcessorContainer)

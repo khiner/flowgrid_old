@@ -1,9 +1,8 @@
 #pragma once
 
-#include <PluginManager.h>
 #include <actions/DeleteProcessorAction.h>
 #include <actions/CreateProcessorAction.h>
-#include "JuceHeader.h"
+#include <PluginManager.h>
 #include "StatefulAudioProcessorContainer.h"
 #include "Stateful.h"
 

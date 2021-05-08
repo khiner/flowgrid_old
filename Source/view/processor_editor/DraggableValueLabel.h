@@ -1,7 +1,5 @@
 #pragma once
 
-#include "JuceHeader.h"
-
 class DraggableValueLabel : public Slider {
 public:
     DraggableValueLabel() : Slider(Slider::RotaryHorizontalVerticalDrag, Slider::TextEntryBoxPosition::NoTextBox) {}

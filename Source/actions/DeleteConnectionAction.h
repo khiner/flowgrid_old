@@ -1,7 +1,6 @@
 #pragma once
 
 #include <state/Identifiers.h>
-#include "JuceHeader.h"
 #include "CreateOrDeleteConnectionsAction.h"
 
 struct DeleteConnectionAction : public CreateOrDeleteConnectionsAction {

@@ -3,7 +3,9 @@
 #include <atomic>
 #include <vector>
 
-#include "JuceHeader.h"
+#include <juce_audio_basics/juce_audio_basics.h>
+
+using namespace juce;
 
 class LevelMeterSource {
 private:

@@ -7,8 +7,6 @@
 
 #include "libusb.h"
 
-#include "JuceHeader.h"
-
 class UsbCommunicator : private Timer {
 public:
     UsbCommunicator(const uint16_t vendorId, const uint16_t productId) :

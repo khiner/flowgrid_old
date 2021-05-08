@@ -1,9 +1,7 @@
 #pragma once
 
 #include <state/Identifiers.h>
-
 #include <state/ConnectionsState.h>
-#include "JuceHeader.h"
 
 struct CreateOrDeleteConnectionsAction : public UndoableAction {
     explicit CreateOrDeleteConnectionsAction(ConnectionsState &connections)

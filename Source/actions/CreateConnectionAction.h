@@ -1,7 +1,5 @@
 #pragma once
 
-#include "JuceHeader.h"
-
 #include <state/Identifiers.h>
 #include <state/ConnectionsState.h>
 #include "CreateOrDeleteConnectionsAction.h"

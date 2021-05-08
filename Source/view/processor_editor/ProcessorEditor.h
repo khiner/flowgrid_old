@@ -1,6 +1,5 @@
 #pragma once
 
-#include "JuceHeader.h"
 #include "processors/StatefulAudioProcessorWrapper.h"
 #include "SwitchParameterComponent.h"
 #include "ParametersPanel.h"

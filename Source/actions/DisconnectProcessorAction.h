@@ -1,10 +1,8 @@
 #pragma once
 
-#include "JuceHeader.h"
-
 #include <state/Identifiers.h>
-#include <StatefulAudioProcessorContainer.h>
 #include <actions/DeleteConnectionAction.h>
+#include <StatefulAudioProcessorContainer.h>
 
 struct DisconnectProcessorAction : public CreateOrDeleteConnectionsAction {
     DisconnectProcessorAction(ConnectionsState &connections, const ValueTree &processor, ConnectionType connectionType,

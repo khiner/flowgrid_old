@@ -1,6 +1,5 @@
 #pragma once
 
-#include "JuceHeader.h"
 #include "SliderControl.h"
 
 class MinimalSliderControl : public SliderControl {

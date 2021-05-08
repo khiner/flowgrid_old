@@ -2,7 +2,6 @@
 
 #include <push2/Push2MidiCommunicator.h>
 #include "state/Project.h"
-#include "JuceHeader.h"
 #include "Push2Listener.h"
 #include "Push2Label.h"
 

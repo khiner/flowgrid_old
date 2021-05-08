@@ -1,7 +1,5 @@
 #pragma once
 
-#include "JuceHeader.h"
-
 // Inserting a processor "pushes" any contiguous set of processors starting at the given slot down.
 // (The new processor always "wins" by keeping its given slot.)
 // Doesn't take care of any select actions! (Caller is responsible for that.)

@@ -1,10 +1,8 @@
 #pragma once
 
-#include "JuceHeader.h"
-#include "CreateConnectionAction.h"
-
 #include <state/Identifiers.h>
 #include <StatefulAudioProcessorContainer.h>
+#include "CreateConnectionAction.h"
 
 struct DefaultConnectProcessorAction : public CreateOrDeleteConnectionsAction {
     DefaultConnectProcessorAction(const ValueTree &fromProcessor, AudioProcessorGraph::NodeID toNodeId,

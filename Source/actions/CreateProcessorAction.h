@@ -2,8 +2,6 @@
 
 #include <state/TracksState.h>
 #include <view/PluginWindow.h>
-
-#include "JuceHeader.h"
 #include "InsertProcessorAction.h"
 
 struct CreateProcessorAction : public UndoableAction {

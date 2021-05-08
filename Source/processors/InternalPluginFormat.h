@@ -1,6 +1,5 @@
 #pragma once
 
-#include "JuceHeader.h"
 #include "InternalProcessorIncludes.h"
 
 class InternalPluginFormat : public AudioPluginFormat {

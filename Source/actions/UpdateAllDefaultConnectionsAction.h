@@ -1,13 +1,11 @@
 #pragma once
 
-#include "JuceHeader.h"
-#include "CreateConnectionAction.h"
-#include "UpdateProcessorDefaultConnectionsAction.h"
-#include "ResetDefaultExternalInputConnectionsAction.h"
-
 #include <state/Identifiers.h>
 #include <StatefulAudioProcessorContainer.h>
 #include <state/InputState.h>
+#include "CreateConnectionAction.h"
+#include "UpdateProcessorDefaultConnectionsAction.h"
+#include "ResetDefaultExternalInputConnectionsAction.h"
 
 struct UpdateAllDefaultConnectionsAction : public CreateOrDeleteConnectionsAction {
 

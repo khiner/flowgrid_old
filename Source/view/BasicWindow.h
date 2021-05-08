@@ -1,6 +1,5 @@
 #pragma once
 
-#include "JuceHeader.h"
 #include "view/UiColours.h"
 
 class BasicWindow : public DocumentWindow {

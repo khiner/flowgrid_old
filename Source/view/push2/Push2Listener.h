@@ -1,7 +1,5 @@
 #pragma once
 
-#include "JuceHeader.h"
-
 class Push2Listener : public MidiInputCallback {
 public:
     ~Push2Listener() override = default;

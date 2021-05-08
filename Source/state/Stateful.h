@@ -1,7 +1,6 @@
 #pragma once
 
 #include <Utilities.h>
-#include "JuceHeader.h"
 
 class Stateful {
 public:

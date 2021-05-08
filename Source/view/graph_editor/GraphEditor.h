@@ -2,7 +2,6 @@
 
 #include <ProcessorGraph.h>
 #include <state/Project.h>
-#include "JuceHeader.h"
 #include "GraphEditorPanel.h"
 #include "view/SelectionEditor.h"
 #include "TooltipBar.h"

@@ -2,7 +2,6 @@
 
 #include <ValueTreeObjectList.h>
 #include <state/Project.h>
-#include "JuceHeader.h"
 #include "GraphEditorTrack.h"
 #include "ConnectorDragListener.h"
 

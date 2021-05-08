@@ -1,7 +1,5 @@
 #pragma once
 
-#include "JuceHeader.h"
-
 class SwitchParameterComponent : public Component {
 public:
     class Listener {

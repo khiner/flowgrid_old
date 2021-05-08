@@ -1,10 +1,9 @@
 #pragma once
 
-#include "JuceHeader.h"
-#include "ConnectorDragListener.h"
-#include "Utilities.h"
 #include "state/Identifiers.h"
 #include "view/CustomColourIds.h"
+#include "ConnectorDragListener.h"
+#include "Utilities.h"
 
 struct GraphEditorChannel : public Component, public SettableTooltipClient, private Utilities::ValueTreePropertyChangeListener {
     GraphEditorChannel(ValueTree state, ConnectorDragListener &connectorDragListener, bool showChannelText = false)

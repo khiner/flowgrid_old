@@ -2,8 +2,6 @@
 
 #include <state/ConnectionsState.h>
 #include <state/TracksState.h>
-
-#include "JuceHeader.h"
 #include "DeleteTrackAction.h"
 
 struct DeleteSelectedItemsAction : public UndoableAction {

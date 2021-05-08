@@ -3,8 +3,6 @@
 #include <state/ConnectionsState.h>
 #include <state/TracksState.h>
 
-#include "JuceHeader.h"
-
 struct CreateTrackAction : public UndoableAction {
     CreateTrackAction(bool isMaster, const ValueTree &derivedFromTrack, TracksState &tracks, ViewState &view)
             : CreateTrackAction(calculateInsertIndex(isMaster, derivedFromTrack, tracks), isMaster, derivedFromTrack, tracks, view) {}

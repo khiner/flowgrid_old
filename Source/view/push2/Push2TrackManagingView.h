@@ -1,6 +1,5 @@
 #pragma once
 
-#include "JuceHeader.h"
 #include "Push2ComponentBase.h"
 #include "view/processor_editor/ParametersPanel.h"
 

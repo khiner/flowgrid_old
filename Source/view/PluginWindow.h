@@ -1,7 +1,5 @@
 #pragma once
 
-#include "JuceHeader.h"
-
 #include <ApplicationPropertiesAndCommandManager.h>
 #include "processors/MidiKeyboardProcessor.h"
 

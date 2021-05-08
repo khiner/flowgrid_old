@@ -1,6 +1,5 @@
 #pragma once
 
-#include "JuceHeader.h"
 #include "DefaultAudioProcessor.h"
 
 class ParameterTypesTestProcessor : public DefaultAudioProcessor {

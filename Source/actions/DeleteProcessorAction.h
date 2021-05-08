@@ -3,8 +3,6 @@
 #include <state/ConnectionsState.h>
 #include <state/TracksState.h>
 #include <view/PluginWindow.h>
-
-#include "JuceHeader.h"
 #include "DisconnectProcessorAction.h"
 
 struct DeleteProcessorAction : public UndoableAction {

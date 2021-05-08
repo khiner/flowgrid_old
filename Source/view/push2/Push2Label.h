@@ -1,6 +1,5 @@
 #pragma once
 
-#include "JuceHeader.h"
 #include "push2/Push2MidiCommunicator.h"
 
 class Push2Label : public Label {

@@ -1,7 +1,5 @@
 #pragma once
 
-#include "JuceHeader.h"
-
 namespace Utilities {
     template<typename ObjectType, typename CriticalSectionType = DummyCriticalSection>
     class ValueTreeObjectList : public ValueTree::Listener {

@@ -1,12 +1,10 @@
 #pragma once
 
-
+#include "state/ViewState.h"
 #include <view/PluginWindow.h>
-#include "JuceHeader.h"
 #include "Identifiers.h"
 #include "unordered_map"
 #include "StatefulAudioProcessorContainer.h"
-#include "state/ViewState.h"
 #include "PluginManager.h"
 #include "Stateful.h"
 

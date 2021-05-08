@@ -1,6 +1,6 @@
 #pragma once
 
-#include "JuceHeader.h"
+#include <juce_audio_devices/juce_audio_devices.h>
 
 namespace DeviceManagerUtilities {
     static String getAudioChannelName(AudioDeviceManager &deviceManager, int channelIndex, bool input) {

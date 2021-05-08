@@ -2,8 +2,6 @@
 
 #include <state/ConnectionsState.h>
 #include <state/TracksState.h>
-
-#include "JuceHeader.h"
 #include "ResetDefaultExternalInputConnectionsAction.h"
 
 struct SelectAction : public UndoableAction {

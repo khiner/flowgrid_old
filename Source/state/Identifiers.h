@@ -1,11 +1,7 @@
 #pragma once
 
-#include "JuceHeader.h"
-
 namespace IDs {
 #define DECLARE_ID(name) const juce::Identifier name(#name);
-
-
     DECLARE_ID(PARAM)
     DECLARE_ID(id)
     DECLARE_ID(value)
@@ -66,6 +62,5 @@ namespace IDs {
     DECLARE_ID(masterViewSlotOffset)
     DECLARE_ID(numMasterProcessorSlots)
     DECLARE_ID(numProcessorSlots)
-
 #undef DECLARE_ID
 }

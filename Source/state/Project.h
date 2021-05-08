@@ -1,7 +1,7 @@
 #pragma once
 
-#include <state/InputState.h>
-#include <state/OutputState.h>
+#include <juce_gui_extra/juce_gui_extra.h>
+
 #include <actions/SelectProcessorSlotAction.h>
 #include <actions/CreateTrackAction.h>
 #include <actions/CreateProcessorAction.h>
@@ -14,14 +14,15 @@
 #include <actions/MoveSelectedItemsAction.h>
 #include <actions/SelectRectangleAction.h>
 #include <actions/InsertAction.h>
-
-#include "PluginManager.h"
-#include "Utilities.h"
-#include "StatefulAudioProcessorContainer.h"
+#include "actions/SelectTrackAction.h"
 #include "state/TracksState.h"
 #include "state/ConnectionsState.h"
 #include "state/ViewState.h"
-#include "actions/SelectTrackAction.h"
+#include <state/InputState.h>
+#include <state/OutputState.h>
+#include "PluginManager.h"
+#include "Utilities.h"
+#include "StatefulAudioProcessorContainer.h"
 #include "CopiedState.h"
 
 class Project : public Stateful, public FileBasedDocument, public StatefulAudioProcessorContainer,

@@ -1,7 +1,10 @@
 #pragma once
 
+#include <juce_audio_processors/juce_audio_processors.h>
 #include "view/parameter_control/level_meter/LevelMeterSource.h"
-#include "JuceHeader.h"
+#include "FlowGridConfig.h"
+
+using namespace juce;
 
 class DefaultAudioProcessor : public AudioPluginInstance, public AudioProcessorParameter::Listener {
 public:
@@ -91,7 +94,9 @@ public:
         descr.pluginFormatName = "Internal";
         descr.category = (registerAsGenerator ? (acceptsMidi ? "Synth" : "Generator") : "Effect");
         descr.manufacturerName = "Odang Ludo Productions";
-        descr.version = ProjectInfo::versionString;
+
+        descr.version = PROJECT_VERSION;
+
         descr.fileOrIdentifier = pluginName + ":" + pluginState;
         descr.uid = pluginName.hashCode();
         descr.isInstrument = (acceptsMidi && registerAsGenerator);

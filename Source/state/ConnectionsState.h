@@ -1,7 +1,5 @@
 #pragma once
 
-#include "JuceHeader.h"
-
 #include "StatefulAudioProcessorContainer.h"
 #include "TracksState.h"
 

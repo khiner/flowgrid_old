@@ -1,6 +1,5 @@
 #pragma once
 
-#include "JuceHeader.h"
 #include "Push2ComponentBase.h"
 
 class Push2ProcessorSelector : public Push2ComponentBase {

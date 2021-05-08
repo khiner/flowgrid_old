@@ -1,7 +1,5 @@
 #pragma once
 
-#include "JuceHeader.h"
-
 class DeviceChangeMonitor : private Timer {
 public:
     explicit DeviceChangeMonitor(AudioDeviceManager &audioDeviceManager) : audioDeviceManager(audioDeviceManager) {

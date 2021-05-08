@@ -1,6 +1,5 @@
 #pragma once
 
-#include "JuceHeader.h"
 #include "DefaultAudioProcessor.h"
 #include "view/parameter_control/level_meter/LevelMeter.h"
 

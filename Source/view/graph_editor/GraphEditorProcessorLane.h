@@ -1,13 +1,13 @@
 #pragma once
 
-#include <ValueTreeObjectList.h>
 #include <state/Project.h>
 #include "view/graph_editor/processor/LabelGraphEditorProcessor.h"
+#include "view/CustomColourIds.h"
+#include "view/graph_editor/processor/ParameterPanelGraphEditorProcessor.h"
+#include <ValueTreeObjectList.h>
 #include "GraphEditorProcessorContainer.h"
 #include "ConnectorDragListener.h"
 #include "GraphEditorChannel.h"
-#include "view/CustomColourIds.h"
-#include "view/graph_editor/processor/ParameterPanelGraphEditorProcessor.h"
 
 class GraphEditorProcessorLane : public Component,
                                  public Utilities::ValueTreeObjectList<BaseGraphEditorProcessor>,

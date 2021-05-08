@@ -1,7 +1,6 @@
 #pragma once
 
 #include <view/parameter_control/ParameterControl.h>
-#include "JuceHeader.h"
 
 class SliderControl : public ParameterControl {
 public:

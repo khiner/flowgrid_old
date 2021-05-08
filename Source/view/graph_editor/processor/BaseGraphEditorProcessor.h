@@ -1,11 +1,10 @@
 #pragma once
 
-#include <Utilities.h>
 #include <state/Project.h>
-#include <StatefulAudioProcessorContainer.h>
-#include "JuceHeader.h"
 #include "view/graph_editor/ConnectorDragListener.h"
 #include "view/graph_editor/GraphEditorChannel.h"
+#include <StatefulAudioProcessorContainer.h>
+#include <Utilities.h>
 
 class BaseGraphEditorProcessor : public Component, public ValueTree::Listener {
 public:

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "JuceHeader.h"
+#include "FlowGridConfig.h"
 
 namespace CommandIDs {
     static const int
@@ -34,11 +34,14 @@ const String push2MidiDeviceName = "Ableton Push 2 Live Port";
 class ApplicationPropertiesAndCommandManager {
 public:
     ApplicationPropertiesAndCommandManager() {
-            PropertiesFile::Options options;
-            options.applicationName = ProjectInfo::projectName;
-            options.filenameSuffix = "settings";
-            options.osxLibrarySubFolder = "Preferences";
-            applicationProperties.setStorageParameters(options);
+        std::cout << "Project name: " << PROJECT_NAME << std::endl;
+        std::cout << "Project version: " << PROJECT_VERSION << std::endl;
+
+        PropertiesFile::Options options;
+        options.applicationName = PROJECT_NAME;
+        options.filenameSuffix = "settings";
+        options.osxLibrarySubFolder = "Preferences";
+        applicationProperties.setStorageParameters(options);
     }
 
     ApplicationProperties applicationProperties;

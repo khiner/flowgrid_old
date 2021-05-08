@@ -1,4 +1,3 @@
-#include <JuceHeader.h>
 #include <Utilities.h>
 #include <state/Identifiers.h>
 #include <PluginManager.h>

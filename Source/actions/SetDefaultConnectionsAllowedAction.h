@@ -2,7 +2,6 @@
 
 #include <state/Identifiers.h>
 #include <StatefulAudioProcessorContainer.h>
-#include "JuceHeader.h"
 #include "CreateOrDeleteConnectionsAction.h"
 #include "DisconnectProcessorAction.h"
 

@@ -3,7 +3,6 @@
 #include <state/Identifiers.h>
 #include <processors/StatefulAudioProcessorWrapper.h>
 
-#include "JuceHeader.h"
 #include "PluginManager.h"
 #include "state/Project.h"
 #include "state/ConnectionsState.h"

@@ -1,7 +1,5 @@
 #pragma once
 
-#include "JuceHeader.h"
-
 class ParameterControl : public Component {
 public:
     enum ColourIds {
