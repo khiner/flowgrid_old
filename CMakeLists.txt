@@ -2,7 +2,7 @@
 # and https://github.com/juce-framework/JUCE/blob/master/examples/CMake/GuiApp/CMakeLists.txt
 # for information on `juce` functions.
 
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.16)
 project(FlowGrid VERSION 0.0.1)
 
 set(CMAKE_CXX_STANDARD 17)
