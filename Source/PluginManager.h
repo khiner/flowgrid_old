@@ -10,7 +10,7 @@ public:
         if (auto savedPluginList = getUserSettings()->getXmlValue(PLUGIN_LIST_FILE_NAME))
             knownPluginListExternal.recreateFromXml(*savedPluginList);
 
-        for (auto &pluginType : internalPluginDescriptions) {
+        for (auto &pluginType : getInternalPluginDescriptions()) {
             knownPluginListInternal.addType(pluginType);
             if (!InternalPluginFormat::isIoProcessor(pluginType.name) &&
                 !InternalPluginFormat::isTrackIOProcessor(pluginType.name))
@@ -43,7 +43,7 @@ public:
     }
 
     Array<PluginDescription> &getInternalPluginDescriptions() {
-        return internalPluginDescriptions;
+        return internalFormat.getInternalPluginDescriptions();
     }
 
     Array<PluginDescription> &getExternalPluginDescriptions() {
@@ -70,18 +70,18 @@ public:
         userCreatableInternalPluginDescriptions = userCreatablePluginListInternal.getTypes();
 
         KnownPluginList::addToMenu (internalSubMenu, userCreatableInternalPluginDescriptions, pluginSortMethod);
-        KnownPluginList::addToMenu (externalSubMenu, externalPluginDescriptions, pluginSortMethod, String(), internalPluginDescriptions.size());
+        KnownPluginList::addToMenu (externalSubMenu, externalPluginDescriptions, pluginSortMethod, String(), getInternalPluginDescriptions().size());
 
         menu.addSubMenu("Internal", internalSubMenu, true);
         menu.addSeparator();
         menu.addSubMenu("External", externalSubMenu, true);
     }
 
-    const PluginDescription getChosenType(const int menuId) const {
+    const PluginDescription getChosenType(const int menuId) {
         int internalPluginListIndex = KnownPluginList::getIndexChosenByMenu(userCreatableInternalPluginDescriptions, menuId);
         if (internalPluginListIndex != -1)
             return userCreatableInternalPluginDescriptions[internalPluginListIndex];
-        int externalPluginListIndex = KnownPluginList::getIndexChosenByMenu(externalPluginDescriptions, menuId - internalPluginDescriptions.size());
+        int externalPluginListIndex = KnownPluginList::getIndexChosenByMenu(externalPluginDescriptions, menuId - getInternalPluginDescriptions().size());
         if (externalPluginListIndex != -1)
             return externalPluginDescriptions[externalPluginListIndex];
         return {};

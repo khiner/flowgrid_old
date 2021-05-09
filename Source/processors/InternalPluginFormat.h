@@ -1,11 +1,35 @@
 #pragma once
 
-#include "InternalProcessorIncludes.h"
+#include "Arpeggiator.h"
+#include "BalanceProcessor.h"
+#include "GainProcessor.h"
+#include "MidiInputProcessor.h"
+#include "MidiKeyboardProcessor.h"
+#include "MidiOutputProcessor.h"
+#include "MixerChannelProcessor.h"
+#include "ParameterTypesTestProcessor.h"
+#include "SineBank.h"
+#include "SineSynth.h"
+#include "TrackInputProcessor.h"
+#include "TrackOutputProcessor.h"
 
 class InternalPluginFormat : public AudioPluginFormat {
 public:
     //==============================================================================
-    InternalPluginFormat() {
+    InternalPluginFormat() : internalPluginDescriptions{
+            TrackInputProcessor::getPluginDescription(),
+            TrackOutputProcessor::getPluginDescription(),
+            Arpeggiator::getPluginDescription(),
+            BalanceProcessor::getPluginDescription(),
+            GainProcessor::getPluginDescription(),
+            MidiInputProcessor::getPluginDescription(),
+            MidiKeyboardProcessor::getPluginDescription(),
+            MidiOutputProcessor::getPluginDescription(),
+            MixerChannelProcessor::getPluginDescription(),
+            ParameterTypesTestProcessor::getPluginDescription(),
+            SineBank::getPluginDescription(),
+            SineSynth::getPluginDescription(),
+    } {
         {
             AudioProcessorGraph::AudioGraphIOProcessor p(AudioProcessorGraph::AudioGraphIOProcessor::audioInputNode);
             p.fillInPluginDescription(audioInDesc);
@@ -21,6 +45,10 @@ public:
     PluginDescription audioInDesc, audioOutDesc;
 
     String getName() const override { return "Internal"; }
+
+    Array<PluginDescription> &getInternalPluginDescriptions() {
+        return internalPluginDescriptions;
+    }
 
     bool fileMightContainThisPluginType(const String &) override { return true; }
 
@@ -57,6 +85,8 @@ public:
     }
 
 private:
+    Array<PluginDescription> internalPluginDescriptions;
+
     void createPluginInstance(const PluginDescription &desc, double initialSampleRate, int initialBufferSize,
                               PluginCreationCallback callback) override {
         if (auto pluginInstance = createInstance(desc.name))
@@ -65,7 +95,7 @@ private:
             callback(nullptr, NEEDS_TRANS("Invalid internal plugin name"));
     }
 
-    std::unique_ptr<AudioPluginInstance> createInstance(const String &name) {
+    std::unique_ptr<AudioPluginInstance> createInstance(const String &name) const {
         if (name == audioOutDesc.name) return std::make_unique<AudioProcessorGraph::AudioGraphIOProcessor>(AudioProcessorGraph::AudioGraphIOProcessor::audioOutputNode);
         if (name == audioInDesc.name) return std::make_unique<AudioProcessorGraph::AudioGraphIOProcessor>(AudioProcessorGraph::AudioGraphIOProcessor::audioInputNode);
         if (name == TrackInputProcessor::name()) return std::make_unique<TrackInputProcessor>();
