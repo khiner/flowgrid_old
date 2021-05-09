@@ -22,7 +22,4 @@ struct SelectProcessorSlotAction : public SelectAction {
         if (selected)
             setNewFocusedSlot({trackIndex, slot});
     }
-
-private:
-    JUCE_DECLARE_NON_COPYABLE(SelectProcessorSlotAction)
 };

@@ -81,6 +81,4 @@ private:
     std::unique_ptr<ParametersPanel> parametersPanel;
     DrawableText titleLabel;
     ArrowButton pageLeftButton, pageRightButton;
-
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ProcessorEditor)
 };

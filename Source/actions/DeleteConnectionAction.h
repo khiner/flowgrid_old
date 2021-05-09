@@ -14,7 +14,4 @@ struct DeleteConnectionAction : public CreateOrDeleteConnectionsAction {
         return (allowCustom && connection.hasProperty(IDs::isCustomConnection)) ||
                (allowDefaults && !connection.hasProperty(IDs::isCustomConnection));
     }
-
-private:
-    JUCE_DECLARE_NON_COPYABLE(DeleteConnectionAction)
 };

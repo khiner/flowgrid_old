@@ -16,7 +16,4 @@ struct DisconnectProcessorAction : public CreateOrDeleteConnectionsAction {
             }
         }
     }
-
-private:
-    JUCE_DECLARE_NON_COPYABLE(DisconnectProcessorAction)
 };

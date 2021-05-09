@@ -128,6 +128,4 @@ private:
     String name, state;
     bool isGenerator, hasMidi;
     AudioChannelSet channelSet;
-
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(DefaultAudioProcessor)
 };

@@ -68,6 +68,4 @@ private:
     DisconnectProcessorAction disconnectProcessorAction;
 
     StatefulAudioProcessorContainer &audioProcessorContainer;
-
-    JUCE_DECLARE_NON_COPYABLE(DeleteProcessorAction)
 };

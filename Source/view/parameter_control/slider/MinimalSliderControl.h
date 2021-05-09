@@ -30,8 +30,6 @@ public:
     }
 
 private:
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MinimalSliderControl)
-
     static constexpr int THUMB_WIDTH = 4;
 
     Rectangle<float> getSliderBounds() {

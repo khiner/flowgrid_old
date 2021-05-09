@@ -43,6 +43,4 @@ struct DeleteSelectedItemsAction : public UndoableAction {
 private:
     OwnedArray<DeleteTrackAction> deleteTrackActions;
     OwnedArray<DeleteProcessorAction> deleteProcessorActions;
-
-    JUCE_DECLARE_NON_COPYABLE(DeleteSelectedItemsAction)
 };

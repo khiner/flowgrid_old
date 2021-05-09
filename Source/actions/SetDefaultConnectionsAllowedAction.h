@@ -29,6 +29,4 @@ struct SetDefaultConnectionsAllowedAction : public CreateOrDeleteConnectionsActi
 private:
     ValueTree processor;
     bool defaultConnectionsAllowed;
-
-    JUCE_DECLARE_NON_COPYABLE(SetDefaultConnectionsAllowedAction)
 };

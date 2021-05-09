@@ -493,7 +493,6 @@ public:
     private:
         FlowGridApplication &owner;
         GraphEditor *graphEditor;
-        JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainWindow)
     };
 
     ApplicationPropertiesAndCommandManager applicationPropertiesAndCommandManager;

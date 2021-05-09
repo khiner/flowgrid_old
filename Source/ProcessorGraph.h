@@ -95,8 +95,6 @@ private:
 
     CreateOrDeleteConnectionsAction connectionsSincePause{connections};
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ProcessorGraph)
-
     void addProcessor(const ValueTree &processorState);
 
     void removeProcessor(const ValueTree &processor);

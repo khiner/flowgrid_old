@@ -43,6 +43,4 @@ private:
     TracksState &tracks;
 
     OwnedArray<DeleteProcessorAction> deleteProcessorActions;
-
-    JUCE_DECLARE_NON_COPYABLE(DeleteTrackAction)
 };

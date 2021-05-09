@@ -25,7 +25,4 @@ struct UpdateAllDefaultConnectionsAction : public CreateOrDeleteConnectionsActio
             coalesceWith(resetAction);
         }
     }
-
-private:
-    JUCE_DECLARE_NON_COPYABLE(UpdateAllDefaultConnectionsAction)
 };

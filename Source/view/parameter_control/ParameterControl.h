@@ -68,9 +68,6 @@ protected:
     virtual float getValueForPosition(juce::Point<int> localPosition) const = 0;
 
 private:
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ParameterControl)
-
     ListenerList<Listener> listeners;
-
     NormalisableRange<float> normalisableRange;
 };

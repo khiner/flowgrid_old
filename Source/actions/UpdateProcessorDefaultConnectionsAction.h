@@ -36,7 +36,4 @@ struct UpdateProcessorDefaultConnectionsAction : public CreateOrDeleteConnection
             }
         }
     }
-
-private:
-    JUCE_DECLARE_NON_COPYABLE(UpdateProcessorDefaultConnectionsAction)
 };

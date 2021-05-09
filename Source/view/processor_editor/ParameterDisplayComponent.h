@@ -191,6 +191,4 @@ private:
         auto r = getLocalBounds();
         return r.getHeight() < 80 || (r.getWidth() < 64 && getSlider() && !getDraggableValueLabel());
     }
-
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ParameterDisplayComponent)
 };

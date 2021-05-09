@@ -68,12 +68,9 @@ protected:
     }
 
 private:
-
     static int calculateInsertIndex(bool isMaster, const ValueTree &derivedFromTrack, TracksState &tracks) {
         if (isMaster)
             return tracks.getNumNonMasterTracks();
         return derivedFromTrack.isValid() ? derivedFromTrack.getParent().indexOf(derivedFromTrack) : tracks.getNumNonMasterTracks();
     }
-
-    JUCE_DECLARE_NON_COPYABLE(CreateTrackAction)
 };

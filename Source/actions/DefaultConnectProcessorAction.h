@@ -25,7 +25,4 @@ struct DefaultConnectProcessorAction : public CreateOrDeleteConnectionsAction {
         static Array<int> defaultMidiConnectionChannels{AudioProcessorGraph::midiChannelIndex};
         return connectionType == audio ? defaultAudioConnectionChannels : defaultMidiConnectionChannels;
     }
-
-private:
-    JUCE_DECLARE_NON_COPYABLE(DefaultConnectProcessorAction)
 };

@@ -32,7 +32,4 @@ struct SelectTrackAction : public SelectAction {
             }
         }
     }
-
-private:
-    JUCE_DECLARE_NON_COPYABLE(SelectTrackAction)
 };

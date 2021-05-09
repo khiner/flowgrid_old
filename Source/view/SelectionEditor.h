@@ -51,6 +51,4 @@ private:
     void valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int) override;
 
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override;
-
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SelectionEditor)
 };

@@ -24,5 +24,4 @@ public:
 
 private:
     std::function<void()> onClose;
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (BasicWindow)
 };

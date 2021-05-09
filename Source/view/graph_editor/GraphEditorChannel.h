@@ -108,6 +108,4 @@ private:
     ChannelLabel channelLabel;
 
     void valueTreePropertyChanged(ValueTree &v, const Identifier &i) override;
-
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (GraphEditorChannel)
 };

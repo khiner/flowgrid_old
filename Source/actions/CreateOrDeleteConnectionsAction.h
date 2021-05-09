@@ -78,7 +78,4 @@ struct CreateOrDeleteConnectionsAction : public UndoableAction {
 
 protected:
     ConnectionsState &connections;
-
-private:
-    JUCE_DECLARE_NON_COPYABLE(CreateOrDeleteConnectionsAction)
 };

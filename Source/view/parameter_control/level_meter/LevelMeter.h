@@ -56,10 +56,7 @@ protected:
     }
 
 private:
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(LevelMeter)
-
     WeakReference<LevelMeterSource> source;
-
     int refreshRate;
 
     virtual void drawMeterBars(Graphics &g, const LevelMeterSource *source) = 0;

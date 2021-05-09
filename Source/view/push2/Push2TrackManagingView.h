@@ -102,6 +102,4 @@ protected:
 
 private:
     OwnedArray<Push2Label> trackLabels;
-
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Push2TrackManagingView)
 };

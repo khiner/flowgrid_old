@@ -82,7 +82,6 @@ public:
     }
 
 private:
-
     ToneSourceWithParameters toneSource1;
     ToneSourceWithParameters toneSource2;
     ToneSourceWithParameters toneSource3;

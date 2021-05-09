@@ -31,7 +31,4 @@ struct SelectRectangleAction : public SelectAction {
         }
         setNewFocusedSlot({toTrackAndSlot.x, slotToFocus});
     }
-
-private:
-    JUCE_DECLARE_NON_COPYABLE(SelectRectangleAction)
 };

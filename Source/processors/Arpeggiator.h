@@ -72,6 +72,4 @@ private:
     int time{0};
     float rate{0};
     SortedSet<int> notes;
-
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Arpeggiator)
 };

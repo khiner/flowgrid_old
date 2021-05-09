@@ -276,6 +276,4 @@ private:
         }
         return firstProcessorInEachContiguousSelectedGroup;
     }
-
-    JUCE_DECLARE_NON_COPYABLE(MoveSelectedItemsAction)
 };

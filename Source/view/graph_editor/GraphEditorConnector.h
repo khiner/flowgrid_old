@@ -79,8 +79,6 @@ private:
             {AudioProcessorGraph::NodeID(0), 0}
     };
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (GraphEditorConnector)
-
     void setSource(AudioProcessorGraph::NodeAndChannel newSource) {
         if (connection.source != newSource) {
             connection.source = newSource;

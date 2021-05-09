@@ -28,6 +28,4 @@ public:
 private:
     GraphEditorPanel graphPanel;
     SelectionEditor selectionEditor;
-
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (GraphEditor)
 };

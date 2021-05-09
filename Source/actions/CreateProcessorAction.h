@@ -82,6 +82,4 @@ private:
             return indexToInsertProcessor <= 0 ? 0 : int(lane.getChild(indexToInsertProcessor - 1)[IDs::processorSlot]) + 1;
         }
     }
-
-    JUCE_DECLARE_NON_COPYABLE(CreateProcessorAction)
 };

@@ -30,7 +30,4 @@ protected:
                std::clamp(1.0f - float(localPosition.y) / float(getHeight()), 0.0f, 1.0f) :
                std::clamp(float(localPosition.x) / float(getWidth()), 0.0f, 1.0f);
     }
-
-private:
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SliderControl)
 };

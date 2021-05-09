@@ -103,14 +103,8 @@ private:
             void audioProcessorParameterChanged(AudioProcessor *, int, float) override {}
 
             AudioProcessor &owner;
-
-            JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PropertyComp)
         };
 
         PropertyPanel panel;
-
-        JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ProgramAudioProcessorEditor)
     };
-
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginWindow)
 };

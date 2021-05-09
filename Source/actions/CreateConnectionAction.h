@@ -74,8 +74,4 @@ struct CreateConnectionAction : public CreateOrDeleteConnectionsAction {
 
         return connectionState;
     }
-
-private:
-
-    JUCE_DECLARE_NON_COPYABLE(CreateConnectionAction)
 };

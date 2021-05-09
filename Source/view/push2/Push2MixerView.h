@@ -139,6 +139,4 @@ private:
         else if (selectedParametersPanel == &panParametersPanel)
             pansLabel.setSelected(true);
     }
-
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Push2MixerView)
 };

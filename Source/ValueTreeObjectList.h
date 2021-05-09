@@ -128,6 +128,4 @@ public:
         int index2 = parent.indexOf(second->getState());
         return index1 - index2;
     }
-
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ValueTreeObjectList)
 };

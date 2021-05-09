@@ -245,6 +245,4 @@ private:
 
         return duplicationIndices;
     }
-
-    JUCE_DECLARE_NON_COPYABLE(InsertAction)
 };
