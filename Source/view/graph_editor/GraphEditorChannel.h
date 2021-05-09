@@ -1,5 +1,7 @@
 #pragma once
 
+#include <juce_audio_processors/juce_audio_processors.h>
+#include <StatefulAudioProcessorContainer.h>
 #include "state/Identifiers.h"
 #include "view/CustomColourIds.h"
 #include "ConnectorDragListener.h"
@@ -18,7 +20,7 @@ struct GraphEditorChannel : public Component, public SettableTooltipClient, priv
         setSize(16, 16);
     }
 
-    ~GraphEditorChannel() {
+    ~GraphEditorChannel() override {
         channelLabel.removeMouseListener(this);
     }
 
@@ -41,7 +43,7 @@ struct GraphEditorChannel : public Component, public SettableTooltipClient, priv
     bool allowDefaultConnections() const { return getProcessor()[IDs::allowDefaultConnections]; }
 
     AudioProcessorGraph::NodeAndChannel getNodeAndChannel() const {
-        return {ProcessorGraph::getNodeIdForState(getProcessor()), getChannelIndex()};
+        return {StatefulAudioProcessorContainer::getNodeIdForState(getProcessor()), getChannelIndex()};
     }
 
     juce::Point<float> getConnectPosition() const {
@@ -110,7 +112,7 @@ struct GraphEditorChannel : public Component, public SettableTooltipClient, priv
     }
 
     void mouseDown(const MouseEvent &e) override {
-        static const AudioProcessorGraph::NodeAndChannel dummy{ProcessorGraph::NodeID(), 0};
+        static const AudioProcessorGraph::NodeAndChannel dummy{juce::AudioProcessorGraph::NodeID(), 0};
         AudioProcessorGraph::NodeAndChannel nodeAndChannel = getNodeAndChannel();
         connectorDragListener.beginConnectorDrag(isInput() ? dummy : nodeAndChannel, isInput() ? nodeAndChannel : dummy, e);
     }
@@ -140,7 +142,7 @@ private:
     // Can be either text or an icon
     struct ChannelLabel : public Component {
         ChannelLabel(bool isMidi, bool showChannelText) :
-                isMidi(isMidi), showChannelText(showChannelText) {
+                isMidi(isMidi), showChannelText(showChannelText), rotate(false) {
             if (showChannelText) {
                 text.setColour(findColour(TextEditor::textColourId));
                 text.setFontHeight(smallFontHeight);
@@ -165,7 +167,7 @@ private:
             }
         }
 
-        const String &getText() {
+        const String &getText() const {
             return text.getText();
         }
 
@@ -173,18 +175,15 @@ private:
             this->text.setText(text);
         }
 
-        bool isMidi, showChannelText;
-
         DrawableText text;
         DrawableImage image;
-        bool rotate;
+        bool isMidi, showChannelText, rotate;
     };
 
     ChannelLabel channelLabel;
 
     void valueTreePropertyChanged(ValueTree &v, const Identifier &i) override {
-        if (v != state)
-            return;
+        if (v != state) return;
 
         if (i == IDs::abbreviatedName) {
             const String &name = v[IDs::abbreviatedName];

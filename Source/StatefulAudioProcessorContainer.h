@@ -14,9 +14,9 @@ public:
 
     virtual StatefulAudioProcessorWrapper *getProcessorWrapperForNodeId(AudioProcessorGraph::NodeID nodeId) const = 0;
 
-    virtual void pauseAudioGraphUpdates() {};
+    virtual void pauseAudioGraphUpdates() {}
 
-    virtual void resumeAudioGraphUpdatesAndApplyDiffSincePause() {};
+    virtual void resumeAudioGraphUpdatesAndApplyDiffSincePause() {}
 
     virtual void onProcessorCreated(const ValueTree &processor) = 0;
 
@@ -39,7 +39,7 @@ public:
     }
 
     static AudioProcessorGraph::NodeID getNodeIdForState(const ValueTree &processorState) {
-        return processorState.isValid() ? AudioProcessorGraph::NodeID(int(processorState[IDs::nodeId])) : AudioProcessorGraph::NodeID{};
+        return processorState.isValid() ? AudioProcessorGraph::NodeID(static_cast<uint32>(int(processorState[IDs::nodeId]))) : AudioProcessorGraph::NodeID{};
     }
 
     void saveProcessorStateInformationToState(ValueTree &processorState) const {

@@ -1,5 +1,9 @@
 #pragma once
 
+#include <juce_gui_basics/juce_gui_basics.h>
+
+using namespace juce;
+
 class ParameterControl : public Component {
 public:
     enum ColourIds {
@@ -14,8 +18,7 @@ public:
         setColour(thumbColourId, Colours::white);
     }
 
-    ~ParameterControl() override {
-    }
+    ~ParameterControl() override = default;
 
     float getValue() const { return normalisableRange.convertFrom0to1(value); }
 
@@ -49,7 +52,7 @@ public:
 
     class Listener {
     public:
-        virtual ~Listener() {}
+        virtual ~Listener() = default;
 
         virtual void parameterControlValueChanged(ParameterControl *) = 0;
         virtual void parameterControlDragStarted(ParameterControl *) = 0;

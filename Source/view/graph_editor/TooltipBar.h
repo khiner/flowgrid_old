@@ -29,6 +29,6 @@ struct TooltipBar : public Component, private Timer {
     }
 
     String tip;
-    String DEFAULT_TOOLTIP = "Hi Hover over anything for info";
+    String DEFAULT_TOOLTIP = "Hover over anything for info";
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (TooltipBar)
 };

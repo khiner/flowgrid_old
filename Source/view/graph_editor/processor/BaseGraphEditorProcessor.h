@@ -4,41 +4,22 @@
 #include "view/graph_editor/ConnectorDragListener.h"
 #include "view/graph_editor/GraphEditorChannel.h"
 #include <StatefulAudioProcessorContainer.h>
-#include <Utilities.h>
 
 class BaseGraphEditorProcessor : public Component, public ValueTree::Listener {
 public:
     BaseGraphEditorProcessor(Project &project, TracksState &tracks, ViewState &view,
-                         const ValueTree &state, ConnectorDragListener &connectorDragListener)
-            : state(state), project(project), tracks(tracks), view(view),
-              connectorDragListener(connectorDragListener), audioProcessorContainer(project), pluginManager(project.getPluginManager()) {
-        this->state.addListener(this);
+                             const ValueTree &state, ConnectorDragListener &connectorDragListener);
 
-        for (auto child : state) {
-            if (child.hasType(IDs::INPUT_CHANNELS) || child.hasType(IDs::OUTPUT_CHANNELS)) {
-                for (auto channel : child) {
-                    valueTreeChildAdded(child, channel);
-                }
-            }
-        }
-    }
+    ~BaseGraphEditorProcessor() override;
 
-    ~BaseGraphEditorProcessor() override {
-        state.removeListener(this);
-    }
-
-    const ValueTree &getState() const {
-        return state;
-    }
+    const ValueTree &getState() const { return state; }
 
     ValueTree getTrack() const {
         return TracksState::getTrackForProcessor(getState());
     }
 
     AudioProcessorGraph::NodeID getNodeId() const {
-        if (!state.isValid())
-            return {};
-        return ProcessorGraph::getNodeIdForState(state);
+        return StatefulAudioProcessorContainer::getNodeIdForState(state);
     }
 
     virtual bool isInView() {
@@ -61,82 +42,19 @@ public:
 
     bool isIoProcessor() const { return InternalPluginFormat::isIoProcessor(state[IDs::name]); }
 
-    bool isSelected() { return tracks.isProcessorSelected(state); }
+    bool isSelected() { return TracksState::isProcessorSelected(state); }
 
     StatefulAudioProcessorWrapper *getProcessorWrapper() const {
         return audioProcessorContainer.getProcessorWrapperForState(state);
     }
 
-    void paint(Graphics &g) override {
-        auto boxColour = findColour(TextEditor::backgroundColourId);
-        if (state[IDs::bypassed])
-            boxColour = boxColour.brighter();
-        else if (isSelected())
-            boxColour = boxColour.brighter(0.02);
+    void paint(Graphics &g) override;
 
-        g.setColour(boxColour);
-        g.fillRect(getBoxBounds());
-    }
+    bool hitTest(int x, int y) override;
 
-    bool hitTest(int x, int y) override {
-        for (auto *child : getChildren())
-            if (child->getBounds().contains(x, y))
-                return true;
+    void resized() override;
 
-        return x >= 3 && x < getWidth() - 6 && y >= channelSize && y < getHeight() - channelSize;
-    }
-
-    void resized() override {
-        if (auto *processor = audioProcessorContainer.getAudioProcessorForState(state)) {
-            auto boxBoundsFloat = getBoxBounds().toFloat();
-            for (auto *channel : channels)
-                layoutChannel(processor, channel, boxBoundsFloat);
-            repaint();
-            connectorDragListener.update();
-        }
-    }
-
-    virtual void layoutChannel(AudioProcessor *processor, GraphEditorChannel *channel, const Rectangle<float> &boxBounds) const {
-        const bool isInput = channel->isInput();
-        auto channelIndex = channel->getChannelIndex();
-        int busIndex = 0;
-        processor->getOffsetInBusBufferForAbsoluteChannelIndex(isInput, channelIndex, busIndex);
-        int total = isInput ? getNumInputChannels() : getNumOutputChannels();
-        const int index = channel->isMidi() ? (total - 1) : channelIndex;
-        auto indexPosition = index + busIndex * 0.5f;
-
-        int x = boxBounds.getX() + indexPosition * channelSize;
-        int y = boxBounds.getY() + indexPosition * channelSize;
-        if (TracksState::isProcessorLeftToRightFlowing(getState()))
-            channel->setSize(boxBounds.getWidth() / 2, channelSize);
-        else
-            channel->setSize(channelSize, boxBounds.getHeight() / 2);
-
-        const auto &connectionDirection = getConnectorDirectionVector(channel->isInput());
-        if (connectionDirection == juce::Point(-1.0f, 0.0f))
-            channel->setTopLeftPosition(boxBounds.getX(), y);
-        else if (connectionDirection == juce::Point(1.0f, 0.0f))
-            channel->setTopRightPosition(boxBounds.getRight(), y);
-        else if (connectionDirection == juce::Point(0.0f, -1.0f))
-            channel->setTopLeftPosition(x, boxBounds.getY());
-        else
-            channel->setTopLeftPosition(x, boxBounds.getBottom() - channel->getHeight());
-    }
-
-    virtual juce::Point<float> getConnectorDirectionVector(bool isInput) const {
-        bool isLeftToRight = TracksState::isProcessorLeftToRightFlowing(getState());
-        if (isInput) {
-            if (isLeftToRight)
-                return {-1, 0};
-            else
-                return {0, -1};
-        } else {
-            if (isLeftToRight)
-                return {1, 0};
-            else
-                return {0, 1};
-        }
-    }
+    virtual juce::Point<float> getConnectorDirectionVector(bool isInput) const;
 
     juce::Point<float> getChannelConnectPosition(int index, bool isInput) const {
         for (auto *channel : channels)
@@ -154,6 +72,8 @@ public:
         return nullptr;
     }
 
+    virtual Rectangle<int> getBoxBounds();
+
     class ElementComparator {
     public:
         static int compareElements(BaseGraphEditorProcessor *first, BaseGraphEditorProcessor *second) {
@@ -161,53 +81,19 @@ public:
         }
     };
 
-    virtual Rectangle<int> getBoxBounds() {
-        auto r = getLocalBounds().reduced(1);
-        bool isLeftToRight = TracksState::isProcessorLeftToRightFlowing(getState());
-        if (isLeftToRight) {
-            if (getNumInputChannels() > 0)
-                r.setLeft(channelSize);
-            if (getNumOutputChannels() > 0)
-                r.removeFromRight(channelSize);
-        } else {
-            if (getNumInputChannels() > 0)
-                r.setTop(channelSize);
-            if (getNumOutputChannels() > 0)
-                r.removeFromBottom(channelSize);
-        }
-        return r;
-    }
-
 protected:
     ValueTree state;
     static constexpr float largeFontHeight = 18.0f;
     static constexpr int channelSize = 10;
     OwnedArray<GraphEditorChannel> channels;
 
-    void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override {
-        if (child.hasType(IDs::CHANNEL)) {
-            auto *channel = new GraphEditorChannel(child, connectorDragListener, isIoProcessor());
-            addAndMakeVisible(channel);
-            channels.add(channel);
-            resized();
-        }
-    }
+    virtual void layoutChannel(AudioProcessor *processor, GraphEditorChannel *channel, const Rectangle<float> &boxBounds) const;
 
-    void valueTreeChildRemoved(ValueTree &parent, ValueTree &child, int) override {
-        if (child.hasType(IDs::CHANNEL)) {
-            auto *channelToRemove = findChannelWithState(child);
-            channels.removeObject(channelToRemove);
-            resized();
-        }
-    }
+    void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override;
 
-    void valueTreePropertyChanged(ValueTree &v, const Identifier &i) override {
-        if (v != state)
-            return;
+    void valueTreeChildRemoved(ValueTree &parent, ValueTree &child, int) override;
 
-        if (i == IDs::processorInitialized)
-            resized();
-    }
+    void valueTreePropertyChanged(ValueTree &v, const Identifier &i) override;
 
 private:
     Project &project;

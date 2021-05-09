@@ -106,7 +106,7 @@ target_sources(FlowGrid PRIVATE
     Source/view/PluginWindow.cpp
     Source/view/SelectionEditor.cpp
     Source/view/UiColours.h
-    Source/view/context_pane/ContextPane.h
+    Source/view/context_pane/ContextPane.cpp
     Source/view/graph_editor/ConnectorDragListener.h
     Source/view/graph_editor/GraphEditor.h
     Source/view/graph_editor/GraphEditorChannel.h
@@ -119,11 +119,11 @@ target_sources(FlowGrid PRIVATE
     Source/view/graph_editor/GraphEditorTrack.h
     Source/view/graph_editor/GraphEditorTracks.h
     Source/view/graph_editor/TooltipBar.h
-    Source/view/graph_editor/processor/BaseGraphEditorProcessor.h
-    Source/view/graph_editor/processor/LabelGraphEditorProcessor.h
-    Source/view/graph_editor/processor/ParameterPanelGraphEditorProcessor.h
-    Source/view/graph_editor/processor/TrackInputGraphEditorProcessor.h
-    Source/view/graph_editor/processor/TrackOutputGraphEditorProcessor.h
+    Source/view/graph_editor/processor/BaseGraphEditorProcessor.cpp
+    Source/view/graph_editor/processor/LabelGraphEditorProcessor.cpp
+    Source/view/graph_editor/processor/ParameterPanelGraphEditorProcessor.cpp
+    Source/view/graph_editor/processor/TrackInputGraphEditorProcessor.cpp
+    Source/view/graph_editor/processor/TrackOutputGraphEditorProcessor.cpp
     Source/view/parameter_control/ParameterControl.h
     Source/view/parameter_control/level_meter/LevelMeter.h
     Source/view/parameter_control/level_meter/LevelMeterSource.h

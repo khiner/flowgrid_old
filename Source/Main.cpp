@@ -1,13 +1,13 @@
 #include <juce_audio_utils/juce_audio_utils.h>
 
+#include <BinaryData.h>
 #include "view/push2/Push2Component.h"
-#include <view/graph_editor/GraphEditor.h>
-#include <view/CustomColourIds.h>
+#include "view/graph_editor/GraphEditor.h"
+#include "view/CustomColourIds.h"
 #include "view/BasicWindow.h"
 #include "ApplicationPropertiesAndCommandManager.h"
 #include "DeviceChangeMonitor.h"
-#include <Utilities.h>
-
+#include "Utilities.h"
 #include "FlowGridConfig.h"
 
 class FlowGridApplication : public JUCEApplication, public MenuBarModel, private ChangeListener, private Utilities::ValueTreePropertyChangeListener {
@@ -45,7 +45,7 @@ public:
         lookAndFeel.setColour(CustomColourIds::customMidiConnectionColourId, Colours::red); // TODO surround with white instead
 
         lookAndFeel.setColour(Slider::rotarySliderOutlineColourId,
-                              lookAndFeel.findColour(Slider::rotarySliderOutlineColourId).brighter(0.06));
+                              lookAndFeel.findColour(Slider::rotarySliderOutlineColourId).brighter(0.06f));
 
         pluginListComponent = std::unique_ptr<PluginListComponent>(pluginManager.makePluginListComponent());
 
@@ -55,7 +55,7 @@ public:
         deviceManager.addChangeListener(this);
 
         mainWindow = std::make_unique<MainWindow>(*this, "FlowGrid", new GraphEditor(processorGraph, project));
-        mainWindow->setBoundsRelative(0.02, 0.02, 0.96, 0.96);
+        mainWindow->setBoundsRelative(0.02f, 0.02f, 0.96f, 0.96f);
 
         push2Component = std::make_unique<Push2Component>(project, push2MidiCommunicator);
 
