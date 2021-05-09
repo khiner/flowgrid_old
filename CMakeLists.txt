@@ -136,16 +136,16 @@ target_sources(FlowGrid PRIVATE
     Source/view/processor_editor/ParametersPanel.cpp
     Source/view/processor_editor/ProcessorEditor.cpp
     Source/view/processor_editor/SwitchParameterComponent.cpp
-    Source/view/push2/Push2Colours.h
-    Source/view/push2/Push2Component.h
+    Source/view/push2/Push2Colours.cpp
+    Source/view/push2/Push2Component.cpp
     Source/view/push2/Push2ComponentBase.h
     Source/view/push2/Push2Label.h
     Source/view/push2/Push2Listener.h
-    Source/view/push2/Push2MixerView.h
+    Source/view/push2/Push2MixerView.cpp
     Source/view/push2/Push2NoteModePadLedManager.h
-    Source/view/push2/Push2ProcessorSelector.h
-    Source/view/push2/Push2ProcessorView.h
-    Source/view/push2/Push2TrackManagingView.h
+    Source/view/push2/Push2ProcessorSelector.cpp
+    Source/view/push2/Push2ProcessorView.cpp
+    Source/view/push2/Push2TrackManagingView.cpp
 )
 
 target_compile_definitions(FlowGrid PRIVATE

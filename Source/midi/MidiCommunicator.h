@@ -1,5 +1,9 @@
 #pragma once
 
+#include <juce_audio_devices/juce_audio_devices.h>
+
+using namespace juce;
+
 class MidiCommunicator : public MidiInputCallback {
 public:
     explicit MidiCommunicator() = default;
@@ -32,7 +36,6 @@ public:
     void handleIncomingMidiMessage(MidiInput *source, const MidiMessage &message) override {
         if (!message.isActiveSense()) {
             const ScopedLock sl(midiCallbackLock);
-
             for (auto &mc : midiCallbacks)
                 mc->handleIncomingMidiMessage(source, message);
         }

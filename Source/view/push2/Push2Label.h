@@ -26,9 +26,7 @@ public:
         updateColours();
     }
 
-    bool isSelected() {
-        return selected;
-    }
+    bool isSelected() const { return selected; }
 
     void setSelected(bool selected) {
         this->selected = selected;

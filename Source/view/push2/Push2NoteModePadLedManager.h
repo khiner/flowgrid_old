@@ -15,8 +15,7 @@ public:
     }
 
     void handleIncomingMidiMessage(MidiInput *source, const MidiMessage &message) override {
-        if (!isVisible)
-            return;
+        if (!isVisible) return;
 
         if (message.isNoteOff())
             push2.setPadColour(message.getNoteNumber(), getPadColourForNoteNumber(message.getNoteNumber()));
@@ -38,7 +37,7 @@ public:
 
     void trackColourChanged(const String &trackUuid, const Colour &colour) override {
         // TODO a bit slow. might want to pass this all down from parent instead of listening directly
-        if (tracks.doesTrackHaveSelections(tracks.findTrackWithUuid(trackUuid))) {
+        if (TracksState::doesTrackHaveSelections(tracks.findTrackWithUuid(trackUuid))) {
             selectedTrackColour = colour;
             updatePadColours();
         }
