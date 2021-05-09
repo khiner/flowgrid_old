@@ -1,5 +1,7 @@
 #pragma once
 
+#include <juce_core/juce_core.h>
+
 namespace IDs {
 #define DECLARE_ID(name) const juce::Identifier name(#name);
     DECLARE_ID(PARAM)

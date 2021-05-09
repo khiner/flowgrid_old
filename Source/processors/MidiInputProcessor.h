@@ -1,5 +1,6 @@
 #pragma once
 
+#include <juce_audio_devices/juce_audio_devices.h>
 #include "DefaultAudioProcessor.h"
 
 class MidiInputProcessor : public DefaultAudioProcessor {
@@ -15,7 +16,7 @@ public:
         return messageCollector;
     }
 
-    static const String name() { return "MIDI Input"; }
+    static String name() { return "MIDI Input"; }
 
     static PluginDescription getPluginDescription() {
         return DefaultAudioProcessor::getPluginDescription(name(), true, false, AudioChannelSet::disabled());
@@ -39,6 +40,5 @@ public:
 
 private:
     String deviceName{};
-
     MidiMessageCollector messageCollector;
 };

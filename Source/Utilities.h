@@ -5,8 +5,6 @@
 using namespace juce;
 
 namespace Utilities {
-
-/** Attempts to load a ValueTree from a file. */
     static ValueTree loadValueTree(const File &file, bool asXml) {
         if (asXml) {
             if (auto xml = std::unique_ptr<XmlElement>(XmlDocument::parse(file)))
@@ -28,18 +26,12 @@ namespace Utilities {
         }
     }
 
-/**
-    Utility wrapper for ValueTree::Listener's that only want to override valueTreePropertyChanged.
-*/
+    // Utility wrapper for ValueTree::Listener's that only want to override valueTreePropertyChanged.
     struct ValueTreePropertyChangeListener : public ValueTree::Listener {
         void valueTreeChildAdded(ValueTree &, ValueTree &) override {}
-
         void valueTreeChildRemoved(ValueTree &, ValueTree &, int) override {}
-
         void valueTreeChildOrderChanged(ValueTree &, int, int) override {}
-
         void valueTreeParentChanged(ValueTree &) override {}
-
         void valueTreeRedirected(ValueTree &) override {}
     };
 }

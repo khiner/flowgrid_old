@@ -2,45 +2,14 @@
 
 #include "state/ViewState.h"
 #include <view/PluginWindow.h>
-#include "Identifiers.h"
-#include "unordered_map"
-#include "StatefulAudioProcessorContainer.h"
 #include "PluginManager.h"
 #include "Stateful.h"
 
-class TracksState :
-        public Stateful,
-        private ValueTree::Listener {
+class TracksState : public Stateful, private ValueTree::Listener {
 public:
-    TracksState(ViewState &view, PluginManager &pluginManager, UndoManager &undoManager)
-            : view(view), pluginManager(pluginManager), undoManager(undoManager) {
-        tracks = ValueTree(IDs::TRACKS);
-        tracks.setProperty(IDs::name, "Tracks", nullptr);
-    }
+    TracksState(ViewState &view, PluginManager &pluginManager, UndoManager &undoManager);
 
-    void loadFromState(const ValueTree &state) override {
-        Utilities::moveAllChildren(state, getState(), nullptr);
-
-        // Re-save all non-string value types,
-        // since type information is not saved in XML
-        // Also, re-set some vars just to trigger the event (like selected slot mask)
-        for (auto track : tracks) {
-            resetVarToBool(track, IDs::isMasterTrack, this);
-            resetVarToBool(track, IDs::selected, this);
-
-            auto lane = getProcessorLaneForTrack(track);
-            lane.sendPropertyChangeMessage(IDs::selectedSlotsMask);
-            for (auto processor : lane) {
-                resetVarToInt(processor, IDs::processorSlot, this);
-                resetVarToInt(processor, IDs::nodeId, this);
-                resetVarToInt(processor, IDs::processorInitialized, this);
-                resetVarToBool(processor, IDs::bypassed, this);
-                resetVarToBool(processor, IDs::acceptsMidi, this);
-                resetVarToBool(processor, IDs::producesMidi, this);
-                resetVarToBool(processor, IDs::allowDefaultConnections, this);
-            }
-        }
-    }
+    void loadFromState(const ValueTree &state) override;
 
     ValueTree &getState() override { return tracks; }
 
@@ -55,18 +24,11 @@ public:
 
     static ValueTree getProcessorLaneForProcessor(const ValueTree &processor) {
         const auto &parent = processor.getParent();
-        if (parent.hasType(IDs::PROCESSOR_LANE))
-            return parent;
-
-        return getProcessorLaneForTrack(parent);
+        return parent.hasType(IDs::PROCESSOR_LANE) ? parent : getProcessorLaneForTrack(parent);
     }
 
     static ValueTree getTrackForProcessor(const ValueTree &processor) {
         return processor.getParent().hasType(IDs::TRACK) ? processor.getParent() : processor.getParent().getParent().getParent();
-    }
-
-    static ValueTree getTrackForProcessorLane(const ValueTree &lane) {
-        return lane.getParent().getParent();
     }
 
     static ValueTree getInputProcessorForTrack(const ValueTree &track) {
@@ -77,15 +39,7 @@ public:
         return track.getChildWithProperty(IDs::name, TrackOutputProcessor::getPluginDescription().name);
     }
 
-    static Array<ValueTree> getAllProcessorsForTrack(const ValueTree &track) {
-        Array<ValueTree> allProcessors;
-        allProcessors.add(getInputProcessorForTrack(track));
-        for (const auto &processor : getProcessorLaneForTrack(track)) {
-            allProcessors.add(processor);
-        }
-        allProcessors.add(getOutputProcessorForTrack(track));
-        return allProcessors;
-    }
+    static Array<ValueTree> getAllProcessorsForTrack(const ValueTree &track);
 
     static bool isTrackIOProcessor(const ValueTree &processor) {
         return InternalPluginFormat::isTrackIOProcessor(processor[IDs::name]);
@@ -171,7 +125,7 @@ public:
         return Colour::fromString(track[IDs::colour].toString());
     }
 
-    void setTrackColour(ValueTree track, const Colour &colour) {
+    void setTrackColour(ValueTree &track, const Colour &colour) {
         track.setProperty(IDs::colour, colour.toString(), &undoManager);
     }
 
@@ -211,7 +165,7 @@ public:
         return {};
     }
 
-    ValueTree findLastTrackWithSelections() {
+    ValueTree findLastTrackWithSelections() const {
         for (int i = getNumTracks() - 1; i >= 0; i--) {
             const auto &track = getTrack(i);
             if (doesTrackHaveSelections(track))
@@ -273,34 +227,9 @@ public:
         return track.isValid() ? lane.getChildWithProperty(IDs::processorSlot, slot) : ValueTree();
     }
 
-    int getInsertIndexForProcessor(const ValueTree &track, const ValueTree &processor, int insertSlot) {
-        const auto &lane = getProcessorLaneForTrack(track);
+    static int getInsertIndexForProcessor(const ValueTree &track, const ValueTree &processor, int insertSlot);
 
-        bool sameLane = lane == getProcessorLaneForProcessor(processor);
-        auto handleSameLane = [sameLane](int index) -> int { return sameLane ? std::max(0, index - 1) : index; };
-        for (const auto &otherProcessor : lane) {
-            int otherSlot = otherProcessor[IDs::processorSlot];
-            if (otherSlot >= insertSlot && otherProcessor != processor) {
-                int otherIndex = lane.indexOf(otherProcessor);
-                if (sameLane && lane.indexOf(processor) < otherIndex)
-                    return handleSameLane(otherIndex);
-                else
-                    return otherIndex;
-            }
-        }
-        return handleSameLane(lane.getNumChildren());
-    }
-
-    Array<ValueTree> findAllSelectedItems() const {
-        Array<ValueTree> selectedItems;
-        for (const auto &track : tracks) {
-            if (track[IDs::selected])
-                selectedItems.add(track);
-            else
-                selectedItems.addArray(findSelectedProcessorsForTrack(track));
-        }
-        return selectedItems;
-    }
+    Array<ValueTree> findAllSelectedItems() const;
 
     static Array<ValueTree> findSelectedProcessorsForTrack(const ValueTree &track) {
         const auto &lane = getProcessorLaneForTrack(track);
@@ -313,24 +242,7 @@ public:
         return selectedProcessors;
     }
 
-    ValueTree findProcessorNearestToSlot(const ValueTree &track, int slot) const {
-        const auto &lane = getProcessorLaneForTrack(track);
-
-        auto nearestSlot = INT_MAX;
-        ValueTree nearestProcessor;
-        for (const auto &processor : lane) {
-            int otherSlot = processor[IDs::processorSlot];
-            if (otherSlot == slot)
-                return processor;
-            if (abs(slot - otherSlot) < abs(slot - nearestSlot)) {
-                nearestSlot = otherSlot;
-                nearestProcessor = processor;
-            }
-            if (otherSlot > slot)
-                break; // processors are ordered by slot.
-        }
-        return nearestProcessor;
-    }
+    static ValueTree findProcessorNearestToSlot(const ValueTree &track, int slot);
 
     void setTrackName(ValueTree track, const String &name) {
         undoManager.beginNewTransaction();
@@ -344,7 +256,7 @@ public:
     bool doesTrackAlreadyHaveGeneratorOrInstrument(const ValueTree &track) {
         for (const auto &processor : getProcessorLaneForTrack(track))
             if (auto existingDescription = pluginManager.getDescriptionForIdentifier(processor.getProperty(IDs::id)))
-                if (pluginManager.isGeneratorOrInstrument(existingDescription.get()))
+                if (PluginManager::isGeneratorOrInstrument(existingDescription.get()))
                     return true;
         return false;
     }
@@ -352,15 +264,13 @@ public:
     juce::Point<int> trackAndSlotWithLeftRightDelta(int delta) const {
         if (view.isGridPaneFocused())
             return trackAndSlotWithGridDelta(delta, 0);
-        else
-            return selectionPaneTrackAndSlotWithLeftRightDelta(delta);
+        return selectionPaneTrackAndSlotWithLeftRightDelta(delta);
     }
 
     juce::Point<int> trackAndSlotWithUpDownDelta(int delta) const {
         if (view.isGridPaneFocused())
             return trackAndSlotWithGridDelta(0, delta);
-        else
-            return selectionPaneTrackAndSlotWithUpDownDelta(delta);
+        return selectionPaneTrackAndSlotWithUpDownDelta(delta);
     }
 
     juce::Point<int> trackAndSlotWithGridDelta(int xDelta, int yDelta) const {
@@ -380,9 +290,9 @@ public:
             return INVALID_TRACK_AND_SLOT;
 
         const ValueTree &focusedProcessor = TracksState::getProcessorAtSlot(focusedTrack, focusedTrackAndSlot.y);
-        if (delta > 0 && focusedTrack[IDs::selected])
-            // down when track is selected deselects the track
-            return {focusedTrackAndSlot.x, focusedTrackAndSlot.y};
+        // down when track is selected deselects the track
+        if (delta > 0 && focusedTrack[IDs::selected]) return {focusedTrackAndSlot.x, focusedTrackAndSlot.y};
+
         ValueTree siblingProcessorToSelect;
         if (focusedProcessor.isValid()) {
             siblingProcessorToSelect = focusedProcessor.getSibling(delta);
@@ -393,27 +303,20 @@ public:
                     break;
             }
         }
-        if (siblingProcessorToSelect.isValid())
-            return {focusedTrackAndSlot.x, siblingProcessorToSelect[IDs::processorSlot]};
-        else if (delta < 0)
-            return {focusedTrackAndSlot.x, -1};
-        else
-            return INVALID_TRACK_AND_SLOT;
+        if (siblingProcessorToSelect.isValid()) return {focusedTrackAndSlot.x, siblingProcessorToSelect[IDs::processorSlot]};
+        if (delta < 0) return {focusedTrackAndSlot.x, -1};
+        return INVALID_TRACK_AND_SLOT;
     }
 
     juce::Point<int> selectionPaneTrackAndSlotWithLeftRightDelta(int delta) const {
         const auto focusedTrackAndSlot = view.getFocusedTrackAndSlot();
         const auto &focusedTrack = getTrack(focusedTrackAndSlot.x);
-
-        if (!focusedTrack.isValid())
-            return INVALID_TRACK_AND_SLOT;
+        if (!focusedTrack.isValid()) return INVALID_TRACK_AND_SLOT;
 
         const auto &siblingTrackToSelect = focusedTrack.getSibling(delta);
-        if (!siblingTrackToSelect.isValid())
-            return INVALID_TRACK_AND_SLOT;
+        if (!siblingTrackToSelect.isValid()) return INVALID_TRACK_AND_SLOT;
 
         int siblingTrackIndex = indexOf(siblingTrackToSelect);
-
         const auto &focusedProcessorLane = getProcessorLaneForTrack(focusedTrack);
         if (focusedTrack[IDs::selected] || focusedProcessorLane.getNumChildren() == 0)
             return {siblingTrackIndex, -1};
@@ -422,8 +325,7 @@ public:
             const auto &processorToSelect = findProcessorNearestToSlot(siblingTrackToSelect, focusedTrackAndSlot.y);
             if (processorToSelect.isValid())
                 return {siblingTrackIndex, focusedTrackAndSlot.y};
-            else
-                return {siblingTrackIndex, -1};
+            return {siblingTrackIndex, -1};
         }
 
         return INVALID_TRACK_AND_SLOT;
@@ -432,36 +334,10 @@ public:
     juce::Point<int> trackAndSlotToGridPosition(const juce::Point<int> trackAndSlot) const {
         if (TracksState::isMasterTrack(getTrack(trackAndSlot.x)))
             return {trackAndSlot.y + view.getGridViewTrackOffset() - view.getMasterViewSlotOffset(), view.getNumTrackProcessorSlots()};
-        else
-            return trackAndSlot;
+        return trackAndSlot;
     }
 
-    juce::Point<int> gridPositionToTrackAndSlot(const juce::Point<int> gridPosition, bool allowUpFromMaster = false) const {
-        if (gridPosition.y > view.getNumTrackProcessorSlots())
-            return INVALID_TRACK_AND_SLOT;
-
-        int trackIndex, slot;
-        if (gridPosition.y == view.getNumTrackProcessorSlots()) {
-            trackIndex = indexOf(getMasterTrack());
-            slot = gridPosition.x + view.getMasterViewSlotOffset() - view.getGridViewTrackOffset();
-        } else {
-            trackIndex = gridPosition.x;
-            if (trackIndex < 0 || trackIndex >= getNumNonMasterTracks()) {
-                if (allowUpFromMaster)
-                    // This is annoyingly tied to arrow selection.
-                    // Allow navigating UP from master track, but not LEFT or RIGHT into no track
-                    trackIndex = std::clamp(trackIndex, 0, getNumNonMasterTracks() - 1);
-                else
-                    return INVALID_TRACK_AND_SLOT;
-            }
-            slot = gridPosition.y;
-        }
-
-        if (trackIndex < 0 || slot < -1 || slot >= view.getNumSlotsForTrack(getTrack(trackIndex)))
-            return INVALID_TRACK_AND_SLOT;
-
-        return {trackIndex, slot};
-    }
+    juce::Point<int> gridPositionToTrackAndSlot(juce::Point<int> gridPosition, bool allowUpFromMaster = false) const;
 
     static constexpr juce::Point<int> INVALID_TRACK_AND_SLOT = {-1, -1};
 

@@ -15,7 +15,7 @@ public:
         }
     }
 
-    bool isInitialized() { return initialized; }
+    bool isInitialized() const { return initialized; }
 
     void addMidiInputCallback(MidiInputCallback *callbackToAdd) {
         const ScopedLock sl(midiCallbackLock);

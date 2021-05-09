@@ -333,3 +333,45 @@ Result Project::loadDocument(const File &file) {
     loadFromState(newState);
     return Result::ok();
 }
+
+bool Project::isDeviceWithNamePresent(const String &deviceName) const {
+    for (auto *deviceType : deviceManager.getAvailableDeviceTypes()) {
+        // Input devices
+        for (const auto &existingDeviceName : deviceType->getDeviceNames(true)) {
+            if (deviceName == existingDeviceName)
+                return true;
+        }
+        // Output devices
+        for (const auto &existingDeviceName : deviceType->getDeviceNames()) {
+            if (deviceName == existingDeviceName)
+                return true;
+        }
+    }
+    return false;
+}
+
+Result Project::saveDocument(const File &file) {
+    for (const auto &track : tracks.getState())
+        for (auto processorState : TracksState::getProcessorLaneForTrack(track))
+            saveProcessorStateInformationToState(processorState);
+
+    if (auto xml = state.createXml())
+        if (!xml->writeTo(file))
+            return Result::fail(TRANS("Could not save the project file"));
+
+    return Result::ok();
+}
+
+File Project::getLastDocumentOpened() {
+    RecentlyOpenedFilesList recentFiles;
+    recentFiles.restoreFromString(getUserSettings()->getValue("recentProjectFiles"));
+
+    return recentFiles.getFile(0);
+}
+
+void Project::setLastDocumentOpened(const File &file) {
+    RecentlyOpenedFilesList recentFiles;
+    recentFiles.restoreFromString(getUserSettings()->getValue("recentProjectFiles"));
+    recentFiles.addFile(file);
+    getUserSettings()->setValue("recentProjectFiles", recentFiles.toString());
+}

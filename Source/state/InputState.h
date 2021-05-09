@@ -1,38 +1,23 @@
 #pragma once
 
-#include <actions/DeleteProcessorAction.h>
-#include <actions/CreateProcessorAction.h>
 #include <PluginManager.h>
 #include "StatefulAudioProcessorContainer.h"
 #include "Stateful.h"
+#include "TracksState.h"
+#include "ConnectionsState.h"
 
 class InputState : public Stateful, private ChangeListener, private ValueTree::Listener {
 public:
     InputState(TracksState &tracks, ConnectionsState &connections, StatefulAudioProcessorContainer &audioProcessorContainer,
-               PluginManager &pluginManager, UndoManager &undoManager, AudioDeviceManager &deviceManager)
-            : tracks(tracks), connections(connections), audioProcessorContainer(audioProcessorContainer),
-              pluginManager(pluginManager), undoManager(undoManager), deviceManager(deviceManager) {
-        input = ValueTree(IDs::INPUT);
-        input.addListener(this);
-        deviceManager.addChangeListener(this);
-    }
+               PluginManager &pluginManager, UndoManager &undoManager, AudioDeviceManager &deviceManager);
 
-    ~InputState() override {
-        deviceManager.removeChangeListener(this);
-        input.removeListener(this);
-    }
+    ~InputState() override;
 
     ValueTree &getState() override { return input; }
 
-    void loadFromState(const ValueTree &state) override {
-        input.copyPropertiesFrom(state, nullptr);
-        Utilities::moveAllChildren(state, input, nullptr);
-    }
+    void loadFromState(const ValueTree &state) override;
 
-    void initializeDefault() {
-        auto inputProcessor = CreateProcessorAction::createProcessor(pluginManager.getAudioInputDescription());
-        input.appendChild(inputProcessor, &undoManager);
-    }
+    void initializeDefault();
 
     ValueTree getAudioInputProcessorState() const {
         return input.getChildWithProperty(IDs::name, pluginManager.getAudioInputDescription().name);
@@ -63,40 +48,9 @@ private:
     UndoManager &undoManager;
     AudioDeviceManager &deviceManager;
 
-    void syncInputDevicesWithDeviceManager() {
-        Array<ValueTree> inputProcessorsToDelete;
-        for (const auto &inputProcessor : input) {
-            if (inputProcessor.hasProperty(IDs::deviceName)) {
-                const String &deviceName = inputProcessor[IDs::deviceName];
-                if (!MidiInput::getDevices().contains(deviceName) || !deviceManager.isMidiInputEnabled(deviceName)) {
-                    inputProcessorsToDelete.add(inputProcessor);
-                }
-            }
-        }
-        for (const auto &inputProcessor : inputProcessorsToDelete) {
-            undoManager.perform(new DeleteProcessorAction(inputProcessor, tracks, connections, audioProcessorContainer));
-        }
-        for (const auto &deviceName : MidiInput::getDevices()) {
-            if (deviceManager.isMidiInputEnabled(deviceName) &&
-                !input.getChildWithProperty(IDs::deviceName, deviceName).isValid()) {
-                auto midiInputProcessor = CreateProcessorAction::createProcessor(MidiInputProcessor::getPluginDescription());
-                midiInputProcessor.setProperty(IDs::deviceName, deviceName, nullptr);
-                input.addChild(midiInputProcessor, -1, &undoManager);
-            }
-        }
-    }
+    void syncInputDevicesWithDeviceManager();
 
-    void changeListenerCallback(ChangeBroadcaster *source) override {
-        if (source == &deviceManager) {
-            deviceManager.updateEnabledMidiInputsAndOutputs();
-            syncInputDevicesWithDeviceManager();
-            AudioDeviceManager::AudioDeviceSetup config;
-            deviceManager.getAudioDeviceSetup(config);
-            // TODO the undomanager behavior around this needs more thinking.
-            //  This should be done along with the work to keep disabled IO devices in the graph if they still have connections
-            input.setProperty(IDs::deviceName, config.inputDeviceName, nullptr);
-        }
-    }
+    void changeListenerCallback(ChangeBroadcaster *source) override;
 
     void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override {
         if (child[IDs::name] == MidiInputProcessor::name() && !deviceManager.isMidiInputEnabled(child[IDs::deviceName]))

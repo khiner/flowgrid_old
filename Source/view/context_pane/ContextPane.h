@@ -90,13 +90,13 @@ public:
         auto colour = processor.isValid() ? findColour(TextEditor::backgroundColourId) : baseColour;
 
         if (TracksState::doesTrackHaveSelections(track))
-            colour = colour.brighter(processor.isValid() ? 0.04 : 0.15);
+            colour = colour.brighter(processor.isValid() ? 0.04f : 0.15f);
         if (slotSelected)
             colour = trackColour;
         if (slotFocused)
-            colour = colour.brighter(0.16);
+            colour = colour.brighter(0.16f);
         if (!inView)
-            colour = colour.darker(0.3);
+            colour = colour.darker(0.3f);
 
         return colour;
     }

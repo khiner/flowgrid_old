@@ -1,13 +1,11 @@
 #pragma once
 
-#include "Identifiers.h"
 #include "Stateful.h"
+#include "Identifiers.h"
 
 class ViewState : public Stateful {
 public:
-    ViewState(UndoManager &undoManager) : undoManager(undoManager) {
-        viewState = ValueTree(IDs::VIEW_STATE);
-    };
+    explicit ViewState(UndoManager &undoManager);
 
     ValueTree &getState() override { return viewState; }
 
@@ -15,17 +13,7 @@ public:
         viewState.copyPropertiesFrom(state, nullptr);
     }
 
-    void initializeDefault() {
-        setNoteMode();
-        focusOnEditorPane();
-        focusOnProcessorSlot({}, -1);
-        viewState.setProperty(IDs::numProcessorSlots, NUM_VISIBLE_NON_MASTER_TRACK_SLOTS, nullptr);
-        // the number of processors in the master track aligns with the number of tracks
-        viewState.setProperty(IDs::numMasterProcessorSlots, NUM_VISIBLE_MASTER_TRACK_SLOTS, nullptr);
-        setGridViewTrackOffset(0);
-        setGridViewSlotOffset(0);
-        setMasterViewSlotOffset(0);
-    }
+    void initializeDefault();
 
     static bool isMasterTrack(const ValueTree &track) {
         return track.isValid() && track[IDs::isMasterTrack];
@@ -59,47 +47,16 @@ public:
         viewState.setProperty(IDs::gridViewTrackOffset, gridViewTrackOffset, &undoManager);
     }
 
-    void updateViewTrackOffsetToInclude(int trackIndex, int numNonMasterTracks) {
-        if (trackIndex < 0)
-            return; // invalid
-        auto viewTrackOffset = getGridViewTrackOffset();
-        if (trackIndex >= viewTrackOffset + NUM_VISIBLE_TRACKS)
-            setGridViewTrackOffset(trackIndex - NUM_VISIBLE_TRACKS + 1);
-        else if (trackIndex < viewTrackOffset)
-            setGridViewTrackOffset(trackIndex);
-        else if (numNonMasterTracks - viewTrackOffset < NUM_VISIBLE_TRACKS && numNonMasterTracks >= NUM_VISIBLE_TRACKS)
-            // always show last N tracks if available
-            setGridViewTrackOffset(numNonMasterTracks - NUM_VISIBLE_TRACKS);
-    }
+    void updateViewTrackOffsetToInclude(int trackIndex, int numNonMasterTracks);
 
     // TODO This and TracksState::isProcessorSlitInView are similar
-    void updateViewSlotOffsetToInclude(int processorSlot, bool isMasterTrack) {
-        if (processorSlot < 0)
-            return; // invalid
-        if (isMasterTrack) {
-            auto viewSlotOffset = getMasterViewSlotOffset();
-            if (processorSlot >= viewSlotOffset + NUM_VISIBLE_MASTER_TRACK_SLOTS)
-                setMasterViewSlotOffset(processorSlot - NUM_VISIBLE_MASTER_TRACK_SLOTS + 1);
-            else if (processorSlot < viewSlotOffset)
-                setMasterViewSlotOffset(processorSlot);
-        } else {
-            auto viewSlotOffset = getGridViewSlotOffset();
-            if (processorSlot >= viewSlotOffset + NUM_VISIBLE_NON_MASTER_TRACK_SLOTS)
-                setGridViewSlotOffset(processorSlot - NUM_VISIBLE_NON_MASTER_TRACK_SLOTS + 1);
-            else if (processorSlot < viewSlotOffset)
-                setGridViewSlotOffset(processorSlot);
-        }
-    }
+    void updateViewSlotOffsetToInclude(int processorSlot, bool isMasterTrack);
 
     int getFocusedTrackIndex() const { return viewState[IDs::focusedTrackIndex]; }
 
     int getFocusedProcessorSlot() const { return viewState[IDs::focusedProcessorSlot]; }
 
-    juce::Point<int> getFocusedTrackAndSlot() const {
-        int trackIndex = viewState.hasProperty(IDs::focusedTrackIndex) ? getFocusedTrackIndex() : 0;
-        int processorSlot = viewState.hasProperty(IDs::focusedProcessorSlot) ? getFocusedProcessorSlot() : -1;
-        return {trackIndex, processorSlot};
-    }
+    juce::Point<int> getFocusedTrackAndSlot() const;
 
     int getNumTrackProcessorSlots() const { return viewState[IDs::numProcessorSlots]; }
 
@@ -160,27 +117,17 @@ public:
 
     int getProcessorHeight() const { return processorHeight; }
 
-    int findSlotAt(const juce::Point<int> position, const ValueTree &track) const {
-        bool isMaster = isMasterTrack(track);
-        int length = isMaster ? position.x : (position.y - TRACK_LABEL_HEIGHT);
-        if (length < 0)
-            return -1;
+    int findSlotAt(juce::Point<int> position, const ValueTree &track) const;
 
-        int processorSlotSize = isMaster ? getTrackWidth() : getProcessorHeight();
-        int slot = getSlotOffsetForTrack(track) + length / processorSlotSize;
-        return std::clamp(slot, 0, getNumSlotsForTrack(track) - 1);
-    }
-
-    bool isTrackInView(const ValueTree &track) {
-        if (isMasterTrack(track))
-            return true;
+    bool isTrackInView(const ValueTree &track) const {
+        if (isMasterTrack(track)) return true;
 
         auto trackIndex = track.getParent().indexOf(track);
         auto trackViewOffset = getGridViewTrackOffset();
         return trackIndex >= trackViewOffset && trackIndex < trackViewOffset + NUM_VISIBLE_TRACKS;
     }
 
-    bool isProcessorSlotInView(const ValueTree &track, int slot) {
+    bool isProcessorSlotInView(const ValueTree &track, int slot) const {
         bool inView = slot >= getSlotOffsetForTrack(track) &&
                       slot < getSlotOffsetForTrack(track) + NUM_VISIBLE_NON_MASTER_TRACK_SLOTS + (isMasterTrack(track) ? 1 : 0);
         return inView && isTrackInView(track);

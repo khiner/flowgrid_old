@@ -197,47 +197,13 @@ public:
 
     Result loadDocument(const File &file) override;
 
-    bool isDeviceWithNamePresent(const String &deviceName) const {
-        for (auto *deviceType : deviceManager.getAvailableDeviceTypes()) {
-            // Input devices
-            for (const auto &existingDeviceName : deviceType->getDeviceNames(true)) {
-                if (deviceName == existingDeviceName)
-                    return true;
-            }
-            // Output devices
-            for (const auto &existingDeviceName : deviceType->getDeviceNames()) {
-                if (deviceName == existingDeviceName)
-                    return true;
-            }
-        }
-        return false;
-    }
+    bool isDeviceWithNamePresent(const String &deviceName) const;
 
-    Result saveDocument(const File &file) override {
-        for (const auto &track : tracks.getState())
-            for (auto processorState : TracksState::getProcessorLaneForTrack(track))
-                saveProcessorStateInformationToState(processorState);
+    Result saveDocument(const File &file) override;
 
-        if (auto xml = state.createXml())
-            if (!xml->writeTo(file))
-                return Result::fail(TRANS("Could not save the project file"));
+    File getLastDocumentOpened() override;
 
-        return Result::ok();
-    }
-
-    File getLastDocumentOpened() override {
-        RecentlyOpenedFilesList recentFiles;
-        recentFiles.restoreFromString(getUserSettings()->getValue("recentProjectFiles"));
-
-        return recentFiles.getFile(0);
-    }
-
-    void setLastDocumentOpened(const File &file) override {
-        RecentlyOpenedFilesList recentFiles;
-        recentFiles.restoreFromString(getUserSettings()->getValue("recentProjectFiles"));
-        recentFiles.addFile(file);
-        getUserSettings()->setValue("recentProjectFiles", recentFiles.toString());
-    }
+    void setLastDocumentOpened(const File &file) override;
 
     static String getFilenameSuffix() { return ".smp"; }
 

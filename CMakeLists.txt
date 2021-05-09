@@ -89,15 +89,15 @@ target_sources(FlowGrid PRIVATE
     Source/push2/Push2DisplayBridge.h
     Source/push2/Push2MidiCommunicator.h
     Source/push2/Push2UsbCommunicator.h
-    Source/state/ConnectionsState.h
-    Source/state/CopiedState.h
+    Source/state/ConnectionsState.cpp
+    Source/state/CopiedState.cpp
     Source/state/Identifiers.h
-    Source/state/InputState.h
-    Source/state/OutputState.h
+    Source/state/InputState.cpp
+    Source/state/OutputState.cpp
     Source/state/Project.cpp
     Source/state/Stateful.h
-    Source/state/TracksState.h
-    Source/state/ViewState.h
+    Source/state/TracksState.cpp
+    Source/state/ViewState.cpp
     Source/usb/UsbCommunicator.h
     Source/usb/libusb/config_msvc.h
     Source/usb/libusb/config_xcode.h
