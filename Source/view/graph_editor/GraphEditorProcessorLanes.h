@@ -2,13 +2,15 @@
 
 #include <ValueTreeObjectList.h>
 #include <state/Project.h>
+
+#include <utility>
 #include "GraphEditorProcessorLane.h"
 
 class GraphEditorProcessorLanes : public Component, public Utilities::ValueTreeObjectList<GraphEditorProcessorLane>,
                                   public GraphEditorProcessorContainer {
 public:
     explicit GraphEditorProcessorLanes(Project &project, ValueTree state, ConnectorDragListener &connectorDragListener)
-            : Utilities::ValueTreeObjectList<GraphEditorProcessorLane>(state), project(project),
+            : Utilities::ValueTreeObjectList<GraphEditorProcessorLane>(std::move(state)), project(project),
               connectorDragListener(connectorDragListener) {
         rebuildObjects();
     }
@@ -32,11 +34,9 @@ public:
     }
 
     void resized() override {
-        auto r = getLocalBounds();
-
         // Assuming only one lane for now
         if (!objects.isEmpty())
-            objects.getFirst()->setBounds(r);
+            objects.getFirst()->setBounds(getLocalBounds());
     }
 
     bool isSuitableType(const ValueTree &v) const override {

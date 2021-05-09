@@ -1,127 +1,41 @@
 #pragma once
 
-#include "view/graph_editor/processor/LabelGraphEditorProcessor.h"
+#include <juce_audio_processors/juce_audio_processors.h>
 #include "ConnectorDragListener.h"
 #include "GraphEditorProcessorContainer.h"
 
 struct GraphEditorConnector : public Component, public SettableTooltipClient {
-    explicit GraphEditorConnector(const ValueTree &state, ConnectorDragListener &connectorDragListener,
+    explicit GraphEditorConnector(ValueTree state, ConnectorDragListener &connectorDragListener,
                                   GraphEditorProcessorContainer &graphEditorProcessorContainer,
                                   AudioProcessorGraph::NodeAndChannel source = {},
-                                  AudioProcessorGraph::NodeAndChannel destination = {})
-            : state(state), connectorDragListener(connectorDragListener), graphEditorProcessorContainer(graphEditorProcessorContainer) {
-        setAlwaysOnTop(true);
-        if (this->state.isValid()) {
-            const auto &sourceState = this->state.getChildWithName(IDs::SOURCE);
-            connection.source = {ProcessorGraph::getNodeIdForState(sourceState), sourceState[IDs::channel]};
-            const auto &destinationState = this->state.getChildWithName(IDs::DESTINATION);
-            connection.destination = {ProcessorGraph::getNodeIdForState(destinationState), destinationState[IDs::channel]};
-        } else {
-            connection.source = source;
-            connection.destination = destination;
-            if (connection.source.nodeID.uid != 0)
-                dragAnchor = source;
-            else if (connection.destination.nodeID.uid != 0)
-                dragAnchor = destination;
-        }
-    }
+                                  AudioProcessorGraph::NodeAndChannel destination = {});
 
-    AudioProcessorGraph::Connection getConnection() {
-        return connection;
-    }
+    AudioProcessorGraph::Connection getConnection() { return connection; }
 
-    const ValueTree &getState() const {
-        return state;
-    }
+    const ValueTree &getState() const { return state; }
 
     bool isCustom() const {
         return !state.isValid() || state[IDs::isCustomConnection];
     }
 
-    void dragTo(const juce::Point<float> &position) {
-        if (dragAnchor == connection.source) {
-            connection.destination = {};
-            lastDestinationPos = position - getPosition().toFloat();
-        } else {
-            connection.source = {};
-            lastSourcePos = position - getPosition().toFloat();
-        }
-        resizeToFit(lastSourcePos, lastDestinationPos);
-    }
+    void dragTo(const juce::Point<float> &position);
+    void dragTo(AudioProcessorGraph::NodeAndChannel nodeAndChannel, bool isInput);
 
-    void dragTo(AudioProcessorGraph::NodeAndChannel nodeAndChannel, bool isInput) {
-        if (dragAnchor == nodeAndChannel) return;
+    void update();
 
-        if (dragAnchor == connection.source && isInput)
-            setDestination(nodeAndChannel);
-        else if (dragAnchor == connection.destination && !isInput)
-            setSource(nodeAndChannel);
-    }
+    void getPoints(juce::Point<float> &p1, juce::Point<float> &p2) const;
 
-    void update() {
-        juce::Point<float> p1, p2;
-        getPoints(p1, p2);
+    bool isDragging() const { return dragAnchor.nodeID.uid != 0; }
 
-        if (lastSourcePos != p1 || lastDestinationPos != p2)
-            resizeToFit(p1, p2);
-    }
+    void paint(Graphics &g) override;
 
-    void getPoints(juce::Point<float> &p1, juce::Point<float> &p2) const {
-        p1 = lastSourcePos;
-        p2 = lastDestinationPos;
+    bool hitTest(int x, int y) override { return hoverPath.contains({float(x), float(y)}); }
 
-        const Component &rootComponent = dynamic_cast<Component &>(connectorDragListener);
+    void mouseEnter(const MouseEvent & e) override { repaint(); }
 
-        auto *sourceComponent = graphEditorProcessorContainer.getProcessorForNodeId(connection.source.nodeID);
-        if (sourceComponent != nullptr) {
-            p1 = rootComponent.getLocalPoint(sourceComponent,
-                                             sourceComponent->getChannelConnectPosition(connection.source.channelIndex, false)) - getPosition().toFloat();
-        }
+    void mouseExit(const MouseEvent & e) override { repaint(); }
 
-        auto *destinationComponent = graphEditorProcessorContainer.getProcessorForNodeId(connection.destination.nodeID);
-        if (destinationComponent != nullptr) {
-            p2 = rootComponent.getLocalPoint(destinationComponent,
-                                             destinationComponent->getChannelConnectPosition(connection.destination.channelIndex, true)) - getPosition().toFloat();
-        }
-    }
-
-    bool isDragging() {
-        return dragAnchor.nodeID.uid != 0;
-    }
-
-    void paint(Graphics &g) override {
-        auto pathColour = connection.source.isMIDI() || connection.destination.isMIDI()
-                            ? findColour(isCustom() ? customMidiConnectionColourId : defaultMidiConnectionColourId)
-                            : findColour(isCustom() ? customAudioConnectionColourId : defaultAudioConnectionColourId);
-
-        bool mouseOver = isMouseOver(false);
-        g.setColour(mouseOver ? pathColour.brighter(0.1f) : pathColour);
-
-        if (bothInView && linePath.getLength() > 200) {
-            ColourGradient colourGradient = ColourGradient(pathColour, lastSourcePos, pathColour, lastDestinationPos, false);
-            colourGradient.addColour(0.25f, pathColour.withAlpha(0.2f));
-            colourGradient.addColour(0.75f, pathColour.withAlpha(0.2f));
-            g.setGradientFill(colourGradient);
-        }
-
-        g.fillPath(mouseOver ? hoverPath : linePath);
-    }
-
-    bool hitTest(int x, int y) override {
-        return hoverPath.contains({float(x), float(y)});
-    }
-
-    void mouseEnter(const MouseEvent & e) override {
-        repaint();
-    }
-
-    void mouseExit(const MouseEvent & e) override {
-        repaint();
-    }
-
-    void mouseDown(const MouseEvent &) override {
-        dragAnchor.nodeID.uid = 0;
-    }
+    void mouseDown(const MouseEvent &) override { dragAnchor.nodeID.uid = 0; }
 
     void mouseDrag(const MouseEvent &e) override {
         if (isDragging()) {
@@ -131,7 +45,7 @@ struct GraphEditorConnector : public Component, public SettableTooltipClient {
             getDistancesFromEnds(e.position, distanceFromStart, distanceFromEnd);
             const bool isNearerSource = (distanceFromStart < distanceFromEnd);
 
-            static const AudioProcessorGraph::NodeAndChannel dummy{ProcessorGraph::NodeID(), 0};
+            static const AudioProcessorGraph::NodeAndChannel dummy{AudioProcessorGraph::NodeID(), 0};
             dragAnchor = isNearerSource ? connection.destination : connection.source;
 
             connectorDragListener.beginConnectorDrag(isNearerSource ? dummy : connection.source,
@@ -147,52 +61,7 @@ struct GraphEditorConnector : public Component, public SettableTooltipClient {
         }
     }
 
-    void resized() override {
-        const static auto arrowW = 5.0f;
-        const static auto arrowL = 4.0f;
-
-        juce::Point<float> sourcePos, destinationPos;
-        getPoints(sourcePos, destinationPos);
-
-        lastSourcePos = sourcePos;
-        lastDestinationPos = destinationPos;
-
-        const auto toDestinationVec = destinationPos - sourcePos;
-        const auto toSourceVec = sourcePos - destinationPos;
-
-        auto *sourceComponent = graphEditorProcessorContainer.getProcessorForNodeId(connection.source.nodeID);
-        auto *destinationComponent = graphEditorProcessorContainer.getProcessorForNodeId(connection.destination.nodeID);
-        bool isSourceInView = sourceComponent == nullptr || sourceComponent->isInView();
-        bool isDestinationInView = destinationComponent == nullptr || destinationComponent->isInView();
-
-        linePath.clear();
-        bothInView = isSourceInView && isDestinationInView;
-        if (bothInView) {
-            static const float controlHeight = 30.0f; // ensure the "cable" comes straight out a bit before curving back
-            const auto &outgoingDirection = sourceComponent != nullptr ? sourceComponent->getConnectorDirectionVector(false) : juce::Point<float>(0, 0);
-            const auto &incomingDirection = destinationComponent != nullptr ? destinationComponent->getConnectorDirectionVector(true) : juce::Point<float>(0, 0);
-            const auto &sourceControlPoint = sourcePos + outgoingDirection * controlHeight;
-            const auto &destinationControlPoint = destinationPos + incomingDirection * controlHeight;
-            linePath.startNewSubPath(sourcePos);
-            // To bevel the line ends with processor edges exactly, need to go directly for 1px here before curving.
-            linePath.lineTo(sourcePos + outgoingDirection);
-            linePath.cubicTo(sourceControlPoint, destinationControlPoint, destinationPos + incomingDirection);
-            linePath.lineTo(destinationPos);
-        } else if (isSourceInView && !isDestinationInView) {
-            const auto &toDestinationUnitVec = toDestinationVec / toDestinationVec.getDistanceFromOrigin();
-            Line line(sourcePos, sourcePos + 24.0f * toDestinationUnitVec);
-            linePath.addArrow(line, 0.0f, arrowW, arrowL);
-        } else if (isDestinationInView && !isSourceInView) {
-            const auto &toSourceUnitVec = toSourceVec / toSourceVec.getDistanceFromOrigin();
-            Line line(destinationPos + 24.0f * toSourceUnitVec, destinationPos + 5.0f * toSourceUnitVec);
-            linePath.addArrow(line, 0.0f, arrowW, arrowL);
-        }
-
-        PathStrokeType(5.0f).createStrokedPath(hoverPath, linePath);
-        PathStrokeType(3.0f).createStrokedPath(linePath, linePath);
-
-        linePath.setUsingNonZeroWinding(true);
-    }
+    void resized() override;
 
 private:
     ValueTree state;
@@ -203,11 +72,11 @@ private:
     juce::Point<float> lastSourcePos, lastDestinationPos;
     Path linePath, hoverPath;
     bool bothInView = false;
-    AudioProcessorGraph::NodeAndChannel dragAnchor{ProcessorGraph::NodeID(), 0};
+    AudioProcessorGraph::NodeAndChannel dragAnchor{AudioProcessorGraph::NodeID(), 0};
 
     AudioProcessorGraph::Connection connection{
-            {ProcessorGraph::NodeID(0), 0},
-            {ProcessorGraph::NodeID(0), 0}
+            {AudioProcessorGraph::NodeID(0), 0},
+            {AudioProcessorGraph::NodeID(0), 0}
     };
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (GraphEditorConnector)

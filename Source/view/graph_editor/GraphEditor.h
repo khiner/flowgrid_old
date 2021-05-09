@@ -1,7 +1,7 @@
 #pragma once
 
-#include <ProcessorGraph.h>
-#include <state/Project.h>
+#include "ProcessorGraph.h"
+#include "state/Project.h"
 #include "GraphEditorPanel.h"
 #include "view/SelectionEditor.h"
 #include "TooltipBar.h"
@@ -9,8 +9,7 @@
 class GraphEditor : public Component {
 public:
     GraphEditor(ProcessorGraph &graph, Project &project)
-            : project(project),
-              graphPanel(graph, project),
+            : graphPanel(graph, project),
               selectionEditor(project, graph) {
         addAndMakeVisible(graphPanel);
         addAndMakeVisible(selectionEditor);
@@ -27,7 +26,6 @@ public:
     }
 
 private:
-    Project &project;
     GraphEditorPanel graphPanel;
     SelectionEditor selectionEditor;
 

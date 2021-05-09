@@ -109,14 +109,14 @@ target_sources(FlowGrid PRIVATE
     Source/view/context_pane/ContextPane.cpp
     Source/view/graph_editor/ConnectorDragListener.h
     Source/view/graph_editor/GraphEditor.h
-    Source/view/graph_editor/GraphEditorChannel.h
-    Source/view/graph_editor/GraphEditorConnector.h
+    Source/view/graph_editor/GraphEditorChannel.cpp
+    Source/view/graph_editor/GraphEditorConnector.cpp
     Source/view/graph_editor/GraphEditorConnectors.h
-    Source/view/graph_editor/GraphEditorPanel.h
+    Source/view/graph_editor/GraphEditorPanel.cpp
     Source/view/graph_editor/GraphEditorProcessorContainer.h
-    Source/view/graph_editor/GraphEditorProcessorLane.h
+    Source/view/graph_editor/GraphEditorProcessorLane.cpp
     Source/view/graph_editor/GraphEditorProcessorLanes.h
-    Source/view/graph_editor/GraphEditorTrack.h
+    Source/view/graph_editor/GraphEditorTrack.cpp
     Source/view/graph_editor/GraphEditorTracks.h
     Source/view/graph_editor/TooltipBar.h
     Source/view/graph_editor/processor/BaseGraphEditorProcessor.cpp
