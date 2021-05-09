@@ -9,7 +9,7 @@ public:
         vertical,
     };
 
-    SliderControl(Orientation orientation, bool fromCenter = false) :
+    explicit SliderControl(Orientation orientation, bool fromCenter = false) :
             ParameterControl(), orientation(orientation), fromCenter(fromCenter),
             thumb("", {}, {}, {}) {
         addAndMakeVisible(thumb);

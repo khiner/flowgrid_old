@@ -20,7 +20,7 @@ public:
         meterGradientMaxColour,   /**< Colour for the meter bar at the clip threshold */
     };
 
-    LevelMeter(Orientation orientation) :
+    explicit LevelMeter(Orientation orientation) :
             ParameterControl(), orientation(orientation),
             thumb("gain", {}, {}, {}), source(nullptr), refreshRate(24) {
         addAndMakeVisible(thumb);
@@ -34,12 +34,8 @@ public:
     }
 
     void paint(Graphics &g) override {
-        Graphics::ScopedSaveState saved(g);
-
         drawMeterBars(g, source);
-
-        if (source)
-            source->decayIfNeeded();
+        if (source) source->decayIfNeeded();
     }
 
     void timerCallback() override { repaint(); }

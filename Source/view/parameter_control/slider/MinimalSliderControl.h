@@ -4,7 +4,7 @@
 
 class MinimalSliderControl : public SliderControl {
 public:
-    MinimalSliderControl(Orientation orientation, bool fromCenter = false) : SliderControl(orientation, fromCenter) {
+    explicit MinimalSliderControl(Orientation orientation, bool fromCenter = false) : SliderControl(orientation, fromCenter) {
         thumb.setColours(findColour(thumbColourId), findColour(thumbColourId), findColour(thumbColourId));
         thumb.setOutline(findColour(thumbColourId), 0);
     }
@@ -12,10 +12,9 @@ public:
     void resized() override {
         const auto &sliderBounds = getSliderBounds();
         const auto &localBounds = getLocalBounds();
-        int thumbPosition = orientation == vertical ?
+        float thumbPosition = orientation == vertical ?
                             sliderBounds.getRelativePoint(0.0f, 1.0f - value).y :
                             sliderBounds.getRelativePoint(value, 0.0f).x;
-
         const auto &thumbBounds = orientation == vertical ?
                                   localBounds.withHeight(THUMB_WIDTH).withY(thumbPosition - THUMB_WIDTH / 2) :
                                   localBounds.withWidth(THUMB_WIDTH).withX(thumbPosition - THUMB_WIDTH / 2);
@@ -48,16 +47,10 @@ private:
             bool extendUp = value >= 0.5f;
             if (orientation == vertical) {
                 const auto &fillBar = sliderBarBounds.withHeight(fromCenterValue * sliderBarBounds.getHeight());
-                if (extendUp)
-                    return fillBar.withBottomY(sliderBarBounds.getCentreY());
-                else
-                    return fillBar.withY(sliderBarBounds.getCentreY());
+                return extendUp ? fillBar.withBottomY(sliderBarBounds.getCentreY()) : fillBar.withY(sliderBarBounds.getCentreY());
             } else {
                 const auto &fillBar = sliderBarBounds.withWidth(fromCenterValue * sliderBarBounds.getWidth());
-                if (extendUp)
-                    return fillBar.withX(sliderBarBounds.getCentreX());
-                else
-                    return fillBar.withRightX(sliderBarBounds.getCentreX());
+                return extendUp ? fillBar.withX(sliderBarBounds.getCentreX()) : fillBar.withRightX(sliderBarBounds.getCentreX());
             }
         } else {
             return orientation == vertical ?
