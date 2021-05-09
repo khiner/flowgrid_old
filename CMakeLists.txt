@@ -129,13 +129,13 @@ target_sources(FlowGrid PRIVATE
     Source/view/parameter_control/level_meter/LevelMeterSource.cpp
     Source/view/parameter_control/level_meter/MinimalLevelMeter.cpp
     Source/view/parameter_control/level_meter/SegmentedLevelMeter.cpp
-    Source/view/parameter_control/slider/MinimalSliderControl.h
+    Source/view/parameter_control/slider/MinimalSliderControl.cpp
     Source/view/parameter_control/slider/SliderControl.h
     Source/view/processor_editor/DraggableValueLabel.h
-    Source/view/processor_editor/ParameterDisplayComponent.h
-    Source/view/processor_editor/ParametersPanel.h
-    Source/view/processor_editor/ProcessorEditor.h
-    Source/view/processor_editor/SwitchParameterComponent.h
+    Source/view/processor_editor/ParameterDisplayComponent.cpp
+    Source/view/processor_editor/ParametersPanel.cpp
+    Source/view/processor_editor/ProcessorEditor.cpp
+    Source/view/processor_editor/SwitchParameterComponent.cpp
     Source/view/push2/Push2Colours.h
     Source/view/push2/Push2Component.h
     Source/view/push2/Push2ComponentBase.h

@@ -5,75 +5,29 @@
 
 class ParametersPanel : public Component {
 public:
-    explicit ParametersPanel(int maxRows, int numColumns = 8) : maxRows(maxRows), numColumns(numColumns) {
-        for (int paramIndex = 0; paramIndex < numColumns * maxRows; paramIndex++) {
-            addChildComponent(paramComponents.add(new ParameterDisplayComponent()));
-        }
-        // This allows the parent to capture click events when clicking on non-interactive elements like param labels.
-        // For example, this allows dragging a processor with inline param UI in the graph
-        setInterceptsMouseClicks(false, true);
-    }
+    explicit ParametersPanel(int maxRows, int numColumns = 8);
 
-    ~ParametersPanel() override {
-        clearParameters();
-    }
+    ~ParametersPanel() override;
 
-    void setProcessorWrapper(StatefulAudioProcessorWrapper *processorWrapper) {
-        if (this->processorWrapper == processorWrapper)
-            return;
+    void setProcessorWrapper(StatefulAudioProcessorWrapper *processorWrapper);
 
-        parameters.clear(false);
-        currentPage = 0;
-        this->processorWrapper = processorWrapper;
-        if (processorWrapper != nullptr) {
-            for (int i = 0; i < processorWrapper->getNumAutomatableParameters(); i++) {
-                parameters.add(processorWrapper->getAutomatableParameter(i));
-            }
-        }
-        updateParameterComponents();
-    }
-
-    const ValueTree getProcessorState() const {
+    ValueTree getProcessorState() const {
         return processorWrapper != nullptr ? processorWrapper->state : ValueTree();
     }
 
-    void addParameter(StatefulAudioProcessorWrapper::Parameter *parameter) {
-        processorWrapper = nullptr; // manual changes mean this is no longer 1:1 with a single processor
-        parameters.add(parameter);
-        updateParameterComponents();
-    }
+    void addParameter(StatefulAudioProcessorWrapper::Parameter *parameter);
 
-    void clearParameters() {
-        parameters.clear(false);
-        updateParameterComponents();
-    }
+    void clearParameters();
 
     StatefulAudioProcessorWrapper::Parameter *getParameterOnCurrentPageAt(int parameterIndex) const {
         int pageCorrectedParameterIndex = currentPage * maxRows * numColumns + parameterIndex;
         return parameters[pageCorrectedParameterIndex];
     }
 
-    void pageLeft() {
-        if (canPageLeft()) {
-            currentPage--;
-            updateParameterComponents();
-        }
-    }
-
-    void pageRight() {
-        if (canPageRight()) {
-            currentPage++;
-            updateParameterComponents();
-        }
-    }
-
-    bool canPageLeft() {
-        return currentPage > 0;
-    }
-
-    bool canPageRight() {
-        return (currentPage + 1) * maxRows * numColumns < parameters.size();
-    }
+    void pageLeft();
+    void pageRight();
+    bool canPageLeft() const { return currentPage > 0; }
+    bool canPageRight() const { return (currentPage + 1) * maxRows * numColumns < parameters.size(); }
 
     // todo switch to adding new LookAndFeel colour IDs
     void setBackgroundColour(const Colour &backgroundColour) {
@@ -86,40 +40,12 @@ public:
         repaint();
     }
 
-    void paint(Graphics &g) override {
-        auto r = getLocalBounds();
-        g.setColour(backgroundColour);
-        g.fillRect(r);
-        g.setColour(outlineColour);
-        g.drawRect(r, 2);
-    }
+    void paint(Graphics &g) override;
 
-    void resized() override {
-        auto r = getLocalBounds();
-        auto parameterWidth = getParameterWidth();
-        auto parameterHeight = getParameterHeight();
-        auto currentRowArea = r.removeFromTop(parameterHeight);
+    void resized() override;
 
-        int column = 1, row = 1;
-        for (auto *comp : paramComponents) {
-            if (column++ % (numColumns + 1) == 0) {
-                column = 1;
-                if (row++ >= maxRows)
-                    break;
-                currentRowArea = r.removeFromTop(parameterHeight);
-            }
-            comp->setBounds(currentRowArea.removeFromLeft(parameterWidth));
-        }
-        repaint();
-    }
-
-    int getParameterWidth() {
-        return getLocalBounds().getWidth() / numColumns;
-    }
-
-    int getParameterHeight() {
-        return maxRows == 1 ? getLocalBounds().getHeight() : getParameterWidth() * 7 / 5;
-    }
+    int getParameterWidth() { return getLocalBounds().getWidth() / numColumns; }
+    int getParameterHeight() { return maxRows == 1 ? getLocalBounds().getHeight() : getParameterWidth() * 7 / 5; }
 
 private:
     int maxRows;
@@ -132,16 +58,5 @@ private:
     Colour backgroundColour = Colours::transparentBlack;
     Colour outlineColour = Colours::transparentBlack;
 
-    void updateParameterComponents() {
-        for (int paramIndex = 0; paramIndex < paramComponents.size(); paramIndex++) {
-            auto *component = paramComponents.getUnchecked(paramIndex);
-            if (auto *parameter = getParameterOnCurrentPageAt(paramIndex)) {
-                component->setParameter(parameter);
-                component->setVisible(true);
-            } else {
-                component->setVisible(false);
-                component->setParameter(nullptr);
-            }
-        }
-    }
+    void updateParameterComponents();
 };

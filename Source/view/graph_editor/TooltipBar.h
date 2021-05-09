@@ -28,5 +28,5 @@ struct TooltipBar : public Component, private Timer {
     }
 
     String tip;
-    String DEFAULT_TOOLTIP = "Hi Hover over anything for info";
+    String DEFAULT_TOOLTIP = "Hover over anything for info";
 };
