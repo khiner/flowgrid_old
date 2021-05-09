@@ -27,11 +27,11 @@ public:
         setMasterViewSlotOffset(0);
     }
 
-    static inline bool isMasterTrack(const ValueTree &track) {
+    static bool isMasterTrack(const ValueTree &track) {
         return track.isValid() && track[IDs::isMasterTrack];
     }
 
-    static inline int getNumVisibleSlotsForTrack(const ValueTree &track) {
+    static int getNumVisibleSlotsForTrack(const ValueTree &track) {
         return isMasterTrack(track) ? NUM_VISIBLE_MASTER_TRACK_SLOTS : NUM_VISIBLE_NON_MASTER_TRACK_SLOTS;
     }
 

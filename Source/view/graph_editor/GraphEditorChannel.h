@@ -32,7 +32,7 @@ struct GraphEditorChannel : public Component, public SettableTooltipClient, priv
         return state[IDs::channelIndex];
     }
 
-    inline bool isMasterTrack() const { return TracksState::isMasterTrack(getTrack()); }
+    bool isMasterTrack() const { return TracksState::isMasterTrack(getTrack()); }
 
     bool isInput() const { return state.getParent().hasType(IDs::INPUT_CHANNELS); }
 

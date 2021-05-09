@@ -192,7 +192,7 @@ private:
     void timerCallback() override { drawFrame(); }
 
     // Render a frame and send it to the Push 2 display (if it's available)
-    void inline drawFrame() {
+    void drawFrame() {
         static const juce::Colour CLEAR_COLOR = juce::Colour(0xff000000);
 
         auto &g = displayBridge.getGraphics();

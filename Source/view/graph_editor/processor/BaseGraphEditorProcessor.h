@@ -45,23 +45,23 @@ public:
         return isIoProcessor() || view.isProcessorSlotInView(getTrack(), getSlot());
     }
 
-    inline bool isMasterTrack() const { return TracksState::isMasterTrack(getTrack()); }
+    bool isMasterTrack() const { return TracksState::isMasterTrack(getTrack()); }
 
-    inline int getTrackIndex() const { return tracks.indexOf(getTrack()); }
+    int getTrackIndex() const { return tracks.indexOf(getTrack()); }
 
-    inline int getSlot() const { return state[IDs::processorSlot]; }
+    int getSlot() const { return state[IDs::processorSlot]; }
 
-    inline int getNumInputChannels() const { return state.getChildWithName(IDs::INPUT_CHANNELS).getNumChildren(); }
+    int getNumInputChannels() const { return state.getChildWithName(IDs::INPUT_CHANNELS).getNumChildren(); }
 
-    inline int getNumOutputChannels() const { return state.getChildWithName(IDs::OUTPUT_CHANNELS).getNumChildren(); }
+    int getNumOutputChannels() const { return state.getChildWithName(IDs::OUTPUT_CHANNELS).getNumChildren(); }
 
-    inline bool acceptsMidi() const { return state[IDs::acceptsMidi]; }
+    bool acceptsMidi() const { return state[IDs::acceptsMidi]; }
 
-    inline bool producesMidi() const { return state[IDs::producesMidi]; }
+    bool producesMidi() const { return state[IDs::producesMidi]; }
 
-    inline bool isIoProcessor() const { return InternalPluginFormat::isIoProcessor(state[IDs::name]); }
+    bool isIoProcessor() const { return InternalPluginFormat::isIoProcessor(state[IDs::name]); }
 
-    inline bool isSelected() { return tracks.isProcessorSelected(state); }
+    bool isSelected() { return tracks.isProcessorSelected(state); }
 
     StatefulAudioProcessorWrapper *getProcessorWrapper() const {
         return audioProcessorContainer.getProcessorWrapperForState(state);
