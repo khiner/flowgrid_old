@@ -1,6 +1,11 @@
 #pragma once
 
+#include <juce_core/juce_core.h>
+#include <juce_data_structures/juce_data_structures.h>
+#include <juce_gui_basics/juce_gui_basics.h>
 #include "FlowGridConfig.h"
+
+using namespace juce;
 
 namespace CommandIDs {
     static const int

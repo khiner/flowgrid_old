@@ -29,15 +29,13 @@ public:
     AudioProcessor *getAudioProcessorForState(const ValueTree &processorState) const {
         if (auto *processorWrapper = getProcessorWrapperForState(processorState))
             return processorWrapper->processor;
-
         return {};
     }
 
-    ValueTree getProcessorStateForNodeId(AudioProcessorGraph::NodeID nodeId) {
+    ValueTree getProcessorStateForNodeId(AudioProcessorGraph::NodeID nodeId) const {
         if (auto processorWrapper = getProcessorWrapperForNodeId(nodeId))
             return processorWrapper->state;
-        else
-            return {};
+        return {};
     }
 
     static AudioProcessorGraph::NodeID getNodeIdForState(const ValueTree &processorState) {
@@ -54,7 +52,7 @@ public:
         }
     }
 
-    ValueTree copyProcessor(ValueTree &fromProcessor) {
+    ValueTree copyProcessor(ValueTree &fromProcessor) const {
         saveProcessorStateInformationToState(fromProcessor);
         auto copiedProcessor = fromProcessor.createCopy();
         copiedProcessor.removeProperty(IDs::nodeId, nullptr);

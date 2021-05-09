@@ -1,15 +1,17 @@
+#include <utility>
+
 #pragma once
 
 namespace Utilities {
     template<typename ObjectType, typename CriticalSectionType = DummyCriticalSection>
     class ValueTreeObjectList : public ValueTree::Listener {
     public:
-        explicit ValueTreeObjectList(const ValueTree &parentTree)
-                : parent(parentTree) {
+        explicit ValueTreeObjectList(ValueTree parentTree)
+                : parent(std::move(parentTree)) {
             parent.addListener(this);
         }
 
-        virtual ~ValueTreeObjectList() {
+        ~ValueTreeObjectList() override {
             jassert(objects.size() == 0); // must call freeObjects() in the subclass destructor!
         }
 

@@ -1,7 +1,10 @@
 #pragma once
 
-#include <ApplicationPropertiesAndCommandManager.h>
-#include "processors/MidiKeyboardProcessor.h"
+#include <juce_audio_processors/juce_audio_processors.h>
+#include <juce_gui_basics/juce_gui_basics.h>
+#include <state/Identifiers.h>
+
+using namespace juce;
 
 class PluginWindow : public DocumentWindow {
 public:
@@ -12,31 +15,7 @@ public:
         audioIO,
     };
 
-    PluginWindow(ValueTree &processorState, AudioProcessor *processor, Type type)
-            : DocumentWindow(processorState[IDs::name],
-                             LookAndFeel::getDefaultLookAndFeel().findColour(ResizableWindow::backgroundColourId),
-                             DocumentWindow::minimiseButton | DocumentWindow::closeButton),
-              processor(processorState), type(type) {
-        setSize(400, 300);
-
-        Component *keyboardComponent{};
-        if (auto *midiKeyboardProcessor = dynamic_cast<MidiKeyboardProcessor *>(processor)) {
-            keyboardComponent = midiKeyboardProcessor->createKeyboard();
-            keyboardComponent->setSize(800, 1);
-            setContentOwned(keyboardComponent, true);
-        } else if (auto *ui = createProcessorEditor(*processor, type)) {
-            setContentOwned(ui, true);
-        }
-
-        int xPosition = processorState.hasProperty(IDs::pluginWindowX) ? int(processorState[IDs::pluginWindowX]) : Random::getSystemRandom().nextInt(500);
-        int yPosition = processorState.hasProperty(IDs::pluginWindowX) ? int(processorState[IDs::pluginWindowY]) : Random::getSystemRandom().nextInt(500);
-        setTopLeftPosition(xPosition, yPosition);
-        setAlwaysOnTop(true);
-        setVisible(true);
-        if (keyboardComponent != nullptr)
-            keyboardComponent->grabKeyboardFocus();
-        addKeyListener(getCommandManager().getKeyMappings());
-    }
+    PluginWindow(ValueTree &processorState, AudioProcessor *processor, Type type);
 
     ~PluginWindow() override {
         clearContentComponent();
@@ -55,23 +34,9 @@ public:
     const Type type;
 
 private:
-
     float getDesktopScaleFactor() const override { return 1.0f; }
 
-    static AudioProcessorEditor *createProcessorEditor(AudioProcessor &processor, PluginWindow::Type type) {
-        if (type == PluginWindow::Type::normal)
-            if (auto *ui = processor.createEditorIfNeeded())
-                return ui;
-
-        if (type == PluginWindow::Type::programs)
-            return new ProgramAudioProcessorEditor(processor);
-
-//        if (type == PluginWindow::Type::audioIO)
-//            return new FilterIOConfigurationWindow (processor);
-
-        jassertfalse;
-        return {};
-    }
+    static AudioProcessorEditor *createProcessorEditor(AudioProcessor &processor, PluginWindow::Type type);
 
     static String getTypeName(Type type) {
         switch (type) {
@@ -86,7 +51,6 @@ private:
         }
     }
 
-    //==============================================================================
     struct ProgramAudioProcessorEditor : public AudioProcessorEditor {
         explicit ProgramAudioProcessorEditor(AudioProcessor &p) : AudioProcessorEditor(p) {
             setOpaque(true);
@@ -100,7 +64,6 @@ private:
 
             for (int i = 0; i < numPrograms; ++i) {
                 auto name = p.getProgramName(i).trim();
-
                 if (name.isEmpty())
                     name = "Unnamed";
 

@@ -42,7 +42,7 @@ target_sources(FlowGrid PRIVATE
     Source/DeviceChangeMonitor.h
     Source/DeviceManagerUtilities.h
     Source/PluginManager.h
-    Source/ProcessorGraph.h
+    Source/ProcessorGraph.cpp
     Source/StatefulAudioProcessorContainer.h
     Source/Utilities.h
     Source/ValueTreeObjectList.h
@@ -103,8 +103,8 @@ target_sources(FlowGrid PRIVATE
     Source/usb/libusb/config_xcode.h
     Source/view/BasicWindow.h
     Source/view/CustomColourIds.h
-    Source/view/PluginWindow.h
-    Source/view/SelectionEditor.h
+    Source/view/PluginWindow.cpp
+    Source/view/SelectionEditor.cpp
     Source/view/UiColours.h
     Source/view/context_pane/ContextPane.h
     Source/view/graph_editor/ConnectorDragListener.h

@@ -1,90 +1,27 @@
-#include <Utilities.h>
-#include <state/Identifiers.h>
+#pragma once
+
 #include <PluginManager.h>
-#include <view/graph_editor/TooltipBar.h>
+#include <ProcessorGraph.h>
 #include "processor_editor/ProcessorEditor.h"
+#include <view/graph_editor/TooltipBar.h>
 #include "view/context_pane/ContextPane.h"
-#include "view/CustomColourIds.h"
 
 class SelectionEditor : public Component,
                         public DragAndDropContainer,
                         private Button::Listener,
                         private ValueTree::Listener {
 public:
-    SelectionEditor(Project &project, ProcessorGraph &audioGraphBuilder)
-            : project(project), tracks(project.getTracks()), view(project.getView()),
-              pluginManager(project.getPluginManager()), audioGraphBuilder(audioGraphBuilder), contextPane(project) {
-        tracks.addListener(this);
-        view.addListener(this);
+    SelectionEditor(Project &project, ProcessorGraph &audioGraphBuilder);
 
-        addAndMakeVisible(addProcessorButton);
-        addAndMakeVisible(processorEditorsViewport);
-        addAndMakeVisible(contextPaneViewport);
-        addAndMakeVisible(statusBar);
-        unfocusOverlay.setFill(findColour(CustomColourIds::unfocusedOverlayColourId));
-        addChildComponent(unfocusOverlay);
+    ~SelectionEditor() override;
 
-        addProcessorButton.addListener(this);
-        processorEditorsViewport.setViewedComponent(&processorEditorsComponent, false);
-        processorEditorsViewport.setScrollBarsShown(true, false);
-        contextPaneViewport.setViewedComponent(&contextPane, false);
-        addMouseListener(this, true);
-    }
+    void mouseDown(const MouseEvent &event) override;
 
-    ~SelectionEditor() override {
-        removeMouseListener(this);
-        tracks.removeListener(this);
-        view.removeListener(this);
-    }
+    void paint(Graphics &g) override;
 
-    void mouseDown(const MouseEvent &event) override {
-        view.focusOnEditorPane();
-        if (auto *processorEditor = dynamic_cast<ProcessorEditor *>(event.originalComponent)) {
-            project.selectProcessor(processorEditor->getProcessorState());
-        }
-    }
+    void resized() override;
 
-    void paint(Graphics &g) override {
-        g.setColour(findColour(TextEditor::backgroundColourId));
-        g.drawLine(1, 0, 1, getHeight(), 2);
-        g.drawLine(0, contextPaneViewport.getY(), getWidth(), contextPaneViewport.getY(), 2);
-    }
-
-    void resized() override {
-        auto r = getLocalBounds().reduced(4);
-        statusBar.setBounds(r.removeFromBottom(20));
-        auto buttons = r.removeFromTop(22);
-        buttons.removeFromLeft(4);
-        addProcessorButton.setBounds(buttons.removeFromLeft(120));
-        contextPaneViewport.setBounds(r.removeFromBottom(250).reduced(1));
-        processorEditorsViewport.setBounds(r);
-        unfocusOverlay.setRectangle(processorEditorsViewport.getBounds().toFloat());
-
-        r.removeFromRight(8);
-        processorEditorsComponent.setBounds(0, 0, r.getWidth(), PROCESSOR_EDITOR_HEIGHT *
-                                                                tracks.getFocusedTrack().getNumChildren());
-        r = processorEditorsComponent.getBounds();
-        for (auto *editor : processorEditors) {
-            if (editor->isVisible())
-                editor->setBounds(r.removeFromTop(PROCESSOR_EDITOR_HEIGHT).reduced(4));
-        }
-    }
-
-    void buttonClicked(Button *b) override {
-        if (b == &addProcessorButton) {
-            const auto &focusedTrack = tracks.getFocusedTrack();
-            if (focusedTrack.isValid()) {
-                addProcessorMenu = std::make_unique<PopupMenu>();
-                pluginManager.addPluginsToMenu(*addProcessorMenu, focusedTrack);
-                addProcessorMenu->showMenuAsync({}, ModalCallbackFunction::create([this](int r) {
-                    auto &description = pluginManager.getChosenType(r);
-                    if (!description.name.isEmpty()) {
-                        project.createProcessor(description);
-                    }
-                }));
-            }
-        }
-    }
+    void buttonClicked(Button *b) override;
 
 private:
     static const int PROCESSOR_EDITOR_HEIGHT = 160;
@@ -107,70 +44,13 @@ private:
     DrawableRectangle unfocusOverlay;
     std::unique_ptr<PopupMenu> addProcessorMenu;
 
-    void refreshProcessors(const ValueTree &singleProcessorToRefresh = {}, bool onlyUpdateFocusState = false) {
-        const ValueTree &focusedTrack = tracks.getFocusedTrack();
-        if (!focusedTrack.isValid()) {
-            for (auto *editor : processorEditors) {
-                editor->setVisible(false);
-                editor->setProcessor(nullptr);
-            }
-        } else if (singleProcessorToRefresh.isValid()) {
-            assignProcessorToEditor(singleProcessorToRefresh);
-        } else {
-            for (int processorSlot = 0; processorSlot < processorEditors.size(); processorSlot++) {
-                const auto &processor = TracksState::getProcessorAtSlot(focusedTrack, processorSlot);
-                assignProcessorToEditor(processor, processorSlot, onlyUpdateFocusState);
-            }
-        }
-        resized();
-    }
+    void refreshProcessors(const ValueTree &singleProcessorToRefresh = {}, bool onlyUpdateFocusState = false);
 
-    void assignProcessorToEditor(const ValueTree &processor, int processorSlot = -1, bool onlyUpdateFocusState = false) const {
-        auto *processorEditor = processorEditors.getUnchecked(processorSlot != -1 ? processorSlot : int(processor[IDs::processorSlot]));
-        if (processor.isValid()) {
-            if (auto *processorWrapper = audioGraphBuilder.getProcessorWrapperForState(processor)) {
-                if (!onlyUpdateFocusState) {
-                    processorEditor->setProcessor(processorWrapper);
-                    processorEditor->setVisible(true);
-                }
-                processorEditor->setSelected(tracks.isProcessorSelected(processor));
-                processorEditor->setFocused(tracks.isProcessorFocused(processor));
-            }
-        } else {
-            processorEditor->setVisible(false);
-            processorEditor->setProcessor(nullptr);
-        }
-    }
+    void assignProcessorToEditor(const ValueTree &processor, int processorSlot = -1, bool onlyUpdateFocusState = false) const;
 
-    void valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int) override {
-        if (child.hasType(IDs::TRACK) || child.hasType(IDs::PROCESSOR)) {
-            refreshProcessors();
-        }
-    }
+    void valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int) override;
 
-    void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {
-        if (i == IDs::focusedTrackIndex) {
-            addProcessorButton.setVisible(tracks.getFocusedTrack().isValid());
-            refreshProcessors();
-        } else if (i == IDs::processorInitialized) {
-            refreshProcessors(); // TODO only the new processor
-        } else if (i == IDs::focusedProcessorSlot) {
-            refreshProcessors({}, true);
-        } else if (i == IDs::numProcessorSlots || i == IDs::numMasterProcessorSlots) {
-            int numProcessorSlots = jmax(int(tree[IDs::numProcessorSlots]), int(tree[IDs::numMasterProcessorSlots]));
-            while (processorEditors.size() < numProcessorSlots) {
-                auto *processorEditor = new ProcessorEditor();
-                processorEditorsComponent.addChildComponent(processorEditor);
-                processorEditors.add(processorEditor);
-            }
-            processorEditors.removeLast(processorEditors.size() - numProcessorSlots);
-        } else if (i == IDs::processorSlot) {
-            refreshProcessors();
-        } else if (i == IDs::focusedPane) {
-            unfocusOverlay.setVisible(view.isGridPaneFocused());
-            unfocusOverlay.toFront(false);
-        }
-    }
+    void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SelectionEditor)
 };

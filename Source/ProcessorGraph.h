@@ -5,7 +5,6 @@
 #include <state/Identifiers.h>
 #include "state/Project.h"
 #include "state/ConnectionsState.h"
-
 #include "PluginManager.h"
 #include "StatefulAudioProcessorContainer.h"
 #include "push2/Push2MidiCommunicator.h"
@@ -36,12 +35,10 @@ public:
     }
 
     StatefulAudioProcessorWrapper *getProcessorWrapperForNodeId(NodeID nodeId) const override {
-        if (!nodeId.isValid())
-            return nullptr;
+        if (!nodeId.isValid()) return nullptr;
 
         auto nodeIdAndProcessorWrapper = processorWrapperForNodeId.find(nodeId);
-        if (nodeIdAndProcessorWrapper == processorWrapperForNodeId.end())
-            return nullptr;
+        if (nodeIdAndProcessorWrapper == processorWrapperForNodeId.end()) return nullptr;
 
         return nodeIdAndProcessorWrapper->second.get();
     }
@@ -100,96 +97,13 @@ private:
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ProcessorGraph)
 
-    void addProcessor(const ValueTree &processorState) {
-        static String errorMessage = "Could not create processor";
-        auto description = pluginManager.getDescriptionForIdentifier(processorState[IDs::id]);
-        auto processor = pluginManager.getFormatManager().createPluginInstance(*description, getSampleRate(), getBlockSize(), errorMessage);
-        if (processorState.hasProperty(IDs::state)) {
-            MemoryBlock memoryBlock;
-            memoryBlock.fromBase64Encoding(processorState[IDs::state].toString());
-            processor->setStateInformation(memoryBlock.getData(), (int) memoryBlock.getSize());
-        }
+    void addProcessor(const ValueTree &processorState);
 
-        const Node::Ptr &newNode = processorState.hasProperty(IDs::nodeId) ?
-                                   addNode(std::move(processor), getNodeIdForState(processorState)) :
-                                   addNode(std::move(processor));
-        processorWrapperForNodeId[newNode->nodeID] = std::make_unique<StatefulAudioProcessorWrapper>
-                (dynamic_cast<AudioPluginInstance *>(newNode->getProcessor()), newNode->nodeID, processorState, undoManager, project.getDeviceManager());
-        if (processorWrapperForNodeId.size() == 1)
-            // Added the first processor. Start the timer that flushes new processor state to their value trees.
-            startTimerHz(10);
+    void removeProcessor(const ValueTree &processor);
 
-        if (auto midiInputProcessor = dynamic_cast<MidiInputProcessor *>(newNode->getProcessor())) {
-            const String &deviceName = processorState.getProperty(IDs::deviceName);
-            midiInputProcessor->setDeviceName(deviceName);
-            if (deviceName.containsIgnoreCase(push2MidiDeviceName)) {
-                push2MidiCommunicator.addMidiInputCallback(&midiInputProcessor->getMidiMessageCollector());
-            } else {
-                deviceManager.addMidiInputCallback(deviceName, &midiInputProcessor->getMidiMessageCollector());
-            }
-        } else if (auto *midiOutputProcessor = dynamic_cast<MidiOutputProcessor *>(newNode->getProcessor())) {
-            const String &deviceName = processorState.getProperty(IDs::deviceName);
-            if (auto *enabledMidiOutput = deviceManager.getEnabledMidiOutput(deviceName))
-                midiOutputProcessor->setMidiOutput(enabledMidiOutput);
-        }
-        ValueTree mutableProcessor = processorState;
-        if (mutableProcessor.hasProperty(IDs::processorInitialized))
-            mutableProcessor.sendPropertyChangeMessage(IDs::processorInitialized);
-        else
-            mutableProcessor.setProperty(IDs::processorInitialized, true, nullptr);
+    void recursivelyAddProcessors(const ValueTree &state);
 
-    }
-
-    void removeProcessor(const ValueTree &processor) {
-        auto *processorWrapper = getProcessorWrapperForState(processor);
-        const NodeID nodeId = getNodeIdForState(processor);
-
-        // disconnect should have already been called before delete! (to avoid nested undo actions)
-        if (processor[IDs::name] == MidiInputProcessor::name()) {
-            if (auto *midiInputProcessor = dynamic_cast<MidiInputProcessor *>(processorWrapper->processor)) {
-                const String &deviceName = processor.getProperty(IDs::deviceName);
-                if (deviceName.containsIgnoreCase(push2MidiDeviceName)) {
-                    push2MidiCommunicator.removeMidiInputCallback(&midiInputProcessor->getMidiMessageCollector());
-                } else {
-                    deviceManager.removeMidiInputCallback(deviceName, &midiInputProcessor->getMidiMessageCollector());
-                }
-            }
-        }
-        processorWrapperForNodeId.erase(nodeId);
-        nodes.removeObject(AudioProcessorGraph::getNodeForId(nodeId));
-        topologyChanged();
-    }
-
-    void recursivelyAddProcessors(const ValueTree &state) {
-        if (state.hasType(IDs::PROCESSOR)) {
-            addProcessor(state);
-            return;
-        }
-        for (const ValueTree &child : state)
-            recursivelyAddProcessors(child);
-    }
-
-    void updateIoChannelEnabled(const ValueTree &channels, const ValueTree &channel, bool enabled) {
-        String processorName = channels.getParent()[IDs::name];
-        bool isInput;
-        if (processorName == "Audio Input" && channels.hasType(IDs::OUTPUT_CHANNELS))
-            isInput = true;
-        else if (processorName == "Audio Output" && channels.hasType(IDs::INPUT_CHANNELS))
-            isInput = false;
-        else
-            return;
-        if (auto *audioDevice = deviceManager.getCurrentAudioDevice()) {
-            AudioDeviceManager::AudioDeviceSetup config;
-            deviceManager.getAudioDeviceSetup(config);
-            auto &configChannels = isInput ? config.inputChannels : config.outputChannels;
-            const auto &channelNames = isInput ? audioDevice->getInputChannelNames() : audioDevice->getOutputChannelNames();
-            auto channelIndex = channelNames.indexOf(channel[IDs::name].toString());
-            if (channelIndex != -1 && ((enabled && !configChannels[channelIndex]) || (!enabled && configChannels[channelIndex]))) {
-                configChannels.setBit(channelIndex, enabled);
-                deviceManager.setAudioDeviceSetup(config, true);
-            }
-        }
-    }
+    void updateIoChannelEnabled(const ValueTree &channels, const ValueTree &channel, bool enabled);
 
     void onProcessorCreated(const ValueTree &processor) override {
         if (getProcessorWrapperForState(processor) == nullptr)
@@ -215,7 +129,7 @@ private:
             if (graphUpdatesArePaused)
                 connectionsSincePause.addConnection(child);
             else
-                AudioProcessorGraph::addConnection(connections.stateToConnection(child));
+                AudioProcessorGraph::addConnection(ConnectionsState::stateToConnection(child));
         } else if (child.hasType(IDs::TRACK) || parent.hasType(IDs::INPUT) || parent.hasType(IDs::OUTPUT)) {
             recursivelyAddProcessors(child); // TODO might be a problem for moving tracks
         } else if (child.hasType(IDs::CHANNEL)) {
@@ -230,7 +144,7 @@ private:
             if (graphUpdatesArePaused)
                 connectionsSincePause.removeConnection(child);
             else
-                AudioProcessorGraph::removeConnection(connections.stateToConnection(child));
+                AudioProcessorGraph::removeConnection(ConnectionsState::stateToConnection(child));
         } else if (child.hasType(IDs::CHANNEL)) {
             updateIoChannelEnabled(parent, child, false);
             removeIllegalConnections(); // TODO shouldn't affect state in state listeners - trace back to specific user actions and do this in the action method
