@@ -16,7 +16,6 @@ struct TooltipBar : public Component, private Timer {
 
     void timerCallback() override {
         String newTip = DEFAULT_TOOLTIP;
-
         if (auto *underMouse = Desktop::getInstance().getMainMouseSource().getComponentUnderMouse())
             if (auto *ttc = dynamic_cast<TooltipClient *> (underMouse))
                 if (!(underMouse->isMouseButtonDown() || underMouse->isCurrentlyBlockedByAnotherModalComponent()))

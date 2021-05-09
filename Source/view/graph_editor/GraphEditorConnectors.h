@@ -4,10 +4,10 @@
 #include <ValueTreeObjectList.h>
 #include "GraphEditorConnector.h"
 
-class GraphEditorConnectors : public Component, public Utilities::ValueTreeObjectList<GraphEditorConnector> {
+class GraphEditorConnectors : public Component, public ValueTreeObjectList<GraphEditorConnector> {
 public:
     explicit GraphEditorConnectors(ConnectionsState &connections, ConnectorDragListener &connectorDragListener, GraphEditorProcessorContainer &graphEditorProcessorContainer, ProcessorGraph &graph)
-            : Utilities::ValueTreeObjectList<GraphEditorConnector>(connections.getState()), connectorDragListener(connectorDragListener), graphEditorProcessorContainer(graphEditorProcessorContainer) {
+            : ValueTreeObjectList<GraphEditorConnector>(connections.getState()), connectorDragListener(connectorDragListener), graphEditorProcessorContainer(graphEditorProcessorContainer) {
         rebuildObjects();
         setInterceptsMouseClicks(false, true);
     }

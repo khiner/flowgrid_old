@@ -1,16 +1,14 @@
 #pragma once
 
-#include <ValueTreeObjectList.h>
-#include <state/Project.h>
-
-#include <utility>
+#include "state/Project.h"
+#include "ValueTreeObjectList.h"
 #include "GraphEditorProcessorLane.h"
 
-class GraphEditorProcessorLanes : public Component, public Utilities::ValueTreeObjectList<GraphEditorProcessorLane>,
+class GraphEditorProcessorLanes : public Component, public ValueTreeObjectList<GraphEditorProcessorLane>,
                                   public GraphEditorProcessorContainer {
 public:
     explicit GraphEditorProcessorLanes(Project &project, ValueTree state, ConnectorDragListener &connectorDragListener)
-            : Utilities::ValueTreeObjectList<GraphEditorProcessorLane>(std::move(state)), project(project),
+            : ValueTreeObjectList<GraphEditorProcessorLane>(std::move(state)), project(project),
               connectorDragListener(connectorDragListener) {
         rebuildObjects();
     }

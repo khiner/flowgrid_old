@@ -4,7 +4,7 @@
 #include "view/graph_editor/processor/ParameterPanelGraphEditorProcessor.h"
 
 GraphEditorProcessorLane::GraphEditorProcessorLane(Project &project, const ValueTree &state, ConnectorDragListener &connectorDragListener)
-        : Utilities::ValueTreeObjectList<BaseGraphEditorProcessor>(state),
+        : ValueTreeObjectList<BaseGraphEditorProcessor>(state),
           project(project), state(state), tracks(project.getTracks()), view(project.getView()),
           connections(project.getConnections()),
           pluginManager(project.getPluginManager()), connectorDragListener(connectorDragListener) {
@@ -115,7 +115,7 @@ void GraphEditorProcessorLane::valueTreePropertyChanged(ValueTree &tree, const I
         resized();
         updateProcessorSlotColours();
     }
-    Utilities::ValueTreeObjectList<BaseGraphEditorProcessor>::valueTreePropertyChanged(tree, i);
+    ValueTreeObjectList<BaseGraphEditorProcessor>::valueTreePropertyChanged(tree, i);
 }
 
 void GraphEditorProcessorLane::valueTreeChildAdded(ValueTree &parent, ValueTree &child) {

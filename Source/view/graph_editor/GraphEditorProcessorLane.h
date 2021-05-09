@@ -6,7 +6,7 @@
 #include "ConnectorDragListener.h"
 #include "GraphEditorChannel.h"
 
-class GraphEditorProcessorLane : public Component, Utilities::ValueTreeObjectList<BaseGraphEditorProcessor>, GraphEditorProcessorContainer {
+class GraphEditorProcessorLane : public Component, ValueTreeObjectList<BaseGraphEditorProcessor>, GraphEditorProcessorContainer {
 public:
     explicit GraphEditorProcessorLane(Project &project, const ValueTree &state, ConnectorDragListener &connectorDragListener);
 

@@ -1,16 +1,16 @@
 #pragma once
 
-#include <ValueTreeObjectList.h>
-#include <state/Project.h>
+#include "state/Project.h"
 #include "GraphEditorTrack.h"
 #include "ConnectorDragListener.h"
+#include "ValueTreeObjectList.h"
 
 class GraphEditorTracks : public Component,
-                          private Utilities::ValueTreeObjectList<GraphEditorTrack>,
+                          private ValueTreeObjectList<GraphEditorTrack>,
                           public GraphEditorProcessorContainer {
 public:
     explicit GraphEditorTracks(Project &project, TracksState &tracks, ConnectorDragListener &connectorDragListener)
-            : Utilities::ValueTreeObjectList<GraphEditorTrack>(tracks.getState()), project(project),
+            : ValueTreeObjectList<GraphEditorTrack>(tracks.getState()), project(project),
               tracks(tracks), view(project.getView()),
               connectorDragListener(connectorDragListener) {
         rebuildObjects();
