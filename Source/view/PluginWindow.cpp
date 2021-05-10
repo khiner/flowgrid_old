@@ -29,6 +29,10 @@ PluginWindow::PluginWindow(ValueTree &processorState, AudioProcessor *processor,
     addKeyListener(getCommandManager().getKeyMappings());
 }
 
+PluginWindow::~PluginWindow() {
+    clearContentComponent();
+}
+
 AudioProcessorEditor *PluginWindow::createProcessorEditor(AudioProcessor &processor, PluginWindow::Type type) {
     if (type == PluginWindow::Type::normal)
         if (auto *ui = processor.createEditorIfNeeded())
@@ -42,6 +46,15 @@ AudioProcessorEditor *PluginWindow::createProcessorEditor(AudioProcessor &proces
 
     jassertfalse;
     return {};
+}
+
+void PluginWindow::moved() {
+    processor.setProperty(IDs::pluginWindowX, getX(), nullptr);
+    processor.setProperty(IDs::pluginWindowY, getY(), nullptr);
+}
+
+void PluginWindow::closeButtonPressed() {
+    processor.setProperty(IDs::pluginWindowType, static_cast<int>(Type::none), nullptr);
 }
 
 PluginWindow::ProgramAudioProcessorEditor::ProgramAudioProcessorEditor(AudioProcessor &p) : AudioProcessorEditor(p) {
@@ -67,4 +80,20 @@ PluginWindow::ProgramAudioProcessorEditor::ProgramAudioProcessorEditor(AudioProc
     panel.addProperties(programs);
 
     setSize(400, std::clamp(totalHeight, 25, 400));
+}
+
+PluginWindow::ProgramAudioProcessorEditor::PropertyComp::PropertyComp(const String &name, AudioProcessor &p) : PropertyComponent(name), owner(p) {
+    owner.addListener(this);
+}
+
+PluginWindow::ProgramAudioProcessorEditor::PropertyComp::~PropertyComp() {
+    owner.removeListener(this);
+}
+
+void PluginWindow::ProgramAudioProcessorEditor::paint(Graphics &g) {
+    g.fillAll(Colours::grey);
+}
+
+void PluginWindow::ProgramAudioProcessorEditor::resized() {
+    panel.setBounds(getLocalBounds());
 }

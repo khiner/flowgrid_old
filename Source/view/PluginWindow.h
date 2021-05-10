@@ -17,18 +17,11 @@ public:
 
     PluginWindow(ValueTree &processorState, AudioProcessor *processor, Type type);
 
-    ~PluginWindow() override {
-        clearContentComponent();
-    }
+    ~PluginWindow() override;
 
-    void moved() override {
-        processor.setProperty(IDs::pluginWindowX, getX(), nullptr);
-        processor.setProperty(IDs::pluginWindowY, getY(), nullptr);
-    }
+    void moved() override;
 
-    void closeButtonPressed() override {
-        processor.setProperty(IDs::pluginWindowType, static_cast<int>(Type::none), nullptr);
-    }
+    void closeButtonPressed() override;
 
     ValueTree processor;
     const Type type;
@@ -54,29 +47,20 @@ private:
     struct ProgramAudioProcessorEditor : public AudioProcessorEditor {
         explicit ProgramAudioProcessorEditor(AudioProcessor &p);
 
-        void paint(Graphics &g) override {
-            g.fillAll(Colours::grey);
-        }
+        void paint(Graphics &g) override;
 
-        void resized() override {
-            panel.setBounds(getLocalBounds());
-        }
+        void resized() override;
 
     private:
         struct PropertyComp : public PropertyComponent,
                               private AudioProcessorListener {
-            PropertyComp(const String &name, AudioProcessor &p) : PropertyComponent(name), owner(p) {
-                owner.addListener(this);
-            }
+            PropertyComp(const String &name, AudioProcessor &p);
 
-            ~PropertyComp() override {
-                owner.removeListener(this);
-            }
+            ~PropertyComp() override;
 
             void refresh() override {}
 
             void audioProcessorChanged(AudioProcessor *, const ChangeDetails& details) override {}
-
             void audioProcessorParameterChanged(AudioProcessor *, int, float) override {}
 
             AudioProcessor &owner;

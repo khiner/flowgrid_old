@@ -5,103 +5,34 @@
 #include <cassert>
 #include <iostream>
 
+#include <juce_events/juce_events.h>
+
 #include "libusb.h"
 
-class UsbCommunicator : private Timer {
+class UsbCommunicator : private juce::Timer {
 public:
-    UsbCommunicator(const uint16_t vendorId, const uint16_t productId) :
-            vendorId(vendorId), productId(productId), frameHeaderTransfer(nullptr), terminate(false) {
-        auto errorCode = libusb_init(nullptr);
-        if (errorCode < 0)
-            throw std::runtime_error("Failed to initialize libusb");
+    UsbCommunicator(uint16_t vendorId, uint16_t productId);
 
-        startTimer(1000); // check back every second
-    }
+    ~UsbCommunicator() override;
 
-    ~UsbCommunicator() override {
-        terminate = true;
-        if (pollThread.joinable()) {
-            pollThread.join();
-        }
-    }
-
-    inline bool isValid() { return handle != nullptr; }
+    bool isValid() { return handle != nullptr; }
 
     /*!
      *  Callback for when a transfer is finished and the next one needs to be
      *  initiated
      */
-    void LIBUSB_CALL onTransferFinished(libusb_transfer *transfer) {
-        if (transfer->status != LIBUSB_TRANSFER_COMPLETED) {
-            switch (transfer->status) {
-                case LIBUSB_TRANSFER_ERROR:
-                    printf("transfer failed\n");
-                    break;
-                case LIBUSB_TRANSFER_TIMED_OUT:
-                    printf("transfer timed out\n");
-                    break;
-                case LIBUSB_TRANSFER_CANCELLED:
-                    printf("transfer was cancelled\n");
-                    break;
-                case LIBUSB_TRANSFER_STALL:
-                    printf("endpoint stalled/control request not supported\n");
-                    break;
-                case LIBUSB_TRANSFER_NO_DEVICE:
-                    printf("device was disconnected\n");
-                    break;
-                case LIBUSB_TRANSFER_OVERFLOW:
-                    printf("device sent more data than requested\n");
-                    break;
-                default:
-                    printf("snd transfer failed with status: %d\n", transfer->status);
-                    break;
-            }
-            terminate.store(true);
-            libusb_close(handle);
-            handle = nullptr;
-        } else if (transfer->length != transfer->actual_length) {
-            char errorMsg[256];
-            sprintf(errorMsg, "only transferred %d of %d bytes\n", transfer->actual_length, transfer->length);
-            throw std::runtime_error(errorMsg);
-        } else if (transfer == frameHeaderTransfer) {
-            if (!terminate.load()) {
-                onFrameSendCompleted();
-            }
-        } else {
-            if (!terminate.load()) {
-                sendNextSlice(transfer);
-            }
-        }
-    }
+    void LIBUSB_CALL onTransferFinished(libusb_transfer *transfer);
 
     /*!
      *  Continuously poll events from libusb, possibly treating any error reported
      */
-    void pollUsbForEvents() {
-        static struct timeval timeout_500ms = {0, 500000};
-        int terminate_main_loop = 0;
-
-        while (!terminate_main_loop && !terminate.load()) {
-            if (libusb_handle_events_timeout_completed(nullptr, &timeout_500ms, &terminate_main_loop) < 0) {
-                assert(false);
-            }
-        }
-    }
+    void pollUsbForEvents();
 
 protected:
     // Allocate a libusb_transfer mapped to a transfer buffer. It also sets
     // up the callback needed to communicate the transfer is done
     static libusb_transfer *allocateAndPrepareTransferChunk(libusb_device_handle *handle, UsbCommunicator *instance,
-                                                            unsigned char *buffer, int bufferSize, const unsigned char endpoint) {
-        // Allocate a transfer structure
-        auto transfer = libusb_alloc_transfer(0);
-        if (!transfer)
-            return nullptr;
-
-        libusb_fill_bulk_transfer(transfer, handle, endpoint, buffer, bufferSize,
-                                  onTransferFinishedStatic, instance, 1000);
-        return transfer;
-    }
+                                                            unsigned char *buffer, int bufferSize, unsigned char endpoint);
 
     /*!
      *  Initiate the send process
@@ -127,57 +58,9 @@ protected:
     std::atomic<bool> headerNeedsSending{true};
 
 private:
-    void timerCallback() override {
-        if (handle == nullptr)
-            findDeviceHandleAndStartPolling();
-    }
+    void timerCallback() override;
 
-    bool findDeviceHandleAndStartPolling() {
-        libusb_device **devices;
-        auto count = libusb_get_device_list(nullptr, &devices);
-        if (count < 0)
-            throw std::runtime_error("could not get usb device list");
-
-        // Look for the one matching Push 2's descriptors
-        libusb_device *device;
-
-        int errorCode;
-        for (int i = 0; (device = devices[i]) != nullptr; i++) {
-            struct libusb_device_descriptor descriptor{};
-            if ((errorCode = libusb_get_device_descriptor(device, &descriptor)) < 0) {
-                std::cerr << "could not get usb device descriptor, error: " << errorCode << '\n';
-                continue;
-            }
-
-            if (descriptor.bDeviceClass == LIBUSB_CLASS_PER_INTERFACE
-                && descriptor.idVendor == vendorId
-                && descriptor.idProduct == productId) {
-                if ((errorCode = libusb_open(device, &handle)) < 0) {
-                    std::cerr << "could not open device, error: " << errorCode << '\n';
-                } else if ((errorCode = libusb_claim_interface(handle, 0)) < 0) {
-                    std::cerr << "could not claim device with interface 0, error: " << errorCode << '\n';
-                    libusb_close(handle);
-                    handle = nullptr;
-                } else {
-                    break; // successfully opened
-                }
-            }
-        }
-
-        libusb_free_device_list(devices, 1);
-
-        if (handle != nullptr) {
-            if (pollThread.joinable()) {
-                pollThread.join();
-                headerNeedsSending.store(true);
-                terminate.store(false);
-            }
-            pollThread = std::thread(&UsbCommunicator::pollUsbForEvents, this);
-            return true;
-        }
-
-        return false;
-    }
+    bool findDeviceHandleAndStartPolling();
 
     // Callback received whenever a transfer has been completed.
     // We defer the processing to the communicator class

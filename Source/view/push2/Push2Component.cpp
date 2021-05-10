@@ -1,5 +1,7 @@
 #include "Push2Component.h"
 
+#include "ApplicationPropertiesAndCommandManager.h"
+
 Push2Component::Push2Component(Project &project, Push2MidiCommunicator &push2MidiCommunicator)
         : Push2ComponentBase(project, push2MidiCommunicator),
           tracks(project.getTracks()), connections(project.getConnections()), view(project.getView()), audioProcessorContainer(project),

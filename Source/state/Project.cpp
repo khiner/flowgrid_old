@@ -13,6 +13,7 @@
 #include "actions/SelectRectangleAction.h"
 #include "actions/InsertAction.h"
 #include "actions/SelectTrackAction.h"
+#include "ApplicationPropertiesAndCommandManager.h"
 
 Project::Project(UndoManager &undoManager, PluginManager &pluginManager, AudioDeviceManager &deviceManager)
         : FileBasedDocument(getFilenameSuffix(), "*" + getFilenameSuffix(), "Load a project", "Save project"),

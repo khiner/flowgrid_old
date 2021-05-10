@@ -64,10 +64,8 @@ public:
     void valueTreeChildRemoved(ValueTree &exParent, ValueTree &tree, int) override {
         if (parent == exParent && isSuitableType(tree)) {
             const int oldIndex = indexOf(tree);
-
             if (oldIndex >= 0) {
                 ObjectType *o;
-
                 {
                     const ScopedLockType sl(arrayLock);
                     o = objects.removeAndReturn(oldIndex);

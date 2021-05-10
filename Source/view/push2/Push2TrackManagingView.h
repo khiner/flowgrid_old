@@ -1,6 +1,5 @@
 #pragma once
 
-#include "view/processor_editor/ParametersPanel.h"
 #include "Push2ComponentBase.h"
 #include "Push2Label.h"
 

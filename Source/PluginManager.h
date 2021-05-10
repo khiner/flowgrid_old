@@ -1,8 +1,6 @@
 #pragma once
 
 #include "processors/InternalPluginFormat.h"
-#include "state/Identifiers.h"
-#include "ApplicationPropertiesAndCommandManager.h"
 
 class PluginManager : private ChangeListener {
 public:

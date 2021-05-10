@@ -1,5 +1,7 @@
 #include "Push2Colours.h"
 
+#include "state/Identifiers.h"
+
 Push2Colours::Push2Colours(TracksState &tracks) : tracks(tracks) {
     this->tracks.addListener(this);
     for (uint8 colourIndex = 1; colourIndex < CHAR_MAX - 1; colourIndex++) {

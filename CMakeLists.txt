@@ -98,7 +98,7 @@ target_sources(FlowGrid PRIVATE
     Source/state/Stateful.h
     Source/state/TracksState.cpp
     Source/state/ViewState.cpp
-    Source/usb/UsbCommunicator.h
+    Source/usb/UsbCommunicator.cpp
     Source/usb/libusb/config_msvc.h
     Source/usb/libusb/config_xcode.h
     Source/view/BasicWindow.h

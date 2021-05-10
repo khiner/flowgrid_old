@@ -17,7 +17,7 @@ public:
               hasMidi(description.isInstrument),
               channelSet(channelSetToUse) {
         jassert(channelSetToUse.size() == description.numOutputChannels);
-    };
+    }
 
     virtual void parameterChanged(AudioProcessorParameter *parameter, float newValue) {}
 
@@ -84,27 +84,7 @@ public:
     }
 
     static PluginDescription getPluginDescription(const String &identifier, bool registerAsGenerator, bool acceptsMidi,
-                                                  const AudioChannelSet &channelSetToUse = AudioChannelSet::stereo()) {
-        PluginDescription descr;
-        auto pluginName = identifier.upToFirstOccurrenceOf(":", false, false);
-        auto pluginState = identifier.fromFirstOccurrenceOf(":", false, false);
-
-        descr.name = pluginName;
-        descr.descriptiveName = pluginName;
-        descr.pluginFormatName = "Internal";
-        descr.category = (registerAsGenerator ? (acceptsMidi ? "Synth" : "Generator") : "Effect");
-        descr.manufacturerName = "Odang Ludo Productions";
-
-        descr.version = PROJECT_VERSION;
-
-        descr.fileOrIdentifier = pluginName + ":" + pluginState;
-        descr.uid = pluginName.hashCode();
-        descr.isInstrument = (acceptsMidi && registerAsGenerator);
-        descr.numInputChannels = (registerAsGenerator ? 0 : channelSetToUse.size());
-        descr.numOutputChannels = channelSetToUse.size();
-
-        return descr;
-    }
+                                                  const AudioChannelSet &channelSetToUse = AudioChannelSet::stereo());
 
     static AudioParameterFloat *createDefaultGainParameter(const String &id, const String &name, float defaultValue = 0.0f) {
         return new AudioParameterFloat(id, name, NormalisableRange<float>(float(Decibels::defaultMinusInfinitydB), 6.0f, 0.0f, 4.0f), defaultValue, "dB",
@@ -117,13 +97,7 @@ public:
     const static std::function<float(const String &)> defaultValueFromDbString;
 
 private:
-    static BusesProperties getBusProperties(bool registerAsGenerator,
-                                            const AudioChannelSet &channelSetToUse) {
-        if (channelSetToUse == AudioChannelSet::disabled())
-            return BusesProperties();
-        return registerAsGenerator ? BusesProperties().withOutput("Output", channelSetToUse)
-                                   : BusesProperties().withInput("Input", channelSetToUse).withOutput("Output", channelSetToUse);
-    }
+    static BusesProperties getBusProperties(bool registerAsGenerator, const AudioChannelSet &channelSetToUse);
 
     String name, state;
     bool isGenerator, hasMidi;

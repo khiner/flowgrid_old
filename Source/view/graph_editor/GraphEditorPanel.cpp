@@ -1,6 +1,7 @@
 #include "GraphEditorPanel.h"
 
 #include "view/CustomColourIds.h"
+#include "ApplicationPropertiesAndCommandManager.h"
 
 GraphEditorPanel::GraphEditorPanel(ProcessorGraph &graph, Project &project)
         : graph(graph), project(project), audioProcessorContainer(project), tracks(project.getTracks()), connections(project.getConnections()),

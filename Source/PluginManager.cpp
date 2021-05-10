@@ -1,5 +1,7 @@
 #include "PluginManager.h"
 
+#include "ApplicationPropertiesAndCommandManager.h"
+
 PluginManager::PluginManager() {
     if (auto savedPluginList = getUserSettings()->getXmlValue(PLUGIN_LIST_FILE_NAME))
         knownPluginListExternal.recreateFromXml(*savedPluginList);
