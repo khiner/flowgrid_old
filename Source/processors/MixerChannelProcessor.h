@@ -22,7 +22,7 @@ public:
         balanceParameter->removeListener(this);
     }
 
-    static const String name() { return "Mixer Channel"; }
+    static String name() { return "Mixer Channel"; }
 
     static PluginDescription getPluginDescription() {
         return DefaultAudioProcessor::getPluginDescription(name(), false, false);

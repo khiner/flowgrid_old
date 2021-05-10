@@ -19,7 +19,7 @@ public:
         monitorAudioParameter->removeListener(this);
     }
 
-    static const String name() { return "Track Input"; }
+    static String name() { return "Track Input"; }
 
     static PluginDescription getPluginDescription() {
         return DefaultAudioProcessor::getPluginDescription(name(), false, true);

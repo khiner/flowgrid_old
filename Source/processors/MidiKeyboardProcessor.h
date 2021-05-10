@@ -15,7 +15,7 @@ public:
         return new MidiKeyboardComponent(midiKeyboardState, MidiKeyboardComponent::horizontalKeyboard);
     }
 
-    static const String name() { return "MIDI Keyboard"; }
+    static String name() { return "MIDI Keyboard"; }
 
     static PluginDescription getPluginDescription() {
         return DefaultAudioProcessor::getPluginDescription(name(), true, false, AudioChannelSet::disabled());

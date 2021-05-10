@@ -22,7 +22,7 @@ public:
         balanceParameter->removeListener(this);
     }
 
-    static const String name() { return "Track Output"; }
+    static String name() { return "Track Output"; }
 
     static PluginDescription getPluginDescription() {
         return DefaultAudioProcessor::getPluginDescription(name(), false, true);

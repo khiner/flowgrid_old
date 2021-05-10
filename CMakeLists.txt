@@ -81,7 +81,7 @@ target_sources(FlowGrid PRIVATE
     Source/processors/ParameterTypesTestProcessor.h
     Source/processors/SineBank.h
     Source/processors/SineSynth.h
-    Source/processors/StatefulAudioProcessorWrapper.h
+    Source/processors/StatefulAudioProcessorWrapper.cpp
     Source/processors/TrackInputProcessor.h
     Source/processors/TrackOutputProcessor.h
     Source/processors/audio_sources/ToneSourceWithParameters.h
