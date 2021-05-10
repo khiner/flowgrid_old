@@ -11,7 +11,7 @@ class Push2Component :
         public Timer,
         public Push2ComponentBase,
         private ChangeListener,
-        private Utilities::ValueTreePropertyChangeListener {
+        private ValueTree::Listener {
 public:
     explicit Push2Component(Project &project, Push2MidiCommunicator &push2MidiCommunicator);
 

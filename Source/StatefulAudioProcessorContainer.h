@@ -42,20 +42,7 @@ public:
         return processorState.isValid() ? AudioProcessorGraph::NodeID(static_cast<uint32>(int(processorState[IDs::nodeId]))) : AudioProcessorGraph::NodeID{};
     }
 
-    void saveProcessorStateInformationToState(ValueTree &processorState) const {
-        if (auto *processorWrapper = getProcessorWrapperForState(processorState)) {
-            MemoryBlock memoryBlock;
-            if (auto *processor = processorWrapper->processor) {
-                processor->getStateInformation(memoryBlock);
-                processorState.setProperty(IDs::state, memoryBlock.toBase64Encoding(), nullptr);
-            }
-        }
-    }
+    void saveProcessorStateInformationToState(ValueTree &processorState) const;
 
-    ValueTree copyProcessor(ValueTree &fromProcessor) const {
-        saveProcessorStateInformationToState(fromProcessor);
-        auto copiedProcessor = fromProcessor.createCopy();
-        copiedProcessor.removeProperty(IDs::nodeId, nullptr);
-        return copiedProcessor;
-    }
+    ValueTree copyProcessor(ValueTree &fromProcessor) const;
 };

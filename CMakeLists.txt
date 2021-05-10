@@ -41,9 +41,9 @@ target_sources(FlowGrid PRIVATE
     Source/ApplicationPropertiesAndCommandManager.h
     Source/DeviceChangeMonitor.h
     Source/DeviceManagerUtilities.h
-    Source/PluginManager.h
+    Source/PluginManager.cpp
     Source/ProcessorGraph.cpp
-    Source/StatefulAudioProcessorContainer.h
+    Source/StatefulAudioProcessorContainer.cpp
     Source/Utilities.h
     Source/ValueTreeObjectList.h
     Source/actions/CreateConnectionAction.h

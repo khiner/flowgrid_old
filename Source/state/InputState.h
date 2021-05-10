@@ -1,6 +1,7 @@
 #pragma once
 
-#include <PluginManager.h>
+#include "push2/Push2MidiDevice.h"
+#include "PluginManager.h"
 #include "StatefulAudioProcessorContainer.h"
 #include "Stateful.h"
 #include "TracksState.h"
@@ -24,7 +25,7 @@ public:
     }
 
     ValueTree getPush2MidiInputProcessor() const {
-        return input.getChildWithProperty(IDs::deviceName, push2MidiDeviceName);
+        return input.getChildWithProperty(IDs::deviceName, Push2MidiDevice::getDeviceName());
     }
 
     AudioProcessorGraph::NodeID getDefaultInputNodeIdForConnectionType(ConnectionType connectionType) const {

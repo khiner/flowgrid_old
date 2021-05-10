@@ -18,7 +18,7 @@ void CopiedState::loadFromState(const ValueTree &tracksState) {
             auto copiedLane = ValueTree(IDs::PROCESSOR_LANE);
             copiedLane.setProperty(IDs::selectedSlotsMask, lane[IDs::selectedSlotsMask].toString(), nullptr);
             for (auto processor : lane)
-                if (track[IDs::selected] || tracks.isProcessorSelected(processor))
+                if (track[IDs::selected] || TracksState::isProcessorSelected(processor))
                     copiedLane.appendChild(audioProcessorContainer.copyProcessor(processor), nullptr);
             copiedLanes.appendChild(copiedLane, nullptr);
         }

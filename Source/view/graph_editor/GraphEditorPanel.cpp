@@ -315,7 +315,7 @@ void GraphEditorPanel::showPopupMenu(const ValueTree &track, int slot) {
         pluginManager.addPluginsToMenu(menu, track);
 
         menu.showMenuAsync({}, ModalCallbackFunction::create([this, slot, &pluginManager](int result) {
-            auto &description = pluginManager.getChosenType(result);
+            const auto &description = pluginManager.getChosenType(result);
             if (!description.name.isEmpty()) {
                 project.createProcessor(description, slot);
             }

@@ -7,10 +7,9 @@
 #include "view/BasicWindow.h"
 #include "ApplicationPropertiesAndCommandManager.h"
 #include "DeviceChangeMonitor.h"
-#include "Utilities.h"
 #include "FlowGridConfig.h"
 
-class FlowGridApplication : public JUCEApplication, public MenuBarModel, private ChangeListener, private Utilities::ValueTreePropertyChangeListener {
+class FlowGridApplication : public JUCEApplication, public MenuBarModel, private ChangeListener {
 public:
     FlowGridApplication() : project(undoManager, pluginManager, deviceManager),
                             tracks(project.getTracks()),
@@ -485,9 +484,7 @@ public:
         }
 
         void fileDragEnter(const StringArray &files, int, int) override {}
-
         void fileDragMove(const StringArray &files, int, int) override {}
-
         void fileDragExit(const StringArray &files) override {}
 
     private:
@@ -564,6 +561,7 @@ private:
         } else if (source == &undoManager) {
             applicationCommandListChanged();
         } else if (source == &deviceManager) {
+            const String &push2MidiDeviceName = Push2MidiDevice::getDeviceName();
             if (!push2MidiCommunicator.isInitialized() && MidiInput::getDevices().contains(push2MidiDeviceName, true)) {
                 auto midiInput = MidiInput::openDevice(MidiInput::getDevices().indexOf(push2MidiDeviceName, true), &push2MidiCommunicator);
                 auto midiOutput = MidiOutput::openDevice(MidiOutput::getDevices().indexOf(push2MidiDeviceName, true));

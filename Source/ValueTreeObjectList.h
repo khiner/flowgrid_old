@@ -91,21 +91,17 @@ public:
     }
 
     void valueTreePropertyChanged(ValueTree &, const Identifier &) override {}
-
     void valueTreeParentChanged(ValueTree &) override {}
-
     void valueTreeRedirected(ValueTree &) override { jassertfalse; } // may need to add handling if this is hit
 
     Array<ObjectType *> objects;
     CriticalSectionType arrayLock;
     typedef typename CriticalSectionType::ScopedLockType ScopedLockType;
-
 protected:
     ValueTree parent;
 
     void deleteAllObjects() {
         const ScopedLockType sl(arrayLock);
-
         while (objects.size() > 0)
             deleteObject(objects.removeAndReturn(objects.size() - 1));
     }

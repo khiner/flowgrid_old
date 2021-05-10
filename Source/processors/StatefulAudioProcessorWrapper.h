@@ -1,10 +1,9 @@
 #pragma once
 
-#include <Utilities.h>
-#include <view/parameter_control/ParameterControl.h>
-#include <view/parameter_control/level_meter/LevelMeterSource.h>
-#include "state/Identifiers.h"
+#include "view/parameter_control/ParameterControl.h"
+#include "view/parameter_control/level_meter/LevelMeterSource.h"
 #include "view/processor_editor/SwitchParameterComponent.h"
+#include "state/Identifiers.h"
 #include "DeviceManagerUtilities.h"
 #include "DefaultAudioProcessor.h"
 
@@ -12,7 +11,7 @@ class StatefulAudioProcessorWrapper : private AudioProcessorListener {
 public:
     struct Parameter
             : public AudioProcessorParameterWithID,
-              private Utilities::ValueTreePropertyChangeListener,
+              private ValueTree::Listener,
               public AudioProcessorParameter::Listener, public Slider::Listener, public Button::Listener,
               public ComboBox::Listener, public SwitchParameterComponent::Listener, public ParameterControl::Listener {
         class Listener {
@@ -416,13 +415,13 @@ public:
         void parameterControlDragEnded(ParameterControl *control) override { endParameterChange(); }
 
 
-        void beginParameterChange() {
+        void beginParameterChange() const {
             if (undoManager != nullptr)
                 undoManager->beginNewTransaction();
             sourceParameter->beginChangeGesture();
         }
 
-        void endParameterChange() {
+        void endParameterChange() const {
             sourceParameter->endChangeGesture();
         }
     };

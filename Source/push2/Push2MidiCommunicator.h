@@ -322,7 +322,7 @@ private:
     }
 
     void registerAllIndexedColours() {
-        for (std::pair<String, uint8> pair : push2Colours.indexForColour) {
+        for (auto &pair : push2Colours.indexForColour) {
             colourAdded(Colour::fromString(pair.first), pair.second);
         }
     }

@@ -326,12 +326,15 @@ void Project::updateDefaultConnectionsForProcessor(const ValueTree &processor, b
 }
 
 Result Project::loadDocument(const File &file) {
-    const ValueTree &newState = Utilities::loadValueTree(file, true);
-    if (!newState.isValid() || !newState.hasType(IDs::PROJECT))
-        return Result::fail(TRANS("Not a valid project file"));
+    if (auto xml = std::unique_ptr<XmlElement>(XmlDocument::parse(file))) {
+        const ValueTree &newState = ValueTree::fromXml(*xml);
+        if (!newState.isValid() || !newState.hasType(IDs::PROJECT))
+            return Result::fail(TRANS("Not a valid project file"));
 
-    loadFromState(newState);
-    return Result::ok();
+        loadFromState(newState);
+        return Result::ok();
+    }
+    return Result::fail(TRANS("Not a valid XML file"));
 }
 
 bool Project::isDeviceWithNamePresent(const String &deviceName) const {

@@ -8,7 +8,6 @@ public:
 
 private:
     AudioDeviceManager &audioDeviceManager;
-
     int numInputDevices{0}, numOutputDevices{0};
 
     void timerCallback() override {

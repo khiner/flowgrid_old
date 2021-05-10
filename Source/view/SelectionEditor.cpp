@@ -70,7 +70,7 @@ void SelectionEditor::buttonClicked(Button *b) {
             addProcessorMenu = std::make_unique<PopupMenu>();
             pluginManager.addPluginsToMenu(*addProcessorMenu, focusedTrack);
             addProcessorMenu->showMenuAsync({}, ModalCallbackFunction::create([this](int r) {
-                auto &description = pluginManager.getChosenType(r);
+                const auto &description = pluginManager.getChosenType(r);
                 if (!description.name.isEmpty()) {
                     project.createProcessor(description);
                 }

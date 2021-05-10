@@ -6,7 +6,7 @@
 #include "ConnectorDragListener.h"
 #include "Utilities.h"
 
-struct GraphEditorChannel : public Component, public SettableTooltipClient, private Utilities::ValueTreePropertyChangeListener {
+struct GraphEditorChannel : public Component, public SettableTooltipClient, private ValueTree::Listener {
     GraphEditorChannel(ValueTree state, ConnectorDragListener &connectorDragListener, bool showChannelText = false);
 
     ~GraphEditorChannel() override;
@@ -20,9 +20,7 @@ struct GraphEditorChannel : public Component, public SettableTooltipClient, priv
     int getChannelIndex() const { return state[IDs::channelIndex]; }
 
     bool isMasterTrack() const { return TracksState::isMasterTrack(getTrack()); }
-
     bool isInput() const { return state.getParent().hasType(IDs::INPUT_CHANNELS); }
-
     bool isMidi() const { return getChannelIndex() == AudioProcessorGraph::midiChannelIndex; }
 
     bool allowDefaultConnections() const { return getProcessor()[IDs::allowDefaultConnections]; }
@@ -36,7 +34,6 @@ struct GraphEditorChannel : public Component, public SettableTooltipClient, priv
     void updateColour();
 
     void mouseEnter(const MouseEvent &e) override { updateColour(); }
-
     void mouseExit(const MouseEvent &e) override { updateColour(); }
 
     void mouseDown(const MouseEvent &e) override {

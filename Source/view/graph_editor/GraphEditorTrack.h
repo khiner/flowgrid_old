@@ -6,7 +6,7 @@
 #include "GraphEditorProcessorLanes.h"
 #include <Utilities.h>
 
-class GraphEditorTrack : public Component, public Utilities::ValueTreePropertyChangeListener, public GraphEditorProcessorContainer {
+class GraphEditorTrack : public Component, public ValueTree::Listener, public GraphEditorProcessorContainer {
 public:
     explicit GraphEditorTrack(Project &project, TracksState &tracks, const ValueTree &state, ConnectorDragListener &connectorDragListener);
 

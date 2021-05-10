@@ -2,7 +2,6 @@
 
 #include <actions/CreateOrDeleteConnectionsAction.h>
 #include <processors/StatefulAudioProcessorWrapper.h>
-#include <state/Identifiers.h>
 #include "state/Project.h"
 #include "state/ConnectionsState.h"
 #include "PluginManager.h"
@@ -14,25 +13,9 @@ class ProcessorGraph : public AudioProcessorGraph, public StatefulAudioProcessor
 public:
     explicit ProcessorGraph(Project &project, TracksState &tracks, ConnectionsState &connections,
                             InputState &input, OutputState &output, UndoManager &undoManager, AudioDeviceManager &deviceManager,
-                            Push2MidiCommunicator &push2MidiCommunicator)
-            : project(project), tracks(tracks), connections(connections), input(input), output(output),
-              undoManager(undoManager), deviceManager(deviceManager), pluginManager(project.getPluginManager()), push2MidiCommunicator(push2MidiCommunicator) {
-        enableAllBuses();
+                            Push2MidiCommunicator &push2MidiCommunicator);
 
-        tracks.addListener(this);
-        connections.addListener(this);
-        input.addListener(this);
-        output.addListener(this);
-        project.setStatefulAudioProcessorContainer(this);
-    }
-
-    ~ProcessorGraph() override {
-        project.setStatefulAudioProcessorContainer(nullptr);
-        output.removeListener(this);
-        input.removeListener(this);
-        connections.removeListener(this);
-        tracks.removeListener(this);
-    }
+    ~ProcessorGraph() override;
 
     StatefulAudioProcessorWrapper *getProcessorWrapperForNodeId(NodeID nodeId) const override {
         if (!nodeId.isValid()) return nullptr;
@@ -47,15 +30,7 @@ public:
         graphUpdatesArePaused = true;
     }
 
-    void resumeAudioGraphUpdatesAndApplyDiffSincePause() override {
-        graphUpdatesArePaused = false;
-        for (auto &connection : connectionsSincePause.connectionsToDelete)
-            valueTreeChildRemoved(connections.getState(), connection, 0);
-        for (auto &connection : connectionsSincePause.connectionsToCreate)
-            valueTreeChildAdded(connections.getState(), connection);
-        connectionsSincePause.connectionsToDelete.clearQuick();
-        connectionsSincePause.connectionsToCreate.clearQuick();
-    }
+    void resumeAudioGraphUpdatesAndApplyDiffSincePause() override;
 
     AudioProcessorGraph::Node *getNodeForId(AudioProcessorGraph::NodeID nodeId) const override {
         return AudioProcessorGraph::getNodeForId(nodeId);
@@ -96,9 +71,7 @@ private:
     CreateOrDeleteConnectionsAction connectionsSincePause{connections};
 
     void addProcessor(const ValueTree &processorState);
-
     void removeProcessor(const ValueTree &processor);
-
     void recursivelyAddProcessors(const ValueTree &state);
 
     void updateIoChannelEnabled(const ValueTree &channels, const ValueTree &channel, bool enabled);
@@ -112,50 +85,9 @@ private:
         removeProcessor(processor);
     }
 
-    void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {
-        if (tree.hasType(IDs::PROCESSOR)) {
-            if (i == IDs::bypassed) {
-                if (auto node = getNodeForState(tree)) {
-                    node->setBypassed(tree[IDs::bypassed]);
-                }
-            }
-        }
-    }
+    void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override;
+    void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override;
+    void valueTreeChildRemoved(ValueTree &parent, ValueTree &child, int indexFromWhichChildWasRemoved) override;
 
-    void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override {
-        if (child.hasType(IDs::CONNECTION)) {
-            if (graphUpdatesArePaused)
-                connectionsSincePause.addConnection(child);
-            else
-                AudioProcessorGraph::addConnection(ConnectionsState::stateToConnection(child));
-        } else if (child.hasType(IDs::TRACK) || parent.hasType(IDs::INPUT) || parent.hasType(IDs::OUTPUT)) {
-            recursivelyAddProcessors(child); // TODO might be a problem for moving tracks
-        } else if (child.hasType(IDs::CHANNEL)) {
-            updateIoChannelEnabled(parent, child, true);
-            // TODO shouldn't affect state in state listeners - trace back to specific user actions and do this in the action method
-            removeIllegalConnections();
-        }
-    }
-
-    void valueTreeChildRemoved(ValueTree &parent, ValueTree &child, int indexFromWhichChildWasRemoved) override {
-        if (child.hasType(IDs::CONNECTION)) {
-            if (graphUpdatesArePaused)
-                connectionsSincePause.removeConnection(child);
-            else
-                AudioProcessorGraph::removeConnection(ConnectionsState::stateToConnection(child));
-        } else if (child.hasType(IDs::CHANNEL)) {
-            updateIoChannelEnabled(parent, child, false);
-            removeIllegalConnections(); // TODO shouldn't affect state in state listeners - trace back to specific user actions and do this in the action method
-        }
-    }
-
-    void timerCallback() override {
-        bool anythingUpdated = false;
-
-        for (auto &nodeIdAndProcessorWrapper : processorWrapperForNodeId)
-            if (nodeIdAndProcessorWrapper.second->flushParameterValuesToValueTree())
-                anythingUpdated = true;
-
-        startTimer(anythingUpdated ? 1000 / 50 : std::clamp(getTimerInterval() + 20, 50, 500));
-    }
+    void timerCallback() override;
 };

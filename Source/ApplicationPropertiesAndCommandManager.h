@@ -34,8 +34,6 @@ namespace CommandIDs {
             allWindowsForward = 0x50004;
 }
 
-const String push2MidiDeviceName = "Ableton Push 2 Live Port";
-
 class ApplicationPropertiesAndCommandManager {
 public:
     ApplicationPropertiesAndCommandManager() {
@@ -54,7 +52,5 @@ public:
 };
 
 ApplicationCommandManager &getCommandManager();
-
 ApplicationProperties &getApplicationProperties();
-
 PropertiesFile *getUserSettings();
