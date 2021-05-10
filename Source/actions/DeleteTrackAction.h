@@ -6,35 +6,12 @@
 
 struct DeleteTrackAction : public UndoableAction {
     DeleteTrackAction(const ValueTree &trackToDelete, TracksState &tracks, ConnectionsState &connections,
-                      StatefulAudioProcessorContainer &audioProcessorContainer)
-            : trackToDelete(trackToDelete), trackIndex(trackToDelete.getParent().indexOf(trackToDelete)),
-              tracks(tracks) {
-        for (const auto &processor : TracksState::getAllProcessorsForTrack(trackToDelete)) {
-            deleteProcessorActions.add(new DeleteProcessorAction(processor, tracks, connections, audioProcessorContainer));
-            deleteProcessorActions.getLast()->performTemporary();
-        }
-        for (int i = deleteProcessorActions.size() - 1; i >= 0; i--)
-            deleteProcessorActions.getUnchecked(i)->undoTemporary();
-    }
+                      StatefulAudioProcessorContainer &audioProcessorContainer);
 
-    bool perform() override {
-        for (auto *deleteProcessorAction : deleteProcessorActions)
-            deleteProcessorAction->perform();
-        tracks.getState().removeChild(trackIndex, nullptr);
+    bool perform() override;
+    bool undo() override;
 
-        return true;
-    }
-
-    bool undo() override {
-        tracks.getState().addChild(trackToDelete, trackIndex, nullptr);
-        for (int i = deleteProcessorActions.size() - 1; i >= 0; i--)
-            deleteProcessorActions.getUnchecked(i)->undo();
-        return true;
-    }
-
-    int getSizeInUnits() override {
-        return (int) sizeof(*this); //xxx should be more accurate
-    }
+    int getSizeInUnits() override { return (int) sizeof(*this); }
 
 private:
     ValueTree trackToDelete;

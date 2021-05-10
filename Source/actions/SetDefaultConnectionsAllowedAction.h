@@ -1,30 +1,12 @@
 #pragma once
 
-#include "state/Identifiers.h"
-#include "StatefulAudioProcessorContainer.h"
 #include "CreateOrDeleteConnectionsAction.h"
-#include "DisconnectProcessorAction.h"
 
 struct SetDefaultConnectionsAllowedAction : public CreateOrDeleteConnectionsAction {
-    SetDefaultConnectionsAllowedAction(const ValueTree &processor, bool defaultConnectionsAllowed, ConnectionsState &connections)
-            : CreateOrDeleteConnectionsAction(connections), processor(processor), defaultConnectionsAllowed(defaultConnectionsAllowed) {
-        if (!defaultConnectionsAllowed) {
-            coalesceWith(DisconnectProcessorAction(connections, processor, all, true, false, true, true, AudioProcessorGraph::NodeID()));
-        }
-    }
+    SetDefaultConnectionsAllowedAction(const ValueTree &processor, bool defaultConnectionsAllowed, ConnectionsState &connections);
 
-    bool perform() override {
-        processor.setProperty(IDs::allowDefaultConnections, defaultConnectionsAllowed, nullptr);
-        CreateOrDeleteConnectionsAction::perform();
-        return true;
-    }
-
-    bool undo() override {
-        CreateOrDeleteConnectionsAction::perform();
-        processor.setProperty(IDs::allowDefaultConnections, defaultConnectionsAllowed, nullptr);
-
-        return true;
-    }
+    bool perform() override;
+    bool undo() override;
 
 private:
     ValueTree processor;

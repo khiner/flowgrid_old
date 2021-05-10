@@ -46,27 +46,27 @@ target_sources(FlowGrid PRIVATE
     Source/StatefulAudioProcessorContainer.cpp
     Source/Utilities.h
     Source/ValueTreeObjectList.h
-    Source/actions/CreateConnectionAction.h
-    Source/actions/CreateOrDeleteConnectionsAction.h
-    Source/actions/CreateProcessorAction.h
-    Source/actions/CreateTrackAction.h
-    Source/actions/DefaultConnectProcessorAction.h
-    Source/actions/DeleteConnectionAction.h
-    Source/actions/DeleteProcessorAction.h
-    Source/actions/DeleteSelectedItemsAction.h
-    Source/actions/DeleteTrackAction.h
-    Source/actions/DisconnectProcessorAction.h
-    Source/actions/InsertAction.h
-    Source/actions/InsertProcessorAction.h
-    Source/actions/MoveSelectedItemsAction.h
-    Source/actions/ResetDefaultExternalInputConnectionsAction.h
-    Source/actions/SelectAction.h
-    Source/actions/SelectProcessorSlotAction.h
-    Source/actions/SelectRectangleAction.h
-    Source/actions/SelectTrackAction.h
-    Source/actions/SetDefaultConnectionsAllowedAction.h
-    Source/actions/UpdateAllDefaultConnectionsAction.h
-    Source/actions/UpdateProcessorDefaultConnectionsAction.h
+    Source/actions/CreateConnectionAction.cpp
+    Source/actions/CreateOrDeleteConnectionsAction.cpp
+    Source/actions/CreateProcessorAction.cpp
+    Source/actions/CreateTrackAction.cpp
+    Source/actions/DefaultConnectProcessorAction.cpp
+    Source/actions/DeleteConnectionAction.cpp
+    Source/actions/DeleteProcessorAction.cpp
+    Source/actions/DeleteSelectedItemsAction.cpp
+    Source/actions/DeleteTrackAction.cpp
+    Source/actions/DisconnectProcessorAction.cpp
+    Source/actions/InsertAction.cpp
+    Source/actions/InsertProcessorAction.cpp
+    Source/actions/MoveSelectedItemsAction.cpp
+    Source/actions/ResetDefaultExternalInputConnectionsAction.cpp
+    Source/actions/SelectAction.cpp
+    Source/actions/SelectProcessorSlotAction.cpp
+    Source/actions/SelectRectangleAction.cpp
+    Source/actions/SelectTrackAction.cpp
+    Source/actions/SetDefaultConnectionsAllowedAction.cpp
+    Source/actions/UpdateAllDefaultConnectionsAction.cpp
+    Source/actions/UpdateProcessorDefaultConnectionsAction.cpp
     Source/config.h
     Source/midi/MidiCommunicator.h
     Source/processors/Arpeggiator.h
