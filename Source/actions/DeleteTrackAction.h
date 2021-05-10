@@ -39,8 +39,6 @@ struct DeleteTrackAction : public UndoableAction {
 private:
     ValueTree trackToDelete;
     int trackIndex;
-
     TracksState &tracks;
-
     OwnedArray<DeleteProcessorAction> deleteProcessorActions;
 };

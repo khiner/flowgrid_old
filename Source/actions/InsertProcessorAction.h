@@ -31,7 +31,7 @@ private:
             for (int i = 0; i < numNewRows; i++)
                 addProcessorRowActions.add(new AddProcessorRowAction(trackIndex, tracks, view));
             if (addProcessorRowActions.isEmpty()) {
-                const auto &conflictingProcessor = tracks.getProcessorAtSlot(track, newSlot);
+                const auto &conflictingProcessor = TracksState::getProcessorAtSlot(track, newSlot);
                 if (conflictingProcessor.isValid())
                     pushConflictingProcessorAction = std::make_unique<SetProcessorSlotAction>(trackIndex, conflictingProcessor, newSlot + 1, tracks, view);
             }
@@ -101,7 +101,7 @@ private:
                 : processor(processor), oldTrackIndex(tracks.indexOf(TracksState::getTrackForProcessor(processor))), newTrackIndex(newTrackIndex),
                   oldSlot(processor[IDs::processorSlot]), newSlot(newSlot),
                   oldIndex(processor.getParent().indexOf(processor)),
-                  newIndex(tracks.getInsertIndexForProcessor(tracks.getTrack(newTrackIndex), processor, this->newSlot)),
+                  newIndex(TracksState::getInsertIndexForProcessor(tracks.getTrack(newTrackIndex), processor, this->newSlot)),
                   setProcessorSlotAction(std::make_unique<SetProcessorSlotAction>(newTrackIndex, processor, newSlot, tracks, view)),
                   tracks(tracks) {}
 

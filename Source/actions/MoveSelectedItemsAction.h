@@ -18,8 +18,7 @@ struct MoveSelectedItemsAction : UndoableAction {
     }
 
     bool perform() override {
-        if (insertTrackOrProcessorActions.isEmpty())
-            return false;
+        if (insertTrackOrProcessorActions.isEmpty()) return false;
 
         for (auto *insertAction : insertTrackOrProcessorActions)
             insertAction->perform();
@@ -116,9 +115,8 @@ private:
     // `createUpdateConnectionsAction`, which should be called immediately after this.
     // This avoids a redundant `undo` on all insert actions here, as well as the subsequent
     // `perform` that would be needed in `createUpdateConnectionsAction` to find the new default connections.
-    OwnedArray<UndoableAction> createInsertActions(TracksState &tracks, ViewState &view) {
+    OwnedArray<UndoableAction> createInsertActions(TracksState &tracks, ViewState &view) const {
         OwnedArray<UndoableAction> insertActions;
-
         if (trackAndSlotDelta.x == 0 && trackAndSlotDelta.y == 0)
             return insertActions;
 
@@ -134,8 +132,7 @@ private:
                 return;
             }
 
-            if (!TracksState::findFirstSelectedProcessor(fromTrack).isValid())
-                return;
+            if (!TracksState::findFirstSelectedProcessor(fromTrack).isValid()) return;
 
             const auto selectedProcessors = TracksState::findSelectedProcessorsForTrack(fromTrack);
 

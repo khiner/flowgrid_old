@@ -7,7 +7,7 @@ struct CreateTrackAction : public UndoableAction {
     CreateTrackAction(bool isMaster, const ValueTree &derivedFromTrack, TracksState &tracks, ViewState &view)
             : CreateTrackAction(calculateInsertIndex(isMaster, derivedFromTrack, tracks), isMaster, derivedFromTrack, tracks, view) {}
 
-    CreateTrackAction(int insertIndex, bool isMaster, ValueTree derivedFromTrack, TracksState &tracks, ViewState &view)
+    CreateTrackAction(int insertIndex, bool isMaster, const ValueTree& derivedFromTrack, TracksState &tracks, ViewState &view)
             : insertIndex(insertIndex), tracks(tracks) {
         // TODO move into method and construct in initializer list
         newTrack = ValueTree(IDs::TRACK);
