@@ -1,12 +1,12 @@
 #pragma once
 
-#include <actions/CreateOrDeleteConnectionsAction.h>
-#include <processors/StatefulAudioProcessorWrapper.h>
+#include "actions/CreateOrDeleteConnectionsAction.h"
+#include "push2/Push2MidiCommunicator.h"
+#include "processors/StatefulAudioProcessorWrapper.h"
 #include "state/Project.h"
 #include "state/ConnectionsState.h"
 #include "PluginManager.h"
 #include "StatefulAudioProcessorContainer.h"
-#include "push2/Push2MidiCommunicator.h"
 
 class ProcessorGraph : public AudioProcessorGraph, public StatefulAudioProcessorContainer,
                        private ValueTree::Listener, private Timer {

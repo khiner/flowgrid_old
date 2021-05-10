@@ -1,5 +1,7 @@
 #include "TracksState.h"
 
+#include "Utilities.h"
+
 TracksState::TracksState(ViewState &view, PluginManager &pluginManager, UndoManager &undoManager)
         : view(view), pluginManager(pluginManager), undoManager(undoManager) {
     tracks = ValueTree(IDs::TRACKS);

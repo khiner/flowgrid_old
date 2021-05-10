@@ -1,7 +1,5 @@
 #include "GraphEditorConnector.h"
 
-#include <utility>
-
 GraphEditorConnector::GraphEditorConnector(ValueTree state, ConnectorDragListener &connectorDragListener, GraphEditorProcessorContainer &graphEditorProcessorContainer,
                                            AudioProcessorGraph::NodeAndChannel source, AudioProcessorGraph::NodeAndChannel destination)
         : state(std::move(state)), connectorDragListener(connectorDragListener), graphEditorProcessorContainer(graphEditorProcessorContainer) {

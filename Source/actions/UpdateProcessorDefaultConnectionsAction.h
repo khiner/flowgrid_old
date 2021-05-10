@@ -1,9 +1,9 @@
 #pragma once
 
-#include <state/Identifiers.h>
-#include <state/InputState.h>
-#include <state/OutputState.h>
-#include <StatefulAudioProcessorContainer.h>
+#include "state/Identifiers.h"
+#include "state/InputState.h"
+#include "state/OutputState.h"
+#include "StatefulAudioProcessorContainer.h"
 #include "CreateConnectionAction.h"
 
 struct UpdateProcessorDefaultConnectionsAction : public CreateOrDeleteConnectionsAction {

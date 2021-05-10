@@ -1,7 +1,7 @@
 #pragma once
 
-#include <state/Identifiers.h>
-#include <state/ConnectionsState.h>
+#include "state/Identifiers.h"
+#include "state/ConnectionsState.h"
 #include "CreateOrDeleteConnectionsAction.h"
 
 struct CreateConnectionAction : public CreateOrDeleteConnectionsAction {

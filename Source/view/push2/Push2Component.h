@@ -1,6 +1,6 @@
 #pragma once
 
-#include <push2/Push2MidiCommunicator.h>
+#include "push2/Push2MidiCommunicator.h"
 #include "push2/Push2DisplayBridge.h"
 #include "Push2ProcessorView.h"
 #include "Push2ProcessorSelector.h"

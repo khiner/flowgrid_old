@@ -1,8 +1,8 @@
 #pragma once
 
-#include <state/ConnectionsState.h>
-#include <state/TracksState.h>
-#include <view/PluginWindow.h>
+#include "state/ConnectionsState.h"
+#include "state/TracksState.h"
+#include "view/PluginWindow.h"
 #include "DisconnectProcessorAction.h"
 
 struct DeleteProcessorAction : public UndoableAction {

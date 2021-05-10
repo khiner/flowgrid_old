@@ -2,6 +2,7 @@
 
 #include "StatefulAudioProcessorContainer.h"
 #include "TracksState.h"
+#include "Utilities.h"
 
 using SAPC = StatefulAudioProcessorContainer;
 

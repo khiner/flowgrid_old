@@ -1,7 +1,7 @@
 #pragma once
 
 #include "state/ViewState.h"
-#include <view/PluginWindow.h>
+#include "view/PluginWindow.h"
 #include "PluginManager.h"
 #include "Stateful.h"
 

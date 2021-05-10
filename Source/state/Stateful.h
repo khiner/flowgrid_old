@@ -1,6 +1,8 @@
 #pragma once
 
-#include <Utilities.h>
+#include <juce_data_structures/juce_data_structures.h>
+
+using namespace juce;
 
 class Stateful {
 public:

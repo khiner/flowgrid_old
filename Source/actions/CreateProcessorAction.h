@@ -1,7 +1,7 @@
 #pragma once
 
-#include <state/TracksState.h>
-#include <view/PluginWindow.h>
+#include "state/TracksState.h"
+#include "view/PluginWindow.h"
 #include "InsertProcessorAction.h"
 
 struct CreateProcessorAction : public UndoableAction {

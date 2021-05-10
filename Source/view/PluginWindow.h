@@ -2,7 +2,7 @@
 
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_gui_basics/juce_gui_basics.h>
-#include <state/Identifiers.h>
+#include "state/Identifiers.h"
 
 using namespace juce;
 
@@ -52,30 +52,7 @@ private:
     }
 
     struct ProgramAudioProcessorEditor : public AudioProcessorEditor {
-        explicit ProgramAudioProcessorEditor(AudioProcessor &p) : AudioProcessorEditor(p) {
-            setOpaque(true);
-
-            addAndMakeVisible(panel);
-
-            Array<PropertyComponent *> programs;
-
-            auto numPrograms = p.getNumPrograms();
-            int totalHeight = 0;
-
-            for (int i = 0; i < numPrograms; ++i) {
-                auto name = p.getProgramName(i).trim();
-                if (name.isEmpty())
-                    name = "Unnamed";
-
-                auto pc = new PropertyComp(name, p);
-                programs.add(pc);
-                totalHeight += pc->getPreferredHeight();
-            }
-
-            panel.addProperties(programs);
-
-            setSize(400, std::clamp(totalHeight, 25, 400));
-        }
+        explicit ProgramAudioProcessorEditor(AudioProcessor &p);
 
         void paint(Graphics &g) override {
             g.fillAll(Colours::grey);

@@ -1,9 +1,9 @@
 #pragma once
 
-#include <PluginManager.h>
-#include <ProcessorGraph.h>
+#include "PluginManager.h"
+#include "ProcessorGraph.h"
 #include "processor_editor/ProcessorEditor.h"
-#include <view/graph_editor/TooltipBar.h>
+#include "view/graph_editor/TooltipBar.h"
 #include "view/context_pane/ContextPane.h"
 
 class SelectionEditor : public Component,

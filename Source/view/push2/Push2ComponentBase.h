@@ -1,6 +1,6 @@
 #pragma once
 
-#include <push2/Push2MidiCommunicator.h>
+#include "push2/Push2MidiCommunicator.h"
 #include "state/Project.h"
 #include "Push2Listener.h"
 

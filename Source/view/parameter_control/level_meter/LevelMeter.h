@@ -1,6 +1,6 @@
 #pragma once
 
-#include <view/parameter_control/ParameterControl.h>
+#include "view/parameter_control/ParameterControl.h"
 #include "LevelMeterSource.h"
 
 class LevelMeter : public ParameterControl, private Timer {

@@ -1,10 +1,9 @@
 #pragma once
 
-#include <state/Identifiers.h>
-#include <view/graph_editor/processor/TrackInputGraphEditorProcessor.h>
+#include "state/Identifiers.h"
+#include "view/graph_editor/processor/TrackInputGraphEditorProcessor.h"
 #include "view/graph_editor/processor/TrackOutputGraphEditorProcessor.h"
 #include "GraphEditorProcessorLanes.h"
-#include <Utilities.h>
 
 class GraphEditorTrack : public Component, public ValueTree::Listener, public GraphEditorProcessorContainer {
 public:

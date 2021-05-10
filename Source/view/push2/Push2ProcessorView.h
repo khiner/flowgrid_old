@@ -1,6 +1,6 @@
 #pragma once
 
-#include <processors/StatefulAudioProcessorWrapper.h>
+#include "processors/StatefulAudioProcessorWrapper.h"
 #include "Push2TrackManagingView.h"
 #include "view/processor_editor/ParametersPanel.h"
 #include "Push2Label.h"

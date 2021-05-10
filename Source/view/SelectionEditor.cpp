@@ -1,6 +1,6 @@
 #include "SelectionEditor.h"
 
-#include <state/Identifiers.h>
+#include "state/Identifiers.h"
 #include "view/CustomColourIds.h"
 
 SelectionEditor::SelectionEditor(Project &project, ProcessorGraph &audioGraphBuilder)

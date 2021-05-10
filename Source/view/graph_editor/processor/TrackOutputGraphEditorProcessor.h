@@ -1,6 +1,6 @@
 #pragma once
 
-#include <view/parameter_control/slider/SliderControl.h>
+#include "view/parameter_control/slider/SliderControl.h"
 #include "view/parameter_control/level_meter/LevelMeter.h"
 #include "BaseGraphEditorProcessor.h"
 

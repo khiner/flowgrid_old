@@ -1,7 +1,7 @@
 #pragma once
 
 #include <thread>
-#include <usb/UsbCommunicator.h>
+#include "usb/UsbCommunicator.h"
 #include "Push2Display.h"
 
 /*!

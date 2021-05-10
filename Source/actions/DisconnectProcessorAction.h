@@ -1,8 +1,8 @@
 #pragma once
 
-#include <state/Identifiers.h>
-#include <actions/DeleteConnectionAction.h>
-#include <StatefulAudioProcessorContainer.h>
+#include "state/Identifiers.h"
+#include "actions/DeleteConnectionAction.h"
+#include "StatefulAudioProcessorContainer.h"
 
 struct DisconnectProcessorAction : public CreateOrDeleteConnectionsAction {
     DisconnectProcessorAction(ConnectionsState &connections, const ValueTree &processor, ConnectionType connectionType,

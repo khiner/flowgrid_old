@@ -1,6 +1,6 @@
 #pragma once
 
-#include <midi/MidiCommunicator.h>
+#include "midi/MidiCommunicator.h"
 #include "view/push2/Push2Listener.h"
 #include "view/push2/Push2Colours.h"
 #include "state/Project.h"

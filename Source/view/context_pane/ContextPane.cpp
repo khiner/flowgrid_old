@@ -1,6 +1,6 @@
 #include "ContextPane.h"
 
-#include <state/Identifiers.h>
+#include "state/Identifiers.h"
 
 ContextPane::ContextPane(Project &project)
         : tracks(project.getTracks()), view(project.getView()) {

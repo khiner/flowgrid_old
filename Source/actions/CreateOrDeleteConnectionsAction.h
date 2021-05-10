@@ -1,7 +1,7 @@
 #pragma once
 
-#include <state/Identifiers.h>
-#include <state/ConnectionsState.h>
+#include "state/Identifiers.h"
+#include "state/ConnectionsState.h"
 
 struct CreateOrDeleteConnectionsAction : public UndoableAction {
     explicit CreateOrDeleteConnectionsAction(ConnectionsState &connections)

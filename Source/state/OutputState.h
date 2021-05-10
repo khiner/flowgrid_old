@@ -1,6 +1,6 @@
 #pragma once
 
-#include <PluginManager.h>
+#include "PluginManager.h"
 #include "StatefulAudioProcessorContainer.h"
 #include "Stateful.h"
 #include "TracksState.h"

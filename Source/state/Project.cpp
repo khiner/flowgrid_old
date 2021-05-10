@@ -1,19 +1,18 @@
 #include "Project.h"
 
-#include <actions/SelectProcessorSlotAction.h>
-#include <actions/CreateTrackAction.h>
-#include <actions/CreateProcessorAction.h>
-#include <actions/DeleteSelectedItemsAction.h>
-#include <actions/CreateConnectionAction.h>
-#include <actions/ResetDefaultExternalInputConnectionsAction.h>
-#include <actions/UpdateProcessorDefaultConnectionsAction.h>
-#include <actions/SetDefaultConnectionsAllowedAction.h>
-#include <actions/UpdateAllDefaultConnectionsAction.h>
-#include <actions/MoveSelectedItemsAction.h>
-#include <actions/SelectRectangleAction.h>
-#include <actions/InsertAction.h>
-#include <actions/SelectTrackAction.h>
-#include "Utilities.h"
+#include "actions/SelectProcessorSlotAction.h"
+#include "actions/CreateTrackAction.h"
+#include "actions/CreateProcessorAction.h"
+#include "actions/DeleteSelectedItemsAction.h"
+#include "actions/CreateConnectionAction.h"
+#include "actions/ResetDefaultExternalInputConnectionsAction.h"
+#include "actions/UpdateProcessorDefaultConnectionsAction.h"
+#include "actions/SetDefaultConnectionsAllowedAction.h"
+#include "actions/UpdateAllDefaultConnectionsAction.h"
+#include "actions/MoveSelectedItemsAction.h"
+#include "actions/SelectRectangleAction.h"
+#include "actions/InsertAction.h"
+#include "actions/SelectTrackAction.h"
 
 Project::Project(UndoManager &undoManager, PluginManager &pluginManager, AudioDeviceManager &deviceManager)
         : FileBasedDocument(getFilenameSuffix(), "*" + getFilenameSuffix(), "Load a project", "Save project"),

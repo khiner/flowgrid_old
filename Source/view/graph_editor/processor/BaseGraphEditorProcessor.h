@@ -1,9 +1,9 @@
 #pragma once
 
-#include <state/Project.h>
+#include "state/Project.h"
 #include "view/graph_editor/ConnectorDragListener.h"
 #include "view/graph_editor/GraphEditorChannel.h"
-#include <StatefulAudioProcessorContainer.h>
+#include "StatefulAudioProcessorContainer.h"
 
 class BaseGraphEditorProcessor : public Component, public ValueTree::Listener {
 public:

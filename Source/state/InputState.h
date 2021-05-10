@@ -29,13 +29,9 @@ public:
     }
 
     AudioProcessorGraph::NodeID getDefaultInputNodeIdForConnectionType(ConnectionType connectionType) const {
-        if (connectionType == audio) {
-            return StatefulAudioProcessorContainer::getNodeIdForState(getAudioInputProcessorState());
-        } else if (connectionType == midi) {
-            return StatefulAudioProcessorContainer::getNodeIdForState(getPush2MidiInputProcessor());
-        } else {
-            return {};
-        }
+        if (connectionType == audio) return StatefulAudioProcessorContainer::getNodeIdForState(getAudioInputProcessorState());
+        if (connectionType == midi) return StatefulAudioProcessorContainer::getNodeIdForState(getPush2MidiInputProcessor());
+        return {};
     }
 
 private:

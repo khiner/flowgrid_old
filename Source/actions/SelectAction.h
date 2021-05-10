@@ -1,7 +1,7 @@
 #pragma once
 
-#include <state/ConnectionsState.h>
-#include <state/TracksState.h>
+#include "state/ConnectionsState.h"
+#include "state/TracksState.h"
 #include "ResetDefaultExternalInputConnectionsAction.h"
 
 struct SelectAction : public UndoableAction {

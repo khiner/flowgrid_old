@@ -1,11 +1,11 @@
 #pragma once
 
-#include <state/Identifiers.h>
-#include <state/InputState.h>
+#include "state/Identifiers.h"
+#include "state/InputState.h"
 #include "CreateConnectionAction.h"
 #include "DisconnectProcessorAction.h"
 #include "DefaultConnectProcessorAction.h"
-#include <StatefulAudioProcessorContainer.h>
+#include "StatefulAudioProcessorContainer.h"
 
 // For both audio and midi connection types:
 //   * Find the topmost effect processor (receiving audio/midi) in the focused track
