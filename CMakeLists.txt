@@ -118,7 +118,7 @@ target_sources(FlowGrid PRIVATE
     Source/view/graph_editor/GraphEditorProcessorLanes.h
     Source/view/graph_editor/GraphEditorTrack.cpp
     Source/view/graph_editor/GraphEditorTracks.h
-    Source/view/graph_editor/TooltipBar.h
+    Source/view/graph_editor/TooltipBar.cpp
     Source/view/graph_editor/processor/BaseGraphEditorProcessor.cpp
     Source/view/graph_editor/processor/LabelGraphEditorProcessor.cpp
     Source/view/graph_editor/processor/ParameterPanelGraphEditorProcessor.cpp
