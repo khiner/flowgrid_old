@@ -97,7 +97,7 @@ target_sources(FlowGrid PRIVATE
     Source/processors/audio_sources/ToneSourceWithParameters.h
     Source/push2/Push2Display.h
     Source/push2/Push2DisplayBridge.h
-    Source/push2/Push2MidiCommunicator.h
+    Source/push2/Push2MidiCommunicator.cpp
     Source/push2/Push2UsbCommunicator.h
     Source/state/ConnectionsState.cpp
     Source/state/CopiedState.cpp

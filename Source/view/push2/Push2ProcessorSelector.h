@@ -6,7 +6,7 @@
 class Push2ProcessorSelector : public Push2ComponentBase {
     class ProcessorSelectorRow : public Component {
     public:
-        explicit ProcessorSelectorRow(Project &project, Push2 &push2, bool top);
+        explicit ProcessorSelectorRow(Push2 &push2, bool top);
 
         void setVisible(bool visible) override;
 
@@ -45,8 +45,6 @@ class Push2ProcessorSelector : public Push2ComponentBase {
         OwnedArray<Push2Label> labels;
     private:
         int currentViewOffset{0};
-        Project &project;
-        TracksState &tracks;
         DrawableRectangle selectionRectangleOverlay;
 
         void updateLabels() const;

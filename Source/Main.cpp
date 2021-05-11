@@ -14,7 +14,7 @@ public:
     FlowGridApplication() : project(undoManager, pluginManager, deviceManager),
                             tracks(project.getTracks()),
                             push2Colours(tracks),
-                            push2MidiCommunicator(project, push2Colours),
+                            push2MidiCommunicator(project.getView(), push2Colours),
                             processorGraph(project, tracks, project.getConnections(), project.getInput(), project.getOutput(),
                                            undoManager, deviceManager, push2MidiCommunicator) {}
 

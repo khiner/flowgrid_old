@@ -1,7 +1,6 @@
 #include "Push2ProcessorSelector.h"
 
-Push2ProcessorSelector::ProcessorSelectorRow::ProcessorSelectorRow(Project &project, Push2 &push2, bool top)
-        : project(project), tracks(project.getTracks()) {
+Push2ProcessorSelector::ProcessorSelectorRow::ProcessorSelectorRow(Push2 &push2, bool top) {
     for (int i = 0; i < NUM_COLUMNS; i++) {
         auto *label = new Push2Label(i, top, push2);
         addChildComponent(label);
@@ -136,8 +135,8 @@ void Push2ProcessorSelector::ProcessorSelectorRow::updateLabels() const {
 
 Push2ProcessorSelector::Push2ProcessorSelector(Project &project, Push2MidiCommunicator &push2MidiCommunicator)
         : Push2ComponentBase(project, push2MidiCommunicator) {
-    topProcessorSelector = std::make_unique<ProcessorSelectorRow>(project, push2, true);
-    bottomProcessorSelector = std::make_unique<ProcessorSelectorRow>(project, push2, false);
+    topProcessorSelector = std::make_unique<ProcessorSelectorRow>(push2, true);
+    bottomProcessorSelector = std::make_unique<ProcessorSelectorRow>(push2, false);
     addChildComponent(topProcessorSelector.get());
     addChildComponent(bottomProcessorSelector.get());
 
