@@ -339,12 +339,12 @@ void GraphEditorPanel::valueTreePropertyChanged(ValueTree &tree, const Identifie
         else if (auto *w = getOrCreateWindowFor(tree, type))
             w->toFront(true);
     } else if (i == IDs::processorInitialized) {
-        if (tree[IDs::name] == MidiInputProcessor::name()) {
+        if (tree[IDs::name] == InternalPluginFormat::getMidiInputProcessorName()) {
             auto *midiInputProcessor = new LabelGraphEditorProcessor(project, tracks, view, tree, *this);
             addAndMakeVisible(midiInputProcessor, 0);
             midiInputProcessors.addSorted(processorComparator, midiInputProcessor);
             resized();
-        } else if (tree[IDs::name] == MidiOutputProcessor::name()) {
+        } else if (tree[IDs::name] == InternalPluginFormat::getMidiOutputProcessorName()) {
             auto *midiOutputProcessor = new LabelGraphEditorProcessor(project, tracks, view, tree, *this);
             addAndMakeVisible(midiOutputProcessor, 0);
             midiOutputProcessors.addSorted(processorComparator, midiOutputProcessor);
@@ -369,10 +369,10 @@ void GraphEditorPanel::valueTreeChildRemoved(ValueTree &parent, ValueTree &child
     if (child.hasType(IDs::TRACK)) {
         connectors->updateConnectors();
     } else if (child.hasType(IDs::PROCESSOR)) {
-        if (child[IDs::name] == MidiInputProcessor::name()) {
+        if (child[IDs::name] == InternalPluginFormat::getMidiInputProcessorName()) {
             midiInputProcessors.removeObject(findMidiInputProcessorForNodeId(ProcessorGraph::getNodeIdForState(child)));
             resized();
-        } else if (child[IDs::name] == MidiOutputProcessor::name()) {
+        } else if (child[IDs::name] == InternalPluginFormat::getMidiOutputProcessorName()) {
             midiOutputProcessors.removeObject(findMidiOutputProcessorForNodeId(ProcessorGraph::getNodeIdForState(child)));
             resized();
         } else {

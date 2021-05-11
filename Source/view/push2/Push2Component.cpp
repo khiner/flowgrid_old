@@ -217,7 +217,7 @@ void Push2Component::updatePush2NoteModePadLedManagerVisibility() {
 
 void Push2Component::updateFocusedProcessor() {
     auto *focusedProcessorWrapper = audioProcessorContainer.getProcessorWrapperForState(tracks.getFocusedProcessor());
-    if (currentlyViewingChild != &mixerView || !dynamic_cast<TrackOutputProcessor *>(focusedProcessorWrapper->processor)) {
+    if (currentlyViewingChild != &mixerView || focusedProcessorWrapper->processor->getName() != InternalPluginFormat::getTrackOutputProcessorName()) {
         processorView.processorFocused(focusedProcessorWrapper);
         showChild(&processorView);
     }

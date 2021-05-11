@@ -50,12 +50,12 @@ private:
     void changeListenerCallback(ChangeBroadcaster *source) override;
 
     void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override {
-        if (child[IDs::name] == MidiInputProcessor::name() && !deviceManager.isMidiInputEnabled(child[IDs::deviceName]))
+        if (child[IDs::name] == InternalPluginFormat::getMidiInputProcessorName() && !deviceManager.isMidiInputEnabled(child[IDs::deviceName]))
             deviceManager.setMidiInputEnabled(child[IDs::deviceName], true);
     }
 
     void valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int) override {
-        if (child[IDs::name] == MidiInputProcessor::name() && deviceManager.isMidiInputEnabled(child[IDs::deviceName]))
+        if (child[IDs::name] == InternalPluginFormat::getMidiInputProcessorName() && deviceManager.isMidiInputEnabled(child[IDs::deviceName]))
             deviceManager.setMidiInputEnabled(child[IDs::deviceName], false);
     }
 

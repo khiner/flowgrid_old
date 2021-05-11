@@ -1,7 +1,9 @@
-#include "TrackOutputGraphEditorProcessor.h"
+#include <processors/TrackOutputProcessor.h>
 
 #include "view/parameter_control/slider/MinimalSliderControl.h"
 #include "view/parameter_control/level_meter/MinimalLevelMeter.h"
+
+#include "TrackOutputGraphEditorProcessor.h"
 
 TrackOutputGraphEditorProcessor::TrackOutputGraphEditorProcessor(SAPC &audioProcessorContainer, TracksState &tracks, ViewState &view, const ValueTree &state, ConnectorDragListener &connectorDragListener) :
         BaseGraphEditorProcessor(audioProcessorContainer, tracks, view, state, connectorDragListener) {

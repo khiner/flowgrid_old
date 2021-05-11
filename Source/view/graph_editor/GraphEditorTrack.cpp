@@ -117,18 +117,18 @@ void GraphEditorTrack::trackOutputProcessorChanged() {
 
 void GraphEditorTrack::valueTreeChildAdded(ValueTree &parent, ValueTree &child) {
     if (child.hasType(IDs::PROCESSOR)) {
-        if (child.getProperty(IDs::name) == TrackInputProcessor::name())
+        if (child.getProperty(IDs::name) == InternalPluginFormat::getTrackInputProcessorName())
             trackInputProcessorChanged();
-        else if (child.getProperty(IDs::name) == TrackOutputProcessor::name())
+        else if (child.getProperty(IDs::name) == InternalPluginFormat::getTrackOutputProcessorName())
             trackOutputProcessorChanged();
     }
 }
 
 void GraphEditorTrack::valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int) {
     if (child.hasType(IDs::PROCESSOR)) {
-        if (child.getProperty(IDs::name) == TrackInputProcessor::name())
+        if (child.getProperty(IDs::name) == InternalPluginFormat::getTrackInputProcessorName())
             trackInputProcessorChanged();
-        else if (child.getProperty(IDs::name) == TrackOutputProcessor::name())
+        else if (child.getProperty(IDs::name) == InternalPluginFormat::getTrackOutputProcessorName())
             trackOutputProcessorChanged();
     }
 }

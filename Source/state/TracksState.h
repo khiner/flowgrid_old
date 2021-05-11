@@ -32,11 +32,11 @@ public:
     }
 
     static ValueTree getInputProcessorForTrack(const ValueTree &track) {
-        return track.getChildWithProperty(IDs::name, TrackInputProcessor::getPluginDescription().name);
+        return track.getChildWithProperty(IDs::name, InternalPluginFormat::getTrackInputProcessorName());
     }
 
     static ValueTree getOutputProcessorForTrack(const ValueTree &track) {
-        return track.getChildWithProperty(IDs::name, TrackOutputProcessor::getPluginDescription().name);
+        return track.getChildWithProperty(IDs::name, InternalPluginFormat::getTrackOutputProcessorName());
     }
 
     static Array<ValueTree> getAllProcessorsForTrack(const ValueTree &track);
@@ -46,11 +46,11 @@ public:
     }
 
     static bool isTrackInputProcessor(const ValueTree &processor) {
-        return InternalPluginFormat::isTrackInputProcessor(processor[IDs::name]);
+        return String(processor[IDs::name]) == InternalPluginFormat::getTrackInputProcessorName();
     }
 
     static bool isTrackOutputProcessor(const ValueTree &processor) {
-        return InternalPluginFormat::isTrackOutputProcessor(processor[IDs::name]);
+        return String(processor[IDs::name]) == InternalPluginFormat::getTrackOutputProcessorName();
     }
 
     static bool isProcessorLeftToRightFlowing(const ValueTree &processor) {

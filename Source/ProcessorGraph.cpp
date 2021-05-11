@@ -1,5 +1,7 @@
 #include "ProcessorGraph.h"
 #include "push2/Push2MidiDevice.h"
+#include "processors/MidiInputProcessor.h"
+#include "processors/MidiOutputProcessor.h"
 
 ProcessorGraph::ProcessorGraph(Project &project, TracksState &tracks, ConnectionsState &connections, InputState &input, OutputState &output, UndoManager &undoManager, AudioDeviceManager &deviceManager,
                                Push2MidiCommunicator &push2MidiCommunicator)

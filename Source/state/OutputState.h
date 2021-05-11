@@ -44,12 +44,14 @@ private:
     void changeListenerCallback(ChangeBroadcaster *source) override;
 
     void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override {
-        if (child[IDs::name] == MidiOutputProcessor::name() && !deviceManager.isMidiOutputEnabled(child[IDs::deviceName]))
+        if (child[IDs::name] == InternalPluginFormat::getMidiOutputProcessorName() &&
+            !deviceManager.isMidiOutputEnabled(child[IDs::deviceName]))
             deviceManager.setMidiOutputEnabled(child[IDs::deviceName], true);
     }
 
     void valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int) override {
-        if (child[IDs::name] == MidiOutputProcessor::name() && deviceManager.isMidiOutputEnabled(child[IDs::deviceName]))
+        if (child[IDs::name] == InternalPluginFormat::getMidiOutputProcessorName() &&
+            deviceManager.isMidiOutputEnabled(child[IDs::deviceName]))
             deviceManager.setMidiOutputEnabled(child[IDs::deviceName], false);
     }
 

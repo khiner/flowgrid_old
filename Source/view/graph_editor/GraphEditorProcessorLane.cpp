@@ -78,7 +78,7 @@ void GraphEditorProcessorLane::updateProcessorSlotColours() {
 }
 
 BaseGraphEditorProcessor *GraphEditorProcessorLane::createEditorForProcessor(const ValueTree &processor) {
-    if (processor[IDs::name] == MixerChannelProcessor::name()) {
+    if (processor[IDs::name] == InternalPluginFormat::getMixerChannelProcessorName()) {
         return new ParameterPanelGraphEditorProcessor(project, tracks, view, processor, connectorDragListener);
     }
     return new LabelGraphEditorProcessor(project, tracks, view, processor, connectorDragListener);

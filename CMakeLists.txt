@@ -82,7 +82,7 @@ target_sources(FlowGrid PRIVATE
     Source/processors/BalanceProcessor.h
     Source/processors/DefaultAudioProcessor.h
     Source/processors/GainProcessor.h
-    Source/processors/InternalPluginFormat.h
+    Source/processors/InternalPluginFormat.cpp
     Source/processors/MidiInputProcessor.h
     Source/processors/MidiKeyboardProcessor.h
     Source/processors/MidiOutputProcessor.h

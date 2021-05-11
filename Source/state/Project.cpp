@@ -13,6 +13,9 @@
 #include "actions/SelectRectangleAction.h"
 #include "actions/InsertAction.h"
 #include "actions/SelectTrackAction.h"
+#include "processors/TrackInputProcessor.h"
+#include "processors/TrackOutputProcessor.h"
+#include "processors/SineBank.h"
 #include "ApplicationPropertiesAndCommandManager.h"
 
 Project::Project(UndoManager &undoManager, PluginManager &pluginManager, AudioDeviceManager &deviceManager)

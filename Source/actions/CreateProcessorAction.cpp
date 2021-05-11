@@ -10,7 +10,7 @@ ValueTree CreateProcessorAction::createProcessor(const PluginDescription &descri
 }
 
 static int getInsertSlot(const PluginDescription &description, int trackIndex, TracksState &tracks) {
-    if (description.name == TrackInputProcessor::name() || description.name == TrackOutputProcessor::name()) return -1;
+    if (InternalPluginFormat::isTrackIOProcessor(description.name)) return -1;
     if (description.numInputChannels == 0) return 0;
 
     // Insert new effect processors right after the lane's last processor

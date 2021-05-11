@@ -2,6 +2,7 @@
 
 #include "actions/DeleteProcessorAction.h"
 #include "actions/CreateProcessorAction.h"
+#include "processors/MidiOutputProcessor.h"
 
 OutputState::OutputState(TracksState &tracks, ConnectionsState &connections, StatefulAudioProcessorContainer &audioProcessorContainer, PluginManager &pluginManager, UndoManager &undoManager,
                          AudioDeviceManager &deviceManager)
