@@ -1,10 +1,5 @@
-/* config.h.  Manually generated for Xcode.  */
-
 /* Default visibility */
 #define DEFAULT_VISIBILITY /**/
-
-/* Message logging */
-// #define ENABLE_LOGGING 1
 
 /* Define to 1 if you have the `gettimeofday' function. */
 #define HAVE_GETTIMEOFDAY 1

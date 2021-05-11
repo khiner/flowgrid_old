@@ -67,7 +67,6 @@ target_sources(FlowGrid PRIVATE
     Source/actions/SetDefaultConnectionsAllowedAction.cpp
     Source/actions/UpdateAllDefaultConnectionsAction.cpp
     Source/actions/UpdateProcessorDefaultConnectionsAction.cpp
-    Source/config.h
     Source/midi/MidiCommunicator.h
     Source/processors/Arpeggiator.h
     Source/processors/BalanceProcessor.h
@@ -99,7 +98,6 @@ target_sources(FlowGrid PRIVATE
     Source/state/TracksState.cpp
     Source/state/ViewState.cpp
     Source/usb/UsbCommunicator.cpp
-    Source/usb/libusb/config_msvc.h
     Source/usb/libusb/config_xcode.h
     Source/view/BasicWindow.h
     Source/view/CustomColourIds.h
