@@ -5,8 +5,19 @@
 cmake_minimum_required(VERSION 3.16)
 project(FlowGrid VERSION 0.0.1)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}\
+    -Wall -Wshorten-64-to-32 -Wstrict-aliasing -Wuninitialized\
+    -Wconversion -Wsign-compare -Wint-conversion\
+    -Wconditional-uninitialized -Woverloaded-virtual -Wreorder\
+    -Wconstant-conversion -Wsign-conversion -Wunused-private-field\
+    -Wbool-conversion -Wextra-semi -Wunreachable-code\
+    -Wzero-as-null-pointer-constant -Wcast-align\
+    -Winconsistent-missing-destructor-override -Wshift-sign-overflow\
+    -Wnullable-to-nonnull-conversion -Wno-missing-field-initializers\
+    -Wno-ignored-qualifiers -Wswitch-enum -Wpedantic"
+)
 
 add_subdirectory(modules/JUCE)
 
@@ -172,5 +183,4 @@ target_link_libraries(FlowGrid
     PUBLIC
     juce::juce_recommended_config_flags
     juce::juce_recommended_lto_flags
-    juce::juce_recommended_warning_flags
 )
