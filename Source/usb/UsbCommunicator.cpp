@@ -36,6 +36,9 @@ void UsbCommunicator::onTransferFinished(libusb_transfer *transfer) {
             case LIBUSB_TRANSFER_OVERFLOW:
                 printf("device sent more data than requested\n");
                 break;
+            case LIBUSB_TRANSFER_COMPLETED:
+                printf("Transfer completed\n");
+                break;
             default:
                 printf("snd transfer failed with status: %d\n", transfer->status);
                 break;

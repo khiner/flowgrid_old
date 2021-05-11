@@ -39,6 +39,7 @@ private:
                 return "Programs";
             case Type::audioIO:
                 return "IO";
+            case Type::none:
             default:
                 return {};
         }
