@@ -25,6 +25,7 @@ private:
         InsertTrackAction(int fromTrackIndex, int toTrackIndex, TracksState &tracks);
 
         bool perform() override;
+
         bool undo() override;
 
         int fromTrackIndex, toTrackIndex;

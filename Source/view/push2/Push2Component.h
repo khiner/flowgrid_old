@@ -22,21 +22,37 @@ public:
     void setVisible(bool visible) override;
 
     void shiftPressed() override;
+
     void shiftReleased() override;
+
     void masterEncoderRotated(float changeAmount) override;
+
     void encoderRotated(int encoderIndex, float changeAmount) override;
+
     void undoButtonPressed() override;
+
     void addTrackButtonPressed() override;
+
     void deleteButtonPressed() override;
+
     void duplicateButtonPressed() override;
+
     void addDeviceButtonPressed() override;
+
     void mixButtonPressed() override;
+
     void masterButtonPressed() override;
+
     void aboveScreenButtonPressed(int buttonIndex) override;
+
     void belowScreenButtonPressed(int buttonIndex) override;
+
     void arrowPressed(int arrowDirection) override;
+
     void noteButtonPressed() override { view.setNoteMode(); }
+
     void sessionButtonPressed() override { view.setSessionMode(); }
+
     void updateEnabledPush2Buttons() override;
 
 private:
@@ -62,13 +78,17 @@ private:
     bool canNavigateInDirection(int direction) const;
 
     void updatePush2SelectionDependentButtons();
+
     void updatePush2NoteModePadLedManagerVisibility();
+
     void updateFocusedProcessor();
 
     void showChild(Push2ComponentBase *child);
 
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override;
+
     void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override;
+
     void valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int) override;
 
     void changeListenerCallback(ChangeBroadcaster *source) override;

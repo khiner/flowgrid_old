@@ -46,9 +46,12 @@ private:
     void onColourChanged();
 
     void trackInputProcessorChanged();
+
     void trackOutputProcessorChanged();
 
     void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override;
+
     void valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int) override;
+
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override;
 };

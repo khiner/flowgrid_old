@@ -12,9 +12,11 @@ public:
     void resized() override;
 
     void trackSelected(const ValueTree &track) override;
+
     void processorFocused(StatefulAudioProcessorWrapper *processorWrapper);
 
     void aboveScreenButtonPressed(int buttonIndex) override;
+
     void encoderRotated(int encoderIndex, float changeAmount) override;
 
     void updateEnabledPush2Buttons() override;
@@ -46,12 +48,17 @@ private:
     }
 
     void updatePageButtonVisibility();
+
     void updateProcessorButtons();
+
     void updateColours();
 
     void pageParametersLeft();
+
     void pageParametersRight();
+
     void pageProcessorsLeft();
+
     void pageProcessorsRight();
 
     bool canPageProcessorsLeft() const { return processorLabelOffset > 0; }
@@ -69,5 +76,6 @@ private:
     }
 
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override;
+
     void trackColourChanged(const String &trackUuid, const Colour &colour) override;
 };

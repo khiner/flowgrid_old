@@ -19,6 +19,7 @@ struct GraphEditorConnector : public Component, public SettableTooltipClient {
     }
 
     void dragTo(const juce::Point<float> &position);
+
     void dragTo(AudioProcessorGraph::NodeAndChannel nodeAndChannel, bool isInput);
 
     void update();
@@ -31,9 +32,9 @@ struct GraphEditorConnector : public Component, public SettableTooltipClient {
 
     bool hitTest(int x, int y) override { return hoverPath.contains({float(x), float(y)}); }
 
-    void mouseEnter(const MouseEvent & e) override { repaint(); }
+    void mouseEnter(const MouseEvent &e) override { repaint(); }
 
-    void mouseExit(const MouseEvent & e) override { repaint(); }
+    void mouseExit(const MouseEvent &e) override { repaint(); }
 
     void mouseDown(const MouseEvent &) override { dragAnchor.nodeID.uid = 0; }
 

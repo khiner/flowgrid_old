@@ -71,7 +71,9 @@ private:
     CreateOrDeleteConnectionsAction connectionsSincePause{connections};
 
     void addProcessor(const ValueTree &processorState);
+
     void removeProcessor(const ValueTree &processor);
+
     void recursivelyAddProcessors(const ValueTree &state);
 
     void updateIoChannelEnabled(const ValueTree &channels, const ValueTree &channel, bool enabled);
@@ -86,7 +88,9 @@ private:
     }
 
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override;
+
     void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override;
+
     void valueTreeChildRemoved(ValueTree &parent, ValueTree &child, int indexFromWhichChildWasRemoved) override;
 
     void timerCallback() override;

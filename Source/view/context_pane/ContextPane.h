@@ -24,6 +24,8 @@ private:
     Colour getFillColour(const Colour &trackColour, const ValueTree &track, const ValueTree &processor, bool inView, bool slotSelected, bool slotFocused);
 
     void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override;
+
     void valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int index) override;
+
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override;
 };

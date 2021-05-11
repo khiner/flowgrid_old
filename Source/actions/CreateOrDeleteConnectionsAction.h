@@ -5,9 +5,10 @@
 struct CreateOrDeleteConnectionsAction : public UndoableAction {
     explicit CreateOrDeleteConnectionsAction(ConnectionsState &connections);
 
-    CreateOrDeleteConnectionsAction(CreateOrDeleteConnectionsAction *coalesceLeft, CreateOrDeleteConnectionsAction *coalesceRight,ConnectionsState &connections);
+    CreateOrDeleteConnectionsAction(CreateOrDeleteConnectionsAction *coalesceLeft, CreateOrDeleteConnectionsAction *coalesceRight, ConnectionsState &connections);
 
     bool perform() override;
+
     bool undo() override;
 
     int getSizeInUnits() override { return (int) sizeof(*this); }
@@ -17,6 +18,7 @@ struct CreateOrDeleteConnectionsAction : public UndoableAction {
     void coalesceWith(const CreateOrDeleteConnectionsAction &other);
 
     void addConnection(const ValueTree &connection);
+
     void removeConnection(const ValueTree &connection);
 
     Array<ValueTree> connectionsToCreate;

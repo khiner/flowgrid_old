@@ -14,5 +14,6 @@ private:
     static constexpr int THUMB_WIDTH = 4;
 
     Rectangle<float> getSliderBounds();
+
     Rectangle<float> getSliderBarFillBounds(const Rectangle<float> &sliderBarBounds);
 };

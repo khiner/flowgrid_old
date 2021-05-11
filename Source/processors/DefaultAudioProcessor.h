@@ -32,6 +32,7 @@ public:
     void parameterGestureChanged(int parameterIndex, bool gestureIsStarting) override {}
 
     virtual LevelMeterSource *getMeterSource() { return nullptr; }
+
     virtual AudioProcessorParameter *getMeteredParameter() { return nullptr; } // TODO should be a new MeteredParameter type
 
     // TODO can remove?

@@ -16,7 +16,7 @@ public:
                             push2Colours(tracks),
                             push2MidiCommunicator(project, push2Colours),
                             processorGraph(project, tracks, project.getConnections(), project.getInput(), project.getOutput(),
-                                               undoManager, deviceManager, push2MidiCommunicator) {}
+                                           undoManager, deviceManager, push2MidiCommunicator) {}
 
     const String getApplicationName() override { return PROJECT_NAME; }
 
@@ -484,7 +484,9 @@ public:
         }
 
         void fileDragEnter(const StringArray &files, int, int) override {}
+
         void fileDragMove(const StringArray &files, int, int) override {}
+
         void fileDragExit(const StringArray &files) override {}
 
     private:

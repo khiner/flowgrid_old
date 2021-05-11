@@ -32,9 +32,12 @@ private:
     TracksState &tracks;
 
     void addColour(const Colour &colour);
+
     void setColour(uint8 colourIndex, const Colour &colour);
 
     void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override;
+
     void valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int) override;
+
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override;
 };

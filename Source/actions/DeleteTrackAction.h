@@ -9,6 +9,7 @@ struct DeleteTrackAction : public UndoableAction {
                       StatefulAudioProcessorContainer &audioProcessorContainer);
 
     bool perform() override;
+
     bool undo() override;
 
     int getSizeInUnits() override { return (int) sizeof(*this); }

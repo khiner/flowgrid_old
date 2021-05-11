@@ -8,7 +8,10 @@ struct CreateConnectionAction : public CreateOrDeleteConnectionsAction {
                            ConnectionsState &connections, StatefulAudioProcessorContainer &audioProcessorContainer);
 
     bool canAddConnection(const AudioProcessorGraph::Connection &c, StatefulAudioProcessorContainer &audioProcessorContainer);
+
     bool canAddConnection(AudioProcessorGraph::Node *source, int sourceChannel, AudioProcessorGraph::Node *dest, int destChannel) noexcept;
+
     bool hasConnectionMatching(const AudioProcessorGraph::Connection &connection);
+
     static ValueTree stateForConnection(const AudioProcessorGraph::Connection &connection, bool isDefault);
 };

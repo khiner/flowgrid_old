@@ -11,10 +11,15 @@ public:
     std::unique_ptr<PluginDescription> getDescriptionForIdentifier(const String &identifier);
 
     PluginDescription &getAudioInputDescription() { return internalFormat.audioInDesc; }
+
     PluginDescription &getAudioOutputDescription() { return internalFormat.audioOutDesc; }
+
     Array<PluginDescription> &getInternalPluginDescriptions() { return internalFormat.getInternalPluginDescriptions(); }
+
     Array<PluginDescription> &getExternalPluginDescriptions() { return externalPluginDescriptions; }
+
     KnownPluginList::SortMethod getPluginSortMethod() const { return pluginSortMethod; }
+
     AudioPluginFormatManager &getFormatManager() { return formatManager; }
 
     void setPluginSortMethod(const KnownPluginList::SortMethod pluginSortMethod) {

@@ -8,6 +8,7 @@ struct DeleteSelectedItemsAction : public UndoableAction {
     DeleteSelectedItemsAction(TracksState &tracks, ConnectionsState &connections, StatefulAudioProcessorContainer &audioProcessorContainer);
 
     bool perform() override;
+
     bool undo() override;
 
     int getSizeInUnits() override { return (int) sizeof(*this); }

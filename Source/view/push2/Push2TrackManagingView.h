@@ -17,12 +17,17 @@ public:
 
 protected:
     virtual void trackAdded(const ValueTree &track) { updateEnabledPush2Buttons(); }
+
     virtual void trackRemoved(const ValueTree &track) { updateEnabledPush2Buttons(); }
+
     virtual void trackSelected(const ValueTree &track) { updateEnabledPush2Buttons(); }
 
     void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override;
+
     void valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int index) override;
+
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override;
+
     void valueTreeChildOrderChanged(ValueTree &tree, int, int) override;
 
 protected:

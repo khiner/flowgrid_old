@@ -16,9 +16,12 @@ struct ResetDefaultExternalInputConnectionsAction : public CreateOrDeleteConnect
 
 private:
     ValueTree findTopmostEffectProcessor(const ValueTree &track, ConnectionType connectionType);
+
     // Find the upper-right-most effect processor that flows into the given processor
     // which doesn't already have incoming node connections.
     ValueTree findMostUpstreamAvailableProcessorConnectedTo(const ValueTree &processor, ConnectionType connectionType, TracksState &tracks, InputState &input);
+
     bool isAvailableForExternalInput(const ValueTree &processor, ConnectionType connectionType, InputState &input);
+
     bool areProcessorsConnected(AudioProcessorGraph::NodeID upstreamNodeId, AudioProcessorGraph::NodeID downstreamNodeId);
 };

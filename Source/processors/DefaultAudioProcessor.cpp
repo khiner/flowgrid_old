@@ -5,7 +5,7 @@ const std::function<String(float, int)> DefaultAudioProcessor::defaultStringFrom
 const std::function<float(const String &)> DefaultAudioProcessor::defaultValueFromString = [](const String &text) {
     auto t = text.trimStart();
     while (t.startsWithChar('+'))
-            t = t.substring(1).trimStart();
+        t = t.substring(1).trimStart();
 
     return t.initialSectionContainingOnly("0123456789.,-").getFloatValue();
 };

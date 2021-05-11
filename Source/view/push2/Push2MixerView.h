@@ -13,6 +13,7 @@ public:
     void resized() override;
 
     void aboveScreenButtonPressed(int buttonIndex) override;
+
     void encoderRotated(int encoderIndex, float changeAmount) override;
 
     void updateEnabledPush2Buttons() override;
@@ -23,6 +24,7 @@ private:
     ParametersPanel *selectedParametersPanel{};
 
     void trackAdded(const ValueTree &track) override;
+
     void trackRemoved(const ValueTree &track) override;
 
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override;

@@ -250,7 +250,7 @@ public:
     }
 
     void showWindow(ValueTree processor, PluginWindow::Type type) {
-        processor.setProperty(IDs::pluginWindowType, int(type),  &undoManager);
+        processor.setProperty(IDs::pluginWindowType, int(type), &undoManager);
     }
 
     bool doesTrackAlreadyHaveGeneratorOrInstrument(const ValueTree &track) {

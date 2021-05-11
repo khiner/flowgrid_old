@@ -6,7 +6,7 @@
 class TrackInputGraphEditorProcessor : public BaseGraphEditorProcessor, private ChangeListener {
 public:
     TrackInputGraphEditorProcessor(Project &project, TracksState &tracks, ViewState &view,
-                                    const ValueTree &state, ConnectorDragListener &connectorDragListener);
+                                   const ValueTree &state, ConnectorDragListener &connectorDragListener);
 
     ~TrackInputGraphEditorProcessor() override;
 
@@ -17,6 +17,7 @@ public:
     }
 
     void mouseDown(const MouseEvent &e) override;
+
     void mouseUp(const MouseEvent &e) override;
 
     void resized() override;

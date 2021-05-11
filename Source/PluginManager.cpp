@@ -37,8 +37,8 @@ void PluginManager::addPluginsToMenu(PopupMenu &menu, const ValueTree &track) {
     externalPluginDescriptions = knownPluginListExternal.getTypes();
     userCreatableInternalPluginDescriptions = userCreatablePluginListInternal.getTypes();
 
-    KnownPluginList::addToMenu (internalSubMenu, userCreatableInternalPluginDescriptions, pluginSortMethod);
-    KnownPluginList::addToMenu (externalSubMenu, externalPluginDescriptions, pluginSortMethod, String(), getInternalPluginDescriptions().size());
+    KnownPluginList::addToMenu(internalSubMenu, userCreatableInternalPluginDescriptions, pluginSortMethod);
+    KnownPluginList::addToMenu(externalSubMenu, externalPluginDescriptions, pluginSortMethod, String(), getInternalPluginDescriptions().size());
 
     menu.addSubMenu("Internal", internalSubMenu, true);
     menu.addSeparator();

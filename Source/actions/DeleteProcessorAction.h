@@ -9,9 +9,11 @@ struct DeleteProcessorAction : public UndoableAction {
                           StatefulAudioProcessorContainer &audioProcessorContainer);
 
     bool perform() override;
+
     bool undo() override;
 
     bool performTemporary();
+
     bool undoTemporary();
 
     int getSizeInUnits() override { return (int) sizeof(*this); }

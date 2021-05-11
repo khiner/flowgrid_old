@@ -15,6 +15,7 @@ struct InsertProcessorAction : UndoableAction {
     InsertProcessorAction(const ValueTree &processor, int toTrackIndex, int toSlot, TracksState &tracks, ViewState &view);
 
     bool perform() override;
+
     bool undo() override;
 
     int getSizeInUnits() override { return (int) sizeof(*this); }
@@ -25,6 +26,7 @@ private:
                                TracksState &tracks, ViewState &view);
 
         bool perform() override;
+
         bool undo() override;
 
     private:
@@ -36,6 +38,7 @@ private:
             AddProcessorRowAction(int trackIndex, TracksState &tracks, ViewState &view);
 
             bool perform() override;
+
             bool undo() override;
 
         private:
@@ -51,6 +54,7 @@ private:
         AddOrMoveProcessorAction(const ValueTree &processor, int newTrackIndex, int newSlot, TracksState &tracks, ViewState &view);
 
         bool perform() override;
+
         bool undo() override;
 
     private:

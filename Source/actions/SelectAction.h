@@ -17,6 +17,7 @@ struct SelectAction : public UndoableAction {
     ValueTree getNewFocusedTrack() { return tracks.getTrack(newFocusedSlot.x); }
 
     bool perform() override;
+
     bool undo() override;
 
     int getSizeInUnits() override { return (int) sizeof(*this); }

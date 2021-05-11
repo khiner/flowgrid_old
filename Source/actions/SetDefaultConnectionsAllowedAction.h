@@ -6,6 +6,7 @@ struct SetDefaultConnectionsAllowedAction : public CreateOrDeleteConnectionsActi
     SetDefaultConnectionsAllowedAction(const ValueTree &processor, bool defaultConnectionsAllowed, ConnectionsState &connections);
 
     bool perform() override;
+
     bool undo() override;
 
 private:

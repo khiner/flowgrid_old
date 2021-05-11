@@ -11,7 +11,9 @@ class Push2ProcessorSelector : public Push2ComponentBase {
         void setVisible(bool visible) override;
 
         KnownPluginList::PluginTree *selectFolder(int index);
+
         void selectFolder(KnownPluginList::PluginTree *subfolder);
+
         KnownPluginList::PluginTree *findSelectedSubfolder() const;
 
         const PluginDescription *selectProcessor(int index) const;
@@ -60,7 +62,9 @@ public:
     const PluginDescription *selectBottomProcessor(int index);
 
     void aboveScreenButtonPressed(int buttonIndex) override;
+
     void belowScreenButtonPressed(int buttonIndex) override;
+
     void arrowPressed(int direction) override;
 
     void resized() override;
@@ -78,8 +82,12 @@ private:
     void updateEnabledPush2Arrows();
 
     bool canNavigateInDirection(int direction);
+
     bool canNavigateRight() const { return currentProcessorSelector->getCurrentViewOffset() + NUM_COLUMNS < currentProcessorSelector->getTotalNumberOfTreeItems(); }
+
     bool canNavigateDown() const { return currentProcessorSelector->findSelectedLabel() != nullptr; }
+
     bool canNavigateLeft() const { return currentProcessorSelector->getCurrentViewOffset() > 0; }
+
     bool canNavigateUp() const { return bottomProcessorSelector.get() == currentProcessorSelector || currentProcessorSelector->currentTree->parent != nullptr; }
 };

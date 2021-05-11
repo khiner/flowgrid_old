@@ -16,14 +16,19 @@ public:
     ~GraphEditorPanel() override;
 
     void mouseDown(const MouseEvent &e) override;
+
     void mouseDrag(const MouseEvent &e) override;
+
     void mouseUp(const MouseEvent &e) override;
 
     void resized() override;
+
     void update() override;
 
     void beginConnectorDrag(AudioProcessorGraph::NodeAndChannel source, AudioProcessorGraph::NodeAndChannel destination, const MouseEvent &e) override;
+
     void dragConnector(const MouseEvent &e) override;
+
     void endDraggingConnector(const MouseEvent &e) override;
 
     BaseGraphEditorProcessor *getProcessorForNodeId(AudioProcessorGraph::NodeID nodeId) const override;
@@ -66,6 +71,7 @@ private:
     GraphEditorChannel *findChannelAt(const MouseEvent &e) const;
 
     LabelGraphEditorProcessor *findMidiInputProcessorForNodeId(AudioProcessorGraph::NodeID nodeId) const;
+
     LabelGraphEditorProcessor *findMidiOutputProcessorForNodeId(AudioProcessorGraph::NodeID nodeId) const;
 
     ResizableWindow *getOrCreateWindowFor(ValueTree &processorState, PluginWindow::Type type);
@@ -77,7 +83,10 @@ private:
     void showPopupMenu(const ValueTree &track, int slot);
 
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override;
+
     void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override;
+
     void valueTreeChildRemoved(ValueTree &parent, ValueTree &child, int indexFromWhichChildWasRemoved) override;
+
     void valueTreeChildOrderChanged(ValueTree &parent, int oldIndex, int newIndex) override;
 };

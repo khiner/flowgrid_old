@@ -25,8 +25,11 @@ public:
     }
 
     void pageLeft();
+
     void pageRight();
+
     bool canPageLeft() const { return currentPage > 0; }
+
     bool canPageRight() const { return (currentPage + 1) * maxRows * numColumns < parameters.size(); }
 
     // todo switch to adding new LookAndFeel colour IDs
@@ -45,6 +48,7 @@ public:
     void resized() override;
 
     int getParameterWidth() { return getLocalBounds().getWidth() / numColumns; }
+
     int getParameterHeight() { return maxRows == 1 ? getLocalBounds().getHeight() : getParameterWidth() * 7 / 5; }
 
 private:

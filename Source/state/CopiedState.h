@@ -7,7 +7,7 @@ struct CopiedState : public Stateful {
     CopiedState(TracksState &tracks, ConnectionsState &connections, StatefulAudioProcessorContainer &audioProcessorContainer)
             : tracks(tracks), connections(connections), audioProcessorContainer(audioProcessorContainer) {}
 
-    ValueTree& getState() override { return copiedItems; }
+    ValueTree &getState() override { return copiedItems; }
 
     void loadFromState(const ValueTree &tracksState) override;
 
