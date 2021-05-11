@@ -26,9 +26,9 @@ public:
 
     static void resetVarToInt(ValueTree &tree, const Identifier &id, ValueTree::Listener *listenerToExclude) {
         tree.setPropertyExcludingListener(listenerToExclude, id, int(tree.getProperty(id)), nullptr);
-    };
+    }
 
     static void resetVarToBool(ValueTree &tree, const Identifier &id, ValueTree::Listener *listenerToExclude) {
         tree.setPropertyExcludingListener(listenerToExclude, id, bool(tree.getProperty(id)), nullptr);
-    };
+    }
 };
