@@ -96,7 +96,6 @@ protected:
     void valueTreePropertyChanged(ValueTree &v, const Identifier &i) override;
 
 private:
-    Project &project;
     TracksState &tracks;
     ViewState &view;
     ConnectorDragListener &connectorDragListener;

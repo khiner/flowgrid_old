@@ -1,12 +1,10 @@
 #pragma once
 
-#include "state/Project.h"
 #include "push2/Push2MidiCommunicator.h"
 
 class Push2NoteModePadLedManager : public MidiInputCallback, public Push2Colours::Listener {
 public:
-    Push2NoteModePadLedManager(Project &project, Push2MidiCommunicator &push2)
-            : project(project), tracks(project.getTracks()), push2(push2) {
+    Push2NoteModePadLedManager(TracksState &tracks, Push2MidiCommunicator &push2) : tracks(tracks), push2(push2) {
         push2.getPush2Colours().addListener(this);
     }
 
@@ -46,9 +44,7 @@ public:
     void colourAdded(const Colour &colour, uint8 index) override {}
 
 private:
-    Project &project;
     TracksState &tracks;
-
     Push2MidiCommunicator &push2;
     Colour selectedTrackColour{Colours::white};
     bool isVisible{false};

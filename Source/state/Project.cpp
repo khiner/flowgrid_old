@@ -25,7 +25,7 @@ Project::Project(UndoManager &undoManager, PluginManager &pluginManager, AudioDe
           input(tracks, connections, *this, pluginManager, undoManager, deviceManager),
           output(tracks, connections, *this, pluginManager, undoManager, deviceManager),
           deviceManager(deviceManager),
-          copiedState(tracks, connections, *this) {
+          copiedState(tracks, *this) {
     state = ValueTree(IDs::PROJECT);
     state.setProperty(IDs::name, "My First Project", nullptr);
     state.appendChild(input.getState(), nullptr);
@@ -128,7 +128,7 @@ void Project::insert() {
 void Project::duplicateSelectedItems() {
     if (isCurrentlyDraggingProcessor())
         endDraggingProcessor();
-    CopiedState duplicateState(tracks, connections, *this);
+    CopiedState duplicateState(tracks, *this);
     duplicateState.copySelectedItems();
 
     undoManager.beginNewTransaction();

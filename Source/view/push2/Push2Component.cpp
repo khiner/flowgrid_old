@@ -6,7 +6,7 @@ Push2Component::Push2Component(Project &project, Push2MidiCommunicator &push2Mid
         : Push2ComponentBase(project, push2MidiCommunicator),
           tracks(project.getTracks()), connections(project.getConnections()), view(project.getView()), audioProcessorContainer(project),
           processorView(project, push2MidiCommunicator), processorSelector(project, push2MidiCommunicator),
-          mixerView(project, push2MidiCommunicator), push2NoteModePadLedManager(project, push2MidiCommunicator) {
+          mixerView(project, push2MidiCommunicator), push2NoteModePadLedManager(project.getTracks(), push2MidiCommunicator) {
     startTimer(60);
 
     addChildComponent(processorView);

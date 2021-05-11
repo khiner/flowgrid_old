@@ -1,7 +1,7 @@
 #include "BaseGraphEditorProcessor.h"
 
 BaseGraphEditorProcessor::BaseGraphEditorProcessor(Project &project, TracksState &tracks, ViewState &view, const ValueTree &state, ConnectorDragListener &connectorDragListener)
-        : state(state), project(project), tracks(tracks), view(view),
+        : state(state), tracks(tracks), view(view),
           connectorDragListener(connectorDragListener), audioProcessorContainer(project), pluginManager(project.getPluginManager()) {
     this->state.addListener(this);
 
