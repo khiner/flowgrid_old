@@ -4,7 +4,6 @@
 #include "state/TracksState.h"
 #include "view/CustomColourIds.h"
 #include "ConnectorDragListener.h"
-#include "Utilities.h"
 
 struct GraphEditorChannel : public Component, public SettableTooltipClient, private ValueTree::Listener {
     GraphEditorChannel(ValueTree state, ConnectorDragListener &connectorDragListener, bool showChannelText = false);

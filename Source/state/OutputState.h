@@ -19,7 +19,7 @@ public:
 
     void loadFromState(const ValueTree &state) override {
         output.copyPropertiesFrom(state, nullptr);
-        Utilities::moveAllChildren(state, output, nullptr);
+        moveAllChildren(state, output, nullptr);
     }
 
     void initializeDefault();

@@ -55,7 +55,6 @@ target_sources(FlowGrid PRIVATE
     Source/PluginManager.cpp
     Source/ProcessorGraph.cpp
     Source/StatefulAudioProcessorContainer.cpp
-    Source/Utilities.h
     Source/ValueTreeObjectList.h
     Source/actions/CreateConnectionAction.cpp
     Source/actions/CreateOrDeleteConnectionsAction.cpp
@@ -105,7 +104,7 @@ target_sources(FlowGrid PRIVATE
     Source/state/InputState.cpp
     Source/state/OutputState.cpp
     Source/state/Project.cpp
-    Source/state/Stateful.h
+    Source/state/Stateful.cpp
     Source/state/TracksState.cpp
     Source/state/ViewState.cpp
     Source/usb/UsbCommunicator.cpp

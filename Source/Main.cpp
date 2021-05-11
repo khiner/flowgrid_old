@@ -544,7 +544,7 @@ private:
         o.resizable = true;
 
         auto *w = o.create();
-        w->enterModalState(true, ModalCallbackFunction::create([this](int) {}), true);
+        w->enterModalState(true, ModalCallbackFunction::create([](int) {}), true);
     }
 
     void showPush2MirrorWindow() {

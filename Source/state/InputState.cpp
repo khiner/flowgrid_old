@@ -54,7 +54,7 @@ void InputState::changeListenerCallback(ChangeBroadcaster *source) {
 
 void InputState::loadFromState(const ValueTree &state) {
     input.copyPropertiesFrom(state, nullptr);
-    Utilities::moveAllChildren(state, input, nullptr);
+    moveAllChildren(state, input, nullptr);
 }
 
 void InputState::initializeDefault() {

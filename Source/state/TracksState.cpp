@@ -1,7 +1,5 @@
 #include "TracksState.h"
 
-#include "Utilities.h"
-
 TracksState::TracksState(ViewState &view, PluginManager &pluginManager, UndoManager &undoManager)
         : view(view), pluginManager(pluginManager), undoManager(undoManager) {
     tracks = ValueTree(IDs::TRACKS);
@@ -9,7 +7,7 @@ TracksState::TracksState(ViewState &view, PluginManager &pluginManager, UndoMana
 }
 
 void TracksState::loadFromState(const ValueTree &state) {
-    Utilities::moveAllChildren(state, getState(), nullptr);
+    moveAllChildren(state, getState(), nullptr);
 
     // Re-save all non-string value types,
     // since type information is not saved in XML

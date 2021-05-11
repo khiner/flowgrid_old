@@ -2,7 +2,6 @@
 
 #include "StatefulAudioProcessorContainer.h"
 #include "TracksState.h"
-#include "Utilities.h"
 
 using SAPC = StatefulAudioProcessorContainer;
 
@@ -13,7 +12,7 @@ public:
     ValueTree &getState() override { return connections; }
 
     void loadFromState(const ValueTree &state) override {
-        Utilities::moveAllChildren(state, getState(), nullptr);
+        moveAllChildren(state, getState(), nullptr);
     }
 
     ValueTree findDefaultDestinationProcessor(const ValueTree &sourceProcessor, ConnectionType connectionType);
