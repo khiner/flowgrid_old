@@ -49,7 +49,7 @@ void TrackOutputGraphEditorProcessor::paint(Graphics &g) {
     g.fillPath(p);
 }
 
-Rectangle<int> TrackOutputGraphEditorProcessor::getBoxBounds() {
+Rectangle<int> TrackOutputGraphEditorProcessor::getBoxBounds() const {
     return isMasterTrack() ?
            getLocalBounds() :
            getLocalBounds().withTrimmedTop(channelSize / 2).withTrimmedBottom(ViewState::TRACKS_MARGIN);

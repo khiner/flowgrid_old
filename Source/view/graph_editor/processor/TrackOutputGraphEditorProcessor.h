@@ -17,7 +17,7 @@ public:
 
     bool isInView() override { return true; }
 
-    Rectangle<int> getBoxBounds() override;
+    Rectangle<int> getBoxBounds() const override;
 
 private:
     std::unique_ptr<LevelMeter> levelMeter;

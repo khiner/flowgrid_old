@@ -13,31 +13,19 @@ public:
 
     ~LevelMeterSource() { masterReference.clear(); }
 
-    /**
-     Resize the meters data containers. Set the
-     \param numChannels to the number of channels. If you don't do this in prepareToPlay,
-            it will be done when calling measureBlock, but a few bytes will be allocated
-            on the audio thread, so be aware.
-     \param rmsWindow is the number of rms values to gather. Keep that aligned with
-            the sampleRate and the blocksize to get reproducable results.
-            e.g. `rmsWindow = msecs * 0.001f * sampleRate / blockSize;`
-     \FIXME: don't call this when measureBlock is processing
-     */
-    void resize(int channels, int rmsWindow);
-
     void measureBlock(const AudioBuffer<float> &buffer) {
         lastMeasurement = Time::currentTimeMillis();
-        if (!suspended) {
-            int numChannels = buffer.getNumChannels();
-            int numSamples = buffer.getNumSamples();
+        if (suspended) return;
 
-            levels.resize(numChannels);
-            for (int channel = 0; channel < numChannels; ++channel) {
-                levels[channel].setLevels(lastMeasurement,
-                                          buffer.getMagnitude(channel, 0, numSamples),
-                                          buffer.getRMSLevel(channel, 0, numSamples),
-                                          holdMSecs);
-            }
+        int numChannels = buffer.getNumChannels();
+        int numSamples = buffer.getNumSamples();
+        levels.resize(static_cast<unsigned long>(numChannels));
+        for (int channel = 0; channel < numChannels; ++channel) {
+            auto channelIndex = static_cast<unsigned long>(channel);
+            levels[channelIndex].setLevels(lastMeasurement,
+                                           buffer.getMagnitude(channel, 0, numSamples),
+                                           buffer.getRMSLevel(channel, 0, numSamples),
+                                           holdMSecs);
         }
     }
 
@@ -94,7 +82,7 @@ private:
             pushNextRMS(std::min(1.0f, newRms));
         }
 
-        void setRMSsize(const int numBlocks) {
+        void setRMSsize(unsigned long numBlocks) {
             rmsHistory.assign(numBlocks, 0.0f);
             rmsSum = 0.0;
             numBlocks > 1 ? (rmsPtr %= rmsHistory.size()) : (rmsPtr = 0);
@@ -115,7 +103,7 @@ private:
         std::atomic<int64> hold;
         std::vector<float> rmsHistory;
         std::atomic<float> rmsSum;
-        int rmsPtr;
+        std::vector<float>::size_type rmsPtr;
     };
 
     WeakReference<LevelMeterSource>::Master masterReference;

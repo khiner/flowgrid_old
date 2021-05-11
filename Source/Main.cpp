@@ -422,7 +422,7 @@ public:
 
             centreWithSize(getWidth(), getHeight());
             setVisible(true);
-            setBackgroundColour(getLookAndFeel().findColour(ResizableWindow::backgroundColourId).brighter(0.04));
+            setBackgroundColour(getLookAndFeel().findColour(ResizableWindow::backgroundColourId).brighter(0.04f));
             addKeyListener(getCommandManager().getKeyMappings());
         }
 

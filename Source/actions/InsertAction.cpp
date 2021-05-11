@@ -48,12 +48,12 @@ static juce::Point<int> findFromTrackAndSlot(const ValueTree &copiedState) {
 static std::vector<int> findDuplicationIndices(std::vector<int> currentIndices) {
     auto duplicationIndices = currentIndices;
     int previousIndex = -1;
-    int endOfContiguousRange = 0;
-    for (int i = 0; i < duplicationIndices.size(); i++) {
+    unsigned long endOfContiguousRange = 0;
+    for (unsigned long i = 0; i < duplicationIndices.size(); i++) {
         int currentIndex = currentIndices[i];
         if (previousIndex != -1 && currentIndex - previousIndex > 1)
             endOfContiguousRange = i;
-        for (int j = endOfContiguousRange; j < duplicationIndices.size(); j++)
+        for (unsigned long j = endOfContiguousRange; j < duplicationIndices.size(); j++)
             duplicationIndices[j] += 1;
         previousIndex = currentIndex;
     }
@@ -100,7 +100,7 @@ InsertAction::InsertAction(bool duplicate, const ValueTree &copiedState, const j
         // Second pass: insert selected tracks (along with their processors)
         const auto selectedTrackIndices = findSelectedNonMasterTrackIndices(copiedState);
         const auto duplicatedTrackIndices = findDuplicationIndices(selectedTrackIndices);
-        for (int i = 0; i < selectedTrackIndices.size(); i++) {
+        for (unsigned long i = 0; i < selectedTrackIndices.size(); i++) {
             int fromTrackIndex = selectedTrackIndices[i];
             const ValueTree &fromTrack = copiedState.getChild(fromTrackIndex);
             if (duplicate) {
@@ -153,7 +153,7 @@ void InsertAction::duplicateSelectedProcessors(const ValueTree &track, const Val
 
     auto duplicatedSlots = findDuplicationIndices(selectedSlots);
     int trackIndex = copiedState.indexOf(track);
-    for (int i = 0; i < selectedSlots.size(); i++) {
+    for (unsigned long i = 0; i < selectedSlots.size(); i++) {
         const ValueTree &processor = TracksState::getProcessorAtSlot(track, selectedSlots[i]);
         addAndPerformCreateProcessorAction(processor, trackIndex, selectedSlots[i], trackIndex, duplicatedSlots[i]);
     }

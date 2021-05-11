@@ -136,7 +136,6 @@ target_sources(FlowGrid PRIVATE
     Source/view/parameter_control/level_meter/LevelMeter.h
     Source/view/parameter_control/level_meter/LevelMeterSource.cpp
     Source/view/parameter_control/level_meter/MinimalLevelMeter.cpp
-    Source/view/parameter_control/level_meter/SegmentedLevelMeter.cpp
     Source/view/parameter_control/slider/MinimalSliderControl.cpp
     Source/view/parameter_control/slider/SliderControl.h
     Source/view/processor_editor/DraggableValueLabel.h

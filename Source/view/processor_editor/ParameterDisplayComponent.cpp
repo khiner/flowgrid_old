@@ -1,6 +1,6 @@
 #include "ParameterDisplayComponent.h"
 
-#include "view/parameter_control/level_meter/SegmentedLevelMeter.h"
+#include "view/parameter_control/level_meter/MinimalLevelMeter.h"
 
 ParameterDisplayComponent::ParameterDisplayComponent() {
     addChildComponent(parameterName);
@@ -61,7 +61,7 @@ void ParameterDisplayComponent::setParameter(StatefulAudioProcessorWrapper::Para
         parameterWrapper->attachSwitch(parameterSwitch);
         parameterComponent.reset(parameterSwitch);
     } else if (auto *levelMeterSource = parameterWrapper->getLevelMeterSource()) {
-        auto *levelMeter = new SegmentedLevelMeter();
+        auto *levelMeter = new MinimalLevelMeter(LevelMeter::vertical);
         levelMeter->setMeterSource(levelMeterSource);
         parameterWrapper->attachParameterControl(levelMeter);
         parameterWrapper->attachLabel(&valueLabel);

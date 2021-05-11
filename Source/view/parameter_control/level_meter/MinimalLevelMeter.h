@@ -12,7 +12,7 @@ public:
 private:
     static constexpr int THUMB_WIDTH = 4;
 
-    Rectangle<float> getMeterBounds();
+    Rectangle<int> getMeterBounds();
 
     void drawMeterBars(Graphics &g, const LevelMeterSource *source) override;
 };

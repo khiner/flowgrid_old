@@ -39,9 +39,8 @@ bool BaseGraphEditorProcessor::hitTest(int x, int y) {
 
 void BaseGraphEditorProcessor::resized() {
     if (auto *processor = audioProcessorContainer.getAudioProcessorForState(state)) {
-        auto boxBoundsFloat = getBoxBounds().toFloat();
         for (auto *channel : channels)
-            layoutChannel(processor, channel, boxBoundsFloat);
+            layoutChannel(processor, channel);
         repaint();
         connectorDragListener.update();
     }
@@ -62,7 +61,7 @@ juce::Point<float> BaseGraphEditorProcessor::getConnectorDirectionVector(bool is
     }
 }
 
-Rectangle<int> BaseGraphEditorProcessor::getBoxBounds() {
+Rectangle<int> BaseGraphEditorProcessor::getBoxBounds() const {
     auto r = getLocalBounds().reduced(1);
     bool isLeftToRight = TracksState::isProcessorLeftToRightFlowing(getState());
     if (isLeftToRight) {
@@ -79,27 +78,28 @@ Rectangle<int> BaseGraphEditorProcessor::getBoxBounds() {
     return r;
 }
 
-void BaseGraphEditorProcessor::layoutChannel(AudioProcessor *processor, GraphEditorChannel *channel, const Rectangle<float> &boxBounds) const {
+void BaseGraphEditorProcessor::layoutChannel(AudioProcessor *processor, GraphEditorChannel *channel) const {
+    const auto boxBounds = getBoxBounds();
     const bool isInput = channel->isInput();
     auto channelIndex = channel->getChannelIndex();
     int busIndex = 0;
     processor->getOffsetInBusBufferForAbsoluteChannelIndex(isInput, channelIndex, busIndex);
     int total = isInput ? getNumInputChannels() : getNumOutputChannels();
     const int index = channel->isMidi() ? (total - 1) : channelIndex;
-    auto indexPosition = index + busIndex * 0.5f;
+    auto indexPosition = index + busIndex / 2;
 
-    int x = boxBounds.getX() + indexPosition * channelSize;
-    int y = boxBounds.getY() + indexPosition * channelSize;
+    int x = boxBounds.getX() + static_cast<int>(indexPosition * channelSize);
+    int y = boxBounds.getY() + static_cast<int>(indexPosition * channelSize);
     if (TracksState::isProcessorLeftToRightFlowing(getState()))
-        channel->setSize(boxBounds.getWidth() / 2, channelSize);
+        channel->setSize(static_cast<int>(boxBounds.getWidth() / 2), channelSize);
     else
-        channel->setSize(channelSize, boxBounds.getHeight() / 2);
+        channel->setSize(channelSize, static_cast<int>(boxBounds.getHeight() / 2));
 
     const auto &connectionDirection = getConnectorDirectionVector(channel->isInput());
     if (connectionDirection == juce::Point(-1.0f, 0.0f))
-        channel->setTopLeftPosition(boxBounds.getX(), y);
+        channel->setTopLeftPosition(static_cast<int>(boxBounds.getX()), y);
     else if (connectionDirection == juce::Point(1.0f, 0.0f))
-        channel->setTopRightPosition(boxBounds.getRight(), y);
+        channel->setTopRightPosition(static_cast<int>(boxBounds.getRight()), y);
     else if (connectionDirection == juce::Point(0.0f, -1.0f))
         channel->setTopLeftPosition(x, boxBounds.getY());
     else

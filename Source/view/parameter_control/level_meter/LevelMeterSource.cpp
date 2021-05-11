@@ -1,12 +1,5 @@
 #include "LevelMeterSource.h"
 
-void LevelMeterSource::resize(const int channels, const int rmsWindow) {
-    levels.resize(channels, ChannelData(rmsWindow));
-    for (ChannelData &l : levels) {
-        l.setRMSsize(rmsWindow);
-    }
-}
-
 /**
  This is called from the GUI. If processing was stalled, this will pump zeroes into the buffer,
  until the readings return to zero.

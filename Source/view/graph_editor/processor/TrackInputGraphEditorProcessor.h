@@ -26,9 +26,7 @@ public:
 
     bool isInView() override { return true; }
 
-    Rectangle<int> getBoxBounds() override {
-        return getLocalBounds();
-    }
+    Rectangle<int> getBoxBounds() const override { return getLocalBounds(); }
 
 private:
     Project &project;

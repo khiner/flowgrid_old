@@ -9,9 +9,8 @@ void MinimalLevelMeter::resized() {
     const auto &meterBounds = getMeterBounds();
     const auto &localBounds = getLocalBounds();
     int thumbPosition = orientation == vertical ?
-                        meterBounds.getRelativePoint(0.0f, 1.0f - value).y :
-                        meterBounds.getRelativePoint(value, 0.0f).x;
-
+                        static_cast<int>(meterBounds.getRelativePoint(0.0f, 1.0f - value).y) :
+                        static_cast<int>(meterBounds.getRelativePoint(value, 0.0f).x);
     const auto &thumbBounds = orientation == vertical ?
                               localBounds.withHeight(THUMB_WIDTH).withY(thumbPosition - THUMB_WIDTH / 2) :
                               localBounds.withWidth(THUMB_WIDTH).withX(thumbPosition - THUMB_WIDTH / 2);
@@ -21,27 +20,27 @@ void MinimalLevelMeter::resized() {
     thumb.setShape(p, false, false, false);
 }
 
-Rectangle<float> MinimalLevelMeter::getMeterBounds() {
-    const auto &r = getLocalBounds().toFloat();
+Rectangle<int> MinimalLevelMeter::getMeterBounds() {
+    const auto &r = getLocalBounds();
     return orientation == vertical ?
-           r.reduced(getWidth() * 0.1f, THUMB_WIDTH) :
-           r.reduced(THUMB_WIDTH, getHeight() * 0.1f);
+           r.reduced(getWidth() / 10, THUMB_WIDTH) :
+           r.reduced(THUMB_WIDTH, getHeight() / 10);
 }
 
 void MinimalLevelMeter::drawMeterBars(Graphics &g, const LevelMeterSource *source) {
-    const int numChannels = source ? source->getNumChannels() : 1;
+    const int numChannels = source ? static_cast<const int>(source->getNumChannels()) : 1;
     auto meterBounds = getMeterBounds();
-    const float shortDimension = orientation == vertical ? meterBounds.getWidth() : meterBounds.getHeight();
-    const float meterWidth = shortDimension / numChannels;
-    for (unsigned int channel = 0; channel < numChannels; ++channel) {
+    const int shortDimension = orientation == vertical ? meterBounds.getWidth() : meterBounds.getHeight();
+    const int meterWidth = shortDimension / numChannels;
+    for (int channel = 0; channel < numChannels; ++channel) {
         const auto &meterBarBounds = orientation == vertical ?
-                                     meterBounds.removeFromLeft(meterWidth).reduced(shortDimension * 0.1f, 0.0f) :
-                                     meterBounds.removeFromTop(meterWidth).reduced(0.0f, shortDimension * 0.1f);
+                                     meterBounds.removeFromLeft(meterWidth).reduced(shortDimension / 10, 0.0f) :
+                                     meterBounds.removeFromTop(meterWidth).reduced(0.0f, shortDimension / 10);
         g.setColour(findColour(backgroundColourId));
         g.fillRect(meterBarBounds);
         if (source != nullptr) {
             const static float infinity = -80.0f;
-            float rmsLevel = source->getRMSLevel(channel);
+            float rmsLevel = source->getRMSLevel(static_cast<unsigned int>(channel));
 //                std::cout << "rmsLevel: " << rmsLevel << std::endl;
             float rmsDb = Decibels::gainToDecibels(rmsLevel, infinity);
 //                std::cout << "rmsDb: " << rmsDb << std::endl;
@@ -49,8 +48,8 @@ void MinimalLevelMeter::drawMeterBars(Graphics &g, const LevelMeterSource *sourc
 //                std::cout << "rmsDbScaled: " << rmsDbScaled << std::endl;
 
             const auto &fillBounds = orientation == vertical ?
-                                     meterBarBounds.withHeight(rmsDbScaled * meterBarBounds.getHeight()) :
-                                     meterBarBounds.withWidth(rmsDbScaled * meterBarBounds.getWidth());
+                                     meterBarBounds.withHeight(static_cast<int>(rmsDbScaled * static_cast<float>(meterBarBounds.getHeight()))) :
+                                     meterBarBounds.withWidth(static_cast<int>(rmsDbScaled * static_cast<float>(meterBarBounds.getWidth())));
             g.setColour(findColour(foregroundColourId));
             g.fillRect(fillBounds);
         }

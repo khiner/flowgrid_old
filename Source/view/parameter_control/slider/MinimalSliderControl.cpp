@@ -9,7 +9,7 @@ MinimalSliderControl::MinimalSliderControl(SliderControl::Orientation orientatio
 void MinimalSliderControl::resized() {
     const auto &sliderBounds = getSliderBounds();
     const auto &localBounds = getLocalBounds();
-    float thumbPosition = orientation == vertical ?
+    int thumbPosition = orientation == vertical ?
                           sliderBounds.getRelativePoint(0.0f, 1.0f - value).y :
                           sliderBounds.getRelativePoint(value, 0.0f).x;
     const auto &thumbBounds = orientation == vertical ?
@@ -24,10 +24,10 @@ void MinimalSliderControl::resized() {
 void MinimalSliderControl::paint(Graphics &g) {
     Graphics::ScopedSaveState saved(g);
     auto sliderBounds = getSliderBounds();
-    const float shortDimension = orientation == vertical ? sliderBounds.getWidth() : sliderBounds.getHeight();
+    const int shortDimension = orientation == vertical ? sliderBounds.getWidth() : sliderBounds.getHeight();
     const auto &sliderBarBounds = orientation == vertical ?
-                                  sliderBounds.removeFromLeft(shortDimension).reduced(shortDimension * 0.1f, 0.0f) :
-                                  sliderBounds.removeFromTop(shortDimension).reduced(0.0f, shortDimension * 0.1f);
+                                  sliderBounds.removeFromLeft(shortDimension).reduced(shortDimension / 10, 0.0f) :
+                                  sliderBounds.removeFromTop(shortDimension).reduced(0.0f, shortDimension / 10);
     g.setColour(findColour(backgroundColourId));
     g.fillRect(sliderBarBounds);
     const auto &fillBounds = getSliderBarFillBounds(sliderBarBounds);
@@ -35,28 +35,28 @@ void MinimalSliderControl::paint(Graphics &g) {
     g.fillRect(fillBounds);
 }
 
-Rectangle<float> MinimalSliderControl::getSliderBarFillBounds(const Rectangle<float> &sliderBarBounds) {
+Rectangle<int> MinimalSliderControl::getSliderBarFillBounds(const Rectangle<int> &sliderBarBounds) {
     if (fromCenter) {
         float fromCenterValue = std::abs(0.5f - value);
         bool extendUp = value >= 0.5f;
         if (orientation == vertical) {
-            const auto &fillBar = sliderBarBounds.withHeight(fromCenterValue * sliderBarBounds.getHeight());
+            const auto &fillBar = sliderBarBounds.withHeight(static_cast<int>(fromCenterValue * static_cast<float>(sliderBarBounds.getHeight())));
             return extendUp ? fillBar.withBottomY(sliderBarBounds.getCentreY()) : fillBar.withY(sliderBarBounds.getCentreY());
         } else {
-            const auto &fillBar = sliderBarBounds.withWidth(fromCenterValue * sliderBarBounds.getWidth());
+            const auto &fillBar = sliderBarBounds.withWidth(static_cast<int>(fromCenterValue * static_cast<float>(sliderBarBounds.getWidth())));
             return extendUp ? fillBar.withX(sliderBarBounds.getCentreX()) : fillBar.withRightX(sliderBarBounds.getCentreX());
         }
     } else {
         return orientation == vertical ?
-               sliderBarBounds.withHeight(value * sliderBarBounds.getHeight()) :
-               sliderBarBounds.withWidth(value * sliderBarBounds.getWidth());
+               sliderBarBounds.withHeight(static_cast<int>(value * static_cast<float>(sliderBarBounds.getHeight()))) :
+               sliderBarBounds.withWidth(static_cast<int>(value * static_cast<float>(sliderBarBounds.getWidth())));
     }
 }
 
-Rectangle<float> MinimalSliderControl::getSliderBounds() {
-    const auto &r = getLocalBounds().toFloat();
+Rectangle<int> MinimalSliderControl::getSliderBounds() {
+    const auto &r = getLocalBounds();
     return orientation == vertical ?
-           r.reduced(getWidth() * 0.2f, THUMB_WIDTH) :
-           r.reduced(THUMB_WIDTH, getHeight() * 0.2f);
+           r.reduced(getWidth() / 5, THUMB_WIDTH) :
+           r.reduced(THUMB_WIDTH, getHeight() / 5);
 }
 

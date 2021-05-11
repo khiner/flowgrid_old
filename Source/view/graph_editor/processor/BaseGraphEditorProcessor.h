@@ -72,7 +72,7 @@ public:
         return nullptr;
     }
 
-    virtual Rectangle<int> getBoxBounds();
+    virtual Rectangle<int> getBoxBounds() const;
 
     class ElementComparator {
     public:
@@ -87,7 +87,7 @@ protected:
     static constexpr int channelSize = 10;
     OwnedArray<GraphEditorChannel> channels;
 
-    virtual void layoutChannel(AudioProcessor *processor, GraphEditorChannel *channel, const Rectangle<float> &boxBounds) const;
+    virtual void layoutChannel(AudioProcessor *processor, GraphEditorChannel *channel) const;
 
     void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override;
 
