@@ -5,7 +5,7 @@
 
 SelectionEditor::SelectionEditor(Project &project, ProcessorGraph &audioGraphBuilder)
         : project(project), tracks(project.getTracks()), view(project.getView()),
-          pluginManager(project.getPluginManager()), audioGraphBuilder(audioGraphBuilder), contextPane(project) {
+          pluginManager(project.getPluginManager()), audioGraphBuilder(audioGraphBuilder), contextPane(tracks, view) {
     tracks.addListener(this);
     view.addListener(this);
 

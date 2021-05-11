@@ -2,7 +2,7 @@
 
 
 Push2TrackManagingView::Push2TrackManagingView(Project &project, Push2MidiCommunicator &push2)
-        : Push2ComponentBase(project, push2) {
+        : Push2ComponentBase(project.getTracks(), project.getView(), push2), project(project) {
     tracks.addListener(this);
     view.addListener(this);
 

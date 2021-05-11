@@ -1,5 +1,6 @@
 #pragma once
 
+#include "state/Project.h"
 #include "BaseGraphEditorProcessor.h"
 #include "view/processor_editor/ParametersPanel.h"
 
@@ -13,6 +14,7 @@ public:
     void resized() override;
 
 private:
+    Project &project;
     std::unique_ptr<ParametersPanel> parametersPanel;
 
     void valueTreePropertyChanged(ValueTree &v, const Identifier &i) override;

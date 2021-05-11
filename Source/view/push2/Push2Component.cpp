@@ -3,8 +3,8 @@
 #include "ApplicationPropertiesAndCommandManager.h"
 
 Push2Component::Push2Component(Project &project, Push2MidiCommunicator &push2MidiCommunicator)
-        : Push2ComponentBase(project, push2MidiCommunicator),
-          tracks(project.getTracks()), connections(project.getConnections()), view(project.getView()), audioProcessorContainer(project),
+        : Push2ComponentBase(project.getTracks(), project.getView(), push2MidiCommunicator),
+          project(project), connections(project.getConnections()), audioProcessorContainer(project),
           processorView(project, push2MidiCommunicator), processorSelector(project, push2MidiCommunicator),
           mixerView(project, push2MidiCommunicator), push2NoteModePadLedManager(project.getTracks(), push2MidiCommunicator) {
     startTimer(60);

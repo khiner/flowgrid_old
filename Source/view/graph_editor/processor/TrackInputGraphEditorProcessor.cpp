@@ -2,8 +2,8 @@
 
 #include "BinaryData.h"
 
-TrackInputGraphEditorProcessor::TrackInputGraphEditorProcessor(Project &project, TracksState &tracks, ViewState &view, const ValueTree &state, ConnectorDragListener &connectorDragListener) :
-        BaseGraphEditorProcessor(project, tracks, view, state, connectorDragListener),
+TrackInputGraphEditorProcessor::TrackInputGraphEditorProcessor(SAPC &audioProcessorContainer, TracksState &tracks, ViewState &view, const ValueTree &state, ConnectorDragListener &connectorDragListener) :
+        BaseGraphEditorProcessor(audioProcessorContainer, tracks, view, state, connectorDragListener),
         project(project), tracks(tracks) {
     nameLabel.setJustificationType(Justification::centred);
     addAndMakeVisible(nameLabel);

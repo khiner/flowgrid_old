@@ -182,8 +182,7 @@ void Project::dragToPosition(juce::Point<int> trackAndSlot) {
 }
 
 void Project::setProcessorSlotSelected(const ValueTree &track, int slot, bool selected, bool deselectOthers) {
-    if (!track.isValid())
-        return;
+    if (!track.isValid()) return;
 
     SelectAction *selectAction = nullptr;
     if (selected) {

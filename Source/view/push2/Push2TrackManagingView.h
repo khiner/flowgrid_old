@@ -1,5 +1,6 @@
 #pragma once
 
+#include <state/Project.h>
 #include "Push2ComponentBase.h"
 #include "Push2Label.h"
 
@@ -31,6 +32,8 @@ protected:
     void valueTreeChildOrderChanged(ValueTree &tree, int, int) override;
 
 protected:
+    Project &project;
+
     void trackColourChanged(const String &trackUuid, const Colour &colour) override;
 
 private:

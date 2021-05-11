@@ -1,7 +1,7 @@
 #include "LabelGraphEditorProcessor.h"
 
-LabelGraphEditorProcessor::LabelGraphEditorProcessor(Project &project, TracksState &tracks, ViewState &view, const ValueTree &state, ConnectorDragListener &connectorDragListener) :
-        BaseGraphEditorProcessor(project, tracks, view, state, connectorDragListener) {
+LabelGraphEditorProcessor::LabelGraphEditorProcessor(SAPC &audioProcessorContainer, TracksState &tracks, ViewState &view, const ValueTree &state, ConnectorDragListener &connectorDragListener) :
+        BaseGraphEditorProcessor(audioProcessorContainer, tracks, view, state, connectorDragListener) {
     valueTreePropertyChanged(this->state, IDs::name);
     if (this->state.hasProperty(IDs::deviceName))
         valueTreePropertyChanged(this->state, IDs::deviceName);

@@ -1,12 +1,11 @@
 #pragma once
 
-#include "state/Project.h"
+#include "state/TracksState.h"
+#include "state/ViewState.h"
 
-class ContextPane :
-        public Component,
-        private ValueTree::Listener {
+class ContextPane : public Component, private ValueTree::Listener {
 public:
-    explicit ContextPane(Project &project);
+    explicit ContextPane(TracksState &tracks, ViewState &view);
 
     ~ContextPane() override;
 

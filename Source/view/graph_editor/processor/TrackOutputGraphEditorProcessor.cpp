@@ -3,8 +3,8 @@
 #include "view/parameter_control/slider/MinimalSliderControl.h"
 #include "view/parameter_control/level_meter/MinimalLevelMeter.h"
 
-TrackOutputGraphEditorProcessor::TrackOutputGraphEditorProcessor(Project &project, TracksState &tracks, ViewState &view, const ValueTree &state, ConnectorDragListener &connectorDragListener) :
-        BaseGraphEditorProcessor(project, tracks, view, state, connectorDragListener) {
+TrackOutputGraphEditorProcessor::TrackOutputGraphEditorProcessor(SAPC &audioProcessorContainer, TracksState &tracks, ViewState &view, const ValueTree &state, ConnectorDragListener &connectorDragListener) :
+        BaseGraphEditorProcessor(audioProcessorContainer, tracks, view, state, connectorDragListener) {
 }
 
 TrackOutputGraphEditorProcessor::~TrackOutputGraphEditorProcessor() {

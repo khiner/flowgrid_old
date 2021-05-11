@@ -2,6 +2,7 @@
 
 #include "Push2ComponentBase.h"
 #include "Push2Label.h"
+#include "state/Project.h"
 
 class Push2ProcessorSelector : public Push2ComponentBase {
     class ProcessorSelectorRow : public Component {
@@ -70,6 +71,7 @@ public:
     void updateEnabledPush2Buttons() override;
 
 private:
+    Project &project;
     KnownPluginList::PluginTree rootTree;
     std::unique_ptr<ProcessorSelectorRow> topProcessorSelector;
     std::unique_ptr<ProcessorSelectorRow> bottomProcessorSelector;

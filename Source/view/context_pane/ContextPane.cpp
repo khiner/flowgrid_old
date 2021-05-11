@@ -2,8 +2,8 @@
 
 #include "state/Identifiers.h"
 
-ContextPane::ContextPane(Project &project)
-        : tracks(project.getTracks()), view(project.getView()) {
+ContextPane::ContextPane(TracksState &tracks, ViewState &view)
+        : tracks(tracks), view(view) {
     tracks.addListener(this);
     view.addListener(this);
     cellPath.addRoundedRectangle(Rectangle<int>(cellWidth, cellHeight).reduced(2), 3);

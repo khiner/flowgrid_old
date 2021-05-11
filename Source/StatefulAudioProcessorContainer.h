@@ -46,3 +46,5 @@ public:
 
     ValueTree copyProcessor(ValueTree &fromProcessor) const;
 };
+
+using SAPC = StatefulAudioProcessorContainer;

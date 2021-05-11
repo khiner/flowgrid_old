@@ -1,13 +1,12 @@
 #pragma once
 
-#include "state/Project.h"
 #include "view/graph_editor/ConnectorDragListener.h"
 #include "view/graph_editor/GraphEditorChannel.h"
 #include "StatefulAudioProcessorContainer.h"
 
 class BaseGraphEditorProcessor : public Component, public ValueTree::Listener {
 public:
-    BaseGraphEditorProcessor(Project &project, TracksState &tracks, ViewState &view,
+    BaseGraphEditorProcessor(StatefulAudioProcessorContainer &audioProcessorContainer, TracksState &tracks, ViewState &view,
                              const ValueTree &state, ConnectorDragListener &connectorDragListener);
 
     ~BaseGraphEditorProcessor() override;
@@ -100,7 +99,6 @@ private:
     ViewState &view;
     ConnectorDragListener &connectorDragListener;
     StatefulAudioProcessorContainer &audioProcessorContainer;
-    PluginManager &pluginManager;
 
     GraphEditorChannel *findChannelWithState(const ValueTree &state) {
         for (auto *channel : channels)

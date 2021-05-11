@@ -3,8 +3,6 @@
 #include "StatefulAudioProcessorContainer.h"
 #include "TracksState.h"
 
-using SAPC = StatefulAudioProcessorContainer;
-
 class ConnectionsState : public Stateful {
 public:
     explicit ConnectionsState(StatefulAudioProcessorContainer &audioProcessorContainer, TracksState &tracks);

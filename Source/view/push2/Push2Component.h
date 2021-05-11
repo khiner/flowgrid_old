@@ -6,6 +6,7 @@
 #include "Push2ProcessorSelector.h"
 #include "Push2MixerView.h"
 #include "Push2NoteModePadLedManager.h"
+#include "state/Project.h"
 
 class Push2Component :
         public Timer,
@@ -56,9 +57,8 @@ public:
     void updateEnabledPush2Buttons() override;
 
 private:
-    TracksState &tracks;
+    Project &project;
     ConnectionsState &connections;
-    ViewState &view;
 
     Push2DisplayBridge displayBridge;
     StatefulAudioProcessorContainer &audioProcessorContainer;

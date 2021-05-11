@@ -1,8 +1,8 @@
 #include "BaseGraphEditorProcessor.h"
 
-BaseGraphEditorProcessor::BaseGraphEditorProcessor(Project &project, TracksState &tracks, ViewState &view, const ValueTree &state, ConnectorDragListener &connectorDragListener)
+BaseGraphEditorProcessor::BaseGraphEditorProcessor(SAPC &audioProcessorContainer, TracksState &tracks, ViewState &view, const ValueTree &state, ConnectorDragListener &connectorDragListener)
         : state(state), tracks(tracks), view(view),
-          connectorDragListener(connectorDragListener), audioProcessorContainer(project), pluginManager(project.getPluginManager()) {
+          connectorDragListener(connectorDragListener), audioProcessorContainer(audioProcessorContainer) {
     this->state.addListener(this);
 
     for (auto child : state) {
@@ -49,16 +49,11 @@ void BaseGraphEditorProcessor::resized() {
 juce::Point<float> BaseGraphEditorProcessor::getConnectorDirectionVector(bool isInput) const {
     bool isLeftToRight = TracksState::isProcessorLeftToRightFlowing(getState());
     if (isInput) {
-        if (isLeftToRight)
-            return {-1, 0};
-        else
-            return {0, -1};
-    } else {
-        if (isLeftToRight)
-            return {1, 0};
-        else
-            return {0, 1};
+        if (isLeftToRight) return {-1, 0};
+        return {0, -1};
     }
+    if (isLeftToRight) return {1, 0};
+    return {0, 1};
 }
 
 Rectangle<int> BaseGraphEditorProcessor::getBoxBounds() const {
