@@ -111,10 +111,10 @@ void ContextPane::valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, i
 }
 
 void ContextPane::valueTreePropertyChanged(ValueTree &tree, const Identifier &i) {
-    if (tree.hasType(IDs::VIEW_STATE)) {
-        if (i == IDs::numProcessorSlots || i == IDs::numMasterProcessorSlots || i == IDs::gridViewTrackOffset || i == IDs::masterViewSlotOffset)
+    if (tree.hasType(ViewStateIDs::VIEW_STATE)) {
+        if (i == ViewStateIDs::numProcessorSlots || i == ViewStateIDs::numMasterProcessorSlots || i == ViewStateIDs::gridViewTrackOffset || i == ViewStateIDs::masterViewSlotOffset)
             resized();
-        else if (i == IDs::focusedTrackIndex || i == IDs::focusedProcessorSlot || i == IDs::gridViewSlotOffset)
+        else if (i == ViewStateIDs::focusedTrackIndex || i == ViewStateIDs::focusedProcessorSlot || i == ViewStateIDs::gridViewSlotOffset)
             repaint();
     } else if (i == IDs::selectedSlotsMask) {
         repaint();

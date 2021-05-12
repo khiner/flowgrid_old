@@ -325,11 +325,11 @@ void GraphEditorPanel::showPopupMenu(const ValueTree &track, int slot) {
 }
 
 void GraphEditorPanel::valueTreePropertyChanged(ValueTree &tree, const Identifier &i) {
-    if ((tree.hasType(IDs::PROCESSOR) && i == IDs::processorSlot) || i == IDs::gridViewSlotOffset) {
+    if ((tree.hasType(IDs::PROCESSOR) && i == IDs::processorSlot) || i == ViewStateIDs::gridViewSlotOffset) {
         connectors->updateConnectors();
-    } else if (i == IDs::gridViewTrackOffset || i == IDs::masterViewSlotOffset) {
+    } else if (i == ViewStateIDs::gridViewTrackOffset || i == ViewStateIDs::masterViewSlotOffset) {
         resized();
-    } else if (i == IDs::focusedPane) {
+    } else if (i == ViewStateIDs::focusedPane) {
         unfocusOverlay.setVisible(!view.isGridPaneFocused());
         unfocusOverlay.toFront(false);
     } else if (i == IDs::pluginWindowType) {

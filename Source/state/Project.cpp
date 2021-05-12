@@ -47,7 +47,7 @@ Project::~Project() {
 void Project::loadFromState(const ValueTree &newState) {
     clear();
 
-    view.loadFromState(newState.getChildWithName(IDs::VIEW_STATE));
+    view.loadFromState(newState.getChildWithName(ViewStateIDs::VIEW_STATE));
 
     const String &inputDeviceName = newState.getChildWithName(IDs::INPUT)[IDs::deviceName];
     const String &outputDeviceName = newState.getChildWithName(IDs::OUTPUT)[IDs::deviceName];

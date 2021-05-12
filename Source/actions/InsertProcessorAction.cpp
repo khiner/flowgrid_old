@@ -50,18 +50,18 @@ InsertProcessorAction::SetProcessorSlotAction::AddProcessorRowAction::AddProcess
 bool InsertProcessorAction::SetProcessorSlotAction::AddProcessorRowAction::perform() {
     const auto &track = tracks.getTrack(trackIndex);
     if (TracksState::isMasterTrack(track))
-        view.getState().setProperty(IDs::numMasterProcessorSlots, view.getNumMasterProcessorSlots() + 1, nullptr);
+        view.getState().setProperty(ViewStateIDs::numMasterProcessorSlots, view.getNumMasterProcessorSlots() + 1, nullptr);
     else
-        view.getState().setProperty(IDs::numProcessorSlots, view.getNumTrackProcessorSlots() + 1, nullptr);
+        view.getState().setProperty(ViewStateIDs::numProcessorSlots, view.getNumTrackProcessorSlots() + 1, nullptr);
     return true;
 }
 
 bool InsertProcessorAction::SetProcessorSlotAction::AddProcessorRowAction::undo() {
     const auto &track = tracks.getTrack(trackIndex);
     if (TracksState::isMasterTrack(track))
-        view.getState().setProperty(IDs::numMasterProcessorSlots, view.getNumMasterProcessorSlots() - 1, nullptr);
+        view.getState().setProperty(ViewStateIDs::numMasterProcessorSlots, view.getNumMasterProcessorSlots() - 1, nullptr);
     else
-        view.getState().setProperty(IDs::numProcessorSlots, view.getNumTrackProcessorSlots() - 1, nullptr);
+        view.getState().setProperty(ViewStateIDs::numProcessorSlots, view.getNumTrackProcessorSlots() - 1, nullptr);
     return true;
 }
 

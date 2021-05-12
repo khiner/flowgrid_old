@@ -70,7 +70,7 @@ void Push2TrackManagingView::valueTreePropertyChanged(ValueTree &tree, const Ide
         } else if (i == IDs::selected && tree[IDs::selected]) {
             trackSelected(tree);
         }
-    } else if (i == IDs::gridViewTrackOffset) {
+    } else if (i == ViewStateIDs::gridViewTrackOffset) {
         updateEnabledPush2Buttons();
     }
 }

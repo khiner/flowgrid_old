@@ -11,7 +11,7 @@ GraphEditorProcessorLane::GraphEditorProcessorLane(Project &project, const Value
     rebuildObjects();
     view.addListener(this);
     // TODO shouldn't need to do this
-    valueTreePropertyChanged(view.getState(), isMasterTrack() ? IDs::numMasterProcessorSlots : IDs::numProcessorSlots);
+    valueTreePropertyChanged(view.getState(), isMasterTrack() ? ViewStateIDs::numMasterProcessorSlots : ViewStateIDs::numProcessorSlots);
     addAndMakeVisible(laneDragRectangle);
     setInterceptsMouseClicks(false, false);
 }
@@ -96,13 +96,13 @@ void GraphEditorProcessorLane::valueTreePropertyChanged(ValueTree &tree, const I
     if (isSuitableType(tree) && i == IDs::processorSlot) {
         resized();
     } else if (i == IDs::selected || i == IDs::colour ||
-               i == IDs::selectedSlotsMask || i == IDs::focusedTrackIndex || i == IDs::focusedProcessorSlot ||
-               i == IDs::gridViewTrackOffset) {
+               i == IDs::selectedSlotsMask || i == ViewStateIDs::focusedTrackIndex || i == ViewStateIDs::focusedProcessorSlot ||
+               i == ViewStateIDs::gridViewTrackOffset) {
         updateProcessorSlotColours();
-    } else if (i == IDs::gridViewSlotOffset || (i == IDs::masterViewSlotOffset && isMasterTrack())) {
+    } else if (i == ViewStateIDs::gridViewSlotOffset || (i == ViewStateIDs::masterViewSlotOffset && isMasterTrack())) {
         resized();
         updateProcessorSlotColours();
-    } else if (i == IDs::numProcessorSlots || (i == IDs::numMasterProcessorSlots && isMasterTrack())) {
+    } else if (i == ViewStateIDs::numProcessorSlots || (i == ViewStateIDs::numMasterProcessorSlots && isMasterTrack())) {
         auto numSlots = getNumSlots();
         while (processorSlotRectangles.size() < numSlots) {
             auto *rect = new DrawableRectangle();

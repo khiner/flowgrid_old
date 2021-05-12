@@ -4,9 +4,25 @@
 #include "Stateful.h"
 #include "Identifiers.h"
 
+namespace ViewStateIDs {
+#define ID(name) const juce::Identifier name(#name);
+    ID(VIEW_STATE)
+    ID(controlMode)
+    ID(focusedPane)
+    ID(focusedTrackIndex)
+    ID(focusedProcessorSlot)
+    ID(gridViewSlotOffset)
+    ID(gridViewTrackOffset)
+    ID(masterViewSlotOffset)
+    ID(numMasterProcessorSlots)
+    ID(numProcessorSlots)
+#undef ID
+}
+
 class ViewState : public Stateful {
 public:
-    explicit ViewState(UndoManager &undoManager);
+
+explicit ViewState(UndoManager &undoManager);
 
     ValueTree &getState() override { return viewState; }
 
@@ -37,15 +53,15 @@ public:
     }
 
     void setMasterViewSlotOffset(int masterViewSlotOffset) {
-        viewState.setProperty(IDs::masterViewSlotOffset, masterViewSlotOffset, &undoManager);
+        viewState.setProperty(ViewStateIDs::masterViewSlotOffset, masterViewSlotOffset, &undoManager);
     }
 
     void setGridViewSlotOffset(int gridViewSlotOffset) {
-        viewState.setProperty(IDs::gridViewSlotOffset, gridViewSlotOffset, &undoManager);
+        viewState.setProperty(ViewStateIDs::gridViewSlotOffset, gridViewSlotOffset, &undoManager);
     }
 
     void setGridViewTrackOffset(int gridViewTrackOffset) {
-        viewState.setProperty(IDs::gridViewTrackOffset, gridViewTrackOffset, &undoManager);
+        viewState.setProperty(ViewStateIDs::gridViewTrackOffset, gridViewTrackOffset, &undoManager);
     }
 
     void updateViewTrackOffsetToInclude(int trackIndex, int numNonMasterTracks);
@@ -53,38 +69,38 @@ public:
     // TODO This and TracksState::isProcessorSlitInView are similar
     void updateViewSlotOffsetToInclude(int processorSlot, bool isMasterTrack);
 
-    int getFocusedTrackIndex() const { return viewState[IDs::focusedTrackIndex]; }
+    int getFocusedTrackIndex() const { return viewState[ViewStateIDs::focusedTrackIndex]; }
 
-    int getFocusedProcessorSlot() const { return viewState[IDs::focusedProcessorSlot]; }
+    int getFocusedProcessorSlot() const { return viewState[ViewStateIDs::focusedProcessorSlot]; }
 
     juce::Point<int> getFocusedTrackAndSlot() const;
 
-    int getNumTrackProcessorSlots() const { return viewState[IDs::numProcessorSlots]; }
+    int getNumTrackProcessorSlots() const { return viewState[ViewStateIDs::numProcessorSlots]; }
 
-    int getNumMasterProcessorSlots() const { return viewState[IDs::numMasterProcessorSlots]; }
+    int getNumMasterProcessorSlots() const { return viewState[ViewStateIDs::numMasterProcessorSlots]; }
 
-    int getGridViewTrackOffset() const { return viewState[IDs::gridViewTrackOffset]; }
+    int getGridViewTrackOffset() const { return viewState[ViewStateIDs::gridViewTrackOffset]; }
 
-    int getGridViewSlotOffset() const { return viewState[IDs::gridViewSlotOffset]; }
+    int getGridViewSlotOffset() const { return viewState[ViewStateIDs::gridViewSlotOffset]; }
 
-    int getMasterViewSlotOffset() const { return viewState[IDs::masterViewSlotOffset]; }
+    int getMasterViewSlotOffset() const { return viewState[ViewStateIDs::masterViewSlotOffset]; }
 
-    bool isInNoteMode() const { return viewState[IDs::controlMode] == noteControlMode; }
+    bool isInNoteMode() const { return viewState[ViewStateIDs::controlMode] == noteControlMode; }
 
-    bool isInSessionMode() const { return viewState[IDs::controlMode] == sessionControlMode; }
+    bool isInSessionMode() const { return viewState[ViewStateIDs::controlMode] == sessionControlMode; }
 
-    bool isGridPaneFocused() const { return viewState[IDs::focusedPane] == gridPaneName; }
+    bool isGridPaneFocused() const { return viewState[ViewStateIDs::focusedPane] == gridPaneName; }
 
-    void setNoteMode() { viewState.setProperty(IDs::controlMode, noteControlMode, nullptr); }
+    void setNoteMode() { viewState.setProperty(ViewStateIDs::controlMode, noteControlMode, nullptr); }
 
-    void setSessionMode() { viewState.setProperty(IDs::controlMode, sessionControlMode, nullptr); }
+    void setSessionMode() { viewState.setProperty(ViewStateIDs::controlMode, sessionControlMode, nullptr); }
 
-    void focusOnGridPane() { viewState.setProperty(IDs::focusedPane, gridPaneName, nullptr); }
+    void focusOnGridPane() { viewState.setProperty(ViewStateIDs::focusedPane, gridPaneName, nullptr); }
 
-    void focusOnEditorPane() { viewState.setProperty(IDs::focusedPane, editorPaneName, nullptr); }
+    void focusOnEditorPane() { viewState.setProperty(ViewStateIDs::focusedPane, editorPaneName, nullptr); }
 
     void focusOnTrackIndex(const int trackIndex) {
-        viewState.setProperty(IDs::focusedTrackIndex, trackIndex, nullptr);
+        viewState.setProperty(ViewStateIDs::focusedTrackIndex, trackIndex, nullptr);
     }
 
     void focusOnProcessorSlot(const juce::Point<int> slot) {
@@ -92,9 +108,9 @@ public:
         focusOnTrackIndex(slot.x);
         if (slot.x != currentlyFocusedTrackAndSlot.x && slot.y == currentlyFocusedTrackAndSlot.y) {
             // Different track but same slot selected - still send out the message
-            viewState.sendPropertyChangeMessage(IDs::focusedProcessorSlot);
+            viewState.sendPropertyChangeMessage(ViewStateIDs::focusedProcessorSlot);
         } else {
-            viewState.setProperty(IDs::focusedProcessorSlot, slot.y, nullptr);
+            viewState.setProperty(ViewStateIDs::focusedProcessorSlot, slot.y, nullptr);
         }
     }
 

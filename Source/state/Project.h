@@ -220,6 +220,7 @@ private:
 
     AudioDeviceManager &deviceManager;
 
+    // TODO next up:
     StatefulAudioProcessorContainer *statefulAudioProcessorContainer{};
     juce::Point<int> selectionStartTrackAndSlot = {0, 0};
 

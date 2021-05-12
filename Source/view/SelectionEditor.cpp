@@ -121,15 +121,15 @@ void SelectionEditor::valueTreeChildRemoved(ValueTree &exParent, ValueTree &chil
 }
 
 void SelectionEditor::valueTreePropertyChanged(ValueTree &tree, const Identifier &i) {
-    if (i == IDs::focusedTrackIndex) {
+    if (i == ViewStateIDs::focusedTrackIndex) {
         addProcessorButton.setVisible(tracks.getFocusedTrack().isValid());
         refreshProcessors();
     } else if (i == IDs::processorInitialized) {
         refreshProcessors(); // TODO only the new processor
-    } else if (i == IDs::focusedProcessorSlot) {
+    } else if (i == ViewStateIDs::focusedProcessorSlot) {
         refreshProcessors({}, true);
-    } else if (i == IDs::numProcessorSlots || i == IDs::numMasterProcessorSlots) {
-        int numProcessorSlots = jmax(int(tree[IDs::numProcessorSlots]), int(tree[IDs::numMasterProcessorSlots]));
+    } else if (i == ViewStateIDs::numProcessorSlots || i == ViewStateIDs::numMasterProcessorSlots) {
+        int numProcessorSlots = jmax(int(tree[ViewStateIDs::numProcessorSlots]), int(tree[ViewStateIDs::numMasterProcessorSlots]));
         while (processorEditors.size() < numProcessorSlots) {
             auto *processorEditor = new ProcessorEditor();
             processorEditorsComponent.addChildComponent(processorEditor);
@@ -138,7 +138,7 @@ void SelectionEditor::valueTreePropertyChanged(ValueTree &tree, const Identifier
         processorEditors.removeLast(processorEditors.size() - numProcessorSlots);
     } else if (i == IDs::processorSlot) {
         refreshProcessors();
-    } else if (i == IDs::focusedPane) {
+    } else if (i == ViewStateIDs::focusedPane) {
         unfocusOverlay.setVisible(view.isGridPaneFocused());
         unfocusOverlay.toFront(false);
     }

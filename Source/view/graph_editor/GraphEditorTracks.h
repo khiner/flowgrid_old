@@ -112,7 +112,7 @@ private:
 
 
     void valueTreePropertyChanged(ValueTree &tree, const juce::Identifier &i) override {
-        if (i == IDs::gridViewTrackOffset || i == IDs::masterViewSlotOffset)
+        if (i == ViewStateIDs::gridViewTrackOffset || i == ViewStateIDs::masterViewSlotOffset)
             resized();
     }
 

@@ -235,11 +235,11 @@ void Push2Component::showChild(Push2ComponentBase *child) {
 }
 
 void Push2Component::valueTreePropertyChanged(ValueTree &tree, const Identifier &i) {
-    if (i == IDs::focusedTrackIndex) {
+    if (i == ViewStateIDs::focusedTrackIndex) {
         updatePush2SelectionDependentButtons();
-    } else if (i == IDs::focusedProcessorSlot || i == IDs::processorInitialized) {
+    } else if (i == ViewStateIDs::focusedProcessorSlot || i == IDs::processorInitialized) {
         updateFocusedProcessor();
-    } else if (i == IDs::controlMode) {
+    } else if (i == ViewStateIDs::controlMode) {
         updateEnabledPush2Buttons();
         updatePush2NoteModePadLedManagerVisibility();
     }
