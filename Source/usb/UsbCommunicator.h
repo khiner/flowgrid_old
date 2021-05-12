@@ -2,8 +2,6 @@
 
 #include <atomic>
 #include <thread>
-#include <cassert>
-#include <iostream>
 
 #include <juce_events/juce_events.h>
 
@@ -34,18 +32,11 @@ protected:
     static libusb_transfer *allocateAndPrepareTransferChunk(libusb_device_handle *handle, UsbCommunicator *instance,
                                                             unsigned char *buffer, int bufferSize, unsigned char endpoint);
 
-    /*!
-     *  Initiate the send process
-     */
     virtual void startSending() = 0;
 
-    /*!
-     *  Send the next slice of data using the provided transfer struct
-     */
     virtual void sendNextSlice(libusb_transfer *transfer) = 0;
 
     /*!
-     *  Callback for when a full frame has been sent
      *  Note that there's no real need of doing double buffering since the
      *  display deals nicely with it already
      */

@@ -64,7 +64,6 @@ void UsbCommunicator::onTransferFinished(libusb_transfer *transfer) {
 void UsbCommunicator::pollUsbForEvents() {
     static struct timeval timeout_500ms = {0, 500000};
     int terminate_main_loop = 0;
-
     while (!terminate_main_loop && !terminate.load()) {
         if (libusb_handle_events_timeout_completed(nullptr, &timeout_500ms, &terminate_main_loop) < 0) {
             assert(false);
@@ -75,8 +74,7 @@ void UsbCommunicator::pollUsbForEvents() {
 libusb_transfer *UsbCommunicator::allocateAndPrepareTransferChunk(libusb_device_handle *handle, UsbCommunicator *instance, unsigned char *buffer, int bufferSize, const unsigned char endpoint) {
     // Allocate a transfer structure
     auto transfer = libusb_alloc_transfer(0);
-    if (!transfer)
-        return nullptr;
+    if (!transfer) return nullptr;
 
     libusb_fill_bulk_transfer(transfer, handle, endpoint, buffer, bufferSize,
                               onTransferFinishedStatic, instance, 1000);
@@ -90,7 +88,6 @@ bool UsbCommunicator::findDeviceHandleAndStartPolling() {
 
     // Look for the one matching Push 2's descriptors
     libusb_device *device;
-
     int errorCode;
     for (int i = 0; (device = devices[i]) != nullptr; i++) {
         struct libusb_device_descriptor descriptor{};

@@ -1,9 +1,21 @@
-// This file is included in the libusb library as "config.h".
-// I couldn't figure out a better way for it to be found than
-// to just put it at the top-level.
-// I'm sure there are better ways to handle this!
 #if defined(__APPLE__)
 
-#include "usb/libusb/config_xcode.h"
+/* Default visibility */
+#define DEFAULT_VISIBILITY /**/
+
+/* Define to 1 if you have the <poll.h> header file. */
+#define HAVE_POLL_H 1
+
+/* Define to 1 if you have the <sys/time.h> header file. */
+#define HAVE_SYS_TIME_H 1
+
+/* Darwin backend */
+#define OS_DARWIN 1
+
+/* type of second poll() argument */
+#define POLL_NFDS_TYPE nfds_t
+
+/* Use POSIX Threads */
+#define THREADS_POSIX 1
 
 #endif
