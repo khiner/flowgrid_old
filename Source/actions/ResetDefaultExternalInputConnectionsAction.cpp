@@ -74,7 +74,7 @@ bool ResetDefaultExternalInputConnectionsAction::isAvailableForExternalInput(con
     const auto &incomingConnections = connections.getConnectionsForNode(processor, connectionType, true, false);
     const auto defaultInputNodeId = input.getDefaultInputNodeIdForConnectionType(connectionType);
     for (const auto &incomingConnection : incomingConnections) {
-        if (TracksState::getNodeIdForProcessor(incomingConnection.getChildWithName(IDs::SOURCE)) != defaultInputNodeId)
+        if (TracksState::getNodeIdForProcessor(incomingConnection.getChildWithName(ConnectionsStateIDs::SOURCE)) != defaultInputNodeId)
             return false;
     }
     return true;
@@ -85,8 +85,8 @@ bool ResetDefaultExternalInputConnectionsAction::areProcessorsConnected(AudioPro
 
     Array<AudioProcessorGraph::NodeID> exploredDownstreamNodes;
     for (const auto &connection : connections.getState()) {
-        if (TracksState::getNodeIdForProcessor(connection.getChildWithName(IDs::SOURCE)) == upstreamNodeId) {
-            auto otherDownstreamNodeId = TracksState::getNodeIdForProcessor(connection.getChildWithName(IDs::DESTINATION));
+        if (TracksState::getNodeIdForProcessor(connection.getChildWithName(ConnectionsStateIDs::SOURCE)) == upstreamNodeId) {
+            auto otherDownstreamNodeId = TracksState::getNodeIdForProcessor(connection.getChildWithName(ConnectionsStateIDs::DESTINATION));
             if (!exploredDownstreamNodes.contains(otherDownstreamNodeId)) {
                 if (otherDownstreamNodeId == downstreamNodeId || areProcessorsConnected(otherDownstreamNodeId, downstreamNodeId))
                     return true;

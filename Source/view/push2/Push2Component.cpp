@@ -248,7 +248,7 @@ void Push2Component::valueTreePropertyChanged(ValueTree &tree, const Identifier 
 void Push2Component::valueTreeChildAdded(ValueTree &parent, ValueTree &child) {
     if (child.hasType(IDs::TRACK)) {
         updatePush2SelectionDependentButtons();
-    } else if (child.hasType(IDs::CONNECTION)) {
+    } else if (child.hasType(ConnectionsStateIDs::CONNECTION)) {
         updatePush2NoteModePadLedManagerVisibility();
     }
 }
@@ -263,7 +263,7 @@ void Push2Component::valueTreeChildRemoved(ValueTree &exParent, ValueTree &child
     } else if (child.hasType(IDs::PROCESSOR)) {
         updateFocusedProcessor();
         updatePush2SelectionDependentButtons();
-    } else if (child.hasType(IDs::CONNECTION)) {
+    } else if (child.hasType(ConnectionsStateIDs::CONNECTION)) {
         updatePush2NoteModePadLedManagerVisibility();
     }
 }

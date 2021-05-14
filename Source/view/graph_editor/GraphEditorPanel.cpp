@@ -360,7 +360,7 @@ void GraphEditorPanel::valueTreePropertyChanged(ValueTree &tree, const Identifie
 }
 
 void GraphEditorPanel::valueTreeChildAdded(ValueTree &parent, ValueTree &child) {
-    if (child.hasType(IDs::TRACK) || child.hasType(IDs::PROCESSOR) || child.hasType(IDs::CONNECTION)) {
+    if (child.hasType(IDs::TRACK) || child.hasType(IDs::PROCESSOR) || child.hasType(ConnectionsStateIDs::CONNECTION)) {
         connectors->updateConnectors();
     }
 }
@@ -378,7 +378,7 @@ void GraphEditorPanel::valueTreeChildRemoved(ValueTree &parent, ValueTree &child
         } else {
             connectors->updateConnectors();
         }
-    } else if (child.hasType(IDs::CONNECTION)) {
+    } else if (child.hasType(ConnectionsStateIDs::CONNECTION)) {
         connectors->updateConnectors();
     }
 }

@@ -7,7 +7,7 @@ DisconnectProcessorAction::DisconnectProcessorAction(ConnectionsState &connectio
         : CreateOrDeleteConnectionsAction(connections) {
     const auto nodeConnections = connections.getConnectionsForNode(processor, connectionType, incoming, outgoing);
     for (const auto &connection : nodeConnections) {
-        const auto destinationNodeId = TracksState::getNodeIdForProcessor(connection.getChildWithName(IDs::DESTINATION));
+        const auto destinationNodeId = TracksState::getNodeIdForProcessor(connection.getChildWithName(ConnectionsStateIDs::DESTINATION));
         if (excludingRemovalTo != destinationNodeId) {
             coalesceWith(DeleteConnectionAction(connection, custom, defaults, connections));
         }

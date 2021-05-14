@@ -46,12 +46,5 @@ namespace IDs {
     ID(CHANNEL)
     ID(channelIndex)
     ID(abbreviatedName)
-
-    ID(CONNECTIONS)
-    ID(CONNECTION)
-    ID(SOURCE)
-    ID(DESTINATION)
-    ID(channel)
-    ID(isCustomConnection)
 #undef ID
 }

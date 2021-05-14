@@ -13,19 +13,19 @@ CreateConnectionAction::CreateConnectionAction(const AudioProcessorGraph::Connec
 }
 
 ValueTree CreateConnectionAction::stateForConnection(const AudioProcessorGraph::Connection &connection, bool isDefault) {
-    ValueTree connectionState(IDs::CONNECTION);
-    ValueTree source(IDs::SOURCE);
+    ValueTree connectionState(ConnectionsStateIDs::CONNECTION);
+    ValueTree source(ConnectionsStateIDs::SOURCE);
     source.setProperty(IDs::nodeId, int(connection.source.nodeID.uid), nullptr);
-    source.setProperty(IDs::channel, connection.source.channelIndex, nullptr);
+    source.setProperty(ConnectionsStateIDs::channel, connection.source.channelIndex, nullptr);
     connectionState.appendChild(source, nullptr);
 
-    ValueTree destination(IDs::DESTINATION);
+    ValueTree destination(ConnectionsStateIDs::DESTINATION);
     destination.setProperty(IDs::nodeId, int(connection.destination.nodeID.uid), nullptr);
-    destination.setProperty(IDs::channel, connection.destination.channelIndex, nullptr);
+    destination.setProperty(ConnectionsStateIDs::channel, connection.destination.channelIndex, nullptr);
     connectionState.appendChild(destination, nullptr);
 
     if (!isDefault) {
-        connectionState.setProperty(IDs::isCustomConnection, true, nullptr);
+        connectionState.setProperty(ConnectionsStateIDs::isCustomConnection, true, nullptr);
     }
 
     return connectionState;

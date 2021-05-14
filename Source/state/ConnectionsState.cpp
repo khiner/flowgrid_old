@@ -6,7 +6,7 @@ static bool canProcessorDefaultConnectTo(const ValueTree &processor, const Value
 }
 
 ConnectionsState::ConnectionsState(TracksState &tracks) : tracks(tracks) {
-    connections = ValueTree(IDs::CONNECTIONS);
+    connections = ValueTree(ConnectionsStateIDs::CONNECTIONS);
 }
 
 ValueTree ConnectionsState::findDefaultDestinationProcessor(const ValueTree &sourceProcessor, ConnectionType connectionType) {
@@ -49,7 +49,7 @@ ValueTree ConnectionsState::findDefaultDestinationProcessor(const ValueTree &sou
 
 bool ConnectionsState::isNodeConnected(AudioProcessorGraph::NodeID nodeId) const {
     for (const auto &connection : connections) {
-        if (TracksState::getNodeIdForProcessor(connection.getChildWithName(IDs::SOURCE)) == nodeId)
+        if (TracksState::getNodeIdForProcessor(connection.getChildWithName(ConnectionsStateIDs::SOURCE)) == nodeId)
             return true;
     }
     return false;
@@ -58,15 +58,15 @@ bool ConnectionsState::isNodeConnected(AudioProcessorGraph::NodeID nodeId) const
 Array<ValueTree> ConnectionsState::getConnectionsForNode(const ValueTree &processor, ConnectionType connectionType, bool incoming, bool outgoing, bool includeCustom, bool includeDefault) {
     Array<ValueTree> nodeConnections;
     for (const auto &connection : connections) {
-        if ((connection[IDs::isCustomConnection] && !includeCustom) || (!connection[IDs::isCustomConnection] && !includeDefault))
+        if ((connection[ConnectionsStateIDs::isCustomConnection] && !includeCustom) || (!connection[ConnectionsStateIDs::isCustomConnection] && !includeDefault))
             continue;
 
         int processorNodeId = int(TracksState::getNodeIdForProcessor(processor).uid);
         const auto &endpointType = connection.getChildWithProperty(IDs::nodeId, processorNodeId);
-        bool directionIsAcceptable = (incoming && endpointType.hasType(IDs::DESTINATION)) || (outgoing && endpointType.hasType(IDs::SOURCE));
+        bool directionIsAcceptable = (incoming && endpointType.hasType(ConnectionsStateIDs::DESTINATION)) || (outgoing && endpointType.hasType(ConnectionsStateIDs::SOURCE));
         bool typeIsAcceptable = connectionType == all ||
-                                (connectionType == audio && int(endpointType[IDs::channel]) != AudioProcessorGraph::midiChannelIndex) ||
-                                (connectionType == midi && int(endpointType[IDs::channel]) == AudioProcessorGraph::midiChannelIndex);
+                                (connectionType == audio && int(endpointType[ConnectionsStateIDs::channel]) != AudioProcessorGraph::midiChannelIndex) ||
+                                (connectionType == midi && int(endpointType[ConnectionsStateIDs::channel]) == AudioProcessorGraph::midiChannelIndex);
 
         if (directionIsAcceptable && typeIsAcceptable)
             nodeConnections.add(connection);

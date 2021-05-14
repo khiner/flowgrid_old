@@ -70,7 +70,7 @@ void Project::loadFromState(const ValueTree &newState) {
         AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, TRANS("Failed to open output device \"") + outputDeviceName + "\"", failureMessage);
 
     tracks.loadFromState(newState.getChildWithName(IDs::TRACKS));
-    connections.loadFromState(newState.getChildWithName(IDs::CONNECTIONS));
+    connections.loadFromState(newState.getChildWithName(ConnectionsStateIDs::CONNECTIONS));
     selectProcessor(tracks.getFocusedProcessor());
     undoManager.clearUndoHistory();
     sendChangeMessage();

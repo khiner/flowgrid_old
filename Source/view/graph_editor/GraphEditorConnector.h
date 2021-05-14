@@ -15,7 +15,7 @@ struct GraphEditorConnector : public Component, public SettableTooltipClient {
     const ValueTree &getState() const { return state; }
 
     bool isCustom() const {
-        return !state.isValid() || state[IDs::isCustomConnection];
+        return !state.isValid() || state[ConnectionsStateIDs::isCustomConnection];
     }
 
     void dragTo(const juce::Point<float> &position);

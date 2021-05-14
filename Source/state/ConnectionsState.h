@@ -3,6 +3,17 @@
 #include "TracksState.h"
 #include "ConnectionType.h"
 
+namespace ConnectionsStateIDs {
+#define ID(name) const juce::Identifier name(#name);
+    ID(CONNECTIONS)
+    ID(CONNECTION)
+    ID(SOURCE)
+    ID(DESTINATION)
+    ID(channel)
+    ID(isCustomConnection)
+#undef ID
+}
+
 class ConnectionsState : public Stateful {
 public:
     explicit ConnectionsState(TracksState &tracks);
@@ -22,10 +33,10 @@ public:
                                            bool includeCustom = true, bool includeDefault = true);
 
     static AudioProcessorGraph::Connection stateToConnection(const ValueTree &connectionState) {
-        const auto &sourceState = connectionState.getChildWithName(IDs::SOURCE);
-        const auto &destState = connectionState.getChildWithName(IDs::DESTINATION);
-        return {{TracksState::getNodeIdForProcessor(sourceState), int(sourceState[IDs::channel])},
-                {TracksState::getNodeIdForProcessor(destState),   int(destState[IDs::channel])}};
+        const auto &sourceState = connectionState.getChildWithName(ConnectionsStateIDs::SOURCE);
+        const auto &destState = connectionState.getChildWithName(ConnectionsStateIDs::DESTINATION);
+        return {{TracksState::getNodeIdForProcessor(sourceState), int(sourceState[ConnectionsStateIDs::channel])},
+                {TracksState::getNodeIdForProcessor(destState),   int(destState[ConnectionsStateIDs::channel])}};
     }
 
     ValueTree getConnectionMatching(const AudioProcessorGraph::Connection &connection) const {

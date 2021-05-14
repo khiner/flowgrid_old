@@ -151,8 +151,8 @@ bool ProcessorGraph::removeConnection(const AudioProcessorGraph::Connection &con
 
     undoManager.beginNewTransaction();
     bool removed = undoManager.perform(new DeleteConnectionAction(connectionState, true, true, connections));
-    if (removed && connectionState.hasProperty(IDs::isCustomConnection)) {
-        const auto &source = connectionState.getChildWithName(IDs::SOURCE);
+    if (removed && connectionState.hasProperty(ConnectionsStateIDs::isCustomConnection)) {
+        const auto &source = connectionState.getChildWithName(ConnectionsStateIDs::SOURCE);
         const auto &sourceProcessor = getProcessorStateForNodeId(TracksState::getNodeIdForProcessor(source));
         undoManager.perform(new UpdateProcessorDefaultConnectionsAction(sourceProcessor, false, connections, output, *this));
         undoManager.perform(new ResetDefaultExternalInputConnectionsAction(connections, tracks, input, *this));
@@ -208,7 +208,7 @@ void ProcessorGraph::valueTreePropertyChanged(ValueTree &tree, const Identifier 
 }
 
 void ProcessorGraph::valueTreeChildAdded(ValueTree &parent, ValueTree &child) {
-    if (child.hasType(IDs::CONNECTION)) {
+    if (child.hasType(ConnectionsStateIDs::CONNECTION)) {
         if (graphUpdatesArePaused)
             connectionsSincePause.addConnection(child);
         else
@@ -223,7 +223,7 @@ void ProcessorGraph::valueTreeChildAdded(ValueTree &parent, ValueTree &child) {
 }
 
 void ProcessorGraph::valueTreeChildRemoved(ValueTree &parent, ValueTree &child, int indexFromWhichChildWasRemoved) {
-    if (child.hasType(IDs::CONNECTION)) {
+    if (child.hasType(ConnectionsStateIDs::CONNECTION)) {
         if (graphUpdatesArePaused)
             connectionsSincePause.removeConnection(child);
         else
