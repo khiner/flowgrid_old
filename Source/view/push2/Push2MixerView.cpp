@@ -70,13 +70,13 @@ void Push2MixerView::trackRemoved(const ValueTree &track) {
 
 void Push2MixerView::valueTreePropertyChanged(ValueTree &tree, const Identifier &i) {
     Push2TrackManagingView::valueTreePropertyChanged(tree, i);
-    if (i == IDs::processorInitialized && tree[i])
+    if (i == TracksStateIDs::processorInitialized && tree[i])
         updateParameters();
 }
 
 void Push2MixerView::valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int index) {
     Push2TrackManagingView::valueTreeChildRemoved(exParent, child, index);
-    if (child.hasType(IDs::PROCESSOR)) {
+    if (child.hasType(TracksStateIDs::PROCESSOR)) {
         updateParameters();
     }
 }

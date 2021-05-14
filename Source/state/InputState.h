@@ -7,7 +7,6 @@
 #include "Stateful.h"
 #include "TracksState.h"
 #include "ConnectionType.h"
-#include "Identifiers.h"
 
 class InputState : public Stateful, private ValueTree::Listener {
 public:
@@ -22,11 +21,11 @@ public:
     void initializeDefault();
 
     ValueTree getAudioInputProcessorState() const {
-        return input.getChildWithProperty(IDs::name, pluginManager.getAudioInputDescription().name);
+        return input.getChildWithProperty(TracksStateIDs::name, pluginManager.getAudioInputDescription().name);
     }
 
     ValueTree getPush2MidiInputProcessor() const {
-        return input.getChildWithProperty(IDs::deviceName, Push2MidiDevice::getDeviceName());
+        return input.getChildWithProperty(TracksStateIDs::deviceName, Push2MidiDevice::getDeviceName());
     }
 
     AudioProcessorGraph::NodeID getDefaultInputNodeIdForConnectionType(ConnectionType connectionType) const {
@@ -45,20 +44,20 @@ private:
     AudioDeviceManager &deviceManager;
 
     void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override {
-        if (child[IDs::name] == InternalPluginFormat::getMidiInputProcessorName() && !deviceManager.isMidiInputEnabled(child[IDs::deviceName]))
-            deviceManager.setMidiInputEnabled(child[IDs::deviceName], true);
+        if (child[TracksStateIDs::name] == InternalPluginFormat::getMidiInputProcessorName() && !deviceManager.isMidiInputEnabled(child[TracksStateIDs::deviceName]))
+            deviceManager.setMidiInputEnabled(child[TracksStateIDs::deviceName], true);
     }
 
     void valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int) override {
-        if (child[IDs::name] == InternalPluginFormat::getMidiInputProcessorName() && deviceManager.isMidiInputEnabled(child[IDs::deviceName]))
-            deviceManager.setMidiInputEnabled(child[IDs::deviceName], false);
+        if (child[TracksStateIDs::name] == InternalPluginFormat::getMidiInputProcessorName() && deviceManager.isMidiInputEnabled(child[TracksStateIDs::deviceName]))
+            deviceManager.setMidiInputEnabled(child[TracksStateIDs::deviceName], false);
     }
 
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {
-        if (i == IDs::deviceName && tree == input) {
+        if (i == TracksStateIDs::deviceName && tree == input) {
             AudioDeviceManager::AudioDeviceSetup config;
             deviceManager.getAudioDeviceSetup(config);
-            config.inputDeviceName = tree[IDs::deviceName];
+            config.inputDeviceName = tree[TracksStateIDs::deviceName];
             deviceManager.setAudioDeviceSetup(config, true);
         }
     }

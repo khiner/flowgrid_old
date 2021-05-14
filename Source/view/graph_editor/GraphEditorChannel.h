@@ -16,15 +16,15 @@ struct GraphEditorChannel : public Component, public SettableTooltipClient, priv
 
     ValueTree getProcessor() const { return state.getParent().getParent(); }
 
-    int getChannelIndex() const { return state[IDs::channelIndex]; }
+    int getChannelIndex() const { return state[TracksStateIDs::channelIndex]; }
 
     bool isMasterTrack() const { return TracksState::isMasterTrack(getTrack()); }
 
-    bool isInput() const { return state.getParent().hasType(IDs::INPUT_CHANNELS); }
+    bool isInput() const { return state.getParent().hasType(TracksStateIDs::INPUT_CHANNELS); }
 
     bool isMidi() const { return getChannelIndex() == AudioProcessorGraph::midiChannelIndex; }
 
-    bool allowDefaultConnections() const { return getProcessor()[IDs::allowDefaultConnections]; }
+    bool allowDefaultConnections() const { return getProcessor()[TracksStateIDs::allowDefaultConnections]; }
 
     AudioProcessorGraph::NodeAndChannel getNodeAndChannel() const;
 

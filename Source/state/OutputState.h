@@ -5,7 +5,7 @@
 #include "PluginManager.h"
 #include "Stateful.h"
 #include "ConnectionType.h"
-#include "Identifiers.h"
+#include "state/TracksState.h"
 
 // TODO Should input/output be combined into a single IOState? (Almost all behavior is symmetrical.)
 class OutputState : public Stateful, private ValueTree::Listener {
@@ -24,7 +24,7 @@ public:
     void initializeDefault();
 
     ValueTree getAudioOutputProcessorState() const {
-        return output.getChildWithProperty(IDs::name, pluginManager.getAudioOutputDescription().name);
+        return output.getChildWithProperty(TracksStateIDs::name, pluginManager.getAudioOutputDescription().name);
     }
 
     // Returns output processors to delete
@@ -37,22 +37,22 @@ private:
     AudioDeviceManager &deviceManager;
 
     void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override {
-        if (child[IDs::name] == InternalPluginFormat::getMidiOutputProcessorName() &&
-            !deviceManager.isMidiOutputEnabled(child[IDs::deviceName]))
-            deviceManager.setMidiOutputEnabled(child[IDs::deviceName], true);
+        if (child[TracksStateIDs::name] == InternalPluginFormat::getMidiOutputProcessorName() &&
+            !deviceManager.isMidiOutputEnabled(child[TracksStateIDs::deviceName]))
+            deviceManager.setMidiOutputEnabled(child[TracksStateIDs::deviceName], true);
     }
 
     void valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int) override {
-        if (child[IDs::name] == InternalPluginFormat::getMidiOutputProcessorName() &&
-            deviceManager.isMidiOutputEnabled(child[IDs::deviceName]))
-            deviceManager.setMidiOutputEnabled(child[IDs::deviceName], false);
+        if (child[TracksStateIDs::name] == InternalPluginFormat::getMidiOutputProcessorName() &&
+            deviceManager.isMidiOutputEnabled(child[TracksStateIDs::deviceName]))
+            deviceManager.setMidiOutputEnabled(child[TracksStateIDs::deviceName], false);
     }
 
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {
-        if (i == IDs::deviceName && tree == output) {
+        if (i == TracksStateIDs::deviceName && tree == output) {
             AudioDeviceManager::AudioDeviceSetup config;
             deviceManager.getAudioDeviceSetup(config);
-            config.outputDeviceName = tree[IDs::deviceName];
+            config.outputDeviceName = tree[TracksStateIDs::deviceName];
             deviceManager.setAudioDeviceSetup(config, true);
         }
     }

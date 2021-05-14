@@ -17,16 +17,16 @@ public:
 
     bool isMasterTrack() const { return TracksState::isMasterTrack(getTrack()); }
 
-    int getNumSlots() const { return view.getNumSlotsForTrack(getTrack()); }
+    int getNumSlots() const { return tracks.getNumSlotsForTrack(getTrack()); }
 
-    int getSlotOffset() const { return view.getSlotOffsetForTrack(getTrack()); }
+    int getSlotOffset() const { return tracks.getSlotOffsetForTrack(getTrack()); }
 
     void resized() override;
 
     void updateProcessorSlotColours();
 
     bool isSuitableType(const ValueTree &v) const override {
-        return v.hasType(IDs::PROCESSOR);
+        return v.hasType(TracksStateIDs::PROCESSOR);
     }
 
     BaseGraphEditorProcessor *createEditorForProcessor(const ValueTree &processor);

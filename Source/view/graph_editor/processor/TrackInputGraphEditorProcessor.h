@@ -10,7 +10,7 @@ public:
 
     ~TrackInputGraphEditorProcessor() override;
 
-    String getTrackName() const { return getTrack()[IDs::name].toString(); }
+    String getTrackName() const { return getTrack()[TracksStateIDs::name].toString(); }
 
     void setTrackName(const String &trackName) {
         nameLabel.setText(trackName, dontSendNotification);

@@ -5,7 +5,7 @@
 
 OutputState::OutputState(PluginManager &pluginManager, UndoManager &undoManager, AudioDeviceManager &deviceManager)
         : pluginManager(pluginManager), undoManager(undoManager), deviceManager(deviceManager) {
-    output = ValueTree(IDs::OUTPUT);
+    output = ValueTree(TracksStateIDs::OUTPUT);
     output.addListener(this);
 }
 
@@ -16,8 +16,8 @@ OutputState::~OutputState() {
 Array<ValueTree> OutputState::syncOutputDevicesWithDeviceManager() {
     Array<ValueTree> outputProcessorsToDelete;
     for (const auto &outputProcessor : output) {
-        if (outputProcessor.hasProperty(IDs::deviceName)) {
-            const String &deviceName = outputProcessor[IDs::deviceName];
+        if (outputProcessor.hasProperty(TracksStateIDs::deviceName)) {
+            const String &deviceName = outputProcessor[TracksStateIDs::deviceName];
             if (!MidiOutput::getDevices().contains(deviceName) || !deviceManager.isMidiOutputEnabled(deviceName)) {
                 outputProcessorsToDelete.add(outputProcessor);
             }
@@ -25,9 +25,9 @@ Array<ValueTree> OutputState::syncOutputDevicesWithDeviceManager() {
     }
     for (const auto &deviceName : MidiOutput::getDevices()) {
         if (deviceManager.isMidiOutputEnabled(deviceName) &&
-            !output.getChildWithProperty(IDs::deviceName, deviceName).isValid()) {
+            !output.getChildWithProperty(TracksStateIDs::deviceName, deviceName).isValid()) {
             auto midiOutputProcessor = CreateProcessorAction::createProcessor(MidiOutputProcessor::getPluginDescription());
-            midiOutputProcessor.setProperty(IDs::deviceName, deviceName, nullptr);
+            midiOutputProcessor.setProperty(TracksStateIDs::deviceName, deviceName, nullptr);
             output.addChild(midiOutputProcessor, -1, &undoManager);
         }
     }

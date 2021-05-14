@@ -2,9 +2,10 @@
 #include "PluginWindow.h"
 
 #include "processors/MidiKeyboardProcessor.h"
+#include "state/TracksState.h"
 
 PluginWindow::PluginWindow(ValueTree &processorState, AudioProcessor *processor, Type type)
-        : DocumentWindow(processorState[IDs::name],
+        : DocumentWindow(processorState[TracksStateIDs::name],
                          LookAndFeel::getDefaultLookAndFeel().findColour(ResizableWindow::backgroundColourId),
                          DocumentWindow::minimiseButton | DocumentWindow::closeButton),
           processor(processorState), type(type) {
@@ -19,8 +20,8 @@ PluginWindow::PluginWindow(ValueTree &processorState, AudioProcessor *processor,
         setContentOwned(ui, true);
     }
 
-    int xPosition = processorState.hasProperty(IDs::pluginWindowX) ? int(processorState[IDs::pluginWindowX]) : Random::getSystemRandom().nextInt(500);
-    int yPosition = processorState.hasProperty(IDs::pluginWindowX) ? int(processorState[IDs::pluginWindowY]) : Random::getSystemRandom().nextInt(500);
+    int xPosition = processorState.hasProperty(TracksStateIDs::pluginWindowX) ? int(processorState[TracksStateIDs::pluginWindowX]) : Random::getSystemRandom().nextInt(500);
+    int yPosition = processorState.hasProperty(TracksStateIDs::pluginWindowX) ? int(processorState[TracksStateIDs::pluginWindowY]) : Random::getSystemRandom().nextInt(500);
     setTopLeftPosition(xPosition, yPosition);
     setAlwaysOnTop(true);
     setVisible(true);
@@ -49,12 +50,12 @@ AudioProcessorEditor *PluginWindow::createProcessorEditor(AudioProcessor &proces
 }
 
 void PluginWindow::moved() {
-    processor.setProperty(IDs::pluginWindowX, getX(), nullptr);
-    processor.setProperty(IDs::pluginWindowY, getY(), nullptr);
+    processor.setProperty(TracksStateIDs::pluginWindowX, getX(), nullptr);
+    processor.setProperty(TracksStateIDs::pluginWindowY, getY(), nullptr);
 }
 
 void PluginWindow::closeButtonPressed() {
-    processor.setProperty(IDs::pluginWindowType, static_cast<int>(Type::none), nullptr);
+    processor.setProperty(TracksStateIDs::pluginWindowType, static_cast<int>(Type::none), nullptr);
 }
 
 PluginWindow::ProgramAudioProcessorEditor::ProgramAudioProcessorEditor(AudioProcessor &p) : AudioProcessorEditor(p) {

@@ -1,7 +1,5 @@
 #include "DisconnectProcessorAction.h"
 
-#include "state/Identifiers.h"
-
 DisconnectProcessorAction::DisconnectProcessorAction(ConnectionsState &connections, const ValueTree &processor, ConnectionType connectionType, bool defaults, bool custom, bool incoming, bool outgoing,
                                                      AudioProcessorGraph::NodeID excludingRemovalTo)
         : CreateOrDeleteConnectionsAction(connections) {

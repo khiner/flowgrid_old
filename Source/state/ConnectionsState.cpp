@@ -1,7 +1,7 @@
 #include "ConnectionsState.h"
 
 static bool canProcessorDefaultConnectTo(const ValueTree &processor, const ValueTree &otherProcessor, ConnectionType connectionType) {
-    return !(!otherProcessor.hasType(IDs::PROCESSOR) || processor == otherProcessor) &&
+    return !(!otherProcessor.hasType(TracksStateIDs::PROCESSOR) || processor == otherProcessor) &&
            ConnectionsState::isProcessorAProducer(processor, connectionType) && ConnectionsState::isProcessorAnEffect(otherProcessor, connectionType);
 }
 
@@ -30,7 +30,7 @@ ValueTree ConnectionsState::findDefaultDestinationProcessor(const ValueTree &sou
     while ((otherLane = lane.getSibling(siblingDelta++)).isValid()) {
         for (const auto &otherProcessor : otherLane) {
             if (otherProcessor == sourceProcessor) continue;
-            bool isOtherProcessorBelow = isTrackInputProcessor || int(otherProcessor[IDs::processorSlot]) > int(sourceProcessor[IDs::processorSlot]);
+            bool isOtherProcessorBelow = isTrackInputProcessor || int(otherProcessor[TracksStateIDs::processorSlot]) > int(sourceProcessor[TracksStateIDs::processorSlot]);
             if (!isOtherProcessorBelow) continue;
             if (canProcessorDefaultConnectTo(sourceProcessor, otherProcessor, connectionType) ||
                 // If a non-effect (another producer) is under this processor in the same track, and no effect processors
@@ -62,7 +62,7 @@ Array<ValueTree> ConnectionsState::getConnectionsForNode(const ValueTree &proces
             continue;
 
         int processorNodeId = int(TracksState::getNodeIdForProcessor(processor).uid);
-        const auto &endpointType = connection.getChildWithProperty(IDs::nodeId, processorNodeId);
+        const auto &endpointType = connection.getChildWithProperty(TracksStateIDs::nodeId, processorNodeId);
         bool directionIsAcceptable = (incoming && endpointType.hasType(ConnectionsStateIDs::DESTINATION)) || (outgoing && endpointType.hasType(ConnectionsStateIDs::SOURCE));
         bool typeIsAcceptable = connectionType == all ||
                                 (connectionType == audio && int(endpointType[ConnectionsStateIDs::channel]) != AudioProcessorGraph::midiChannelIndex) ||

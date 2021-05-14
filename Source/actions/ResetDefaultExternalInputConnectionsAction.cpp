@@ -1,6 +1,5 @@
 #include "ResetDefaultExternalInputConnectionsAction.h"
 
-#include "state/Identifiers.h"
 #include "DisconnectProcessorAction.h"
 #include "DefaultConnectProcessorAction.h"
 
@@ -55,7 +54,7 @@ ValueTree ResetDefaultExternalInputConnectionsAction::findMostUpstreamAvailableP
 
         const auto &firstProcessor = lane.getChild(0);
         auto firstProcessorNodeId = TracksState::getNodeIdForProcessor(firstProcessor);
-        int slot = firstProcessor[IDs::processorSlot];
+        int slot = firstProcessor[TracksStateIDs::processorSlot];
         if (slot < lowestSlot &&
             isAvailableForExternalInput(firstProcessor, connectionType, input) &&
             areProcessorsConnected(firstProcessorNodeId, processorNodeId)) {

@@ -2,7 +2,6 @@
 
 #include <juce_graphics/juce_graphics.h>
 #include "Stateful.h"
-#include "Identifiers.h"
 
 namespace ViewStateIDs {
 #define ID(name) const juce::Identifier name(#name);
@@ -31,26 +30,6 @@ public:
     }
 
     void initializeDefault();
-
-    static bool isMasterTrack(const ValueTree &track) {
-        return track.isValid() && track[IDs::isMasterTrack];
-    }
-
-    static int getNumVisibleSlotsForTrack(const ValueTree &track) {
-        return isMasterTrack(track) ? NUM_VISIBLE_MASTER_TRACK_SLOTS : NUM_VISIBLE_NON_MASTER_TRACK_SLOTS;
-    }
-
-    int getSlotOffsetForTrack(const ValueTree &track) const {
-        return isMasterTrack(track) ? getMasterViewSlotOffset() : getGridViewSlotOffset();
-    }
-
-    int getNumSlotsForTrack(const ValueTree &track) const {
-        return isMasterTrack(track) ? getNumMasterProcessorSlots() : getNumTrackProcessorSlots();
-    }
-
-    int getProcessorSlotSize(const ValueTree &track) const {
-        return isMasterTrack(track) ? getTrackWidth() : getProcessorHeight();
-    }
 
     void setMasterViewSlotOffset(int masterViewSlotOffset) {
         viewState.setProperty(ViewStateIDs::masterViewSlotOffset, masterViewSlotOffset, &undoManager);
@@ -133,22 +112,6 @@ public:
     int getTrackWidth() const { return trackWidth; }
 
     int getProcessorHeight() const { return processorHeight; }
-
-    int findSlotAt(juce::Point<int> position, const ValueTree &track) const;
-
-    bool isTrackInView(const ValueTree &track) const {
-        if (isMasterTrack(track)) return true;
-
-        auto trackIndex = track.getParent().indexOf(track);
-        auto trackViewOffset = getGridViewTrackOffset();
-        return trackIndex >= trackViewOffset && trackIndex < trackViewOffset + NUM_VISIBLE_TRACKS;
-    }
-
-    bool isProcessorSlotInView(const ValueTree &track, int slot) const {
-        bool inView = slot >= getSlotOffsetForTrack(track) &&
-                      slot < getSlotOffsetForTrack(track) + NUM_VISIBLE_NON_MASTER_TRACK_SLOTS + (isMasterTrack(track) ? 1 : 0);
-        return inView && isTrackInView(track);
-    }
 
     const String sessionControlMode = "session", noteControlMode = "note";
     const String gridPaneName = "grid", editorPaneName = "editor";

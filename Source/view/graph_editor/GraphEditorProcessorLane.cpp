@@ -22,7 +22,7 @@ GraphEditorProcessorLane::~GraphEditorProcessorLane() {
 
 void GraphEditorProcessorLane::resized() {
     auto slotOffset = getSlotOffset();
-    auto processorSlotSize = view.getProcessorSlotSize(getTrack());
+    auto processorSlotSize = tracks.getProcessorSlotSize(getTrack());
     auto r = getLocalBounds();
     if (isMasterTrack()) {
         r.setWidth(processorSlotSize);
@@ -70,14 +70,14 @@ void GraphEditorProcessorLane::updateProcessorSlotColours() {
             fillColour = TracksState::getTrackColour(track);
         if (tracks.isSlotFocused(track, slot))
             fillColour = fillColour.brighter(0.16f);
-        if (!view.isProcessorSlotInView(track, slot))
+        if (!tracks.isProcessorSlotInView(track, slot))
             fillColour = fillColour.darker(0.3f);
         processorSlotRectangles.getUnchecked(slot)->setFill(fillColour);
     }
 }
 
 BaseGraphEditorProcessor *GraphEditorProcessorLane::createEditorForProcessor(const ValueTree &processor) {
-    if (processor[IDs::name] == InternalPluginFormat::getMixerChannelProcessorName()) {
+    if (processor[TracksStateIDs::name] == InternalPluginFormat::getMixerChannelProcessorName()) {
         return new ParameterPanelGraphEditorProcessor(processor, view, tracks, processorGraph, connectorDragListener);
     }
     return new LabelGraphEditorProcessor(processor, view, tracks, processorGraph, connectorDragListener);
@@ -92,10 +92,10 @@ BaseGraphEditorProcessor *GraphEditorProcessorLane::createNewObject(const ValueT
 // TODO only instantiate 64 slot rects (and maybe another set for the boundary perimeter)
 //  might be an over-early optimization though
 void GraphEditorProcessorLane::valueTreePropertyChanged(ValueTree &tree, const Identifier &i) {
-    if (isSuitableType(tree) && i == IDs::processorSlot) {
+    if (isSuitableType(tree) && i == TracksStateIDs::processorSlot) {
         resized();
-    } else if (i == IDs::selected || i == IDs::colour ||
-               i == IDs::selectedSlotsMask || i == ViewStateIDs::focusedTrackIndex || i == ViewStateIDs::focusedProcessorSlot ||
+    } else if (i == TracksStateIDs::selected || i == TracksStateIDs::colour ||
+               i == TracksStateIDs::selectedSlotsMask || i == ViewStateIDs::focusedTrackIndex || i == ViewStateIDs::focusedProcessorSlot ||
                i == ViewStateIDs::gridViewTrackOffset) {
         updateProcessorSlotColours();
     } else if (i == ViewStateIDs::gridViewSlotOffset || (i == ViewStateIDs::masterViewSlotOffset && isMasterTrack())) {

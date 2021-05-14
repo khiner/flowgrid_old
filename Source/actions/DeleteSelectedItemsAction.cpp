@@ -2,9 +2,9 @@
 
 DeleteSelectedItemsAction::DeleteSelectedItemsAction(TracksState &tracks, ConnectionsState &connections, ProcessorGraph &processorGraph) {
     for (const auto &selectedItem : tracks.findAllSelectedItems()) {
-        if (selectedItem.hasType(IDs::TRACK)) {
+        if (selectedItem.hasType(TracksStateIDs::TRACK)) {
             deleteTrackActions.add(new DeleteTrackAction(selectedItem, tracks, connections, processorGraph));
-        } else if (selectedItem.hasType(IDs::PROCESSOR)) {
+        } else if (selectedItem.hasType(TracksStateIDs::PROCESSOR)) {
             deleteProcessorActions.add(new DeleteProcessorAction(selectedItem, tracks, connections, processorGraph));
             deleteProcessorActions.getLast()->performTemporary();
         }

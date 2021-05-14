@@ -3,7 +3,7 @@
 GraphEditorChannel::GraphEditorChannel(ValueTree state, ConnectorDragListener &connectorDragListener, bool showChannelText)
         : state(std::move(state)), connectorDragListener(connectorDragListener),
           channelLabel(isMidi(), showChannelText) {
-    valueTreePropertyChanged(this->state, IDs::abbreviatedName);
+    valueTreePropertyChanged(this->state, TracksStateIDs::abbreviatedName);
     this->state.addListener(this);
 
     addAndMakeVisible(channelLabel);
@@ -80,8 +80,8 @@ void GraphEditorChannel::updateColour() {
 void GraphEditorChannel::valueTreePropertyChanged(ValueTree &v, const Identifier &i) {
     if (v != state) return;
 
-    if (i == IDs::abbreviatedName) {
-        const String &name = v[IDs::abbreviatedName];
+    if (i == TracksStateIDs::abbreviatedName) {
+        const String &name = v[TracksStateIDs::abbreviatedName];
         channelLabel.setText(name);
         setName(name);
         setTooltip(name);

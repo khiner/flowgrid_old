@@ -12,9 +12,9 @@ bool InsertProcessorAction::undo() {
 }
 
 InsertProcessorAction::SetProcessorSlotAction::SetProcessorSlotAction(int trackIndex, const ValueTree &processor, int newSlot, TracksState &tracks, ViewState &view)
-        : processor(processor), oldSlot(processor[IDs::processorSlot]), newSlot(newSlot) {
+        : processor(processor), oldSlot(processor[TracksStateIDs::processorSlot]), newSlot(newSlot) {
     const auto &track = tracks.getTrack(trackIndex);
-    int numNewRows = this->newSlot + 1 - view.getNumSlotsForTrack(track);
+    int numNewRows = this->newSlot + 1 - tracks.getNumSlotsForTrack(track);
     for (int i = 0; i < numNewRows; i++)
         addProcessorRowActions.add(new AddProcessorRowAction(trackIndex, tracks, view));
     if (addProcessorRowActions.isEmpty()) {
@@ -30,13 +30,13 @@ bool InsertProcessorAction::SetProcessorSlotAction::perform() {
     if (pushConflictingProcessorAction)
         pushConflictingProcessorAction->perform();
     if (processor.isValid())
-        processor.setProperty(IDs::processorSlot, newSlot, nullptr);
+        processor.setProperty(TracksStateIDs::processorSlot, newSlot, nullptr);
     return true;
 }
 
 bool InsertProcessorAction::SetProcessorSlotAction::undo() {
     if (processor.isValid())
-        processor.setProperty(IDs::processorSlot, oldSlot, nullptr);
+        processor.setProperty(TracksStateIDs::processorSlot, oldSlot, nullptr);
     if (pushConflictingProcessorAction)
         pushConflictingProcessorAction->undo();
     for (auto *addProcessorRowAction : addProcessorRowActions)
@@ -67,7 +67,7 @@ bool InsertProcessorAction::SetProcessorSlotAction::AddProcessorRowAction::undo(
 
 InsertProcessorAction::AddOrMoveProcessorAction::AddOrMoveProcessorAction(const ValueTree &processor, int newTrackIndex, int newSlot, TracksState &tracks, ViewState &view)
         : processor(processor), oldTrackIndex(tracks.indexOf(TracksState::getTrackForProcessor(processor))), newTrackIndex(newTrackIndex),
-          oldSlot(processor[IDs::processorSlot]), newSlot(newSlot),
+          oldSlot(processor[TracksStateIDs::processorSlot]), newSlot(newSlot),
           oldIndex(processor.getParent().indexOf(processor)),
           newIndex(TracksState::getInsertIndexForProcessor(tracks.getTrack(newTrackIndex), processor, this->newSlot)),
           setProcessorSlotAction(std::make_unique<SetProcessorSlotAction>(newTrackIndex, processor, newSlot, tracks, view)),

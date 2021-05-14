@@ -44,30 +44,30 @@ void Push2TrackManagingView::updateEnabledPush2Buttons() {
         // TODO left/right buttons
         label->setVisible(true);
         label->setMainColour(TracksState::getTrackColour(track));
-        label->setText(track[IDs::name], dontSendNotification);
+        label->setText(track[TracksStateIDs::name], dontSendNotification);
         label->setSelected(track == focusedTrack);
     }
 }
 
 void Push2TrackManagingView::valueTreeChildAdded(ValueTree &parent, ValueTree &child) {
-    if (child.hasType(IDs::TRACK))
+    if (child.hasType(TracksStateIDs::TRACK))
         trackAdded(child);
 }
 
 void Push2TrackManagingView::valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int index) {
-    if (child.hasType(IDs::TRACK))
+    if (child.hasType(TracksStateIDs::TRACK))
         trackRemoved(child);
 }
 
 void Push2TrackManagingView::valueTreePropertyChanged(ValueTree &tree, const Identifier &i) {
-    if (tree.hasType(IDs::TRACK)) {
-        if (i == IDs::name || i == IDs::colour) {
+    if (tree.hasType(TracksStateIDs::TRACK)) {
+        if (i == TracksStateIDs::name || i == TracksStateIDs::colour) {
             int trackIndex = tracks.getViewIndexForTrack(tree);
             if (trackIndex < 0 || trackIndex >= trackLabels.size())
                 return;
-            if (i == IDs::name && !TracksState::isMasterTrack(tree))
-                trackLabels.getUnchecked(trackIndex)->setText(tree[IDs::name], dontSendNotification);
-        } else if (i == IDs::selected && tree[IDs::selected]) {
+            if (i == TracksStateIDs::name && !TracksState::isMasterTrack(tree))
+                trackLabels.getUnchecked(trackIndex)->setText(tree[TracksStateIDs::name], dontSendNotification);
+        } else if (i == TracksStateIDs::selected && tree[TracksStateIDs::selected]) {
             trackSelected(tree);
         }
     } else if (i == ViewStateIDs::gridViewTrackOffset) {
@@ -76,7 +76,7 @@ void Push2TrackManagingView::valueTreePropertyChanged(ValueTree &tree, const Ide
 }
 
 void Push2TrackManagingView::valueTreeChildOrderChanged(ValueTree &tree, int, int) {
-    if (tree.hasType(IDs::TRACKS))
+    if (tree.hasType(TracksStateIDs::TRACKS))
         updateEnabledPush2Buttons();
 }
 

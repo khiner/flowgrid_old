@@ -47,8 +47,8 @@ bool SelectAction::perform() {
     for (int i = 0; i < newTrackSelections.size(); i++) {
         auto track = tracks.getTrack(i);
         auto lane = TracksState::getProcessorLaneForTrack(track);
-        track.setProperty(IDs::selected, newTrackSelections.getUnchecked(i), nullptr);
-        lane.setProperty(IDs::selectedSlotsMask, newSelectedSlotsMasks.getUnchecked(i), nullptr);
+        track.setProperty(TracksStateIDs::selected, newTrackSelections.getUnchecked(i), nullptr);
+        lane.setProperty(TracksStateIDs::selectedSlotsMask, newSelectedSlotsMasks.getUnchecked(i), nullptr);
     }
     if (newFocusedSlot != oldFocusedSlot)
         updateViewFocus(newFocusedSlot);
@@ -66,8 +66,8 @@ bool SelectAction::undo() {
     for (int i = 0; i < oldTrackSelections.size(); i++) {
         auto track = tracks.getTrack(i);
         auto lane = TracksState::getProcessorLaneForTrack(track);
-        track.setProperty(IDs::selected, oldTrackSelections.getUnchecked(i), nullptr);
-        lane.setProperty(IDs::selectedSlotsMask, oldSelectedSlotsMasks.getUnchecked(i), nullptr);
+        track.setProperty(TracksStateIDs::selected, oldTrackSelections.getUnchecked(i), nullptr);
+        lane.setProperty(TracksStateIDs::selectedSlotsMask, oldSelectedSlotsMasks.getUnchecked(i), nullptr);
     }
     if (oldFocusedSlot != newFocusedSlot)
         updateViewFocus(oldFocusedSlot);

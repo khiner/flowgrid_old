@@ -2,9 +2,9 @@
 
 LabelGraphEditorProcessor::LabelGraphEditorProcessor(const ValueTree &state, ViewState &view, TracksState &tracks, ProcessorGraph &processorGraph, ConnectorDragListener &connectorDragListener) :
         BaseGraphEditorProcessor(state, view, tracks, processorGraph, connectorDragListener) {
-    valueTreePropertyChanged(this->state, IDs::name);
-    if (this->state.hasProperty(IDs::deviceName))
-        valueTreePropertyChanged(this->state, IDs::deviceName);
+    valueTreePropertyChanged(this->state, TracksStateIDs::name);
+    if (this->state.hasProperty(TracksStateIDs::deviceName))
+        valueTreePropertyChanged(this->state, TracksStateIDs::deviceName);
 
     nameLabel.setColour(findColour(TextEditor::textColourId));
     nameLabel.setFontHeight(largeFontHeight);
@@ -22,11 +22,11 @@ void LabelGraphEditorProcessor::resized() {
 void LabelGraphEditorProcessor::valueTreePropertyChanged(ValueTree &v, const Identifier &i) {
     if (v != state) return;
 
-    if (i == IDs::deviceName) {
-        setName(v[IDs::deviceName]);
+    if (i == TracksStateIDs::deviceName) {
+        setName(v[TracksStateIDs::deviceName]);
         nameLabel.setText(getName());
-    } else if (i == IDs::name) {
-        setName(v[IDs::name]);
+    } else if (i == TracksStateIDs::name) {
+        setName(v[TracksStateIDs::name]);
         nameLabel.setText(getName());
     }
 

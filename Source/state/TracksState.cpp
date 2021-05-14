@@ -2,8 +2,8 @@
 
 TracksState::TracksState(ViewState &view, PluginManager &pluginManager, UndoManager &undoManager)
         : view(view), pluginManager(pluginManager), undoManager(undoManager) {
-    tracks = ValueTree(IDs::TRACKS);
-    tracks.setProperty(IDs::name, "Tracks", nullptr);
+    tracks = ValueTree(TracksStateIDs::TRACKS);
+    tracks.setProperty(TracksStateIDs::name, "Tracks", nullptr);
 }
 
 void TracksState::loadFromState(const ValueTree &state) {
@@ -13,19 +13,19 @@ void TracksState::loadFromState(const ValueTree &state) {
     // since type information is not saved in XML
     // Also, re-set some vars just to trigger the event (like selected slot mask)
     for (auto track : tracks) {
-        resetVarToBool(track, IDs::isMasterTrack, this);
-        resetVarToBool(track, IDs::selected, this);
+        resetVarToBool(track, TracksStateIDs::isMasterTrack, this);
+        resetVarToBool(track, TracksStateIDs::selected, this);
 
         auto lane = getProcessorLaneForTrack(track);
-        lane.sendPropertyChangeMessage(IDs::selectedSlotsMask);
+        lane.sendPropertyChangeMessage(TracksStateIDs::selectedSlotsMask);
         for (auto processor : lane) {
-            resetVarToInt(processor, IDs::processorSlot, this);
-            resetVarToInt(processor, IDs::nodeId, this);
-            resetVarToInt(processor, IDs::processorInitialized, this);
-            resetVarToBool(processor, IDs::bypassed, this);
-            resetVarToBool(processor, IDs::acceptsMidi, this);
-            resetVarToBool(processor, IDs::producesMidi, this);
-            resetVarToBool(processor, IDs::allowDefaultConnections, this);
+            resetVarToInt(processor, TracksStateIDs::processorSlot, this);
+            resetVarToInt(processor, TracksStateIDs::nodeId, this);
+            resetVarToInt(processor, TracksStateIDs::processorInitialized, this);
+            resetVarToBool(processor, TracksStateIDs::bypassed, this);
+            resetVarToBool(processor, TracksStateIDs::acceptsMidi, this);
+            resetVarToBool(processor, TracksStateIDs::producesMidi, this);
+            resetVarToBool(processor, TracksStateIDs::allowDefaultConnections, this);
         }
     }
 }
@@ -46,7 +46,7 @@ int TracksState::getInsertIndexForProcessor(const ValueTree &track, const ValueT
     bool sameLane = lane == getProcessorLaneForProcessor(processor);
     auto handleSameLane = [sameLane](int index) -> int { return sameLane ? std::max(0, index - 1) : index; };
     for (const auto &otherProcessor : lane) {
-        int otherSlot = otherProcessor[IDs::processorSlot];
+        int otherSlot = otherProcessor[TracksStateIDs::processorSlot];
         if (otherSlot >= insertSlot && otherProcessor != processor) {
             int otherIndex = lane.indexOf(otherProcessor);
             return sameLane && lane.indexOf(processor) < otherIndex ? handleSameLane(otherIndex) : otherIndex;
@@ -58,7 +58,7 @@ int TracksState::getInsertIndexForProcessor(const ValueTree &track, const ValueT
 Array<ValueTree> TracksState::findAllSelectedItems() const {
     Array<ValueTree> selectedItems;
     for (const auto &track : tracks) {
-        if (track[IDs::selected])
+        if (track[TracksStateIDs::selected])
             selectedItems.add(track);
         else
             selectedItems.addArray(findSelectedProcessorsForTrack(track));
@@ -71,7 +71,7 @@ ValueTree TracksState::findProcessorNearestToSlot(const ValueTree &track, int sl
     auto nearestSlot = INT_MAX;
     ValueTree nearestProcessor;
     for (const auto &processor : lane) {
-        int otherSlot = processor[IDs::processorSlot];
+        int otherSlot = processor[TracksStateIDs::processorSlot];
         if (otherSlot == slot)
             return processor;
         if (abs(slot - otherSlot) < abs(slot - nearestSlot)) {
@@ -105,8 +105,19 @@ juce::Point<int> TracksState::gridPositionToTrackAndSlot(const juce::Point<int> 
         slot = gridPosition.y;
     }
 
-    if (trackIndex < 0 || slot < -1 || slot >= view.getNumSlotsForTrack(getTrack(trackIndex)))
+    if (trackIndex < 0 || slot < -1 || slot >= getNumSlotsForTrack(getTrack(trackIndex)))
         return INVALID_TRACK_AND_SLOT;
 
     return {trackIndex, slot};
+}
+
+int TracksState::findSlotAt(const juce::Point<int> position, const ValueTree &track) const {
+    bool isMaster = isMasterTrack(track);
+    int length = isMaster ? position.x : (position.y - ViewState::TRACK_LABEL_HEIGHT);
+    if (length < 0)
+        return -1;
+
+    int processorSlotSize = isMaster ? view.getTrackWidth() : view.getProcessorHeight();
+    int slot = getSlotOffsetForTrack(track) + length / processorSlotSize;
+    return std::clamp(slot, 0, getNumSlotsForTrack(track) - 1);
 }

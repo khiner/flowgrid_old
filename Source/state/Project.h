@@ -11,6 +11,13 @@
 #include "ProcessorGraph.h"
 #include "CopiedState.h"
 
+namespace ProjectIDs {
+#define ID(name) const juce::Identifier name(#name);
+    ID(PROJECT)
+    ID(name)
+#undef ID
+}
+
 class Project : public Stateful, public FileBasedDocument, private ChangeListener, private ValueTree::Listener {
 public:
     Project(ViewState &view, TracksState &tracks, ConnectionsState &connections, InputState &input, OutputState &output,
@@ -207,9 +214,9 @@ private:
     void updateAllDefaultConnections();
 
     void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override {
-        if (child.hasType(IDs::TRACK))
+        if (child.hasType(TracksStateIDs::TRACK))
             mostRecentlyCreatedTrack = child;
-        else if (child.hasType(IDs::PROCESSOR))
+        else if (child.hasType(TracksStateIDs::PROCESSOR))
             mostRecentlyCreatedProcessor = child;
     }
 };

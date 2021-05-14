@@ -598,7 +598,7 @@ private:
             deviceManager.getAudioDeviceSetup(config);
             // TODO the undomanager behavior around this needs more thinking.
             //  This should be done along with the work to keep disabled IO devices in the graph if they still have connections
-            project.getInput().getState().setProperty(IDs::deviceName, config.inputDeviceName, nullptr);
+            project.getInput().getState().setProperty(TracksStateIDs::deviceName, config.inputDeviceName, nullptr);
 
             deviceManager.updateEnabledMidiInputsAndOutputs();
             Array<ValueTree> outputProcessorsToDelete = project.getOutput().syncOutputDevicesWithDeviceManager();
@@ -607,7 +607,7 @@ private:
             }
             // TODO the undomanager behavior around this needs more thinking.
             //  This should be done along with the work to keep disabled IO devices in the graph if they still have connections
-            project.getOutput().getState().setProperty(IDs::deviceName, config.outputDeviceName, nullptr);
+            project.getOutput().getState().setProperty(TracksStateIDs::deviceName, config.outputDeviceName, nullptr);
         }
     }
 };

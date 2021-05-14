@@ -118,7 +118,7 @@ void StatefulAudioProcessorWrapper::Parameter::postUnnormalizedValue(float unnor
 }
 
 void StatefulAudioProcessorWrapper::Parameter::updateFromValueTree() {
-    const float unnormalizedValue = float(state.getProperty(IDs::value, defaultValue));
+    const float unnormalizedValue = float(state.getProperty(TracksStateIDs::value, defaultValue));
     setUnnormalizedValue(unnormalizedValue);
 }
 
@@ -131,10 +131,10 @@ void StatefulAudioProcessorWrapper::Parameter::setNewState(const ValueTree &v, U
 }
 
 void StatefulAudioProcessorWrapper::Parameter::copyValueToValueTree() {
-    if (auto *valueProperty = state.getPropertyPointer(IDs::value)) {
+    if (auto *valueProperty = state.getPropertyPointer(TracksStateIDs::value)) {
         if ((float) *valueProperty != value) {
             ScopedValueSetter<bool> svs(ignoreParameterChangedCallbacks, true);
-            state.setProperty(IDs::value, value, undoManager);
+            state.setProperty(TracksStateIDs::value, value, undoManager);
             // TODO uncomment and make it work
 //                    if (!processorWrapper->isSelected()) {
             // If we're looking at something else, change the focus so we know what's changing.
@@ -142,7 +142,7 @@ void StatefulAudioProcessorWrapper::Parameter::copyValueToValueTree() {
 //                    }
         }
     } else {
-        state.setProperty(IDs::value, value, nullptr);
+        state.setProperty(TracksStateIDs::value, value, nullptr);
     }
 }
 
@@ -263,7 +263,7 @@ LevelMeterSource *StatefulAudioProcessorWrapper::Parameter::getLevelMeterSource(
 void StatefulAudioProcessorWrapper::Parameter::valueTreePropertyChanged(ValueTree &tree, const Identifier &p) {
     if (ignoreParameterChangedCallbacks) return;
 
-    if (p == IDs::value) {
+    if (p == TracksStateIDs::value) {
         updateFromValueTree();
     }
 }
@@ -328,7 +328,7 @@ void StatefulAudioProcessorWrapper::Parameter::parameterControlValueChanged(Para
 
 StatefulAudioProcessorWrapper::StatefulAudioProcessorWrapper(AudioPluginInstance *processor, AudioProcessorGraph::NodeID nodeId, ValueTree state, UndoManager &undoManager, AudioDeviceManager &deviceManager) :
         processor(processor), state(std::move(state)), undoManager(undoManager), deviceManager(deviceManager) {
-    this->state.setProperty(IDs::nodeId, int(nodeId.uid), nullptr);
+    this->state.setProperty(TracksStateIDs::nodeId, int(nodeId.uid), nullptr);
     processor->enableAllBuses();
     if (auto *ioProcessor = dynamic_cast<AudioProcessorGraph::AudioGraphIOProcessor *> (processor)) {
         if (ioProcessor->isInput()) {
@@ -358,15 +358,15 @@ void StatefulAudioProcessorWrapper::updateValueTree() {
     audioProcessorChanged(processor, AudioProcessorListener::ChangeDetails().withParameterInfoChanged(true));
     // Also a little hacky, but maybe the best we can do.
     // If we're loading from state, bypass state needs to make its way to the processor graph to actually mute.
-    state.sendPropertyChangeMessage(IDs::bypassed);
+    state.sendPropertyChangeMessage(TracksStateIDs::bypassed);
 }
 
 ValueTree StatefulAudioProcessorWrapper::getOrCreateChildValueTree(const String &paramID) {
-    ValueTree v(state.getChildWithProperty(IDs::id, paramID));
+    ValueTree v(state.getChildWithProperty(TracksStateIDs::id, paramID));
 
     if (!v.isValid()) {
-        v = ValueTree(IDs::PARAM);
-        v.setProperty(IDs::id, paramID, nullptr);
+        v = ValueTree(TracksStateIDs::PARAM);
+        v.setProperty(TracksStateIDs::id, paramID, nullptr);
         state.appendChild(v, nullptr);
     }
 
@@ -399,14 +399,14 @@ void StatefulAudioProcessorWrapper::updateStateForProcessor(AudioProcessor *proc
     if (processor->producesMidi())
         newOutputs.add({processor, deviceManager, AudioProcessorGraph::midiChannelIndex, false});
 
-    ValueTree inputChannels = state.getChildWithName(IDs::INPUT_CHANNELS);
-    ValueTree outputChannels = state.getChildWithName(IDs::OUTPUT_CHANNELS);
+    ValueTree inputChannels = state.getChildWithName(TracksStateIDs::INPUT_CHANNELS);
+    ValueTree outputChannels = state.getChildWithName(TracksStateIDs::OUTPUT_CHANNELS);
     if (!inputChannels.isValid()) {
-        inputChannels = ValueTree(IDs::INPUT_CHANNELS);
+        inputChannels = ValueTree(TracksStateIDs::INPUT_CHANNELS);
         state.appendChild(inputChannels, nullptr);
     }
     if (!outputChannels.isValid()) {
-        outputChannels = ValueTree(IDs::OUTPUT_CHANNELS);
+        outputChannels = ValueTree(TracksStateIDs::OUTPUT_CHANNELS);
         state.appendChild(outputChannels, nullptr);
     }
 
@@ -421,9 +421,9 @@ void StatefulAudioProcessorWrapper::updateStateForProcessor(AudioProcessor *proc
     }
 
     if (processor->acceptsMidi())
-        state.setProperty(IDs::acceptsMidi, true, nullptr);
+        state.setProperty(TracksStateIDs::acceptsMidi, true, nullptr);
     if (processor->producesMidi())
-        state.setProperty(IDs::producesMidi, true, nullptr);
+        state.setProperty(TracksStateIDs::producesMidi, true, nullptr);
 
     updateChannels(oldInputs, newInputs, inputChannels);
     updateChannels(oldOutputs, newOutputs, outputChannels);
@@ -433,7 +433,7 @@ void StatefulAudioProcessorWrapper::updateChannels(Array<Channel> &oldChannels, 
     for (int i = 0; i < oldChannels.size(); i++) {
         const auto &oldChannel = oldChannels.getUnchecked(i);
         if (!newChannels.contains(oldChannel)) {
-            channelsState.removeChild(channelsState.getChildWithProperty(IDs::name, oldChannel.name), &undoManager);
+            channelsState.removeChild(channelsState.getChildWithProperty(TracksStateIDs::name, oldChannel.name), &undoManager);
         }
     }
     for (int i = 0; i < newChannels.size(); i++) {
@@ -477,7 +477,7 @@ StatefulAudioProcessorWrapper::Channel::Channel(AudioProcessor *processor, Audio
 }
 
 StatefulAudioProcessorWrapper::Channel::Channel(const ValueTree &channelState) :
-        channelIndex(channelState[IDs::channelIndex]),
-        name(channelState[IDs::name]),
-        abbreviatedName(channelState[IDs::abbreviatedName]) {
+        channelIndex(channelState[TracksStateIDs::channelIndex]),
+        name(channelState[TracksStateIDs::name]),
+        abbreviatedName(channelState[TracksStateIDs::abbreviatedName]) {
 }

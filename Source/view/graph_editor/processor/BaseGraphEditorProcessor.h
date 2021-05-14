@@ -22,24 +22,24 @@ public:
     }
 
     virtual bool isInView() {
-        return isIoProcessor() || view.isProcessorSlotInView(getTrack(), getSlot());
+        return isIoProcessor() || tracks.isProcessorSlotInView(getTrack(), getSlot());
     }
 
     bool isMasterTrack() const { return TracksState::isMasterTrack(getTrack()); }
 
     int getTrackIndex() const { return tracks.indexOf(getTrack()); }
 
-    int getSlot() const { return state[IDs::processorSlot]; }
+    int getSlot() const { return state[TracksStateIDs::processorSlot]; }
 
-    int getNumInputChannels() const { return state.getChildWithName(IDs::INPUT_CHANNELS).getNumChildren(); }
+    int getNumInputChannels() const { return state.getChildWithName(TracksStateIDs::INPUT_CHANNELS).getNumChildren(); }
 
-    int getNumOutputChannels() const { return state.getChildWithName(IDs::OUTPUT_CHANNELS).getNumChildren(); }
+    int getNumOutputChannels() const { return state.getChildWithName(TracksStateIDs::OUTPUT_CHANNELS).getNumChildren(); }
 
-    bool acceptsMidi() const { return state[IDs::acceptsMidi]; }
+    bool acceptsMidi() const { return state[TracksStateIDs::acceptsMidi]; }
 
-    bool producesMidi() const { return state[IDs::producesMidi]; }
+    bool producesMidi() const { return state[TracksStateIDs::producesMidi]; }
 
-    bool isIoProcessor() const { return InternalPluginFormat::isIoProcessor(state[IDs::name]); }
+    bool isIoProcessor() const { return InternalPluginFormat::isIoProcessor(state[TracksStateIDs::name]); }
 
     bool isSelected() { return TracksState::isProcessorSelected(state); }
 

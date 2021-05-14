@@ -14,7 +14,7 @@ SelectRectangleAction::SelectRectangleAction(const juce::Point<int> fromTrackAnd
             newSelectedSlotsMasks.setUnchecked(trackIndex, tracks.createFullSelectionBitmask(track));
         } else {
             BigInteger newSlotsMask;
-            for (int otherSlot = 0; otherSlot < view.getNumSlotsForTrack(track); otherSlot++)
+            for (int otherSlot = 0; otherSlot < tracks.getNumSlotsForTrack(track); otherSlot++)
                 newSlotsMask.setBit(otherSlot, selectionRectangle.contains(tracks.trackAndSlotToGridPosition({trackIndex, otherSlot})));
             newSelectedSlotsMasks.setUnchecked(trackIndex, newSlotsMask.toString(2));
         }
@@ -22,7 +22,7 @@ SelectRectangleAction::SelectRectangleAction(const juce::Point<int> fromTrackAnd
     int slotToFocus = toTrackAndSlot.y;
     if (slotToFocus == -1) {
         const ValueTree &firstProcessor = tracks.getTrack(toTrackAndSlot.x).getChild(0);
-        slotToFocus = firstProcessor.isValid() ? int(firstProcessor[IDs::processorSlot]) : 0;
+        slotToFocus = firstProcessor.isValid() ? int(firstProcessor[TracksStateIDs::processorSlot]) : 0;
     }
     setNewFocusedSlot({toTrackAndSlot.x, slotToFocus});
 }

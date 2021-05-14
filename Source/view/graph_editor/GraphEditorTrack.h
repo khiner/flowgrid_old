@@ -1,6 +1,5 @@
 #pragma once
 
-#include "state/Identifiers.h"
 #include "view/graph_editor/processor/TrackInputGraphEditorProcessor.h"
 #include "view/graph_editor/processor/TrackOutputGraphEditorProcessor.h"
 #include "GraphEditorProcessorLanes.h"
@@ -20,7 +19,7 @@ public:
         return isSelected() ? trackColour.brighter(0.25) : trackColour;
     }
 
-    bool isSelected() const { return state.getProperty(IDs::selected); }
+    bool isSelected() const { return state.getProperty(TracksStateIDs::selected); }
 
     void paint(Graphics &g) override;
 

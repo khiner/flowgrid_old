@@ -1,6 +1,6 @@
 #include "ContextPane.h"
 
-#include "state/Identifiers.h"
+#include "state/TracksState.h"
 
 ContextPane::ContextPane(TracksState &tracks, ViewState &view)
         : tracks(tracks), view(view) {
@@ -46,16 +46,16 @@ void ContextPane::paint(Graphics &g) {
         }
 
         const auto &outputProcessor = TracksState::getOutputProcessorForTrack(track);
-        auto trackOutputIndex = view.getSlotOffsetForTrack(track) + ViewState::getNumVisibleSlotsForTrack(track);
-        for (auto gridCellIndex = 0; gridCellIndex < view.getNumSlotsForTrack(track) + 1; gridCellIndex++) {
+        auto trackOutputIndex = tracks.getSlotOffsetForTrack(track) + TracksState::getNumVisibleSlotsForTrack(track);
+        for (auto gridCellIndex = 0; gridCellIndex < tracks.getNumSlotsForTrack(track) + 1; gridCellIndex++) {
             Colour cellColour;
             if (gridCellIndex == trackOutputIndex) {
-                cellColour = getFillColour(trackColour, track, outputProcessor, view.isTrackInView(track), true, false);
+                cellColour = getFillColour(trackColour, track, outputProcessor, tracks.isTrackInView(track), true, false);
             } else {
                 int slot = gridCellIndex < trackOutputIndex ? gridCellIndex : gridCellIndex - 1;
                 const auto &processor = TracksState::getProcessorAtSlot(track, slot);
                 cellColour = getFillColour(trackColour, track, processor,
-                                           view.isProcessorSlotInView(track, slot),
+                                           tracks.isProcessorSlotInView(track, slot),
                                            TracksState::isSlotSelected(track, slot),
                                            tracks.isSlotFocused(track, slot));
             }
@@ -97,16 +97,16 @@ Colour ContextPane::getFillColour(const Colour &trackColour, const ValueTree &tr
 }
 
 void ContextPane::valueTreeChildAdded(ValueTree &parent, ValueTree &child) {
-    if (child.hasType(IDs::TRACK))
+    if (child.hasType(TracksStateIDs::TRACK))
         resized();
-    else if (child.hasType(IDs::PROCESSOR))
+    else if (child.hasType(TracksStateIDs::PROCESSOR))
         repaint();
 }
 
 void ContextPane::valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int index) {
-    if (child.hasType(IDs::TRACK))
+    if (child.hasType(TracksStateIDs::TRACK))
         resized();
-    else if (child.hasType(IDs::PROCESSOR))
+    else if (child.hasType(TracksStateIDs::PROCESSOR))
         repaint();
 }
 
@@ -116,7 +116,7 @@ void ContextPane::valueTreePropertyChanged(ValueTree &tree, const Identifier &i)
             resized();
         else if (i == ViewStateIDs::focusedTrackIndex || i == ViewStateIDs::focusedProcessorSlot || i == ViewStateIDs::gridViewSlotOffset)
             repaint();
-    } else if (i == IDs::selectedSlotsMask) {
+    } else if (i == TracksStateIDs::selectedSlotsMask) {
         repaint();
     }
 }

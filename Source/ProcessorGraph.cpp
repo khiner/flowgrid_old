@@ -28,15 +28,15 @@ ProcessorGraph::~ProcessorGraph() {
 
 void ProcessorGraph::addProcessor(const ValueTree &processorState) {
     static String errorMessage = "Could not create processor";
-    auto description = pluginManager.getDescriptionForIdentifier(processorState[IDs::id]);
+    auto description = pluginManager.getDescriptionForIdentifier(processorState[TracksStateIDs::id]);
     auto processor = pluginManager.getFormatManager().createPluginInstance(*description, getSampleRate(), getBlockSize(), errorMessage);
-    if (processorState.hasProperty(IDs::state)) {
+    if (processorState.hasProperty(TracksStateIDs::state)) {
         MemoryBlock memoryBlock;
-        memoryBlock.fromBase64Encoding(processorState[IDs::state].toString());
+        memoryBlock.fromBase64Encoding(processorState[TracksStateIDs::state].toString());
         processor->setStateInformation(memoryBlock.getData(), (int) memoryBlock.getSize());
     }
 
-    const Node::Ptr &newNode = processorState.hasProperty(IDs::nodeId) ?
+    const Node::Ptr &newNode = processorState.hasProperty(TracksStateIDs::nodeId) ?
                                addNode(std::move(processor), TracksState::getNodeIdForProcessor(processorState)) :
                                addNode(std::move(processor));
     processorWrapperForNodeId[newNode->nodeID] = std::make_unique<StatefulAudioProcessorWrapper>
@@ -46,7 +46,7 @@ void ProcessorGraph::addProcessor(const ValueTree &processorState) {
         startTimerHz(10);
 
     if (auto midiInputProcessor = dynamic_cast<MidiInputProcessor *>(newNode->getProcessor())) {
-        const String &deviceName = processorState.getProperty(IDs::deviceName);
+        const String &deviceName = processorState.getProperty(TracksStateIDs::deviceName);
         midiInputProcessor->setDeviceName(deviceName);
         if (deviceName.containsIgnoreCase(Push2MidiDevice::getDeviceName())) {
             push2MidiCommunicator.addMidiInputCallback(&midiInputProcessor->getMidiMessageCollector());
@@ -54,20 +54,20 @@ void ProcessorGraph::addProcessor(const ValueTree &processorState) {
             deviceManager.addMidiInputCallback(deviceName, &midiInputProcessor->getMidiMessageCollector());
         }
     } else if (auto *midiOutputProcessor = dynamic_cast<MidiOutputProcessor *>(newNode->getProcessor())) {
-        const String &deviceName = processorState.getProperty(IDs::deviceName);
+        const String &deviceName = processorState.getProperty(TracksStateIDs::deviceName);
         if (auto *enabledMidiOutput = deviceManager.getEnabledMidiOutput(deviceName))
             midiOutputProcessor->setMidiOutput(enabledMidiOutput);
     }
     ValueTree mutableProcessor = processorState;
-    if (mutableProcessor.hasProperty(IDs::processorInitialized))
-        mutableProcessor.sendPropertyChangeMessage(IDs::processorInitialized);
+    if (mutableProcessor.hasProperty(TracksStateIDs::processorInitialized))
+        mutableProcessor.sendPropertyChangeMessage(TracksStateIDs::processorInitialized);
     else
-        mutableProcessor.setProperty(IDs::processorInitialized, true, nullptr);
+        mutableProcessor.setProperty(TracksStateIDs::processorInitialized, true, nullptr);
 
 }
 
 void ProcessorGraph::recursivelyAddProcessors(const ValueTree &state) {
-    if (state.hasType(IDs::PROCESSOR)) {
+    if (state.hasType(TracksStateIDs::PROCESSOR)) {
         addProcessor(state);
         return;
     }
@@ -80,9 +80,9 @@ void ProcessorGraph::removeProcessor(const ValueTree &processor) {
     const NodeID nodeId = TracksState::getNodeIdForProcessor(processor);
 
     // disconnect should have already been called before delete! (to avoid nested undo actions)
-    if (processor[IDs::name] == MidiInputProcessor::name()) {
+    if (processor[TracksStateIDs::name] == MidiInputProcessor::name()) {
         if (auto *midiInputProcessor = dynamic_cast<MidiInputProcessor *>(processorWrapper->processor)) {
-            const String &deviceName = processor.getProperty(IDs::deviceName);
+            const String &deviceName = processor.getProperty(TracksStateIDs::deviceName);
             if (deviceName.containsIgnoreCase(Push2MidiDevice::getDeviceName())) {
                 push2MidiCommunicator.removeMidiInputCallback(&midiInputProcessor->getMidiMessageCollector());
             } else {
@@ -166,11 +166,11 @@ bool ProcessorGraph::doDisconnectNode(const ValueTree &processor, ConnectionType
 }
 
 void ProcessorGraph::updateIoChannelEnabled(const ValueTree &channels, const ValueTree &channel, bool enabled) {
-    String processorName = channels.getParent()[IDs::name];
+    String processorName = channels.getParent()[TracksStateIDs::name];
     bool isInput;
-    if (processorName == "Audio Input" && channels.hasType(IDs::OUTPUT_CHANNELS))
+    if (processorName == "Audio Input" && channels.hasType(TracksStateIDs::OUTPUT_CHANNELS))
         isInput = true;
-    else if (processorName == "Audio Output" && channels.hasType(IDs::INPUT_CHANNELS))
+    else if (processorName == "Audio Output" && channels.hasType(TracksStateIDs::INPUT_CHANNELS))
         isInput = false;
     else
         return;
@@ -179,7 +179,7 @@ void ProcessorGraph::updateIoChannelEnabled(const ValueTree &channels, const Val
         deviceManager.getAudioDeviceSetup(config);
         auto &configChannels = isInput ? config.inputChannels : config.outputChannels;
         const auto &channelNames = isInput ? audioDevice->getInputChannelNames() : audioDevice->getOutputChannelNames();
-        auto channelIndex = channelNames.indexOf(channel[IDs::name].toString());
+        auto channelIndex = channelNames.indexOf(channel[TracksStateIDs::name].toString());
         if (channelIndex != -1 && ((enabled && !configChannels[channelIndex]) || (!enabled && configChannels[channelIndex]))) {
             configChannels.setBit(channelIndex, enabled);
             deviceManager.setAudioDeviceSetup(config, true);
@@ -198,10 +198,10 @@ void ProcessorGraph::resumeAudioGraphUpdatesAndApplyDiffSincePause() {
 }
 
 void ProcessorGraph::valueTreePropertyChanged(ValueTree &tree, const Identifier &i) {
-    if (tree.hasType(IDs::PROCESSOR)) {
-        if (i == IDs::bypassed) {
+    if (tree.hasType(TracksStateIDs::PROCESSOR)) {
+        if (i == TracksStateIDs::bypassed) {
             if (auto node = getNodeForState(tree)) {
-                node->setBypassed(tree[IDs::bypassed]);
+                node->setBypassed(tree[TracksStateIDs::bypassed]);
             }
         }
     }
@@ -213,9 +213,9 @@ void ProcessorGraph::valueTreeChildAdded(ValueTree &parent, ValueTree &child) {
             connectionsSincePause.addConnection(child);
         else
             AudioProcessorGraph::addConnection(ConnectionsState::stateToConnection(child));
-    } else if (child.hasType(IDs::TRACK) || parent.hasType(IDs::INPUT) || parent.hasType(IDs::OUTPUT)) {
+    } else if (child.hasType(TracksStateIDs::TRACK) || parent.hasType(TracksStateIDs::INPUT) || parent.hasType(TracksStateIDs::OUTPUT)) {
         recursivelyAddProcessors(child); // TODO might be a problem for moving tracks
-    } else if (child.hasType(IDs::CHANNEL)) {
+    } else if (child.hasType(TracksStateIDs::CHANNEL)) {
         updateIoChannelEnabled(parent, child, true);
         // TODO shouldn't affect state in state listeners - trace back to specific user actions and do this in the action method
         removeIllegalConnections();
@@ -228,7 +228,7 @@ void ProcessorGraph::valueTreeChildRemoved(ValueTree &parent, ValueTree &child, 
             connectionsSincePause.removeConnection(child);
         else
             AudioProcessorGraph::removeConnection(ConnectionsState::stateToConnection(child));
-    } else if (child.hasType(IDs::CHANNEL)) {
+    } else if (child.hasType(TracksStateIDs::CHANNEL)) {
         updateIoChannelEnabled(parent, child, false);
         removeIllegalConnections(); // TODO shouldn't affect state in state listeners - trace back to specific user actions and do this in the action method
     }

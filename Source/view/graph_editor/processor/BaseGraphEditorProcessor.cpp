@@ -6,7 +6,7 @@ BaseGraphEditorProcessor::BaseGraphEditorProcessor(const ValueTree &state, ViewS
     this->state.addListener(this);
 
     for (auto child : state) {
-        if (child.hasType(IDs::INPUT_CHANNELS) || child.hasType(IDs::OUTPUT_CHANNELS)) {
+        if (child.hasType(TracksStateIDs::INPUT_CHANNELS) || child.hasType(TracksStateIDs::OUTPUT_CHANNELS)) {
             for (auto channel : child) {
                 valueTreeChildAdded(child, channel);
             }
@@ -20,7 +20,7 @@ BaseGraphEditorProcessor::~BaseGraphEditorProcessor() {
 
 void BaseGraphEditorProcessor::paint(Graphics &g) {
     auto boxColour = findColour(TextEditor::backgroundColourId);
-    if (state[IDs::bypassed])
+    if (state[TracksStateIDs::bypassed])
         boxColour = boxColour.brighter();
     else if (isSelected())
         boxColour = boxColour.brighter(0.02f);
@@ -102,7 +102,7 @@ void BaseGraphEditorProcessor::layoutChannel(AudioProcessor *processor, GraphEdi
 }
 
 void BaseGraphEditorProcessor::valueTreeChildAdded(ValueTree &parent, ValueTree &child) {
-    if (child.hasType(IDs::CHANNEL)) {
+    if (child.hasType(TracksStateIDs::CHANNEL)) {
         auto *channel = new GraphEditorChannel(child, connectorDragListener, isIoProcessor());
         addAndMakeVisible(channel);
         channels.add(channel);
@@ -111,7 +111,7 @@ void BaseGraphEditorProcessor::valueTreeChildAdded(ValueTree &parent, ValueTree 
 }
 
 void BaseGraphEditorProcessor::valueTreeChildRemoved(ValueTree &parent, ValueTree &child, int) {
-    if (child.hasType(IDs::CHANNEL)) {
+    if (child.hasType(TracksStateIDs::CHANNEL)) {
         auto *channelToRemove = findChannelWithState(child);
         channels.removeObject(channelToRemove);
         resized();
@@ -121,6 +121,6 @@ void BaseGraphEditorProcessor::valueTreeChildRemoved(ValueTree &parent, ValueTre
 void BaseGraphEditorProcessor::valueTreePropertyChanged(ValueTree &v, const Identifier &i) {
     if (v != state) return;
 
-    if (i == IDs::processorInitialized)
+    if (i == TracksStateIDs::processorInitialized)
         resized();
 }

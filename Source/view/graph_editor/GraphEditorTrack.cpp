@@ -50,8 +50,8 @@ void GraphEditorTrack::resized() {
                             r.removeFromTop(ViewState::TRACK_INPUT_HEIGHT);
 
     const auto &trackOutputBounds = isMasterTrack()
-                                    ? r.removeFromRight(view.getProcessorSlotSize(getState()))
-                                    : r.removeFromBottom(view.getProcessorSlotSize(getState()));
+                                    ? r.removeFromRight(tracks.getProcessorSlotSize(getState()))
+                                    : r.removeFromBottom(tracks.getProcessorSlotSize(getState()));
 
     if (trackInputProcessorView != nullptr)
         trackInputProcessorView->setBounds(trackInputBounds);
@@ -117,19 +117,19 @@ void GraphEditorTrack::trackOutputProcessorChanged() {
 }
 
 void GraphEditorTrack::valueTreeChildAdded(ValueTree &parent, ValueTree &child) {
-    if (child.hasType(IDs::PROCESSOR)) {
-        if (child.getProperty(IDs::name) == InternalPluginFormat::getTrackInputProcessorName())
+    if (child.hasType(TracksStateIDs::PROCESSOR)) {
+        if (child.getProperty(TracksStateIDs::name) == InternalPluginFormat::getTrackInputProcessorName())
             trackInputProcessorChanged();
-        else if (child.getProperty(IDs::name) == InternalPluginFormat::getTrackOutputProcessorName())
+        else if (child.getProperty(TracksStateIDs::name) == InternalPluginFormat::getTrackOutputProcessorName())
             trackOutputProcessorChanged();
     }
 }
 
 void GraphEditorTrack::valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int) {
-    if (child.hasType(IDs::PROCESSOR)) {
-        if (child.getProperty(IDs::name) == InternalPluginFormat::getTrackInputProcessorName())
+    if (child.hasType(TracksStateIDs::PROCESSOR)) {
+        if (child.getProperty(TracksStateIDs::name) == InternalPluginFormat::getTrackInputProcessorName())
             trackInputProcessorChanged();
-        else if (child.getProperty(IDs::name) == InternalPluginFormat::getTrackOutputProcessorName())
+        else if (child.getProperty(TracksStateIDs::name) == InternalPluginFormat::getTrackOutputProcessorName())
             trackOutputProcessorChanged();
     }
 }
@@ -141,10 +141,10 @@ void GraphEditorTrack::valueTreePropertyChanged(ValueTree &tree, const Identifie
     if (tree != state)
         return;
 
-    if (i == IDs::name) {
+    if (i == TracksStateIDs::name) {
         if (trackInputProcessorView != nullptr)
-            trackInputProcessorView->setTrackName(tree[IDs::name].toString());
-    } else if (i == IDs::colour || i == IDs::selected) {
+            trackInputProcessorView->setTrackName(tree[TracksStateIDs::name].toString());
+    } else if (i == TracksStateIDs::colour || i == TracksStateIDs::selected) {
         onColourChanged();
     }
 }

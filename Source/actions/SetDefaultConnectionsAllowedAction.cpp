@@ -1,6 +1,5 @@
 #include "SetDefaultConnectionsAllowedAction.h"
 
-#include "state/Identifiers.h"
 #include "DisconnectProcessorAction.h"
 
 SetDefaultConnectionsAllowedAction::SetDefaultConnectionsAllowedAction(const ValueTree &processor, bool defaultConnectionsAllowed, ConnectionsState &connections)
@@ -11,13 +10,13 @@ SetDefaultConnectionsAllowedAction::SetDefaultConnectionsAllowedAction(const Val
 }
 
 bool SetDefaultConnectionsAllowedAction::perform() {
-    processor.setProperty(IDs::allowDefaultConnections, defaultConnectionsAllowed, nullptr);
+    processor.setProperty(TracksStateIDs::allowDefaultConnections, defaultConnectionsAllowed, nullptr);
     CreateOrDeleteConnectionsAction::perform();
     return true;
 }
 
 bool SetDefaultConnectionsAllowedAction::undo() {
     CreateOrDeleteConnectionsAction::perform();
-    processor.setProperty(IDs::allowDefaultConnections, defaultConnectionsAllowed, nullptr);
+    processor.setProperty(TracksStateIDs::allowDefaultConnections, defaultConnectionsAllowed, nullptr);
     return true;
 }

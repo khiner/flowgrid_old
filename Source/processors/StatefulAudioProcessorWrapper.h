@@ -3,10 +3,10 @@
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_audio_devices/juce_audio_devices.h>
 
+#include "state/TracksState.h"
 #include "view/parameter_control/ParameterControl.h"
 #include "view/parameter_control/level_meter/LevelMeterSource.h"
 #include "view/processor_editor/SwitchParameterComponent.h"
-#include "state/Identifiers.h"
 
 class StatefulAudioProcessorWrapper : private AudioProcessorListener {
 public:
@@ -185,10 +185,10 @@ private:
         Channel(const ValueTree &channelState);
 
         ValueTree toState() const {
-            ValueTree state(IDs::CHANNEL);
-            state.setProperty(IDs::channelIndex, channelIndex, nullptr);
-            state.setProperty(IDs::name, name, nullptr);
-            state.setProperty(IDs::abbreviatedName, abbreviatedName, nullptr);
+            ValueTree state(TracksStateIDs::CHANNEL);
+            state.setProperty(TracksStateIDs::channelIndex, channelIndex, nullptr);
+            state.setProperty(TracksStateIDs::name, name, nullptr);
+            state.setProperty(TracksStateIDs::abbreviatedName, abbreviatedName, nullptr);
             return state;
         }
 

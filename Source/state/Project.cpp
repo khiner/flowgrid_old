@@ -29,8 +29,8 @@ Project::Project(ViewState &view, TracksState &tracks, ConnectionsState &connect
           pluginManager(pluginManager),
           deviceManager(deviceManager),
           copiedState(tracks, processorGraph) {
-    state = ValueTree(IDs::PROJECT);
-    state.setProperty(IDs::name, "My Project", nullptr);
+    state = ValueTree(ProjectIDs::PROJECT);
+    state.setProperty(ProjectIDs::name, "My Project", nullptr);
     state.appendChild(input.getState(), nullptr);
     state.appendChild(output.getState(), nullptr);
     state.appendChild(tracks.getState(), nullptr);
@@ -49,8 +49,8 @@ void Project::loadFromState(const ValueTree &newState) {
 
     view.loadFromState(newState.getChildWithName(ViewStateIDs::VIEW_STATE));
 
-    const String &inputDeviceName = newState.getChildWithName(IDs::INPUT)[IDs::deviceName];
-    const String &outputDeviceName = newState.getChildWithName(IDs::OUTPUT)[IDs::deviceName];
+    const String &inputDeviceName = newState.getChildWithName(TracksStateIDs::INPUT)[TracksStateIDs::deviceName];
+    const String &outputDeviceName = newState.getChildWithName(TracksStateIDs::OUTPUT)[TracksStateIDs::deviceName];
 
     // TODO this should be replaced with the greyed-out IO processor behavior (keeping connections)
     static const String &failureMessage = TRANS("Could not open an Audio IO device used by this project.  "
@@ -60,16 +60,16 @@ void Project::loadFromState(const ValueTree &newState) {
                                                 "reload this project (without saving first!).");
 
     if (isDeviceWithNamePresent(inputDeviceName))
-        input.loadFromState(newState.getChildWithName(IDs::INPUT));
+        input.loadFromState(newState.getChildWithName(TracksStateIDs::INPUT));
     else
         AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, TRANS("Failed to open input device \"") + inputDeviceName + "\"", failureMessage);
 
     if (isDeviceWithNamePresent(outputDeviceName))
-        output.loadFromState(newState.getChildWithName(IDs::OUTPUT));
+        output.loadFromState(newState.getChildWithName(TracksStateIDs::OUTPUT));
     else
         AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, TRANS("Failed to open output device \"") + outputDeviceName + "\"", failureMessage);
 
-    tracks.loadFromState(newState.getChildWithName(IDs::TRACKS));
+    tracks.loadFromState(newState.getChildWithName(TracksStateIDs::TRACKS));
     connections.loadFromState(newState.getChildWithName(ConnectionsStateIDs::CONNECTIONS));
     selectProcessor(tracks.getFocusedProcessor());
     undoManager.clearUndoHistory();
@@ -209,7 +209,7 @@ void Project::setTrackSelected(const ValueTree &track, bool selected, bool desel
 }
 
 void Project::selectProcessor(const ValueTree &processor) {
-    setProcessorSlotSelected(TracksState::getTrackForProcessor(processor), processor[IDs::processorSlot], true);
+    setProcessorSlotSelected(TracksState::getTrackForProcessor(processor), processor[TracksStateIDs::processorSlot], true);
 }
 
 bool Project::disconnectCustom(const ValueTree &processor) {
@@ -225,7 +225,7 @@ void Project::setDefaultConnectionsAllowed(const ValueTree &processor, bool defa
 
 void Project::toggleProcessorBypass(ValueTree processor) {
     undoManager.beginNewTransaction();
-    processor.setProperty(IDs::bypassed, !processor[IDs::bypassed], &undoManager);
+    processor.setProperty(TracksStateIDs::bypassed, !processor[TracksStateIDs::bypassed], &undoManager);
 }
 
 void Project::selectTrackAndSlot(juce::Point<int> trackAndSlot) {
@@ -283,7 +283,7 @@ void Project::updateAllDefaultConnections() {
 Result Project::loadDocument(const File &file) {
     if (auto xml = std::unique_ptr<XmlElement>(XmlDocument::parse(file))) {
         const ValueTree &newState = ValueTree::fromXml(*xml);
-        if (!newState.isValid() || !newState.hasType(IDs::PROJECT))
+        if (!newState.isValid() || !newState.hasType(ProjectIDs::PROJECT))
             return Result::fail(TRANS("Not a valid project file"));
 
         loadFromState(newState);

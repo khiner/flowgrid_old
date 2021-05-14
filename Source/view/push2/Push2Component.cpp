@@ -237,7 +237,7 @@ void Push2Component::showChild(Push2ComponentBase *child) {
 void Push2Component::valueTreePropertyChanged(ValueTree &tree, const Identifier &i) {
     if (i == ViewStateIDs::focusedTrackIndex) {
         updatePush2SelectionDependentButtons();
-    } else if (i == ViewStateIDs::focusedProcessorSlot || i == IDs::processorInitialized) {
+    } else if (i == ViewStateIDs::focusedProcessorSlot || i == TracksStateIDs::processorInitialized) {
         updateFocusedProcessor();
     } else if (i == ViewStateIDs::controlMode) {
         updateEnabledPush2Buttons();
@@ -246,7 +246,7 @@ void Push2Component::valueTreePropertyChanged(ValueTree &tree, const Identifier 
 }
 
 void Push2Component::valueTreeChildAdded(ValueTree &parent, ValueTree &child) {
-    if (child.hasType(IDs::TRACK)) {
+    if (child.hasType(TracksStateIDs::TRACK)) {
         updatePush2SelectionDependentButtons();
     } else if (child.hasType(ConnectionsStateIDs::CONNECTION)) {
         updatePush2NoteModePadLedManagerVisibility();
@@ -254,13 +254,13 @@ void Push2Component::valueTreeChildAdded(ValueTree &parent, ValueTree &child) {
 }
 
 void Push2Component::valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int) {
-    if (child.hasType(IDs::TRACK)) {
+    if (child.hasType(TracksStateIDs::TRACK)) {
         updatePush2SelectionDependentButtons();
         if (!tracks.getFocusedTrack().isValid()) {
             showChild(nullptr);
             processorView.processorFocused(nullptr);
         }
-    } else if (child.hasType(IDs::PROCESSOR)) {
+    } else if (child.hasType(TracksStateIDs::PROCESSOR)) {
         updateFocusedProcessor();
         updatePush2SelectionDependentButtons();
     } else if (child.hasType(ConnectionsStateIDs::CONNECTION)) {

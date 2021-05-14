@@ -28,7 +28,7 @@ public:
 
     void trackSelected(const ValueTree &track) {
         if (track.isValid()) {
-            selectedTrackColour = Colour::fromString(track[IDs::colour].toString());
+            selectedTrackColour = Colour::fromString(track[TracksStateIDs::colour].toString());
             updatePadColours();
         }
     }

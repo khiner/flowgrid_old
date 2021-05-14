@@ -12,7 +12,7 @@ SelectTrackAction::SelectTrackAction(const ValueTree &track, bool selected, bool
         newSelectedSlotsMasks.setUnchecked(trackIndex, tracks.createFullSelectionBitmask(track));
 
         const ValueTree &firstProcessor = TracksState::getProcessorLaneForTrack(track).getChild(0);
-        int slot = firstProcessor.isValid() ? int(firstProcessor[IDs::processorSlot]) : 0;
+        int slot = firstProcessor.isValid() ? int(firstProcessor[TracksStateIDs::processorSlot]) : 0;
         setNewFocusedSlot({trackIndex, slot});
     } else {
         newSelectedSlotsMasks.setUnchecked(trackIndex, BigInteger().toString(2));

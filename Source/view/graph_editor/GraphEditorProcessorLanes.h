@@ -37,7 +37,7 @@ public:
     }
 
     bool isSuitableType(const ValueTree &v) const override {
-        return v.hasType(IDs::PROCESSOR_LANE);
+        return v.hasType(TracksStateIDs::PROCESSOR_LANE);
     }
 
     GraphEditorProcessorLane *createNewObject(const ValueTree &v) override {

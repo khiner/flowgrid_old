@@ -1,24 +1,24 @@
 #include "CopiedState.h"
 
 void CopiedState::loadFromState(const ValueTree &tracksState) {
-    copiedItems = ValueTree(IDs::TRACKS);
+    copiedItems = ValueTree(TracksStateIDs::TRACKS);
     for (const auto &track : tracksState) {
-        auto copiedTrack = ValueTree(IDs::TRACK);
-        if (track[IDs::selected]) {
+        auto copiedTrack = ValueTree(TracksStateIDs::TRACK);
+        if (track[TracksStateIDs::selected]) {
             copiedTrack.copyPropertiesFrom(track, nullptr);
             for (auto processor : track)
-                if (processor.hasType(IDs::PROCESSOR))
+                if (processor.hasType(TracksStateIDs::PROCESSOR))
                     copiedTrack.appendChild(processorGraph.copyProcessor(processor), nullptr);
         } else {
-            copiedTrack.setProperty(IDs::isMasterTrack, track[IDs::isMasterTrack], nullptr);
+            copiedTrack.setProperty(TracksStateIDs::isMasterTrack, track[TracksStateIDs::isMasterTrack], nullptr);
         }
 
-        auto copiedLanes = ValueTree(IDs::PROCESSOR_LANES);
+        auto copiedLanes = ValueTree(TracksStateIDs::PROCESSOR_LANES);
         for (const auto &lane : TracksState::getProcessorLanesForTrack(track)) {
-            auto copiedLane = ValueTree(IDs::PROCESSOR_LANE);
-            copiedLane.setProperty(IDs::selectedSlotsMask, lane[IDs::selectedSlotsMask].toString(), nullptr);
+            auto copiedLane = ValueTree(TracksStateIDs::PROCESSOR_LANE);
+            copiedLane.setProperty(TracksStateIDs::selectedSlotsMask, lane[TracksStateIDs::selectedSlotsMask].toString(), nullptr);
             for (auto processor : lane)
-                if (track[IDs::selected] || TracksState::isProcessorSelected(processor))
+                if (track[TracksStateIDs::selected] || TracksState::isProcessorSelected(processor))
                     copiedLane.appendChild(processorGraph.copyProcessor(processor), nullptr);
             copiedLanes.appendChild(copiedLane, nullptr);
         }

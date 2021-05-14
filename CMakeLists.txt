@@ -99,7 +99,6 @@ target_sources(FlowGrid PRIVATE
     Source/push2/Push2UsbCommunicator.h
     Source/state/ConnectionsState.cpp
     Source/state/CopiedState.cpp
-    Source/state/Identifiers.h
     Source/state/InputState.cpp
     Source/state/OutputState.cpp
     Source/state/Project.cpp
