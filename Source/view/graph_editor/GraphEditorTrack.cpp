@@ -1,8 +1,9 @@
 #include "GraphEditorTrack.h"
 
-GraphEditorTrack::GraphEditorTrack(Project &project, TracksState &tracks, const ValueTree &state, ConnectorDragListener &connectorDragListener)
-        : project(project), tracks(tracks), view(project.getView()), state(state),
-          connectorDragListener(connectorDragListener), lanes(project, TracksState::getProcessorLanesForTrack(state), connectorDragListener) {
+GraphEditorTrack::GraphEditorTrack(const ValueTree &state, ViewState &view, TracksState &tracks, Project &project, ProcessorGraph &processorGraph, PluginManager &pluginManager,
+                                   ConnectorDragListener &connectorDragListener)
+        : state(state), view(view), tracks(tracks), project(project), processorGraph(processorGraph), connectorDragListener(connectorDragListener),
+          lanes(TracksState::getProcessorLanesForTrack(state), view, tracks, processorGraph, connectorDragListener) {
     addAndMakeVisible(lanes);
     trackInputProcessorChanged();
     trackOutputProcessorChanged();
@@ -92,7 +93,7 @@ void GraphEditorTrack::onColourChanged() {
 void GraphEditorTrack::trackInputProcessorChanged() {
     const ValueTree &trackInputProcessor = TracksState::getInputProcessorForTrack(state);
     if (trackInputProcessor.isValid()) {
-        trackInputProcessorView = std::make_unique<TrackInputGraphEditorProcessor>(project, tracks, view, trackInputProcessor, connectorDragListener);
+        trackInputProcessorView = std::make_unique<TrackInputGraphEditorProcessor>(trackInputProcessor, view, tracks, project, processorGraph, connectorDragListener);
         addAndMakeVisible(trackInputProcessorView.get());
         resized();
     } else {
@@ -105,7 +106,7 @@ void GraphEditorTrack::trackInputProcessorChanged() {
 void GraphEditorTrack::trackOutputProcessorChanged() {
     const ValueTree &trackOutputProcessor = TracksState::getOutputProcessorForTrack(state);
     if (trackOutputProcessor.isValid()) {
-        trackOutputProcessorView = std::make_unique<TrackOutputGraphEditorProcessor>(project, tracks, view, trackOutputProcessor, connectorDragListener);
+        trackOutputProcessorView = std::make_unique<TrackOutputGraphEditorProcessor>(trackOutputProcessor, view, tracks, processorGraph, connectorDragListener);
         addAndMakeVisible(trackOutputProcessorView.get());
         resized();
     } else {

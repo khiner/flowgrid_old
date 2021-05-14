@@ -3,19 +3,19 @@
 #include "state/Identifiers.h"
 #include "view/PluginWindow.h"
 
-DeleteProcessorAction::DeleteProcessorAction(const ValueTree &processorToDelete, TracksState &tracks, ConnectionsState &connections, StatefulAudioProcessorContainer &audioProcessorContainer)
+DeleteProcessorAction::DeleteProcessorAction(const ValueTree &processorToDelete, TracksState &tracks, ConnectionsState &connections, ProcessorGraph &processorGraph)
         : tracks(tracks), trackIndex(tracks.indexOf(TracksState::getTrackForProcessor(processorToDelete))),
           processorToDelete(processorToDelete),
           processorIndex(processorToDelete.getParent().indexOf(processorToDelete)),
           pluginWindowType(processorToDelete[IDs::pluginWindowType]),
           disconnectProcessorAction(DisconnectProcessorAction(connections, processorToDelete, all, true, true, true, true)),
-          audioProcessorContainer(audioProcessorContainer) {}
+          processorGraph(processorGraph) {}
 
 bool DeleteProcessorAction::perform() {
-    audioProcessorContainer.saveProcessorStateInformationToState(processorToDelete);
+    processorGraph.saveProcessorStateInformationToState(processorToDelete);
     performTemporary();
     processorToDelete.setProperty(IDs::pluginWindowType, static_cast<int>(PluginWindow::Type::none), nullptr);
-    audioProcessorContainer.onProcessorDestroyed(processorToDelete);
+    processorGraph.onProcessorDestroyed(processorToDelete);
     return true;
 }
 
@@ -25,7 +25,7 @@ bool DeleteProcessorAction::undo() {
         track.appendChild(processorToDelete, nullptr);
     else
         TracksState::getProcessorLaneForTrack(track).addChild(processorToDelete, processorIndex, nullptr);
-    audioProcessorContainer.onProcessorCreated(processorToDelete);
+    processorGraph.onProcessorCreated(processorToDelete);
     processorToDelete.setProperty(IDs::pluginWindowType, pluginWindowType, nullptr);
     disconnectProcessorAction.undo();
 

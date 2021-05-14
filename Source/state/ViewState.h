@@ -22,7 +22,7 @@ namespace ViewStateIDs {
 class ViewState : public Stateful {
 public:
 
-explicit ViewState(UndoManager &undoManager);
+    explicit ViewState(UndoManager &undoManager);
 
     ValueTree &getState() override { return viewState; }
 

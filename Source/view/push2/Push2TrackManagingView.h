@@ -1,12 +1,12 @@
 #pragma once
 
-#include <state/Project.h>
+#include "state/Project.h"
 #include "Push2ComponentBase.h"
 #include "Push2Label.h"
 
 class Push2TrackManagingView : public Push2ComponentBase, protected ValueTree::Listener {
 public:
-    explicit Push2TrackManagingView(Project &project, Push2MidiCommunicator &push2);
+    explicit Push2TrackManagingView(ViewState &view, TracksState &tracks, Project &project, Push2MidiCommunicator &push2);
 
     ~Push2TrackManagingView() override;
 

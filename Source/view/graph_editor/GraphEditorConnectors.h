@@ -1,6 +1,5 @@
 #pragma once
 
-#include "state/Project.h"
 #include "ValueTreeObjectList.h"
 #include "GraphEditorConnector.h"
 

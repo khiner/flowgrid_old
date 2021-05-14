@@ -6,8 +6,7 @@
 
 class TrackInputGraphEditorProcessor : public BaseGraphEditorProcessor, private ChangeListener {
 public:
-    TrackInputGraphEditorProcessor(StatefulAudioProcessorContainer &audioProcessorContainer, TracksState &tracks, ViewState &view,
-                                   const ValueTree &state, ConnectorDragListener &connectorDragListener);
+    TrackInputGraphEditorProcessor(const ValueTree &state, ViewState &view, TracksState &tracks, Project &project, ProcessorGraph &processorGraph, ConnectorDragListener &connectorDragListener);
 
     ~TrackInputGraphEditorProcessor() override;
 
@@ -31,7 +30,6 @@ public:
 
 private:
     Project &project;
-    TracksState &tracks;
     Label nameLabel;
     std::unique_ptr<ImageButton> audioMonitorToggle, midiMonitorToggle;
 

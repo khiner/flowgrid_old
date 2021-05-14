@@ -4,7 +4,7 @@
 #include "DisconnectProcessorAction.h"
 #include "DefaultConnectProcessorAction.h"
 
-ResetDefaultExternalInputConnectionsAction::ResetDefaultExternalInputConnectionsAction(ConnectionsState &connections, TracksState &tracks, InputState &input, StatefulAudioProcessorContainer &audioProcessorContainer,
+ResetDefaultExternalInputConnectionsAction::ResetDefaultExternalInputConnectionsAction(ConnectionsState &connections, TracksState &tracks, InputState &input, ProcessorGraph &processorGraph,
                                                                                        ValueTree trackToTreatAsFocused)
         : CreateOrDeleteConnectionsAction(connections) {
     if (!trackToTreatAsFocused.isValid())
@@ -16,15 +16,15 @@ ResetDefaultExternalInputConnectionsAction::ResetDefaultExternalInputConnections
         // If master track received focus, only change the default connections if no other tracks have effect processors
         if (TracksState::isMasterTrack(trackToTreatAsFocused) && connections.anyNonMasterTrackHasEffectProcessor(connectionType)) continue;
 
-        const ValueTree &inputProcessor = audioProcessorContainer.getProcessorStateForNodeId(sourceNodeId);
+        const ValueTree &inputProcessor = processorGraph.getProcessorStateForNodeId(sourceNodeId);
         AudioProcessorGraph::NodeID destinationNodeId;
 
         const ValueTree &topmostEffectProcessor = findTopmostEffectProcessor(trackToTreatAsFocused, connectionType);
         const auto &destinationProcessor = findMostUpstreamAvailableProcessorConnectedTo(topmostEffectProcessor, connectionType, tracks, input);
-        destinationNodeId = SAPC::getNodeIdForState(destinationProcessor);
+        destinationNodeId = TracksState::getNodeIdForProcessor(destinationProcessor);
 
         if (destinationNodeId.isValid()) {
-            coalesceWith(DefaultConnectProcessorAction(inputProcessor, destinationNodeId, connectionType, connections, audioProcessorContainer));
+            coalesceWith(DefaultConnectProcessorAction(inputProcessor, destinationNodeId, connectionType, connections, processorGraph));
         }
         coalesceWith(DisconnectProcessorAction(connections, inputProcessor, connectionType, true, false, false, true, destinationNodeId));
     }
@@ -32,7 +32,7 @@ ResetDefaultExternalInputConnectionsAction::ResetDefaultExternalInputConnections
 
 ValueTree ResetDefaultExternalInputConnectionsAction::findTopmostEffectProcessor(const ValueTree &track, ConnectionType connectionType) {
     for (const auto &processor : TracksState::getProcessorLaneForTrack(track))
-        if (connections.isProcessorAnEffect(processor, connectionType))
+        if (ConnectionsState::isProcessorAnEffect(processor, connectionType))
             return processor;
     return {};
 }
@@ -43,7 +43,7 @@ ValueTree ResetDefaultExternalInputConnectionsAction::findMostUpstreamAvailableP
 
     int lowestSlot = INT_MAX;
     ValueTree upperRightMostProcessor;
-    AudioProcessorGraph::NodeID processorNodeId = SAPC::getNodeIdForState(processor);
+    AudioProcessorGraph::NodeID processorNodeId = TracksState::getNodeIdForProcessor(processor);
     if (isAvailableForExternalInput(processor, connectionType, input))
         upperRightMostProcessor = processor;
 
@@ -54,7 +54,7 @@ ValueTree ResetDefaultExternalInputConnectionsAction::findMostUpstreamAvailableP
             continue;
 
         const auto &firstProcessor = lane.getChild(0);
-        auto firstProcessorNodeId = SAPC::getNodeIdForState(firstProcessor);
+        auto firstProcessorNodeId = TracksState::getNodeIdForProcessor(firstProcessor);
         int slot = firstProcessor[IDs::processorSlot];
         if (slot < lowestSlot &&
             isAvailableForExternalInput(firstProcessor, connectionType, input) &&
@@ -74,7 +74,7 @@ bool ResetDefaultExternalInputConnectionsAction::isAvailableForExternalInput(con
     const auto &incomingConnections = connections.getConnectionsForNode(processor, connectionType, true, false);
     const auto defaultInputNodeId = input.getDefaultInputNodeIdForConnectionType(connectionType);
     for (const auto &incomingConnection : incomingConnections) {
-        if (SAPC::getNodeIdForState(incomingConnection.getChildWithName(IDs::SOURCE)) != defaultInputNodeId)
+        if (TracksState::getNodeIdForProcessor(incomingConnection.getChildWithName(IDs::SOURCE)) != defaultInputNodeId)
             return false;
     }
     return true;
@@ -85,8 +85,8 @@ bool ResetDefaultExternalInputConnectionsAction::areProcessorsConnected(AudioPro
 
     Array<AudioProcessorGraph::NodeID> exploredDownstreamNodes;
     for (const auto &connection : connections.getState()) {
-        if (SAPC::getNodeIdForState(connection.getChildWithName(IDs::SOURCE)) == upstreamNodeId) {
-            auto otherDownstreamNodeId = SAPC::getNodeIdForState(connection.getChildWithName(IDs::DESTINATION));
+        if (TracksState::getNodeIdForProcessor(connection.getChildWithName(IDs::SOURCE)) == upstreamNodeId) {
+            auto otherDownstreamNodeId = TracksState::getNodeIdForProcessor(connection.getChildWithName(IDs::DESTINATION));
             if (!exploredDownstreamNodes.contains(otherDownstreamNodeId)) {
                 if (otherDownstreamNodeId == downstreamNodeId || areProcessorsConnected(otherDownstreamNodeId, downstreamNodeId))
                     return true;

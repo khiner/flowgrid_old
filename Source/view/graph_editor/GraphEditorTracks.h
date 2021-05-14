@@ -9,10 +9,9 @@ class GraphEditorTracks : public Component,
                           private ValueTreeObjectList<GraphEditorTrack>,
                           public GraphEditorProcessorContainer {
 public:
-    explicit GraphEditorTracks(Project &project, TracksState &tracks, ConnectorDragListener &connectorDragListener)
-            : ValueTreeObjectList<GraphEditorTrack>(tracks.getState()), project(project),
-              tracks(tracks), view(project.getView()),
-              connectorDragListener(connectorDragListener) {
+    explicit GraphEditorTracks(ViewState &view, TracksState &tracks, Project &project, ProcessorGraph &processorGraph, PluginManager &pluginManager, ConnectorDragListener &connectorDragListener)
+            : ValueTreeObjectList<GraphEditorTrack>(tracks.getState()),
+              view(view), tracks(tracks), project(project), processorGraph(processorGraph), pluginManager(pluginManager), connectorDragListener(connectorDragListener) {
         rebuildObjects();
         view.addListener(this);
     }
@@ -53,7 +52,7 @@ public:
     }
 
     GraphEditorTrack *createNewObject(const ValueTree &tree) override {
-        auto *track = new GraphEditorTrack(project, tracks, tree, connectorDragListener);
+        auto *track = new GraphEditorTrack(tree, view, tracks, project, processorGraph, pluginManager, connectorDragListener);
         addAndMakeVisible(track);
         return track;
     }
@@ -105,11 +104,12 @@ public:
     }
 
 private:
-    Project &project;
-    TracksState &tracks;
     ViewState &view;
+    TracksState &tracks;
+    Project &project;
+    ProcessorGraph &processorGraph;
+    PluginManager &pluginManager;
     ConnectorDragListener &connectorDragListener;
-
 
     void valueTreePropertyChanged(ValueTree &tree, const juce::Identifier &i) override {
         if (i == ViewStateIDs::gridViewTrackOffset || i == ViewStateIDs::masterViewSlotOffset)

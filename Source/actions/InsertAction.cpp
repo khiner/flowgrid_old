@@ -61,9 +61,9 @@ static std::vector<int> findDuplicationIndices(std::vector<int> currentIndices) 
     return duplicationIndices;
 }
 
-InsertAction::InsertAction(bool duplicate, const ValueTree &copiedState, const juce::Point<int> toTrackAndSlot, TracksState &tracks, ConnectionsState &connections, ViewState &view, InputState &input,
-                           StatefulAudioProcessorContainer &audioProcessorContainer)
-        : tracks(tracks), view(view), audioProcessorContainer(audioProcessorContainer),
+InsertAction::InsertAction(bool duplicate, const ValueTree &copiedState, const juce::Point<int> toTrackAndSlot,
+                           TracksState &tracks, ConnectionsState &connections, ViewState &view, InputState &input, ProcessorGraph &processorGraph)
+        : tracks(tracks), view(view), processorGraph(processorGraph),
           fromTrackAndSlot(findFromTrackAndSlot(copiedState)), toTrackAndSlot(limitToTrackAndSlot(toTrackAndSlot, copiedState)),
           oldFocusedTrackAndSlot(view.getFocusedTrackAndSlot()), newFocusedTrackAndSlot(oldFocusedTrackAndSlot) {
     auto trackAndSlotDiff = this->toTrackAndSlot - this->fromTrackAndSlot;
@@ -111,7 +111,7 @@ InsertAction::InsertAction(bool duplicate, const ValueTree &copiedState, const j
         }
     }
 
-    selectAction = std::make_unique<MoveSelectionsAction>(createActions, tracks, connections, view, input, audioProcessorContainer);
+    selectAction = std::make_unique<MoveSelectionsAction>(createActions, tracks, connections, view, input, processorGraph);
     selectAction->setNewFocusedSlot(newFocusedTrackAndSlot);
 
     // Cleanup
@@ -177,7 +177,7 @@ void InsertAction::addAndPerformAction(UndoableAction *action) {
 }
 
 void InsertAction::addAndPerformCreateProcessorAction(const ValueTree &processor, int fromTrackIndex, int fromSlot, int toTrackIndex, int toSlot) {
-    addAndPerformAction(new CreateProcessorAction(processor.createCopy(), toTrackIndex, toSlot, tracks, view, audioProcessorContainer));
+    addAndPerformAction(new CreateProcessorAction(processor.createCopy(), toTrackIndex, toSlot, tracks, view, processorGraph));
     if (oldFocusedTrackAndSlot.x == fromTrackIndex && oldFocusedTrackAndSlot.y == fromSlot)
         newFocusedTrackAndSlot = {toTrackIndex, toSlot};
 }
@@ -187,7 +187,7 @@ void InsertAction::addAndPerformCreateTrackAction(const ValueTree &track, int fr
     // Create track-level processors
     for (const auto &processor : track)
         if (processor.hasType(IDs::PROCESSOR))
-            addAndPerformAction(new CreateProcessorAction(processor.createCopy(), toTrackIndex, -1, tracks, view, audioProcessorContainer));
+            addAndPerformAction(new CreateProcessorAction(processor.createCopy(), toTrackIndex, -1, tracks, view, processorGraph));
 
     // Create in-lane processors
     for (const auto &processor : TracksState::getProcessorLaneForTrack(track)) {
@@ -196,9 +196,9 @@ void InsertAction::addAndPerformCreateTrackAction(const ValueTree &track, int fr
     }
 }
 
-InsertAction::MoveSelectionsAction::MoveSelectionsAction(const OwnedArray<UndoableAction> &createActions, TracksState &tracks, ConnectionsState &connections, ViewState &view, InputState &input,
-                                                         StatefulAudioProcessorContainer &audioProcessorContainer)
-        : SelectAction(tracks, connections, view, input, audioProcessorContainer) {
+InsertAction::MoveSelectionsAction::MoveSelectionsAction(const OwnedArray<UndoableAction> &createActions, TracksState &tracks, ConnectionsState &connections,
+                                                         ViewState &view, InputState &input, ProcessorGraph &processorGraph)
+        : SelectAction(tracks, connections, view, input, processorGraph) {
     for (int i = 0; i < newTrackSelections.size(); i++) {
         newTrackSelections.setUnchecked(i, false);
         newSelectedSlotsMasks.setUnchecked(i, BigInteger().toString(2));

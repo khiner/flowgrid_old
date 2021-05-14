@@ -52,7 +52,7 @@ class Push2ProcessorSelector : public Push2ComponentBase {
     };
 
 public:
-    Push2ProcessorSelector(Project &project, Push2MidiCommunicator &push2MidiCommunicator);
+    Push2ProcessorSelector(ViewState &view, TracksState &tracks, Project &project, Push2MidiCommunicator &push2MidiCommunicator);
 
     void setVisible(bool visible) override;
 

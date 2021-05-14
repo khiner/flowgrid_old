@@ -1,16 +1,17 @@
 #pragma once
 
+#include <juce_audio_devices/juce_audio_devices.h>
+
 #include "push2/Push2MidiDevice.h"
 #include "PluginManager.h"
-#include "StatefulAudioProcessorContainer.h"
 #include "Stateful.h"
 #include "TracksState.h"
-#include "ConnectionsState.h"
+#include "ConnectionType.h"
+#include "Identifiers.h"
 
-class InputState : public Stateful, private ChangeListener, private ValueTree::Listener {
+class InputState : public Stateful, private ValueTree::Listener {
 public:
-    InputState(TracksState &tracks, ConnectionsState &connections, StatefulAudioProcessorContainer &audioProcessorContainer,
-               PluginManager &pluginManager, UndoManager &undoManager, AudioDeviceManager &deviceManager);
+    InputState(PluginManager &pluginManager, UndoManager &undoManager, AudioDeviceManager &deviceManager);
 
     ~InputState() override;
 
@@ -29,25 +30,19 @@ public:
     }
 
     AudioProcessorGraph::NodeID getDefaultInputNodeIdForConnectionType(ConnectionType connectionType) const {
-        if (connectionType == audio) return StatefulAudioProcessorContainer::getNodeIdForState(getAudioInputProcessorState());
-        if (connectionType == midi) return StatefulAudioProcessorContainer::getNodeIdForState(getPush2MidiInputProcessor());
+        if (connectionType == audio) return TracksState::getNodeIdForProcessor(getAudioInputProcessorState());
+        if (connectionType == midi) return TracksState::getNodeIdForProcessor(getPush2MidiInputProcessor());
         return {};
     }
 
+    // Returns input processors to delete
+    Array<ValueTree> syncInputDevicesWithDeviceManager();
+
 private:
     ValueTree input;
-
-    TracksState &tracks;
-    ConnectionsState &connections;
-    StatefulAudioProcessorContainer &audioProcessorContainer;
     PluginManager &pluginManager;
-
     UndoManager &undoManager;
     AudioDeviceManager &deviceManager;
-
-    void syncInputDevicesWithDeviceManager();
-
-    void changeListenerCallback(ChangeBroadcaster *source) override;
 
     void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override {
         if (child[IDs::name] == InternalPluginFormat::getMidiInputProcessorName() && !deviceManager.isMidiInputEnabled(child[IDs::deviceName]))

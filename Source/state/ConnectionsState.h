@@ -1,11 +1,11 @@
 #pragma once
 
-#include "StatefulAudioProcessorContainer.h"
 #include "TracksState.h"
+#include "ConnectionType.h"
 
 class ConnectionsState : public Stateful {
 public:
-    explicit ConnectionsState(StatefulAudioProcessorContainer &audioProcessorContainer, TracksState &tracks);
+    explicit ConnectionsState(TracksState &tracks);
 
     ValueTree &getState() override { return connections; }
 
@@ -24,8 +24,8 @@ public:
     static AudioProcessorGraph::Connection stateToConnection(const ValueTree &connectionState) {
         const auto &sourceState = connectionState.getChildWithName(IDs::SOURCE);
         const auto &destState = connectionState.getChildWithName(IDs::DESTINATION);
-        return {{SAPC::getNodeIdForState(sourceState), int(sourceState[IDs::channel])},
-                {SAPC::getNodeIdForState(destState),   int(destState[IDs::channel])}};
+        return {{TracksState::getNodeIdForProcessor(sourceState), int(sourceState[IDs::channel])},
+                {TracksState::getNodeIdForProcessor(destState),   int(destState[IDs::channel])}};
     }
 
     ValueTree getConnectionMatching(const AudioProcessorGraph::Connection &connection) const {
@@ -35,38 +35,19 @@ public:
         return {};
     }
 
-    bool canProcessorDefaultConnectTo(const ValueTree &processor, const ValueTree &otherProcessor, ConnectionType connectionType) const {
-        if (!otherProcessor.hasType(IDs::PROCESSOR) || processor == otherProcessor)
-            return false;
+    bool anyNonMasterTrackHasEffectProcessor(ConnectionType connectionType);
 
-        return isProcessorAProducer(processor, connectionType) && isProcessorAnEffect(otherProcessor, connectionType);
+    static bool isProcessorAnEffect(const ValueTree &processor, ConnectionType connectionType) {
+        return (connectionType == audio && TracksState::getNumInputChannelsForProcessor(processor) > 0) ||
+               (connectionType == midi && processor[IDs::acceptsMidi]);
     }
 
-    bool isProcessorAProducer(const ValueTree &processor, ConnectionType connectionType) const {
-        if (auto *processorWrapper = audioProcessorContainer.getProcessorWrapperForState(processor))
-            return (connectionType == audio && processorWrapper->processor->getTotalNumOutputChannels() > 0) ||
-                   (connectionType == midi && processorWrapper->processor->producesMidi());
-        return false;
-    }
-
-    bool isProcessorAnEffect(const ValueTree &processor, ConnectionType connectionType) const {
-        if (auto *processorWrapper = audioProcessorContainer.getProcessorWrapperForState(processor))
-            return (connectionType == audio && processorWrapper->processor->getTotalNumInputChannels() > 0) ||
-                   (connectionType == midi && processorWrapper->processor->acceptsMidi());
-        return false;
-    }
-
-    bool anyNonMasterTrackHasEffectProcessor(ConnectionType connectionType) {
-        for (const auto &track : tracks.getState())
-            if (!TracksState::isMasterTrack(track))
-                for (const auto &processor : TracksState::getProcessorLaneForTrack(track))
-                    if (isProcessorAnEffect(processor, connectionType))
-                        return true;
-        return false;
+    static bool isProcessorAProducer(const ValueTree &processor, ConnectionType connectionType) {
+        return (connectionType == audio && TracksState::getNumOutputChannelsForProcessor(processor) > 0) ||
+               (connectionType == midi && processor[IDs::producesMidi]);
     }
 
 private:
     ValueTree connections;
-    StatefulAudioProcessorContainer &audioProcessorContainer;
     TracksState &tracks;
 };

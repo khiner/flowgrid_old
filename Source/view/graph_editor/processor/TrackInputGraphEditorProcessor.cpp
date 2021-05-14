@@ -2,9 +2,9 @@
 
 #include "BinaryData.h"
 
-TrackInputGraphEditorProcessor::TrackInputGraphEditorProcessor(SAPC &audioProcessorContainer, TracksState &tracks, ViewState &view, const ValueTree &state, ConnectorDragListener &connectorDragListener) :
-        BaseGraphEditorProcessor(audioProcessorContainer, tracks, view, state, connectorDragListener),
-        project(project), tracks(tracks) {
+TrackInputGraphEditorProcessor::TrackInputGraphEditorProcessor(const ValueTree &state, ViewState &view, TracksState &tracks, Project &project, ProcessorGraph &processorGraph, ConnectorDragListener &connectorDragListener)
+        :
+        BaseGraphEditorProcessor(state, view, tracks, processorGraph, connectorDragListener), project(project) {
     nameLabel.setJustificationType(Justification::centred);
     addAndMakeVisible(nameLabel);
     nameLabel.addMouseListener(this, false);

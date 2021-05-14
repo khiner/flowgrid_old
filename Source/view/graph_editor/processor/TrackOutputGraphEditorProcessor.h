@@ -6,8 +6,7 @@
 
 class TrackOutputGraphEditorProcessor : public BaseGraphEditorProcessor {
 public:
-    TrackOutputGraphEditorProcessor(StatefulAudioProcessorContainer &audioProcessorContainer, TracksState &tracks, ViewState &view,
-                                    const ValueTree &state, ConnectorDragListener &connectorDragListener);
+    TrackOutputGraphEditorProcessor(const ValueTree &state, ViewState &view, TracksState &tracks, ProcessorGraph &processorGraph, ConnectorDragListener &connectorDragListener);
 
     ~TrackOutputGraphEditorProcessor() override;
 

@@ -5,8 +5,7 @@
 #include "actions/DeleteProcessorAction.h"
 
 struct DeleteTrackAction : public UndoableAction {
-    DeleteTrackAction(const ValueTree &trackToDelete, TracksState &tracks, ConnectionsState &connections,
-                      StatefulAudioProcessorContainer &audioProcessorContainer);
+    DeleteTrackAction(const ValueTree &trackToDelete, TracksState &tracks, ConnectionsState &connections, ProcessorGraph &processorGraph);
 
     bool perform() override;
 

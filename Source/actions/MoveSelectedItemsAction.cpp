@@ -112,12 +112,12 @@ static juce::Point<int> limitedDelta(juce::Point<int> fromTrackAndSlot, juce::Po
 }
 
 MoveSelectedItemsAction::MoveSelectedItemsAction(juce::Point<int> fromTrackAndSlot, juce::Point<int> toTrackAndSlot, bool makeInvalidDefaultsIntoCustom, TracksState &tracks, ConnectionsState &connections,
-                                                 ViewState &view, InputState &input, OutputState &output, StatefulAudioProcessorContainer &audioProcessorContainer)
+                                                 ViewState &view, InputState &input, OutputState &output, ProcessorGraph &processorGraph)
         : trackAndSlotDelta(limitedDelta(fromTrackAndSlot, toTrackAndSlot, tracks, view)),
-          updateSelectionAction(trackAndSlotDelta, tracks, connections, view, input, audioProcessorContainer),
+          updateSelectionAction(trackAndSlotDelta, tracks, connections, view, input, processorGraph),
           insertTrackOrProcessorActions(createInsertActions(tracks, view)),
           updateConnectionsAction(makeInvalidDefaultsIntoCustom, true, tracks, connections, input, output,
-                                  audioProcessorContainer, updateSelectionAction.getNewFocusedTrack()) {
+                                  processorGraph, updateSelectionAction.getNewFocusedTrack()) {
     // cleanup - yeah it's ugly but avoids need for some copy/move madness in createUpdateConnectionsAction
     for (int i = insertTrackOrProcessorActions.size() - 1; i >= 0; i--)
         insertTrackOrProcessorActions.getUnchecked(i)->undo();
@@ -194,8 +194,8 @@ OwnedArray<UndoableAction> MoveSelectedItemsAction::createInsertActions(TracksSt
 }
 
 MoveSelectedItemsAction::MoveSelectionsAction::MoveSelectionsAction(juce::Point<int> trackAndSlotDelta, TracksState &tracks, ConnectionsState &connections, ViewState &view, InputState &input,
-                                                                    StatefulAudioProcessorContainer &audioProcessorContainer)
-        : SelectAction(tracks, connections, view, input, audioProcessorContainer) {
+                                                                    ProcessorGraph &processorGraph)
+        : SelectAction(tracks, connections, view, input, processorGraph) {
     if (trackAndSlotDelta.y != 0) {
         for (int i = 0; i < tracks.getNumTracks(); i++) {
             if (oldTrackSelections.getUnchecked(i))

@@ -27,8 +27,22 @@ public:
         return parent.hasType(IDs::PROCESSOR_LANE) ? parent : getProcessorLaneForTrack(parent);
     }
 
+    static int getNumInputChannelsForProcessor(const ValueTree &processor) {
+        const ValueTree &inputChannels = processor.getChildWithName(IDs::INPUT_CHANNELS);
+        return inputChannels.getNumChildren();
+    }
+
+    static int getNumOutputChannelsForProcessor(const ValueTree &processor) {
+        const ValueTree &outputChannels = processor.getChildWithName(IDs::OUTPUT_CHANNELS);
+        return outputChannels.getNumChildren();
+    }
+
     static ValueTree getTrackForProcessor(const ValueTree &processor) {
         return processor.getParent().hasType(IDs::TRACK) ? processor.getParent() : processor.getParent().getParent().getParent();
+    }
+
+    static AudioProcessorGraph::NodeID getNodeIdForProcessor(const ValueTree &processor) {
+        return processor.isValid() ? AudioProcessorGraph::NodeID(static_cast<uint32>(int(processor[IDs::nodeId]))) : AudioProcessorGraph::NodeID{};
     }
 
     static ValueTree getInputProcessorForTrack(const ValueTree &track) {

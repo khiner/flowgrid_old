@@ -1,7 +1,11 @@
 #include "ConnectionsState.h"
 
-ConnectionsState::ConnectionsState(StatefulAudioProcessorContainer &audioProcessorContainer, TracksState &tracks)
-        : audioProcessorContainer(audioProcessorContainer), tracks(tracks) {
+static bool canProcessorDefaultConnectTo(const ValueTree &processor, const ValueTree &otherProcessor, ConnectionType connectionType) {
+    return !(!otherProcessor.hasType(IDs::PROCESSOR) || processor == otherProcessor) &&
+           ConnectionsState::isProcessorAProducer(processor, connectionType) && ConnectionsState::isProcessorAnEffect(otherProcessor, connectionType);
+}
+
+ConnectionsState::ConnectionsState(TracksState &tracks) : tracks(tracks) {
     connections = ValueTree(IDs::CONNECTIONS);
 }
 
@@ -45,7 +49,7 @@ ValueTree ConnectionsState::findDefaultDestinationProcessor(const ValueTree &sou
 
 bool ConnectionsState::isNodeConnected(AudioProcessorGraph::NodeID nodeId) const {
     for (const auto &connection : connections) {
-        if (SAPC::getNodeIdForState(connection.getChildWithName(IDs::SOURCE)) == nodeId)
+        if (TracksState::getNodeIdForProcessor(connection.getChildWithName(IDs::SOURCE)) == nodeId)
             return true;
     }
     return false;
@@ -57,7 +61,7 @@ Array<ValueTree> ConnectionsState::getConnectionsForNode(const ValueTree &proces
         if ((connection[IDs::isCustomConnection] && !includeCustom) || (!connection[IDs::isCustomConnection] && !includeDefault))
             continue;
 
-        int processorNodeId = int(StatefulAudioProcessorContainer::getNodeIdForState(processor).uid);
+        int processorNodeId = int(TracksState::getNodeIdForProcessor(processor).uid);
         const auto &endpointType = connection.getChildWithProperty(IDs::nodeId, processorNodeId);
         bool directionIsAcceptable = (incoming && endpointType.hasType(IDs::DESTINATION)) || (outgoing && endpointType.hasType(IDs::SOURCE));
         bool typeIsAcceptable = connectionType == all ||
@@ -69,4 +73,13 @@ Array<ValueTree> ConnectionsState::getConnectionsForNode(const ValueTree &proces
     }
 
     return nodeConnections;
+}
+
+bool ConnectionsState::anyNonMasterTrackHasEffectProcessor(ConnectionType connectionType) {
+    for (const auto &track : tracks.getState())
+        if (!TracksState::isMasterTrack(track))
+            for (const auto &processor : TracksState::getProcessorLaneForTrack(track))
+                if (isProcessorAnEffect(processor, connectionType))
+                    return true;
+    return false;
 }

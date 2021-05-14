@@ -10,8 +10,8 @@ void MinimalSliderControl::resized() {
     const auto &sliderBounds = getSliderBounds();
     const auto &localBounds = getLocalBounds();
     int thumbPosition = orientation == vertical ?
-                          sliderBounds.getRelativePoint(0.0f, 1.0f - value).y :
-                          sliderBounds.getRelativePoint(value, 0.0f).x;
+                        sliderBounds.getRelativePoint(0.0f, 1.0f - value).y :
+                        sliderBounds.getRelativePoint(value, 0.0f).x;
     const auto &thumbBounds = orientation == vertical ?
                               localBounds.withHeight(THUMB_WIDTH).withY(thumbPosition - THUMB_WIDTH / 2) :
                               localBounds.withWidth(THUMB_WIDTH).withX(thumbPosition - THUMB_WIDTH / 2);

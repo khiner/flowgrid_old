@@ -2,11 +2,11 @@
 
 #include "ApplicationPropertiesAndCommandManager.h"
 
-Push2Component::Push2Component(Project &project, Push2MidiCommunicator &push2MidiCommunicator)
-        : Push2ComponentBase(project.getTracks(), project.getView(), push2MidiCommunicator),
-          project(project), connections(project.getConnections()), audioProcessorContainer(project),
-          processorView(project, push2MidiCommunicator), processorSelector(project, push2MidiCommunicator),
-          mixerView(project, push2MidiCommunicator), push2NoteModePadLedManager(project.getTracks(), push2MidiCommunicator) {
+Push2Component::Push2Component(ViewState &view, TracksState &tracks, Project &project, Push2MidiCommunicator &push2MidiCommunicator)
+        : Push2ComponentBase(view, tracks, push2MidiCommunicator),
+          project(project), connections(project.getConnections()), processorGraph(project.getProcessorGraph()),
+          processorView(view, tracks, project, push2MidiCommunicator), processorSelector(view, tracks, project, push2MidiCommunicator),
+          mixerView(view, tracks, project, push2MidiCommunicator), push2NoteModePadLedManager(project.getTracks(), push2MidiCommunicator) {
     startTimer(60);
 
     addChildComponent(processorView);
@@ -62,7 +62,7 @@ void Push2Component::shiftReleased() {
 
 void Push2Component::masterEncoderRotated(float changeAmount) {
     const auto &trackOutputProcessor = TracksState::getOutputProcessorForTrack(tracks.getMasterTrack());
-    if (auto *masterGainProcessor = audioProcessorContainer.getProcessorWrapperForState(trackOutputProcessor))
+    if (auto *masterGainProcessor = processorGraph.getProcessorWrapperForState(trackOutputProcessor))
         if (auto *masterGainParameter = masterGainProcessor->getParameter(1))
             masterGainParameter->setValue(masterGainParameter->getValue() + changeAmount);
 }
@@ -216,7 +216,7 @@ void Push2Component::updatePush2NoteModePadLedManagerVisibility() {
 }
 
 void Push2Component::updateFocusedProcessor() {
-    auto *focusedProcessorWrapper = audioProcessorContainer.getProcessorWrapperForState(tracks.getFocusedProcessor());
+    auto *focusedProcessorWrapper = processorGraph.getProcessorWrapperForState(tracks.getFocusedProcessor());
     if (currentlyViewingChild != &mixerView || focusedProcessorWrapper->processor->getName() != InternalPluginFormat::getTrackOutputProcessorName()) {
         processorView.processorFocused(focusedProcessorWrapper);
         showChild(&processorView);

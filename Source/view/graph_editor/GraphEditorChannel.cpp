@@ -1,7 +1,5 @@
 #include "GraphEditorChannel.h"
 
-#include "StatefulAudioProcessorContainer.h"
-
 GraphEditorChannel::GraphEditorChannel(ValueTree state, ConnectorDragListener &connectorDragListener, bool showChannelText)
         : state(std::move(state)), connectorDragListener(connectorDragListener),
           channelLabel(isMidi(), showChannelText) {
@@ -19,7 +17,7 @@ GraphEditorChannel::~GraphEditorChannel() {
 }
 
 AudioProcessorGraph::NodeAndChannel GraphEditorChannel::getNodeAndChannel() const {
-    return {StatefulAudioProcessorContainer::getNodeIdForState(getProcessor()), getChannelIndex()};
+    return {TracksState::getNodeIdForProcessor(getProcessor()), getChannelIndex()};
 }
 
 juce::Point<float> GraphEditorChannel::getConnectPosition() const {

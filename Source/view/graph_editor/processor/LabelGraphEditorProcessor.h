@@ -4,8 +4,7 @@
 
 class LabelGraphEditorProcessor : public BaseGraphEditorProcessor {
 public:
-    LabelGraphEditorProcessor(StatefulAudioProcessorContainer &audioProcessorContainer, TracksState &tracks, ViewState &view,
-                              const ValueTree &state, ConnectorDragListener &connectorDragListener);
+    LabelGraphEditorProcessor(const ValueTree &state, ViewState &view, TracksState &tracks, ProcessorGraph &processorGraph, ConnectorDragListener &connectorDragListener);
 
     void resized() override;
 

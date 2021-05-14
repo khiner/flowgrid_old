@@ -2,12 +2,12 @@
 
 #include "view/graph_editor/ConnectorDragListener.h"
 #include "view/graph_editor/GraphEditorChannel.h"
-#include "StatefulAudioProcessorContainer.h"
+#include "ProcessorGraph.h"
 
 class BaseGraphEditorProcessor : public Component, public ValueTree::Listener {
 public:
-    BaseGraphEditorProcessor(StatefulAudioProcessorContainer &audioProcessorContainer, TracksState &tracks, ViewState &view,
-                             const ValueTree &state, ConnectorDragListener &connectorDragListener);
+    BaseGraphEditorProcessor(const ValueTree &state, ViewState &view, TracksState &tracks,
+                             ProcessorGraph &processorGraph, ConnectorDragListener &connectorDragListener);
 
     ~BaseGraphEditorProcessor() override;
 
@@ -18,7 +18,7 @@ public:
     }
 
     AudioProcessorGraph::NodeID getNodeId() const {
-        return StatefulAudioProcessorContainer::getNodeIdForState(state);
+        return TracksState::getNodeIdForProcessor(state);
     }
 
     virtual bool isInView() {
@@ -44,7 +44,7 @@ public:
     bool isSelected() { return TracksState::isProcessorSelected(state); }
 
     StatefulAudioProcessorWrapper *getProcessorWrapper() const {
-        return audioProcessorContainer.getProcessorWrapperForState(state);
+        return processorGraph.getProcessorWrapperForState(state);
     }
 
     void paint(Graphics &g) override;
@@ -94,12 +94,13 @@ protected:
 
     void valueTreePropertyChanged(ValueTree &v, const Identifier &i) override;
 
-private:
-    TracksState &tracks;
+protected:
     ViewState &view;
+    TracksState &tracks;
+    ProcessorGraph &processorGraph;
     ConnectorDragListener &connectorDragListener;
-    StatefulAudioProcessorContainer &audioProcessorContainer;
 
+private:
     GraphEditorChannel *findChannelWithState(const ValueTree &state) {
         for (auto *channel : channels)
             if (channel->getState() == state)

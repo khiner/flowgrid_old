@@ -1,8 +1,8 @@
 #include "Push2TrackManagingView.h"
 
 
-Push2TrackManagingView::Push2TrackManagingView(Project &project, Push2MidiCommunicator &push2)
-        : Push2ComponentBase(project.getTracks(), project.getView(), push2), project(project) {
+Push2TrackManagingView::Push2TrackManagingView(ViewState &view, TracksState &tracks, Project &project, Push2MidiCommunicator &push2)
+        : Push2ComponentBase(view, tracks, push2), project(project) {
     tracks.addListener(this);
     view.addListener(this);
 

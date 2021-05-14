@@ -8,24 +8,24 @@
 
 class GraphEditor : public Component {
 public:
-    GraphEditor(ProcessorGraph &graph, Project &project)
-            : graphPanel(graph, project),
-              selectionEditor(project, graph) {
-        addAndMakeVisible(graphPanel);
+    GraphEditor(ViewState &view, TracksState &tracks, ConnectionsState &connections, ProcessorGraph &processorGraph, Project &project, PluginManager &pluginManager)
+            : graphEditorPanel(view, tracks, connections, processorGraph, project, pluginManager),
+              selectionEditor(project, processorGraph) {
+        addAndMakeVisible(graphEditorPanel);
         addAndMakeVisible(selectionEditor);
     }
 
     void resized() override {
         auto r = getLocalBounds();
-        graphPanel.setBounds(r.removeFromLeft(int(r.getWidth() * 0.6f)));
+        graphEditorPanel.setBounds(r.removeFromLeft(int(r.getWidth() * 0.6f)));
         selectionEditor.setBounds(r);
     }
 
     bool closeAnyOpenPluginWindows() {
-        return graphPanel.closeAnyOpenPluginWindows();
+        return graphEditorPanel.closeAnyOpenPluginWindows();
     }
 
 private:
-    GraphEditorPanel graphPanel;
+    GraphEditorPanel graphEditorPanel;
     SelectionEditor selectionEditor;
 };

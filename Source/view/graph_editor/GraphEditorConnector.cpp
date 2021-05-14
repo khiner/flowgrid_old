@@ -6,9 +6,9 @@ GraphEditorConnector::GraphEditorConnector(ValueTree state, ConnectorDragListene
     setAlwaysOnTop(true);
     if (this->state.isValid()) {
         const auto &sourceState = this->state.getChildWithName(IDs::SOURCE);
-        connection.source = {SAPC::getNodeIdForState(sourceState), sourceState[IDs::channel]};
+        connection.source = {TracksState::getNodeIdForProcessor(sourceState), sourceState[IDs::channel]};
         const auto &destinationState = this->state.getChildWithName(IDs::DESTINATION);
-        connection.destination = {SAPC::getNodeIdForState(destinationState), destinationState[IDs::channel]};
+        connection.destination = {TracksState::getNodeIdForProcessor(destinationState), destinationState[IDs::channel]};
     } else {
         connection.source = source;
         connection.destination = destination;

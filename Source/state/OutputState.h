@@ -1,17 +1,16 @@
 #pragma once
 
+#include <juce_audio_devices/juce_audio_devices.h>
+
 #include "PluginManager.h"
-#include "StatefulAudioProcessorContainer.h"
 #include "Stateful.h"
-#include "TracksState.h"
-#include "ConnectionsState.h"
+#include "ConnectionType.h"
+#include "Identifiers.h"
 
 // TODO Should input/output be combined into a single IOState? (Almost all behavior is symmetrical.)
-class OutputState : public Stateful, private ChangeListener, private ValueTree::Listener {
+class OutputState : public Stateful, private ValueTree::Listener {
 public:
-    OutputState(TracksState &tracks, ConnectionsState &connections,
-                StatefulAudioProcessorContainer &audioProcessorContainer, PluginManager &pluginManager,
-                UndoManager &undoManager, AudioDeviceManager &deviceManager);
+    OutputState(PluginManager &pluginManager, UndoManager &undoManager, AudioDeviceManager &deviceManager);
 
     ~OutputState() override;
 
@@ -28,20 +27,14 @@ public:
         return output.getChildWithProperty(IDs::name, pluginManager.getAudioOutputDescription().name);
     }
 
+    // Returns output processors to delete
+    Array<ValueTree> syncOutputDevicesWithDeviceManager();
+
 private:
     ValueTree output;
-
-    TracksState &tracks;
-    ConnectionsState &connections;
-    StatefulAudioProcessorContainer &audioProcessorContainer;
     PluginManager &pluginManager;
-
     UndoManager &undoManager;
     AudioDeviceManager &deviceManager;
-
-    void syncOutputDevicesWithDeviceManager();
-
-    void changeListenerCallback(ChangeBroadcaster *source) override;
 
     void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override {
         if (child[IDs::name] == InternalPluginFormat::getMidiOutputProcessorName() &&

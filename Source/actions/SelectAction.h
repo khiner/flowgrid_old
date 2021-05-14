@@ -6,11 +6,11 @@
 
 struct SelectAction : public UndoableAction {
     SelectAction(TracksState &tracks, ConnectionsState &connections, ViewState &view, InputState &input,
-                 StatefulAudioProcessorContainer &audioProcessorContainer);
+                 ProcessorGraph &processorGraph);
 
     SelectAction(SelectAction *coalesceLeft, SelectAction *coalesceRight,
                  TracksState &tracks, ConnectionsState &connections, ViewState &view, InputState &input,
-                 StatefulAudioProcessorContainer &audioProcessorContainer);
+                 ProcessorGraph &processorGraph);
 
     void setNewFocusedSlot(juce::Point<int> newFocusedSlot, bool resetDefaultExternalInputs = true);
 
@@ -35,7 +35,7 @@ protected:
     ConnectionsState &connections;
     ViewState &view;
     InputState &input;
-    StatefulAudioProcessorContainer &audioProcessorContainer;
+    ProcessorGraph &processorGraph;
 
     Array<String> oldSelectedSlotsMasks, newSelectedSlotsMasks;
     Array<bool> oldTrackSelections, newTrackSelections;

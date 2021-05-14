@@ -1,10 +1,14 @@
 #pragma once
 
+#include <juce_core/juce_core.h>
+#include <juce_data_structures/juce_data_structures.h>
+
+using namespace juce;
+
 template<typename ObjectType, typename CriticalSectionType = DummyCriticalSection>
 class ValueTreeObjectList : public ValueTree::Listener {
 public:
-    explicit ValueTreeObjectList(ValueTree parentTree)
-            : parent(std::move(parentTree)) {
+    explicit ValueTreeObjectList(ValueTree parentTree) : parent(std::move(parentTree)) {
         parent.addListener(this);
     }
 

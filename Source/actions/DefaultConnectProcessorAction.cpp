@@ -9,15 +9,15 @@ static const Array<int> &getDefaultConnectionChannels(ConnectionType connectionT
 }
 
 DefaultConnectProcessorAction::DefaultConnectProcessorAction(const ValueTree &fromProcessor, AudioProcessorGraph::NodeID toNodeId, ConnectionType connectionType, ConnectionsState &connections,
-                                                             StatefulAudioProcessorContainer &audioProcessorContainer)
+                                                             ProcessorGraph &processorGraph)
         : CreateOrDeleteConnectionsAction(connections) {
-    const auto fromNodeId = StatefulAudioProcessorContainer::getNodeIdForState(fromProcessor);
+    const auto fromNodeId = TracksState::getNodeIdForProcessor(fromProcessor);
     if (fromProcessor.isValid() && toNodeId.isValid()) {
         const auto &defaultConnectionChannels = getDefaultConnectionChannels(connectionType);
         for (auto channel : defaultConnectionChannels) {
             AudioProcessorGraph::Connection connection = {{fromNodeId, channel},
                                                           {toNodeId,   channel}};
-            coalesceWith(CreateConnectionAction(connection, true, connections, audioProcessorContainer));
+            coalesceWith(CreateConnectionAction(connection, true, connections, processorGraph));
         }
     }
 }

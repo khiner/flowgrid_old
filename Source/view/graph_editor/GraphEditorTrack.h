@@ -7,7 +7,7 @@
 
 class GraphEditorTrack : public Component, public ValueTree::Listener, public GraphEditorProcessorContainer {
 public:
-    explicit GraphEditorTrack(Project &project, TracksState &tracks, const ValueTree &state, ConnectorDragListener &connectorDragListener);
+    explicit GraphEditorTrack(const ValueTree &state, ViewState &view, TracksState &tracks, Project &project, ProcessorGraph &processorGraph, PluginManager &pluginManager, ConnectorDragListener &connectorDragListener);
 
     ~GraphEditorTrack() override;
 
@@ -33,11 +33,12 @@ public:
 private:
     static constexpr int BORDER_WIDTH = 2;
 
-    Project &project;
-    TracksState &tracks;
-    ViewState &view;
     ValueTree state;
+    ViewState &view;
+    TracksState &tracks;
 
+    Project &project;
+    ProcessorGraph &processorGraph;
     std::unique_ptr<TrackInputGraphEditorProcessor> trackInputProcessorView;
     std::unique_ptr<TrackOutputGraphEditorProcessor> trackOutputProcessorView;
     ConnectorDragListener &connectorDragListener;

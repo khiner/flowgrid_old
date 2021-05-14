@@ -20,23 +20,23 @@ static int getInsertSlot(const PluginDescription &description, int trackIndex, T
     return indexToInsertProcessor <= 0 ? 0 : int(lane.getChild(indexToInsertProcessor - 1)[IDs::processorSlot]) + 1;
 }
 
-CreateProcessorAction::CreateProcessorAction(ValueTree processorToCreate, int trackIndex, int slot, TracksState &tracks, ViewState &view, StatefulAudioProcessorContainer &audioProcessorContainer)
+CreateProcessorAction::CreateProcessorAction(ValueTree processorToCreate, int trackIndex, int slot, TracksState &tracks, ViewState &view, ProcessorGraph &processorGraph)
         : trackIndex(trackIndex), slot(slot), processorToCreate(std::move(processorToCreate)),
           pluginWindowType(this->processorToCreate[IDs::pluginWindowType]),
           insertAction(this->processorToCreate, trackIndex, slot, tracks, view),
-          audioProcessorContainer(audioProcessorContainer) {}
+          processorGraph(processorGraph) {}
 
-CreateProcessorAction::CreateProcessorAction(const PluginDescription &description, int trackIndex, int slot, TracksState &tracks, ViewState &view, StatefulAudioProcessorContainer &audioProcessorContainer)
-        : CreateProcessorAction(createProcessor(description), trackIndex, slot, tracks, view, audioProcessorContainer) {}
+CreateProcessorAction::CreateProcessorAction(const PluginDescription &description, int trackIndex, int slot, TracksState &tracks, ViewState &view, ProcessorGraph &processorGraph)
+        : CreateProcessorAction(createProcessor(description), trackIndex, slot, tracks, view, processorGraph) {}
 
-CreateProcessorAction::CreateProcessorAction(const PluginDescription &description, int trackIndex, TracksState &tracks, ViewState &view, StatefulAudioProcessorContainer &audioProcessorContainer)
+CreateProcessorAction::CreateProcessorAction(const PluginDescription &description, int trackIndex, TracksState &tracks, ViewState &view, ProcessorGraph &processorGraph)
         : CreateProcessorAction(createProcessor(description), trackIndex, getInsertSlot(description, trackIndex, tracks),
-                                tracks, view, audioProcessorContainer) {}
+                                tracks, view, processorGraph) {}
 
 bool CreateProcessorAction::perform() {
     performTemporary();
     if (processorToCreate.isValid()) {
-        audioProcessorContainer.onProcessorCreated(processorToCreate);
+        processorGraph.onProcessorCreated(processorToCreate);
         processorToCreate.setProperty(IDs::pluginWindowType, pluginWindowType, nullptr);
     }
     return true;
@@ -46,7 +46,7 @@ bool CreateProcessorAction::undo() {
     undoTemporary();
     if (processorToCreate.isValid()) {
         processorToCreate.setProperty(IDs::pluginWindowType, static_cast<int>(PluginWindow::Type::none), nullptr);
-        audioProcessorContainer.onProcessorDestroyed(processorToCreate);
+        processorGraph.onProcessorDestroyed(processorToCreate);
     }
     return true;
 }

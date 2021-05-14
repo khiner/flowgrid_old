@@ -1,6 +1,5 @@
 #pragma once
 
-#include "state/Project.h"
 #include "ValueTreeObjectList.h"
 #include "GraphEditorProcessorContainer.h"
 #include "ConnectorDragListener.h"
@@ -8,7 +7,7 @@
 
 class GraphEditorProcessorLane : public Component, ValueTreeObjectList<BaseGraphEditorProcessor>, GraphEditorProcessorContainer {
 public:
-    explicit GraphEditorProcessorLane(Project &project, const ValueTree &state, ConnectorDragListener &connectorDragListener);
+    explicit GraphEditorProcessorLane(const ValueTree &state, ViewState &view, TracksState &tracks, ProcessorGraph &processorGraph, ConnectorDragListener &connectorDragListener);
 
     ~GraphEditorProcessorLane() override;
 
@@ -63,14 +62,12 @@ public:
     }
 
 private:
-    Project &project;
     ValueTree state;
 
-    TracksState &tracks;
     ViewState &view;
-    ConnectionsState &connections;
+    TracksState &tracks;
 
-    PluginManager &pluginManager;
+    ProcessorGraph &processorGraph;
     ConnectorDragListener &connectorDragListener;
 
     DrawableRectangle laneDragRectangle;

@@ -2,53 +2,14 @@
 
 #include "state/Identifiers.h"
 
-CreateConnectionAction::CreateConnectionAction(const AudioProcessorGraph::Connection &connection, bool isDefault, ConnectionsState &connections, StatefulAudioProcessorContainer &audioProcessorContainer)
+// TODO iterate through state instead of getProcessorStateForNodeId
+CreateConnectionAction::CreateConnectionAction(const AudioProcessorGraph::Connection &connection, bool isDefault, ConnectionsState &connections, ProcessorGraph &processorGraph)
         : CreateOrDeleteConnectionsAction(connections) {
-    if (canAddConnection(connection, audioProcessorContainer) &&
-        (!isDefault || (audioProcessorContainer.getProcessorStateForNodeId(connection.source.nodeID)[IDs::allowDefaultConnections] &&
-                        audioProcessorContainer.getProcessorStateForNodeId(connection.destination.nodeID)[IDs::allowDefaultConnections]))) {
+    if (processorGraph.canAddConnection(connection) &&
+        (!isDefault || (processorGraph.getProcessorStateForNodeId(connection.source.nodeID)[IDs::allowDefaultConnections] &&
+                        processorGraph.getProcessorStateForNodeId(connection.destination.nodeID)[IDs::allowDefaultConnections]))) {
         addConnection(stateForConnection(connection, isDefault));
     }
-}
-
-bool CreateConnectionAction::canAddConnection(const AudioProcessorGraph::Connection &c, StatefulAudioProcessorContainer &audioProcessorContainer) {
-    if (auto *source = audioProcessorContainer.getNodeForId(c.source.nodeID))
-        if (auto *dest = audioProcessorContainer.getNodeForId(c.destination.nodeID))
-            return canAddConnection(source, c.source.channelIndex, dest, c.destination.channelIndex);
-
-    return false;
-}
-
-bool CreateConnectionAction::canAddConnection(AudioProcessorGraph::Node *source, int sourceChannel, AudioProcessorGraph::Node *dest, int destChannel) noexcept {
-    bool sourceIsMIDI = sourceChannel == AudioProcessorGraph::midiChannelIndex;
-    bool destIsMIDI = destChannel == AudioProcessorGraph::midiChannelIndex;
-
-    if (sourceChannel < 0
-        || destChannel < 0
-        || source == dest
-        || sourceIsMIDI != destIsMIDI)
-        return false;
-
-    if (source == nullptr
-        || (!sourceIsMIDI && sourceChannel >= source->getProcessor()->getTotalNumOutputChannels())
-        || (sourceIsMIDI && !source->getProcessor()->producesMidi()))
-        return false;
-
-    if (dest == nullptr
-        || (!destIsMIDI && destChannel >= dest->getProcessor()->getTotalNumInputChannels())
-        || (destIsMIDI && !dest->getProcessor()->acceptsMidi()))
-        return false;
-
-    return !hasConnectionMatching({{source->nodeID, sourceChannel},
-                                   {dest->nodeID,   destChannel}});
-}
-
-bool CreateConnectionAction::hasConnectionMatching(const AudioProcessorGraph::Connection &connection) {
-    for (const auto &connectionState : connections.getState()) {
-        if (ConnectionsState::stateToConnection(connectionState) == connection)
-            return true;
-    }
-    return false;
 }
 
 ValueTree CreateConnectionAction::stateForConnection(const AudioProcessorGraph::Connection &connection, bool isDefault) {

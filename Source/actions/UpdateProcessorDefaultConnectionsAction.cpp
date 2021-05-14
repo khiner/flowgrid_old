@@ -4,8 +4,8 @@
 #include "DefaultConnectProcessorAction.h"
 #include "DisconnectProcessorAction.h"
 
-UpdateProcessorDefaultConnectionsAction::UpdateProcessorDefaultConnectionsAction(const ValueTree &processor, bool makeInvalidDefaultsIntoCustom, ConnectionsState &connections, OutputState &output,
-                                                                                 StatefulAudioProcessorContainer &audioProcessorContainer)
+UpdateProcessorDefaultConnectionsAction::UpdateProcessorDefaultConnectionsAction(const ValueTree &processor, bool makeInvalidDefaultsIntoCustom,
+                                                                                 ConnectionsState &connections, OutputState &output, ProcessorGraph &processorGraph)
         : CreateOrDeleteConnectionsAction(connections) {
     for (auto connectionType : {audio, midi}) {
         auto customOutgoingConnections = connections.getConnectionsForNode(processor, connectionType, false, true, true, false);
@@ -14,7 +14,7 @@ UpdateProcessorDefaultConnectionsAction::UpdateProcessorDefaultConnectionsAction
         auto processorToConnectTo = connections.findDefaultDestinationProcessor(processor, connectionType);
         if (!processorToConnectTo.isValid())
             processorToConnectTo = output.getAudioOutputProcessorState();
-        auto nodeIdToConnectTo = StatefulAudioProcessorContainer::getNodeIdForState(processorToConnectTo);
+        auto nodeIdToConnectTo = TracksState::getNodeIdForProcessor(processorToConnectTo);
 
         auto disconnectDefaultsAction = DisconnectProcessorAction(connections, processor, connectionType, true, false, false, true, nodeIdToConnectTo);
         coalesceWith(disconnectDefaultsAction);
@@ -27,7 +27,7 @@ UpdateProcessorDefaultConnectionsAction::UpdateProcessorDefaultConnectionsAction
                 }
             }
         } else {
-            coalesceWith(DefaultConnectProcessorAction(processor, nodeIdToConnectTo, connectionType, connections, audioProcessorContainer));
+            coalesceWith(DefaultConnectProcessorAction(processor, nodeIdToConnectTo, connectionType, connections, processorGraph));
         }
     }
 }

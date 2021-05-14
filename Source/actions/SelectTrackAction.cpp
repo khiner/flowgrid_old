@@ -1,8 +1,8 @@
 #include "SelectTrackAction.h"
 
 SelectTrackAction::SelectTrackAction(const ValueTree &track, bool selected, bool deselectOthers, TracksState &tracks, ConnectionsState &connections, ViewState &view, InputState &input,
-                                     StatefulAudioProcessorContainer &audioProcessorContainer)
-        : SelectAction(tracks, connections, view, input, audioProcessorContainer) {
+                                     ProcessorGraph &processorGraph)
+        : SelectAction(tracks, connections, view, input, processorGraph) {
     if (!track.isValid()) return; // no-op
 
     auto trackIndex = tracks.indexOf(track);

@@ -1,8 +1,8 @@
 #include "SelectAction.h"
 
-SelectAction::SelectAction(TracksState &tracks, ConnectionsState &connections, ViewState &view, InputState &input, StatefulAudioProcessorContainer &audioProcessorContainer)
+SelectAction::SelectAction(TracksState &tracks, ConnectionsState &connections, ViewState &view, InputState &input, ProcessorGraph &processorGraph)
         : tracks(tracks), connections(connections), view(view),
-          input(input), audioProcessorContainer(audioProcessorContainer) {
+          input(input), processorGraph(processorGraph) {
     this->oldSelectedSlotsMasks = tracks.getSelectedSlotsMasks();
     this->oldTrackSelections = tracks.getTrackSelections();
     this->oldFocusedSlot = view.getFocusedTrackAndSlot();
@@ -12,9 +12,9 @@ SelectAction::SelectAction(TracksState &tracks, ConnectionsState &connections, V
 }
 
 SelectAction::SelectAction(SelectAction *coalesceLeft, SelectAction *coalesceRight, TracksState &tracks, ConnectionsState &connections, ViewState &view, InputState &input,
-                           StatefulAudioProcessorContainer &audioProcessorContainer)
+                           ProcessorGraph &processorGraph)
         : tracks(tracks), connections(connections), view(view),
-          input(input), audioProcessorContainer(audioProcessorContainer),
+          input(input), processorGraph(processorGraph),
           oldSelectedSlotsMasks(std::move(coalesceLeft->oldSelectedSlotsMasks)), newSelectedSlotsMasks(std::move(coalesceRight->newSelectedSlotsMasks)),
           oldTrackSelections(std::move(coalesceLeft->oldTrackSelections)), newTrackSelections(std::move(coalesceRight->newTrackSelections)),
           oldFocusedSlot(coalesceLeft->oldFocusedSlot), newFocusedSlot(coalesceRight->newFocusedSlot) {
@@ -37,7 +37,7 @@ SelectAction::SelectAction(SelectAction *coalesceLeft, SelectAction *coalesceRig
 void SelectAction::setNewFocusedSlot(juce::Point<int> newFocusedSlot, bool resetDefaultExternalInputs) {
     this->newFocusedSlot = newFocusedSlot;
     if (resetDefaultExternalInputs && oldFocusedSlot.x != this->newFocusedSlot.x) {
-        resetInputsAction = std::make_unique<ResetDefaultExternalInputConnectionsAction>(connections, tracks, input, audioProcessorContainer, getNewFocusedTrack());
+        resetInputsAction = std::make_unique<ResetDefaultExternalInputConnectionsAction>(connections, tracks, input, processorGraph, getNewFocusedTrack());
     }
 }
 
@@ -77,7 +77,7 @@ bool SelectAction::undo() {
 UndoableAction *SelectAction::createCoalescedAction(UndoableAction *nextAction) {
     if (auto *nextSelect = dynamic_cast<SelectAction *>(nextAction))
         if (canCoalesceWith(nextSelect))
-            return new SelectAction(this, nextSelect, tracks, connections, view, input, audioProcessorContainer);
+            return new SelectAction(this, nextSelect, tracks, connections, view, input, processorGraph);
     return nullptr;
 }
 

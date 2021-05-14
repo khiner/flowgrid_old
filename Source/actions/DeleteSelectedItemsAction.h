@@ -5,7 +5,7 @@
 #include "DeleteTrackAction.h"
 
 struct DeleteSelectedItemsAction : public UndoableAction {
-    DeleteSelectedItemsAction(TracksState &tracks, ConnectionsState &connections, StatefulAudioProcessorContainer &audioProcessorContainer);
+    DeleteSelectedItemsAction(TracksState &tracks, ConnectionsState &connections, ProcessorGraph &processorGraph);
 
     bool perform() override;
 

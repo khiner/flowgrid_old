@@ -64,6 +64,7 @@ public:
     void setPadColour(int noteNumber, const Colour &colour);
 
     static uint8 ccNumberForArrowButton(int direction);
+
 private:
     static constexpr int NO_ANIMATION_LED_CHANNEL = 1;
     static constexpr int BUTTON_HOLD_REPEAT_HZ = 10; // how often to repeat a repeatable button press when it is held

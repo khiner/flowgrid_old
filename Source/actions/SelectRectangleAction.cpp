@@ -1,8 +1,8 @@
 #include "SelectRectangleAction.h"
 
-SelectRectangleAction::SelectRectangleAction(const juce::Point<int> fromTrackAndSlot, const juce::Point<int> toTrackAndSlot, TracksState &tracks, ConnectionsState &connections, ViewState &view, InputState &input,
-                                             StatefulAudioProcessorContainer &audioProcessorContainer)
-        : SelectAction(tracks, connections, view, input, audioProcessorContainer) {
+SelectRectangleAction::SelectRectangleAction(const juce::Point<int> fromTrackAndSlot, const juce::Point<int> toTrackAndSlot,
+                                             TracksState &tracks, ConnectionsState &connections, ViewState &view, InputState &input, ProcessorGraph &processorGraph)
+        : SelectAction(tracks, connections, view, input, processorGraph) {
     Rectangle<int> selectionRectangle(tracks.trackAndSlotToGridPosition(fromTrackAndSlot), tracks.trackAndSlotToGridPosition(toTrackAndSlot));
     selectionRectangle.setSize(selectionRectangle.getWidth() + 1, selectionRectangle.getHeight() + 1);
 

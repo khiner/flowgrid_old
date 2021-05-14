@@ -7,7 +7,7 @@
 
 class Push2ProcessorView : public Push2TrackManagingView {
 public:
-    explicit Push2ProcessorView(Project &project, Push2MidiCommunicator &push2MidiCommunicator);
+    explicit Push2ProcessorView(ViewState &view, TracksState &tracks, Project &project, Push2MidiCommunicator &push2MidiCommunicator);
 
     void resized() override;
 
@@ -68,12 +68,7 @@ private:
         return focusedLane.getNumChildren() > processorLabelOffset + (canPageProcessorsLeft() ? NUM_COLUMNS - 1 : NUM_COLUMNS);
     }
 
-    void selectProcessor(int processorIndex) {
-        const auto &focusedLane = TracksState::getProcessorLaneForTrack(tracks.getFocusedTrack());
-        if (focusedLane.isValid() && processorIndex < focusedLane.getNumChildren()) {
-            project.selectProcessor(focusedLane.getChild(processorIndex));
-        }
-    }
+    void selectProcessor(int processorIndex);
 
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override;
 

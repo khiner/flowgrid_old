@@ -1,7 +1,7 @@
 #include "Push2MixerView.h"
 
-Push2MixerView::Push2MixerView(Project &project, Push2MidiCommunicator &push2MidiCommunicator)
-        : Push2TrackManagingView(project, push2MidiCommunicator),
+Push2MixerView::Push2MixerView(ViewState &view, TracksState &tracks, Project &project, Push2MidiCommunicator &push2MidiCommunicator)
+        : Push2TrackManagingView(view, tracks, project, push2MidiCommunicator),
           volumesLabel(0, true, push2MidiCommunicator), pansLabel(1, true, push2MidiCommunicator),
           volumeParametersPanel(1), panParametersPanel(1) {
     volumesLabel.setText("Volumes", dontSendNotification);
@@ -88,7 +88,7 @@ void Push2MixerView::updateParameters() {
     const auto &focusedTrack = tracks.getFocusedTrack();
     if (TracksState::isMasterTrack(focusedTrack)) {
         const auto &trackOutputProcessor = TracksState::getOutputProcessorForTrack(focusedTrack);
-        if (auto *processorWrapper = project.getProcessorWrapperForState(trackOutputProcessor)) {
+        if (auto *processorWrapper = project.getProcessorGraph().getProcessorWrapperForState(trackOutputProcessor)) {
             volumeParametersPanel.addParameter(processorWrapper->getParameter(1));
             panParametersPanel.addParameter(processorWrapper->getParameter(0));
         }
@@ -96,8 +96,8 @@ void Push2MixerView::updateParameters() {
         for (const auto &track : tracks.getState()) {
             if (TracksState::isMasterTrack(track))
                 continue;
-            const auto &trackOutputProcessor = tracks.getOutputProcessorForTrack(track);
-            if (auto *processorWrapper = project.getProcessorWrapperForState(trackOutputProcessor)) {
+            const auto &trackOutputProcessor = TracksState::getOutputProcessorForTrack(track);
+            if (auto *processorWrapper = project.getProcessorGraph().getProcessorWrapperForState(trackOutputProcessor)) {
                 // TODO use param identifiers instead of indexes
                 volumeParametersPanel.addParameter(processorWrapper->getParameter(1));
                 panParametersPanel.addParameter(processorWrapper->getParameter(0));

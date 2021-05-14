@@ -8,13 +8,13 @@
 #include "state/InputState.h"
 #include "state/OutputState.h"
 #include "PluginManager.h"
-#include "StatefulAudioProcessorContainer.h"
+#include "ProcessorGraph.h"
 #include "CopiedState.h"
 
-class Project : public Stateful, public FileBasedDocument, public StatefulAudioProcessorContainer,
-                private ChangeListener, private ValueTree::Listener {
+class Project : public Stateful, public FileBasedDocument, private ChangeListener, private ValueTree::Listener {
 public:
-    Project(UndoManager &undoManager, PluginManager &pluginManager, AudioDeviceManager &deviceManager);
+    Project(ViewState &view, TracksState &tracks, ConnectionsState &connections, InputState &input, OutputState &output,
+            ProcessorGraph &processorGraph, UndoManager &undoManager, PluginManager &pluginManager, AudioDeviceManager &deviceManager);
 
     ~Project() override;
 
@@ -44,33 +44,7 @@ public:
         undoManager.redo();
     }
 
-    void setStatefulAudioProcessorContainer(StatefulAudioProcessorContainer *statefulAudioProcessorContainer) {
-        this->statefulAudioProcessorContainer = statefulAudioProcessorContainer;
-    }
-
-    StatefulAudioProcessorWrapper *getProcessorWrapperForNodeId(AudioProcessorGraph::NodeID nodeId) const override {
-        if (statefulAudioProcessorContainer != nullptr)
-            return statefulAudioProcessorContainer->getProcessorWrapperForNodeId(nodeId);
-
-        return nullptr;
-    }
-
-    AudioProcessorGraph::Node *getNodeForId(AudioProcessorGraph::NodeID nodeId) const override {
-        if (statefulAudioProcessorContainer != nullptr)
-            return statefulAudioProcessorContainer->getNodeForId(nodeId);
-
-        return nullptr;
-    }
-
-    void onProcessorCreated(const ValueTree &processor) override {
-        if (statefulAudioProcessorContainer != nullptr)
-            statefulAudioProcessorContainer->onProcessorCreated(processor);
-    }
-
-    void onProcessorDestroyed(const ValueTree &processor) override {
-        if (statefulAudioProcessorContainer != nullptr)
-            statefulAudioProcessorContainer->onProcessorDestroyed(processor);
-    }
+    ProcessorGraph &getProcessorGraph() { return processorGraph; }
 
     TracksState &getTracks() { return tracks; }
 
@@ -87,7 +61,7 @@ public:
     AudioDeviceManager &getDeviceManager() { return deviceManager; }
 
     bool isPush2MidiInputProcessorConnected() const {
-        return connections.isNodeConnected(getNodeIdForState(input.getPush2MidiInputProcessor()));
+        return connections.isNodeConnected(TracksState::getNodeIdForProcessor(input.getPush2MidiInputProcessor()));
     }
 
     bool isShiftHeld() const { return shiftHeld || push2ShiftHeld; }
@@ -125,7 +99,7 @@ public:
 
     void duplicateSelectedItems();
 
-    void beginDragging(const juce::Point<int> trackAndSlot);
+    void beginDragging(juce::Point<int> trackAndSlot);
 
     void dragToPosition(juce::Point<int> trackAndSlot);
 
@@ -134,7 +108,7 @@ public:
             return;
 
         initialDraggingTrackAndSlot = TracksState::INVALID_TRACK_AND_SLOT;
-        statefulAudioProcessorContainer->resumeAudioGraphUpdatesAndApplyDiffSincePause();
+        processorGraph.resumeAudioGraphUpdatesAndApplyDiffSincePause();
     }
 
     bool isCurrentlyDraggingProcessor() {
@@ -149,13 +123,7 @@ public:
 
     void selectTrackAndSlot(juce::Point<int> trackAndSlot);
 
-    bool addConnection(const AudioProcessorGraph::Connection &connection);
-
-    bool removeConnection(const AudioProcessorGraph::Connection &connection);
-
     bool disconnectCustom(const ValueTree &processor);
-
-    bool disconnectProcessor(const ValueTree &processor);
 
     void setDefaultConnectionsAllowed(const ValueTree &processor, bool defaultConnectionsAllowed);
 
@@ -210,18 +178,17 @@ public:
 private:
     ValueTree state;
 
+    ViewState &view;
+    TracksState &tracks;
+    ConnectionsState &connections;
+    InputState &input;
+    OutputState &output;
+
+    ProcessorGraph &processorGraph;
     UndoManager &undoManager;
     PluginManager &pluginManager;
-    ViewState view;
-    TracksState tracks;
-    ConnectionsState connections;
-    InputState input;
-    OutputState output;
-
     AudioDeviceManager &deviceManager;
 
-    // TODO next up:
-    StatefulAudioProcessorContainer *statefulAudioProcessorContainer{};
     juce::Point<int> selectionStartTrackAndSlot = {0, 0};
 
     bool shiftHeld{false}, altHeld{false}, push2ShiftHeld{false};
@@ -237,14 +204,7 @@ private:
 
     void changeListenerCallback(ChangeBroadcaster *source) override;
 
-    bool doDisconnectNode(const ValueTree &processor, ConnectionType connectionType,
-                          bool defaults, bool custom, bool incoming, bool outgoing, AudioProcessorGraph::NodeID excludingRemovalTo = {});
-
     void updateAllDefaultConnections();
-
-    void resetDefaultExternalInputs();
-
-    void updateDefaultConnectionsForProcessor(const ValueTree &processor, bool makeInvalidDefaultsIntoCustom = false);
 
     void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override {
         if (child.hasType(IDs::TRACK))

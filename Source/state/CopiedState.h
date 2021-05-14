@@ -1,11 +1,11 @@
 #pragma once
 
 #include "TracksState.h"
-#include "StatefulAudioProcessorContainer.h"
+#include "ProcessorGraph.h"
 
 struct CopiedState : public Stateful {
-    CopiedState(TracksState &tracks, StatefulAudioProcessorContainer &audioProcessorContainer)
-            : tracks(tracks), audioProcessorContainer(audioProcessorContainer) {}
+    CopiedState(TracksState &tracks, ProcessorGraph &processorGraph)
+            : tracks(tracks), processorGraph(processorGraph) {}
 
     ValueTree &getState() override { return copiedItems; }
 
@@ -17,7 +17,7 @@ struct CopiedState : public Stateful {
 
 private:
     TracksState &tracks;
-    StatefulAudioProcessorContainer &audioProcessorContainer;
+    ProcessorGraph &processorGraph;
 
     ValueTree copiedItems;
 };

@@ -8,7 +8,7 @@ void CopiedState::loadFromState(const ValueTree &tracksState) {
             copiedTrack.copyPropertiesFrom(track, nullptr);
             for (auto processor : track)
                 if (processor.hasType(IDs::PROCESSOR))
-                    copiedTrack.appendChild(audioProcessorContainer.copyProcessor(processor), nullptr);
+                    copiedTrack.appendChild(processorGraph.copyProcessor(processor), nullptr);
         } else {
             copiedTrack.setProperty(IDs::isMasterTrack, track[IDs::isMasterTrack], nullptr);
         }
@@ -19,7 +19,7 @@ void CopiedState::loadFromState(const ValueTree &tracksState) {
             copiedLane.setProperty(IDs::selectedSlotsMask, lane[IDs::selectedSlotsMask].toString(), nullptr);
             for (auto processor : lane)
                 if (track[IDs::selected] || TracksState::isProcessorSelected(processor))
-                    copiedLane.appendChild(audioProcessorContainer.copyProcessor(processor), nullptr);
+                    copiedLane.appendChild(processorGraph.copyProcessor(processor), nullptr);
             copiedLanes.appendChild(copiedLane, nullptr);
         }
 

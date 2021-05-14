@@ -11,7 +11,7 @@ class GraphEditorPanel
         : public Component, public ConnectorDragListener, public GraphEditorProcessorContainer,
           private ValueTree::Listener {
 public:
-    GraphEditorPanel(ProcessorGraph &graph, Project &project);
+    GraphEditorPanel(ViewState &view, TracksState &tracks, ConnectionsState &connections, ProcessorGraph &processorGraph, Project &project, PluginManager &pluginManager);
 
     ~GraphEditorPanel() override;
 
@@ -36,15 +36,14 @@ public:
     bool closeAnyOpenPluginWindows();
 
 private:
-    ProcessorGraph &graph;
-    Project &project;
-    StatefulAudioProcessorContainer &audioProcessorContainer;
-
+    ViewState &view;
     TracksState &tracks;
     ConnectionsState &connections;
-    ViewState &view;
     InputState &input;
     OutputState &output;
+
+    ProcessorGraph &graph;
+    Project &project;
 
     const AudioProcessorGraph::Connection EMPTY_CONNECTION{{ProcessorGraph::NodeID(0), 0},
                                                            {ProcessorGraph::NodeID(0), 0}};

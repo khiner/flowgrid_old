@@ -1,15 +1,14 @@
 #pragma once
 
-#include "state/Project.h"
 #include "ValueTreeObjectList.h"
 #include "GraphEditorProcessorLane.h"
 
 class GraphEditorProcessorLanes : public Component, public ValueTreeObjectList<GraphEditorProcessorLane>,
                                   public GraphEditorProcessorContainer {
 public:
-    explicit GraphEditorProcessorLanes(Project &project, ValueTree state, ConnectorDragListener &connectorDragListener)
-            : ValueTreeObjectList<GraphEditorProcessorLane>(std::move(state)), project(project),
-              connectorDragListener(connectorDragListener) {
+    explicit GraphEditorProcessorLanes(ValueTree state, ViewState &view, TracksState &tracks, ProcessorGraph &processorGraph, ConnectorDragListener &connectorDragListener)
+            : ValueTreeObjectList<GraphEditorProcessorLane>(std::move(state)),
+              view(view), tracks(tracks), processorGraph(processorGraph), connectorDragListener(connectorDragListener) {
         rebuildObjects();
     }
 
@@ -42,7 +41,7 @@ public:
     }
 
     GraphEditorProcessorLane *createNewObject(const ValueTree &v) override {
-        auto *lane = new GraphEditorProcessorLane(project, v, connectorDragListener);
+        auto *lane = new GraphEditorProcessorLane(v, view, tracks, processorGraph, connectorDragListener);
         addAndMakeVisible(lane);
         return lane;
     }
@@ -58,6 +57,8 @@ public:
     void objectOrderChanged() override {}
 
 private:
-    Project &project;
+    ViewState &view;
+    TracksState &tracks;
+    ProcessorGraph &processorGraph;
     ConnectorDragListener &connectorDragListener;
 };

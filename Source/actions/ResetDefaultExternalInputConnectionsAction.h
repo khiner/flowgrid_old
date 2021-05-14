@@ -2,7 +2,7 @@
 
 #include "state/InputState.h"
 #include "CreateOrDeleteConnectionsAction.h"
-#include "StatefulAudioProcessorContainer.h"
+#include "ProcessorGraph.h"
 
 // For both audio and midi connection types:
 //   * Find the topmost effect processor (receiving audio/midi) in the focused track
@@ -11,8 +11,7 @@
 // from its default midi-input processor.)
 
 struct ResetDefaultExternalInputConnectionsAction : public CreateOrDeleteConnectionsAction {
-    ResetDefaultExternalInputConnectionsAction(ConnectionsState &connections, TracksState &tracks, InputState &input,
-                                               StatefulAudioProcessorContainer &audioProcessorContainer, ValueTree trackToTreatAsFocused = {});
+    ResetDefaultExternalInputConnectionsAction(ConnectionsState &connections, TracksState &tracks, InputState &input, ProcessorGraph &processorGraph, ValueTree trackToTreatAsFocused = {});
 
 private:
     ValueTree findTopmostEffectProcessor(const ValueTree &track, ConnectionType connectionType);

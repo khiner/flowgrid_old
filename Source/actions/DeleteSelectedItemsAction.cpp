@@ -1,11 +1,11 @@
 #include "DeleteSelectedItemsAction.h"
 
-DeleteSelectedItemsAction::DeleteSelectedItemsAction(TracksState &tracks, ConnectionsState &connections, StatefulAudioProcessorContainer &audioProcessorContainer) {
+DeleteSelectedItemsAction::DeleteSelectedItemsAction(TracksState &tracks, ConnectionsState &connections, ProcessorGraph &processorGraph) {
     for (const auto &selectedItem : tracks.findAllSelectedItems()) {
         if (selectedItem.hasType(IDs::TRACK)) {
-            deleteTrackActions.add(new DeleteTrackAction(selectedItem, tracks, connections, audioProcessorContainer));
+            deleteTrackActions.add(new DeleteTrackAction(selectedItem, tracks, connections, processorGraph));
         } else if (selectedItem.hasType(IDs::PROCESSOR)) {
-            deleteProcessorActions.add(new DeleteProcessorAction(selectedItem, tracks, connections, audioProcessorContainer));
+            deleteProcessorActions.add(new DeleteProcessorAction(selectedItem, tracks, connections, processorGraph));
             deleteProcessorActions.getLast()->performTemporary();
         }
     }

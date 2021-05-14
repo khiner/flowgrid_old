@@ -3,10 +3,10 @@
 #include "state/ConnectionsState.h"
 #include "state/TracksState.h"
 #include "DisconnectProcessorAction.h"
+#include "ProcessorGraph.h"
 
 struct DeleteProcessorAction : public UndoableAction {
-    DeleteProcessorAction(const ValueTree &processorToDelete, TracksState &tracks, ConnectionsState &connections,
-                          StatefulAudioProcessorContainer &audioProcessorContainer);
+    DeleteProcessorAction(const ValueTree &processorToDelete, TracksState &tracks, ConnectionsState &connections, ProcessorGraph &processorGraph);
 
     bool perform() override;
 
@@ -24,5 +24,5 @@ private:
     ValueTree processorToDelete;
     int processorIndex, pluginWindowType;
     DisconnectProcessorAction disconnectProcessorAction;
-    StatefulAudioProcessorContainer &audioProcessorContainer;
+    ProcessorGraph &processorGraph;
 };

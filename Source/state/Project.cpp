@@ -4,9 +4,7 @@
 #include "actions/CreateTrackAction.h"
 #include "actions/CreateProcessorAction.h"
 #include "actions/DeleteSelectedItemsAction.h"
-#include "actions/CreateConnectionAction.h"
 #include "actions/ResetDefaultExternalInputConnectionsAction.h"
-#include "actions/UpdateProcessorDefaultConnectionsAction.h"
 #include "actions/SetDefaultConnectionsAllowedAction.h"
 #include "actions/UpdateAllDefaultConnectionsAction.h"
 #include "actions/MoveSelectedItemsAction.h"
@@ -18,19 +16,21 @@
 #include "processors/SineBank.h"
 #include "ApplicationPropertiesAndCommandManager.h"
 
-Project::Project(UndoManager &undoManager, PluginManager &pluginManager, AudioDeviceManager &deviceManager)
+Project::Project(ViewState &view, TracksState &tracks, ConnectionsState &connections, InputState &input, OutputState &output,
+                 ProcessorGraph &processorGraph, UndoManager &undoManager, PluginManager &pluginManager, AudioDeviceManager &deviceManager)
         : FileBasedDocument(getFilenameSuffix(), "*" + getFilenameSuffix(), "Load a project", "Save project"),
+          view(view),
+          tracks(tracks),
+          connections(connections),
+          input(input),
+          output(output),
+          processorGraph(processorGraph),
           undoManager(undoManager),
           pluginManager(pluginManager),
-          view(undoManager),
-          tracks(view, pluginManager, undoManager),
-          connections(*this, tracks),
-          input(tracks, connections, *this, pluginManager, undoManager, deviceManager),
-          output(tracks, connections, *this, pluginManager, undoManager, deviceManager),
           deviceManager(deviceManager),
-          copiedState(tracks, *this) {
+          copiedState(tracks, processorGraph) {
     state = ValueTree(IDs::PROJECT);
-    state.setProperty(IDs::name, "My First Project", nullptr);
+    state.setProperty(IDs::name, "My Project", nullptr);
     state.appendChild(input.getState(), nullptr);
     state.appendChild(output.getState(), nullptr);
     state.appendChild(tracks.getState(), nullptr);
@@ -93,9 +93,9 @@ void Project::createTrack(bool isMaster) {
 
     undoManager.perform(new CreateTrackAction(isMaster, {}, tracks, view));
     undoManager.perform(new CreateProcessorAction(TrackInputProcessor::getPluginDescription(),
-                                                  tracks.indexOf(mostRecentlyCreatedTrack), tracks, view, *this));
+                                                  tracks.indexOf(mostRecentlyCreatedTrack), tracks, view, processorGraph));
     undoManager.perform(new CreateProcessorAction(TrackOutputProcessor::getPluginDescription(),
-                                                  tracks.indexOf(mostRecentlyCreatedTrack), tracks, view, *this));
+                                                  tracks.indexOf(mostRecentlyCreatedTrack), tracks, view, processorGraph));
 
     setTrackSelected(mostRecentlyCreatedTrack, true);
     updateAllDefaultConnections();
@@ -114,7 +114,7 @@ void Project::deleteSelectedItems() {
         endDraggingProcessor();
 
     undoManager.beginNewTransaction();
-    undoManager.perform(new DeleteSelectedItemsAction(tracks, connections, *statefulAudioProcessorContainer));
+    undoManager.perform(new DeleteSelectedItemsAction(tracks, connections, processorGraph));
     if (view.getFocusedTrackIndex() >= tracks.getNumTracks() && tracks.getNumTracks() > 0)
         setTrackSelected(tracks.getTrack(tracks.getNumTracks() - 1), true);
     updateAllDefaultConnections();
@@ -124,18 +124,18 @@ void Project::insert() {
     if (isCurrentlyDraggingProcessor())
         endDraggingProcessor();
     undoManager.beginNewTransaction();
-    undoManager.perform(new InsertAction(false, copiedState.getState(), view.getFocusedTrackAndSlot(), tracks, connections, view, input, *this));
+    undoManager.perform(new InsertAction(false, copiedState.getState(), view.getFocusedTrackAndSlot(), tracks, connections, view, input, processorGraph));
     updateAllDefaultConnections();
 }
 
 void Project::duplicateSelectedItems() {
     if (isCurrentlyDraggingProcessor())
         endDraggingProcessor();
-    CopiedState duplicateState(tracks, *this);
+    CopiedState duplicateState(tracks, processorGraph);
     duplicateState.copySelectedItems();
 
     undoManager.beginNewTransaction();
-    undoManager.perform(new InsertAction(true, duplicateState.getState(), view.getFocusedTrackAndSlot(), tracks, connections, view, input, *this));
+    undoManager.perform(new InsertAction(true, duplicateState.getState(), view.getFocusedTrackAndSlot(), tracks, connections, view, input, processorGraph));
     updateAllDefaultConnections();
 }
 
@@ -148,7 +148,7 @@ void Project::beginDragging(const juce::Point<int> trackAndSlot) {
     currentlyDraggingTrackAndSlot = initialDraggingTrackAndSlot;
 
     // During drag actions, everything _except the audio graph_ is updated as a preview
-    statefulAudioProcessorContainer->pauseAudioGraphUpdates();
+    processorGraph.pauseAudioGraphUpdates();
 }
 
 void Project::dragToPosition(juce::Point<int> trackAndSlot) {
@@ -179,7 +179,7 @@ void Project::dragToPosition(juce::Point<int> trackAndSlot) {
 
     if (trackAndSlot == initialDraggingTrackAndSlot ||
         undoManager.perform(new MoveSelectedItemsAction(initialDraggingTrackAndSlot, trackAndSlot, isAltHeld(),
-                                                        tracks, connections, view, input, output, *statefulAudioProcessorContainer))) {
+                                                        tracks, connections, view, input, output, processorGraph))) {
         currentlyDraggingTrackAndSlot = trackAndSlot;
     }
 }
@@ -191,15 +191,15 @@ void Project::setProcessorSlotSelected(const ValueTree &track, int slot, bool se
     if (selected) {
         const juce::Point<int> trackAndSlot(tracks.indexOf(track), slot);
         if (push2ShiftHeld || shiftHeld)
-            selectAction = new SelectRectangleAction(selectionStartTrackAndSlot, trackAndSlot, tracks, connections, view, input, *statefulAudioProcessorContainer);
+            selectAction = new SelectRectangleAction(selectionStartTrackAndSlot, trackAndSlot, tracks, connections, view, input, processorGraph);
         else
             selectionStartTrackAndSlot = trackAndSlot;
     }
     if (selectAction == nullptr) {
         if (slot == -1)
-            selectAction = new SelectTrackAction(track, selected, deselectOthers, tracks, connections, view, input, *this);
+            selectAction = new SelectTrackAction(track, selected, deselectOthers, tracks, connections, view, input, processorGraph);
         else
-            selectAction = new SelectProcessorSlotAction(track, slot, selected, selected && deselectOthers, tracks, connections, view, input, *statefulAudioProcessorContainer);
+            selectAction = new SelectProcessorSlotAction(track, slot, selected, selected && deselectOthers, tracks, connections, view, input, processorGraph);
     }
     undoManager.perform(selectAction);
 }
@@ -212,50 +212,15 @@ void Project::selectProcessor(const ValueTree &processor) {
     setProcessorSlotSelected(TracksState::getTrackForProcessor(processor), processor[IDs::processorSlot], true);
 }
 
-bool Project::addConnection(const AudioProcessorGraph::Connection &connection) {
-    undoManager.beginNewTransaction();
-    ConnectionType connectionType = connection.source.isMIDI() ? midi : audio;
-    const auto &sourceProcessor = getProcessorStateForNodeId(connection.source.nodeID);
-    // disconnect default outgoing
-    undoManager.perform(new DisconnectProcessorAction(connections, sourceProcessor, connectionType, true, false, false, true));
-    if (undoManager.perform(new CreateConnectionAction(connection, false, connections, *this))) {
-        resetDefaultExternalInputs();
-        return true;
-    }
-    return false;
-}
-
-bool Project::removeConnection(const AudioProcessorGraph::Connection &connection) {
-    undoManager.beginNewTransaction();
-    const ValueTree &connectionState = connections.getConnectionMatching(connection);
-    if (!connectionState[IDs::isCustomConnection] && isShiftHeld())
-        return false; // no default connection stuff while shift is held
-
-    bool removed = undoManager.perform(new DeleteConnectionAction(connectionState, true, true, connections));
-    if (removed && connectionState.hasProperty(IDs::isCustomConnection)) {
-        const auto &sourceState = connectionState.getChildWithName(IDs::SOURCE);
-        auto sourceNodeId = StatefulAudioProcessorContainer::getNodeIdForState(sourceState);
-        const auto &processor = getProcessorStateForNodeId(sourceNodeId);
-        updateDefaultConnectionsForProcessor(processor);
-        resetDefaultExternalInputs();
-    }
-    return removed;
-}
-
 bool Project::disconnectCustom(const ValueTree &processor) {
     undoManager.beginNewTransaction();
-    return doDisconnectNode(processor, all, false, true, true, true);
-}
-
-bool Project::disconnectProcessor(const ValueTree &processor) {
-    undoManager.beginNewTransaction();
-    return doDisconnectNode(processor, all, true, true, true, true);
+    return processorGraph.doDisconnectNode(processor, all, false, true, true, true);
 }
 
 void Project::setDefaultConnectionsAllowed(const ValueTree &processor, bool defaultConnectionsAllowed) {
     undoManager.beginNewTransaction();
     undoManager.perform(new SetDefaultConnectionsAllowedAction(processor, defaultConnectionsAllowed, connections));
-    resetDefaultExternalInputs();
+    undoManager.perform(new ResetDefaultExternalInputConnectionsAction(connections, tracks, input, processorGraph));
 }
 
 void Project::toggleProcessorBypass(ValueTree processor) {
@@ -282,7 +247,8 @@ void Project::createDefaultProject() {
     createTrack(true);
     createTrack(false);
     doCreateAndAddProcessor(SineBank::getPluginDescription(), mostRecentlyCreatedTrack, 0);
-    resetDefaultExternalInputs(); // Select action only does this if the focused track changes, so we just need to do this once ourselves
+    // Select action only does this if the focused track changes, so we just need to do this once ourselves
+    undoManager.perform(new ResetDefaultExternalInputConnectionsAction(connections, tracks, input, processorGraph));
     undoManager.clearUndoHistory();
     sendChangeMessage();
 }
@@ -295,9 +261,9 @@ void Project::doCreateAndAddProcessor(const PluginDescription &description, Valu
     }
 
     if (slot == -1)
-        undoManager.perform(new CreateProcessorAction(description, tracks.indexOf(track), tracks, view, *statefulAudioProcessorContainer));
+        undoManager.perform(new CreateProcessorAction(description, tracks.indexOf(track), tracks, view, processorGraph));
     else
-        undoManager.perform(new CreateProcessorAction(description, tracks.indexOf(track), slot, tracks, view, *statefulAudioProcessorContainer));
+        undoManager.perform(new CreateProcessorAction(description, tracks.indexOf(track), slot, tracks, view, processorGraph));
 
     selectProcessor(mostRecentlyCreatedProcessor);
     updateAllDefaultConnections();
@@ -310,21 +276,8 @@ void Project::changeListenerCallback(ChangeBroadcaster *source) {
     }
 }
 
-bool Project::doDisconnectNode(const ValueTree &processor, ConnectionType connectionType, bool defaults, bool custom, bool incoming, bool outgoing, AudioProcessorGraph::NodeID excludingRemovalTo) {
-    return undoManager.perform(new DisconnectProcessorAction(connections, processor, connectionType, defaults,
-                                                             custom, incoming, outgoing, excludingRemovalTo));
-}
-
 void Project::updateAllDefaultConnections() {
-    undoManager.perform(new UpdateAllDefaultConnectionsAction(false, true, tracks, connections, input, output, *statefulAudioProcessorContainer));
-}
-
-void Project::resetDefaultExternalInputs() {
-    undoManager.perform(new ResetDefaultExternalInputConnectionsAction(connections, tracks, input, *statefulAudioProcessorContainer));
-}
-
-void Project::updateDefaultConnectionsForProcessor(const ValueTree &processor, bool makeInvalidDefaultsIntoCustom) {
-    undoManager.perform(new UpdateProcessorDefaultConnectionsAction(processor, makeInvalidDefaultsIntoCustom, connections, output, *statefulAudioProcessorContainer));
+    undoManager.perform(new UpdateAllDefaultConnectionsAction(false, true, tracks, connections, input, output, processorGraph));
 }
 
 Result Project::loadDocument(const File &file) {
@@ -358,7 +311,7 @@ bool Project::isDeviceWithNamePresent(const String &deviceName) const {
 Result Project::saveDocument(const File &file) {
     for (const auto &track : tracks.getState())
         for (auto processorState : TracksState::getProcessorLaneForTrack(track))
-            saveProcessorStateInformationToState(processorState);
+            processorGraph.saveProcessorStateInformationToState(processorState);
 
     if (auto xml = state.createXml())
         if (!xml->writeTo(file))

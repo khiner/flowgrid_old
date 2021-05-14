@@ -1,7 +1,7 @@
 #include "Push2ProcessorView.h"
 
-Push2ProcessorView::Push2ProcessorView(Project &project, Push2MidiCommunicator &push2MidiCommunicator)
-        : Push2TrackManagingView(project, push2MidiCommunicator),
+Push2ProcessorView::Push2ProcessorView(ViewState &view, TracksState &tracks, Project &project, Push2MidiCommunicator &push2MidiCommunicator)
+        : Push2TrackManagingView(view, tracks, project, push2MidiCommunicator),
           escapeProcessorFocusButton("Back", 0.5, Colours::white),
           parameterPageLeftButton("Page parameters left", 0.5, Colours::white),
           parameterPageRightButton("Page parameters right", 0.0, Colours::white),
@@ -224,5 +224,12 @@ void Push2ProcessorView::trackColourChanged(const String &trackUuid, const Colou
     auto track = tracks.findTrackWithUuid(trackUuid);
     if (TracksState::doesTrackHaveSelections(track)) {
         updateColours();
+    }
+}
+
+void Push2ProcessorView::selectProcessor(int processorIndex) {
+    const auto &focusedLane = TracksState::getProcessorLaneForTrack(tracks.getFocusedTrack());
+    if (focusedLane.isValid() && processorIndex < focusedLane.getNumChildren()) {
+        project.selectProcessor(focusedLane.getChild(processorIndex));
     }
 }

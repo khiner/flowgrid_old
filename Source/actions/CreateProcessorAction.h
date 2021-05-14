@@ -2,17 +2,17 @@
 
 #include "state/TracksState.h"
 #include "InsertProcessorAction.h"
-#include "StatefulAudioProcessorContainer.h"
+#include "ProcessorGraph.h"
 
 struct CreateProcessorAction : public UndoableAction {
     CreateProcessorAction(ValueTree processorToCreate, int trackIndex, int slot,
-                          TracksState &tracks, ViewState &view, StatefulAudioProcessorContainer &audioProcessorContainer);
+                          TracksState &tracks, ViewState &view, ProcessorGraph &processorGraph);
 
     CreateProcessorAction(const PluginDescription &description, int trackIndex, int slot,
-                          TracksState &tracks, ViewState &view, StatefulAudioProcessorContainer &audioProcessorContainer);
+                          TracksState &tracks, ViewState &view, ProcessorGraph &processorGraph);
 
     CreateProcessorAction(const PluginDescription &description, int trackIndex,
-                          TracksState &tracks, ViewState &view, StatefulAudioProcessorContainer &audioProcessorContainer);
+                          TracksState &tracks, ViewState &view, ProcessorGraph &processorGraph);
 
     bool perform() override;
 
@@ -33,5 +33,5 @@ private:
     ValueTree processorToCreate;
     int pluginWindowType;
     InsertProcessorAction insertAction;
-    StatefulAudioProcessorContainer &audioProcessorContainer;
+    ProcessorGraph &processorGraph;
 };
