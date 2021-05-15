@@ -15,19 +15,13 @@ namespace OutputStateIDs {
 }
 
 // TODO Should input/output be combined into a single IOState? (Almost all behavior is symmetrical.)
-class OutputState : public Stateful, private ValueTree::Listener {
+class OutputState : public Stateful<OutputState>, private ValueTree::Listener {
 public:
     OutputState(PluginManager &pluginManager, UndoManager &undoManager, AudioDeviceManager &deviceManager);
 
     ~OutputState() override;
 
-    ValueTree &getState() override { return state; }
-
-    static bool isType(const ValueTree &state) { return state.hasType(OutputStateIDs::OUTPUT); }
-
-    void loadFromState(const ValueTree &fromState) override;
-
-    void loadFromParentState(const ValueTree &parent) override { loadFromState(parent.getChildWithName(OutputStateIDs::OUTPUT)); }
+    static Identifier getIdentifier() { return OutputStateIDs::OUTPUT; }
 
     void initializeDefault();
 
@@ -39,7 +33,6 @@ public:
     Array<ValueTree> syncOutputDevicesWithDeviceManager();
 
 private:
-    ValueTree state;
     PluginManager &pluginManager;
     UndoManager &undoManager;
     AudioDeviceManager &deviceManager;

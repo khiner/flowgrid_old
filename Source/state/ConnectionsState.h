@@ -14,17 +14,11 @@ namespace ConnectionsStateIDs {
 #undef ID
 }
 
-class ConnectionsState : public Stateful {
+class ConnectionsState : public Stateful<ConnectionsState> {
 public:
-    explicit ConnectionsState(TracksState &tracks);
+    explicit ConnectionsState(TracksState &tracks) : tracks(tracks) {}
 
-    ValueTree &getState() override { return state; }
-
-    static bool isType(const ValueTree &state) { return state.hasType(ConnectionsStateIDs::CONNECTIONS); }
-
-    void loadFromState(const ValueTree &fromState) override;
-
-    void loadFromParentState(const ValueTree &parent) override { loadFromState(parent.getChildWithName(ConnectionsStateIDs::CONNECTIONS)); }
+    static Identifier getIdentifier() { return ConnectionStateIDs::CONNECTION; }
 
     ValueTree findDefaultDestinationProcessor(const ValueTree &sourceProcessor, ConnectionType connectionType);
 
@@ -61,6 +55,5 @@ public:
     }
 
 private:
-    ValueTree state;
     TracksState &tracks;
 };

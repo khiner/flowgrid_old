@@ -29,7 +29,6 @@ Project::Project(ViewState &view, TracksState &tracks, ConnectionsState &connect
           pluginManager(pluginManager),
           deviceManager(deviceManager),
           copiedTracks(tracks, processorGraph) {
-    state = ValueTree(ProjectIDs::PROJECT);
     state.setProperty(ProjectIDs::name, "My Project", nullptr);
     state.appendChild(input.getState(), nullptr);
     state.appendChild(output.getState(), nullptr);

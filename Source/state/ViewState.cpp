@@ -1,9 +1,5 @@
 #include "ViewState.h"
 
-ViewState::ViewState(UndoManager &undoManager) : undoManager(undoManager) {
-    state = ValueTree(ViewStateIDs::VIEW_STATE);
-}
-
 void ViewState::initializeDefault() {
     setNoteMode();
     focusOnEditorPane();

@@ -18,19 +18,11 @@ namespace ViewStateIDs {
 #undef ID
 }
 
-class ViewState : public Stateful {
+class ViewState : public Stateful<ViewState> {
 public:
-    explicit ViewState(UndoManager &undoManager);
+    explicit ViewState(UndoManager &undoManager) : undoManager(undoManager) {}
 
-    ValueTree &getState() override { return state; }
-
-    static bool isType(const ValueTree &state) { return state.hasType(ViewStateIDs::VIEW_STATE); }
-
-    void loadFromParentState(const ValueTree &parent) override { loadFromState(parent.getChildWithName(ViewStateIDs::VIEW_STATE)); }
-
-    void loadFromState(const ValueTree &fromState) override {
-        state.copyPropertiesFrom(fromState, nullptr);
-    }
+    static Identifier getIdentifier() { return ViewStateIDs::VIEW_STATE; }
 
     void initializeDefault();
 
@@ -132,7 +124,6 @@ public:
             TRACK_LABEL_HEIGHT = TRACK_INPUT_HEIGHT + LANE_HEADER_HEIGHT,
             TRACKS_MARGIN = 10;
 private:
-    ValueTree state;
     UndoManager &undoManager;
 
     int trackWidth{0}, processorHeight{0};

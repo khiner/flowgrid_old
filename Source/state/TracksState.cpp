@@ -2,13 +2,11 @@
 
 TracksState::TracksState(ViewState &view, PluginManager &pluginManager, UndoManager &undoManager)
         : view(view), pluginManager(pluginManager), undoManager(undoManager) {
-    state = ValueTree(TracksStateIDs::TRACKS);
     state.setProperty(TracksStateIDs::name, "Tracks", nullptr);
 }
 
 void TracksState::loadFromState(const ValueTree &fromState) {
-    state.copyPropertiesFrom(fromState, nullptr);
-    moveAllChildren(fromState, state, nullptr);
+    Stateful<TracksState>::loadFromState(fromState);
 
     // Re-save all non-string value types,
     // since type information is not saved in XML

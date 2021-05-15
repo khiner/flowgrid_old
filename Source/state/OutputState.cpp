@@ -5,17 +5,11 @@
 
 OutputState::OutputState(PluginManager &pluginManager, UndoManager &undoManager, AudioDeviceManager &deviceManager)
         : pluginManager(pluginManager), undoManager(undoManager), deviceManager(deviceManager) {
-    state = ValueTree(OutputStateIDs::OUTPUT);
     state.addListener(this);
 }
 
 OutputState::~OutputState() {
     state.removeListener(this);
-}
-
-void OutputState::loadFromState(const ValueTree &fromState) {
-    state.copyPropertiesFrom(fromState, nullptr);
-    moveAllChildren(fromState, state, nullptr);
 }
 
 Array<ValueTree> OutputState::syncOutputDevicesWithDeviceManager() {

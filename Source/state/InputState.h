@@ -14,19 +14,18 @@ namespace InputStateIDs {
 #undef ID
 }
 
-class InputState : public Stateful, private ValueTree::Listener {
+class InputState : public Stateful<InputState>, private ValueTree::Listener {
 public:
-    InputState(PluginManager &pluginManager, UndoManager &undoManager, AudioDeviceManager &deviceManager);
+    InputState(PluginManager &pluginManager, UndoManager &undoManager, AudioDeviceManager &deviceManager)
+            : pluginManager(pluginManager), undoManager(undoManager), deviceManager(deviceManager) {
+        state.addListener(this);
+    }
 
-    ~InputState() override;
+    ~InputState() override {
+        state.removeListener(this);
+    }
 
-    ValueTree &getState() override { return state; }
-
-    static bool isType(const ValueTree &state) { return state.hasType(InputStateIDs::INPUT); }
-
-    void loadFromState(const ValueTree &fromState) override;
-
-    void loadFromParentState(const ValueTree &parent) override { loadFromState(parent.getChildWithName(InputStateIDs::INPUT)); }
+    static Identifier getIdentifier() { return InputStateIDs::INPUT; }
 
     void initializeDefault();
 
@@ -48,7 +47,6 @@ public:
     Array<ValueTree> syncInputDevicesWithDeviceManager();
 
 private:
-    ValueTree state;
     PluginManager &pluginManager;
     UndoManager &undoManager;
     AudioDeviceManager &deviceManager;

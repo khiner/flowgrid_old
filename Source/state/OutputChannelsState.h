@@ -8,20 +8,9 @@ namespace OutputChannelsStateIDs {
 #undef ID
 }
 
-class OutputChannelsState : public Stateful, private ValueTree::Listener {
+class OutputChannelsState : public Stateful<OutputChannelsState>, private ValueTree::Listener {
 public:
-    OutputChannelsState() = default;
-
     ~OutputChannelsState() override = 0;
 
-    ValueTree &getState() override { return state; }
-
-    static bool isType(const ValueTree &state) { return state.hasType(OutputChannelsStateIDs::OUTPUT_CHANNELS); }
-
-    void loadFromState(const ValueTree &fromState) override;
-
-    void loadFromParentState(const ValueTree &parent) override { loadFromState(parent.getChildWithName(OutputChannelsStateIDs::OUTPUT_CHANNELS)); }
-
-private:
-    ValueTree state;
+    static Identifier getIdentifier() { return OutputChannelsStateIDs::OUTPUT_CHANNELS; }
 };

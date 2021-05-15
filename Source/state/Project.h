@@ -18,20 +18,16 @@ namespace ProjectIDs {
 #undef ID
 }
 
-class Project : public Stateful, public FileBasedDocument, private ChangeListener, private ValueTree::Listener {
+class Project : public Stateful<Project>, public FileBasedDocument, private ChangeListener, private ValueTree::Listener {
 public:
     Project(ViewState &view, TracksState &tracks, ConnectionsState &connections, InputState &input, OutputState &output,
             ProcessorGraph &processorGraph, UndoManager &undoManager, PluginManager &pluginManager, AudioDeviceManager &deviceManager);
 
     ~Project() override;
 
-    ValueTree &getState() override { return state; }
-
-    static bool isType(const ValueTree &state) { return state.hasType(ProjectIDs::PROJECT); }
+    static Identifier getIdentifier() { return ProjectIDs::PROJECT; }
 
     void loadFromState(const ValueTree &fromState) override;
-
-    void loadFromParentState(const ValueTree &parent) override { loadFromState(parent.getChildWithName(ProjectIDs::PROJECT)); }
 
     void clear() override;
 
@@ -185,8 +181,6 @@ public:
     static String getFilenameSuffix() { return ".smp"; }
 
 private:
-    ValueTree state;
-
     ViewState &view;
     TracksState &tracks;
     ConnectionsState &connections;

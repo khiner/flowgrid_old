@@ -46,17 +46,13 @@ namespace TracksStateIDs {
 #undef ID
 }
 
-class TracksState : public Stateful, private ValueTree::Listener {
+class TracksState : public Stateful<TracksState>, private ValueTree::Listener {
 public:
     TracksState(ViewState &view, PluginManager &pluginManager, UndoManager &undoManager);
 
-    static bool isType(const ValueTree &state) { return state.hasType(TracksStateIDs::TRACKS); }
+    static Identifier getIdentifier() { return TracksStateIDs::TRACKS; }
 
     void loadFromState(const ValueTree &fromState) override;
-
-    void loadFromParentState(const ValueTree &parent) override { loadFromState(parent.getChildWithName(TracksStateIDs::TRACKS)); }
-
-    ValueTree &getState() override { return state; }
 
     static ValueTree getProcessorLanesForTrack(const ValueTree &track) {
         return track.isValid() ? track.getChildWithName(TracksStateIDs::PROCESSOR_LANES) : ValueTree();
@@ -433,7 +429,6 @@ public:
     static constexpr juce::Point<int> INVALID_TRACK_AND_SLOT = {-1, -1};
 
 private:
-    ValueTree state;
     ViewState &view;
     PluginManager &pluginManager;
     UndoManager &undoManager;

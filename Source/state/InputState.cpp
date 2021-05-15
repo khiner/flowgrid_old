@@ -3,21 +3,6 @@
 #include "actions/CreateProcessorAction.h"
 #include "processors/MidiInputProcessor.h"
 
-InputState::InputState(PluginManager &pluginManager, UndoManager &undoManager, AudioDeviceManager &deviceManager)
-        : pluginManager(pluginManager), undoManager(undoManager), deviceManager(deviceManager) {
-    state = ValueTree(InputStateIDs::INPUT);
-    state.addListener(this);
-}
-
-InputState::~InputState() {
-    state.removeListener(this);
-}
-
-void InputState::loadFromState(const ValueTree &fromState) {
-    state.copyPropertiesFrom(fromState, nullptr);
-    moveAllChildren(fromState, state, nullptr);
-}
-
 Array<ValueTree> InputState::syncInputDevicesWithDeviceManager() {
     Array<ValueTree> inputProcessorsToDelete;
     for (const auto &inputProcessor : state) {

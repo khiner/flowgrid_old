@@ -5,15 +5,6 @@ static bool canProcessorDefaultConnectTo(const ValueTree &processor, const Value
            ConnectionsState::isProcessorAProducer(processor, connectionType) && ConnectionsState::isProcessorAnEffect(otherProcessor, connectionType);
 }
 
-ConnectionsState::ConnectionsState(TracksState &tracks) : tracks(tracks) {
-    state = ValueTree(ConnectionsStateIDs::CONNECTIONS);
-}
-
-void ConnectionsState::loadFromState(const ValueTree &fromState) {
-    state.copyPropertiesFrom(fromState, nullptr);
-    moveAllChildren(fromState, state, nullptr);
-}
-
 ValueTree ConnectionsState::findDefaultDestinationProcessor(const ValueTree &sourceProcessor, ConnectionType connectionType) {
     if (!isProcessorAProducer(sourceProcessor, connectionType))
         return {};
