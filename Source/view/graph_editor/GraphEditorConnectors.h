@@ -18,7 +18,7 @@ public:
     void resized() override {}
 
     bool isSuitableType(const ValueTree &v) const override {
-        return v.hasType(ConnectionsStateIDs::CONNECTION);
+        return ConnectionState::isType(v);
     }
 
     GraphEditorConnector *createNewObject(const ValueTree &v) override {

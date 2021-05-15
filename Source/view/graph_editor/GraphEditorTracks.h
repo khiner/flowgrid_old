@@ -48,7 +48,7 @@ public:
     }
 
     bool isSuitableType(const ValueTree &tree) const override {
-        return tree.hasType(TracksStateIDs::TRACK);
+        return TrackState::isType(tree);
     }
 
     GraphEditorTrack *createNewObject(const ValueTree &tree) override {

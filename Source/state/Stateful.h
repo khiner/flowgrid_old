@@ -8,9 +8,13 @@ class Stateful {
 public:
     virtual ~Stateful() = default;
 
-    virtual void loadFromState(const ValueTree &state) = 0;
-
+    // TODO remove this method and remove any remaining accesses.
+    //  (All state accesses should be done through accessor methods.)
     virtual ValueTree &getState() = 0;
+
+    virtual void loadFromState(const ValueTree &fromState) = 0;
+
+    virtual void loadFromParentState(const ValueTree &parent) = 0;
 
     virtual void clear() {
         getState().removeAllChildren(nullptr);

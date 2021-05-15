@@ -6,8 +6,9 @@ BaseGraphEditorProcessor::BaseGraphEditorProcessor(const ValueTree &state, ViewS
     this->state.addListener(this);
 
     for (auto child : state) {
-        if (child.hasType(TracksStateIDs::INPUT_CHANNELS) || child.hasType(TracksStateIDs::OUTPUT_CHANNELS)) {
+        if (InputChannelsState::isType(child) || OutputChannelsState::isType(child)) {
             for (auto channel : child) {
+                // TODO shouldn't have to do this kind of thing
                 valueTreeChildAdded(child, channel);
             }
         }

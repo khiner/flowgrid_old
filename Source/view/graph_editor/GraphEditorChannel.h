@@ -20,7 +20,7 @@ struct GraphEditorChannel : public Component, public SettableTooltipClient, priv
 
     bool isMasterTrack() const { return TracksState::isMasterTrack(getTrack()); }
 
-    bool isInput() const { return state.getParent().hasType(TracksStateIDs::INPUT_CHANNELS); }
+    bool isInput() const { return state.getParent().hasType(InputChannelsStateIDs::INPUT_CHANNELS); }
 
     bool isMidi() const { return getChannelIndex() == AudioProcessorGraph::midiChannelIndex; }
 

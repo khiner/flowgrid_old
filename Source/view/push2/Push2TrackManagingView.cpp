@@ -50,17 +50,17 @@ void Push2TrackManagingView::updateEnabledPush2Buttons() {
 }
 
 void Push2TrackManagingView::valueTreeChildAdded(ValueTree &parent, ValueTree &child) {
-    if (child.hasType(TracksStateIDs::TRACK))
+    if (TrackState::isType(child))
         trackAdded(child);
 }
 
 void Push2TrackManagingView::valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int index) {
-    if (child.hasType(TracksStateIDs::TRACK))
+    if (TrackState::isType(child))
         trackRemoved(child);
 }
 
 void Push2TrackManagingView::valueTreePropertyChanged(ValueTree &tree, const Identifier &i) {
-    if (tree.hasType(TracksStateIDs::TRACK)) {
+    if (TrackState::isType(tree)) {
         if (i == TracksStateIDs::name || i == TracksStateIDs::colour) {
             int trackIndex = tracks.getViewIndexForTrack(tree);
             if (trackIndex < 0 || trackIndex >= trackLabels.size())
@@ -76,7 +76,7 @@ void Push2TrackManagingView::valueTreePropertyChanged(ValueTree &tree, const Ide
 }
 
 void Push2TrackManagingView::valueTreeChildOrderChanged(ValueTree &tree, int, int) {
-    if (tree.hasType(TracksStateIDs::TRACKS))
+    if (TracksState::isType(tree))
         updateEnabledPush2Buttons();
 }
 

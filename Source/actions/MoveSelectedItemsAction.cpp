@@ -100,7 +100,7 @@ static juce::Point<int> limitedDelta(juce::Point<int> fromTrackAndSlot, juce::Po
     if (multipleTracksWithSelections &&
         !TracksState::isMasterTrack(tracks.getTrack(fromTrackAndSlot.x)) &&
         TracksState::isMasterTrack(tracks.getTrack(toTrackAndSlot.x))) {
-        originalDelta = {toTrackAndSlot.y - fromTrackAndSlot.x, view.getNumTrackProcessorSlots() - 1 - fromTrackAndSlot.y};
+        originalDelta = {toTrackAndSlot.y - fromTrackAndSlot.x, view.getNumProcessorSlots() - 1 - fromTrackAndSlot.y};
     }
 
     int limitedTrackDelta = limitTrackDelta(originalDelta.x, anyTrackSelected, multipleTracksWithSelections, tracks);

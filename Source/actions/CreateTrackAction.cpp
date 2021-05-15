@@ -28,7 +28,7 @@ CreateTrackAction::CreateTrackAction(bool isMaster, const ValueTree &derivedFrom
 CreateTrackAction::CreateTrackAction(int insertIndex, bool isMaster, const ValueTree &derivedFromTrack, TracksState &tracks, ViewState &view)
         : insertIndex(insertIndex), tracks(tracks) {
     // TODO move into method and construct in initializer list
-    newTrack = ValueTree(TracksStateIDs::TRACK);
+    newTrack = ValueTree(TrackStateIDs::TRACK);
     newTrack.setProperty(TracksStateIDs::isMasterTrack, isMaster, nullptr);
     newTrack.setProperty(TracksStateIDs::uuid, Uuid().toString(), nullptr);
     bool isSubTrack = !isMaster && derivedFromTrack.isValid();

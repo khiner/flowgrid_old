@@ -2,17 +2,18 @@
 
 TracksState::TracksState(ViewState &view, PluginManager &pluginManager, UndoManager &undoManager)
         : view(view), pluginManager(pluginManager), undoManager(undoManager) {
-    tracks = ValueTree(TracksStateIDs::TRACKS);
-    tracks.setProperty(TracksStateIDs::name, "Tracks", nullptr);
+    state = ValueTree(TracksStateIDs::TRACKS);
+    state.setProperty(TracksStateIDs::name, "Tracks", nullptr);
 }
 
-void TracksState::loadFromState(const ValueTree &state) {
-    moveAllChildren(state, getState(), nullptr);
+void TracksState::loadFromState(const ValueTree &fromState) {
+    state.copyPropertiesFrom(fromState, nullptr);
+    moveAllChildren(fromState, state, nullptr);
 
     // Re-save all non-string value types,
     // since type information is not saved in XML
     // Also, re-set some vars just to trigger the event (like selected slot mask)
-    for (auto track : tracks) {
+    for (auto track : state) {
         resetVarToBool(track, TracksStateIDs::isMasterTrack, this);
         resetVarToBool(track, TracksStateIDs::selected, this);
 
@@ -57,7 +58,7 @@ int TracksState::getInsertIndexForProcessor(const ValueTree &track, const ValueT
 
 Array<ValueTree> TracksState::findAllSelectedItems() const {
     Array<ValueTree> selectedItems;
-    for (const auto &track : tracks) {
+    for (const auto &track : state) {
         if (track[TracksStateIDs::selected])
             selectedItems.add(track);
         else
@@ -85,11 +86,11 @@ ValueTree TracksState::findProcessorNearestToSlot(const ValueTree &track, int sl
 }
 
 juce::Point<int> TracksState::gridPositionToTrackAndSlot(const juce::Point<int> gridPosition, bool allowUpFromMaster) const {
-    if (gridPosition.y > view.getNumTrackProcessorSlots())
+    if (gridPosition.y > view.getNumProcessorSlots())
         return INVALID_TRACK_AND_SLOT;
 
     int trackIndex, slot;
-    if (gridPosition.y == view.getNumTrackProcessorSlots()) {
+    if (gridPosition.y == view.getNumProcessorSlots()) {
         trackIndex = indexOf(getMasterTrack());
         slot = gridPosition.x + view.getMasterViewSlotOffset() - view.getGridViewTrackOffset();
     } else {

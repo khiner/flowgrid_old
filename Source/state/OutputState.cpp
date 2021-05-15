@@ -5,17 +5,22 @@
 
 OutputState::OutputState(PluginManager &pluginManager, UndoManager &undoManager, AudioDeviceManager &deviceManager)
         : pluginManager(pluginManager), undoManager(undoManager), deviceManager(deviceManager) {
-    output = ValueTree(TracksStateIDs::OUTPUT);
-    output.addListener(this);
+    state = ValueTree(OutputStateIDs::OUTPUT);
+    state.addListener(this);
 }
 
 OutputState::~OutputState() {
-    output.removeListener(this);
+    state.removeListener(this);
+}
+
+void OutputState::loadFromState(const ValueTree &fromState) {
+    state.copyPropertiesFrom(fromState, nullptr);
+    moveAllChildren(fromState, state, nullptr);
 }
 
 Array<ValueTree> OutputState::syncOutputDevicesWithDeviceManager() {
     Array<ValueTree> outputProcessorsToDelete;
-    for (const auto &outputProcessor : output) {
+    for (const auto &outputProcessor : state) {
         if (outputProcessor.hasProperty(TracksStateIDs::deviceName)) {
             const String &deviceName = outputProcessor[TracksStateIDs::deviceName];
             if (!MidiOutput::getDevices().contains(deviceName) || !deviceManager.isMidiOutputEnabled(deviceName)) {
@@ -25,10 +30,10 @@ Array<ValueTree> OutputState::syncOutputDevicesWithDeviceManager() {
     }
     for (const auto &deviceName : MidiOutput::getDevices()) {
         if (deviceManager.isMidiOutputEnabled(deviceName) &&
-            !output.getChildWithProperty(TracksStateIDs::deviceName, deviceName).isValid()) {
+            !state.getChildWithProperty(TracksStateIDs::deviceName, deviceName).isValid()) {
             auto midiOutputProcessor = CreateProcessorAction::createProcessor(MidiOutputProcessor::getPluginDescription());
             midiOutputProcessor.setProperty(TracksStateIDs::deviceName, deviceName, nullptr);
-            output.addChild(midiOutputProcessor, -1, &undoManager);
+            state.addChild(midiOutputProcessor, -1, &undoManager);
         }
     }
     return outputProcessorsToDelete;
@@ -36,5 +41,5 @@ Array<ValueTree> OutputState::syncOutputDevicesWithDeviceManager() {
 
 void OutputState::initializeDefault() {
     auto outputProcessor = CreateProcessorAction::createProcessor(pluginManager.getAudioOutputDescription());
-    output.appendChild(outputProcessor, &undoManager);
+    state.appendChild(outputProcessor, &undoManager);
 }

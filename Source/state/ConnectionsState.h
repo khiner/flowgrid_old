@@ -2,11 +2,11 @@
 
 #include "TracksState.h"
 #include "ConnectionType.h"
+#include "ConnectionState.h"
 
 namespace ConnectionsStateIDs {
 #define ID(name) const juce::Identifier name(#name);
     ID(CONNECTIONS)
-    ID(CONNECTION)
     ID(SOURCE)
     ID(DESTINATION)
     ID(channel)
@@ -18,11 +18,13 @@ class ConnectionsState : public Stateful {
 public:
     explicit ConnectionsState(TracksState &tracks);
 
-    ValueTree &getState() override { return connections; }
+    ValueTree &getState() override { return state; }
 
-    void loadFromState(const ValueTree &state) override {
-        moveAllChildren(state, getState(), nullptr);
-    }
+    static bool isType(const ValueTree &state) { return state.hasType(ConnectionsStateIDs::CONNECTIONS); }
+
+    void loadFromState(const ValueTree &fromState) override;
+
+    void loadFromParentState(const ValueTree &parent) override { loadFromState(parent.getChildWithName(ConnectionsStateIDs::CONNECTIONS)); }
 
     ValueTree findDefaultDestinationProcessor(const ValueTree &sourceProcessor, ConnectionType connectionType);
 
@@ -40,7 +42,7 @@ public:
     }
 
     ValueTree getConnectionMatching(const AudioProcessorGraph::Connection &connection) const {
-        for (auto connectionState : connections)
+        for (auto connectionState : state)
             if (stateToConnection(connectionState) == connection)
                 return connectionState;
         return {};
@@ -59,6 +61,6 @@ public:
     }
 
 private:
-    ValueTree connections;
+    ValueTree state;
     TracksState &tracks;
 };

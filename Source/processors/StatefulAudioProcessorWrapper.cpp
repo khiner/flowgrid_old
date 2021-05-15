@@ -399,14 +399,14 @@ void StatefulAudioProcessorWrapper::updateStateForProcessor(AudioProcessor *proc
     if (processor->producesMidi())
         newOutputs.add({processor, deviceManager, AudioProcessorGraph::midiChannelIndex, false});
 
-    ValueTree inputChannels = state.getChildWithName(TracksStateIDs::INPUT_CHANNELS);
-    ValueTree outputChannels = state.getChildWithName(TracksStateIDs::OUTPUT_CHANNELS);
+    ValueTree inputChannels = state.getChildWithName(InputChannelsStateIDs::INPUT_CHANNELS);
+    ValueTree outputChannels = state.getChildWithName(OutputChannelsStateIDs::OUTPUT_CHANNELS);
     if (!inputChannels.isValid()) {
-        inputChannels = ValueTree(TracksStateIDs::INPUT_CHANNELS);
+        inputChannels = ValueTree(InputChannelsStateIDs::INPUT_CHANNELS);
         state.appendChild(inputChannels, nullptr);
     }
     if (!outputChannels.isValid()) {
-        outputChannels = ValueTree(TracksStateIDs::OUTPUT_CHANNELS);
+        outputChannels = ValueTree(OutputChannelsStateIDs::OUTPUT_CHANNELS);
         state.appendChild(outputChannels, nullptr);
     }
 

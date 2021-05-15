@@ -11,7 +11,7 @@ CreateConnectionAction::CreateConnectionAction(const AudioProcessorGraph::Connec
 }
 
 ValueTree CreateConnectionAction::stateForConnection(const AudioProcessorGraph::Connection &connection, bool isDefault) {
-    ValueTree connectionState(ConnectionsStateIDs::CONNECTION);
+    ValueTree connectionState(ConnectionStateIDs::CONNECTION);
     ValueTree source(ConnectionsStateIDs::SOURCE);
     source.setProperty(TracksStateIDs::nodeId, int(connection.source.nodeID.uid), nullptr);
     source.setProperty(ConnectionsStateIDs::channel, connection.source.channelIndex, nullptr);

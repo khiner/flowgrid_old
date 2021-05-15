@@ -28,7 +28,7 @@ Project::Project(ViewState &view, TracksState &tracks, ConnectionsState &connect
           undoManager(undoManager),
           pluginManager(pluginManager),
           deviceManager(deviceManager),
-          copiedState(tracks, processorGraph) {
+          copiedTracks(tracks, processorGraph) {
     state = ValueTree(ProjectIDs::PROJECT);
     state.setProperty(ProjectIDs::name, "My Project", nullptr);
     state.appendChild(input.getState(), nullptr);
@@ -44,13 +44,13 @@ Project::~Project() {
     tracks.removeListener(this);
 }
 
-void Project::loadFromState(const ValueTree &newState) {
+void Project::loadFromState(const ValueTree &fromState) {
     clear();
 
-    view.loadFromState(newState.getChildWithName(ViewStateIDs::VIEW_STATE));
+    view.loadFromParentState(fromState);
 
-    const String &inputDeviceName = newState.getChildWithName(TracksStateIDs::INPUT)[TracksStateIDs::deviceName];
-    const String &outputDeviceName = newState.getChildWithName(TracksStateIDs::OUTPUT)[TracksStateIDs::deviceName];
+    const String &inputDeviceName = fromState.getChildWithName(InputStateIDs::INPUT)[TracksStateIDs::deviceName];
+    const String &outputDeviceName = fromState.getChildWithName(OutputStateIDs::OUTPUT)[TracksStateIDs::deviceName];
 
     // TODO this should be replaced with the greyed-out IO processor behavior (keeping connections)
     static const String &failureMessage = TRANS("Could not open an Audio IO device used by this project.  "
@@ -60,17 +60,17 @@ void Project::loadFromState(const ValueTree &newState) {
                                                 "reload this project (without saving first!).");
 
     if (isDeviceWithNamePresent(inputDeviceName))
-        input.loadFromState(newState.getChildWithName(TracksStateIDs::INPUT));
+        input.loadFromParentState(fromState);
     else
         AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, TRANS("Failed to open input device \"") + inputDeviceName + "\"", failureMessage);
 
     if (isDeviceWithNamePresent(outputDeviceName))
-        output.loadFromState(newState.getChildWithName(TracksStateIDs::OUTPUT));
+        output.loadFromParentState(fromState);
     else
         AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, TRANS("Failed to open output device \"") + outputDeviceName + "\"", failureMessage);
 
-    tracks.loadFromState(newState.getChildWithName(TracksStateIDs::TRACKS));
-    connections.loadFromState(newState.getChildWithName(ConnectionsStateIDs::CONNECTIONS));
+    tracks.loadFromParentState(fromState);
+    connections.loadFromParentState(fromState);
     selectProcessor(tracks.getFocusedProcessor());
     undoManager.clearUndoHistory();
     sendChangeMessage();
@@ -124,14 +124,14 @@ void Project::insert() {
     if (isCurrentlyDraggingProcessor())
         endDraggingProcessor();
     undoManager.beginNewTransaction();
-    undoManager.perform(new InsertAction(false, copiedState.getState(), view.getFocusedTrackAndSlot(), tracks, connections, view, input, processorGraph));
+    undoManager.perform(new InsertAction(false, copiedTracks.getState(), view.getFocusedTrackAndSlot(), tracks, connections, view, input, processorGraph));
     updateAllDefaultConnections();
 }
 
 void Project::duplicateSelectedItems() {
     if (isCurrentlyDraggingProcessor())
         endDraggingProcessor();
-    CopiedState duplicateState(tracks, processorGraph);
+    CopiedTracks duplicateState(tracks, processorGraph);
     duplicateState.copySelectedItems();
 
     undoManager.beginNewTransaction();

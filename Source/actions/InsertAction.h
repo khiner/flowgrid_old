@@ -4,7 +4,7 @@
 
 // UpdateAllDefaultConnectionsAction should be performed after this
 struct InsertAction : UndoableAction {
-    InsertAction(bool duplicate, const ValueTree &copiedState, juce::Point<int> toTrackAndSlot,
+    InsertAction(bool duplicate, const ValueTree &copiedTracks, juce::Point<int> toTrackAndSlot,
                  TracksState &tracks, ConnectionsState &connections, ViewState &view, InputState &input, ProcessorGraph &processorGraph);
 
     bool perform() override;
@@ -28,7 +28,7 @@ private:
                              InputState &input, ProcessorGraph &processorGraph);
     };
 
-    void duplicateSelectedProcessors(const ValueTree &track, const ValueTree &copiedState);
+    void duplicateSelectedProcessors(const ValueTree &track, const ValueTree &copiedTracks);
 
     void copyProcessorsFromTrack(const ValueTree &fromTrack, int fromTrackIndex, int toTrackIndex, int slotDiff);
 

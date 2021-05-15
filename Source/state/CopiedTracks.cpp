@@ -1,9 +1,9 @@
-#include "CopiedState.h"
+#include "CopiedTracks.h"
 
-void CopiedState::loadFromState(const ValueTree &tracksState) {
-    copiedItems = ValueTree(TracksStateIDs::TRACKS);
-    for (const auto &track : tracksState) {
-        auto copiedTrack = ValueTree(TracksStateIDs::TRACK);
+void CopiedTracks::loadFromState(const ValueTree &fromState) {
+    state = ValueTree(TracksStateIDs::TRACKS);
+    for (const auto &track : fromState) {
+        auto copiedTrack = ValueTree(TrackStateIDs::TRACK);
         if (track[TracksStateIDs::selected]) {
             copiedTrack.copyPropertiesFrom(track, nullptr);
             for (auto processor : track)
@@ -24,6 +24,6 @@ void CopiedState::loadFromState(const ValueTree &tracksState) {
         }
 
         copiedTrack.appendChild(copiedLanes, nullptr);
-        copiedItems.appendChild(copiedTrack, nullptr);
+        state.appendChild(copiedTrack, nullptr);
     }
 }

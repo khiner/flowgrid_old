@@ -5,17 +5,22 @@
 
 InputState::InputState(PluginManager &pluginManager, UndoManager &undoManager, AudioDeviceManager &deviceManager)
         : pluginManager(pluginManager), undoManager(undoManager), deviceManager(deviceManager) {
-    input = ValueTree(TracksStateIDs::INPUT);
-    input.addListener(this);
+    state = ValueTree(InputStateIDs::INPUT);
+    state.addListener(this);
 }
 
 InputState::~InputState() {
-    input.removeListener(this);
+    state.removeListener(this);
+}
+
+void InputState::loadFromState(const ValueTree &fromState) {
+    state.copyPropertiesFrom(fromState, nullptr);
+    moveAllChildren(fromState, state, nullptr);
 }
 
 Array<ValueTree> InputState::syncInputDevicesWithDeviceManager() {
     Array<ValueTree> inputProcessorsToDelete;
-    for (const auto &inputProcessor : input) {
+    for (const auto &inputProcessor : state) {
         if (inputProcessor.hasProperty(TracksStateIDs::deviceName)) {
             const String &deviceName = inputProcessor[TracksStateIDs::deviceName];
             if (!MidiInput::getDevices().contains(deviceName) || !deviceManager.isMidiInputEnabled(deviceName)) {
@@ -25,21 +30,16 @@ Array<ValueTree> InputState::syncInputDevicesWithDeviceManager() {
     }
     for (const auto &deviceName : MidiInput::getDevices()) {
         if (deviceManager.isMidiInputEnabled(deviceName) &&
-            !input.getChildWithProperty(TracksStateIDs::deviceName, deviceName).isValid()) {
+            !state.getChildWithProperty(TracksStateIDs::deviceName, deviceName).isValid()) {
             auto midiInputProcessor = CreateProcessorAction::createProcessor(MidiInputProcessor::getPluginDescription());
             midiInputProcessor.setProperty(TracksStateIDs::deviceName, deviceName, nullptr);
-            input.addChild(midiInputProcessor, -1, &undoManager);
+            state.addChild(midiInputProcessor, -1, &undoManager);
         }
     }
     return inputProcessorsToDelete;
 }
 
-void InputState::loadFromState(const ValueTree &state) {
-    input.copyPropertiesFrom(state, nullptr);
-    moveAllChildren(state, input, nullptr);
-}
-
 void InputState::initializeDefault() {
     auto inputProcessor = CreateProcessorAction::createProcessor(pluginManager.getAudioInputDescription());
-    input.appendChild(inputProcessor, &undoManager);
+    state.appendChild(inputProcessor, &undoManager);
 }

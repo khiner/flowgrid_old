@@ -73,8 +73,8 @@ void ContextPane::paint(Graphics &g) {
 }
 
 void ContextPane::resized() {
-    int numColumns = std::max(tracks.getNumNonMasterTracks(), view.getNumMasterProcessorSlots() + (view.getMasterViewSlotOffset() - view.getGridViewTrackOffset()) + 1); // + master track output
-    int numRows = view.getNumTrackProcessorSlots() + 2;  // + track output row + master track
+    int numColumns = std::max(tracks.getNumNonMasterTracks(), view.getNumProcessorSlots(true) + (view.getMasterViewSlotOffset() - view.getGridViewTrackOffset()) + 1); // + master track output
+    int numRows = view.getNumProcessorSlots() + 2;  // + track output row + master track
     setSize(cellWidth * numColumns, cellHeight * numRows);
 }
 
@@ -83,7 +83,6 @@ Colour ContextPane::getFillColour(const Colour &trackColour, const ValueTree &tr
 
     // this is the only part different than GraphEditorProcessorLane
     auto colour = processor.isValid() ? findColour(TextEditor::backgroundColourId) : baseColour;
-
     if (TracksState::doesTrackHaveSelections(track))
         colour = colour.brighter(processor.isValid() ? 0.04f : 0.15f);
     if (slotSelected)
@@ -97,14 +96,14 @@ Colour ContextPane::getFillColour(const Colour &trackColour, const ValueTree &tr
 }
 
 void ContextPane::valueTreeChildAdded(ValueTree &parent, ValueTree &child) {
-    if (child.hasType(TracksStateIDs::TRACK))
+    if (TrackState::isType(child))
         resized();
     else if (child.hasType(TracksStateIDs::PROCESSOR))
         repaint();
 }
 
 void ContextPane::valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int index) {
-    if (child.hasType(TracksStateIDs::TRACK))
+    if (TrackState::isType(child))
         resized();
     else if (child.hasType(TracksStateIDs::PROCESSOR))
         repaint();

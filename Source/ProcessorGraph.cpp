@@ -168,9 +168,9 @@ bool ProcessorGraph::doDisconnectNode(const ValueTree &processor, ConnectionType
 void ProcessorGraph::updateIoChannelEnabled(const ValueTree &channels, const ValueTree &channel, bool enabled) {
     String processorName = channels.getParent()[TracksStateIDs::name];
     bool isInput;
-    if (processorName == "Audio Input" && channels.hasType(TracksStateIDs::OUTPUT_CHANNELS))
+    if (processorName == "Audio Input" && OutputState::isType(channels))
         isInput = true;
-    else if (processorName == "Audio Output" && channels.hasType(TracksStateIDs::INPUT_CHANNELS))
+    else if (processorName == "Audio Output" && InputState::isType(channels))
         isInput = false;
     else
         return;
@@ -208,12 +208,12 @@ void ProcessorGraph::valueTreePropertyChanged(ValueTree &tree, const Identifier 
 }
 
 void ProcessorGraph::valueTreeChildAdded(ValueTree &parent, ValueTree &child) {
-    if (child.hasType(ConnectionsStateIDs::CONNECTION)) {
+    if (ConnectionState::isType(child)) {
         if (graphUpdatesArePaused)
             connectionsSincePause.addConnection(child);
         else
             AudioProcessorGraph::addConnection(ConnectionsState::stateToConnection(child));
-    } else if (child.hasType(TracksStateIDs::TRACK) || parent.hasType(TracksStateIDs::INPUT) || parent.hasType(TracksStateIDs::OUTPUT)) {
+    } else if (TrackState::isType(child) || InputState::isType(parent) || OutputState::isType(parent)) {
         recursivelyAddProcessors(child); // TODO might be a problem for moving tracks
     } else if (child.hasType(TracksStateIDs::CHANNEL)) {
         updateIoChannelEnabled(parent, child, true);
@@ -223,7 +223,7 @@ void ProcessorGraph::valueTreeChildAdded(ValueTree &parent, ValueTree &child) {
 }
 
 void ProcessorGraph::valueTreeChildRemoved(ValueTree &parent, ValueTree &child, int indexFromWhichChildWasRemoved) {
-    if (child.hasType(ConnectionsStateIDs::CONNECTION)) {
+    if (ConnectionState::isType(child)) {
         if (graphUpdatesArePaused)
             connectionsSincePause.removeConnection(child);
         else

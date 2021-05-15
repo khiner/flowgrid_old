@@ -1,16 +1,16 @@
 #include "ViewState.h"
 
 ViewState::ViewState(UndoManager &undoManager) : undoManager(undoManager) {
-    viewState = ValueTree(ViewStateIDs::VIEW_STATE);
+    state = ValueTree(ViewStateIDs::VIEW_STATE);
 }
 
 void ViewState::initializeDefault() {
     setNoteMode();
     focusOnEditorPane();
     focusOnProcessorSlot({}, -1);
-    viewState.setProperty(ViewStateIDs::numProcessorSlots, NUM_VISIBLE_NON_MASTER_TRACK_SLOTS, nullptr);
+    state.setProperty(ViewStateIDs::numProcessorSlots, NUM_VISIBLE_NON_MASTER_TRACK_SLOTS, nullptr);
     // the number of processors in the master track aligns with the number of tracks
-    viewState.setProperty(ViewStateIDs::numMasterProcessorSlots, NUM_VISIBLE_MASTER_TRACK_SLOTS, nullptr);
+    state.setProperty(ViewStateIDs::numMasterProcessorSlots, NUM_VISIBLE_MASTER_TRACK_SLOTS, nullptr);
     setGridViewTrackOffset(0);
     setGridViewSlotOffset(0);
     setMasterViewSlotOffset(0);
@@ -48,7 +48,7 @@ void ViewState::updateViewSlotOffsetToInclude(int processorSlot, bool isMasterTr
 }
 
 juce::Point<int> ViewState::getFocusedTrackAndSlot() const {
-    int trackIndex = viewState.hasProperty(ViewStateIDs::focusedTrackIndex) ? getFocusedTrackIndex() : 0;
-    int processorSlot = viewState.hasProperty(ViewStateIDs::focusedProcessorSlot) ? getFocusedProcessorSlot() : -1;
+    int trackIndex = state.hasProperty(ViewStateIDs::focusedTrackIndex) ? getFocusedTrackIndex() : 0;
+    int processorSlot = state.hasProperty(ViewStateIDs::focusedProcessorSlot) ? getFocusedProcessorSlot() : -1;
     return {trackIndex, processorSlot};
 }

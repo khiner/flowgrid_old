@@ -33,7 +33,7 @@ void Push2Colours::setColour(uint8 colourIndex, const Colour &colour) {
 }
 
 void Push2Colours::valueTreeChildAdded(ValueTree &parent, ValueTree &child) {
-    if (child.hasType(TracksStateIDs::TRACK)) {
+    if (TrackState::isType(child)) {
         const String &uuid = child[TracksStateIDs::uuid];
         const auto &colour = Colour::fromString(child[TracksStateIDs::colour].toString());
         auto index = findIndexForColourAddingIfNeeded(colour);
@@ -43,7 +43,7 @@ void Push2Colours::valueTreeChildAdded(ValueTree &parent, ValueTree &child) {
 }
 
 void Push2Colours::valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int) {
-    if (child.hasType(TracksStateIDs::TRACK)) {
+    if (TrackState::isType(child)) {
         const auto &uuid = child[TracksStateIDs::uuid].toString();
         auto index = indexForTrackUuid[uuid];
         availableColourIndexes.add(index);
@@ -52,7 +52,7 @@ void Push2Colours::valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, 
 }
 
 void Push2Colours::valueTreePropertyChanged(ValueTree &tree, const Identifier &i) {
-    if (tree.hasType(TracksStateIDs::TRACK)) {
+    if (TrackState::isType(tree)) {
         if (i == TracksStateIDs::colour) {
             const String &uuid = tree[TracksStateIDs::uuid];
             auto index = indexForTrackUuid[uuid];

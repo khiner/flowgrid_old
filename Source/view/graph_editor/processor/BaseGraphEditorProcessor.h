@@ -31,9 +31,9 @@ public:
 
     int getSlot() const { return state[TracksStateIDs::processorSlot]; }
 
-    int getNumInputChannels() const { return state.getChildWithName(TracksStateIDs::INPUT_CHANNELS).getNumChildren(); }
+    int getNumInputChannels() const { return state.getChildWithName(InputChannelsStateIDs::INPUT_CHANNELS).getNumChildren(); }
 
-    int getNumOutputChannels() const { return state.getChildWithName(TracksStateIDs::OUTPUT_CHANNELS).getNumChildren(); }
+    int getNumOutputChannels() const { return state.getChildWithName(OutputChannelsStateIDs::OUTPUT_CHANNELS).getNumChildren(); }
 
     bool acceptsMidi() const { return state[TracksStateIDs::acceptsMidi]; }
 

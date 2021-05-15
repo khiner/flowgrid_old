@@ -360,13 +360,13 @@ void GraphEditorPanel::valueTreePropertyChanged(ValueTree &tree, const Identifie
 }
 
 void GraphEditorPanel::valueTreeChildAdded(ValueTree &parent, ValueTree &child) {
-    if (child.hasType(TracksStateIDs::TRACK) || child.hasType(TracksStateIDs::PROCESSOR) || child.hasType(ConnectionsStateIDs::CONNECTION)) {
+    if (TrackState::isType(child) || child.hasType(TracksStateIDs::PROCESSOR) || child.hasType(ConnectionStateIDs::CONNECTION)) {
         connectors->updateConnectors();
     }
 }
 
 void GraphEditorPanel::valueTreeChildRemoved(ValueTree &parent, ValueTree &child, int indexFromWhichChildWasRemoved) {
-    if (child.hasType(TracksStateIDs::TRACK)) {
+    if (TrackState::isType(child)) {
         connectors->updateConnectors();
     } else if (child.hasType(TracksStateIDs::PROCESSOR)) {
         if (child[TracksStateIDs::name] == InternalPluginFormat::getMidiInputProcessorName()) {
@@ -378,13 +378,13 @@ void GraphEditorPanel::valueTreeChildRemoved(ValueTree &parent, ValueTree &child
         } else {
             connectors->updateConnectors();
         }
-    } else if (child.hasType(ConnectionsStateIDs::CONNECTION)) {
+    } else if (child.hasType(ConnectionStateIDs::CONNECTION)) {
         connectors->updateConnectors();
     }
 }
 
 void GraphEditorPanel::valueTreeChildOrderChanged(ValueTree &parent, int oldIndex, int newIndex) {
-    if (parent.hasType(TracksStateIDs::TRACKS)) {
+    if (TracksState::isType(parent)) {
         connectors->updateConnectors();
     }
 }

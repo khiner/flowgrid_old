@@ -1,6 +1,9 @@
 #pragma once
 
+#include "state/TrackState.h"
 #include "state/ViewState.h"
+#include "state/InputChannelsState.h"
+#include "state/OutputChannelsState.h"
 #include "view/PluginWindow.h"
 #include "PluginManager.h"
 #include "Stateful.h"
@@ -8,12 +11,7 @@
 namespace TracksStateIDs {
 #define ID(name) const juce::Identifier name(#name);
     ID(TRACKS)
-    ID(INPUT)
-    ID(OUTPUT)
-    ID(MIDI_INPUT)
-    ID(MIDI_OUTPUT)
 
-    ID(TRACK)
     ID(uuid)
     ID(colour)
     ID(name)
@@ -38,8 +36,6 @@ namespace TracksStateIDs {
     ID(pluginWindowX)
     ID(pluginWindowY)
 
-    ID(INPUT_CHANNELS)
-    ID(OUTPUT_CHANNELS)
     ID(CHANNEL)
     ID(channelIndex)
     ID(abbreviatedName)
@@ -54,9 +50,13 @@ class TracksState : public Stateful, private ValueTree::Listener {
 public:
     TracksState(ViewState &view, PluginManager &pluginManager, UndoManager &undoManager);
 
-    void loadFromState(const ValueTree &state) override;
+    static bool isType(const ValueTree &state) { return state.hasType(TracksStateIDs::TRACKS); }
 
-    ValueTree &getState() override { return tracks; }
+    void loadFromState(const ValueTree &fromState) override;
+
+    void loadFromParentState(const ValueTree &parent) override { loadFromState(parent.getChildWithName(TracksStateIDs::TRACKS)); }
+
+    ValueTree &getState() override { return state; }
 
     static ValueTree getProcessorLanesForTrack(const ValueTree &track) {
         return track.isValid() ? track.getChildWithName(TracksStateIDs::PROCESSOR_LANES) : ValueTree();
@@ -73,17 +73,17 @@ public:
     }
 
     static int getNumInputChannelsForProcessor(const ValueTree &processor) {
-        const ValueTree &inputChannels = processor.getChildWithName(TracksStateIDs::INPUT_CHANNELS);
+        const ValueTree &inputChannels = processor.getChildWithName(InputChannelsStateIDs::INPUT_CHANNELS);
         return inputChannels.getNumChildren();
     }
 
     static int getNumOutputChannelsForProcessor(const ValueTree &processor) {
-        const ValueTree &outputChannels = processor.getChildWithName(TracksStateIDs::OUTPUT_CHANNELS);
+        const ValueTree &outputChannels = processor.getChildWithName(OutputChannelsStateIDs::OUTPUT_CHANNELS);
         return outputChannels.getNumChildren();
     }
 
     static ValueTree getTrackForProcessor(const ValueTree &processor) {
-        return processor.getParent().hasType(TracksStateIDs::TRACK) ? processor.getParent() : processor.getParent().getParent().getParent();
+        return TrackState::isType(processor.getParent()) ? processor.getParent() : processor.getParent().getParent().getParent();
     }
 
     static AudioProcessorGraph::NodeID getNodeIdForProcessor(const ValueTree &processor) {
@@ -116,11 +116,11 @@ public:
         return isMasterTrack(getTrackForProcessor(processor)) && !isTrackIOProcessor(processor);
     }
 
-    int getNumTracks() const { return tracks.getNumChildren(); }
+    int getNumTracks() const { return state.getNumChildren(); }
 
-    int indexOf(const ValueTree &track) const { return tracks.indexOf(track); }
+    int indexOf(const ValueTree &track) const { return state.indexOf(track); }
 
-    ValueTree getTrack(int trackIndex) const { return tracks.getChild(trackIndex); }
+    ValueTree getTrack(int trackIndex) const { return state.getChild(trackIndex); }
 
     int getViewIndexForTrack(const ValueTree &track) const { return indexOf(track) - view.getGridViewTrackOffset(); }
 
@@ -128,12 +128,12 @@ public:
         return getTrack(trackViewIndex + view.getGridViewTrackOffset());
     }
 
-    ValueTree getMasterTrack() const { return tracks.getChildWithProperty(TracksStateIDs::isMasterTrack, true); }
+    ValueTree getMasterTrack() const { return state.getChildWithProperty(TracksStateIDs::isMasterTrack, true); }
 
     static bool isMasterTrack(const ValueTree &track) { return track[TracksStateIDs::isMasterTrack]; }
 
     int getNumNonMasterTracks() const {
-        return getMasterTrack().isValid() ? tracks.getNumChildren() - 1 : tracks.getNumChildren();
+        return getMasterTrack().isValid() ? state.getNumChildren() - 1 : state.getNumChildren();
     }
 
     static bool doesTrackHaveSelections(const ValueTree &track) {
@@ -141,14 +141,14 @@ public:
     }
 
     bool anyTrackSelected() const {
-        for (const auto &track : tracks)
+        for (const auto &track : state)
             if (track[TracksStateIDs::selected])
                 return true;
         return false;
     }
 
     bool anyTrackHasSelections() const {
-        for (const auto &track : tracks)
+        for (const auto &track : state)
             if (doesTrackHaveSelections(track))
                 return true;
         return false;
@@ -156,7 +156,7 @@ public:
 
     bool moreThanOneTrackHasSelections() const {
         bool foundOne = false;
-        for (const auto &track : tracks) {
+        for (const auto &track : state) {
             if (doesTrackHaveSelections(track)) {
                 if (foundOne) return true; // found a second one
                 else foundOne = true;
@@ -166,7 +166,7 @@ public:
     }
 
     ValueTree findTrackWithUuid(const String &uuid) {
-        for (const auto &track : tracks)
+        for (const auto &track : state)
             if (track[TracksStateIDs::uuid] == uuid)
                 return track;
         return {};
@@ -218,7 +218,7 @@ public:
     }
 
     ValueTree findFirstTrackWithSelections() {
-        for (const auto &track : tracks)
+        for (const auto &track : state)
             if (doesTrackHaveSelections(track))
                 return track;
         return {};
@@ -252,7 +252,7 @@ public:
 
     Array<String> getSelectedSlotsMasks() const {
         Array<String> selectedSlotMasks;
-        for (const auto &track : tracks) {
+        for (const auto &track : state) {
             const auto &lane = getProcessorLaneForTrack(track);
             selectedSlotMasks.add(lane[TracksStateIDs::selectedSlotsMask]);
         }
@@ -261,7 +261,7 @@ public:
 
     Array<bool> getTrackSelections() const {
         Array<bool> trackSelections;
-        for (const auto &track : tracks) {
+        for (const auto &track : state) {
             trackSelections.add(track[TracksStateIDs::selected]);
         }
         return trackSelections;
@@ -392,7 +392,7 @@ public:
 
     juce::Point<int> trackAndSlotToGridPosition(const juce::Point<int> trackAndSlot) const {
         if (TracksState::isMasterTrack(getTrack(trackAndSlot.x)))
-            return {trackAndSlot.y + view.getGridViewTrackOffset() - view.getMasterViewSlotOffset(), view.getNumTrackProcessorSlots()};
+            return {trackAndSlot.y + view.getGridViewTrackOffset() - view.getMasterViewSlotOffset(), view.getNumProcessorSlots()};
         return trackAndSlot;
     }
 
@@ -421,7 +421,7 @@ public:
     }
 
     int getNumSlotsForTrack(const ValueTree &track) const {
-        return isMasterTrack(track) ? view.getNumMasterProcessorSlots() : view.getNumTrackProcessorSlots();
+        return view.getNumProcessorSlots(isMasterTrack(track));
     }
 
     int getProcessorSlotSize(const ValueTree &track) const {
@@ -433,7 +433,7 @@ public:
     static constexpr juce::Point<int> INVALID_TRACK_AND_SLOT = {-1, -1};
 
 private:
-    ValueTree tracks;
+    ValueTree state;
     ViewState &view;
     PluginManager &pluginManager;
     UndoManager &undoManager;

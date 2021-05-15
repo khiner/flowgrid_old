@@ -6,7 +6,12 @@ static bool canProcessorDefaultConnectTo(const ValueTree &processor, const Value
 }
 
 ConnectionsState::ConnectionsState(TracksState &tracks) : tracks(tracks) {
-    connections = ValueTree(ConnectionsStateIDs::CONNECTIONS);
+    state = ValueTree(ConnectionsStateIDs::CONNECTIONS);
+}
+
+void ConnectionsState::loadFromState(const ValueTree &fromState) {
+    state.copyPropertiesFrom(fromState, nullptr);
+    moveAllChildren(fromState, state, nullptr);
 }
 
 ValueTree ConnectionsState::findDefaultDestinationProcessor(const ValueTree &sourceProcessor, ConnectionType connectionType) {
@@ -48,7 +53,7 @@ ValueTree ConnectionsState::findDefaultDestinationProcessor(const ValueTree &sou
 }
 
 bool ConnectionsState::isNodeConnected(AudioProcessorGraph::NodeID nodeId) const {
-    for (const auto &connection : connections) {
+    for (const auto &connection : state) {
         if (TracksState::getNodeIdForProcessor(connection.getChildWithName(ConnectionsStateIDs::SOURCE)) == nodeId)
             return true;
     }
@@ -57,7 +62,7 @@ bool ConnectionsState::isNodeConnected(AudioProcessorGraph::NodeID nodeId) const
 
 Array<ValueTree> ConnectionsState::getConnectionsForNode(const ValueTree &processor, ConnectionType connectionType, bool incoming, bool outgoing, bool includeCustom, bool includeDefault) {
     Array<ValueTree> nodeConnections;
-    for (const auto &connection : connections) {
+    for (const auto &connection : state) {
         if ((connection[ConnectionsStateIDs::isCustomConnection] && !includeCustom) || (!connection[ConnectionsStateIDs::isCustomConnection] && !includeDefault))
             continue;
 

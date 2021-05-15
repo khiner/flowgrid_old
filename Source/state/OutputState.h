@@ -7,6 +7,13 @@
 #include "ConnectionType.h"
 #include "state/TracksState.h"
 
+
+namespace OutputStateIDs {
+#define ID(name) const juce::Identifier name(#name);
+    ID(OUTPUT)
+#undef ID
+}
+
 // TODO Should input/output be combined into a single IOState? (Almost all behavior is symmetrical.)
 class OutputState : public Stateful, private ValueTree::Listener {
 public:
@@ -14,24 +21,25 @@ public:
 
     ~OutputState() override;
 
-    ValueTree &getState() override { return output; }
+    ValueTree &getState() override { return state; }
 
-    void loadFromState(const ValueTree &state) override {
-        output.copyPropertiesFrom(state, nullptr);
-        moveAllChildren(state, output, nullptr);
-    }
+    static bool isType(const ValueTree &state) { return state.hasType(OutputStateIDs::OUTPUT); }
+
+    void loadFromState(const ValueTree &fromState) override;
+
+    void loadFromParentState(const ValueTree &parent) override { loadFromState(parent.getChildWithName(OutputStateIDs::OUTPUT)); }
 
     void initializeDefault();
 
     ValueTree getAudioOutputProcessorState() const {
-        return output.getChildWithProperty(TracksStateIDs::name, pluginManager.getAudioOutputDescription().name);
+        return state.getChildWithProperty(TracksStateIDs::name, pluginManager.getAudioOutputDescription().name);
     }
 
     // Returns output processors to delete
     Array<ValueTree> syncOutputDevicesWithDeviceManager();
 
 private:
-    ValueTree output;
+    ValueTree state;
     PluginManager &pluginManager;
     UndoManager &undoManager;
     AudioDeviceManager &deviceManager;
@@ -49,7 +57,7 @@ private:
     }
 
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {
-        if (i == TracksStateIDs::deviceName && tree == output) {
+        if (i == TracksStateIDs::deviceName && tree == state) {
             AudioDeviceManager::AudioDeviceSetup config;
             deviceManager.getAudioDeviceSetup(config);
             config.outputDeviceName = tree[TracksStateIDs::deviceName];

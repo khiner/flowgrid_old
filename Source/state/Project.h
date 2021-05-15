@@ -9,7 +9,7 @@
 #include "state/OutputState.h"
 #include "PluginManager.h"
 #include "ProcessorGraph.h"
-#include "CopiedState.h"
+#include "CopiedTracks.h"
 
 namespace ProjectIDs {
 #define ID(name) const juce::Identifier name(#name);
@@ -27,7 +27,11 @@ public:
 
     ValueTree &getState() override { return state; }
 
-    void loadFromState(const ValueTree &newState) override;
+    static bool isType(const ValueTree &state) { return state.hasType(ProjectIDs::PROJECT); }
+
+    void loadFromState(const ValueTree &fromState) override;
+
+    void loadFromParentState(const ValueTree &parent) override { loadFromState(parent.getChildWithName(ProjectIDs::PROJECT)); }
 
     void clear() override;
 
@@ -65,8 +69,6 @@ public:
 
     UndoManager &getUndoManager() { return undoManager; }
 
-    AudioDeviceManager &getDeviceManager() { return deviceManager; }
-
     bool isPush2MidiInputProcessorConnected() const {
         return connections.isNodeConnected(TracksState::getNodeIdForProcessor(input.getPush2MidiInputProcessor()));
     }
@@ -95,11 +97,11 @@ public:
     void deleteSelectedItems();
 
     void copySelectedItems() {
-        copiedState.copySelectedItems();
+        copiedTracks.copySelectedItems();
     }
 
     bool hasCopy() {
-        return copiedState.getState().isValid();
+        return copiedTracks.getState().isValid();
     }
 
     void insert();
@@ -205,7 +207,7 @@ private:
 
     ValueTree mostRecentlyCreatedTrack, mostRecentlyCreatedProcessor;
 
-    CopiedState copiedState;
+    CopiedTracks copiedTracks;
 
     void doCreateAndAddProcessor(const PluginDescription &description, ValueTree &track, int slot = -1);
 
@@ -214,7 +216,7 @@ private:
     void updateAllDefaultConnections();
 
     void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override {
-        if (child.hasType(TracksStateIDs::TRACK))
+        if (TrackState::isType(child))
             mostRecentlyCreatedTrack = child;
         else if (child.hasType(TracksStateIDs::PROCESSOR))
             mostRecentlyCreatedProcessor = child;

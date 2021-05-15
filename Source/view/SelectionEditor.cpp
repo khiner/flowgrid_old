@@ -114,7 +114,7 @@ void SelectionEditor::assignProcessorToEditor(const ValueTree &processor, int pr
 }
 
 void SelectionEditor::valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int) {
-    if (child.hasType(TracksStateIDs::TRACK) || child.hasType(TracksStateIDs::PROCESSOR)) {
+    if (TrackState::isType(child) || child.hasType(TracksStateIDs::PROCESSOR)) {
         refreshProcessors();
     }
 }
@@ -128,7 +128,7 @@ void SelectionEditor::valueTreePropertyChanged(ValueTree &tree, const Identifier
     } else if (i == ViewStateIDs::focusedProcessorSlot) {
         refreshProcessors({}, true);
     } else if (i == ViewStateIDs::numProcessorSlots || i == ViewStateIDs::numMasterProcessorSlots) {
-        int numProcessorSlots = jmax(int(tree[ViewStateIDs::numProcessorSlots]), int(tree[ViewStateIDs::numMasterProcessorSlots]));
+        int numProcessorSlots = jmax(view.getNumProcessorSlots(true), view.getNumProcessorSlots(false));
         while (processorEditors.size() < numProcessorSlots) {
             auto *processorEditor = new ProcessorEditor();
             processorEditorsComponent.addChildComponent(processorEditor);

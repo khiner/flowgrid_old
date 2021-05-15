@@ -246,15 +246,15 @@ void Push2Component::valueTreePropertyChanged(ValueTree &tree, const Identifier 
 }
 
 void Push2Component::valueTreeChildAdded(ValueTree &parent, ValueTree &child) {
-    if (child.hasType(TracksStateIDs::TRACK)) {
+    if (TrackState::isType(child)) {
         updatePush2SelectionDependentButtons();
-    } else if (child.hasType(ConnectionsStateIDs::CONNECTION)) {
+    } else if (child.hasType(ConnectionStateIDs::CONNECTION)) {
         updatePush2NoteModePadLedManagerVisibility();
     }
 }
 
 void Push2Component::valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int) {
-    if (child.hasType(TracksStateIDs::TRACK)) {
+    if (TrackState::isType(child)) {
         updatePush2SelectionDependentButtons();
         if (!tracks.getFocusedTrack().isValid()) {
             showChild(nullptr);
@@ -263,7 +263,7 @@ void Push2Component::valueTreeChildRemoved(ValueTree &exParent, ValueTree &child
     } else if (child.hasType(TracksStateIDs::PROCESSOR)) {
         updateFocusedProcessor();
         updatePush2SelectionDependentButtons();
-    } else if (child.hasType(ConnectionsStateIDs::CONNECTION)) {
+    } else if (child.hasType(ConnectionStateIDs::CONNECTION)) {
         updatePush2NoteModePadLedManagerVisibility();
     }
 }

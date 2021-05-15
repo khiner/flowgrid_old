@@ -19,6 +19,19 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}\
     -Wno-ignored-qualifiers -Wswitch-enum -Wpedantic"
 )
 
+# TODO
+#-Wno-unused-variable
+#-Wno-infinite-recursion
+#-Werror=implicit-function-declaration
+#-Wno-shadow-field-in-constructor-modified
+#-Wno-shadow-ivar
+#-Wuninitialized
+#-Wunused-label
+#-Wunused-lambda-capture
+#-Wno-shadow-field-in-constructor
+#-Wno-shadow
+#-Wno-shadow-field
+
 add_subdirectory(modules/JUCE)
 
 juce_set_vst2_sdk_path($ENV{HOME}/SDKs/VST_SDK/VST2_SDK)
@@ -97,12 +110,16 @@ target_sources(FlowGrid PRIVATE
     Source/push2/Push2DisplayBridge.h
     Source/push2/Push2MidiCommunicator.cpp
     Source/push2/Push2UsbCommunicator.h
+    Source/state/ConnectionState.cpp
     Source/state/ConnectionsState.cpp
-    Source/state/CopiedState.cpp
+    Source/state/CopiedTracks.cpp
     Source/state/InputState.cpp
     Source/state/OutputState.cpp
+    Source/state/InputChannelsState.cpp
+    Source/state/OutputChannelsState.cpp
     Source/state/Project.cpp
     Source/state/Stateful.cpp
+    Source/state/TrackState.cpp
     Source/state/TracksState.cpp
     Source/state/ViewState.cpp
     Source/usb/UsbCommunicator.cpp
