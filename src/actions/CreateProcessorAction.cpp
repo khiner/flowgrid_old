@@ -2,8 +2,8 @@
 
 ValueTree CreateProcessorAction::createProcessor(const PluginDescription &description) {
     ValueTree processorToCreate(ProcessorStateIDs::PROCESSOR);
-    processorToCreate.setProperty(TracksStateIDs::id, description.createIdentifierString(), nullptr);
-    processorToCreate.setProperty(TrackStateIDs::name, description.name, nullptr);
+    processorToCreate.setProperty(ProcessorStateIDs::id, description.createIdentifierString(), nullptr);
+    processorToCreate.setProperty(ProcessorStateIDs::name, description.name, nullptr);
     processorToCreate.setProperty(ProcessorStateIDs::allowDefaultConnections, true, nullptr);
     processorToCreate.setProperty(ProcessorStateIDs::pluginWindowType, static_cast<int>(PluginWindow::Type::none), nullptr);
     return processorToCreate;

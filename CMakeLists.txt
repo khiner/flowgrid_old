@@ -118,6 +118,7 @@ target_sources(FlowGrid PRIVATE
     src/state/ChannelState.cpp
     src/state/InputChannelsState.cpp
     src/state/OutputChannelsState.cpp
+    src/state/ParamState.cpp
     src/state/Project.cpp
     src/state/Stateful.cpp
     src/state/ProcessorState.cpp

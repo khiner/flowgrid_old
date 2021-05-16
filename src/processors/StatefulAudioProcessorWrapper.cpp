@@ -118,7 +118,7 @@ void StatefulAudioProcessorWrapper::Parameter::postUnnormalizedValue(float unnor
 }
 
 void StatefulAudioProcessorWrapper::Parameter::updateFromValueTree() {
-    const float unnormalizedValue = float(state.getProperty(TracksStateIDs::value, defaultValue));
+    const float unnormalizedValue = float(state.getProperty(ParamStateIDs::value, defaultValue));
     setUnnormalizedValue(unnormalizedValue);
 }
 
@@ -131,10 +131,10 @@ void StatefulAudioProcessorWrapper::Parameter::setNewState(const ValueTree &v, U
 }
 
 void StatefulAudioProcessorWrapper::Parameter::copyValueToValueTree() {
-    if (auto *valueProperty = state.getPropertyPointer(TracksStateIDs::value)) {
+    if (auto *valueProperty = state.getPropertyPointer(ParamStateIDs::value)) {
         if ((float) *valueProperty != value) {
             ScopedValueSetter<bool> svs(ignoreParameterChangedCallbacks, true);
-            state.setProperty(TracksStateIDs::value, value, undoManager);
+            state.setProperty(ParamStateIDs::value, value, undoManager);
             // TODO uncomment and make it work
 //                    if (!processorWrapper->isSelected()) {
             // If we're looking at something else, change the focus so we know what's changing.
@@ -142,7 +142,7 @@ void StatefulAudioProcessorWrapper::Parameter::copyValueToValueTree() {
 //                    }
         }
     } else {
-        state.setProperty(TracksStateIDs::value, value, nullptr);
+        state.setProperty(ParamStateIDs::value, value, nullptr);
     }
 }
 
@@ -263,7 +263,7 @@ LevelMeterSource *StatefulAudioProcessorWrapper::Parameter::getLevelMeterSource(
 void StatefulAudioProcessorWrapper::Parameter::valueTreePropertyChanged(ValueTree &tree, const Identifier &p) {
     if (ignoreParameterChangedCallbacks) return;
 
-    if (p == TracksStateIDs::value) {
+    if (p == ParamStateIDs::value) {
         updateFromValueTree();
     }
 }
@@ -362,11 +362,11 @@ void StatefulAudioProcessorWrapper::updateValueTree() {
 }
 
 ValueTree StatefulAudioProcessorWrapper::getOrCreateChildValueTree(const String &paramID) {
-    ValueTree v(state.getChildWithProperty(TracksStateIDs::id, paramID));
+    ValueTree v(state.getChildWithProperty(ProcessorStateIDs::id, paramID));
 
     if (!v.isValid()) {
-        v = ValueTree(TracksStateIDs::PARAM);
-        v.setProperty(TracksStateIDs::id, paramID, nullptr);
+        v = ValueTree(ParamStateIDs::PARAM);
+        v.setProperty(ParamStateIDs::id, paramID, nullptr);
         state.appendChild(v, nullptr);
     }
 
@@ -433,7 +433,7 @@ void StatefulAudioProcessorWrapper::updateChannels(Array<Channel> &oldChannels, 
     for (int i = 0; i < oldChannels.size(); i++) {
         const auto &oldChannel = oldChannels.getUnchecked(i);
         if (!newChannels.contains(oldChannel)) {
-            channelsState.removeChild(channelsState.getChildWithProperty(TrackStateIDs::name, oldChannel.name), &undoManager);
+            channelsState.removeChild(channelsState.getChildWithProperty(ChannelStateIDs::name, oldChannel.name), &undoManager);
         }
     }
     for (int i = 0; i < newChannels.size(); i++) {
@@ -478,6 +478,6 @@ StatefulAudioProcessorWrapper::Channel::Channel(AudioProcessor *processor, Audio
 
 StatefulAudioProcessorWrapper::Channel::Channel(const ValueTree &channelState) :
         channelIndex(channelState[ChannelStateIDs::channelIndex]),
-        name(channelState[TrackStateIDs::name]),
+        name(channelState[ChannelStateIDs::name]),
         abbreviatedName(channelState[ChannelStateIDs::abbreviatedName]) {
 }

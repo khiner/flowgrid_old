@@ -118,18 +118,18 @@ void GraphEditorTrack::trackOutputProcessorChanged() {
 
 void GraphEditorTrack::valueTreeChildAdded(ValueTree &parent, ValueTree &child) {
     if (child.hasType(ProcessorStateIDs::PROCESSOR)) {
-        if (child.getProperty(TrackStateIDs::name) == InternalPluginFormat::getTrackInputProcessorName())
+        if (child.getProperty(ProcessorStateIDs::name) == InternalPluginFormat::getTrackInputProcessorName())
             trackInputProcessorChanged();
-        else if (child.getProperty(TrackStateIDs::name) == InternalPluginFormat::getTrackOutputProcessorName())
+        else if (child.getProperty(ProcessorStateIDs::name) == InternalPluginFormat::getTrackOutputProcessorName())
             trackOutputProcessorChanged();
     }
 }
 
 void GraphEditorTrack::valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int) {
     if (child.hasType(ProcessorStateIDs::PROCESSOR)) {
-        if (child.getProperty(TrackStateIDs::name) == InternalPluginFormat::getTrackInputProcessorName())
+        if (child.getProperty(ProcessorStateIDs::name) == InternalPluginFormat::getTrackInputProcessorName())
             trackInputProcessorChanged();
-        else if (child.getProperty(TrackStateIDs::name) == InternalPluginFormat::getTrackOutputProcessorName())
+        else if (child.getProperty(ProcessorStateIDs::name) == InternalPluginFormat::getTrackOutputProcessorName())
             trackOutputProcessorChanged();
     }
 }

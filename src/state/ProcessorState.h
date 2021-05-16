@@ -1,10 +1,15 @@
 #pragma once
 
 #include "Stateful.h"
+#include "InputChannelsState.h"
+#include "OutputChannelsState.h"
+#include "ParamState.h"
 
 namespace ProcessorStateIDs {
 #define ID(name) const juce::Identifier name(#name);
     ID(PROCESSOR)
+    ID(id)
+    ID(name)
     ID(processorInitialized)
     ID(processorSlot)
     ID(nodeId)

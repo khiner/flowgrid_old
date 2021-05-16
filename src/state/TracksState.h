@@ -2,8 +2,6 @@
 
 #include "state/TrackState.h"
 #include "state/ViewState.h"
-#include "state/InputChannelsState.h"
-#include "state/OutputChannelsState.h"
 #include "view/PluginWindow.h"
 #include "PluginManager.h"
 #include "Stateful.h"
@@ -11,10 +9,6 @@
 namespace TracksStateIDs {
 #define ID(name) const juce::Identifier name(#name);
     ID(TRACKS)
-
-    ID(PARAM)
-    ID(id)
-    ID(value)
 #undef ID
 }
 
@@ -59,25 +53,25 @@ public:
     }
 
     static ValueTree getInputProcessorForTrack(const ValueTree &track) {
-        return track.getChildWithProperty(TrackStateIDs::name, InternalPluginFormat::getTrackInputProcessorName());
+        return track.getChildWithProperty(ProcessorStateIDs::name, InternalPluginFormat::getTrackInputProcessorName());
     }
 
     static ValueTree getOutputProcessorForTrack(const ValueTree &track) {
-        return track.getChildWithProperty(TrackStateIDs::name, InternalPluginFormat::getTrackOutputProcessorName());
+        return track.getChildWithProperty(ProcessorStateIDs::name, InternalPluginFormat::getTrackOutputProcessorName());
     }
 
     static Array<ValueTree> getAllProcessorsForTrack(const ValueTree &track);
 
     static bool isTrackIOProcessor(const ValueTree &processor) {
-        return InternalPluginFormat::isTrackIOProcessor(processor[TrackStateIDs::name]);
+        return InternalPluginFormat::isTrackIOProcessor(processor[ProcessorStateIDs::name]);
     }
 
     static bool isTrackInputProcessor(const ValueTree &processor) {
-        return String(processor[TrackStateIDs::name]) == InternalPluginFormat::getTrackInputProcessorName();
+        return String(processor[ProcessorStateIDs::name]) == InternalPluginFormat::getTrackInputProcessorName();
     }
 
     static bool isTrackOutputProcessor(const ValueTree &processor) {
-        return String(processor[TrackStateIDs::name]) == InternalPluginFormat::getTrackOutputProcessorName();
+        return String(processor[ProcessorStateIDs::name]) == InternalPluginFormat::getTrackOutputProcessorName();
     }
 
     static bool isProcessorLeftToRightFlowing(const ValueTree &processor) {
@@ -282,7 +276,7 @@ public:
 
     bool doesTrackAlreadyHaveGeneratorOrInstrument(const ValueTree &track) {
         for (const auto &processor : getProcessorLaneForTrack(track))
-            if (auto existingDescription = pluginManager.getDescriptionForIdentifier(processor.getProperty(TracksStateIDs::id)))
+            if (auto existingDescription = pluginManager.getDescriptionForIdentifier(processor.getProperty(ProcessorStateIDs::id)))
                 if (PluginManager::isGeneratorOrInstrument(existingDescription.get()))
                     return true;
         return false;

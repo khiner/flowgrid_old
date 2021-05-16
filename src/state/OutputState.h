@@ -26,7 +26,7 @@ public:
     void initializeDefault();
 
     ValueTree getAudioOutputProcessorState() const {
-        return state.getChildWithProperty(TrackStateIDs::name, pluginManager.getAudioOutputDescription().name);
+        return state.getChildWithProperty(ProcessorStateIDs::name, pluginManager.getAudioOutputDescription().name);
     }
 
     // Returns output processors to delete
