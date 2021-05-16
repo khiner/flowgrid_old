@@ -1,6 +1,6 @@
 #include "Output.h"
 
-#include "action/CreateProcessorAction.h"
+#include "action/CreateProcessor.h"
 #include "processors/MidiOutputProcessor.h"
 
 Output::Output(PluginManager &pluginManager, UndoManager &undoManager, AudioDeviceManager &deviceManager)
@@ -25,7 +25,7 @@ Array<ValueTree> Output::syncOutputDevicesWithDeviceManager() {
     for (const auto &deviceName : MidiOutput::getDevices()) {
         if (deviceManager.isMidiOutputEnabled(deviceName) &&
             !state.getChildWithProperty(ProcessorIDs::deviceName, deviceName).isValid()) {
-            auto midiOutputProcessor = CreateProcessorAction::createProcessor(MidiOutputProcessor::getPluginDescription());
+            auto midiOutputProcessor = CreateProcessor::createProcessor(MidiOutputProcessor::getPluginDescription());
             midiOutputProcessor.setProperty(ProcessorIDs::deviceName, deviceName, nullptr);
             state.addChild(midiOutputProcessor, -1, &undoManager);
         }
@@ -34,7 +34,7 @@ Array<ValueTree> Output::syncOutputDevicesWithDeviceManager() {
 }
 
 void Output::initializeDefault() {
-    auto outputProcessor = CreateProcessorAction::createProcessor(pluginManager.getAudioOutputDescription());
+    auto outputProcessor = CreateProcessor::createProcessor(pluginManager.getAudioOutputDescription());
     state.appendChild(outputProcessor, &undoManager);
 }
 

@@ -68,27 +68,27 @@ target_sources(FlowGrid PRIVATE
     src/PluginManager.cpp
     src/ProcessorGraph.cpp
     src/ValueTreeObjectList.h
-    src/action/CreateConnectionAction.cpp
-    src/action/CreateOrDeleteConnectionsAction.cpp
-    src/action/CreateProcessorAction.cpp
-    src/action/CreateTrackAction.cpp
-    src/action/DefaultConnectProcessorAction.cpp
-    src/action/DeleteConnectionAction.cpp
-    src/action/DeleteProcessorAction.cpp
-    src/action/DeleteSelectedItemsAction.cpp
-    src/action/DeleteTrackAction.cpp
-    src/action/DisconnectProcessorAction.cpp
-    src/action/InsertAction.cpp
-    src/action/InsertProcessorAction.cpp
-    src/action/MoveSelectedItemsAction.cpp
+    src/action/CreateConnection.cpp
+    src/action/CreateOrDeleteConnections.cpp
+    src/action/CreateProcessor.cpp
+    src/action/CreateTrack.cpp
+    src/action/DefaultConnectProcessor.cpp
+    src/action/DeleteConnection.cpp
+    src/action/DeleteProcessor.cpp
+    src/action/DeleteSelectedItems.cpp
+    src/action/DeleteTrack.cpp
+    src/action/DisconnectProcessor.cpp
+    src/action/Insert.cpp
+    src/action/InsertProcessor.cpp
+    src/action/MoveSelectedItems.cpp
     src/action/ResetDefaultExternalInputConnectionsAction.cpp
-    src/action/SelectAction.cpp
-    src/action/SelectProcessorSlotAction.cpp
-    src/action/SelectRectangleAction.cpp
-    src/action/SelectTrackAction.cpp
-    src/action/SetDefaultConnectionsAllowedAction.cpp
-    src/action/UpdateAllDefaultConnectionsAction.cpp
-    src/action/UpdateProcessorDefaultConnectionsAction.cpp
+    src/action/Select.cpp
+    src/action/SelectProcessorSlot.cpp
+    src/action/SelectRectangle.cpp
+    src/action/SelectTrack.cpp
+    src/action/SetDefaultConnectionsAllowed.cpp
+    src/action/UpdateAllDefaultConnections.cpp
+    src/action/UpdateProcessorDefaultConnections.cpp
     src/midi/MidiCommunicator.h
     src/processors/Arpeggiator.h
     src/processors/BalanceProcessor.h

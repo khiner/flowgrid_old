@@ -1,7 +1,7 @@
 #pragma once
 
-#include <action/DeleteConnectionAction.h>
-#include "action/CreateOrDeleteConnectionsAction.h"
+#include <action/DeleteConnection.h>
+#include "action/CreateOrDeleteConnections.h"
 #include "push2/Push2MidiCommunicator.h"
 #include "processors/StatefulAudioProcessorWrapper.h"
 #include "model/Input.h"
@@ -112,7 +112,7 @@ private:
 
     bool graphUpdatesArePaused{false};
 
-    CreateOrDeleteConnectionsAction connectionsSincePause{connections};
+    CreateOrDeleteConnections connectionsSincePause{connections};
 
     void addProcessor(const ValueTree &processorState);
 

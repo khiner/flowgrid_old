@@ -3,6 +3,11 @@
     <Objective-C>
       <option name="INDENT_NAMESPACE_MEMBERS" value="0" />
     </Objective-C>
+    <codeStyleSettings language="CMake">
+      <indentOptions>
+        <option name="CONTINUATION_INDENT_SIZE" value="4" />
+      </indentOptions>
+    </codeStyleSettings>
     <codeStyleSettings language="ObjectiveC">
       <option name="RIGHT_MARGIN" value="220" />
     </codeStyleSettings>

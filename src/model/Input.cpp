@@ -1,6 +1,6 @@
 #include "Input.h"
 
-#include "action/CreateProcessorAction.h"
+#include "action/CreateProcessor.h"
 #include "processors/MidiInputProcessor.h"
 
 Array<ValueTree> Input::syncInputDevicesWithDeviceManager() {
@@ -16,7 +16,7 @@ Array<ValueTree> Input::syncInputDevicesWithDeviceManager() {
     for (const auto &deviceName : MidiInput::getDevices()) {
         if (deviceManager.isMidiInputEnabled(deviceName) &&
             !state.getChildWithProperty(ProcessorIDs::deviceName, deviceName).isValid()) {
-            auto midiInputProcessor = CreateProcessorAction::createProcessor(MidiInputProcessor::getPluginDescription());
+            auto midiInputProcessor = CreateProcessor::createProcessor(MidiInputProcessor::getPluginDescription());
             midiInputProcessor.setProperty(ProcessorIDs::deviceName, deviceName, nullptr);
             state.addChild(midiInputProcessor, -1, &undoManager);
         }
@@ -25,7 +25,7 @@ Array<ValueTree> Input::syncInputDevicesWithDeviceManager() {
 }
 
 void Input::initializeDefault() {
-    auto inputProcessor = CreateProcessorAction::createProcessor(pluginManager.getAudioInputDescription());
+    auto inputProcessor = CreateProcessor::createProcessor(pluginManager.getAudioInputDescription());
     state.appendChild(inputProcessor, &undoManager);
 }
 

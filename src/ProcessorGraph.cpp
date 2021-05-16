@@ -2,10 +2,10 @@
 #include "push2/Push2MidiDevice.h"
 #include "processors/MidiInputProcessor.h"
 #include "processors/MidiOutputProcessor.h"
-#include "action/CreateConnectionAction.h"
-#include "action/UpdateProcessorDefaultConnectionsAction.h"
+#include "action/CreateConnection.h"
+#include "action/UpdateProcessorDefaultConnections.h"
 #include "action/ResetDefaultExternalInputConnectionsAction.h"
-#include "action/DisconnectProcessorAction.h"
+#include "action/DisconnectProcessor.h"
 
 ProcessorGraph::ProcessorGraph(PluginManager &pluginManager, Tracks &tracks, Connections &connections, Input &input, Output &output, UndoManager &undoManager, AudioDeviceManager &deviceManager,
                                Push2MidiCommunicator &push2MidiCommunicator)
@@ -127,8 +127,8 @@ bool ProcessorGraph::addConnection(const AudioProcessorGraph::Connection &connec
     ConnectionType connectionType = connection.source.isMIDI() ? midi : audio;
     const auto &sourceProcessor = getProcessorStateForNodeId(connection.source.nodeID);
     // disconnect default outgoing
-    undoManager.perform(new DisconnectProcessorAction(connections, sourceProcessor, connectionType, true, false, false, true));
-    if (undoManager.perform(new CreateConnectionAction(connection, false, connections, *this))) {
+    undoManager.perform(new DisconnectProcessor(connections, sourceProcessor, connectionType, true, false, false, true));
+    if (undoManager.perform(new CreateConnection(connection, false, connections, *this))) {
         undoManager.perform(new ResetDefaultExternalInputConnectionsAction(connections, tracks, input, *this));
         return true;
     }
@@ -150,19 +150,19 @@ bool ProcessorGraph::removeConnection(const AudioProcessorGraph::Connection &con
 //        return false; // no default connection stuff while shift is held
 
     undoManager.beginNewTransaction();
-    bool removed = undoManager.perform(new DeleteConnectionAction(connectionState, true, true, connections));
+    bool removed = undoManager.perform(new DeleteConnection(connectionState, true, true, connections));
     if (removed && connectionState.hasProperty(ConnectionsIDs::isCustomConnection)) {
         const auto &source = connectionState.getChildWithName(ConnectionsIDs::SOURCE);
         const auto &sourceProcessor = getProcessorStateForNodeId(Tracks::getNodeIdForProcessor(source));
-        undoManager.perform(new UpdateProcessorDefaultConnectionsAction(sourceProcessor, false, connections, output, *this));
+        undoManager.perform(new UpdateProcessorDefaultConnections(sourceProcessor, false, connections, output, *this));
         undoManager.perform(new ResetDefaultExternalInputConnectionsAction(connections, tracks, input, *this));
     }
     return removed;
 }
 
 bool ProcessorGraph::doDisconnectNode(const ValueTree &processor, ConnectionType connectionType, bool defaults, bool custom, bool incoming, bool outgoing, AudioProcessorGraph::NodeID excludingRemovalTo) {
-    return undoManager.perform(new DisconnectProcessorAction(connections, processor, connectionType, defaults,
-                                                             custom, incoming, outgoing, excludingRemovalTo));
+    return undoManager.perform(new DisconnectProcessor(connections, processor, connectionType, defaults,
+                                                       custom, incoming, outgoing, excludingRemovalTo));
 }
 
 void ProcessorGraph::updateIoChannelEnabled(const ValueTree &channels, const ValueTree &channel, bool enabled) {

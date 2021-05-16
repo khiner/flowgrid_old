@@ -1,11 +1,11 @@
 #include "ResetDefaultExternalInputConnectionsAction.h"
 
-#include "DisconnectProcessorAction.h"
-#include "DefaultConnectProcessorAction.h"
+#include "DisconnectProcessor.h"
+#include "DefaultConnectProcessor.h"
 
 ResetDefaultExternalInputConnectionsAction::ResetDefaultExternalInputConnectionsAction(Connections &connections, Tracks &tracks, Input &input, ProcessorGraph &processorGraph,
                                                                                        ValueTree trackToTreatAsFocused)
-        : CreateOrDeleteConnectionsAction(connections) {
+        : CreateOrDeleteConnections(connections) {
     if (!trackToTreatAsFocused.isValid())
         trackToTreatAsFocused = tracks.getFocusedTrack();
 
@@ -23,9 +23,9 @@ ResetDefaultExternalInputConnectionsAction::ResetDefaultExternalInputConnections
         destinationNodeId = Tracks::getNodeIdForProcessor(destinationProcessor);
 
         if (destinationNodeId.isValid()) {
-            coalesceWith(DefaultConnectProcessorAction(inputProcessor, destinationNodeId, connectionType, connections, processorGraph));
+            coalesceWith(DefaultConnectProcessor(inputProcessor, destinationNodeId, connectionType, connections, processorGraph));
         }
-        coalesceWith(DisconnectProcessorAction(connections, inputProcessor, connectionType, true, false, false, true, destinationNodeId));
+        coalesceWith(DisconnectProcessor(connections, inputProcessor, connectionType, true, false, false, true, destinationNodeId));
     }
 }
 

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "model/Input.h"
-#include "CreateOrDeleteConnectionsAction.h"
+#include "CreateOrDeleteConnections.h"
 #include "ProcessorGraph.h"
 
 // For both audio and midi connection types:
@@ -10,7 +10,7 @@
 // (Note that it is possible for the same focused track to have a default audio-input processor different
 // from its default midi-input processor.)
 
-struct ResetDefaultExternalInputConnectionsAction : public CreateOrDeleteConnectionsAction {
+struct ResetDefaultExternalInputConnectionsAction : public CreateOrDeleteConnections {
     ResetDefaultExternalInputConnectionsAction(Connections &connections, Tracks &tracks, Input &input, ProcessorGraph &processorGraph, ValueTree trackToTreatAsFocused = {});
 
 private:
