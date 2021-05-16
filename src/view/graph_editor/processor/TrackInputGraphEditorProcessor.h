@@ -1,7 +1,7 @@
 #pragma once
 
 #include <juce_gui_extra/juce_gui_extra.h>
-#include "state/Project.h"
+#include "model/Project.h"
 #include "BaseGraphEditorProcessor.h"
 
 class TrackInputGraphEditorProcessor : public BaseGraphEditorProcessor, private ChangeListener {

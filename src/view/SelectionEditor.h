@@ -1,6 +1,6 @@
 #pragma once
 
-#include "state/Project.h"
+#include "model/Project.h"
 #include "PluginManager.h"
 #include "ProcessorGraph.h"
 #include "processor_editor/ProcessorEditor.h"

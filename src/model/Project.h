@@ -2,11 +2,11 @@
 
 #include <juce_gui_extra/juce_gui_extra.h>
 
-#include "state/Tracks.h"
-#include "state/Connections.h"
-#include "state/View.h"
-#include "state/Input.h"
-#include "state/Output.h"
+#include "model/Tracks.h"
+#include "model/Connections.h"
+#include "model/View.h"
+#include "model/Input.h"
+#include "model/Output.h"
 #include "PluginManager.h"
 #include "ProcessorGraph.h"
 #include "CopiedTracks.h"

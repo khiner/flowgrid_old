@@ -1,7 +1,7 @@
 #pragma once
 
-#include "state/Tracks.h"
-#include "state/View.h"
+#include "model/Tracks.h"
+#include "model/View.h"
 
 class ContextPane : public Component, private ValueTree::Listener {
 public:

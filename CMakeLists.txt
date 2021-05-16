@@ -110,23 +110,23 @@ target_sources(FlowGrid PRIVATE
     src/push2/Push2DisplayBridge.h
     src/push2/Push2MidiCommunicator.cpp
     src/push2/Push2UsbCommunicator.h
-    src/state/Connection.cpp
-    src/state/Connections.cpp
-    src/state/CopiedTracks.cpp
-    src/state/Input.cpp
-    src/state/Output.cpp
-    src/state/Channel.cpp
-    src/state/InputChannels.cpp
-    src/state/OutputChannels.cpp
-    src/state/Param.cpp
-    src/state/Project.cpp
-    src/state/Stateful.cpp
-    src/state/Processor.cpp
-    src/state/ProcessorLane.cpp
-    src/state/ProcessorLanes.cpp
-    src/state/Track.cpp
-    src/state/Tracks.cpp
-    src/state/View.cpp
+    src/model/Connection.cpp
+    src/model/Connections.cpp
+    src/model/CopiedTracks.cpp
+    src/model/Input.cpp
+    src/model/Output.cpp
+    src/model/Channel.cpp
+    src/model/InputChannels.cpp
+    src/model/OutputChannels.cpp
+    src/model/Param.cpp
+    src/model/Project.cpp
+    src/model/Stateful.cpp
+    src/model/Processor.cpp
+    src/model/ProcessorLane.cpp
+    src/model/ProcessorLanes.cpp
+    src/model/Track.cpp
+    src/model/Tracks.cpp
+    src/model/View.cpp
     src/usb/UsbCommunicator.cpp
     src/view/BasicWindow.h
     src/view/CustomColourIds.h

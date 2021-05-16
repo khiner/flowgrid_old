@@ -1,6 +1,6 @@
 #pragma once
 
-#include "state/Connections.h"
+#include "model/Connections.h"
 
 struct CreateOrDeleteConnectionsAction : public UndoableAction {
     explicit CreateOrDeleteConnectionsAction(Connections &connections);

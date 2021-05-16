@@ -6,7 +6,7 @@
 #include "Push2ProcessorSelector.h"
 #include "Push2MixerView.h"
 #include "Push2NoteModePadLedManager.h"
-#include "state/Project.h"
+#include "model/Project.h"
 
 class Push2Component :
         public Timer,

@@ -1,6 +1,6 @@
 #include "ContextPane.h"
 
-#include "state/Tracks.h"
+#include "model/Tracks.h"
 
 ContextPane::ContextPane(Tracks &tracks, View &view)
         : tracks(tracks), view(view) {

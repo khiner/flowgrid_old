@@ -1,7 +1,7 @@
 #pragma once
 
 #include <juce_audio_processors/juce_audio_processors.h>
-#include "state/Tracks.h"
+#include "model/Tracks.h"
 #include "view/CustomColourIds.h"
 #include "ConnectorDragListener.h"
 

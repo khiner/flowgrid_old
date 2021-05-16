@@ -2,8 +2,8 @@
 
 #include <juce_data_structures/juce_data_structures.h>
 
-#include "state/Tracks.h"
-#include "state/View.h"
+#include "model/Tracks.h"
+#include "model/View.h"
 
 using namespace juce;
 

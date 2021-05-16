@@ -1,7 +1,7 @@
 #pragma once
 
-#include "state/Track.h"
-#include "state/View.h"
+#include "model/Track.h"
+#include "model/View.h"
 #include "view/PluginWindow.h"
 #include "PluginManager.h"
 #include "Stateful.h"

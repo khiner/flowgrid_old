@@ -2,7 +2,7 @@
 
 #include "Push2ComponentBase.h"
 #include "Push2Label.h"
-#include "state/Project.h"
+#include "model/Project.h"
 
 class Push2ProcessorSelector : public Push2ComponentBase {
     class ProcessorSelectorRow : public Component {

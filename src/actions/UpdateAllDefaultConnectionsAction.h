@@ -1,6 +1,6 @@
 #pragma once
 
-#include "state/Input.h"
+#include "model/Input.h"
 #include "CreateConnectionAction.h"
 #include "UpdateProcessorDefaultConnectionsAction.h"
 #include "ResetDefaultExternalInputConnectionsAction.h"

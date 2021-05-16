@@ -4,9 +4,9 @@
 #include "actions/CreateOrDeleteConnectionsAction.h"
 #include "push2/Push2MidiCommunicator.h"
 #include "processors/StatefulAudioProcessorWrapper.h"
-#include "state/Input.h"
-#include "state/Output.h"
-#include "state/Connections.h"
+#include "model/Input.h"
+#include "model/Output.h"
+#include "model/Connections.h"
 #include "PluginManager.h"
 
 using namespace fg; // Only to disambiguate `Connection` currently

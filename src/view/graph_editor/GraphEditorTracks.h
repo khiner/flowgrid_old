@@ -1,6 +1,6 @@
 #pragma once
 
-#include "state/Project.h"
+#include "model/Project.h"
 #include "GraphEditorTrack.h"
 #include "ConnectorDragListener.h"
 #include "ValueTreeObjectList.h"

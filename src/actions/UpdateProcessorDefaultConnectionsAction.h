@@ -1,6 +1,6 @@
 #pragma once
 
-#include "state/Output.h"
+#include "model/Output.h"
 #include "CreateOrDeleteConnectionsAction.h"
 #include "ProcessorGraph.h"
 

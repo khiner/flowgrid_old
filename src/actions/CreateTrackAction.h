@@ -1,7 +1,7 @@
 #pragma once
 
-#include "state/Connections.h"
-#include "state/Tracks.h"
+#include "model/Connections.h"
+#include "model/Tracks.h"
 
 struct CreateTrackAction : public UndoableAction {
     CreateTrackAction(bool isMaster, const ValueTree &derivedFromTrack, Tracks &tracks, View &view);

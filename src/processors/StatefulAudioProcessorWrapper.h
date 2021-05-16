@@ -3,7 +3,7 @@
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_audio_devices/juce_audio_devices.h>
 
-#include "state/Tracks.h"
+#include "model/Tracks.h"
 #include "view/parameter_control/ParameterControl.h"
 #include "view/parameter_control/level_meter/LevelMeterSource.h"
 #include "view/processor_editor/SwitchParameterComponent.h"

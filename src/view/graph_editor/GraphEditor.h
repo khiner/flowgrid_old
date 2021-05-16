@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ProcessorGraph.h"
-#include "state/Project.h"
+#include "model/Project.h"
 #include "GraphEditorPanel.h"
 #include "view/SelectionEditor.h"
 #include "TooltipBar.h"
