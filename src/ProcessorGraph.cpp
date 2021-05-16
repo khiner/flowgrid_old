@@ -2,10 +2,10 @@
 #include "push2/Push2MidiDevice.h"
 #include "processors/MidiInputProcessor.h"
 #include "processors/MidiOutputProcessor.h"
-#include "actions/CreateConnectionAction.h"
-#include "actions/UpdateProcessorDefaultConnectionsAction.h"
-#include "actions/ResetDefaultExternalInputConnectionsAction.h"
-#include "actions/DisconnectProcessorAction.h"
+#include "action/CreateConnectionAction.h"
+#include "action/UpdateProcessorDefaultConnectionsAction.h"
+#include "action/ResetDefaultExternalInputConnectionsAction.h"
+#include "action/DisconnectProcessorAction.h"
 
 ProcessorGraph::ProcessorGraph(PluginManager &pluginManager, Tracks &tracks, Connections &connections, Input &input, Output &output, UndoManager &undoManager, AudioDeviceManager &deviceManager,
                                Push2MidiCommunicator &push2MidiCommunicator)

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "actions/DeleteConnectionAction.h"
+#include "action/DeleteConnectionAction.h"
 
 struct DisconnectProcessorAction : public CreateOrDeleteConnectionsAction {
     DisconnectProcessorAction(Connections &connections, const ValueTree &processor, ConnectionType connectionType,

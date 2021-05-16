@@ -8,7 +8,7 @@
 #include "ApplicationPropertiesAndCommandManager.h"
 #include "DeviceChangeMonitor.h"
 #include "FlowGridConfig.h"
-#include "actions/DeleteProcessorAction.h"
+#include "action/DeleteProcessorAction.h"
 
 class FlowGridApplication : public JUCEApplication, public MenuBarModel, public ChangeListener {
 public:

@@ -1,7 +1,7 @@
 #pragma once
 
-#include <actions/DeleteConnectionAction.h>
-#include "actions/CreateOrDeleteConnectionsAction.h"
+#include <action/DeleteConnectionAction.h>
+#include "action/CreateOrDeleteConnectionsAction.h"
 #include "push2/Push2MidiCommunicator.h"
 #include "processors/StatefulAudioProcessorWrapper.h"
 #include "model/Input.h"

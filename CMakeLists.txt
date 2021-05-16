@@ -68,27 +68,27 @@ target_sources(FlowGrid PRIVATE
     src/PluginManager.cpp
     src/ProcessorGraph.cpp
     src/ValueTreeObjectList.h
-    src/actions/CreateConnectionAction.cpp
-    src/actions/CreateOrDeleteConnectionsAction.cpp
-    src/actions/CreateProcessorAction.cpp
-    src/actions/CreateTrackAction.cpp
-    src/actions/DefaultConnectProcessorAction.cpp
-    src/actions/DeleteConnectionAction.cpp
-    src/actions/DeleteProcessorAction.cpp
-    src/actions/DeleteSelectedItemsAction.cpp
-    src/actions/DeleteTrackAction.cpp
-    src/actions/DisconnectProcessorAction.cpp
-    src/actions/InsertAction.cpp
-    src/actions/InsertProcessorAction.cpp
-    src/actions/MoveSelectedItemsAction.cpp
-    src/actions/ResetDefaultExternalInputConnectionsAction.cpp
-    src/actions/SelectAction.cpp
-    src/actions/SelectProcessorSlotAction.cpp
-    src/actions/SelectRectangleAction.cpp
-    src/actions/SelectTrackAction.cpp
-    src/actions/SetDefaultConnectionsAllowedAction.cpp
-    src/actions/UpdateAllDefaultConnectionsAction.cpp
-    src/actions/UpdateProcessorDefaultConnectionsAction.cpp
+    src/action/CreateConnectionAction.cpp
+    src/action/CreateOrDeleteConnectionsAction.cpp
+    src/action/CreateProcessorAction.cpp
+    src/action/CreateTrackAction.cpp
+    src/action/DefaultConnectProcessorAction.cpp
+    src/action/DeleteConnectionAction.cpp
+    src/action/DeleteProcessorAction.cpp
+    src/action/DeleteSelectedItemsAction.cpp
+    src/action/DeleteTrackAction.cpp
+    src/action/DisconnectProcessorAction.cpp
+    src/action/InsertAction.cpp
+    src/action/InsertProcessorAction.cpp
+    src/action/MoveSelectedItemsAction.cpp
+    src/action/ResetDefaultExternalInputConnectionsAction.cpp
+    src/action/SelectAction.cpp
+    src/action/SelectProcessorSlotAction.cpp
+    src/action/SelectRectangleAction.cpp
+    src/action/SelectTrackAction.cpp
+    src/action/SetDefaultConnectionsAllowedAction.cpp
+    src/action/UpdateAllDefaultConnectionsAction.cpp
+    src/action/UpdateProcessorDefaultConnectionsAction.cpp
     src/midi/MidiCommunicator.h
     src/processors/Arpeggiator.h
     src/processors/BalanceProcessor.h

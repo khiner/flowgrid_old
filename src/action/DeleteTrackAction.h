@@ -2,7 +2,7 @@
 
 #include "model/Connections.h"
 #include "model/Tracks.h"
-#include "actions/DeleteProcessorAction.h"
+#include "action/DeleteProcessorAction.h"
 
 struct DeleteTrackAction : public UndoableAction {
     DeleteTrackAction(const ValueTree &trackToDelete, Tracks &tracks, Connections &connections, ProcessorGraph &processorGraph);

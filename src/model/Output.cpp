@@ -1,6 +1,6 @@
 #include "Output.h"
 
-#include "actions/CreateProcessorAction.h"
+#include "action/CreateProcessorAction.h"
 #include "processors/MidiOutputProcessor.h"
 
 Output::Output(PluginManager &pluginManager, UndoManager &undoManager, AudioDeviceManager &deviceManager)

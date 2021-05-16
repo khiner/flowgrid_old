@@ -1,6 +1,6 @@
 #include "Input.h"
 
-#include "actions/CreateProcessorAction.h"
+#include "action/CreateProcessorAction.h"
 #include "processors/MidiInputProcessor.h"
 
 Array<ValueTree> Input::syncInputDevicesWithDeviceManager() {
