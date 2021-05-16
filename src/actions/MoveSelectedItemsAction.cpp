@@ -203,7 +203,7 @@ MoveSelectedItemsAction::MoveSelectionsAction::MoveSelectionsAction(juce::Point<
             const auto &track = tracks.getTrack(i);
             const auto &lane = TracksState::getProcessorLaneForTrack(track);
             BigInteger selectedSlotsMask;
-            selectedSlotsMask.parseString(lane[TracksStateIDs::selectedSlotsMask].toString(), 2);
+            selectedSlotsMask.parseString(lane[ProcessorLaneStateIDs::selectedSlotsMask].toString(), 2);
             selectedSlotsMask.shiftBits(trackAndSlotDelta.y, 0);
             newSelectedSlotsMasks.setUnchecked(i, selectedSlotsMask.toString(2));
         }

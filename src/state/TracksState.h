@@ -12,10 +12,6 @@ namespace TracksStateIDs {
 #define ID(name) const juce::Identifier name(#name);
     ID(TRACKS)
 
-    ID(PROCESSOR_LANES)
-    ID(PROCESSOR_LANE)
-    ID(selectedSlotsMask)
-
     ID(CHANNEL)
     ID(channelIndex)
     ID(abbreviatedName)
@@ -35,7 +31,7 @@ public:
     void loadFromState(const ValueTree &fromState) override;
 
     static ValueTree getProcessorLanesForTrack(const ValueTree &track) {
-        return track.isValid() ? track.getChildWithName(TracksStateIDs::PROCESSOR_LANES) : ValueTree();
+        return track.isValid() ? track.getChildWithName(ProcessorLanesStateIDs::PROCESSOR_LANES) : ValueTree();
     }
 
     static ValueTree getProcessorLaneForTrack(const ValueTree &track) {
@@ -45,7 +41,7 @@ public:
 
     static ValueTree getProcessorLaneForProcessor(const ValueTree &processor) {
         const auto &parent = processor.getParent();
-        return parent.hasType(TracksStateIDs::PROCESSOR_LANE) ? parent : getProcessorLaneForTrack(parent);
+        return parent.hasType(ProcessorLaneStateIDs::PROCESSOR_LANE) ? parent : getProcessorLaneForTrack(parent);
     }
 
     static int getNumInputChannelsForProcessor(const ValueTree &processor) {
@@ -230,7 +226,7 @@ public:
         Array<String> selectedSlotMasks;
         for (const auto &track : state) {
             const auto &lane = getProcessorLaneForTrack(track);
-            selectedSlotMasks.add(lane[TracksStateIDs::selectedSlotsMask]);
+            selectedSlotMasks.add(lane[ProcessorLaneStateIDs::selectedSlotsMask]);
         }
         return selectedSlotMasks;
     }
@@ -247,7 +243,7 @@ public:
         const auto &lane = getProcessorLaneForTrack(track);
 
         BigInteger selectedSlotsMask;
-        selectedSlotsMask.parseString(lane[TracksStateIDs::selectedSlotsMask].toString(), 2);
+        selectedSlotsMask.parseString(lane[ProcessorLaneStateIDs::selectedSlotsMask].toString(), 2);
         return selectedSlotsMask;
     }
 

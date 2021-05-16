@@ -40,9 +40,9 @@ CreateTrackAction::CreateTrackAction(int insertIndex, bool isMaster, const Value
     newTrack.setProperty(TrackStateIDs::colour, isSubTrack ? derivedFromTrack[TrackStateIDs::colour].toString() : Colour::fromHSV((1.0f / 8.0f) * tracks.getNumTracks(), 0.65f, 0.65f, 1.0f).toString(), nullptr);
     newTrack.setProperty(TrackStateIDs::selected, false, nullptr);
 
-    auto lanes = ValueTree(TracksStateIDs::PROCESSOR_LANES);
-    auto lane = ValueTree(TracksStateIDs::PROCESSOR_LANE);
-    lane.setProperty(TracksStateIDs::selectedSlotsMask, BigInteger().toString(2), nullptr);
+    auto lanes = ValueTree(ProcessorLanesStateIDs::PROCESSOR_LANES);
+    auto lane = ValueTree(ProcessorLaneStateIDs::PROCESSOR_LANE);
+    lane.setProperty(ProcessorLaneStateIDs::selectedSlotsMask, BigInteger().toString(2), nullptr);
     lanes.appendChild(lane, nullptr);
     newTrack.appendChild(lanes, nullptr);
 }

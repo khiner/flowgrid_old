@@ -115,7 +115,7 @@ void ContextPane::valueTreePropertyChanged(ValueTree &tree, const Identifier &i)
             resized();
         else if (i == ViewStateIDs::focusedTrackIndex || i == ViewStateIDs::focusedProcessorSlot || i == ViewStateIDs::gridViewSlotOffset)
             repaint();
-    } else if (i == TracksStateIDs::selectedSlotsMask) {
+    } else if (i == ProcessorLaneStateIDs::selectedSlotsMask) {
         repaint();
     }
 }

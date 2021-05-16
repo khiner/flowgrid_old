@@ -16,7 +16,7 @@ void TracksState::loadFromState(const ValueTree &fromState) {
         resetVarToBool(track, TrackStateIDs::selected, nullptr);
 
         auto lane = getProcessorLaneForTrack(track);
-        lane.sendPropertyChangeMessage(TracksStateIDs::selectedSlotsMask);
+        lane.sendPropertyChangeMessage(ProcessorLaneStateIDs::selectedSlotsMask);
         for (auto processor : lane) {
             resetVarToInt(processor, ProcessorStateIDs::processorSlot, nullptr);
             resetVarToInt(processor, ProcessorStateIDs::nodeId, nullptr);

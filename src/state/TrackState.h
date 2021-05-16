@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Stateful.h"
-#include "ProcessorState.h"
+#include "ProcessorLanesState.h"
 
 namespace TrackStateIDs {
 #define ID(name) const juce::Identifier name(#name);

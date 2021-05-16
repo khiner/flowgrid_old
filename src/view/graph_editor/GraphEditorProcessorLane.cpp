@@ -95,7 +95,7 @@ void GraphEditorProcessorLane::valueTreePropertyChanged(ValueTree &tree, const I
     if (isSuitableType(tree) && i == ProcessorStateIDs::processorSlot) {
         resized();
     } else if (i == TrackStateIDs::selected || i == TrackStateIDs::colour ||
-               i == TracksStateIDs::selectedSlotsMask || i == ViewStateIDs::focusedTrackIndex || i == ViewStateIDs::focusedProcessorSlot ||
+               i == ProcessorLaneStateIDs::selectedSlotsMask || i == ViewStateIDs::focusedTrackIndex || i == ViewStateIDs::focusedProcessorSlot ||
                i == ViewStateIDs::gridViewTrackOffset) {
         updateProcessorSlotColours();
     } else if (i == ViewStateIDs::gridViewSlotOffset || (i == ViewStateIDs::masterViewSlotOffset && isMasterTrack())) {

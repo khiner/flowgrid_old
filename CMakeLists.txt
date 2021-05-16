@@ -120,6 +120,8 @@ target_sources(FlowGrid PRIVATE
     src/state/Project.cpp
     src/state/Stateful.cpp
     src/state/ProcessorState.cpp
+    src/state/ProcessorLaneState.cpp
+    src/state/ProcessorLanesState.cpp
     src/state/TrackState.cpp
     src/state/TracksState.cpp
     src/state/ViewState.cpp
