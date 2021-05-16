@@ -11,6 +11,8 @@ ID(selectedSlotsMask)
 }
 
 
-class ProcessorLane : public Stateful<ProcessorLane> {
+struct ProcessorLane : public Stateful<ProcessorLane> {
+    void setSelectedSlots(const BigInteger& selectedSlots) { state.setProperty(ProcessorLaneIDs::selectedSlotsMask, selectedSlots.toString(2), nullptr); }
+
     static Identifier getIdentifier() { return ProcessorLaneIDs::PROCESSOR_LANE; }
 };

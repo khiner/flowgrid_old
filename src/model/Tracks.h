@@ -78,6 +78,10 @@ public:
         return isMasterTrack(getTrackForProcessor(processor)) && !isTrackIOProcessor(processor);
     }
 
+    void addTrack(Track &track, int insertIndex) { state.addChild(track.getState(), insertIndex, nullptr); }
+
+    void removeTrack(Track &track) { state.removeChild(track.getState(), nullptr); }
+
     int getNumTracks() const { return state.getNumChildren(); }
 
     int indexOf(const ValueTree &track) const { return state.indexOf(track); }

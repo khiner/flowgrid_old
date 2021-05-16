@@ -96,8 +96,6 @@ public:
 
     void valueTreeParentChanged(ValueTree &) override {}
 
-    void valueTreeRedirected(ValueTree &) override { jassertfalse; } // may need to add handling if this is hit
-
     Array<ObjectType *> objects;
     CriticalSectionType arrayLock;
     typedef typename CriticalSectionType::ScopedLockType ScopedLockType;

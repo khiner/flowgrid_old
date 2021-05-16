@@ -28,31 +28,30 @@ CreateTrack::CreateTrack(bool isMaster, const ValueTree &derivedFromTrack, Track
 CreateTrack::CreateTrack(int insertIndex, bool isMaster, const ValueTree &derivedFromTrack, Tracks &tracks, View &view)
         : insertIndex(insertIndex), tracks(tracks) {
     // TODO move into method and construct in initializer list
-    newTrack = ValueTree(TrackIDs::TRACK);
-    newTrack.setProperty(TrackIDs::isMasterTrack, isMaster, nullptr);
-    newTrack.setProperty(TrackIDs::uuid, Uuid().toString(), nullptr);
+    newTrack.setMaster(isMaster);
+    newTrack.setUuid(Uuid().toString());
     bool isSubTrack = !isMaster && derivedFromTrack.isValid();
     if (isMaster) {
-        newTrack.setProperty(TrackIDs::name, "Master", nullptr);
+        newTrack.setName("Master");
     } else {
-        newTrack.setProperty(TrackIDs::name, isSubTrack ? makeTrackNameUnique(tracks, derivedFromTrack[TrackIDs::name]) : ("Track " + String(tracks.getNumNonMasterTracks() + 1)), nullptr);
+        newTrack.setName(isSubTrack ? makeTrackNameUnique(tracks, derivedFromTrack[TrackIDs::name]) : ("Track " + String(tracks.getNumNonMasterTracks() + 1)));
     }
-    newTrack.setProperty(TrackIDs::colour, isSubTrack ? derivedFromTrack[TrackIDs::colour].toString() : Colour::fromHSV((1.0f / 8.0f) * tracks.getNumTracks(), 0.65f, 0.65f, 1.0f).toString(), nullptr);
-    newTrack.setProperty(TrackIDs::selected, false, nullptr);
+    newTrack.setColour(isSubTrack ? derivedFromTrack[TrackIDs::colour].toString() : Colour::fromHSV((1.0f / 8.0f) * tracks.getNumTracks(), 0.65f, 0.65f, 1.0f).toString());
+    newTrack.setSelected(false);
 
-    auto lanes = ValueTree(ProcessorLanesIDs::PROCESSOR_LANES);
-    auto lane = ValueTree(ProcessorLaneIDs::PROCESSOR_LANE);
-    lane.setProperty(ProcessorLaneIDs::selectedSlotsMask, BigInteger().toString(2), nullptr);
-    lanes.appendChild(lane, nullptr);
-    newTrack.appendChild(lanes, nullptr);
+    auto lane = ProcessorLane();
+    lane.setSelectedSlots(BigInteger());
+    auto lanes = ProcessorLanes();
+    lanes.addLane(lane);
+    newTrack.addLanes(lanes);
 }
 
 bool CreateTrack::perform() {
-    tracks.getState().addChild(newTrack, insertIndex, nullptr);
+    tracks.addTrack(newTrack, insertIndex);
     return true;
 }
 
 bool CreateTrack::undo() {
-    tracks.getState().removeChild(newTrack, nullptr);
+    tracks.removeTrack(newTrack);
     return true;
 }

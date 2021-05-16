@@ -10,6 +10,8 @@ ID(PROCESSOR_LANES)
 }
 
 
-class ProcessorLanes : public Stateful<ProcessorLanes> {
+struct ProcessorLanes : public Stateful<ProcessorLanes> {
     static Identifier getIdentifier() { return ProcessorLanesIDs::PROCESSOR_LANES; }
+
+    void addLane(ProcessorLane &processorLane) { state.appendChild(processorLane.getState(), nullptr); }
 };

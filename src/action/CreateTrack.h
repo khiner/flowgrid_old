@@ -14,7 +14,7 @@ struct CreateTrack : public UndoableAction {
 
     int getSizeInUnits() override { return (int) sizeof(*this); }
 
-    ValueTree newTrack;
+    Track newTrack;
     int insertIndex;
 
 protected:
