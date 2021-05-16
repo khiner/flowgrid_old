@@ -325,20 +325,20 @@ void GraphEditorPanel::showPopupMenu(const ValueTree &track, int slot) {
 }
 
 void GraphEditorPanel::valueTreePropertyChanged(ValueTree &tree, const Identifier &i) {
-    if ((tree.hasType(TracksStateIDs::PROCESSOR) && i == TracksStateIDs::processorSlot) || i == ViewStateIDs::gridViewSlotOffset) {
+    if ((tree.hasType(ProcessorStateIDs::PROCESSOR) && i == ProcessorStateIDs::processorSlot) || i == ViewStateIDs::gridViewSlotOffset) {
         connectors->updateConnectors();
     } else if (i == ViewStateIDs::gridViewTrackOffset || i == ViewStateIDs::masterViewSlotOffset) {
         resized();
     } else if (i == ViewStateIDs::focusedPane) {
         unfocusOverlay.setVisible(!view.isGridPaneFocused());
         unfocusOverlay.toFront(false);
-    } else if (i == TracksStateIDs::pluginWindowType) {
+    } else if (i == ProcessorStateIDs::pluginWindowType) {
         const auto type = static_cast<PluginWindow::Type>(int(tree[i]));
         if (type == PluginWindow::Type::none)
             closeWindowFor(tree);
         else if (auto *w = getOrCreateWindowFor(tree, type))
             w->toFront(true);
-    } else if (i == TracksStateIDs::processorInitialized) {
+    } else if (i == ProcessorStateIDs::processorInitialized) {
         if (tree[TracksStateIDs::name] == InternalPluginFormat::getMidiInputProcessorName()) {
             auto *midiInputProcessor = new LabelGraphEditorProcessor(tree, view, tracks, graph, *this);
             addAndMakeVisible(midiInputProcessor, 0);
@@ -360,7 +360,7 @@ void GraphEditorPanel::valueTreePropertyChanged(ValueTree &tree, const Identifie
 }
 
 void GraphEditorPanel::valueTreeChildAdded(ValueTree &parent, ValueTree &child) {
-    if (TrackState::isType(child) || child.hasType(TracksStateIDs::PROCESSOR) || child.hasType(ConnectionStateIDs::CONNECTION)) {
+    if (TrackState::isType(child) || child.hasType(ProcessorStateIDs::PROCESSOR) || child.hasType(ConnectionStateIDs::CONNECTION)) {
         connectors->updateConnectors();
     }
 }
@@ -368,7 +368,7 @@ void GraphEditorPanel::valueTreeChildAdded(ValueTree &parent, ValueTree &child) 
 void GraphEditorPanel::valueTreeChildRemoved(ValueTree &parent, ValueTree &child, int indexFromWhichChildWasRemoved) {
     if (TrackState::isType(child)) {
         connectors->updateConnectors();
-    } else if (child.hasType(TracksStateIDs::PROCESSOR)) {
+    } else if (child.hasType(ProcessorStateIDs::PROCESSOR)) {
         if (child[TracksStateIDs::name] == InternalPluginFormat::getMidiInputProcessorName()) {
             midiInputProcessors.removeObject(findMidiInputProcessorForNodeId(TracksState::getNodeIdForProcessor(child)));
             resized();

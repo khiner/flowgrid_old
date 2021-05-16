@@ -34,7 +34,7 @@ public:
     }
 
     ValueTree getPush2MidiInputProcessor() const {
-        return state.getChildWithProperty(TracksStateIDs::deviceName, Push2MidiDevice::getDeviceName());
+        return state.getChildWithProperty(ProcessorStateIDs::deviceName, Push2MidiDevice::getDeviceName());
     }
 
     AudioProcessorGraph::NodeID getDefaultInputNodeIdForConnectionType(ConnectionType connectionType) const {

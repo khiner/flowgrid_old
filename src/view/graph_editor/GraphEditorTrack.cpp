@@ -117,7 +117,7 @@ void GraphEditorTrack::trackOutputProcessorChanged() {
 }
 
 void GraphEditorTrack::valueTreeChildAdded(ValueTree &parent, ValueTree &child) {
-    if (child.hasType(TracksStateIDs::PROCESSOR)) {
+    if (child.hasType(ProcessorStateIDs::PROCESSOR)) {
         if (child.getProperty(TracksStateIDs::name) == InternalPluginFormat::getTrackInputProcessorName())
             trackInputProcessorChanged();
         else if (child.getProperty(TracksStateIDs::name) == InternalPluginFormat::getTrackOutputProcessorName())
@@ -126,7 +126,7 @@ void GraphEditorTrack::valueTreeChildAdded(ValueTree &parent, ValueTree &child) 
 }
 
 void GraphEditorTrack::valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int) {
-    if (child.hasType(TracksStateIDs::PROCESSOR)) {
+    if (child.hasType(ProcessorStateIDs::PROCESSOR)) {
         if (child.getProperty(TracksStateIDs::name) == InternalPluginFormat::getTrackInputProcessorName())
             trackInputProcessorChanged();
         else if (child.getProperty(TracksStateIDs::name) == InternalPluginFormat::getTrackOutputProcessorName())

@@ -20,8 +20,8 @@ PluginWindow::PluginWindow(ValueTree &processorState, AudioProcessor *processor,
         setContentOwned(ui, true);
     }
 
-    int xPosition = processorState.hasProperty(TracksStateIDs::pluginWindowX) ? int(processorState[TracksStateIDs::pluginWindowX]) : Random::getSystemRandom().nextInt(500);
-    int yPosition = processorState.hasProperty(TracksStateIDs::pluginWindowX) ? int(processorState[TracksStateIDs::pluginWindowY]) : Random::getSystemRandom().nextInt(500);
+    int xPosition = processorState.hasProperty(ProcessorStateIDs::pluginWindowX) ? int(processorState[ProcessorStateIDs::pluginWindowX]) : Random::getSystemRandom().nextInt(500);
+    int yPosition = processorState.hasProperty(ProcessorStateIDs::pluginWindowX) ? int(processorState[ProcessorStateIDs::pluginWindowY]) : Random::getSystemRandom().nextInt(500);
     setTopLeftPosition(xPosition, yPosition);
     setAlwaysOnTop(true);
     setVisible(true);
@@ -50,12 +50,12 @@ AudioProcessorEditor *PluginWindow::createProcessorEditor(AudioProcessor &proces
 }
 
 void PluginWindow::moved() {
-    processor.setProperty(TracksStateIDs::pluginWindowX, getX(), nullptr);
-    processor.setProperty(TracksStateIDs::pluginWindowY, getY(), nullptr);
+    processor.setProperty(ProcessorStateIDs::pluginWindowX, getX(), nullptr);
+    processor.setProperty(ProcessorStateIDs::pluginWindowY, getY(), nullptr);
 }
 
 void PluginWindow::closeButtonPressed() {
-    processor.setProperty(TracksStateIDs::pluginWindowType, static_cast<int>(Type::none), nullptr);
+    processor.setProperty(ProcessorStateIDs::pluginWindowType, static_cast<int>(Type::none), nullptr);
 }
 
 PluginWindow::ProgramAudioProcessorEditor::ProgramAudioProcessorEditor(AudioProcessor &p) : AudioProcessorEditor(p) {

@@ -97,7 +97,7 @@ void SelectionEditor::refreshProcessors(const ValueTree &singleProcessorToRefres
 }
 
 void SelectionEditor::assignProcessorToEditor(const ValueTree &processor, int processorSlot, bool onlyUpdateFocusState) const {
-    auto *processorEditor = processorEditors.getUnchecked(processorSlot != -1 ? processorSlot : int(processor[TracksStateIDs::processorSlot]));
+    auto *processorEditor = processorEditors.getUnchecked(processorSlot != -1 ? processorSlot : int(processor[ProcessorStateIDs::processorSlot]));
     if (processor.isValid()) {
         if (auto *processorWrapper = audioGraphBuilder.getProcessorWrapperForState(processor)) {
             if (!onlyUpdateFocusState) {
@@ -114,7 +114,7 @@ void SelectionEditor::assignProcessorToEditor(const ValueTree &processor, int pr
 }
 
 void SelectionEditor::valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int) {
-    if (TrackState::isType(child) || child.hasType(TracksStateIDs::PROCESSOR)) {
+    if (TrackState::isType(child) || child.hasType(ProcessorStateIDs::PROCESSOR)) {
         refreshProcessors();
     }
 }
@@ -123,7 +123,7 @@ void SelectionEditor::valueTreePropertyChanged(ValueTree &tree, const Identifier
     if (i == ViewStateIDs::focusedTrackIndex) {
         addProcessorButton.setVisible(tracks.getFocusedTrack().isValid());
         refreshProcessors();
-    } else if (i == TracksStateIDs::processorInitialized) {
+    } else if (i == ProcessorStateIDs::processorInitialized) {
         refreshProcessors(); // TODO only the new processor
     } else if (i == ViewStateIDs::focusedProcessorSlot) {
         refreshProcessors({}, true);
@@ -135,7 +135,7 @@ void SelectionEditor::valueTreePropertyChanged(ValueTree &tree, const Identifier
             processorEditors.add(processorEditor);
         }
         processorEditors.removeLast(processorEditors.size() - numProcessorSlots);
-    } else if (i == TracksStateIDs::processorSlot) {
+    } else if (i == ProcessorStateIDs::processorSlot) {
         refreshProcessors();
     } else if (i == ViewStateIDs::focusedPane) {
         unfocusOverlay.setVisible(view.isGridPaneFocused());

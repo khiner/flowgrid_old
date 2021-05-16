@@ -186,12 +186,12 @@ void InsertAction::addAndPerformCreateTrackAction(const ValueTree &track, int fr
     addAndPerformAction(new CreateTrackAction(toTrackIndex, false, track, tracks, view));
     // Create track-level processors
     for (const auto &processor : track)
-        if (processor.hasType(TracksStateIDs::PROCESSOR))
+        if (processor.hasType(ProcessorStateIDs::PROCESSOR))
             addAndPerformAction(new CreateProcessorAction(processor.createCopy(), toTrackIndex, -1, tracks, view, processorGraph));
 
     // Create in-lane processors
     for (const auto &processor : TracksState::getProcessorLaneForTrack(track)) {
-        int slot = processor[TracksStateIDs::processorSlot];
+        int slot = processor[ProcessorStateIDs::processorSlot];
         addAndPerformCreateProcessorAction(processor, fromTrackIndex, slot, toTrackIndex, slot);
     }
 }

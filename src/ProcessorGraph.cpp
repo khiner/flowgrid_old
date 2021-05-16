@@ -30,13 +30,13 @@ void ProcessorGraph::addProcessor(const ValueTree &processorState) {
     static String errorMessage = "Could not create processor";
     auto description = pluginManager.getDescriptionForIdentifier(processorState[TracksStateIDs::id]);
     auto processor = pluginManager.getFormatManager().createPluginInstance(*description, getSampleRate(), getBlockSize(), errorMessage);
-    if (processorState.hasProperty(TracksStateIDs::state)) {
+    if (processorState.hasProperty(ProcessorStateIDs::state)) {
         MemoryBlock memoryBlock;
-        memoryBlock.fromBase64Encoding(processorState[TracksStateIDs::state].toString());
+        memoryBlock.fromBase64Encoding(processorState[ProcessorStateIDs::state].toString());
         processor->setStateInformation(memoryBlock.getData(), (int) memoryBlock.getSize());
     }
 
-    const Node::Ptr &newNode = processorState.hasProperty(TracksStateIDs::nodeId) ?
+    const Node::Ptr &newNode = processorState.hasProperty(ProcessorStateIDs::nodeId) ?
                                addNode(std::move(processor), TracksState::getNodeIdForProcessor(processorState)) :
                                addNode(std::move(processor));
     processorWrapperForNodeId[newNode->nodeID] = std::make_unique<StatefulAudioProcessorWrapper>
@@ -46,7 +46,7 @@ void ProcessorGraph::addProcessor(const ValueTree &processorState) {
         startTimerHz(10);
 
     if (auto midiInputProcessor = dynamic_cast<MidiInputProcessor *>(newNode->getProcessor())) {
-        const String &deviceName = processorState.getProperty(TracksStateIDs::deviceName);
+        const String &deviceName = processorState.getProperty(ProcessorStateIDs::deviceName);
         midiInputProcessor->setDeviceName(deviceName);
         if (deviceName.containsIgnoreCase(Push2MidiDevice::getDeviceName())) {
             push2MidiCommunicator.addMidiInputCallback(&midiInputProcessor->getMidiMessageCollector());
@@ -54,20 +54,20 @@ void ProcessorGraph::addProcessor(const ValueTree &processorState) {
             deviceManager.addMidiInputCallback(deviceName, &midiInputProcessor->getMidiMessageCollector());
         }
     } else if (auto *midiOutputProcessor = dynamic_cast<MidiOutputProcessor *>(newNode->getProcessor())) {
-        const String &deviceName = processorState.getProperty(TracksStateIDs::deviceName);
+        const String &deviceName = processorState.getProperty(ProcessorStateIDs::deviceName);
         if (auto *enabledMidiOutput = deviceManager.getEnabledMidiOutput(deviceName))
             midiOutputProcessor->setMidiOutput(enabledMidiOutput);
     }
     ValueTree mutableProcessor = processorState;
-    if (mutableProcessor.hasProperty(TracksStateIDs::processorInitialized))
-        mutableProcessor.sendPropertyChangeMessage(TracksStateIDs::processorInitialized);
+    if (mutableProcessor.hasProperty(ProcessorStateIDs::processorInitialized))
+        mutableProcessor.sendPropertyChangeMessage(ProcessorStateIDs::processorInitialized);
     else
-        mutableProcessor.setProperty(TracksStateIDs::processorInitialized, true, nullptr);
+        mutableProcessor.setProperty(ProcessorStateIDs::processorInitialized, true, nullptr);
 
 }
 
 void ProcessorGraph::recursivelyAddProcessors(const ValueTree &state) {
-    if (state.hasType(TracksStateIDs::PROCESSOR)) {
+    if (state.hasType(ProcessorStateIDs::PROCESSOR)) {
         addProcessor(state);
         return;
     }
@@ -82,7 +82,7 @@ void ProcessorGraph::removeProcessor(const ValueTree &processor) {
     // disconnect should have already been called before delete! (to avoid nested undo actions)
     if (processor[TracksStateIDs::name] == MidiInputProcessor::name()) {
         if (auto *midiInputProcessor = dynamic_cast<MidiInputProcessor *>(processorWrapper->processor)) {
-            const String &deviceName = processor.getProperty(TracksStateIDs::deviceName);
+            const String &deviceName = processor.getProperty(ProcessorStateIDs::deviceName);
             if (deviceName.containsIgnoreCase(Push2MidiDevice::getDeviceName())) {
                 push2MidiCommunicator.removeMidiInputCallback(&midiInputProcessor->getMidiMessageCollector());
             } else {
@@ -198,10 +198,10 @@ void ProcessorGraph::resumeAudioGraphUpdatesAndApplyDiffSincePause() {
 }
 
 void ProcessorGraph::valueTreePropertyChanged(ValueTree &tree, const Identifier &i) {
-    if (tree.hasType(TracksStateIDs::PROCESSOR)) {
-        if (i == TracksStateIDs::bypassed) {
+    if (tree.hasType(ProcessorStateIDs::PROCESSOR)) {
+        if (i == ProcessorStateIDs::bypassed) {
             if (auto node = getNodeForState(tree)) {
-                node->setBypassed(tree[TracksStateIDs::bypassed]);
+                node->setBypassed(tree[ProcessorStateIDs::bypassed]);
             }
         }
     }

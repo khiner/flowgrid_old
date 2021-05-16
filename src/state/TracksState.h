@@ -22,20 +22,6 @@ namespace TracksStateIDs {
     ID(PROCESSOR_LANE)
     ID(selectedSlotsMask)
 
-    ID(PROCESSOR)
-    ID(processorInitialized)
-    ID(processorSlot)
-    ID(nodeId)
-    ID(bypassed)
-    ID(acceptsMidi)
-    ID(producesMidi)
-    ID(deviceName)
-    ID(state)
-    ID(allowDefaultConnections)
-    ID(pluginWindowType)
-    ID(pluginWindowX)
-    ID(pluginWindowY)
-
     ID(CHANNEL)
     ID(channelIndex)
     ID(abbreviatedName)
@@ -83,7 +69,7 @@ public:
     }
 
     static AudioProcessorGraph::NodeID getNodeIdForProcessor(const ValueTree &processor) {
-        return processor.isValid() ? AudioProcessorGraph::NodeID(static_cast<uint32>(int(processor[TracksStateIDs::nodeId]))) : AudioProcessorGraph::NodeID{};
+        return processor.isValid() ? AudioProcessorGraph::NodeID(static_cast<uint32>(int(processor[ProcessorStateIDs::nodeId]))) : AudioProcessorGraph::NodeID{};
     }
 
     static ValueTree getInputProcessorForTrack(const ValueTree &track) {
@@ -189,8 +175,8 @@ public:
     }
 
     static bool isProcessorSelected(const ValueTree &processor) {
-        return processor.hasType(TracksStateIDs::PROCESSOR) &&
-               isSlotSelected(getTrackForProcessor(processor), processor[TracksStateIDs::processorSlot]);
+        return processor.hasType(ProcessorStateIDs::PROCESSOR) &&
+               isSlotSelected(getTrackForProcessor(processor), processor[ProcessorStateIDs::processorSlot]);
     }
 
     ValueTree getFocusedTrack() const {
@@ -231,7 +217,7 @@ public:
 
     static ValueTree findFirstSelectedProcessor(const ValueTree &track) {
         for (const auto &processor : getProcessorLaneForTrack(track))
-            if (isSlotSelected(track, processor[TracksStateIDs::processorSlot]))
+            if (isSlotSelected(track, processor[ProcessorStateIDs::processorSlot]))
                 return processor;
         return {};
     }
@@ -240,7 +226,7 @@ public:
         const auto &lane = getProcessorLaneForTrack(track);
         for (int i = lane.getNumChildren() - 1; i >= 0; i--) {
             const auto &processor = lane.getChild(i);
-            if (isSlotSelected(track, processor[TracksStateIDs::processorSlot]))
+            if (isSlotSelected(track, processor[ProcessorStateIDs::processorSlot]))
                 return processor;
         }
         return {};
@@ -279,7 +265,7 @@ public:
 
     static ValueTree getProcessorAtSlot(const ValueTree &track, int slot) {
         const auto &lane = getProcessorLaneForTrack(track);
-        return track.isValid() ? lane.getChildWithProperty(TracksStateIDs::processorSlot, slot) : ValueTree();
+        return track.isValid() ? lane.getChildWithProperty(ProcessorStateIDs::processorSlot, slot) : ValueTree();
     }
 
     static int getInsertIndexForProcessor(const ValueTree &track, const ValueTree &processor, int insertSlot);
@@ -292,7 +278,7 @@ public:
         Array<ValueTree> selectedProcessors;
         auto selectedSlotsMask = getSlotMask(track);
         for (const auto &processor : lane)
-            if (selectedSlotsMask[int(processor[TracksStateIDs::processorSlot])])
+            if (selectedSlotsMask[int(processor[ProcessorStateIDs::processorSlot])])
                 selectedProcessors.add(processor);
         return selectedProcessors;
     }
@@ -305,7 +291,7 @@ public:
     }
 
     void showWindow(ValueTree processor, PluginWindow::Type type) {
-        processor.setProperty(TracksStateIDs::pluginWindowType, int(type), &undoManager);
+        processor.setProperty(ProcessorStateIDs::pluginWindowType, int(type), &undoManager);
     }
 
     bool doesTrackAlreadyHaveGeneratorOrInstrument(const ValueTree &track) {
@@ -357,7 +343,7 @@ public:
                     break;
             }
         }
-        if (siblingProcessorToSelect.isValid()) return {focusedTrackAndSlot.x, siblingProcessorToSelect[TracksStateIDs::processorSlot]};
+        if (siblingProcessorToSelect.isValid()) return {focusedTrackAndSlot.x, siblingProcessorToSelect[ProcessorStateIDs::processorSlot]};
         if (delta < 0) return {focusedTrackAndSlot.x, -1};
         return INVALID_TRACK_AND_SLOT;
     }

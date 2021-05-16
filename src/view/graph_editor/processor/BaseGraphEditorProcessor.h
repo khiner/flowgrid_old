@@ -29,15 +29,15 @@ public:
 
     int getTrackIndex() const { return tracks.indexOf(getTrack()); }
 
-    int getSlot() const { return state[TracksStateIDs::processorSlot]; }
+    int getSlot() const { return state[ProcessorStateIDs::processorSlot]; }
 
     int getNumInputChannels() const { return state.getChildWithName(InputChannelsStateIDs::INPUT_CHANNELS).getNumChildren(); }
 
     int getNumOutputChannels() const { return state.getChildWithName(OutputChannelsStateIDs::OUTPUT_CHANNELS).getNumChildren(); }
 
-    bool acceptsMidi() const { return state[TracksStateIDs::acceptsMidi]; }
+    bool acceptsMidi() const { return state[ProcessorStateIDs::acceptsMidi]; }
 
-    bool producesMidi() const { return state[TracksStateIDs::producesMidi]; }
+    bool producesMidi() const { return state[ProcessorStateIDs::producesMidi]; }
 
     bool isIoProcessor() const { return InternalPluginFormat::isIoProcessor(state[TracksStateIDs::name]); }
 

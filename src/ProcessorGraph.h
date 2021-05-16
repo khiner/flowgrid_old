@@ -42,7 +42,7 @@ public:
             MemoryBlock memoryBlock;
             if (auto *processor = processorWrapper->processor) {
                 processor->getStateInformation(memoryBlock);
-                processorState.setProperty(TracksStateIDs::state, memoryBlock.toBase64Encoding(), nullptr);
+                processorState.setProperty(ProcessorStateIDs::state, memoryBlock.toBase64Encoding(), nullptr);
             }
         }
     }
@@ -50,7 +50,7 @@ public:
     ValueTree copyProcessor(ValueTree &fromProcessor) const {
         saveProcessorStateInformationToState(fromProcessor);
         auto copiedProcessor = fromProcessor.createCopy();
-        copiedProcessor.removeProperty(TracksStateIDs::nodeId, nullptr);
+        copiedProcessor.removeProperty(ProcessorStateIDs::nodeId, nullptr);
         return copiedProcessor;
     }
 

@@ -6,8 +6,8 @@
 Array<ValueTree> InputState::syncInputDevicesWithDeviceManager() {
     Array<ValueTree> inputProcessorsToDelete;
     for (const auto &inputProcessor : state) {
-        if (inputProcessor.hasProperty(TracksStateIDs::deviceName)) {
-            const String &deviceName = inputProcessor[TracksStateIDs::deviceName];
+        if (inputProcessor.hasProperty(ProcessorStateIDs::deviceName)) {
+            const String &deviceName = inputProcessor[ProcessorStateIDs::deviceName];
             if (!MidiInput::getDevices().contains(deviceName) || !deviceManager.isMidiInputEnabled(deviceName)) {
                 inputProcessorsToDelete.add(inputProcessor);
             }
@@ -15,9 +15,9 @@ Array<ValueTree> InputState::syncInputDevicesWithDeviceManager() {
     }
     for (const auto &deviceName : MidiInput::getDevices()) {
         if (deviceManager.isMidiInputEnabled(deviceName) &&
-            !state.getChildWithProperty(TracksStateIDs::deviceName, deviceName).isValid()) {
+            !state.getChildWithProperty(ProcessorStateIDs::deviceName, deviceName).isValid()) {
             auto midiInputProcessor = CreateProcessorAction::createProcessor(MidiInputProcessor::getPluginDescription());
-            midiInputProcessor.setProperty(TracksStateIDs::deviceName, deviceName, nullptr);
+            midiInputProcessor.setProperty(ProcessorStateIDs::deviceName, deviceName, nullptr);
             state.addChild(midiInputProcessor, -1, &undoManager);
         }
     }
@@ -30,20 +30,20 @@ void InputState::initializeDefault() {
 }
 
 void InputState::valueTreeChildAdded(ValueTree &parent, ValueTree &child) {
-    if (child[TracksStateIDs::name] == InternalPluginFormat::getMidiInputProcessorName() && !deviceManager.isMidiInputEnabled(child[TracksStateIDs::deviceName]))
-        deviceManager.setMidiInputEnabled(child[TracksStateIDs::deviceName], true);
+    if (child[TracksStateIDs::name] == InternalPluginFormat::getMidiInputProcessorName() && !deviceManager.isMidiInputEnabled(child[ProcessorStateIDs::deviceName]))
+        deviceManager.setMidiInputEnabled(child[ProcessorStateIDs::deviceName], true);
 }
 
 void InputState::valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int) {
-    if (child[TracksStateIDs::name] == InternalPluginFormat::getMidiInputProcessorName() && deviceManager.isMidiInputEnabled(child[TracksStateIDs::deviceName]))
-        deviceManager.setMidiInputEnabled(child[TracksStateIDs::deviceName], false);
+    if (child[TracksStateIDs::name] == InternalPluginFormat::getMidiInputProcessorName() && deviceManager.isMidiInputEnabled(child[ProcessorStateIDs::deviceName]))
+        deviceManager.setMidiInputEnabled(child[ProcessorStateIDs::deviceName], false);
 }
 
 void InputState::valueTreePropertyChanged(ValueTree &tree, const Identifier &i) {
-    if (i == TracksStateIDs::deviceName && tree == state) {
+    if (i == ProcessorStateIDs::deviceName && tree == state) {
         AudioDeviceManager::AudioDeviceSetup config;
         deviceManager.getAudioDeviceSetup(config);
-        config.inputDeviceName = tree[TracksStateIDs::deviceName];
+        config.inputDeviceName = tree[ProcessorStateIDs::deviceName];
         deviceManager.setAudioDeviceSetup(config, true);
     }
 }

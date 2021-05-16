@@ -18,13 +18,13 @@ void TracksState::loadFromState(const ValueTree &fromState) {
         auto lane = getProcessorLaneForTrack(track);
         lane.sendPropertyChangeMessage(TracksStateIDs::selectedSlotsMask);
         for (auto processor : lane) {
-            resetVarToInt(processor, TracksStateIDs::processorSlot, nullptr);
-            resetVarToInt(processor, TracksStateIDs::nodeId, nullptr);
-            resetVarToInt(processor, TracksStateIDs::processorInitialized, nullptr);
-            resetVarToBool(processor, TracksStateIDs::bypassed, nullptr);
-            resetVarToBool(processor, TracksStateIDs::acceptsMidi, nullptr);
-            resetVarToBool(processor, TracksStateIDs::producesMidi, nullptr);
-            resetVarToBool(processor, TracksStateIDs::allowDefaultConnections, nullptr);
+            resetVarToInt(processor, ProcessorStateIDs::processorSlot, nullptr);
+            resetVarToInt(processor, ProcessorStateIDs::nodeId, nullptr);
+            resetVarToInt(processor, ProcessorStateIDs::processorInitialized, nullptr);
+            resetVarToBool(processor, ProcessorStateIDs::bypassed, nullptr);
+            resetVarToBool(processor, ProcessorStateIDs::acceptsMidi, nullptr);
+            resetVarToBool(processor, ProcessorStateIDs::producesMidi, nullptr);
+            resetVarToBool(processor, ProcessorStateIDs::allowDefaultConnections, nullptr);
         }
     }
 }
@@ -45,7 +45,7 @@ int TracksState::getInsertIndexForProcessor(const ValueTree &track, const ValueT
     bool sameLane = lane == getProcessorLaneForProcessor(processor);
     auto handleSameLane = [sameLane](int index) -> int { return sameLane ? std::max(0, index - 1) : index; };
     for (const auto &otherProcessor : lane) {
-        int otherSlot = otherProcessor[TracksStateIDs::processorSlot];
+        int otherSlot = otherProcessor[ProcessorStateIDs::processorSlot];
         if (otherSlot >= insertSlot && otherProcessor != processor) {
             int otherIndex = lane.indexOf(otherProcessor);
             return sameLane && lane.indexOf(processor) < otherIndex ? handleSameLane(otherIndex) : otherIndex;
@@ -70,7 +70,7 @@ ValueTree TracksState::findProcessorNearestToSlot(const ValueTree &track, int sl
     auto nearestSlot = INT_MAX;
     ValueTree nearestProcessor;
     for (const auto &processor : lane) {
-        int otherSlot = processor[TracksStateIDs::processorSlot];
+        int otherSlot = processor[ProcessorStateIDs::processorSlot];
         if (otherSlot == slot) return processor;
 
         if (abs(slot - otherSlot) < abs(slot - nearestSlot)) {

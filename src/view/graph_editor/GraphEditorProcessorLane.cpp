@@ -92,7 +92,7 @@ BaseGraphEditorProcessor *GraphEditorProcessorLane::createNewObject(const ValueT
 // TODO only instantiate 64 slot rects (and maybe another set for the boundary perimeter)
 //  might be an over-early optimization though
 void GraphEditorProcessorLane::valueTreePropertyChanged(ValueTree &tree, const Identifier &i) {
-    if (isSuitableType(tree) && i == TracksStateIDs::processorSlot) {
+    if (isSuitableType(tree) && i == ProcessorStateIDs::processorSlot) {
         resized();
     } else if (i == TracksStateIDs::selected || i == TracksStateIDs::colour ||
                i == TracksStateIDs::selectedSlotsMask || i == ViewStateIDs::focusedTrackIndex || i == ViewStateIDs::focusedProcessorSlot ||

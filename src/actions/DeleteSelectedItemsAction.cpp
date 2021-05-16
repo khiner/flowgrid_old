@@ -4,7 +4,7 @@ DeleteSelectedItemsAction::DeleteSelectedItemsAction(TracksState &tracks, Connec
     for (const auto &selectedItem : tracks.findAllSelectedItems()) {
         if (TrackState::isType(selectedItem)) {
             deleteTrackActions.add(new DeleteTrackAction(selectedItem, tracks, connections, processorGraph));
-        } else if (selectedItem.hasType(TracksStateIDs::PROCESSOR)) {
+        } else if (selectedItem.hasType(ProcessorStateIDs::PROCESSOR)) {
             deleteProcessorActions.add(new DeleteProcessorAction(selectedItem, tracks, connections, processorGraph));
             deleteProcessorActions.getLast()->performTemporary();
         }

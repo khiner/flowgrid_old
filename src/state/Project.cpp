@@ -48,8 +48,8 @@ void Project::loadFromState(const ValueTree &fromState) {
 
     view.loadFromParentState(fromState);
 
-    const String &inputDeviceName = fromState.getChildWithName(InputStateIDs::INPUT)[TracksStateIDs::deviceName];
-    const String &outputDeviceName = fromState.getChildWithName(OutputStateIDs::OUTPUT)[TracksStateIDs::deviceName];
+    const String &inputDeviceName = fromState.getChildWithName(InputStateIDs::INPUT)[ProcessorStateIDs::deviceName];
+    const String &outputDeviceName = fromState.getChildWithName(OutputStateIDs::OUTPUT)[ProcessorStateIDs::deviceName];
 
     // TODO this should be replaced with the greyed-out IO processor behavior (keeping connections)
     static const String &failureMessage = TRANS("Could not open an Audio IO device used by this project.  "
@@ -207,7 +207,7 @@ void Project::setTrackSelected(const ValueTree &track, bool selected, bool desel
 }
 
 void Project::selectProcessor(const ValueTree &processor) {
-    setProcessorSlotSelected(TracksState::getTrackForProcessor(processor), processor[TracksStateIDs::processorSlot], true);
+    setProcessorSlotSelected(TracksState::getTrackForProcessor(processor), processor[ProcessorStateIDs::processorSlot], true);
 }
 
 bool Project::disconnectCustom(const ValueTree &processor) {
@@ -223,7 +223,7 @@ void Project::setDefaultConnectionsAllowed(const ValueTree &processor, bool defa
 
 void Project::toggleProcessorBypass(ValueTree processor) {
     undoManager.beginNewTransaction();
-    processor.setProperty(TracksStateIDs::bypassed, !processor[TracksStateIDs::bypassed], &undoManager);
+    processor.setProperty(ProcessorStateIDs::bypassed, !processor[ProcessorStateIDs::bypassed], &undoManager);
 }
 
 void Project::selectTrackAndSlot(juce::Point<int> trackAndSlot) {

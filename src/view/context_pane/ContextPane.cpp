@@ -98,14 +98,14 @@ Colour ContextPane::getFillColour(const Colour &trackColour, const ValueTree &tr
 void ContextPane::valueTreeChildAdded(ValueTree &parent, ValueTree &child) {
     if (TrackState::isType(child))
         resized();
-    else if (child.hasType(TracksStateIDs::PROCESSOR))
+    else if (child.hasType(ProcessorStateIDs::PROCESSOR))
         repaint();
 }
 
 void ContextPane::valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int index) {
     if (TrackState::isType(child))
         resized();
-    else if (child.hasType(TracksStateIDs::PROCESSOR))
+    else if (child.hasType(ProcessorStateIDs::PROCESSOR))
         repaint();
 }
 

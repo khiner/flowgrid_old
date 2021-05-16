@@ -26,7 +26,7 @@ public:
     void updateProcessorSlotColours();
 
     bool isSuitableType(const ValueTree &v) const override {
-        return v.hasType(TracksStateIDs::PROCESSOR);
+        return v.hasType(ProcessorStateIDs::PROCESSOR);
     }
 
     BaseGraphEditorProcessor *createEditorForProcessor(const ValueTree &processor);

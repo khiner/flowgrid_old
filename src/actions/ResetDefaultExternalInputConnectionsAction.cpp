@@ -54,7 +54,7 @@ ValueTree ResetDefaultExternalInputConnectionsAction::findMostUpstreamAvailableP
 
         const auto &firstProcessor = lane.getChild(0);
         auto firstProcessorNodeId = TracksState::getNodeIdForProcessor(firstProcessor);
-        int slot = firstProcessor[TracksStateIDs::processorSlot];
+        int slot = firstProcessor[ProcessorStateIDs::processorSlot];
         if (slot < lowestSlot &&
             isAvailableForExternalInput(firstProcessor, connectionType, input) &&
             areProcessorsConnected(firstProcessorNodeId, processorNodeId)) {

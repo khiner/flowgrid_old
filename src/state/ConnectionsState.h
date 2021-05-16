@@ -46,12 +46,12 @@ public:
 
     static bool isProcessorAnEffect(const ValueTree &processor, ConnectionType connectionType) {
         return (connectionType == audio && TracksState::getNumInputChannelsForProcessor(processor) > 0) ||
-               (connectionType == midi && processor[TracksStateIDs::acceptsMidi]);
+               (connectionType == midi && processor[ProcessorStateIDs::acceptsMidi]);
     }
 
     static bool isProcessorAProducer(const ValueTree &processor, ConnectionType connectionType) {
         return (connectionType == audio && TracksState::getNumOutputChannelsForProcessor(processor) > 0) ||
-               (connectionType == midi && processor[TracksStateIDs::producesMidi]);
+               (connectionType == midi && processor[ProcessorStateIDs::producesMidi]);
     }
 
 private:

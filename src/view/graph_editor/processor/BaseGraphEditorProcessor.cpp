@@ -21,7 +21,7 @@ BaseGraphEditorProcessor::~BaseGraphEditorProcessor() {
 
 void BaseGraphEditorProcessor::paint(Graphics &g) {
     auto boxColour = findColour(TextEditor::backgroundColourId);
-    if (state[TracksStateIDs::bypassed])
+    if (state[ProcessorStateIDs::bypassed])
         boxColour = boxColour.brighter();
     else if (isSelected())
         boxColour = boxColour.brighter(0.02f);
@@ -122,6 +122,6 @@ void BaseGraphEditorProcessor::valueTreeChildRemoved(ValueTree &parent, ValueTre
 void BaseGraphEditorProcessor::valueTreePropertyChanged(ValueTree &v, const Identifier &i) {
     if (v != state) return;
 
-    if (i == TracksStateIDs::processorInitialized)
+    if (i == ProcessorStateIDs::processorInitialized)
         resized();
 }

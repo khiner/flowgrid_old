@@ -24,7 +24,7 @@ struct GraphEditorChannel : public Component, public SettableTooltipClient, priv
 
     bool isMidi() const { return getChannelIndex() == AudioProcessorGraph::midiChannelIndex; }
 
-    bool allowDefaultConnections() const { return getProcessor()[TracksStateIDs::allowDefaultConnections]; }
+    bool allowDefaultConnections() const { return getProcessor()[ProcessorStateIDs::allowDefaultConnections]; }
 
     AudioProcessorGraph::NodeAndChannel getNodeAndChannel() const;
 

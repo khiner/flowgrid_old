@@ -10,13 +10,13 @@ SetDefaultConnectionsAllowedAction::SetDefaultConnectionsAllowedAction(const Val
 }
 
 bool SetDefaultConnectionsAllowedAction::perform() {
-    processor.setProperty(TracksStateIDs::allowDefaultConnections, defaultConnectionsAllowed, nullptr);
+    processor.setProperty(ProcessorStateIDs::allowDefaultConnections, defaultConnectionsAllowed, nullptr);
     CreateOrDeleteConnectionsAction::perform();
     return true;
 }
 
 bool SetDefaultConnectionsAllowedAction::undo() {
     CreateOrDeleteConnectionsAction::perform();
-    processor.setProperty(TracksStateIDs::allowDefaultConnections, defaultConnectionsAllowed, nullptr);
+    processor.setProperty(ProcessorStateIDs::allowDefaultConnections, defaultConnectionsAllowed, nullptr);
     return true;
 }

@@ -197,7 +197,7 @@ private:
     void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override {
         if (TrackState::isType(child))
             mostRecentlyCreatedTrack = child;
-        else if (child.hasType(TracksStateIDs::PROCESSOR))
+        else if (child.hasType(ProcessorStateIDs::PROCESSOR))
             mostRecentlyCreatedProcessor = child;
     }
 };

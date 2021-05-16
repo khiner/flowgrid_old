@@ -152,7 +152,7 @@ void Push2ProcessorView::updateProcessorButtons() {
                 label->setVisible(false);
             } else if (processorIndex < focusedProcessorLane.getNumChildren()) {
                 const auto &processor = focusedProcessorLane.getChild(processorIndex);
-                if (processor.hasType(TracksStateIDs::PROCESSOR)) {
+                if (processor.hasType(ProcessorStateIDs::PROCESSOR)) {
                     label->setVisible(true);
                     label->setText(processor[TracksStateIDs::name], dontSendNotification);
                     label->setSelected(tracks.isProcessorFocused(processor));
@@ -208,7 +208,7 @@ void Push2ProcessorView::pageProcessorsRight() {
 
 void Push2ProcessorView::valueTreePropertyChanged(ValueTree &tree, const Identifier &i) {
     Push2TrackManagingView::valueTreePropertyChanged(tree, i);
-    if (tree.hasType(TracksStateIDs::PROCESSOR)) {
+    if (tree.hasType(ProcessorStateIDs::PROCESSOR)) {
         int processorIndex = tree.getParent().indexOf(tree);
         if (i == TracksStateIDs::name) {
             auto buttonIndex = getButtonIndexForProcessorIndex(processorIndex);

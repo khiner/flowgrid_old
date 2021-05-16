@@ -237,7 +237,7 @@ void Push2Component::showChild(Push2ComponentBase *child) {
 void Push2Component::valueTreePropertyChanged(ValueTree &tree, const Identifier &i) {
     if (i == ViewStateIDs::focusedTrackIndex) {
         updatePush2SelectionDependentButtons();
-    } else if (i == ViewStateIDs::focusedProcessorSlot || i == TracksStateIDs::processorInitialized) {
+    } else if (i == ViewStateIDs::focusedProcessorSlot || i == ProcessorStateIDs::processorInitialized) {
         updateFocusedProcessor();
     } else if (i == ViewStateIDs::controlMode) {
         updateEnabledPush2Buttons();
@@ -260,7 +260,7 @@ void Push2Component::valueTreeChildRemoved(ValueTree &exParent, ValueTree &child
             showChild(nullptr);
             processorView.processorFocused(nullptr);
         }
-    } else if (child.hasType(TracksStateIDs::PROCESSOR)) {
+    } else if (child.hasType(ProcessorStateIDs::PROCESSOR)) {
         updateFocusedProcessor();
         updatePush2SelectionDependentButtons();
     } else if (child.hasType(ConnectionStateIDs::CONNECTION)) {

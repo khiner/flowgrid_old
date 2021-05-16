@@ -328,7 +328,7 @@ void StatefulAudioProcessorWrapper::Parameter::parameterControlValueChanged(Para
 
 StatefulAudioProcessorWrapper::StatefulAudioProcessorWrapper(AudioPluginInstance *processor, AudioProcessorGraph::NodeID nodeId, ValueTree state, UndoManager &undoManager, AudioDeviceManager &deviceManager) :
         processor(processor), state(std::move(state)), undoManager(undoManager), deviceManager(deviceManager) {
-    this->state.setProperty(TracksStateIDs::nodeId, int(nodeId.uid), nullptr);
+    this->state.setProperty(ProcessorStateIDs::nodeId, int(nodeId.uid), nullptr);
     processor->enableAllBuses();
     if (auto *ioProcessor = dynamic_cast<AudioProcessorGraph::AudioGraphIOProcessor *> (processor)) {
         if (ioProcessor->isInput()) {
@@ -358,7 +358,7 @@ void StatefulAudioProcessorWrapper::updateValueTree() {
     audioProcessorChanged(processor, AudioProcessorListener::ChangeDetails().withParameterInfoChanged(true));
     // Also a little hacky, but maybe the best we can do.
     // If we're loading from state, bypass state needs to make its way to the processor graph to actually mute.
-    state.sendPropertyChangeMessage(TracksStateIDs::bypassed);
+    state.sendPropertyChangeMessage(ProcessorStateIDs::bypassed);
 }
 
 ValueTree StatefulAudioProcessorWrapper::getOrCreateChildValueTree(const String &paramID) {
@@ -421,9 +421,9 @@ void StatefulAudioProcessorWrapper::updateStateForProcessor(AudioProcessor *proc
     }
 
     if (processor->acceptsMidi())
-        state.setProperty(TracksStateIDs::acceptsMidi, true, nullptr);
+        state.setProperty(ProcessorStateIDs::acceptsMidi, true, nullptr);
     if (processor->producesMidi())
-        state.setProperty(TracksStateIDs::producesMidi, true, nullptr);
+        state.setProperty(ProcessorStateIDs::producesMidi, true, nullptr);
 
     updateChannels(oldInputs, newInputs, inputChannels);
     updateChannels(oldOutputs, newOutputs, outputChannels);
