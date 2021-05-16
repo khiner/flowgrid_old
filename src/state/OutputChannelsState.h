@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Stateful.h"
+#include "ChannelState.h"
 
 namespace OutputChannelsStateIDs {
 #define ID(name) const juce::Identifier name(#name);

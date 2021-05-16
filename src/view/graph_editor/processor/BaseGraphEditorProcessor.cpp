@@ -103,7 +103,7 @@ void BaseGraphEditorProcessor::layoutChannel(AudioProcessor *processor, GraphEdi
 }
 
 void BaseGraphEditorProcessor::valueTreeChildAdded(ValueTree &parent, ValueTree &child) {
-    if (child.hasType(TracksStateIDs::CHANNEL)) {
+    if (child.hasType(ChannelStateIDs::CHANNEL)) {
         auto *channel = new GraphEditorChannel(child, connectorDragListener, isIoProcessor());
         addAndMakeVisible(channel);
         channels.add(channel);
@@ -112,7 +112,7 @@ void BaseGraphEditorProcessor::valueTreeChildAdded(ValueTree &parent, ValueTree 
 }
 
 void BaseGraphEditorProcessor::valueTreeChildRemoved(ValueTree &parent, ValueTree &child, int) {
-    if (child.hasType(TracksStateIDs::CHANNEL)) {
+    if (child.hasType(ChannelStateIDs::CHANNEL)) {
         auto *channelToRemove = findChannelWithState(child);
         channels.removeObject(channelToRemove);
         resized();

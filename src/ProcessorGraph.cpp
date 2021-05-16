@@ -215,7 +215,7 @@ void ProcessorGraph::valueTreeChildAdded(ValueTree &parent, ValueTree &child) {
             AudioProcessorGraph::addConnection(ConnectionsState::stateToConnection(child));
     } else if (TrackState::isType(child) || InputState::isType(parent) || OutputState::isType(parent)) {
         recursivelyAddProcessors(child); // TODO might be a problem for moving tracks
-    } else if (child.hasType(TracksStateIDs::CHANNEL)) {
+    } else if (child.hasType(ChannelStateIDs::CHANNEL)) {
         updateIoChannelEnabled(parent, child, true);
         // TODO shouldn't affect state in state listeners - trace back to specific user actions and do this in the action method
         removeIllegalConnections();
@@ -228,7 +228,7 @@ void ProcessorGraph::valueTreeChildRemoved(ValueTree &parent, ValueTree &child, 
             connectionsSincePause.removeConnection(child);
         else
             AudioProcessorGraph::removeConnection(ConnectionsState::stateToConnection(child));
-    } else if (child.hasType(TracksStateIDs::CHANNEL)) {
+    } else if (child.hasType(ChannelStateIDs::CHANNEL)) {
         updateIoChannelEnabled(parent, child, false);
         removeIllegalConnections(); // TODO shouldn't affect state in state listeners - trace back to specific user actions and do this in the action method
     }

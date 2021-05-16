@@ -185,10 +185,10 @@ private:
         Channel(const ValueTree &channelState);
 
         ValueTree toState() const {
-            ValueTree state(TracksStateIDs::CHANNEL);
-            state.setProperty(TracksStateIDs::channelIndex, channelIndex, nullptr);
+            ValueTree state(ChannelStateIDs::CHANNEL);
+            state.setProperty(ChannelStateIDs::channelIndex, channelIndex, nullptr);
             state.setProperty(TrackStateIDs::name, name, nullptr);
-            state.setProperty(TracksStateIDs::abbreviatedName, abbreviatedName, nullptr);
+            state.setProperty(ChannelStateIDs::abbreviatedName, abbreviatedName, nullptr);
             return state;
         }
 

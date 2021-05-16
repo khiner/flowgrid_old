@@ -16,7 +16,7 @@ struct GraphEditorChannel : public Component, public SettableTooltipClient, priv
 
     ValueTree getProcessor() const { return state.getParent().getParent(); }
 
-    int getChannelIndex() const { return state[TracksStateIDs::channelIndex]; }
+    int getChannelIndex() const { return state[ChannelStateIDs::channelIndex]; }
 
     bool isMasterTrack() const { return TracksState::isMasterTrack(getTrack()); }
 

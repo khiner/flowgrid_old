@@ -12,10 +12,6 @@ namespace TracksStateIDs {
 #define ID(name) const juce::Identifier name(#name);
     ID(TRACKS)
 
-    ID(CHANNEL)
-    ID(channelIndex)
-    ID(abbreviatedName)
-
     ID(PARAM)
     ID(id)
     ID(value)

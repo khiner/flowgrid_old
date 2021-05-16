@@ -115,6 +115,7 @@ target_sources(FlowGrid PRIVATE
     src/state/CopiedTracks.cpp
     src/state/InputState.cpp
     src/state/OutputState.cpp
+    src/state/ChannelState.cpp
     src/state/InputChannelsState.cpp
     src/state/OutputChannelsState.cpp
     src/state/Project.cpp
