@@ -1,7 +1,7 @@
 #include "CopiedTracks.h"
 
 void CopiedTracks::loadFromState(const ValueTree &fromState) {
-    state = ValueTree(TracksStateIDs::TRACKS);
+    state = ValueTree(getIdentifier());
     for (const auto &track : fromState) {
         auto copiedTrack = ValueTree(TrackStateIDs::TRACK);
         if (track[TracksStateIDs::selected]) {

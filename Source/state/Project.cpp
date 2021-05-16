@@ -84,8 +84,7 @@ void Project::clear() {
 }
 
 void Project::createTrack(bool isMaster) {
-    if (isMaster && tracks.getMasterTrack().isValid())
-        return; // only one master track allowed!
+    if (isMaster && tracks.getMasterTrack().isValid()) return; // only one master track allowed!
 
     setShiftHeld(false); // prevent rectangle-select behavior when doing cmd+shift+t
     undoManager.beginNewTransaction();
@@ -228,8 +227,7 @@ void Project::toggleProcessorBypass(ValueTree processor) {
 }
 
 void Project::selectTrackAndSlot(juce::Point<int> trackAndSlot) {
-    if (trackAndSlot.x < 0 || trackAndSlot.x >= tracks.getNumTracks())
-        return;
+    if (trackAndSlot.x < 0 || trackAndSlot.x >= tracks.getNumTracks()) return;
 
     const auto &track = tracks.getTrack(trackAndSlot.x);
     const int slot = trackAndSlot.y;
@@ -322,7 +320,6 @@ Result Project::saveDocument(const File &file) {
 File Project::getLastDocumentOpened() {
     RecentlyOpenedFilesList recentFiles;
     recentFiles.restoreFromString(getUserSettings()->getValue("recentProjectFiles"));
-
     return recentFiles.getFile(0);
 }
 

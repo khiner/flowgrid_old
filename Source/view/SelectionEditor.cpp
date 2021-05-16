@@ -2,9 +2,9 @@
 
 #include "view/CustomColourIds.h"
 
-SelectionEditor::SelectionEditor(Project &project, ProcessorGraph &audioGraphBuilder)
-        : project(project), tracks(project.getTracks()), view(project.getView()),
-          pluginManager(project.getPluginManager()), audioGraphBuilder(audioGraphBuilder), contextPane(tracks, view) {
+SelectionEditor::SelectionEditor(Project &project, ViewState &view, TracksState &tracks, ProcessorGraph &audioGraphBuilder)
+        : project(project), view(view), tracks(tracks), pluginManager(project.getPluginManager()),
+        audioGraphBuilder(audioGraphBuilder), contextPane(tracks, view) {
     tracks.addListener(this);
     view.addListener(this);
 

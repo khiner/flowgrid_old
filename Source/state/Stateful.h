@@ -22,7 +22,9 @@ public:
         moveAllChildren(fromState, state, nullptr);
     }
 
-    void loadFromParentState(const ValueTree &parent) { loadFromState(parent.getChildWithName(Type::getIdentifier())); }
+    void loadFromParentState(const ValueTree &parent) {
+        loadFromState(parent.getChildWithName(Type::getIdentifier()));
+    }
 
     virtual void clear() {
         state.removeAllChildren(nullptr);

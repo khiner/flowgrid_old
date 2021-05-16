@@ -8,9 +8,7 @@ namespace InputChannelsStateIDs {
 #undef ID
 }
 
-class InputChannelsState : public Stateful<InputChannelsState>, private ValueTree::Listener {
+class InputChannelsState : public Stateful<InputChannelsState> {
 public:
-    ~InputChannelsState() override = 0;
-
     static Identifier getIdentifier() { return InputChannelsStateIDs::INPUT_CHANNELS; }
 };

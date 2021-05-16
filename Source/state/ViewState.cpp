@@ -26,8 +26,8 @@ void ViewState::updateViewTrackOffsetToInclude(int trackIndex, int numNonMasterT
 }
 
 void ViewState::updateViewSlotOffsetToInclude(int processorSlot, bool isMasterTrack) {
-    if (processorSlot < 0)
-        return; // invalid
+    if (processorSlot < 0) return; // invalid
+
     if (isMasterTrack) {
         auto viewSlotOffset = getMasterViewSlotOffset();
         if (processorSlot >= viewSlotOffset + NUM_VISIBLE_MASTER_TRACK_SLOTS)

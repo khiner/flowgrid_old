@@ -8,9 +8,9 @@
 
 class GraphEditor : public Component {
 public:
-    GraphEditor(ViewState &view, TracksState &tracks, ConnectionsState &connections, ProcessorGraph &processorGraph, Project &project, PluginManager &pluginManager)
-            : graphEditorPanel(view, tracks, connections, processorGraph, project, pluginManager),
-              selectionEditor(project, processorGraph) {
+    GraphEditor(ViewState &view, TracksState &tracks, ConnectionsState &connections, InputState &input, OutputState &output, ProcessorGraph &processorGraph, Project &project, PluginManager &pluginManager)
+            : graphEditorPanel(view, tracks, connections, input, output, processorGraph, project, pluginManager),
+              selectionEditor(project, view, tracks, processorGraph) {
         addAndMakeVisible(graphEditorPanel);
         addAndMakeVisible(selectionEditor);
     }

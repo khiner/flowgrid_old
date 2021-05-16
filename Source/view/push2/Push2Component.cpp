@@ -2,11 +2,11 @@
 
 #include "ApplicationPropertiesAndCommandManager.h"
 
-Push2Component::Push2Component(ViewState &view, TracksState &tracks, Project &project, Push2MidiCommunicator &push2MidiCommunicator)
+Push2Component::Push2Component(ViewState &view, TracksState &tracks, ConnectionsState &connections, Project &project, ProcessorGraph &processorGraph, Push2MidiCommunicator &push2MidiCommunicator)
         : Push2ComponentBase(view, tracks, push2MidiCommunicator),
-          project(project), connections(project.getConnections()), processorGraph(project.getProcessorGraph()),
+          project(project), connections(connections), processorGraph(processorGraph),
           processorView(view, tracks, project, push2MidiCommunicator), processorSelector(view, tracks, project, push2MidiCommunicator),
-          mixerView(view, tracks, project, push2MidiCommunicator), push2NoteModePadLedManager(project.getTracks(), push2MidiCommunicator) {
+          mixerView(view, tracks, project, processorGraph, push2MidiCommunicator), push2NoteModePadLedManager(tracks, push2MidiCommunicator) {
     startTimer(60);
 
     addChildComponent(processorView);

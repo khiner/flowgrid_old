@@ -14,7 +14,7 @@ class Push2Component :
         private ChangeListener,
         private ValueTree::Listener {
 public:
-    explicit Push2Component(ViewState &view, TracksState &tracks, Project &project, Push2MidiCommunicator &push2MidiCommunicator);
+    explicit Push2Component(ViewState &view, TracksState &tracks, ConnectionsState &connections, Project &project, ProcessorGraph &processorGraph, Push2MidiCommunicator &push2MidiCommunicator);
 
     ~Push2Component() override;
 

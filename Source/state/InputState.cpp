@@ -28,3 +28,22 @@ void InputState::initializeDefault() {
     auto inputProcessor = CreateProcessorAction::createProcessor(pluginManager.getAudioInputDescription());
     state.appendChild(inputProcessor, &undoManager);
 }
+
+void InputState::valueTreeChildAdded(ValueTree &parent, ValueTree &child) {
+    if (child[TracksStateIDs::name] == InternalPluginFormat::getMidiInputProcessorName() && !deviceManager.isMidiInputEnabled(child[TracksStateIDs::deviceName]))
+        deviceManager.setMidiInputEnabled(child[TracksStateIDs::deviceName], true);
+}
+
+void InputState::valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int) {
+    if (child[TracksStateIDs::name] == InternalPluginFormat::getMidiInputProcessorName() && deviceManager.isMidiInputEnabled(child[TracksStateIDs::deviceName]))
+        deviceManager.setMidiInputEnabled(child[TracksStateIDs::deviceName], false);
+}
+
+void InputState::valueTreePropertyChanged(ValueTree &tree, const Identifier &i) {
+    if (i == TracksStateIDs::deviceName && tree == state) {
+        AudioDeviceManager::AudioDeviceSetup config;
+        deviceManager.getAudioDeviceSetup(config);
+        config.inputDeviceName = tree[TracksStateIDs::deviceName];
+        deviceManager.setAudioDeviceSetup(config, true);
+    }
+}

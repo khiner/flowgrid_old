@@ -51,18 +51,6 @@ public:
         undoManager.redo();
     }
 
-    ProcessorGraph &getProcessorGraph() { return processorGraph; }
-
-    TracksState &getTracks() { return tracks; }
-
-    ConnectionsState &getConnections() { return connections; }
-
-    ViewState &getView() { return view; }
-
-    InputState &getInput() { return input; }
-
-    OutputState &getOutput() { return output; }
-
     UndoManager &getUndoManager() { return undoManager; }
 
     bool isPush2MidiInputProcessorConnected() const {
@@ -96,9 +84,7 @@ public:
         copiedTracks.copySelectedItems();
     }
 
-    bool hasCopy() {
-        return copiedTracks.getState().isValid();
-    }
+    bool hasCopy() { return copiedTracks.getState().isValid(); }
 
     void insert();
 
@@ -109,8 +95,7 @@ public:
     void dragToPosition(juce::Point<int> trackAndSlot);
 
     void endDraggingProcessor() {
-        if (!isCurrentlyDraggingProcessor())
-            return;
+        if (!isCurrentlyDraggingProcessor()) return;
 
         initialDraggingTrackAndSlot = TracksState::INVALID_TRACK_AND_SLOT;
         processorGraph.resumeAudioGraphUpdatesAndApplyDiffSincePause();

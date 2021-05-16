@@ -12,19 +12,19 @@ void TracksState::loadFromState(const ValueTree &fromState) {
     // since type information is not saved in XML
     // Also, re-set some vars just to trigger the event (like selected slot mask)
     for (auto track : state) {
-        resetVarToBool(track, TracksStateIDs::isMasterTrack, this);
-        resetVarToBool(track, TracksStateIDs::selected, this);
+        resetVarToBool(track, TracksStateIDs::isMasterTrack, nullptr);
+        resetVarToBool(track, TracksStateIDs::selected, nullptr);
 
         auto lane = getProcessorLaneForTrack(track);
         lane.sendPropertyChangeMessage(TracksStateIDs::selectedSlotsMask);
         for (auto processor : lane) {
-            resetVarToInt(processor, TracksStateIDs::processorSlot, this);
-            resetVarToInt(processor, TracksStateIDs::nodeId, this);
-            resetVarToInt(processor, TracksStateIDs::processorInitialized, this);
-            resetVarToBool(processor, TracksStateIDs::bypassed, this);
-            resetVarToBool(processor, TracksStateIDs::acceptsMidi, this);
-            resetVarToBool(processor, TracksStateIDs::producesMidi, this);
-            resetVarToBool(processor, TracksStateIDs::allowDefaultConnections, this);
+            resetVarToInt(processor, TracksStateIDs::processorSlot, nullptr);
+            resetVarToInt(processor, TracksStateIDs::nodeId, nullptr);
+            resetVarToInt(processor, TracksStateIDs::processorInitialized, nullptr);
+            resetVarToBool(processor, TracksStateIDs::bypassed, nullptr);
+            resetVarToBool(processor, TracksStateIDs::acceptsMidi, nullptr);
+            resetVarToBool(processor, TracksStateIDs::producesMidi, nullptr);
+            resetVarToBool(processor, TracksStateIDs::allowDefaultConnections, nullptr);
         }
     }
 }
@@ -71,8 +71,8 @@ ValueTree TracksState::findProcessorNearestToSlot(const ValueTree &track, int sl
     ValueTree nearestProcessor;
     for (const auto &processor : lane) {
         int otherSlot = processor[TracksStateIDs::processorSlot];
-        if (otherSlot == slot)
-            return processor;
+        if (otherSlot == slot) return processor;
+
         if (abs(slot - otherSlot) < abs(slot - nearestSlot)) {
             nearestSlot = otherSlot;
             nearestProcessor = processor;
@@ -84,8 +84,7 @@ ValueTree TracksState::findProcessorNearestToSlot(const ValueTree &track, int sl
 }
 
 juce::Point<int> TracksState::gridPositionToTrackAndSlot(const juce::Point<int> gridPosition, bool allowUpFromMaster) const {
-    if (gridPosition.y > view.getNumProcessorSlots())
-        return INVALID_TRACK_AND_SLOT;
+    if (gridPosition.y > view.getNumProcessorSlots()) return INVALID_TRACK_AND_SLOT;
 
     int trackIndex, slot;
     if (gridPosition.y == view.getNumProcessorSlots()) {
@@ -113,8 +112,7 @@ juce::Point<int> TracksState::gridPositionToTrackAndSlot(const juce::Point<int> 
 int TracksState::findSlotAt(const juce::Point<int> position, const ValueTree &track) const {
     bool isMaster = isMasterTrack(track);
     int length = isMaster ? position.x : (position.y - ViewState::TRACK_LABEL_HEIGHT);
-    if (length < 0)
-        return -1;
+    if (length < 0) return -1;
 
     int processorSlotSize = isMaster ? view.getTrackWidth() : view.getProcessorHeight();
     int slot = getSlotOffsetForTrack(track) + length / processorSlotSize;

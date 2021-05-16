@@ -51,22 +51,9 @@ private:
     UndoManager &undoManager;
     AudioDeviceManager &deviceManager;
 
-    void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override {
-        if (child[TracksStateIDs::name] == InternalPluginFormat::getMidiInputProcessorName() && !deviceManager.isMidiInputEnabled(child[TracksStateIDs::deviceName]))
-            deviceManager.setMidiInputEnabled(child[TracksStateIDs::deviceName], true);
-    }
+    void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override;
 
-    void valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int) override {
-        if (child[TracksStateIDs::name] == InternalPluginFormat::getMidiInputProcessorName() && deviceManager.isMidiInputEnabled(child[TracksStateIDs::deviceName]))
-            deviceManager.setMidiInputEnabled(child[TracksStateIDs::deviceName], false);
-    }
+    void valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int) override;
 
-    void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {
-        if (i == TracksStateIDs::deviceName && tree == state) {
-            AudioDeviceManager::AudioDeviceSetup config;
-            deviceManager.getAudioDeviceSetup(config);
-            config.inputDeviceName = tree[TracksStateIDs::deviceName];
-            deviceManager.setAudioDeviceSetup(config, true);
-        }
-    }
+    void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override;
 };

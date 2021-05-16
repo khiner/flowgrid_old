@@ -12,7 +12,7 @@ class SelectionEditor : public Component,
                         private Button::Listener,
                         private ValueTree::Listener {
 public:
-    SelectionEditor(Project &project, ProcessorGraph &audioGraphBuilder);
+    SelectionEditor(Project &project, ViewState &view, TracksState &tracks, ProcessorGraph &audioGraphBuilder);
 
     ~SelectionEditor() override;
 
@@ -30,8 +30,8 @@ private:
     TextButton addProcessorButton{"Add Processor"};
 
     Project &project;
-    TracksState &tracks;
     ViewState &view;
+    TracksState &tracks;
 
     PluginManager &pluginManager;
     ProcessorGraph &audioGraphBuilder;

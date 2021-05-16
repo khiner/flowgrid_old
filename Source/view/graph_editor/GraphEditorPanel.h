@@ -11,7 +11,7 @@ class GraphEditorPanel
         : public Component, public ConnectorDragListener, public GraphEditorProcessorContainer,
           private ValueTree::Listener {
 public:
-    GraphEditorPanel(ViewState &view, TracksState &tracks, ConnectionsState &connections, ProcessorGraph &processorGraph, Project &project, PluginManager &pluginManager);
+    GraphEditorPanel(ViewState &view, TracksState &tracks, ConnectionsState &connections, InputState &input, OutputState &output, ProcessorGraph &processorGraph, Project &project, PluginManager &pluginManager);
 
     ~GraphEditorPanel() override;
 

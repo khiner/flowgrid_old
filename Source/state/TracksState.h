@@ -46,7 +46,7 @@ namespace TracksStateIDs {
 #undef ID
 }
 
-class TracksState : public Stateful<TracksState>, private ValueTree::Listener {
+class TracksState : public Stateful<TracksState> {
 public:
     TracksState(ViewState &view, PluginManager &pluginManager, UndoManager &undoManager);
 
@@ -341,8 +341,7 @@ public:
     juce::Point<int> selectionPaneTrackAndSlotWithUpDownDelta(int delta) const {
         const auto focusedTrackAndSlot = view.getFocusedTrackAndSlot();
         const auto &focusedTrack = getTrack(focusedTrackAndSlot.x);
-        if (!focusedTrack.isValid())
-            return INVALID_TRACK_AND_SLOT;
+        if (!focusedTrack.isValid()) return INVALID_TRACK_AND_SLOT;
 
         const ValueTree &focusedProcessor = TracksState::getProcessorAtSlot(focusedTrack, focusedTrackAndSlot.y);
         // down when track is selected deselects the track

@@ -1,7 +1,8 @@
 #include "Push2MixerView.h"
 
-Push2MixerView::Push2MixerView(ViewState &view, TracksState &tracks, Project &project, Push2MidiCommunicator &push2MidiCommunicator)
+Push2MixerView::Push2MixerView(ViewState &view, TracksState &tracks, Project &project, ProcessorGraph &processorGraph, Push2MidiCommunicator &push2MidiCommunicator)
         : Push2TrackManagingView(view, tracks, project, push2MidiCommunicator),
+          processorGraph(processorGraph),
           volumesLabel(0, true, push2MidiCommunicator), pansLabel(1, true, push2MidiCommunicator),
           volumeParametersPanel(1), panParametersPanel(1) {
     volumesLabel.setText("Volumes", dontSendNotification);
@@ -26,7 +27,6 @@ void Push2MixerView::resized() {
 
     auto r = getLocalBounds();
     auto top = r.removeFromTop(HEADER_FOOTER_HEIGHT);
-    top = getLocalBounds().removeFromTop(HEADER_FOOTER_HEIGHT);
     auto labelWidth = getWidth() / NUM_COLUMNS;
     volumesLabel.setBounds(top.removeFromLeft(labelWidth));
     pansLabel.setBounds(top.removeFromLeft(labelWidth));
@@ -88,7 +88,7 @@ void Push2MixerView::updateParameters() {
     const auto &focusedTrack = tracks.getFocusedTrack();
     if (TracksState::isMasterTrack(focusedTrack)) {
         const auto &trackOutputProcessor = TracksState::getOutputProcessorForTrack(focusedTrack);
-        if (auto *processorWrapper = project.getProcessorGraph().getProcessorWrapperForState(trackOutputProcessor)) {
+        if (auto *processorWrapper = processorGraph.getProcessorWrapperForState(trackOutputProcessor)) {
             volumeParametersPanel.addParameter(processorWrapper->getParameter(1));
             panParametersPanel.addParameter(processorWrapper->getParameter(0));
         }
@@ -97,7 +97,7 @@ void Push2MixerView::updateParameters() {
             if (TracksState::isMasterTrack(track))
                 continue;
             const auto &trackOutputProcessor = TracksState::getOutputProcessorForTrack(track);
-            if (auto *processorWrapper = project.getProcessorGraph().getProcessorWrapperForState(trackOutputProcessor)) {
+            if (auto *processorWrapper = processorGraph.getProcessorWrapperForState(trackOutputProcessor)) {
                 // TODO use param identifiers instead of indexes
                 volumeParametersPanel.addParameter(processorWrapper->getParameter(1));
                 panParametersPanel.addParameter(processorWrapper->getParameter(0));

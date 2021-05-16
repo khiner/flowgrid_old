@@ -57,10 +57,10 @@ public:
 
         deviceManager.addChangeListener(this);
 
-        mainWindow = std::make_unique<MainWindow>(*this, "FlowGrid", new GraphEditor(view, tracks, connections, processorGraph, project, pluginManager));
+        mainWindow = std::make_unique<MainWindow>(*this, "FlowGrid", new GraphEditor(view, tracks, connections, input, output, processorGraph, project, pluginManager));
         mainWindow->setBoundsRelative(0.02f, 0.02f, 0.96f, 0.96f);
 
-        push2Component = std::make_unique<Push2Component>(view, tracks, project, push2MidiCommunicator);
+        push2Component = std::make_unique<Push2Component>(view, tracks, connections, project, processorGraph, push2MidiCommunicator);
 
         push2MidiCommunicator.setPush2Listener(push2Component.get());
 
@@ -395,7 +395,7 @@ public:
                 showAudioMidiSettings();
                 break;
             case CommandIDs::togglePaneFocus:
-                project.getView().togglePaneFocus();
+                view.togglePaneFocus();
                 break;
 //            case CommandIDs::aboutBox:
 //                // TODO
@@ -590,24 +590,24 @@ private:
             getUserSettings()->saveIfNeeded();
 
             deviceManager.updateEnabledMidiInputsAndOutputs();
-            Array<ValueTree> inputProcessorsToDelete = project.getInput().syncInputDevicesWithDeviceManager();
+            Array<ValueTree> inputProcessorsToDelete = input.syncInputDevicesWithDeviceManager();
             for (const auto &inputProcessor : inputProcessorsToDelete) {
-                undoManager.perform(new DeleteProcessorAction(inputProcessor, tracks, project.getConnections(), processorGraph));
+                undoManager.perform(new DeleteProcessorAction(inputProcessor, tracks, connections, processorGraph));
             }
             AudioDeviceManager::AudioDeviceSetup config;
             deviceManager.getAudioDeviceSetup(config);
             // TODO the undomanager behavior around this needs more thinking.
             //  This should be done along with the work to keep disabled IO devices in the graph if they still have connections
-            project.getInput().getState().setProperty(TracksStateIDs::deviceName, config.inputDeviceName, nullptr);
+            input.getState().setProperty(TracksStateIDs::deviceName, config.inputDeviceName, nullptr);
 
             deviceManager.updateEnabledMidiInputsAndOutputs();
-            Array<ValueTree> outputProcessorsToDelete = project.getOutput().syncOutputDevicesWithDeviceManager();
+            Array<ValueTree> outputProcessorsToDelete = output.syncOutputDevicesWithDeviceManager();
             for (const auto &outputProcessor : outputProcessorsToDelete) {
-                undoManager.perform(new DeleteProcessorAction(outputProcessor, tracks, project.getConnections(), processorGraph));
+                undoManager.perform(new DeleteProcessorAction(outputProcessor, tracks, connections, processorGraph));
             }
             // TODO the undomanager behavior around this needs more thinking.
             //  This should be done along with the work to keep disabled IO devices in the graph if they still have connections
-            project.getOutput().getState().setProperty(TracksStateIDs::deviceName, config.outputDeviceName, nullptr);
+            output.getState().setProperty(TracksStateIDs::deviceName, config.outputDeviceName, nullptr);
         }
     }
 };

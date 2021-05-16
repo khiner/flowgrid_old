@@ -8,9 +8,7 @@ namespace ConnectionStateIDs {
 #undef ID
 }
 
-class ConnectionState : public Stateful<ConnectionState>, private ValueTree::Listener {
+class ConnectionState : public Stateful<ConnectionState> {
 public:
-    ~ConnectionState() override = 0;
-
     static Identifier getIdentifier() { return ConnectionStateIDs::CONNECTION; }
 };

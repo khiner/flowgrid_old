@@ -10,7 +10,5 @@ namespace OutputChannelsStateIDs {
 
 class OutputChannelsState : public Stateful<OutputChannelsState>, private ValueTree::Listener {
 public:
-    ~OutputChannelsState() override = 0;
-
     static Identifier getIdentifier() { return OutputChannelsStateIDs::OUTPUT_CHANNELS; }
 };

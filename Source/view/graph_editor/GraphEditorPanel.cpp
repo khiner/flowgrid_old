@@ -3,9 +3,9 @@
 #include "view/CustomColourIds.h"
 #include "ApplicationPropertiesAndCommandManager.h"
 
-GraphEditorPanel::GraphEditorPanel(ViewState &view, TracksState &tracks, ConnectionsState &connections, ProcessorGraph &processorGraph, Project &project, PluginManager &pluginManager)
+GraphEditorPanel::GraphEditorPanel(ViewState &view, TracksState &tracks, ConnectionsState &connections, InputState &input, OutputState &output, ProcessorGraph &processorGraph, Project &project, PluginManager &pluginManager)
         : view(view), tracks(tracks), connections(connections),
-          input(project.getInput()), output(project.getOutput()), graph(processorGraph), project(project) {
+          input(input), output(output), graph(processorGraph), project(project) {
     tracks.addListener(this);
     view.addListener(this);
     connections.addListener(this);

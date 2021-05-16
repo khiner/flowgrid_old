@@ -8,11 +8,7 @@ namespace TrackStateIDs {
 #undef ID
 }
 
-class TrackState : public Stateful<TrackState>, private ValueTree::Listener {
+class TrackState : public Stateful<TrackState> {
 public:
-    TrackState() = default;
-
-    ~TrackState() override = 0;
-
     static Identifier getIdentifier() { return TrackStateIDs::TRACK; }
 };
