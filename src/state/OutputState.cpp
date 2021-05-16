@@ -39,13 +39,13 @@ void OutputState::initializeDefault() {
 }
 
 void OutputState::valueTreeChildAdded(ValueTree &parent, ValueTree &child) {
-    if (child[TracksStateIDs::name] == InternalPluginFormat::getMidiOutputProcessorName() &&
+    if (child[TrackStateIDs::name] == InternalPluginFormat::getMidiOutputProcessorName() &&
         !deviceManager.isMidiOutputEnabled(child[ProcessorStateIDs::deviceName]))
         deviceManager.setMidiOutputEnabled(child[ProcessorStateIDs::deviceName], true);
 }
 
 void OutputState::valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int) {
-    if (child[TracksStateIDs::name] == InternalPluginFormat::getMidiOutputProcessorName() &&
+    if (child[TrackStateIDs::name] == InternalPluginFormat::getMidiOutputProcessorName() &&
         deviceManager.isMidiOutputEnabled(child[ProcessorStateIDs::deviceName]))
         deviceManager.setMidiOutputEnabled(child[ProcessorStateIDs::deviceName], false);
 }

@@ -5,7 +5,7 @@
 
 static int getIndexOfFirstCopiedTrackWithSelections(const ValueTree &copiedTracks) {
     for (const auto &track : copiedTracks)
-        if (track[TracksStateIDs::selected] || TracksState::trackHasAnySlotSelected(track))
+        if (track[TrackStateIDs::selected] || TracksState::trackHasAnySlotSelected(track))
             return copiedTracks.indexOf(track);
 
     assert(false); // Copied state, by definition, must have a selection.
@@ -13,7 +13,7 @@ static int getIndexOfFirstCopiedTrackWithSelections(const ValueTree &copiedTrack
 
 static bool anyCopiedTrackSelected(const ValueTree &copiedTracks) {
     for (const ValueTree &track : copiedTracks)
-        if (track[TracksStateIDs::selected])
+        if (track[TrackStateIDs::selected])
             return true;
     return false;
 }
@@ -25,7 +25,7 @@ static juce::Point<int> limitToTrackAndSlot(juce::Point<int> toTrackAndSlot, con
 static std::vector<int> findSelectedNonMasterTrackIndices(const ValueTree &copiedTracks) {
     std::vector<int> selectedTrackIndices;
     for (const auto &track : copiedTracks)
-        if (track[TracksStateIDs::selected] && !TracksState::isMasterTrack(track))
+        if (track[TrackStateIDs::selected] && !TracksState::isMasterTrack(track))
             selectedTrackIndices.push_back(copiedTracks.indexOf(track));
     return selectedTrackIndices;
 }
@@ -75,7 +75,7 @@ InsertAction::InsertAction(bool duplicate, const ValueTree &copiedTracks, const 
         // First pass: insert processors that are selected without their parent track also selected.
         // This is done because adding new tracks changes the track indices relative to their current position.
         for (const auto &copiedTrack : copiedTracks) {
-            if (!copiedTrack[TracksStateIDs::selected]) {
+            if (!copiedTrack[TrackStateIDs::selected]) {
                 int fromTrackIndex = copiedTracks.indexOf(copiedTrack);
                 if (duplicate) {
                     duplicateSelectedProcessors(copiedTrack, copiedTracks);

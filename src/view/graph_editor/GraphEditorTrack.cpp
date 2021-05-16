@@ -118,18 +118,18 @@ void GraphEditorTrack::trackOutputProcessorChanged() {
 
 void GraphEditorTrack::valueTreeChildAdded(ValueTree &parent, ValueTree &child) {
     if (child.hasType(ProcessorStateIDs::PROCESSOR)) {
-        if (child.getProperty(TracksStateIDs::name) == InternalPluginFormat::getTrackInputProcessorName())
+        if (child.getProperty(TrackStateIDs::name) == InternalPluginFormat::getTrackInputProcessorName())
             trackInputProcessorChanged();
-        else if (child.getProperty(TracksStateIDs::name) == InternalPluginFormat::getTrackOutputProcessorName())
+        else if (child.getProperty(TrackStateIDs::name) == InternalPluginFormat::getTrackOutputProcessorName())
             trackOutputProcessorChanged();
     }
 }
 
 void GraphEditorTrack::valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int) {
     if (child.hasType(ProcessorStateIDs::PROCESSOR)) {
-        if (child.getProperty(TracksStateIDs::name) == InternalPluginFormat::getTrackInputProcessorName())
+        if (child.getProperty(TrackStateIDs::name) == InternalPluginFormat::getTrackInputProcessorName())
             trackInputProcessorChanged();
-        else if (child.getProperty(TracksStateIDs::name) == InternalPluginFormat::getTrackOutputProcessorName())
+        else if (child.getProperty(TrackStateIDs::name) == InternalPluginFormat::getTrackOutputProcessorName())
             trackOutputProcessorChanged();
     }
 }
@@ -141,10 +141,10 @@ void GraphEditorTrack::valueTreePropertyChanged(ValueTree &tree, const Identifie
     if (tree != state)
         return;
 
-    if (i == TracksStateIDs::name) {
+    if (i == TrackStateIDs::name) {
         if (trackInputProcessorView != nullptr)
-            trackInputProcessorView->setTrackName(tree[TracksStateIDs::name].toString());
-    } else if (i == TracksStateIDs::colour || i == TracksStateIDs::selected) {
+            trackInputProcessorView->setTrackName(tree[TrackStateIDs::name].toString());
+    } else if (i == TrackStateIDs::colour || i == TrackStateIDs::selected) {
         onColourChanged();
     }
 }

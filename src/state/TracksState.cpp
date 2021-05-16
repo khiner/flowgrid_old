@@ -2,7 +2,7 @@
 
 TracksState::TracksState(ViewState &view, PluginManager &pluginManager, UndoManager &undoManager)
         : view(view), pluginManager(pluginManager), undoManager(undoManager) {
-    state.setProperty(TracksStateIDs::name, "Tracks", nullptr);
+    state.setProperty(TrackStateIDs::name, "Tracks", nullptr);
 }
 
 void TracksState::loadFromState(const ValueTree &fromState) {
@@ -12,8 +12,8 @@ void TracksState::loadFromState(const ValueTree &fromState) {
     // since type information is not saved in XML
     // Also, re-set some vars just to trigger the event (like selected slot mask)
     for (auto track : state) {
-        resetVarToBool(track, TracksStateIDs::isMasterTrack, nullptr);
-        resetVarToBool(track, TracksStateIDs::selected, nullptr);
+        resetVarToBool(track, TrackStateIDs::isMasterTrack, nullptr);
+        resetVarToBool(track, TrackStateIDs::selected, nullptr);
 
         auto lane = getProcessorLaneForTrack(track);
         lane.sendPropertyChangeMessage(TracksStateIDs::selectedSlotsMask);
@@ -57,7 +57,7 @@ int TracksState::getInsertIndexForProcessor(const ValueTree &track, const ValueT
 Array<ValueTree> TracksState::findAllSelectedItems() const {
     Array<ValueTree> selectedItems;
     for (const auto &track : state) {
-        if (track[TracksStateIDs::selected])
+        if (track[TrackStateIDs::selected])
             selectedItems.add(track);
         else
             selectedItems.addArray(findSelectedProcessorsForTrack(track));

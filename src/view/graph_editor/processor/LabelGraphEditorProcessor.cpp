@@ -2,7 +2,7 @@
 
 LabelGraphEditorProcessor::LabelGraphEditorProcessor(const ValueTree &state, ViewState &view, TracksState &tracks, ProcessorGraph &processorGraph, ConnectorDragListener &connectorDragListener) :
         BaseGraphEditorProcessor(state, view, tracks, processorGraph, connectorDragListener) {
-    valueTreePropertyChanged(this->state, TracksStateIDs::name);
+    valueTreePropertyChanged(this->state, TrackStateIDs::name);
     if (this->state.hasProperty(ProcessorStateIDs::deviceName))
         valueTreePropertyChanged(this->state, ProcessorStateIDs::deviceName);
 
@@ -25,8 +25,8 @@ void LabelGraphEditorProcessor::valueTreePropertyChanged(ValueTree &v, const Ide
     if (i == ProcessorStateIDs::deviceName) {
         setName(v[ProcessorStateIDs::deviceName]);
         nameLabel.setText(getName());
-    } else if (i == TracksStateIDs::name) {
-        setName(v[TracksStateIDs::name]);
+    } else if (i == TrackStateIDs::name) {
+        setName(v[TrackStateIDs::name]);
         nameLabel.setText(getName());
     }
 

@@ -12,12 +12,6 @@ namespace TracksStateIDs {
 #define ID(name) const juce::Identifier name(#name);
     ID(TRACKS)
 
-    ID(uuid)
-    ID(colour)
-    ID(name)
-    ID(selected)
-    ID(isMasterTrack)
-
     ID(PROCESSOR_LANES)
     ID(PROCESSOR_LANE)
     ID(selectedSlotsMask)
@@ -73,25 +67,25 @@ public:
     }
 
     static ValueTree getInputProcessorForTrack(const ValueTree &track) {
-        return track.getChildWithProperty(TracksStateIDs::name, InternalPluginFormat::getTrackInputProcessorName());
+        return track.getChildWithProperty(TrackStateIDs::name, InternalPluginFormat::getTrackInputProcessorName());
     }
 
     static ValueTree getOutputProcessorForTrack(const ValueTree &track) {
-        return track.getChildWithProperty(TracksStateIDs::name, InternalPluginFormat::getTrackOutputProcessorName());
+        return track.getChildWithProperty(TrackStateIDs::name, InternalPluginFormat::getTrackOutputProcessorName());
     }
 
     static Array<ValueTree> getAllProcessorsForTrack(const ValueTree &track);
 
     static bool isTrackIOProcessor(const ValueTree &processor) {
-        return InternalPluginFormat::isTrackIOProcessor(processor[TracksStateIDs::name]);
+        return InternalPluginFormat::isTrackIOProcessor(processor[TrackStateIDs::name]);
     }
 
     static bool isTrackInputProcessor(const ValueTree &processor) {
-        return String(processor[TracksStateIDs::name]) == InternalPluginFormat::getTrackInputProcessorName();
+        return String(processor[TrackStateIDs::name]) == InternalPluginFormat::getTrackInputProcessorName();
     }
 
     static bool isTrackOutputProcessor(const ValueTree &processor) {
-        return String(processor[TracksStateIDs::name]) == InternalPluginFormat::getTrackOutputProcessorName();
+        return String(processor[TrackStateIDs::name]) == InternalPluginFormat::getTrackOutputProcessorName();
     }
 
     static bool isProcessorLeftToRightFlowing(const ValueTree &processor) {
@@ -110,21 +104,21 @@ public:
         return getTrack(trackViewIndex + view.getGridViewTrackOffset());
     }
 
-    ValueTree getMasterTrack() const { return state.getChildWithProperty(TracksStateIDs::isMasterTrack, true); }
+    ValueTree getMasterTrack() const { return state.getChildWithProperty(TrackStateIDs::isMasterTrack, true); }
 
-    static bool isMasterTrack(const ValueTree &track) { return track[TracksStateIDs::isMasterTrack]; }
+    static bool isMasterTrack(const ValueTree &track) { return track[TrackStateIDs::isMasterTrack]; }
 
     int getNumNonMasterTracks() const {
         return getMasterTrack().isValid() ? state.getNumChildren() - 1 : state.getNumChildren();
     }
 
     static bool doesTrackHaveSelections(const ValueTree &track) {
-        return track[TracksStateIDs::selected] || trackHasAnySlotSelected(track);
+        return track[TrackStateIDs::selected] || trackHasAnySlotSelected(track);
     }
 
     bool anyTrackSelected() const {
         for (const auto &track : state)
-            if (track[TracksStateIDs::selected])
+            if (track[TrackStateIDs::selected])
                 return true;
         return false;
     }
@@ -149,7 +143,7 @@ public:
 
     ValueTree findTrackWithUuid(const String &uuid) {
         for (const auto &track : state)
-            if (track[TracksStateIDs::uuid] == uuid)
+            if (track[TrackStateIDs::uuid] == uuid)
                 return track;
         return {};
     }
@@ -163,11 +157,11 @@ public:
     }
 
     static Colour getTrackColour(const ValueTree &track) {
-        return Colour::fromString(track[TracksStateIDs::colour].toString());
+        return Colour::fromString(track[TrackStateIDs::colour].toString());
     }
 
     void setTrackColour(ValueTree &track, const Colour &colour) {
-        track.setProperty(TracksStateIDs::colour, colour.toString(), &undoManager);
+        track.setProperty(TrackStateIDs::colour, colour.toString(), &undoManager);
     }
 
     static bool isSlotSelected(const ValueTree &track, int slot) {
@@ -244,7 +238,7 @@ public:
     Array<bool> getTrackSelections() const {
         Array<bool> trackSelections;
         for (const auto &track : state) {
-            trackSelections.add(track[TracksStateIDs::selected]);
+            trackSelections.add(track[TrackStateIDs::selected]);
         }
         return trackSelections;
     }
@@ -287,7 +281,7 @@ public:
 
     void setTrackName(ValueTree track, const String &name) {
         undoManager.beginNewTransaction();
-        track.setProperty(TracksStateIDs::name, name, &undoManager);
+        track.setProperty(TrackStateIDs::name, name, &undoManager);
     }
 
     void showWindow(ValueTree processor, PluginWindow::Type type) {
@@ -317,7 +311,7 @@ public:
     juce::Point<int> trackAndSlotWithGridDelta(int xDelta, int yDelta) const {
         auto focusedTrackAndSlot = view.getFocusedTrackAndSlot();
         const auto &focusedTrack = getTrack(focusedTrackAndSlot.x);
-        if (focusedTrack[TracksStateIDs::selected])
+        if (focusedTrack[TrackStateIDs::selected])
             focusedTrackAndSlot.y = -1;
 
         const auto fromGridPosition = trackAndSlotToGridPosition(focusedTrackAndSlot);
@@ -331,7 +325,7 @@ public:
 
         const ValueTree &focusedProcessor = TracksState::getProcessorAtSlot(focusedTrack, focusedTrackAndSlot.y);
         // down when track is selected deselects the track
-        if (delta > 0 && focusedTrack[TracksStateIDs::selected]) return {focusedTrackAndSlot.x, focusedTrackAndSlot.y};
+        if (delta > 0 && focusedTrack[TrackStateIDs::selected]) return {focusedTrackAndSlot.x, focusedTrackAndSlot.y};
 
         ValueTree siblingProcessorToSelect;
         if (focusedProcessor.isValid()) {
@@ -358,7 +352,7 @@ public:
 
         int siblingTrackIndex = indexOf(siblingTrackToSelect);
         const auto &focusedProcessorLane = getProcessorLaneForTrack(focusedTrack);
-        if (focusedTrack[TracksStateIDs::selected] || focusedProcessorLane.getNumChildren() == 0)
+        if (focusedTrack[TrackStateIDs::selected] || focusedProcessorLane.getNumChildren() == 0)
             return {siblingTrackIndex, -1};
 
         if (focusedTrackAndSlot.y != -1) {

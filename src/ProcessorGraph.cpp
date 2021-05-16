@@ -80,7 +80,7 @@ void ProcessorGraph::removeProcessor(const ValueTree &processor) {
     const NodeID nodeId = TracksState::getNodeIdForProcessor(processor);
 
     // disconnect should have already been called before delete! (to avoid nested undo actions)
-    if (processor[TracksStateIDs::name] == MidiInputProcessor::name()) {
+    if (processor[TrackStateIDs::name] == MidiInputProcessor::name()) {
         if (auto *midiInputProcessor = dynamic_cast<MidiInputProcessor *>(processorWrapper->processor)) {
             const String &deviceName = processor.getProperty(ProcessorStateIDs::deviceName);
             if (deviceName.containsIgnoreCase(Push2MidiDevice::getDeviceName())) {
@@ -166,7 +166,7 @@ bool ProcessorGraph::doDisconnectNode(const ValueTree &processor, ConnectionType
 }
 
 void ProcessorGraph::updateIoChannelEnabled(const ValueTree &channels, const ValueTree &channel, bool enabled) {
-    String processorName = channels.getParent()[TracksStateIDs::name];
+    String processorName = channels.getParent()[TrackStateIDs::name];
     bool isInput;
     if (processorName == "Audio Input" && OutputState::isType(channels))
         isInput = true;
@@ -179,7 +179,7 @@ void ProcessorGraph::updateIoChannelEnabled(const ValueTree &channels, const Val
         deviceManager.getAudioDeviceSetup(config);
         auto &configChannels = isInput ? config.inputChannels : config.outputChannels;
         const auto &channelNames = isInput ? audioDevice->getInputChannelNames() : audioDevice->getOutputChannelNames();
-        auto channelIndex = channelNames.indexOf(channel[TracksStateIDs::name].toString());
+        auto channelIndex = channelNames.indexOf(channel[TrackStateIDs::name].toString());
         if (channelIndex != -1 && ((enabled && !configChannels[channelIndex]) || (!enabled && configChannels[channelIndex]))) {
             configChannels.setBit(channelIndex, enabled);
             deviceManager.setAudioDeviceSetup(config, true);

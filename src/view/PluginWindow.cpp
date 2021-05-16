@@ -5,7 +5,7 @@
 #include "state/TracksState.h"
 
 PluginWindow::PluginWindow(ValueTree &processorState, AudioProcessor *processor, Type type)
-        : DocumentWindow(processorState[TracksStateIDs::name],
+        : DocumentWindow(processorState[TrackStateIDs::name],
                          LookAndFeel::getDefaultLookAndFeel().findColour(ResizableWindow::backgroundColourId),
                          DocumentWindow::minimiseButton | DocumentWindow::closeButton),
           processor(processorState), type(type) {

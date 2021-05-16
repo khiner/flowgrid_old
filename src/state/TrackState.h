@@ -6,6 +6,11 @@
 namespace TrackStateIDs {
 #define ID(name) const juce::Identifier name(#name);
     ID(TRACK)
+    ID(uuid)
+    ID(colour)
+    ID(name)
+    ID(selected)
+    ID(isMasterTrack)
 #undef ID
 }
 

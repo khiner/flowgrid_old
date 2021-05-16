@@ -47,7 +47,7 @@ bool SelectAction::perform() {
     for (int i = 0; i < newTrackSelections.size(); i++) {
         auto track = tracks.getTrack(i);
         auto lane = TracksState::getProcessorLaneForTrack(track);
-        track.setProperty(TracksStateIDs::selected, newTrackSelections.getUnchecked(i), nullptr);
+        track.setProperty(TrackStateIDs::selected, newTrackSelections.getUnchecked(i), nullptr);
         lane.setProperty(TracksStateIDs::selectedSlotsMask, newSelectedSlotsMasks.getUnchecked(i), nullptr);
     }
     if (newFocusedSlot != oldFocusedSlot)
@@ -66,7 +66,7 @@ bool SelectAction::undo() {
     for (int i = 0; i < oldTrackSelections.size(); i++) {
         auto track = tracks.getTrack(i);
         auto lane = TracksState::getProcessorLaneForTrack(track);
-        track.setProperty(TracksStateIDs::selected, oldTrackSelections.getUnchecked(i), nullptr);
+        track.setProperty(TrackStateIDs::selected, oldTrackSelections.getUnchecked(i), nullptr);
         lane.setProperty(TracksStateIDs::selectedSlotsMask, oldSelectedSlotsMasks.getUnchecked(i), nullptr);
     }
     if (oldFocusedSlot != newFocusedSlot)

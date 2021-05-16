@@ -187,7 +187,7 @@ private:
         ValueTree toState() const {
             ValueTree state(TracksStateIDs::CHANNEL);
             state.setProperty(TracksStateIDs::channelIndex, channelIndex, nullptr);
-            state.setProperty(TracksStateIDs::name, name, nullptr);
+            state.setProperty(TrackStateIDs::name, name, nullptr);
             state.setProperty(TracksStateIDs::abbreviatedName, abbreviatedName, nullptr);
             return state;
         }

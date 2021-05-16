@@ -42,7 +42,7 @@ static Array<ValueTree> getFirstProcessorInEachContiguousSelectedGroup(const Val
 static int limitSlotDelta(int originalSlotDelta, int limitedTrackDelta, TracksState &tracks, ViewState &view) {
     int limitedSlotDelta = originalSlotDelta;
     for (const auto &fromTrack : tracks.getState()) {
-        if (fromTrack[TracksStateIDs::selected])
+        if (fromTrack[TrackStateIDs::selected])
             continue; // entire track will be moved, so it shouldn't restrict other slot movements
 
         const auto &lastSelectedProcessor = TracksState::findLastSelectedProcessor(fromTrack);
@@ -152,7 +152,7 @@ OwnedArray<UndoableAction> MoveSelectedItemsAction::createInsertActions(TracksSt
         const auto &fromTrack = tracks.getTrack(fromTrackIndex);
         const int toTrackIndex = fromTrackIndex + trackAndSlotDelta.x;
 
-        if (fromTrack[TracksStateIDs::selected]) {
+        if (fromTrack[TrackStateIDs::selected]) {
             if (fromTrackIndex != toTrackIndex) {
                 insertActions.add(new InsertTrackAction(fromTrackIndex, toTrackIndex, tracks));
                 insertActions.getLast()->perform();

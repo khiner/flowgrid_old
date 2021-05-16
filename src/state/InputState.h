@@ -30,7 +30,7 @@ public:
     void initializeDefault();
 
     ValueTree getAudioInputProcessorState() const {
-        return state.getChildWithProperty(TracksStateIDs::name, pluginManager.getAudioInputDescription().name);
+        return state.getChildWithProperty(TrackStateIDs::name, pluginManager.getAudioInputDescription().name);
     }
 
     ValueTree getPush2MidiInputProcessor() const {

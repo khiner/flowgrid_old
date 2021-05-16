@@ -433,7 +433,7 @@ void StatefulAudioProcessorWrapper::updateChannels(Array<Channel> &oldChannels, 
     for (int i = 0; i < oldChannels.size(); i++) {
         const auto &oldChannel = oldChannels.getUnchecked(i);
         if (!newChannels.contains(oldChannel)) {
-            channelsState.removeChild(channelsState.getChildWithProperty(TracksStateIDs::name, oldChannel.name), &undoManager);
+            channelsState.removeChild(channelsState.getChildWithProperty(TrackStateIDs::name, oldChannel.name), &undoManager);
         }
     }
     for (int i = 0; i < newChannels.size(); i++) {
@@ -478,6 +478,6 @@ StatefulAudioProcessorWrapper::Channel::Channel(AudioProcessor *processor, Audio
 
 StatefulAudioProcessorWrapper::Channel::Channel(const ValueTree &channelState) :
         channelIndex(channelState[TracksStateIDs::channelIndex]),
-        name(channelState[TracksStateIDs::name]),
+        name(channelState[TrackStateIDs::name]),
         abbreviatedName(channelState[TracksStateIDs::abbreviatedName]) {
 }

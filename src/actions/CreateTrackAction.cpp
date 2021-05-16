@@ -3,7 +3,7 @@
 // NOTE: assumes the track hasn't been added yet!
 String makeTrackNameUnique(TracksState &tracks, const String &trackName) {
     for (const auto &track : tracks.getState()) {
-        String otherTrackName = track[TracksStateIDs::name];
+        String otherTrackName = track[TrackStateIDs::name];
         if (otherTrackName == trackName) {
             if (trackName.contains("-")) {
                 int i = trackName.getLastCharacters(trackName.length() - trackName.lastIndexOf("-") - 1).getIntValue();
@@ -29,16 +29,16 @@ CreateTrackAction::CreateTrackAction(int insertIndex, bool isMaster, const Value
         : insertIndex(insertIndex), tracks(tracks) {
     // TODO move into method and construct in initializer list
     newTrack = ValueTree(TrackStateIDs::TRACK);
-    newTrack.setProperty(TracksStateIDs::isMasterTrack, isMaster, nullptr);
-    newTrack.setProperty(TracksStateIDs::uuid, Uuid().toString(), nullptr);
+    newTrack.setProperty(TrackStateIDs::isMasterTrack, isMaster, nullptr);
+    newTrack.setProperty(TrackStateIDs::uuid, Uuid().toString(), nullptr);
     bool isSubTrack = !isMaster && derivedFromTrack.isValid();
     if (isMaster) {
-        newTrack.setProperty(TracksStateIDs::name, "Master", nullptr);
+        newTrack.setProperty(TrackStateIDs::name, "Master", nullptr);
     } else {
-        newTrack.setProperty(TracksStateIDs::name, isSubTrack ? makeTrackNameUnique(tracks, derivedFromTrack[TracksStateIDs::name]) : ("Track " + String(tracks.getNumNonMasterTracks() + 1)), nullptr);
+        newTrack.setProperty(TrackStateIDs::name, isSubTrack ? makeTrackNameUnique(tracks, derivedFromTrack[TrackStateIDs::name]) : ("Track " + String(tracks.getNumNonMasterTracks() + 1)), nullptr);
     }
-    newTrack.setProperty(TracksStateIDs::colour, isSubTrack ? derivedFromTrack[TracksStateIDs::colour].toString() : Colour::fromHSV((1.0f / 8.0f) * tracks.getNumTracks(), 0.65f, 0.65f, 1.0f).toString(), nullptr);
-    newTrack.setProperty(TracksStateIDs::selected, false, nullptr);
+    newTrack.setProperty(TrackStateIDs::colour, isSubTrack ? derivedFromTrack[TrackStateIDs::colour].toString() : Colour::fromHSV((1.0f / 8.0f) * tracks.getNumTracks(), 0.65f, 0.65f, 1.0f).toString(), nullptr);
+    newTrack.setProperty(TrackStateIDs::selected, false, nullptr);
 
     auto lanes = ValueTree(TracksStateIDs::PROCESSOR_LANES);
     auto lane = ValueTree(TracksStateIDs::PROCESSOR_LANE);

@@ -34,8 +34,8 @@ void Push2Colours::setColour(uint8 colourIndex, const Colour &colour) {
 
 void Push2Colours::valueTreeChildAdded(ValueTree &parent, ValueTree &child) {
     if (TrackState::isType(child)) {
-        const String &uuid = child[TracksStateIDs::uuid];
-        const auto &colour = Colour::fromString(child[TracksStateIDs::colour].toString());
+        const String &uuid = child[TrackStateIDs::uuid];
+        const auto &colour = Colour::fromString(child[TrackStateIDs::colour].toString());
         auto index = findIndexForColourAddingIfNeeded(colour);
         indexForTrackUuid[uuid] = index;
         listeners.call([uuid, colour](Listener &listener) { listener.trackColourChanged(uuid, colour); });
@@ -44,7 +44,7 @@ void Push2Colours::valueTreeChildAdded(ValueTree &parent, ValueTree &child) {
 
 void Push2Colours::valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int) {
     if (TrackState::isType(child)) {
-        const auto &uuid = child[TracksStateIDs::uuid].toString();
+        const auto &uuid = child[TrackStateIDs::uuid].toString();
         auto index = indexForTrackUuid[uuid];
         availableColourIndexes.add(index);
         indexForTrackUuid.erase(uuid);
@@ -53,10 +53,10 @@ void Push2Colours::valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, 
 
 void Push2Colours::valueTreePropertyChanged(ValueTree &tree, const Identifier &i) {
     if (TrackState::isType(tree)) {
-        if (i == TracksStateIDs::colour) {
-            const String &uuid = tree[TracksStateIDs::uuid];
+        if (i == TrackStateIDs::colour) {
+            const String &uuid = tree[TrackStateIDs::uuid];
             auto index = indexForTrackUuid[uuid];
-            const auto &colour = Colour::fromString(tree[TracksStateIDs::colour].toString());
+            const auto &colour = Colour::fromString(tree[TrackStateIDs::colour].toString());
             setColour(index, colour);
             listeners.call([uuid, colour](Listener &listener) { listener.trackColourChanged(uuid, colour); });
         }

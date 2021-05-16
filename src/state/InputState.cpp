@@ -30,12 +30,12 @@ void InputState::initializeDefault() {
 }
 
 void InputState::valueTreeChildAdded(ValueTree &parent, ValueTree &child) {
-    if (child[TracksStateIDs::name] == InternalPluginFormat::getMidiInputProcessorName() && !deviceManager.isMidiInputEnabled(child[ProcessorStateIDs::deviceName]))
+    if (child[TrackStateIDs::name] == InternalPluginFormat::getMidiInputProcessorName() && !deviceManager.isMidiInputEnabled(child[ProcessorStateIDs::deviceName]))
         deviceManager.setMidiInputEnabled(child[ProcessorStateIDs::deviceName], true);
 }
 
 void InputState::valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int) {
-    if (child[TracksStateIDs::name] == InternalPluginFormat::getMidiInputProcessorName() && deviceManager.isMidiInputEnabled(child[ProcessorStateIDs::deviceName]))
+    if (child[TrackStateIDs::name] == InternalPluginFormat::getMidiInputProcessorName() && deviceManager.isMidiInputEnabled(child[ProcessorStateIDs::deviceName]))
         deviceManager.setMidiInputEnabled(child[ProcessorStateIDs::deviceName], false);
 }
 

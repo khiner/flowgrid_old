@@ -77,7 +77,7 @@ void GraphEditorProcessorLane::updateProcessorSlotColours() {
 }
 
 BaseGraphEditorProcessor *GraphEditorProcessorLane::createEditorForProcessor(const ValueTree &processor) {
-    if (processor[TracksStateIDs::name] == InternalPluginFormat::getMixerChannelProcessorName()) {
+    if (processor[TrackStateIDs::name] == InternalPluginFormat::getMixerChannelProcessorName()) {
         return new ParameterPanelGraphEditorProcessor(processor, view, tracks, processorGraph, connectorDragListener);
     }
     return new LabelGraphEditorProcessor(processor, view, tracks, processorGraph, connectorDragListener);
@@ -94,7 +94,7 @@ BaseGraphEditorProcessor *GraphEditorProcessorLane::createNewObject(const ValueT
 void GraphEditorProcessorLane::valueTreePropertyChanged(ValueTree &tree, const Identifier &i) {
     if (isSuitableType(tree) && i == ProcessorStateIDs::processorSlot) {
         resized();
-    } else if (i == TracksStateIDs::selected || i == TracksStateIDs::colour ||
+    } else if (i == TrackStateIDs::selected || i == TrackStateIDs::colour ||
                i == TracksStateIDs::selectedSlotsMask || i == ViewStateIDs::focusedTrackIndex || i == ViewStateIDs::focusedProcessorSlot ||
                i == ViewStateIDs::gridViewTrackOffset) {
         updateProcessorSlotColours();

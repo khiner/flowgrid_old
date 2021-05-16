@@ -19,7 +19,7 @@ public:
         return isSelected() ? trackColour.brighter(0.25) : trackColour;
     }
 
-    bool isSelected() const { return state.getProperty(TracksStateIDs::selected); }
+    bool isSelected() const { return state.getProperty(TrackStateIDs::selected); }
 
     void paint(Graphics &g) override;
 
