@@ -4,7 +4,7 @@
 
 class Push2NoteModePadLedManager : public MidiInputCallback, public Push2Colours::Listener {
 public:
-    Push2NoteModePadLedManager(TracksState &tracks, Push2MidiCommunicator &push2) : tracks(tracks), push2(push2) {
+    Push2NoteModePadLedManager(Tracks &tracks, Push2MidiCommunicator &push2) : tracks(tracks), push2(push2) {
         push2.getPush2Colours().addListener(this);
     }
 
@@ -28,14 +28,14 @@ public:
 
     void trackSelected(const ValueTree &track) {
         if (track.isValid()) {
-            selectedTrackColour = Colour::fromString(track[TrackStateIDs::colour].toString());
+            selectedTrackColour = Colour::fromString(track[TrackIDs::colour].toString());
             updatePadColours();
         }
     }
 
     void trackColourChanged(const String &trackUuid, const Colour &colour) override {
         // TODO a bit slow. might want to pass this all down from parent instead of listening directly
-        if (TracksState::doesTrackHaveSelections(tracks.findTrackWithUuid(trackUuid))) {
+        if (Tracks::doesTrackHaveSelections(tracks.findTrackWithUuid(trackUuid))) {
             selectedTrackColour = colour;
             updatePadColours();
         }
@@ -44,7 +44,7 @@ public:
     void colourAdded(const Colour &colour, uint8 index) override {}
 
 private:
-    TracksState &tracks;
+    Tracks &tracks;
     Push2MidiCommunicator &push2;
     Colour selectedTrackColour{Colours::white};
     bool isVisible{false};

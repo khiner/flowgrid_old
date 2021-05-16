@@ -1,11 +1,11 @@
 #pragma once
 
-#include "state/ConnectionsState.h"
-#include "state/TracksState.h"
+#include "state/Connections.h"
+#include "state/Tracks.h"
 #include "DeleteTrackAction.h"
 
 struct DeleteSelectedItemsAction : public UndoableAction {
-    DeleteSelectedItemsAction(TracksState &tracks, ConnectionsState &connections, ProcessorGraph &processorGraph);
+    DeleteSelectedItemsAction(Tracks &tracks, Connections &connections, ProcessorGraph &processorGraph);
 
     bool perform() override;
 

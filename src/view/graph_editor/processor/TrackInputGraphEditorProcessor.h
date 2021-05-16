@@ -6,11 +6,11 @@
 
 class TrackInputGraphEditorProcessor : public BaseGraphEditorProcessor, private ChangeListener {
 public:
-    TrackInputGraphEditorProcessor(const ValueTree &state, ViewState &view, TracksState &tracks, Project &project, ProcessorGraph &processorGraph, ConnectorDragListener &connectorDragListener);
+    TrackInputGraphEditorProcessor(const ValueTree &state, View &view, Tracks &tracks, Project &project, ProcessorGraph &processorGraph, ConnectorDragListener &connectorDragListener);
 
     ~TrackInputGraphEditorProcessor() override;
 
-    String getTrackName() const { return getTrack()[TrackStateIDs::name].toString(); }
+    String getTrackName() const { return getTrack()[TrackIDs::name].toString(); }
 
     void setTrackName(const String &trackName) {
         nameLabel.setText(trackName, dontSendNotification);

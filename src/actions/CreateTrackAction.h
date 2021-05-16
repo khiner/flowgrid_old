@@ -1,12 +1,12 @@
 #pragma once
 
-#include "state/ConnectionsState.h"
-#include "state/TracksState.h"
+#include "state/Connections.h"
+#include "state/Tracks.h"
 
 struct CreateTrackAction : public UndoableAction {
-    CreateTrackAction(bool isMaster, const ValueTree &derivedFromTrack, TracksState &tracks, ViewState &view);
+    CreateTrackAction(bool isMaster, const ValueTree &derivedFromTrack, Tracks &tracks, View &view);
 
-    CreateTrackAction(int insertIndex, bool isMaster, const ValueTree &derivedFromTrack, TracksState &tracks, ViewState &view);
+    CreateTrackAction(int insertIndex, bool isMaster, const ValueTree &derivedFromTrack, Tracks &tracks, View &view);
 
     bool perform() override;
 
@@ -18,5 +18,5 @@ struct CreateTrackAction : public UndoableAction {
     int insertIndex;
 
 protected:
-    TracksState &tracks;
+    Tracks &tracks;
 };

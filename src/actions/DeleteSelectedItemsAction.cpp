@@ -1,10 +1,10 @@
 #include "DeleteSelectedItemsAction.h"
 
-DeleteSelectedItemsAction::DeleteSelectedItemsAction(TracksState &tracks, ConnectionsState &connections, ProcessorGraph &processorGraph) {
+DeleteSelectedItemsAction::DeleteSelectedItemsAction(Tracks &tracks, Connections &connections, ProcessorGraph &processorGraph) {
     for (const auto &selectedItem : tracks.findAllSelectedItems()) {
-        if (TrackState::isType(selectedItem)) {
+        if (Track::isType(selectedItem)) {
             deleteTrackActions.add(new DeleteTrackAction(selectedItem, tracks, connections, processorGraph));
-        } else if (selectedItem.hasType(ProcessorStateIDs::PROCESSOR)) {
+        } else if (selectedItem.hasType(ProcessorIDs::PROCESSOR)) {
             deleteProcessorActions.add(new DeleteProcessorAction(selectedItem, tracks, connections, processorGraph));
             deleteProcessorActions.getLast()->performTemporary();
         }

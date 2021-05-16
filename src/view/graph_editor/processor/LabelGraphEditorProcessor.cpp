@@ -1,10 +1,10 @@
 #include "LabelGraphEditorProcessor.h"
 
-LabelGraphEditorProcessor::LabelGraphEditorProcessor(const ValueTree &state, ViewState &view, TracksState &tracks, ProcessorGraph &processorGraph, ConnectorDragListener &connectorDragListener) :
+LabelGraphEditorProcessor::LabelGraphEditorProcessor(const ValueTree &state, View &view, Tracks &tracks, ProcessorGraph &processorGraph, ConnectorDragListener &connectorDragListener) :
         BaseGraphEditorProcessor(state, view, tracks, processorGraph, connectorDragListener) {
-    valueTreePropertyChanged(this->state, ProcessorStateIDs::name);
-    if (this->state.hasProperty(ProcessorStateIDs::deviceName))
-        valueTreePropertyChanged(this->state, ProcessorStateIDs::deviceName);
+    valueTreePropertyChanged(this->state, ProcessorIDs::name);
+    if (this->state.hasProperty(ProcessorIDs::deviceName))
+        valueTreePropertyChanged(this->state, ProcessorIDs::deviceName);
 
     nameLabel.setColour(findColour(TextEditor::textColourId));
     nameLabel.setFontHeight(largeFontHeight);
@@ -22,11 +22,11 @@ void LabelGraphEditorProcessor::resized() {
 void LabelGraphEditorProcessor::valueTreePropertyChanged(ValueTree &v, const Identifier &i) {
     if (v != state) return;
 
-    if (i == ProcessorStateIDs::deviceName) {
-        setName(v[ProcessorStateIDs::deviceName]);
+    if (i == ProcessorIDs::deviceName) {
+        setName(v[ProcessorIDs::deviceName]);
         nameLabel.setText(getName());
-    } else if (i == ProcessorStateIDs::name) {
-        setName(v[ProcessorStateIDs::name]);
+    } else if (i == ProcessorIDs::name) {
+        setName(v[ProcessorIDs::name]);
         nameLabel.setText(getName());
     }
 

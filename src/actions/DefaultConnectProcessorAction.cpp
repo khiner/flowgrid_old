@@ -8,10 +8,10 @@ static const Array<int> &getDefaultConnectionChannels(ConnectionType connectionT
     return connectionType == audio ? defaultAudioConnectionChannels : defaultMidiConnectionChannels;
 }
 
-DefaultConnectProcessorAction::DefaultConnectProcessorAction(const ValueTree &fromProcessor, AudioProcessorGraph::NodeID toNodeId, ConnectionType connectionType, ConnectionsState &connections,
+DefaultConnectProcessorAction::DefaultConnectProcessorAction(const ValueTree &fromProcessor, AudioProcessorGraph::NodeID toNodeId, ConnectionType connectionType, Connections &connections,
                                                              ProcessorGraph &processorGraph)
         : CreateOrDeleteConnectionsAction(connections) {
-    const auto fromNodeId = TracksState::getNodeIdForProcessor(fromProcessor);
+    const auto fromNodeId = Tracks::getNodeIdForProcessor(fromProcessor);
     if (fromProcessor.isValid() && toNodeId.isValid()) {
         const auto &defaultConnectionChannels = getDefaultConnectionChannels(connectionType);
         for (auto channel : defaultConnectionChannels) {

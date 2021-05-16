@@ -16,7 +16,7 @@
 #include "processors/SineBank.h"
 #include "ApplicationPropertiesAndCommandManager.h"
 
-Project::Project(ViewState &view, TracksState &tracks, ConnectionsState &connections, InputState &input, OutputState &output,
+Project::Project(View &view, Tracks &tracks, Connections &connections, Input &input, Output &output,
                  ProcessorGraph &processorGraph, UndoManager &undoManager, PluginManager &pluginManager, AudioDeviceManager &deviceManager)
         : FileBasedDocument(getFilenameSuffix(), "*" + getFilenameSuffix(), "Load a project", "Save project"),
           view(view),
@@ -48,8 +48,8 @@ void Project::loadFromState(const ValueTree &fromState) {
 
     view.loadFromParentState(fromState);
 
-    const String &inputDeviceName = fromState.getChildWithName(InputStateIDs::INPUT)[ProcessorStateIDs::deviceName];
-    const String &outputDeviceName = fromState.getChildWithName(OutputStateIDs::OUTPUT)[ProcessorStateIDs::deviceName];
+    const String &inputDeviceName = fromState.getChildWithName(InputIDs::INPUT)[ProcessorIDs::deviceName];
+    const String &outputDeviceName = fromState.getChildWithName(OutputIDs::OUTPUT)[ProcessorIDs::deviceName];
 
     // TODO this should be replaced with the greyed-out IO processor behavior (keeping connections)
     static const String &failureMessage = TRANS("Could not open an Audio IO device used by this project.  "
@@ -138,8 +138,8 @@ void Project::duplicateSelectedItems() {
 }
 
 void Project::beginDragging(const juce::Point<int> trackAndSlot) {
-    if (trackAndSlot.x == TracksState::INVALID_TRACK_AND_SLOT.x ||
-        (trackAndSlot.y == -1 && TracksState::isMasterTrack(tracks.getTrack(trackAndSlot.x))))
+    if (trackAndSlot.x == Tracks::INVALID_TRACK_AND_SLOT.x ||
+        (trackAndSlot.y == -1 && Tracks::isMasterTrack(tracks.getTrack(trackAndSlot.x))))
         return;
 
     initialDraggingTrackAndSlot = trackAndSlot;
@@ -154,7 +154,7 @@ void Project::dragToPosition(juce::Point<int> trackAndSlot) {
         trackAndSlot.y = 0;
     if (!isCurrentlyDraggingProcessor() || trackAndSlot == currentlyDraggingTrackAndSlot ||
         (currentlyDraggingTrackAndSlot.y == -1 && trackAndSlot.x == currentlyDraggingTrackAndSlot.x) ||
-        trackAndSlot == TracksState::INVALID_TRACK_AND_SLOT)
+        trackAndSlot == Tracks::INVALID_TRACK_AND_SLOT)
         return;
 
     if (currentlyDraggingTrackAndSlot == initialDraggingTrackAndSlot)
@@ -207,7 +207,7 @@ void Project::setTrackSelected(const ValueTree &track, bool selected, bool desel
 }
 
 void Project::selectProcessor(const ValueTree &processor) {
-    setProcessorSlotSelected(TracksState::getTrackForProcessor(processor), processor[ProcessorStateIDs::processorSlot], true);
+    setProcessorSlotSelected(Tracks::getTrackForProcessor(processor), processor[ProcessorIDs::processorSlot], true);
 }
 
 bool Project::disconnectCustom(const ValueTree &processor) {
@@ -223,7 +223,7 @@ void Project::setDefaultConnectionsAllowed(const ValueTree &processor, bool defa
 
 void Project::toggleProcessorBypass(ValueTree processor) {
     undoManager.beginNewTransaction();
-    processor.setProperty(ProcessorStateIDs::bypassed, !processor[ProcessorStateIDs::bypassed], &undoManager);
+    processor.setProperty(ProcessorIDs::bypassed, !processor[ProcessorIDs::bypassed], &undoManager);
 }
 
 void Project::selectTrackAndSlot(juce::Point<int> trackAndSlot) {
@@ -307,7 +307,7 @@ bool Project::isDeviceWithNamePresent(const String &deviceName) const {
 
 Result Project::saveDocument(const File &file) {
     for (const auto &track : tracks.getState())
-        for (auto processorState : TracksState::getProcessorLaneForTrack(track))
+        for (auto processorState : Tracks::getProcessorLaneForTrack(track))
             processorGraph.saveProcessorStateInformationToState(processorState);
 
     if (auto xml = state.createXml())

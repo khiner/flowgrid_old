@@ -2,9 +2,9 @@
 
 #include "view/CustomColourIds.h"
 
-SelectionEditor::SelectionEditor(Project &project, ViewState &view, TracksState &tracks, ProcessorGraph &audioGraphBuilder)
+SelectionEditor::SelectionEditor(Project &project, View &view, Tracks &tracks, ProcessorGraph &audioGraphBuilder)
         : project(project), view(view), tracks(tracks), pluginManager(project.getPluginManager()),
-        audioGraphBuilder(audioGraphBuilder), contextPane(tracks, view) {
+          audioGraphBuilder(audioGraphBuilder), contextPane(tracks, view) {
     tracks.addListener(this);
     view.addListener(this);
 
@@ -89,7 +89,7 @@ void SelectionEditor::refreshProcessors(const ValueTree &singleProcessorToRefres
         assignProcessorToEditor(singleProcessorToRefresh);
     } else {
         for (int processorSlot = 0; processorSlot < processorEditors.size(); processorSlot++) {
-            const auto &processor = TracksState::getProcessorAtSlot(focusedTrack, processorSlot);
+            const auto &processor = Tracks::getProcessorAtSlot(focusedTrack, processorSlot);
             assignProcessorToEditor(processor, processorSlot, onlyUpdateFocusState);
         }
     }
@@ -97,14 +97,14 @@ void SelectionEditor::refreshProcessors(const ValueTree &singleProcessorToRefres
 }
 
 void SelectionEditor::assignProcessorToEditor(const ValueTree &processor, int processorSlot, bool onlyUpdateFocusState) const {
-    auto *processorEditor = processorEditors.getUnchecked(processorSlot != -1 ? processorSlot : int(processor[ProcessorStateIDs::processorSlot]));
+    auto *processorEditor = processorEditors.getUnchecked(processorSlot != -1 ? processorSlot : int(processor[ProcessorIDs::processorSlot]));
     if (processor.isValid()) {
         if (auto *processorWrapper = audioGraphBuilder.getProcessorWrapperForState(processor)) {
             if (!onlyUpdateFocusState) {
                 processorEditor->setProcessor(processorWrapper);
                 processorEditor->setVisible(true);
             }
-            processorEditor->setSelected(TracksState::isProcessorSelected(processor));
+            processorEditor->setSelected(Tracks::isProcessorSelected(processor));
             processorEditor->setFocused(tracks.isProcessorFocused(processor));
         }
     } else {
@@ -114,20 +114,20 @@ void SelectionEditor::assignProcessorToEditor(const ValueTree &processor, int pr
 }
 
 void SelectionEditor::valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int) {
-    if (TrackState::isType(child) || child.hasType(ProcessorStateIDs::PROCESSOR)) {
+    if (Track::isType(child) || child.hasType(ProcessorIDs::PROCESSOR)) {
         refreshProcessors();
     }
 }
 
 void SelectionEditor::valueTreePropertyChanged(ValueTree &tree, const Identifier &i) {
-    if (i == ViewStateIDs::focusedTrackIndex) {
+    if (i == ViewIDs::focusedTrackIndex) {
         addProcessorButton.setVisible(tracks.getFocusedTrack().isValid());
         refreshProcessors();
-    } else if (i == ProcessorStateIDs::processorInitialized) {
+    } else if (i == ProcessorIDs::processorInitialized) {
         refreshProcessors(); // TODO only the new processor
-    } else if (i == ViewStateIDs::focusedProcessorSlot) {
+    } else if (i == ViewIDs::focusedProcessorSlot) {
         refreshProcessors({}, true);
-    } else if (i == ViewStateIDs::numProcessorSlots || i == ViewStateIDs::numMasterProcessorSlots) {
+    } else if (i == ViewIDs::numProcessorSlots || i == ViewIDs::numMasterProcessorSlots) {
         int numProcessorSlots = jmax(view.getNumProcessorSlots(true), view.getNumProcessorSlots(false));
         while (processorEditors.size() < numProcessorSlots) {
             auto *processorEditor = new ProcessorEditor();
@@ -135,9 +135,9 @@ void SelectionEditor::valueTreePropertyChanged(ValueTree &tree, const Identifier
             processorEditors.add(processorEditor);
         }
         processorEditors.removeLast(processorEditors.size() - numProcessorSlots);
-    } else if (i == ProcessorStateIDs::processorSlot) {
+    } else if (i == ProcessorIDs::processorSlot) {
         refreshProcessors();
-    } else if (i == ViewStateIDs::focusedPane) {
+    } else if (i == ViewIDs::focusedPane) {
         unfocusOverlay.setVisible(view.isGridPaneFocused());
         unfocusOverlay.toFront(false);
     }

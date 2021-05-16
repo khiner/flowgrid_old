@@ -1,7 +1,7 @@
 #pragma once
 
 #include <juce_audio_processors/juce_audio_processors.h>
-#include "state/TracksState.h"
+#include "state/Tracks.h"
 #include "view/CustomColourIds.h"
 #include "ConnectorDragListener.h"
 
@@ -12,19 +12,19 @@ struct GraphEditorChannel : public Component, public SettableTooltipClient, priv
 
     const ValueTree &getState() { return state; }
 
-    ValueTree getTrack() const { return TracksState::getTrackForProcessor(getProcessor()); }
+    ValueTree getTrack() const { return Tracks::getTrackForProcessor(getProcessor()); }
 
     ValueTree getProcessor() const { return state.getParent().getParent(); }
 
-    int getChannelIndex() const { return state[ChannelStateIDs::channelIndex]; }
+    int getChannelIndex() const { return state[ChannelIDs::channelIndex]; }
 
-    bool isMasterTrack() const { return TracksState::isMasterTrack(getTrack()); }
+    bool isMasterTrack() const { return Tracks::isMasterTrack(getTrack()); }
 
-    bool isInput() const { return state.getParent().hasType(InputChannelsStateIDs::INPUT_CHANNELS); }
+    bool isInput() const { return state.getParent().hasType(InputChannelsIDs::INPUT_CHANNELS); }
 
     bool isMidi() const { return getChannelIndex() == AudioProcessorGraph::midiChannelIndex; }
 
-    bool allowDefaultConnections() const { return getProcessor()[ProcessorStateIDs::allowDefaultConnections]; }
+    bool allowDefaultConnections() const { return getProcessor()[ProcessorIDs::allowDefaultConnections]; }
 
     AudioProcessorGraph::NodeAndChannel getNodeAndChannel() const;
 

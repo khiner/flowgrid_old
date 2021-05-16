@@ -118,7 +118,7 @@ void StatefulAudioProcessorWrapper::Parameter::postUnnormalizedValue(float unnor
 }
 
 void StatefulAudioProcessorWrapper::Parameter::updateFromValueTree() {
-    const float unnormalizedValue = float(state.getProperty(ParamStateIDs::value, defaultValue));
+    const float unnormalizedValue = float(state.getProperty(ParamIDs::value, defaultValue));
     setUnnormalizedValue(unnormalizedValue);
 }
 
@@ -131,10 +131,10 @@ void StatefulAudioProcessorWrapper::Parameter::setNewState(const ValueTree &v, U
 }
 
 void StatefulAudioProcessorWrapper::Parameter::copyValueToValueTree() {
-    if (auto *valueProperty = state.getPropertyPointer(ParamStateIDs::value)) {
+    if (auto *valueProperty = state.getPropertyPointer(ParamIDs::value)) {
         if ((float) *valueProperty != value) {
             ScopedValueSetter<bool> svs(ignoreParameterChangedCallbacks, true);
-            state.setProperty(ParamStateIDs::value, value, undoManager);
+            state.setProperty(ParamIDs::value, value, undoManager);
             // TODO uncomment and make it work
 //                    if (!processorWrapper->isSelected()) {
             // If we're looking at something else, change the focus so we know what's changing.
@@ -142,7 +142,7 @@ void StatefulAudioProcessorWrapper::Parameter::copyValueToValueTree() {
 //                    }
         }
     } else {
-        state.setProperty(ParamStateIDs::value, value, nullptr);
+        state.setProperty(ParamIDs::value, value, nullptr);
     }
 }
 
@@ -263,7 +263,7 @@ LevelMeterSource *StatefulAudioProcessorWrapper::Parameter::getLevelMeterSource(
 void StatefulAudioProcessorWrapper::Parameter::valueTreePropertyChanged(ValueTree &tree, const Identifier &p) {
     if (ignoreParameterChangedCallbacks) return;
 
-    if (p == ParamStateIDs::value) {
+    if (p == ParamIDs::value) {
         updateFromValueTree();
     }
 }
@@ -328,7 +328,7 @@ void StatefulAudioProcessorWrapper::Parameter::parameterControlValueChanged(Para
 
 StatefulAudioProcessorWrapper::StatefulAudioProcessorWrapper(AudioPluginInstance *processor, AudioProcessorGraph::NodeID nodeId, ValueTree state, UndoManager &undoManager, AudioDeviceManager &deviceManager) :
         processor(processor), state(std::move(state)), undoManager(undoManager), deviceManager(deviceManager) {
-    this->state.setProperty(ProcessorStateIDs::nodeId, int(nodeId.uid), nullptr);
+    this->state.setProperty(ProcessorIDs::nodeId, int(nodeId.uid), nullptr);
     processor->enableAllBuses();
     if (auto *ioProcessor = dynamic_cast<AudioProcessorGraph::AudioGraphIOProcessor *> (processor)) {
         if (ioProcessor->isInput()) {
@@ -358,15 +358,15 @@ void StatefulAudioProcessorWrapper::updateValueTree() {
     audioProcessorChanged(processor, AudioProcessorListener::ChangeDetails().withParameterInfoChanged(true));
     // Also a little hacky, but maybe the best we can do.
     // If we're loading from state, bypass state needs to make its way to the processor graph to actually mute.
-    state.sendPropertyChangeMessage(ProcessorStateIDs::bypassed);
+    state.sendPropertyChangeMessage(ProcessorIDs::bypassed);
 }
 
 ValueTree StatefulAudioProcessorWrapper::getOrCreateChildValueTree(const String &paramID) {
-    ValueTree v(state.getChildWithProperty(ProcessorStateIDs::id, paramID));
+    ValueTree v(state.getChildWithProperty(ProcessorIDs::id, paramID));
 
     if (!v.isValid()) {
-        v = ValueTree(ParamStateIDs::PARAM);
-        v.setProperty(ParamStateIDs::id, paramID, nullptr);
+        v = ValueTree(ParamIDs::PARAM);
+        v.setProperty(ParamIDs::id, paramID, nullptr);
         state.appendChild(v, nullptr);
     }
 
@@ -399,14 +399,14 @@ void StatefulAudioProcessorWrapper::updateStateForProcessor(AudioProcessor *proc
     if (processor->producesMidi())
         newOutputs.add({processor, deviceManager, AudioProcessorGraph::midiChannelIndex, false});
 
-    ValueTree inputChannels = state.getChildWithName(InputChannelsStateIDs::INPUT_CHANNELS);
-    ValueTree outputChannels = state.getChildWithName(OutputChannelsStateIDs::OUTPUT_CHANNELS);
+    ValueTree inputChannels = state.getChildWithName(InputChannelsIDs::INPUT_CHANNELS);
+    ValueTree outputChannels = state.getChildWithName(OutputChannelsIDs::OUTPUT_CHANNELS);
     if (!inputChannels.isValid()) {
-        inputChannels = ValueTree(InputChannelsStateIDs::INPUT_CHANNELS);
+        inputChannels = ValueTree(InputChannelsIDs::INPUT_CHANNELS);
         state.appendChild(inputChannels, nullptr);
     }
     if (!outputChannels.isValid()) {
-        outputChannels = ValueTree(OutputChannelsStateIDs::OUTPUT_CHANNELS);
+        outputChannels = ValueTree(OutputChannelsIDs::OUTPUT_CHANNELS);
         state.appendChild(outputChannels, nullptr);
     }
 
@@ -421,9 +421,9 @@ void StatefulAudioProcessorWrapper::updateStateForProcessor(AudioProcessor *proc
     }
 
     if (processor->acceptsMidi())
-        state.setProperty(ProcessorStateIDs::acceptsMidi, true, nullptr);
+        state.setProperty(ProcessorIDs::acceptsMidi, true, nullptr);
     if (processor->producesMidi())
-        state.setProperty(ProcessorStateIDs::producesMidi, true, nullptr);
+        state.setProperty(ProcessorIDs::producesMidi, true, nullptr);
 
     updateChannels(oldInputs, newInputs, inputChannels);
     updateChannels(oldOutputs, newOutputs, outputChannels);
@@ -433,7 +433,7 @@ void StatefulAudioProcessorWrapper::updateChannels(Array<Channel> &oldChannels, 
     for (int i = 0; i < oldChannels.size(); i++) {
         const auto &oldChannel = oldChannels.getUnchecked(i);
         if (!newChannels.contains(oldChannel)) {
-            channelsState.removeChild(channelsState.getChildWithProperty(ChannelStateIDs::name, oldChannel.name), &undoManager);
+            channelsState.removeChild(channelsState.getChildWithProperty(ChannelIDs::name, oldChannel.name), &undoManager);
         }
     }
     for (int i = 0; i < newChannels.size(); i++) {
@@ -477,7 +477,7 @@ StatefulAudioProcessorWrapper::Channel::Channel(AudioProcessor *processor, Audio
 }
 
 StatefulAudioProcessorWrapper::Channel::Channel(const ValueTree &channelState) :
-        channelIndex(channelState[ChannelStateIDs::channelIndex]),
-        name(channelState[ChannelStateIDs::name]),
-        abbreviatedName(channelState[ChannelStateIDs::abbreviatedName]) {
+        channelIndex(channelState[ChannelIDs::channelIndex]),
+        name(channelState[ChannelIDs::name]),
+        abbreviatedName(channelState[ChannelIDs::abbreviatedName]) {
 }

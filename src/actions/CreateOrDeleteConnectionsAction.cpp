@@ -1,10 +1,10 @@
 #include "CreateOrDeleteConnectionsAction.h"
 
-CreateOrDeleteConnectionsAction::CreateOrDeleteConnectionsAction(ConnectionsState &connections)
+CreateOrDeleteConnectionsAction::CreateOrDeleteConnectionsAction(Connections &connections)
         : connections(connections) {
 }
 
-CreateOrDeleteConnectionsAction::CreateOrDeleteConnectionsAction(CreateOrDeleteConnectionsAction *coalesceLeft, CreateOrDeleteConnectionsAction *coalesceRight, ConnectionsState &connections)
+CreateOrDeleteConnectionsAction::CreateOrDeleteConnectionsAction(CreateOrDeleteConnectionsAction *coalesceLeft, CreateOrDeleteConnectionsAction *coalesceRight, Connections &connections)
         : connections(connections) {
     if (coalesceLeft != nullptr)
         this->coalesceWith(*coalesceLeft);

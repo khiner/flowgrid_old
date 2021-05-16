@@ -1,11 +1,11 @@
 #pragma once
 
-#include "state/ConnectionsState.h"
+#include "state/Connections.h"
 
 struct CreateOrDeleteConnectionsAction : public UndoableAction {
-    explicit CreateOrDeleteConnectionsAction(ConnectionsState &connections);
+    explicit CreateOrDeleteConnectionsAction(Connections &connections);
 
-    CreateOrDeleteConnectionsAction(CreateOrDeleteConnectionsAction *coalesceLeft, CreateOrDeleteConnectionsAction *coalesceRight, ConnectionsState &connections);
+    CreateOrDeleteConnectionsAction(CreateOrDeleteConnectionsAction *coalesceLeft, CreateOrDeleteConnectionsAction *coalesceRight, Connections &connections);
 
     bool perform() override;
 
@@ -24,5 +24,5 @@ struct CreateOrDeleteConnectionsAction : public UndoableAction {
     Array<ValueTree> connectionsToCreate;
     Array<ValueTree> connectionsToDelete;
 protected:
-    ConnectionsState &connections;
+    Connections &connections;
 };

@@ -1,10 +1,10 @@
 #include "UpdateAllDefaultConnectionsAction.h"
 
-UpdateAllDefaultConnectionsAction::UpdateAllDefaultConnectionsAction(bool makeInvalidDefaultsIntoCustom, bool resetDefaultExternalInputConnections, TracksState &tracks, ConnectionsState &connections, InputState &input,
-                                                                     OutputState &output, ProcessorGraph &processorGraph, ValueTree trackToTreatAsFocused)
+UpdateAllDefaultConnectionsAction::UpdateAllDefaultConnectionsAction(bool makeInvalidDefaultsIntoCustom, bool resetDefaultExternalInputConnections, Tracks &tracks, Connections &connections, Input &input,
+                                                                     Output &output, ProcessorGraph &processorGraph, ValueTree trackToTreatAsFocused)
         : CreateOrDeleteConnectionsAction(connections) {
     for (const auto &track : tracks.getState()) {
-        for (const auto &processor : TracksState::getAllProcessorsForTrack(track))
+        for (const auto &processor : Tracks::getAllProcessorsForTrack(track))
             coalesceWith(UpdateProcessorDefaultConnectionsAction(processor, makeInvalidDefaultsIntoCustom, connections, output, processorGraph));
     }
 

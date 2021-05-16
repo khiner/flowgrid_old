@@ -1,6 +1,6 @@
 #include "SelectTrackAction.h"
 
-SelectTrackAction::SelectTrackAction(const ValueTree &track, bool selected, bool deselectOthers, TracksState &tracks, ConnectionsState &connections, ViewState &view, InputState &input,
+SelectTrackAction::SelectTrackAction(const ValueTree &track, bool selected, bool deselectOthers, Tracks &tracks, Connections &connections, View &view, Input &input,
                                      ProcessorGraph &processorGraph)
         : SelectAction(tracks, connections, view, input, processorGraph) {
     if (!track.isValid()) return; // no-op
@@ -11,8 +11,8 @@ SelectTrackAction::SelectTrackAction(const ValueTree &track, bool selected, bool
     if (selected) {
         newSelectedSlotsMasks.setUnchecked(trackIndex, tracks.createFullSelectionBitmask(track));
 
-        const ValueTree &firstProcessor = TracksState::getProcessorLaneForTrack(track).getChild(0);
-        int slot = firstProcessor.isValid() ? int(firstProcessor[ProcessorStateIDs::processorSlot]) : 0;
+        const ValueTree &firstProcessor = Tracks::getProcessorLaneForTrack(track).getChild(0);
+        int slot = firstProcessor.isValid() ? int(firstProcessor[ProcessorIDs::processorSlot]) : 0;
         setNewFocusedSlot({trackIndex, slot});
     } else {
         newSelectedSlotsMasks.setUnchecked(trackIndex, BigInteger().toString(2));

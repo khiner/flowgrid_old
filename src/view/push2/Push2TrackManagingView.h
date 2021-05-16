@@ -6,7 +6,7 @@
 
 class Push2TrackManagingView : public Push2ComponentBase, protected ValueTree::Listener {
 public:
-    explicit Push2TrackManagingView(ViewState &view, TracksState &tracks, Project &project, Push2MidiCommunicator &push2);
+    explicit Push2TrackManagingView(View &view, Tracks &tracks, Project &project, Push2MidiCommunicator &push2);
 
     ~Push2TrackManagingView() override;
 

@@ -3,7 +3,7 @@
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_audio_devices/juce_audio_devices.h>
 
-#include "state/TracksState.h"
+#include "state/Tracks.h"
 #include "view/parameter_control/ParameterControl.h"
 #include "view/parameter_control/level_meter/LevelMeterSource.h"
 #include "view/processor_editor/SwitchParameterComponent.h"
@@ -185,10 +185,10 @@ private:
         Channel(const ValueTree &channelState);
 
         ValueTree toState() const {
-            ValueTree state(ChannelStateIDs::CHANNEL);
-            state.setProperty(ChannelStateIDs::channelIndex, channelIndex, nullptr);
-            state.setProperty(ChannelStateIDs::name, name, nullptr);
-            state.setProperty(ChannelStateIDs::abbreviatedName, abbreviatedName, nullptr);
+            ValueTree state(ChannelIDs::CHANNEL);
+            state.setProperty(ChannelIDs::channelIndex, channelIndex, nullptr);
+            state.setProperty(ChannelIDs::name, name, nullptr);
+            state.setProperty(ChannelIDs::abbreviatedName, abbreviatedName, nullptr);
             return state;
         }
 

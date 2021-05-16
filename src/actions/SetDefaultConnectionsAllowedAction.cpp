@@ -2,7 +2,7 @@
 
 #include "DisconnectProcessorAction.h"
 
-SetDefaultConnectionsAllowedAction::SetDefaultConnectionsAllowedAction(const ValueTree &processor, bool defaultConnectionsAllowed, ConnectionsState &connections)
+SetDefaultConnectionsAllowedAction::SetDefaultConnectionsAllowedAction(const ValueTree &processor, bool defaultConnectionsAllowed, Connections &connections)
         : CreateOrDeleteConnectionsAction(connections), processor(processor), defaultConnectionsAllowed(defaultConnectionsAllowed) {
     if (!defaultConnectionsAllowed) {
         coalesceWith(DisconnectProcessorAction(connections, processor, all, true, false, true, true, AudioProcessorGraph::NodeID()));
@@ -10,13 +10,13 @@ SetDefaultConnectionsAllowedAction::SetDefaultConnectionsAllowedAction(const Val
 }
 
 bool SetDefaultConnectionsAllowedAction::perform() {
-    processor.setProperty(ProcessorStateIDs::allowDefaultConnections, defaultConnectionsAllowed, nullptr);
+    processor.setProperty(ProcessorIDs::allowDefaultConnections, defaultConnectionsAllowed, nullptr);
     CreateOrDeleteConnectionsAction::perform();
     return true;
 }
 
 bool SetDefaultConnectionsAllowedAction::undo() {
     CreateOrDeleteConnectionsAction::perform();
-    processor.setProperty(ProcessorStateIDs::allowDefaultConnections, defaultConnectionsAllowed, nullptr);
+    processor.setProperty(ProcessorIDs::allowDefaultConnections, defaultConnectionsAllowed, nullptr);
     return true;
 }

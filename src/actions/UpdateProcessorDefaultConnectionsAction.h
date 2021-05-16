@@ -1,10 +1,10 @@
 #pragma once
 
-#include "state/OutputState.h"
+#include "state/Output.h"
 #include "CreateOrDeleteConnectionsAction.h"
 #include "ProcessorGraph.h"
 
 struct UpdateProcessorDefaultConnectionsAction : public CreateOrDeleteConnectionsAction {
     UpdateProcessorDefaultConnectionsAction(const ValueTree &processor, bool makeInvalidDefaultsIntoCustom,
-                                            ConnectionsState &connections, OutputState &output, ProcessorGraph &processorGraph);
+                                            Connections &connections, Output &output, ProcessorGraph &processorGraph);
 };

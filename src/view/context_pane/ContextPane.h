@@ -1,11 +1,11 @@
 #pragma once
 
-#include "state/TracksState.h"
-#include "state/ViewState.h"
+#include "state/Tracks.h"
+#include "state/View.h"
 
 class ContextPane : public Component, private ValueTree::Listener {
 public:
-    explicit ContextPane(TracksState &tracks, ViewState &view);
+    explicit ContextPane(Tracks &tracks, View &view);
 
     ~ContextPane() override;
 
@@ -16,8 +16,8 @@ public:
 private:
     static constexpr int cellWidth = 20, cellHeight = 20;
 
-    TracksState &tracks;
-    ViewState &view;
+    Tracks &tracks;
+    View &view;
     Path cellPath, trackBorderPath, masterTrackBorderPath;
 
     Colour getFillColour(const Colour &trackColour, const ValueTree &track, const ValueTree &processor, bool inView, bool slotSelected, bool slotFocused);

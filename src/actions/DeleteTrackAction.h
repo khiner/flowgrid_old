@@ -1,11 +1,11 @@
 #pragma once
 
-#include "state/ConnectionsState.h"
-#include "state/TracksState.h"
+#include "state/Connections.h"
+#include "state/Tracks.h"
 #include "actions/DeleteProcessorAction.h"
 
 struct DeleteTrackAction : public UndoableAction {
-    DeleteTrackAction(const ValueTree &trackToDelete, TracksState &tracks, ConnectionsState &connections, ProcessorGraph &processorGraph);
+    DeleteTrackAction(const ValueTree &trackToDelete, Tracks &tracks, Connections &connections, ProcessorGraph &processorGraph);
 
     bool perform() override;
 
@@ -16,6 +16,6 @@ struct DeleteTrackAction : public UndoableAction {
 private:
     ValueTree trackToDelete;
     int trackIndex;
-    TracksState &tracks;
+    Tracks &tracks;
     OwnedArray<DeleteProcessorAction> deleteProcessorActions;
 };

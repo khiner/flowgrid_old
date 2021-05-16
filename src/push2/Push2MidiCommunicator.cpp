@@ -51,7 +51,7 @@ static bool isPadNoteNumber(int noteNumber) {
     return noteNumber >= P2::lowestPadNoteNumber && noteNumber <= P2::highestPadNoteNumber;
 }
 
-Push2MidiCommunicator::Push2MidiCommunicator(ViewState &view, Push2Colours &push2Colours) : view(view), push2Colours(push2Colours) {}
+Push2MidiCommunicator::Push2MidiCommunicator(View &view, Push2Colours &push2Colours) : view(view), push2Colours(push2Colours) {}
 
 void Push2MidiCommunicator::initialize() {
     MidiCommunicator::initialize();

@@ -7,7 +7,7 @@
 
 class GraphEditorProcessorLane : public Component, ValueTreeObjectList<BaseGraphEditorProcessor>, GraphEditorProcessorContainer {
 public:
-    explicit GraphEditorProcessorLane(const ValueTree &state, ViewState &view, TracksState &tracks, ProcessorGraph &processorGraph, ConnectorDragListener &connectorDragListener);
+    explicit GraphEditorProcessorLane(const ValueTree &state, View &view, Tracks &tracks, ProcessorGraph &processorGraph, ConnectorDragListener &connectorDragListener);
 
     ~GraphEditorProcessorLane() override;
 
@@ -15,7 +15,7 @@ public:
 
     ValueTree getTrack() const { return parent.getParent().getParent(); }
 
-    bool isMasterTrack() const { return TracksState::isMasterTrack(getTrack()); }
+    bool isMasterTrack() const { return Tracks::isMasterTrack(getTrack()); }
 
     int getNumSlots() const { return tracks.getNumSlotsForTrack(getTrack()); }
 
@@ -26,7 +26,7 @@ public:
     void updateProcessorSlotColours();
 
     bool isSuitableType(const ValueTree &v) const override {
-        return v.hasType(ProcessorStateIDs::PROCESSOR);
+        return v.hasType(ProcessorIDs::PROCESSOR);
     }
 
     BaseGraphEditorProcessor *createEditorForProcessor(const ValueTree &processor);
@@ -64,8 +64,8 @@ public:
 private:
     ValueTree state;
 
-    ViewState &view;
-    TracksState &tracks;
+    View &view;
+    Tracks &tracks;
 
     ProcessorGraph &processorGraph;
     ConnectorDragListener &connectorDragListener;

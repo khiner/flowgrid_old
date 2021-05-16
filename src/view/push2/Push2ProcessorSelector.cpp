@@ -133,7 +133,7 @@ void Push2ProcessorSelector::ProcessorSelectorRow::updateLabels() const {
     }
 }
 
-Push2ProcessorSelector::Push2ProcessorSelector(ViewState &view, TracksState &tracks, Project &project, Push2MidiCommunicator &push2MidiCommunicator)
+Push2ProcessorSelector::Push2ProcessorSelector(View &view, Tracks &tracks, Project &project, Push2MidiCommunicator &push2MidiCommunicator)
         : Push2ComponentBase(view, tracks, push2MidiCommunicator), project(project) {
     topProcessorSelector = std::make_unique<ProcessorSelectorRow>(push2, true);
     bottomProcessorSelector = std::make_unique<ProcessorSelectorRow>(push2, false);

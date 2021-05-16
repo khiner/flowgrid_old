@@ -5,7 +5,7 @@
 
 class GraphEditorConnectors : public Component, public ValueTreeObjectList<GraphEditorConnector> {
 public:
-    explicit GraphEditorConnectors(ConnectionsState &connections, ConnectorDragListener &connectorDragListener, GraphEditorProcessorContainer &graphEditorProcessorContainer, ProcessorGraph &graph)
+    explicit GraphEditorConnectors(Connections &connections, ConnectorDragListener &connectorDragListener, GraphEditorProcessorContainer &graphEditorProcessorContainer, ProcessorGraph &graph)
             : ValueTreeObjectList<GraphEditorConnector>(connections.getState()), connectorDragListener(connectorDragListener), graphEditorProcessorContainer(graphEditorProcessorContainer) {
         rebuildObjects();
         setInterceptsMouseClicks(false, true);
@@ -18,7 +18,7 @@ public:
     void resized() override {}
 
     bool isSuitableType(const ValueTree &v) const override {
-        return ConnectionState::isType(v);
+        return Connection::isType(v);
     }
 
     GraphEditorConnector *createNewObject(const ValueTree &v) override {

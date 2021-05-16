@@ -6,7 +6,7 @@
 class GraphEditorProcessorLanes : public Component, public ValueTreeObjectList<GraphEditorProcessorLane>,
                                   public GraphEditorProcessorContainer {
 public:
-    explicit GraphEditorProcessorLanes(ValueTree state, ViewState &view, TracksState &tracks, ProcessorGraph &processorGraph, ConnectorDragListener &connectorDragListener)
+    explicit GraphEditorProcessorLanes(ValueTree state, View &view, Tracks &tracks, ProcessorGraph &processorGraph, ConnectorDragListener &connectorDragListener)
             : ValueTreeObjectList<GraphEditorProcessorLane>(std::move(state)),
               view(view), tracks(tracks), processorGraph(processorGraph), connectorDragListener(connectorDragListener) {
         rebuildObjects();
@@ -37,7 +37,7 @@ public:
     }
 
     bool isSuitableType(const ValueTree &v) const override {
-        return v.hasType(ProcessorLaneStateIDs::PROCESSOR_LANE);
+        return v.hasType(ProcessorLaneIDs::PROCESSOR_LANE);
     }
 
     GraphEditorProcessorLane *createNewObject(const ValueTree &v) override {
@@ -57,8 +57,8 @@ public:
     void objectOrderChanged() override {}
 
 private:
-    ViewState &view;
-    TracksState &tracks;
+    View &view;
+    Tracks &tracks;
     ProcessorGraph &processorGraph;
     ConnectorDragListener &connectorDragListener;
 };

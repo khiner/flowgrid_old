@@ -5,8 +5,8 @@
 
 struct MoveSelectedItemsAction : UndoableAction {
     MoveSelectedItemsAction(juce::Point<int> fromTrackAndSlot, juce::Point<int> toTrackAndSlot, bool makeInvalidDefaultsIntoCustom,
-                            TracksState &tracks, ConnectionsState &connections, ViewState &view,
-                            InputState &input, OutputState &output, ProcessorGraph &processorGraph);
+                            Tracks &tracks, Connections &connections, View &view,
+                            Input &input, Output &output, ProcessorGraph &processorGraph);
 
     bool perform() override;
 
@@ -17,19 +17,19 @@ struct MoveSelectedItemsAction : UndoableAction {
 private:
     struct MoveSelectionsAction : public SelectAction {
         MoveSelectionsAction(juce::Point<int> trackAndSlotDelta,
-                             TracksState &tracks, ConnectionsState &connections, ViewState &view,
-                             InputState &input, ProcessorGraph &processorGraph);
+                             Tracks &tracks, Connections &connections, View &view,
+                             Input &input, ProcessorGraph &processorGraph);
     };
 
     struct InsertTrackAction : UndoableAction {
-        InsertTrackAction(int fromTrackIndex, int toTrackIndex, TracksState &tracks);
+        InsertTrackAction(int fromTrackIndex, int toTrackIndex, Tracks &tracks);
 
         bool perform() override;
 
         bool undo() override;
 
         int fromTrackIndex, toTrackIndex;
-        TracksState &tracks;
+        Tracks &tracks;
     };
 
     juce::Point<int> trackAndSlotDelta;
@@ -41,5 +41,5 @@ private:
     // `createUpdateConnectionsAction`, which should be called immediately after this.
     // This avoids a redundant `undo` on all insert actions here, as well as the subsequent
     // `perform` that would be needed in `createUpdateConnectionsAction` to find the new default connections.
-    OwnedArray<UndoableAction> createInsertActions(TracksState &tracks, ViewState &view) const;
+    OwnedArray<UndoableAction> createInsertActions(Tracks &tracks, View &view) const;
 };

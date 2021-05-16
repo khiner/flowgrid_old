@@ -1,7 +1,7 @@
 #include "Push2TrackManagingView.h"
 
 
-Push2TrackManagingView::Push2TrackManagingView(ViewState &view, TracksState &tracks, Project &project, Push2MidiCommunicator &push2)
+Push2TrackManagingView::Push2TrackManagingView(View &view, Tracks &tracks, Project &project, Push2MidiCommunicator &push2)
         : Push2ComponentBase(view, tracks, push2), project(project) {
     tracks.addListener(this);
     view.addListener(this);
@@ -26,7 +26,7 @@ void Push2TrackManagingView::resized() {
 
 void Push2TrackManagingView::belowScreenButtonPressed(int buttonIndex) {
     auto track = tracks.getTrackWithViewIndex(buttonIndex);
-    if (track.isValid() && !TracksState::isMasterTrack(track))
+    if (track.isValid() && !Tracks::isMasterTrack(track))
         project.setTrackSelected(track, true);
 }
 
@@ -43,46 +43,46 @@ void Push2TrackManagingView::updateEnabledPush2Buttons() {
         const auto &track = tracks.getTrackWithViewIndex(i);
         // TODO left/right buttons
         label->setVisible(true);
-        label->setMainColour(TracksState::getTrackColour(track));
-        label->setText(track[TrackStateIDs::name], dontSendNotification);
+        label->setMainColour(Tracks::getTrackColour(track));
+        label->setText(track[TrackIDs::name], dontSendNotification);
         label->setSelected(track == focusedTrack);
     }
 }
 
 void Push2TrackManagingView::valueTreeChildAdded(ValueTree &parent, ValueTree &child) {
-    if (TrackState::isType(child))
+    if (Track::isType(child))
         trackAdded(child);
 }
 
 void Push2TrackManagingView::valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int index) {
-    if (TrackState::isType(child))
+    if (Track::isType(child))
         trackRemoved(child);
 }
 
 void Push2TrackManagingView::valueTreePropertyChanged(ValueTree &tree, const Identifier &i) {
-    if (TrackState::isType(tree)) {
-        if (i == TrackStateIDs::name || i == TrackStateIDs::colour) {
+    if (Track::isType(tree)) {
+        if (i == TrackIDs::name || i == TrackIDs::colour) {
             int trackIndex = tracks.getViewIndexForTrack(tree);
             if (trackIndex < 0 || trackIndex >= trackLabels.size())
                 return;
-            if (i == TrackStateIDs::name && !TracksState::isMasterTrack(tree))
-                trackLabels.getUnchecked(trackIndex)->setText(tree[TrackStateIDs::name], dontSendNotification);
-        } else if (i == TrackStateIDs::selected && tree[TrackStateIDs::selected]) {
+            if (i == TrackIDs::name && !Tracks::isMasterTrack(tree))
+                trackLabels.getUnchecked(trackIndex)->setText(tree[TrackIDs::name], dontSendNotification);
+        } else if (i == TrackIDs::selected && tree[TrackIDs::selected]) {
             trackSelected(tree);
         }
-    } else if (i == ViewStateIDs::gridViewTrackOffset) {
+    } else if (i == ViewIDs::gridViewTrackOffset) {
         updateEnabledPush2Buttons();
     }
 }
 
 void Push2TrackManagingView::valueTreeChildOrderChanged(ValueTree &tree, int, int) {
-    if (TracksState::isType(tree))
+    if (Tracks::isType(tree))
         updateEnabledPush2Buttons();
 }
 
 void Push2TrackManagingView::trackColourChanged(const String &trackUuid, const Colour &colour) {
     auto track = tracks.findTrackWithUuid(trackUuid);
-    if (!TracksState::isMasterTrack(track))
+    if (!Tracks::isMasterTrack(track))
         if (auto *trackLabel = trackLabels[tracks.getViewIndexForTrack(track)])
             trackLabel->setMainColour(colour);
 }

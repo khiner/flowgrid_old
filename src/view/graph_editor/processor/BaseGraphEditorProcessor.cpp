@@ -1,12 +1,12 @@
 #include "BaseGraphEditorProcessor.h"
 
-BaseGraphEditorProcessor::BaseGraphEditorProcessor(const ValueTree &state, ViewState &view, TracksState &tracks,
+BaseGraphEditorProcessor::BaseGraphEditorProcessor(const ValueTree &state, View &view, Tracks &tracks,
                                                    ProcessorGraph &processorGraph, ConnectorDragListener &connectorDragListener)
         : state(state), view(view), tracks(tracks), processorGraph(processorGraph), connectorDragListener(connectorDragListener) {
     this->state.addListener(this);
 
     for (auto child : state) {
-        if (InputChannelsState::isType(child) || OutputChannelsState::isType(child)) {
+        if (InputChannels::isType(child) || OutputChannels::isType(child)) {
             for (auto channel : child) {
                 // TODO shouldn't have to do this kind of thing
                 valueTreeChildAdded(child, channel);
@@ -21,7 +21,7 @@ BaseGraphEditorProcessor::~BaseGraphEditorProcessor() {
 
 void BaseGraphEditorProcessor::paint(Graphics &g) {
     auto boxColour = findColour(TextEditor::backgroundColourId);
-    if (state[ProcessorStateIDs::bypassed])
+    if (state[ProcessorIDs::bypassed])
         boxColour = boxColour.brighter();
     else if (isSelected())
         boxColour = boxColour.brighter(0.02f);
@@ -48,7 +48,7 @@ void BaseGraphEditorProcessor::resized() {
 }
 
 juce::Point<float> BaseGraphEditorProcessor::getConnectorDirectionVector(bool isInput) const {
-    bool isLeftToRight = TracksState::isProcessorLeftToRightFlowing(getState());
+    bool isLeftToRight = Tracks::isProcessorLeftToRightFlowing(getState());
     if (isInput) {
         if (isLeftToRight) return {-1, 0};
         return {0, -1};
@@ -59,7 +59,7 @@ juce::Point<float> BaseGraphEditorProcessor::getConnectorDirectionVector(bool is
 
 Rectangle<int> BaseGraphEditorProcessor::getBoxBounds() const {
     auto r = getLocalBounds().reduced(1);
-    bool isLeftToRight = TracksState::isProcessorLeftToRightFlowing(getState());
+    bool isLeftToRight = Tracks::isProcessorLeftToRightFlowing(getState());
     if (isLeftToRight) {
         if (getNumInputChannels() > 0)
             r.setLeft(channelSize);
@@ -86,7 +86,7 @@ void BaseGraphEditorProcessor::layoutChannel(AudioProcessor *processor, GraphEdi
 
     int x = boxBounds.getX() + static_cast<int>(indexPosition * channelSize);
     int y = boxBounds.getY() + static_cast<int>(indexPosition * channelSize);
-    if (TracksState::isProcessorLeftToRightFlowing(getState()))
+    if (Tracks::isProcessorLeftToRightFlowing(getState()))
         channel->setSize(static_cast<int>(boxBounds.getWidth() / 2), channelSize);
     else
         channel->setSize(channelSize, static_cast<int>(boxBounds.getHeight() / 2));
@@ -103,7 +103,7 @@ void BaseGraphEditorProcessor::layoutChannel(AudioProcessor *processor, GraphEdi
 }
 
 void BaseGraphEditorProcessor::valueTreeChildAdded(ValueTree &parent, ValueTree &child) {
-    if (child.hasType(ChannelStateIDs::CHANNEL)) {
+    if (child.hasType(ChannelIDs::CHANNEL)) {
         auto *channel = new GraphEditorChannel(child, connectorDragListener, isIoProcessor());
         addAndMakeVisible(channel);
         channels.add(channel);
@@ -112,7 +112,7 @@ void BaseGraphEditorProcessor::valueTreeChildAdded(ValueTree &parent, ValueTree 
 }
 
 void BaseGraphEditorProcessor::valueTreeChildRemoved(ValueTree &parent, ValueTree &child, int) {
-    if (child.hasType(ChannelStateIDs::CHANNEL)) {
+    if (child.hasType(ChannelIDs::CHANNEL)) {
         auto *channelToRemove = findChannelWithState(child);
         channels.removeObject(channelToRemove);
         resized();
@@ -122,6 +122,6 @@ void BaseGraphEditorProcessor::valueTreeChildRemoved(ValueTree &parent, ValueTre
 void BaseGraphEditorProcessor::valueTreePropertyChanged(ValueTree &v, const Identifier &i) {
     if (v != state) return;
 
-    if (i == ProcessorStateIDs::processorInitialized)
+    if (i == ProcessorIDs::processorInitialized)
         resized();
 }

@@ -1,18 +1,18 @@
 #pragma once
 
-#include "state/TracksState.h"
+#include "state/Tracks.h"
 #include "InsertProcessorAction.h"
 #include "ProcessorGraph.h"
 
 struct CreateProcessorAction : public UndoableAction {
     CreateProcessorAction(ValueTree processorToCreate, int trackIndex, int slot,
-                          TracksState &tracks, ViewState &view, ProcessorGraph &processorGraph);
+                          Tracks &tracks, View &view, ProcessorGraph &processorGraph);
 
     CreateProcessorAction(const PluginDescription &description, int trackIndex, int slot,
-                          TracksState &tracks, ViewState &view, ProcessorGraph &processorGraph);
+                          Tracks &tracks, View &view, ProcessorGraph &processorGraph);
 
     CreateProcessorAction(const PluginDescription &description, int trackIndex,
-                          TracksState &tracks, ViewState &view, ProcessorGraph &processorGraph);
+                          Tracks &tracks, View &view, ProcessorGraph &processorGraph);
 
     bool perform() override;
 

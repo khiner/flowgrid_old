@@ -1,12 +1,12 @@
 #pragma once
 
-#include "state/ConnectionsState.h"
-#include "state/TracksState.h"
+#include "state/Connections.h"
+#include "state/Tracks.h"
 #include "DisconnectProcessorAction.h"
 #include "ProcessorGraph.h"
 
 struct DeleteProcessorAction : public UndoableAction {
-    DeleteProcessorAction(const ValueTree &processorToDelete, TracksState &tracks, ConnectionsState &connections, ProcessorGraph &processorGraph);
+    DeleteProcessorAction(const ValueTree &processorToDelete, Tracks &tracks, Connections &connections, ProcessorGraph &processorGraph);
 
     bool perform() override;
 
@@ -19,7 +19,7 @@ struct DeleteProcessorAction : public UndoableAction {
     int getSizeInUnits() override { return (int) sizeof(*this); }
 
 private:
-    TracksState &tracks;
+    Tracks &tracks;
     int trackIndex;
     ValueTree processorToDelete;
     int processorIndex, pluginWindowType;

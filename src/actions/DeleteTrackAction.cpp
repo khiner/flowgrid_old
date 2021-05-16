@@ -1,9 +1,9 @@
 #include "DeleteTrackAction.h"
 
-DeleteTrackAction::DeleteTrackAction(const ValueTree &trackToDelete, TracksState &tracks, ConnectionsState &connections, ProcessorGraph &processorGraph)
+DeleteTrackAction::DeleteTrackAction(const ValueTree &trackToDelete, Tracks &tracks, Connections &connections, ProcessorGraph &processorGraph)
         : trackToDelete(trackToDelete), trackIndex(trackToDelete.getParent().indexOf(trackToDelete)),
           tracks(tracks) {
-    for (const auto &processor : TracksState::getAllProcessorsForTrack(trackToDelete)) {
+    for (const auto &processor : Tracks::getAllProcessorsForTrack(trackToDelete)) {
         deleteProcessorActions.add(new DeleteProcessorAction(processor, tracks, connections, processorGraph));
         deleteProcessorActions.getLast()->performTemporary();
     }

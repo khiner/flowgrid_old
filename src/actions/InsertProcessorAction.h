@@ -2,8 +2,8 @@
 
 #include <juce_data_structures/juce_data_structures.h>
 
-#include "state/TracksState.h"
-#include "state/ViewState.h"
+#include "state/Tracks.h"
+#include "state/View.h"
 
 using namespace juce;
 
@@ -12,7 +12,7 @@ using namespace juce;
 // Doesn't take care of any select actions! (Caller is responsible for that.)
 struct InsertProcessorAction : UndoableAction {
     // slot of -1 used for track-level processors (track IO processors that aren't in a lane).
-    InsertProcessorAction(const ValueTree &processor, int toTrackIndex, int toSlot, TracksState &tracks, ViewState &view);
+    InsertProcessorAction(const ValueTree &processor, int toTrackIndex, int toSlot, Tracks &tracks, View &view);
 
     bool perform() override;
 
@@ -23,7 +23,7 @@ struct InsertProcessorAction : UndoableAction {
 private:
     struct SetProcessorSlotAction : public UndoableAction {
         SetProcessorSlotAction(int trackIndex, const ValueTree &processor, int newSlot,
-                               TracksState &tracks, ViewState &view);
+                               Tracks &tracks, View &view);
 
         bool perform() override;
 
@@ -35,7 +35,7 @@ private:
         std::unique_ptr<SetProcessorSlotAction> pushConflictingProcessorAction;
 
         struct AddProcessorRowAction : public UndoableAction {
-            AddProcessorRowAction(int trackIndex, TracksState &tracks, ViewState &view);
+            AddProcessorRowAction(int trackIndex, Tracks &tracks, View &view);
 
             bool perform() override;
 
@@ -43,15 +43,15 @@ private:
 
         private:
             int trackIndex;
-            TracksState &tracks;
-            ViewState &view;
+            Tracks &tracks;
+            View &view;
         };
 
         OwnedArray<AddProcessorRowAction> addProcessorRowActions;
     };
 
     struct AddOrMoveProcessorAction : public UndoableAction {
-        AddOrMoveProcessorAction(const ValueTree &processor, int newTrackIndex, int newSlot, TracksState &tracks, ViewState &view);
+        AddOrMoveProcessorAction(const ValueTree &processor, int newTrackIndex, int newSlot, Tracks &tracks, View &view);
 
         bool perform() override;
 
@@ -63,7 +63,7 @@ private:
         int oldSlot, newSlot;
         int oldIndex, newIndex;
         std::unique_ptr<SetProcessorSlotAction> setProcessorSlotAction;
-        TracksState &tracks;
+        Tracks &tracks;
     };
 
     AddOrMoveProcessorAction addOrMoveProcessorAction;

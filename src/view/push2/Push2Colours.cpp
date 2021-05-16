@@ -1,6 +1,6 @@
 #include "Push2Colours.h"
 
-Push2Colours::Push2Colours(TracksState &tracks) : tracks(tracks) {
+Push2Colours::Push2Colours(Tracks &tracks) : tracks(tracks) {
     this->tracks.addListener(this);
     for (uint8 colourIndex = 1; colourIndex < CHAR_MAX - 1; colourIndex++) {
         availableColourIndexes.add(colourIndex);
@@ -33,9 +33,9 @@ void Push2Colours::setColour(uint8 colourIndex, const Colour &colour) {
 }
 
 void Push2Colours::valueTreeChildAdded(ValueTree &parent, ValueTree &child) {
-    if (TrackState::isType(child)) {
-        const String &uuid = child[TrackStateIDs::uuid];
-        const auto &colour = Colour::fromString(child[TrackStateIDs::colour].toString());
+    if (Track::isType(child)) {
+        const String &uuid = child[TrackIDs::uuid];
+        const auto &colour = Colour::fromString(child[TrackIDs::colour].toString());
         auto index = findIndexForColourAddingIfNeeded(colour);
         indexForTrackUuid[uuid] = index;
         listeners.call([uuid, colour](Listener &listener) { listener.trackColourChanged(uuid, colour); });
@@ -43,8 +43,8 @@ void Push2Colours::valueTreeChildAdded(ValueTree &parent, ValueTree &child) {
 }
 
 void Push2Colours::valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int) {
-    if (TrackState::isType(child)) {
-        const auto &uuid = child[TrackStateIDs::uuid].toString();
+    if (Track::isType(child)) {
+        const auto &uuid = child[TrackIDs::uuid].toString();
         auto index = indexForTrackUuid[uuid];
         availableColourIndexes.add(index);
         indexForTrackUuid.erase(uuid);
@@ -52,11 +52,11 @@ void Push2Colours::valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, 
 }
 
 void Push2Colours::valueTreePropertyChanged(ValueTree &tree, const Identifier &i) {
-    if (TrackState::isType(tree)) {
-        if (i == TrackStateIDs::colour) {
-            const String &uuid = tree[TrackStateIDs::uuid];
+    if (Track::isType(tree)) {
+        if (i == TrackIDs::colour) {
+            const String &uuid = tree[TrackIDs::uuid];
             auto index = indexForTrackUuid[uuid];
-            const auto &colour = Colour::fromString(tree[TrackStateIDs::colour].toString());
+            const auto &colour = Colour::fromString(tree[TrackIDs::colour].toString());
             setColour(index, colour);
             listeners.call([uuid, colour](Listener &listener) { listener.trackColourChanged(uuid, colour); });
         }

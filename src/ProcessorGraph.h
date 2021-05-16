@@ -4,16 +4,18 @@
 #include "actions/CreateOrDeleteConnectionsAction.h"
 #include "push2/Push2MidiCommunicator.h"
 #include "processors/StatefulAudioProcessorWrapper.h"
-#include "state/InputState.h"
-#include "state/OutputState.h"
-#include "state/ConnectionsState.h"
+#include "state/Input.h"
+#include "state/Output.h"
+#include "state/Connections.h"
 #include "PluginManager.h"
+
+using namespace fg; // Only to disambiguate `Connection` currently
 
 class ProcessorGraph : public AudioProcessorGraph,
                        private ValueTree::Listener, private Timer {
 public:
-    explicit ProcessorGraph(PluginManager &pluginManager, TracksState &tracks, ConnectionsState &connections,
-                            InputState &input, OutputState &output, UndoManager &undoManager, AudioDeviceManager &deviceManager,
+    explicit ProcessorGraph(PluginManager &pluginManager, Tracks &tracks, Connections &connections,
+                            Input &input, Output &output, UndoManager &undoManager, AudioDeviceManager &deviceManager,
                             Push2MidiCommunicator &push2MidiCommunicator);
 
     ~ProcessorGraph() override;
@@ -28,7 +30,7 @@ public:
     }
 
     StatefulAudioProcessorWrapper *getProcessorWrapperForState(const ValueTree &processorState) const {
-        return processorState.isValid() ? getProcessorWrapperForNodeId(TracksState::getNodeIdForProcessor(processorState)) : nullptr;
+        return processorState.isValid() ? getProcessorWrapperForNodeId(Tracks::getNodeIdForProcessor(processorState)) : nullptr;
     }
 
     AudioProcessor *getAudioProcessorForState(const ValueTree &processorState) const {
@@ -42,7 +44,7 @@ public:
             MemoryBlock memoryBlock;
             if (auto *processor = processorWrapper->processor) {
                 processor->getStateInformation(memoryBlock);
-                processorState.setProperty(ProcessorStateIDs::state, memoryBlock.toBase64Encoding(), nullptr);
+                processorState.setProperty(ProcessorIDs::state, memoryBlock.toBase64Encoding(), nullptr);
             }
         }
     }
@@ -50,7 +52,7 @@ public:
     ValueTree copyProcessor(ValueTree &fromProcessor) const {
         saveProcessorStateInformationToState(fromProcessor);
         auto copiedProcessor = fromProcessor.createCopy();
-        copiedProcessor.removeProperty(ProcessorStateIDs::nodeId, nullptr);
+        copiedProcessor.removeProperty(ProcessorIDs::nodeId, nullptr);
         return copiedProcessor;
     }
 
@@ -83,7 +85,7 @@ public:
                           bool defaults, bool custom, bool incoming, bool outgoing, NodeID excludingRemovalTo = {});
 
     Node *getNodeForState(const ValueTree &processorState) const {
-        return getNodeForId(TracksState::getNodeIdForProcessor(processorState));
+        return getNodeForId(Tracks::getNodeIdForProcessor(processorState));
     }
 
     void onProcessorCreated(const ValueTree &processor) {
@@ -98,10 +100,10 @@ public:
 private:
     std::map<NodeID, std::unique_ptr<StatefulAudioProcessorWrapper> > processorWrapperForNodeId;
 
-    TracksState &tracks;
-    ConnectionsState &connections;
-    InputState &input;
-    OutputState &output;
+    Tracks &tracks;
+    Connections &connections;
+    Input &input;
+    Output &output;
 
     UndoManager &undoManager;
     AudioDeviceManager &deviceManager;

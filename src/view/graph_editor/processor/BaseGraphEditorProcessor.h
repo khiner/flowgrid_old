@@ -6,7 +6,7 @@
 
 class BaseGraphEditorProcessor : public Component, public ValueTree::Listener {
 public:
-    BaseGraphEditorProcessor(const ValueTree &state, ViewState &view, TracksState &tracks,
+    BaseGraphEditorProcessor(const ValueTree &state, View &view, Tracks &tracks,
                              ProcessorGraph &processorGraph, ConnectorDragListener &connectorDragListener);
 
     ~BaseGraphEditorProcessor() override;
@@ -14,34 +14,34 @@ public:
     const ValueTree &getState() const { return state; }
 
     ValueTree getTrack() const {
-        return TracksState::getTrackForProcessor(getState());
+        return Tracks::getTrackForProcessor(getState());
     }
 
     AudioProcessorGraph::NodeID getNodeId() const {
-        return TracksState::getNodeIdForProcessor(state);
+        return Tracks::getNodeIdForProcessor(state);
     }
 
     virtual bool isInView() {
         return isIoProcessor() || tracks.isProcessorSlotInView(getTrack(), getSlot());
     }
 
-    bool isMasterTrack() const { return TracksState::isMasterTrack(getTrack()); }
+    bool isMasterTrack() const { return Tracks::isMasterTrack(getTrack()); }
 
     int getTrackIndex() const { return tracks.indexOf(getTrack()); }
 
-    int getSlot() const { return state[ProcessorStateIDs::processorSlot]; }
+    int getSlot() const { return state[ProcessorIDs::processorSlot]; }
 
-    int getNumInputChannels() const { return state.getChildWithName(InputChannelsStateIDs::INPUT_CHANNELS).getNumChildren(); }
+    int getNumInputChannels() const { return state.getChildWithName(InputChannelsIDs::INPUT_CHANNELS).getNumChildren(); }
 
-    int getNumOutputChannels() const { return state.getChildWithName(OutputChannelsStateIDs::OUTPUT_CHANNELS).getNumChildren(); }
+    int getNumOutputChannels() const { return state.getChildWithName(OutputChannelsIDs::OUTPUT_CHANNELS).getNumChildren(); }
 
-    bool acceptsMidi() const { return state[ProcessorStateIDs::acceptsMidi]; }
+    bool acceptsMidi() const { return state[ProcessorIDs::acceptsMidi]; }
 
-    bool producesMidi() const { return state[ProcessorStateIDs::producesMidi]; }
+    bool producesMidi() const { return state[ProcessorIDs::producesMidi]; }
 
-    bool isIoProcessor() const { return InternalPluginFormat::isIoProcessor(state[ProcessorStateIDs::name]); }
+    bool isIoProcessor() const { return InternalPluginFormat::isIoProcessor(state[ProcessorIDs::name]); }
 
-    bool isSelected() { return TracksState::isProcessorSelected(state); }
+    bool isSelected() { return Tracks::isProcessorSelected(state); }
 
     StatefulAudioProcessorWrapper *getProcessorWrapper() const {
         return processorGraph.getProcessorWrapperForState(state);
@@ -95,8 +95,8 @@ protected:
     void valueTreePropertyChanged(ValueTree &v, const Identifier &i) override;
 
 protected:
-    ViewState &view;
-    TracksState &tracks;
+    View &view;
+    Tracks &tracks;
     ProcessorGraph &processorGraph;
     ConnectorDragListener &connectorDragListener;
 

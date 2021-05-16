@@ -5,7 +5,7 @@
 
 class ParameterPanelGraphEditorProcessor : public BaseGraphEditorProcessor {
 public:
-    ParameterPanelGraphEditorProcessor(const ValueTree &state, ViewState &view, TracksState &tracks, ProcessorGraph &processorGraph, ConnectorDragListener &connectorDragListener);
+    ParameterPanelGraphEditorProcessor(const ValueTree &state, View &view, Tracks &tracks, ProcessorGraph &processorGraph, ConnectorDragListener &connectorDragListener);
 
     ~ParameterPanelGraphEditorProcessor() override;
 

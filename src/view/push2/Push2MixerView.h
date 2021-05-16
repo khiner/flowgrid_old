@@ -6,7 +6,7 @@
 
 class Push2MixerView : public Push2TrackManagingView {
 public:
-    explicit Push2MixerView(ViewState &view, TracksState &tracks, Project &project, ProcessorGraph &processorGraph, Push2MidiCommunicator &push2MidiCommunicator);
+    explicit Push2MixerView(View &view, Tracks &tracks, Project &project, ProcessorGraph &processorGraph, Push2MidiCommunicator &push2MidiCommunicator);
 
     ~Push2MixerView() override;
 

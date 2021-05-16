@@ -3,14 +3,14 @@
 #include "view/graph_editor/processor/LabelGraphEditorProcessor.h"
 #include "view/graph_editor/processor/ParameterPanelGraphEditorProcessor.h"
 
-GraphEditorProcessorLane::GraphEditorProcessorLane(const ValueTree &state, ViewState &view, TracksState &tracks, ProcessorGraph &processorGraph, ConnectorDragListener &connectorDragListener)
+GraphEditorProcessorLane::GraphEditorProcessorLane(const ValueTree &state, View &view, Tracks &tracks, ProcessorGraph &processorGraph, ConnectorDragListener &connectorDragListener)
         : ValueTreeObjectList<BaseGraphEditorProcessor>(state),
           state(state), view(view), tracks(tracks),
           processorGraph(processorGraph), connectorDragListener(connectorDragListener) {
     rebuildObjects();
     view.addListener(this);
     // TODO shouldn't need to do this
-    valueTreePropertyChanged(view.getState(), isMasterTrack() ? ViewStateIDs::numMasterProcessorSlots : ViewStateIDs::numProcessorSlots);
+    valueTreePropertyChanged(view.getState(), isMasterTrack() ? ViewIDs::numMasterProcessorSlots : ViewIDs::numProcessorSlots);
     addAndMakeVisible(laneDragRectangle);
     setInterceptsMouseClicks(false, false);
 }
@@ -26,22 +26,22 @@ void GraphEditorProcessorLane::resized() {
     auto r = getLocalBounds();
     if (isMasterTrack()) {
         r.setWidth(processorSlotSize);
-        r.setX(-slotOffset * processorSlotSize - ViewState::TRACK_LABEL_HEIGHT);
+        r.setX(-slotOffset * processorSlotSize - View::TRACK_LABEL_HEIGHT);
     } else {
-        auto laneHeaderBounds = r.removeFromTop(ViewState::LANE_HEADER_HEIGHT).reduced(0, 2);
+        auto laneHeaderBounds = r.removeFromTop(View::LANE_HEADER_HEIGHT).reduced(0, 2);
         laneDragRectangle.setRectangle(laneHeaderBounds.toFloat());
 
         r.setHeight(processorSlotSize);
-        r.setY(r.getY() - slotOffset * processorSlotSize - ViewState::TRACK_LABEL_HEIGHT);
+        r.setY(r.getY() - slotOffset * processorSlotSize - View::TRACK_LABEL_HEIGHT);
     }
 
     for (int slot = 0; slot < processorSlotRectangles.size(); slot++) {
         if (slot == slotOffset) {
             if (isMasterTrack())
-                r.setX(r.getX() + ViewState::TRACK_LABEL_HEIGHT);
+                r.setX(r.getX() + View::TRACK_LABEL_HEIGHT);
             else
-                r.setY(r.getY() + ViewState::TRACK_LABEL_HEIGHT);
-        } else if (slot == slotOffset + ViewState::NUM_VISIBLE_NON_MASTER_TRACK_SLOTS + (isMasterTrack() ? 1 : 0)) {
+                r.setY(r.getY() + View::TRACK_LABEL_HEIGHT);
+        } else if (slot == slotOffset + View::NUM_VISIBLE_NON_MASTER_TRACK_SLOTS + (isMasterTrack() ? 1 : 0)) {
             if (isMasterTrack())
                 r.setX(r.getRight());
             else
@@ -61,13 +61,13 @@ void GraphEditorProcessorLane::updateProcessorSlotColours() {
     const static auto &baseColour = findColour(ResizableWindow::backgroundColourId).brighter(0.4f);
     const auto &track = getTrack();
 
-    laneDragRectangle.setFill(TracksState::getTrackColour(track));
+    laneDragRectangle.setFill(Tracks::getTrackColour(track));
     for (int slot = 0; slot < processorSlotRectangles.size(); slot++) {
         auto fillColour = baseColour;
-        if (TracksState::doesTrackHaveSelections(track))
+        if (Tracks::doesTrackHaveSelections(track))
             fillColour = fillColour.brighter(0.2f);
-        if (TracksState::isSlotSelected(track, slot))
-            fillColour = TracksState::getTrackColour(track);
+        if (Tracks::isSlotSelected(track, slot))
+            fillColour = Tracks::getTrackColour(track);
         if (tracks.isSlotFocused(track, slot))
             fillColour = fillColour.brighter(0.16f);
         if (!tracks.isProcessorSlotInView(track, slot))
@@ -77,7 +77,7 @@ void GraphEditorProcessorLane::updateProcessorSlotColours() {
 }
 
 BaseGraphEditorProcessor *GraphEditorProcessorLane::createEditorForProcessor(const ValueTree &processor) {
-    if (processor[ProcessorStateIDs::name] == InternalPluginFormat::getMixerChannelProcessorName()) {
+    if (processor[ProcessorIDs::name] == InternalPluginFormat::getMixerChannelProcessorName()) {
         return new ParameterPanelGraphEditorProcessor(processor, view, tracks, processorGraph, connectorDragListener);
     }
     return new LabelGraphEditorProcessor(processor, view, tracks, processorGraph, connectorDragListener);
@@ -92,16 +92,16 @@ BaseGraphEditorProcessor *GraphEditorProcessorLane::createNewObject(const ValueT
 // TODO only instantiate 64 slot rects (and maybe another set for the boundary perimeter)
 //  might be an over-early optimization though
 void GraphEditorProcessorLane::valueTreePropertyChanged(ValueTree &tree, const Identifier &i) {
-    if (isSuitableType(tree) && i == ProcessorStateIDs::processorSlot) {
+    if (isSuitableType(tree) && i == ProcessorIDs::processorSlot) {
         resized();
-    } else if (i == TrackStateIDs::selected || i == TrackStateIDs::colour ||
-               i == ProcessorLaneStateIDs::selectedSlotsMask || i == ViewStateIDs::focusedTrackIndex || i == ViewStateIDs::focusedProcessorSlot ||
-               i == ViewStateIDs::gridViewTrackOffset) {
+    } else if (i == TrackIDs::selected || i == TrackIDs::colour ||
+               i == ProcessorLaneIDs::selectedSlotsMask || i == ViewIDs::focusedTrackIndex || i == ViewIDs::focusedProcessorSlot ||
+               i == ViewIDs::gridViewTrackOffset) {
         updateProcessorSlotColours();
-    } else if (i == ViewStateIDs::gridViewSlotOffset || (i == ViewStateIDs::masterViewSlotOffset && isMasterTrack())) {
+    } else if (i == ViewIDs::gridViewSlotOffset || (i == ViewIDs::masterViewSlotOffset && isMasterTrack())) {
         resized();
         updateProcessorSlotColours();
-    } else if (i == ViewStateIDs::numProcessorSlots || (i == ViewStateIDs::numMasterProcessorSlots && isMasterTrack())) {
+    } else if (i == ViewIDs::numProcessorSlots || (i == ViewIDs::numMasterProcessorSlots && isMasterTrack())) {
         auto numSlots = getNumSlots();
         while (processorSlotRectangles.size() < numSlots) {
             auto *rect = new DrawableRectangle();

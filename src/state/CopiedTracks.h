@@ -1,13 +1,13 @@
 #pragma once
 
-#include "TracksState.h"
+#include "Tracks.h"
 #include "ProcessorGraph.h"
 
 struct CopiedTracks : public Stateful<CopiedTracks> {
-    CopiedTracks(TracksState &tracks, ProcessorGraph &processorGraph)
+    CopiedTracks(Tracks &tracks, ProcessorGraph &processorGraph)
             : tracks(tracks), processorGraph(processorGraph) {}
 
-    static Identifier getIdentifier() { return TracksStateIDs::TRACKS; }
+    static Identifier getIdentifier() { return TracksIDs::TRACKS; }
 
     void loadFromState(const ValueTree &fromState) override;
 
@@ -16,6 +16,6 @@ struct CopiedTracks : public Stateful<CopiedTracks> {
     }
 
 private:
-    TracksState &tracks;
+    Tracks &tracks;
     ProcessorGraph &processorGraph;
 };

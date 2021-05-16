@@ -1,9 +1,9 @@
 #include "GraphEditorTrack.h"
 
-GraphEditorTrack::GraphEditorTrack(const ValueTree &state, ViewState &view, TracksState &tracks, Project &project, ProcessorGraph &processorGraph, PluginManager &pluginManager,
+GraphEditorTrack::GraphEditorTrack(const ValueTree &state, View &view, Tracks &tracks, Project &project, ProcessorGraph &processorGraph, PluginManager &pluginManager,
                                    ConnectorDragListener &connectorDragListener)
         : state(state), view(view), tracks(tracks), project(project), processorGraph(processorGraph), connectorDragListener(connectorDragListener),
-          lanes(TracksState::getProcessorLanesForTrack(state), view, tracks, processorGraph, connectorDragListener) {
+          lanes(Tracks::getProcessorLanesForTrack(state), view, tracks, processorGraph, connectorDragListener) {
     addAndMakeVisible(lanes);
     trackInputProcessorChanged();
     trackOutputProcessorChanged();
@@ -45,9 +45,9 @@ void GraphEditorTrack::resized() {
     auto r = getLocalBounds();
 
     auto trackInputBounds = isMasterTrack() ?
-                            r.removeFromTop(ViewState::TRACK_INPUT_HEIGHT)
-                                    .withSize(view.getTrackWidth(), ViewState::TRACK_INPUT_HEIGHT) :
-                            r.removeFromTop(ViewState::TRACK_INPUT_HEIGHT);
+                            r.removeFromTop(View::TRACK_INPUT_HEIGHT)
+                                    .withSize(view.getTrackWidth(), View::TRACK_INPUT_HEIGHT) :
+                            r.removeFromTop(View::TRACK_INPUT_HEIGHT);
 
     const auto &trackOutputBounds = isMasterTrack()
                                     ? r.removeFromRight(tracks.getProcessorSlotSize(getState()))
@@ -91,7 +91,7 @@ void GraphEditorTrack::onColourChanged() {
 }
 
 void GraphEditorTrack::trackInputProcessorChanged() {
-    const ValueTree &trackInputProcessor = TracksState::getInputProcessorForTrack(state);
+    const ValueTree &trackInputProcessor = Tracks::getInputProcessorForTrack(state);
     if (trackInputProcessor.isValid()) {
         trackInputProcessorView = std::make_unique<TrackInputGraphEditorProcessor>(trackInputProcessor, view, tracks, project, processorGraph, connectorDragListener);
         addAndMakeVisible(trackInputProcessorView.get());
@@ -104,7 +104,7 @@ void GraphEditorTrack::trackInputProcessorChanged() {
 }
 
 void GraphEditorTrack::trackOutputProcessorChanged() {
-    const ValueTree &trackOutputProcessor = TracksState::getOutputProcessorForTrack(state);
+    const ValueTree &trackOutputProcessor = Tracks::getOutputProcessorForTrack(state);
     if (trackOutputProcessor.isValid()) {
         trackOutputProcessorView = std::make_unique<TrackOutputGraphEditorProcessor>(trackOutputProcessor, view, tracks, processorGraph, connectorDragListener);
         addAndMakeVisible(trackOutputProcessorView.get());
@@ -117,34 +117,34 @@ void GraphEditorTrack::trackOutputProcessorChanged() {
 }
 
 void GraphEditorTrack::valueTreeChildAdded(ValueTree &parent, ValueTree &child) {
-    if (child.hasType(ProcessorStateIDs::PROCESSOR)) {
-        if (child.getProperty(ProcessorStateIDs::name) == InternalPluginFormat::getTrackInputProcessorName())
+    if (child.hasType(ProcessorIDs::PROCESSOR)) {
+        if (child.getProperty(ProcessorIDs::name) == InternalPluginFormat::getTrackInputProcessorName())
             trackInputProcessorChanged();
-        else if (child.getProperty(ProcessorStateIDs::name) == InternalPluginFormat::getTrackOutputProcessorName())
+        else if (child.getProperty(ProcessorIDs::name) == InternalPluginFormat::getTrackOutputProcessorName())
             trackOutputProcessorChanged();
     }
 }
 
 void GraphEditorTrack::valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int) {
-    if (child.hasType(ProcessorStateIDs::PROCESSOR)) {
-        if (child.getProperty(ProcessorStateIDs::name) == InternalPluginFormat::getTrackInputProcessorName())
+    if (child.hasType(ProcessorIDs::PROCESSOR)) {
+        if (child.getProperty(ProcessorIDs::name) == InternalPluginFormat::getTrackInputProcessorName())
             trackInputProcessorChanged();
-        else if (child.getProperty(ProcessorStateIDs::name) == InternalPluginFormat::getTrackOutputProcessorName())
+        else if (child.getProperty(ProcessorIDs::name) == InternalPluginFormat::getTrackOutputProcessorName())
             trackOutputProcessorChanged();
     }
 }
 
 void GraphEditorTrack::valueTreePropertyChanged(ValueTree &tree, const Identifier &i) {
-    if (i == ViewStateIDs::gridViewSlotOffset || ((i == ViewStateIDs::gridViewTrackOffset || i == ViewStateIDs::masterViewSlotOffset) && isMasterTrack()))
+    if (i == ViewIDs::gridViewSlotOffset || ((i == ViewIDs::gridViewTrackOffset || i == ViewIDs::masterViewSlotOffset) && isMasterTrack()))
         resized();
 
     if (tree != state)
         return;
 
-    if (i == TrackStateIDs::name) {
+    if (i == TrackIDs::name) {
         if (trackInputProcessorView != nullptr)
-            trackInputProcessorView->setTrackName(tree[TrackStateIDs::name].toString());
-    } else if (i == TrackStateIDs::colour || i == TrackStateIDs::selected) {
+            trackInputProcessorView->setTrackName(tree[TrackIDs::name].toString());
+    } else if (i == TrackIDs::colour || i == TrackIDs::selected) {
         onColourChanged();
     }
 }

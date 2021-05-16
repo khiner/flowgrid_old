@@ -1,15 +1,15 @@
 #pragma once
 
-#include "state/ConnectionsState.h"
-#include "state/TracksState.h"
+#include "state/Connections.h"
+#include "state/Tracks.h"
 #include "ResetDefaultExternalInputConnectionsAction.h"
 
 struct SelectAction : public UndoableAction {
-    SelectAction(TracksState &tracks, ConnectionsState &connections, ViewState &view, InputState &input,
+    SelectAction(Tracks &tracks, Connections &connections, View &view, Input &input,
                  ProcessorGraph &processorGraph);
 
     SelectAction(SelectAction *coalesceLeft, SelectAction *coalesceRight,
-                 TracksState &tracks, ConnectionsState &connections, ViewState &view, InputState &input,
+                 Tracks &tracks, Connections &connections, View &view, Input &input,
                  ProcessorGraph &processorGraph);
 
     void setNewFocusedSlot(juce::Point<int> newFocusedSlot, bool resetDefaultExternalInputs = true);
@@ -31,10 +31,10 @@ protected:
 
     bool changed();
 
-    TracksState &tracks;
-    ConnectionsState &connections;
-    ViewState &view;
-    InputState &input;
+    Tracks &tracks;
+    Connections &connections;
+    View &view;
+    Input &input;
     ProcessorGraph &processorGraph;
 
     Array<String> oldSelectedSlotsMasks, newSelectedSlotsMasks;

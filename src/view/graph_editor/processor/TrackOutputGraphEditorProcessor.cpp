@@ -5,7 +5,7 @@
 
 #include "TrackOutputGraphEditorProcessor.h"
 
-TrackOutputGraphEditorProcessor::TrackOutputGraphEditorProcessor(const ValueTree &state, ViewState &view, TracksState &tracks, ProcessorGraph &processorGraph, ConnectorDragListener &connectorDragListener) :
+TrackOutputGraphEditorProcessor::TrackOutputGraphEditorProcessor(const ValueTree &state, View &view, Tracks &tracks, ProcessorGraph &processorGraph, ConnectorDragListener &connectorDragListener) :
         BaseGraphEditorProcessor(state, view, tracks, processorGraph, connectorDragListener) {
 }
 
@@ -54,7 +54,7 @@ void TrackOutputGraphEditorProcessor::paint(Graphics &g) {
 Rectangle<int> TrackOutputGraphEditorProcessor::getBoxBounds() const {
     return isMasterTrack() ?
            getLocalBounds() :
-           getLocalBounds().withTrimmedTop(channelSize / 2).withTrimmedBottom(ViewState::TRACKS_MARGIN);
+           getLocalBounds().withTrimmedTop(channelSize / 2).withTrimmedBottom(View::TRACKS_MARGIN);
 }
 
 void TrackOutputGraphEditorProcessor::valueTreePropertyChanged(ValueTree &v, const Identifier &i) {

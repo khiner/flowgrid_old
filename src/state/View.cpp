@@ -1,18 +1,18 @@
-#include "ViewState.h"
+#include "View.h"
 
-void ViewState::initializeDefault() {
+void View::initializeDefault() {
     setNoteMode();
     focusOnEditorPane();
     focusOnProcessorSlot({}, -1);
-    state.setProperty(ViewStateIDs::numProcessorSlots, NUM_VISIBLE_NON_MASTER_TRACK_SLOTS, nullptr);
+    state.setProperty(ViewIDs::numProcessorSlots, NUM_VISIBLE_NON_MASTER_TRACK_SLOTS, nullptr);
     // the number of processors in the master track aligns with the number of tracks
-    state.setProperty(ViewStateIDs::numMasterProcessorSlots, NUM_VISIBLE_MASTER_TRACK_SLOTS, nullptr);
+    state.setProperty(ViewIDs::numMasterProcessorSlots, NUM_VISIBLE_MASTER_TRACK_SLOTS, nullptr);
     setGridViewTrackOffset(0);
     setGridViewSlotOffset(0);
     setMasterViewSlotOffset(0);
 }
 
-void ViewState::updateViewTrackOffsetToInclude(int trackIndex, int numNonMasterTracks) {
+void View::updateViewTrackOffsetToInclude(int trackIndex, int numNonMasterTracks) {
     if (trackIndex < 0)
         return; // invalid
     auto viewTrackOffset = getGridViewTrackOffset();
@@ -25,7 +25,7 @@ void ViewState::updateViewTrackOffsetToInclude(int trackIndex, int numNonMasterT
         setGridViewTrackOffset(numNonMasterTracks - NUM_VISIBLE_TRACKS);
 }
 
-void ViewState::updateViewSlotOffsetToInclude(int processorSlot, bool isMasterTrack) {
+void View::updateViewSlotOffsetToInclude(int processorSlot, bool isMasterTrack) {
     if (processorSlot < 0) return; // invalid
 
     if (isMasterTrack) {
@@ -43,8 +43,8 @@ void ViewState::updateViewSlotOffsetToInclude(int processorSlot, bool isMasterTr
     }
 }
 
-juce::Point<int> ViewState::getFocusedTrackAndSlot() const {
-    int trackIndex = state.hasProperty(ViewStateIDs::focusedTrackIndex) ? getFocusedTrackIndex() : 0;
-    int processorSlot = state.hasProperty(ViewStateIDs::focusedProcessorSlot) ? getFocusedProcessorSlot() : -1;
+juce::Point<int> View::getFocusedTrackAndSlot() const {
+    int trackIndex = state.hasProperty(ViewIDs::focusedTrackIndex) ? getFocusedTrackIndex() : 0;
+    int processorSlot = state.hasProperty(ViewIDs::focusedProcessorSlot) ? getFocusedProcessorSlot() : -1;
     return {trackIndex, processorSlot};
 }

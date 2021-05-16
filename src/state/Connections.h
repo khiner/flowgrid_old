@@ -1,24 +1,24 @@
 #pragma once
 
-#include "TracksState.h"
+#include "Tracks.h"
 #include "ConnectionType.h"
-#include "ConnectionState.h"
+#include "Connection.h"
 
-namespace ConnectionsStateIDs {
+namespace ConnectionsIDs {
 #define ID(name) const juce::Identifier name(#name);
-    ID(CONNECTIONS)
-    ID(SOURCE)
-    ID(DESTINATION)
-    ID(channel)
-    ID(isCustomConnection)
+ID(CONNECTIONS)
+ID(SOURCE)
+ID(DESTINATION)
+ID(channel)
+ID(isCustomConnection)
 #undef ID
 }
 
-class ConnectionsState : public Stateful<ConnectionsState> {
+class Connections : public Stateful<Connections> {
 public:
-    explicit ConnectionsState(TracksState &tracks) : tracks(tracks) {}
+    explicit Connections(Tracks &tracks) : tracks(tracks) {}
 
-    static Identifier getIdentifier() { return ConnectionStateIDs::CONNECTION; }
+    static Identifier getIdentifier() { return ConnectionIDs::CONNECTION; }
 
     ValueTree findDefaultDestinationProcessor(const ValueTree &sourceProcessor, ConnectionType connectionType);
 
@@ -29,10 +29,10 @@ public:
                                            bool includeCustom = true, bool includeDefault = true);
 
     static AudioProcessorGraph::Connection stateToConnection(const ValueTree &connectionState) {
-        const auto &sourceState = connectionState.getChildWithName(ConnectionsStateIDs::SOURCE);
-        const auto &destState = connectionState.getChildWithName(ConnectionsStateIDs::DESTINATION);
-        return {{TracksState::getNodeIdForProcessor(sourceState), int(sourceState[ConnectionsStateIDs::channel])},
-                {TracksState::getNodeIdForProcessor(destState),   int(destState[ConnectionsStateIDs::channel])}};
+        const auto &sourceState = connectionState.getChildWithName(ConnectionsIDs::SOURCE);
+        const auto &destState = connectionState.getChildWithName(ConnectionsIDs::DESTINATION);
+        return {{Tracks::getNodeIdForProcessor(sourceState), int(sourceState[ConnectionsIDs::channel])},
+                {Tracks::getNodeIdForProcessor(destState),   int(destState[ConnectionsIDs::channel])}};
     }
 
     ValueTree getConnectionMatching(const AudioProcessorGraph::Connection &connection) const {
@@ -45,15 +45,15 @@ public:
     bool anyNonMasterTrackHasEffectProcessor(ConnectionType connectionType);
 
     static bool isProcessorAnEffect(const ValueTree &processor, ConnectionType connectionType) {
-        return (connectionType == audio && TracksState::getNumInputChannelsForProcessor(processor) > 0) ||
-               (connectionType == midi && processor[ProcessorStateIDs::acceptsMidi]);
+        return (connectionType == audio && Tracks::getNumInputChannelsForProcessor(processor) > 0) ||
+               (connectionType == midi && processor[ProcessorIDs::acceptsMidi]);
     }
 
     static bool isProcessorAProducer(const ValueTree &processor, ConnectionType connectionType) {
-        return (connectionType == audio && TracksState::getNumOutputChannelsForProcessor(processor) > 0) ||
-               (connectionType == midi && processor[ProcessorStateIDs::producesMidi]);
+        return (connectionType == audio && Tracks::getNumOutputChannelsForProcessor(processor) > 0) ||
+               (connectionType == midi && processor[ProcessorIDs::producesMidi]);
     }
 
 private:
-    TracksState &tracks;
+    Tracks &tracks;
 };

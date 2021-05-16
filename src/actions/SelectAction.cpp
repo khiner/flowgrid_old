@@ -1,6 +1,6 @@
 #include "SelectAction.h"
 
-SelectAction::SelectAction(TracksState &tracks, ConnectionsState &connections, ViewState &view, InputState &input, ProcessorGraph &processorGraph)
+SelectAction::SelectAction(Tracks &tracks, Connections &connections, View &view, Input &input, ProcessorGraph &processorGraph)
         : tracks(tracks), connections(connections), view(view),
           input(input), processorGraph(processorGraph) {
     this->oldSelectedSlotsMasks = tracks.getSelectedSlotsMasks();
@@ -11,7 +11,7 @@ SelectAction::SelectAction(TracksState &tracks, ConnectionsState &connections, V
     this->newFocusedSlot = oldFocusedSlot;
 }
 
-SelectAction::SelectAction(SelectAction *coalesceLeft, SelectAction *coalesceRight, TracksState &tracks, ConnectionsState &connections, ViewState &view, InputState &input,
+SelectAction::SelectAction(SelectAction *coalesceLeft, SelectAction *coalesceRight, Tracks &tracks, Connections &connections, View &view, Input &input,
                            ProcessorGraph &processorGraph)
         : tracks(tracks), connections(connections), view(view),
           input(input), processorGraph(processorGraph),
@@ -46,9 +46,9 @@ bool SelectAction::perform() {
 
     for (int i = 0; i < newTrackSelections.size(); i++) {
         auto track = tracks.getTrack(i);
-        auto lane = TracksState::getProcessorLaneForTrack(track);
-        track.setProperty(TrackStateIDs::selected, newTrackSelections.getUnchecked(i), nullptr);
-        lane.setProperty(ProcessorLaneStateIDs::selectedSlotsMask, newSelectedSlotsMasks.getUnchecked(i), nullptr);
+        auto lane = Tracks::getProcessorLaneForTrack(track);
+        track.setProperty(TrackIDs::selected, newTrackSelections.getUnchecked(i), nullptr);
+        lane.setProperty(ProcessorLaneIDs::selectedSlotsMask, newSelectedSlotsMasks.getUnchecked(i), nullptr);
     }
     if (newFocusedSlot != oldFocusedSlot)
         updateViewFocus(newFocusedSlot);
@@ -65,9 +65,9 @@ bool SelectAction::undo() {
         resetInputsAction->undo();
     for (int i = 0; i < oldTrackSelections.size(); i++) {
         auto track = tracks.getTrack(i);
-        auto lane = TracksState::getProcessorLaneForTrack(track);
-        track.setProperty(TrackStateIDs::selected, oldTrackSelections.getUnchecked(i), nullptr);
-        lane.setProperty(ProcessorLaneStateIDs::selectedSlotsMask, oldSelectedSlotsMasks.getUnchecked(i), nullptr);
+        auto lane = Tracks::getProcessorLaneForTrack(track);
+        track.setProperty(TrackIDs::selected, oldTrackSelections.getUnchecked(i), nullptr);
+        lane.setProperty(ProcessorLaneIDs::selectedSlotsMask, oldSelectedSlotsMasks.getUnchecked(i), nullptr);
     }
     if (oldFocusedSlot != newFocusedSlot)
         updateViewFocus(oldFocusedSlot);
@@ -89,7 +89,7 @@ bool SelectAction::canCoalesceWith(SelectAction *otherAction) {
 void SelectAction::updateViewFocus(const juce::Point<int> focusedSlot) {
     view.focusOnProcessorSlot(focusedSlot);
     const auto &focusedTrack = tracks.getTrack(focusedSlot.x);
-    bool isMaster = TracksState::isMasterTrack(focusedTrack);
+    bool isMaster = Tracks::isMasterTrack(focusedTrack);
     if (!isMaster)
         view.updateViewTrackOffsetToInclude(focusedSlot.x, tracks.getNumNonMasterTracks());
     view.updateViewSlotOffsetToInclude(focusedSlot.y, isMaster);

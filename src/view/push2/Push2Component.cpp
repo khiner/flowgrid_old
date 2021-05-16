@@ -2,7 +2,7 @@
 
 #include "ApplicationPropertiesAndCommandManager.h"
 
-Push2Component::Push2Component(ViewState &view, TracksState &tracks, ConnectionsState &connections, Project &project, ProcessorGraph &processorGraph, Push2MidiCommunicator &push2MidiCommunicator)
+Push2Component::Push2Component(View &view, Tracks &tracks, Connections &connections, Project &project, ProcessorGraph &processorGraph, Push2MidiCommunicator &push2MidiCommunicator)
         : Push2ComponentBase(view, tracks, push2MidiCommunicator),
           project(project), connections(connections), processorGraph(processorGraph),
           processorView(view, tracks, project, push2MidiCommunicator), processorSelector(view, tracks, project, push2MidiCommunicator),
@@ -61,7 +61,7 @@ void Push2Component::shiftReleased() {
 }
 
 void Push2Component::masterEncoderRotated(float changeAmount) {
-    const auto &trackOutputProcessor = TracksState::getOutputProcessorForTrack(tracks.getMasterTrack());
+    const auto &trackOutputProcessor = Tracks::getOutputProcessorForTrack(tracks.getMasterTrack());
     if (auto *masterGainProcessor = processorGraph.getProcessorWrapperForState(trackOutputProcessor))
         if (auto *masterGainParameter = masterGainProcessor->getParameter(1))
             masterGainParameter->setValue(masterGainParameter->getValue() + changeAmount);
@@ -235,35 +235,35 @@ void Push2Component::showChild(Push2ComponentBase *child) {
 }
 
 void Push2Component::valueTreePropertyChanged(ValueTree &tree, const Identifier &i) {
-    if (i == ViewStateIDs::focusedTrackIndex) {
+    if (i == ViewIDs::focusedTrackIndex) {
         updatePush2SelectionDependentButtons();
-    } else if (i == ViewStateIDs::focusedProcessorSlot || i == ProcessorStateIDs::processorInitialized) {
+    } else if (i == ViewIDs::focusedProcessorSlot || i == ProcessorIDs::processorInitialized) {
         updateFocusedProcessor();
-    } else if (i == ViewStateIDs::controlMode) {
+    } else if (i == ViewIDs::controlMode) {
         updateEnabledPush2Buttons();
         updatePush2NoteModePadLedManagerVisibility();
     }
 }
 
 void Push2Component::valueTreeChildAdded(ValueTree &parent, ValueTree &child) {
-    if (TrackState::isType(child)) {
+    if (Track::isType(child)) {
         updatePush2SelectionDependentButtons();
-    } else if (child.hasType(ConnectionStateIDs::CONNECTION)) {
+    } else if (child.hasType(ConnectionIDs::CONNECTION)) {
         updatePush2NoteModePadLedManagerVisibility();
     }
 }
 
 void Push2Component::valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int) {
-    if (TrackState::isType(child)) {
+    if (Track::isType(child)) {
         updatePush2SelectionDependentButtons();
         if (!tracks.getFocusedTrack().isValid()) {
             showChild(nullptr);
             processorView.processorFocused(nullptr);
         }
-    } else if (child.hasType(ProcessorStateIDs::PROCESSOR)) {
+    } else if (child.hasType(ProcessorIDs::PROCESSOR)) {
         updateFocusedProcessor();
         updatePush2SelectionDependentButtons();
-    } else if (child.hasType(ConnectionStateIDs::CONNECTION)) {
+    } else if (child.hasType(ConnectionIDs::CONNECTION)) {
         updatePush2NoteModePadLedManagerVisibility();
     }
 }

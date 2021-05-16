@@ -25,7 +25,7 @@ public:
 
     static const int lowestPadNoteNumber = 36, highestPadNoteNumber = 99;
 
-    explicit Push2MidiCommunicator(ViewState &view, Push2Colours &push2Colours);
+    explicit Push2MidiCommunicator(View &view, Push2Colours &push2Colours);
 
     ~Push2MidiCommunicator() override;
 
@@ -70,7 +70,7 @@ private:
     static constexpr int BUTTON_HOLD_REPEAT_HZ = 10; // how often to repeat a repeatable button press when it is held
     static constexpr int BUTTON_HOLD_WAIT_FOR_REPEAT_MS = 500; // how long to wait before starting held button message repeats
 
-    ViewState &view;
+    View &view;
     Push2Colours &push2Colours;
     Push2Listener *push2Listener{};
 

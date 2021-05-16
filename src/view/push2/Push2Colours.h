@@ -1,6 +1,6 @@
 #pragma once
 
-#include "state/TracksState.h"
+#include "state/Tracks.h"
 #include "unordered_map"
 
 class Push2Colours : ValueTree::Listener {
@@ -14,7 +14,7 @@ public:
         virtual void trackColourChanged(const String &trackUuid, const Colour &colour) = 0;
     };
 
-    explicit Push2Colours(TracksState &tracks);
+    explicit Push2Colours(Tracks &tracks);
 
     ~Push2Colours() override;
 
@@ -29,7 +29,7 @@ private:
     Array<uint8> availableColourIndexes;
     std::unordered_map<String, uint8> indexForTrackUuid;
     ListenerList<Listener> listeners;
-    TracksState &tracks;
+    Tracks &tracks;
 
     void addColour(const Colour &colour);
 

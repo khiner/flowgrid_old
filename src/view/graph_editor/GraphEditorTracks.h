@@ -9,7 +9,7 @@ class GraphEditorTracks : public Component,
                           private ValueTreeObjectList<GraphEditorTrack>,
                           public GraphEditorProcessorContainer {
 public:
-    explicit GraphEditorTracks(ViewState &view, TracksState &tracks, Project &project, ProcessorGraph &processorGraph, PluginManager &pluginManager, ConnectorDragListener &connectorDragListener)
+    explicit GraphEditorTracks(View &view, Tracks &tracks, Project &project, ProcessorGraph &processorGraph, PluginManager &pluginManager, ConnectorDragListener &connectorDragListener)
             : ValueTreeObjectList<GraphEditorTrack>(tracks.getState()),
               view(view), tracks(tracks), project(project), processorGraph(processorGraph), pluginManager(pluginManager), connectorDragListener(connectorDragListener) {
         rebuildObjects();
@@ -23,9 +23,9 @@ public:
 
     void resized() override {
         auto r = getLocalBounds();
-        auto trackBounds = r.removeFromTop(ViewState::TRACK_LABEL_HEIGHT + view.getProcessorHeight() * (ViewState::NUM_VISIBLE_NON_MASTER_TRACK_SLOTS + 1));
+        auto trackBounds = r.removeFromTop(View::TRACK_LABEL_HEIGHT + view.getProcessorHeight() * (View::NUM_VISIBLE_NON_MASTER_TRACK_SLOTS + 1));
         trackBounds.setWidth(view.getTrackWidth());
-        trackBounds.setX(-view.getGridViewTrackOffset() * view.getTrackWidth() + ViewState::TRACKS_MARGIN);
+        trackBounds.setX(-view.getGridViewTrackOffset() * view.getTrackWidth() + View::TRACKS_MARGIN);
 
         for (auto *track : objects) {
             if (track->isMasterTrack())
@@ -35,7 +35,7 @@ public:
         }
 
         if (auto *masterTrack = findMasterTrack()) {
-            masterTrack->setBounds(r.withX(ViewState::TRACKS_MARGIN).withWidth(view.getTrackWidth() * (ViewState::NUM_VISIBLE_MASTER_TRACK_SLOTS + 1)));
+            masterTrack->setBounds(r.withX(View::TRACKS_MARGIN).withWidth(view.getTrackWidth() * (View::NUM_VISIBLE_MASTER_TRACK_SLOTS + 1)));
         }
     }
 
@@ -48,7 +48,7 @@ public:
     }
 
     bool isSuitableType(const ValueTree &tree) const override {
-        return TrackState::isType(tree);
+        return Track::isType(tree);
     }
 
     GraphEditorTrack *createNewObject(const ValueTree &tree) override {
@@ -104,15 +104,15 @@ public:
     }
 
 private:
-    ViewState &view;
-    TracksState &tracks;
+    View &view;
+    Tracks &tracks;
     Project &project;
     ProcessorGraph &processorGraph;
     PluginManager &pluginManager;
     ConnectorDragListener &connectorDragListener;
 
     void valueTreePropertyChanged(ValueTree &tree, const juce::Identifier &i) override {
-        if (i == ViewStateIDs::gridViewTrackOffset || i == ViewStateIDs::masterViewSlotOffset)
+        if (i == ViewIDs::gridViewTrackOffset || i == ViewIDs::masterViewSlotOffset)
             resized();
     }
 

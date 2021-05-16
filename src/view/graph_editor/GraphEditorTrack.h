@@ -6,20 +6,20 @@
 
 class GraphEditorTrack : public Component, public ValueTree::Listener, public GraphEditorProcessorContainer {
 public:
-    explicit GraphEditorTrack(const ValueTree &state, ViewState &view, TracksState &tracks, Project &project, ProcessorGraph &processorGraph, PluginManager &pluginManager, ConnectorDragListener &connectorDragListener);
+    explicit GraphEditorTrack(const ValueTree &state, View &view, Tracks &tracks, Project &project, ProcessorGraph &processorGraph, PluginManager &pluginManager, ConnectorDragListener &connectorDragListener);
 
     ~GraphEditorTrack() override;
 
     const ValueTree &getState() const { return state; }
 
-    bool isMasterTrack() const { return TracksState::isMasterTrack(state); }
+    bool isMasterTrack() const { return Tracks::isMasterTrack(state); }
 
     Colour getColour() const {
-        const Colour &trackColour = TracksState::getTrackColour(state);
+        const Colour &trackColour = Tracks::getTrackColour(state);
         return isSelected() ? trackColour.brighter(0.25) : trackColour;
     }
 
-    bool isSelected() const { return state.getProperty(TrackStateIDs::selected); }
+    bool isSelected() const { return state.getProperty(TrackIDs::selected); }
 
     void paint(Graphics &g) override;
 
@@ -33,8 +33,8 @@ private:
     static constexpr int BORDER_WIDTH = 2;
 
     ValueTree state;
-    ViewState &view;
-    TracksState &tracks;
+    View &view;
+    Tracks &tracks;
 
     Project &project;
     ProcessorGraph &processorGraph;

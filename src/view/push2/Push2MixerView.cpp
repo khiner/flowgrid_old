@@ -1,6 +1,6 @@
 #include "Push2MixerView.h"
 
-Push2MixerView::Push2MixerView(ViewState &view, TracksState &tracks, Project &project, ProcessorGraph &processorGraph, Push2MidiCommunicator &push2MidiCommunicator)
+Push2MixerView::Push2MixerView(View &view, Tracks &tracks, Project &project, ProcessorGraph &processorGraph, Push2MidiCommunicator &push2MidiCommunicator)
         : Push2TrackManagingView(view, tracks, project, push2MidiCommunicator),
           processorGraph(processorGraph),
           volumesLabel(0, true, push2MidiCommunicator), pansLabel(1, true, push2MidiCommunicator),
@@ -70,13 +70,13 @@ void Push2MixerView::trackRemoved(const ValueTree &track) {
 
 void Push2MixerView::valueTreePropertyChanged(ValueTree &tree, const Identifier &i) {
     Push2TrackManagingView::valueTreePropertyChanged(tree, i);
-    if (i == ProcessorStateIDs::processorInitialized && tree[i])
+    if (i == ProcessorIDs::processorInitialized && tree[i])
         updateParameters();
 }
 
 void Push2MixerView::valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int index) {
     Push2TrackManagingView::valueTreeChildRemoved(exParent, child, index);
-    if (child.hasType(ProcessorStateIDs::PROCESSOR)) {
+    if (child.hasType(ProcessorIDs::PROCESSOR)) {
         updateParameters();
     }
 }
@@ -86,17 +86,17 @@ void Push2MixerView::updateParameters() {
     panParametersPanel.clearParameters();
 
     const auto &focusedTrack = tracks.getFocusedTrack();
-    if (TracksState::isMasterTrack(focusedTrack)) {
-        const auto &trackOutputProcessor = TracksState::getOutputProcessorForTrack(focusedTrack);
+    if (Tracks::isMasterTrack(focusedTrack)) {
+        const auto &trackOutputProcessor = Tracks::getOutputProcessorForTrack(focusedTrack);
         if (auto *processorWrapper = processorGraph.getProcessorWrapperForState(trackOutputProcessor)) {
             volumeParametersPanel.addParameter(processorWrapper->getParameter(1));
             panParametersPanel.addParameter(processorWrapper->getParameter(0));
         }
     } else {
         for (const auto &track : tracks.getState()) {
-            if (TracksState::isMasterTrack(track))
+            if (Tracks::isMasterTrack(track))
                 continue;
-            const auto &trackOutputProcessor = TracksState::getOutputProcessorForTrack(track);
+            const auto &trackOutputProcessor = Tracks::getOutputProcessorForTrack(track);
             if (auto *processorWrapper = processorGraph.getProcessorWrapperForState(trackOutputProcessor)) {
                 // TODO use param identifiers instead of indexes
                 volumeParametersPanel.addParameter(processorWrapper->getParameter(1));

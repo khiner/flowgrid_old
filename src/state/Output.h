@@ -5,28 +5,28 @@
 #include "PluginManager.h"
 #include "Stateful.h"
 #include "ConnectionType.h"
-#include "state/TracksState.h"
+#include "state/Tracks.h"
 
 
-namespace OutputStateIDs {
+namespace OutputIDs {
 #define ID(name) const juce::Identifier name(#name);
-    ID(OUTPUT)
+ID(OUTPUT)
 #undef ID
 }
 
 // TODO Should input/output be combined into a single IOState? (Almost all behavior is symmetrical.)
-class OutputState : public Stateful<OutputState>, private ValueTree::Listener {
+class Output : public Stateful<Output>, private ValueTree::Listener {
 public:
-    OutputState(PluginManager &pluginManager, UndoManager &undoManager, AudioDeviceManager &deviceManager);
+    Output(PluginManager &pluginManager, UndoManager &undoManager, AudioDeviceManager &deviceManager);
 
-    ~OutputState() override;
+    ~Output() override;
 
-    static Identifier getIdentifier() { return OutputStateIDs::OUTPUT; }
+    static Identifier getIdentifier() { return OutputIDs::OUTPUT; }
 
     void initializeDefault();
 
     ValueTree getAudioOutputProcessorState() const {
-        return state.getChildWithProperty(ProcessorStateIDs::name, pluginManager.getAudioOutputDescription().name);
+        return state.getChildWithProperty(ProcessorIDs::name, pluginManager.getAudioOutputDescription().name);
     }
 
     // Returns output processors to delete

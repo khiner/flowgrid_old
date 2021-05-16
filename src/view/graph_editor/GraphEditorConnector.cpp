@@ -5,10 +5,10 @@ GraphEditorConnector::GraphEditorConnector(ValueTree state, ConnectorDragListene
         : state(std::move(state)), connectorDragListener(connectorDragListener), graphEditorProcessorContainer(graphEditorProcessorContainer) {
     setAlwaysOnTop(true);
     if (this->state.isValid()) {
-        const auto &sourceState = this->state.getChildWithName(ConnectionsStateIDs::SOURCE);
-        connection.source = {TracksState::getNodeIdForProcessor(sourceState), sourceState[ConnectionsStateIDs::channel]};
-        const auto &destinationState = this->state.getChildWithName(ConnectionsStateIDs::DESTINATION);
-        connection.destination = {TracksState::getNodeIdForProcessor(destinationState), destinationState[ConnectionsStateIDs::channel]};
+        const auto &sourceState = this->state.getChildWithName(ConnectionsIDs::SOURCE);
+        connection.source = {Tracks::getNodeIdForProcessor(sourceState), sourceState[ConnectionsIDs::channel]};
+        const auto &destinationState = this->state.getChildWithName(ConnectionsIDs::DESTINATION);
+        connection.destination = {Tracks::getNodeIdForProcessor(destinationState), destinationState[ConnectionsIDs::channel]};
     } else {
         connection.source = source;
         connection.destination = destination;

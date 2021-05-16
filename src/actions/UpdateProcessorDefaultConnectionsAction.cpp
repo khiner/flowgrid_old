@@ -4,7 +4,7 @@
 #include "DisconnectProcessorAction.h"
 
 UpdateProcessorDefaultConnectionsAction::UpdateProcessorDefaultConnectionsAction(const ValueTree &processor, bool makeInvalidDefaultsIntoCustom,
-                                                                                 ConnectionsState &connections, OutputState &output, ProcessorGraph &processorGraph)
+                                                                                 Connections &connections, Output &output, ProcessorGraph &processorGraph)
         : CreateOrDeleteConnectionsAction(connections) {
     for (auto connectionType : {audio, midi}) {
         auto customOutgoingConnections = connections.getConnectionsForNode(processor, connectionType, false, true, true, false);
@@ -13,7 +13,7 @@ UpdateProcessorDefaultConnectionsAction::UpdateProcessorDefaultConnectionsAction
         auto processorToConnectTo = connections.findDefaultDestinationProcessor(processor, connectionType);
         if (!processorToConnectTo.isValid())
             processorToConnectTo = output.getAudioOutputProcessorState();
-        auto nodeIdToConnectTo = TracksState::getNodeIdForProcessor(processorToConnectTo);
+        auto nodeIdToConnectTo = Tracks::getNodeIdForProcessor(processorToConnectTo);
 
         auto disconnectDefaultsAction = DisconnectProcessorAction(connections, processor, connectionType, true, false, false, true, nodeIdToConnectTo);
         coalesceWith(disconnectDefaultsAction);
@@ -21,7 +21,7 @@ UpdateProcessorDefaultConnectionsAction::UpdateProcessorDefaultConnectionsAction
             if (!disconnectDefaultsAction.connectionsToDelete.isEmpty()) {
                 for (const auto &connectionToConvert : disconnectDefaultsAction.connectionsToDelete) {
                     auto customConnection = connectionToConvert.createCopy();
-                    customConnection.setProperty(ConnectionsStateIDs::isCustomConnection, true, nullptr);
+                    customConnection.setProperty(ConnectionsIDs::isCustomConnection, true, nullptr);
                     connectionsToCreate.add(customConnection);
                 }
             }

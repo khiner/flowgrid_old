@@ -2,7 +2,7 @@
 
 #include "BinaryData.h"
 
-TrackInputGraphEditorProcessor::TrackInputGraphEditorProcessor(const ValueTree &state, ViewState &view, TracksState &tracks, Project &project, ProcessorGraph &processorGraph, ConnectorDragListener &connectorDragListener)
+TrackInputGraphEditorProcessor::TrackInputGraphEditorProcessor(const ValueTree &state, View &view, Tracks &tracks, Project &project, ProcessorGraph &processorGraph, ConnectorDragListener &connectorDragListener)
         :
         BaseGraphEditorProcessor(state, view, tracks, processorGraph, connectorDragListener), project(project) {
     nameLabel.setJustificationType(Justification::centred);

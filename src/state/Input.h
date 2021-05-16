@@ -5,41 +5,41 @@
 #include "push2/Push2MidiDevice.h"
 #include "PluginManager.h"
 #include "Stateful.h"
-#include "TracksState.h"
+#include "Tracks.h"
 #include "ConnectionType.h"
 
-namespace InputStateIDs {
+namespace InputIDs {
 #define ID(name) const juce::Identifier name(#name);
-    ID(INPUT)
+ID(INPUT)
 #undef ID
 }
 
-class InputState : public Stateful<InputState>, private ValueTree::Listener {
+class Input : public Stateful<Input>, private ValueTree::Listener {
 public:
-    InputState(PluginManager &pluginManager, UndoManager &undoManager, AudioDeviceManager &deviceManager)
+    Input(PluginManager &pluginManager, UndoManager &undoManager, AudioDeviceManager &deviceManager)
             : pluginManager(pluginManager), undoManager(undoManager), deviceManager(deviceManager) {
         state.addListener(this);
     }
 
-    ~InputState() override {
+    ~Input() override {
         state.removeListener(this);
     }
 
-    static Identifier getIdentifier() { return InputStateIDs::INPUT; }
+    static Identifier getIdentifier() { return InputIDs::INPUT; }
 
     void initializeDefault();
 
     ValueTree getAudioInputProcessorState() const {
-        return state.getChildWithProperty(ProcessorStateIDs::name, pluginManager.getAudioInputDescription().name);
+        return state.getChildWithProperty(ProcessorIDs::name, pluginManager.getAudioInputDescription().name);
     }
 
     ValueTree getPush2MidiInputProcessor() const {
-        return state.getChildWithProperty(ProcessorStateIDs::deviceName, Push2MidiDevice::getDeviceName());
+        return state.getChildWithProperty(ProcessorIDs::deviceName, Push2MidiDevice::getDeviceName());
     }
 
     AudioProcessorGraph::NodeID getDefaultInputNodeIdForConnectionType(ConnectionType connectionType) const {
-        if (connectionType == audio) return TracksState::getNodeIdForProcessor(getAudioInputProcessorState());
-        if (connectionType == midi) return TracksState::getNodeIdForProcessor(getPush2MidiInputProcessor());
+        if (connectionType == audio) return Tracks::getNodeIdForProcessor(getAudioInputProcessorState());
+        if (connectionType == midi) return Tracks::getNodeIdForProcessor(getPush2MidiInputProcessor());
         return {};
     }
 

@@ -3,39 +3,39 @@
 #include <juce_graphics/juce_graphics.h>
 #include "Stateful.h"
 
-namespace ViewStateIDs {
+namespace ViewIDs {
 #define ID(name) const juce::Identifier name(#name);
-    ID(VIEW_STATE)
-    ID(controlMode)
-    ID(focusedPane)
-    ID(focusedTrackIndex)
-    ID(focusedProcessorSlot)
-    ID(gridViewSlotOffset)
-    ID(gridViewTrackOffset)
-    ID(masterViewSlotOffset)
-    ID(numMasterProcessorSlots)
-    ID(numProcessorSlots)
+ID(VIEW_STATE)
+ID(controlMode)
+ID(focusedPane)
+ID(focusedTrackIndex)
+ID(focusedProcessorSlot)
+ID(gridViewSlotOffset)
+ID(gridViewTrackOffset)
+ID(masterViewSlotOffset)
+ID(numMasterProcessorSlots)
+ID(numProcessorSlots)
 #undef ID
 }
 
-class ViewState : public Stateful<ViewState> {
+class View : public Stateful<View> {
 public:
-    explicit ViewState(UndoManager &undoManager) : undoManager(undoManager) {}
+    explicit View(UndoManager &undoManager) : undoManager(undoManager) {}
 
-    static Identifier getIdentifier() { return ViewStateIDs::VIEW_STATE; }
+    static Identifier getIdentifier() { return ViewIDs::VIEW_STATE; }
 
     void initializeDefault();
 
     void setMasterViewSlotOffset(int masterViewSlotOffset) {
-        state.setProperty(ViewStateIDs::masterViewSlotOffset, masterViewSlotOffset, &undoManager);
+        state.setProperty(ViewIDs::masterViewSlotOffset, masterViewSlotOffset, &undoManager);
     }
 
     void setGridViewSlotOffset(int gridViewSlotOffset) {
-        state.setProperty(ViewStateIDs::gridViewSlotOffset, gridViewSlotOffset, &undoManager);
+        state.setProperty(ViewIDs::gridViewSlotOffset, gridViewSlotOffset, &undoManager);
     }
 
     void setGridViewTrackOffset(int gridViewTrackOffset) {
-        state.setProperty(ViewStateIDs::gridViewTrackOffset, gridViewTrackOffset, &undoManager);
+        state.setProperty(ViewIDs::gridViewTrackOffset, gridViewTrackOffset, &undoManager);
     }
 
     void updateViewTrackOffsetToInclude(int trackIndex, int numNonMasterTracks);
@@ -43,36 +43,36 @@ public:
     // TODO This and TracksState::isProcessorSlitInView are similar
     void updateViewSlotOffsetToInclude(int processorSlot, bool isMasterTrack);
 
-    int getFocusedTrackIndex() const { return state[ViewStateIDs::focusedTrackIndex]; }
+    int getFocusedTrackIndex() const { return state[ViewIDs::focusedTrackIndex]; }
 
-    int getFocusedProcessorSlot() const { return state[ViewStateIDs::focusedProcessorSlot]; }
+    int getFocusedProcessorSlot() const { return state[ViewIDs::focusedProcessorSlot]; }
 
     juce::Point<int> getFocusedTrackAndSlot() const;
 
-    int getGridViewTrackOffset() const { return state[ViewStateIDs::gridViewTrackOffset]; }
+    int getGridViewTrackOffset() const { return state[ViewIDs::gridViewTrackOffset]; }
 
-    int getGridViewSlotOffset() const { return state[ViewStateIDs::gridViewSlotOffset]; }
+    int getGridViewSlotOffset() const { return state[ViewIDs::gridViewSlotOffset]; }
 
-    int getMasterViewSlotOffset() const { return state[ViewStateIDs::masterViewSlotOffset]; }
+    int getMasterViewSlotOffset() const { return state[ViewIDs::masterViewSlotOffset]; }
 
-    int getNumProcessorSlots(bool isMaster = false) const { return state[isMaster ? ViewStateIDs::numMasterProcessorSlots : ViewStateIDs::numProcessorSlots]; }
+    int getNumProcessorSlots(bool isMaster = false) const { return state[isMaster ? ViewIDs::numMasterProcessorSlots : ViewIDs::numProcessorSlots]; }
 
-    bool isInNoteMode() const { return state[ViewStateIDs::controlMode] == noteControlMode; }
+    bool isInNoteMode() const { return state[ViewIDs::controlMode] == noteControlMode; }
 
-    bool isInSessionMode() const { return state[ViewStateIDs::controlMode] == sessionControlMode; }
+    bool isInSessionMode() const { return state[ViewIDs::controlMode] == sessionControlMode; }
 
-    bool isGridPaneFocused() const { return state[ViewStateIDs::focusedPane] == gridPaneName; }
+    bool isGridPaneFocused() const { return state[ViewIDs::focusedPane] == gridPaneName; }
 
-    void setNoteMode() { state.setProperty(ViewStateIDs::controlMode, noteControlMode, nullptr); }
+    void setNoteMode() { state.setProperty(ViewIDs::controlMode, noteControlMode, nullptr); }
 
-    void setSessionMode() { state.setProperty(ViewStateIDs::controlMode, sessionControlMode, nullptr); }
+    void setSessionMode() { state.setProperty(ViewIDs::controlMode, sessionControlMode, nullptr); }
 
-    void focusOnGridPane() { state.setProperty(ViewStateIDs::focusedPane, gridPaneName, nullptr); }
+    void focusOnGridPane() { state.setProperty(ViewIDs::focusedPane, gridPaneName, nullptr); }
 
-    void focusOnEditorPane() { state.setProperty(ViewStateIDs::focusedPane, editorPaneName, nullptr); }
+    void focusOnEditorPane() { state.setProperty(ViewIDs::focusedPane, editorPaneName, nullptr); }
 
     void focusOnTrackIndex(const int trackIndex) {
-        state.setProperty(ViewStateIDs::focusedTrackIndex, trackIndex, nullptr);
+        state.setProperty(ViewIDs::focusedTrackIndex, trackIndex, nullptr);
     }
 
     void focusOnProcessorSlot(const juce::Point<int> slot) {
@@ -80,9 +80,9 @@ public:
         focusOnTrackIndex(slot.x);
         if (slot.x != currentlyFocusedTrackAndSlot.x && slot.y == currentlyFocusedTrackAndSlot.y) {
             // Different track but same slot selected - still send out the message
-            state.sendPropertyChangeMessage(ViewStateIDs::focusedProcessorSlot);
+            state.sendPropertyChangeMessage(ViewIDs::focusedProcessorSlot);
         } else {
-            state.setProperty(ViewStateIDs::focusedProcessorSlot, slot.y, nullptr);
+            state.setProperty(ViewIDs::focusedProcessorSlot, slot.y, nullptr);
         }
     }
 
@@ -92,8 +92,8 @@ public:
     }
 
     void addProcessorSlots(int n = 1, bool isMaster = false) {
-        state.setProperty(isMaster ? ViewStateIDs::numMasterProcessorSlots : ViewStateIDs::numProcessorSlots,
-                              getNumProcessorSlots(isMaster) + n, nullptr);
+        state.setProperty(isMaster ? ViewIDs::numMasterProcessorSlots : ViewIDs::numProcessorSlots,
+                          getNumProcessorSlots(isMaster) + n, nullptr);
     }
 
 

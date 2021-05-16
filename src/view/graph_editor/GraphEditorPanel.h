@@ -11,7 +11,7 @@ class GraphEditorPanel
         : public Component, public ConnectorDragListener, public GraphEditorProcessorContainer,
           private ValueTree::Listener {
 public:
-    GraphEditorPanel(ViewState &view, TracksState &tracks, ConnectionsState &connections, InputState &input, OutputState &output, ProcessorGraph &processorGraph, Project &project, PluginManager &pluginManager);
+    GraphEditorPanel(View &view, Tracks &tracks, Connections &connections, Input &input, Output &output, ProcessorGraph &processorGraph, Project &project, PluginManager &pluginManager);
 
     ~GraphEditorPanel() override;
 
@@ -36,11 +36,11 @@ public:
     bool closeAnyOpenPluginWindows();
 
 private:
-    ViewState &view;
-    TracksState &tracks;
-    ConnectionsState &connections;
-    InputState &input;
-    OutputState &output;
+    View &view;
+    Tracks &tracks;
+    Connections &connections;
+    Input &input;
+    Output &output;
 
     ProcessorGraph &graph;
     Project &project;
@@ -63,9 +63,9 @@ private:
 
     OwnedArray<PluginWindow> activePluginWindows;
 
-    int getTrackWidth() { return (getWidth() - ViewState::TRACKS_MARGIN * 2) / ViewState::NUM_VISIBLE_TRACKS; }
+    int getTrackWidth() { return (getWidth() - View::TRACKS_MARGIN * 2) / View::NUM_VISIBLE_TRACKS; }
 
-    int getProcessorHeight() { return (getHeight() - ViewState::TRACK_LABEL_HEIGHT - ViewState::TRACK_INPUT_HEIGHT) / (ViewState::NUM_VISIBLE_PROCESSOR_SLOTS + 1); }
+    int getProcessorHeight() { return (getHeight() - View::TRACK_LABEL_HEIGHT - View::TRACK_INPUT_HEIGHT) / (View::NUM_VISIBLE_PROCESSOR_SLOTS + 1); }
 
     GraphEditorChannel *findChannelAt(const MouseEvent &e) const;
 

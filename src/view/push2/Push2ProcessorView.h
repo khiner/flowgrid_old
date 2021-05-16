@@ -7,7 +7,7 @@
 
 class Push2ProcessorView : public Push2TrackManagingView {
 public:
-    explicit Push2ProcessorView(ViewState &view, TracksState &tracks, Project &project, Push2MidiCommunicator &push2MidiCommunicator);
+    explicit Push2ProcessorView(View &view, Tracks &tracks, Project &project, Push2MidiCommunicator &push2MidiCommunicator);
 
     void resized() override;
 
@@ -31,7 +31,7 @@ private:
     bool processorHasFocus{false};
 
     static Colour getColourForTrack(const ValueTree &track) {
-        return track.isValid() ? TracksState::getTrackColour(track) : Colours::black;
+        return track.isValid() ? Tracks::getTrackColour(track) : Colours::black;
     }
 
     int getProcessorIndexForButtonIndex(int buttonIndex) {
@@ -64,7 +64,7 @@ private:
     bool canPageProcessorsLeft() const { return processorLabelOffset > 0; }
 
     bool canPageProcessorsRight() const {
-        const auto &focusedLane = TracksState::getProcessorLaneForTrack(tracks.getFocusedTrack());
+        const auto &focusedLane = Tracks::getProcessorLaneForTrack(tracks.getFocusedTrack());
         return focusedLane.getNumChildren() > processorLabelOffset + (canPageProcessorsLeft() ? NUM_COLUMNS - 1 : NUM_COLUMNS);
     }
 

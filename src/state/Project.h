@@ -2,25 +2,25 @@
 
 #include <juce_gui_extra/juce_gui_extra.h>
 
-#include "state/TracksState.h"
-#include "state/ConnectionsState.h"
-#include "state/ViewState.h"
-#include "state/InputState.h"
-#include "state/OutputState.h"
+#include "state/Tracks.h"
+#include "state/Connections.h"
+#include "state/View.h"
+#include "state/Input.h"
+#include "state/Output.h"
 #include "PluginManager.h"
 #include "ProcessorGraph.h"
 #include "CopiedTracks.h"
 
 namespace ProjectIDs {
 #define ID(name) const juce::Identifier name(#name);
-    ID(PROJECT)
-    ID(name)
+ID(PROJECT)
+ID(name)
 #undef ID
 }
 
 class Project : public Stateful<Project>, public FileBasedDocument, private ChangeListener, private ValueTree::Listener {
 public:
-    Project(ViewState &view, TracksState &tracks, ConnectionsState &connections, InputState &input, OutputState &output,
+    Project(View &view, Tracks &tracks, Connections &connections, Input &input, Output &output,
             ProcessorGraph &processorGraph, UndoManager &undoManager, PluginManager &pluginManager, AudioDeviceManager &deviceManager);
 
     ~Project() override;
@@ -54,7 +54,7 @@ public:
     UndoManager &getUndoManager() { return undoManager; }
 
     bool isPush2MidiInputProcessorConnected() const {
-        return connections.isNodeConnected(TracksState::getNodeIdForProcessor(input.getPush2MidiInputProcessor()));
+        return connections.isNodeConnected(Tracks::getNodeIdForProcessor(input.getPush2MidiInputProcessor()));
     }
 
     bool isShiftHeld() const { return shiftHeld || push2ShiftHeld; }
@@ -97,12 +97,12 @@ public:
     void endDraggingProcessor() {
         if (!isCurrentlyDraggingProcessor()) return;
 
-        initialDraggingTrackAndSlot = TracksState::INVALID_TRACK_AND_SLOT;
+        initialDraggingTrackAndSlot = Tracks::INVALID_TRACK_AND_SLOT;
         processorGraph.resumeAudioGraphUpdatesAndApplyDiffSincePause();
     }
 
     bool isCurrentlyDraggingProcessor() {
-        return initialDraggingTrackAndSlot != TracksState::INVALID_TRACK_AND_SLOT;
+        return initialDraggingTrackAndSlot != Tracks::INVALID_TRACK_AND_SLOT;
     }
 
     void setProcessorSlotSelected(const ValueTree &track, int slot, bool selected, bool deselectOthers = true);
@@ -127,13 +127,13 @@ public:
 
     void navigateRight() { selectTrackAndSlot(tracks.trackAndSlotWithLeftRightDelta(1)); }
 
-    bool canNavigateUp() const { return tracks.trackAndSlotWithUpDownDelta(-1).x != TracksState::INVALID_TRACK_AND_SLOT.x; }
+    bool canNavigateUp() const { return tracks.trackAndSlotWithUpDownDelta(-1).x != Tracks::INVALID_TRACK_AND_SLOT.x; }
 
-    bool canNavigateDown() const { return tracks.trackAndSlotWithUpDownDelta(1).x != TracksState::INVALID_TRACK_AND_SLOT.x; }
+    bool canNavigateDown() const { return tracks.trackAndSlotWithUpDownDelta(1).x != Tracks::INVALID_TRACK_AND_SLOT.x; }
 
-    bool canNavigateLeft() const { return tracks.trackAndSlotWithLeftRightDelta(-1).x != TracksState::INVALID_TRACK_AND_SLOT.x; }
+    bool canNavigateLeft() const { return tracks.trackAndSlotWithLeftRightDelta(-1).x != Tracks::INVALID_TRACK_AND_SLOT.x; }
 
-    bool canNavigateRight() const { return tracks.trackAndSlotWithLeftRightDelta(1).x != TracksState::INVALID_TRACK_AND_SLOT.x; }
+    bool canNavigateRight() const { return tracks.trackAndSlotWithLeftRightDelta(1).x != Tracks::INVALID_TRACK_AND_SLOT.x; }
 
     void createDefaultProject();
 
@@ -166,11 +166,11 @@ public:
     static String getFilenameSuffix() { return ".smp"; }
 
 private:
-    ViewState &view;
-    TracksState &tracks;
-    ConnectionsState &connections;
-    InputState &input;
-    OutputState &output;
+    View &view;
+    Tracks &tracks;
+    Connections &connections;
+    Input &input;
+    Output &output;
 
     ProcessorGraph &processorGraph;
     UndoManager &undoManager;
@@ -181,8 +181,8 @@ private:
 
     bool shiftHeld{false}, altHeld{false}, push2ShiftHeld{false};
 
-    juce::Point<int> initialDraggingTrackAndSlot = TracksState::INVALID_TRACK_AND_SLOT,
-            currentlyDraggingTrackAndSlot = TracksState::INVALID_TRACK_AND_SLOT;
+    juce::Point<int> initialDraggingTrackAndSlot = Tracks::INVALID_TRACK_AND_SLOT,
+            currentlyDraggingTrackAndSlot = Tracks::INVALID_TRACK_AND_SLOT;
 
     ValueTree mostRecentlyCreatedTrack, mostRecentlyCreatedProcessor;
 
@@ -195,9 +195,9 @@ private:
     void updateAllDefaultConnections();
 
     void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override {
-        if (TrackState::isType(child))
+        if (Track::isType(child))
             mostRecentlyCreatedTrack = child;
-        else if (child.hasType(ProcessorStateIDs::PROCESSOR))
+        else if (child.hasType(ProcessorIDs::PROCESSOR))
             mostRecentlyCreatedProcessor = child;
     }
 };

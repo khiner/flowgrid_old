@@ -3,7 +3,7 @@
 GraphEditorChannel::GraphEditorChannel(ValueTree state, ConnectorDragListener &connectorDragListener, bool showChannelText)
         : state(std::move(state)), connectorDragListener(connectorDragListener),
           channelLabel(isMidi(), showChannelText) {
-    valueTreePropertyChanged(this->state, ChannelStateIDs::abbreviatedName);
+    valueTreePropertyChanged(this->state, ChannelIDs::abbreviatedName);
     this->state.addListener(this);
 
     addAndMakeVisible(channelLabel);
@@ -17,12 +17,12 @@ GraphEditorChannel::~GraphEditorChannel() {
 }
 
 AudioProcessorGraph::NodeAndChannel GraphEditorChannel::getNodeAndChannel() const {
-    return {TracksState::getNodeIdForProcessor(getProcessor()), getChannelIndex()};
+    return {Tracks::getNodeIdForProcessor(getProcessor()), getChannelIndex()};
 }
 
 juce::Point<float> GraphEditorChannel::getConnectPosition() const {
     const auto &centre = getBounds().getCentre().toFloat();
-    bool isLeftToRight = TracksState::isProcessorLeftToRightFlowing(getProcessor());
+    bool isLeftToRight = Tracks::isProcessorLeftToRightFlowing(getProcessor());
 
     if (isInput()) {
         if (isLeftToRight)
@@ -47,7 +47,7 @@ void GraphEditorChannel::resized() {
 //  make IO processors smaller, left-align input processors and right-align output processors
 //  fix master trackoutput bottom channel label positioning
     if (channelLabel.getText().length() <= 1 || isMidi()) {
-        bool isLeftToRight = TracksState::isProcessorLeftToRightFlowing(getProcessor());
+        bool isLeftToRight = Tracks::isProcessorLeftToRightFlowing(getProcessor());
         if (isInput()) {
             if (isLeftToRight)
                 channelLabelBounds.setWidth(getHeight());
@@ -80,8 +80,8 @@ void GraphEditorChannel::updateColour() {
 void GraphEditorChannel::valueTreePropertyChanged(ValueTree &v, const Identifier &i) {
     if (v != state) return;
 
-    if (i == ChannelStateIDs::abbreviatedName) {
-        const String &name = v[ChannelStateIDs::abbreviatedName];
+    if (i == ChannelIDs::abbreviatedName) {
+        const String &name = v[ChannelIDs::abbreviatedName];
         channelLabel.setText(name);
         setName(name);
         setTooltip(name);

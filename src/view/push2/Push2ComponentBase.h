@@ -7,7 +7,7 @@ using Push2 = Push2MidiCommunicator;
 
 class Push2ComponentBase : public Component, public Push2Listener, public Push2Colours::Listener {
 public:
-    Push2ComponentBase(ViewState &view, TracksState &tracks, Push2MidiCommunicator &push2)
+    Push2ComponentBase(View &view, Tracks &tracks, Push2MidiCommunicator &push2)
             : view(view), tracks(tracks), push2(push2) {
         push2.getPush2Colours().addListener(this);
     }
@@ -70,7 +70,7 @@ protected:
 
     bool isShiftHeld{false};
 
-    ViewState &view;
-    TracksState &tracks;
+    View &view;
+    Tracks &tracks;
     Push2MidiCommunicator &push2;
 };

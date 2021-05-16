@@ -1,6 +1,6 @@
 #include "Push2ProcessorView.h"
 
-Push2ProcessorView::Push2ProcessorView(ViewState &view, TracksState &tracks, Project &project, Push2MidiCommunicator &push2MidiCommunicator)
+Push2ProcessorView::Push2ProcessorView(View &view, Tracks &tracks, Project &project, Push2MidiCommunicator &push2MidiCommunicator)
         : Push2TrackManagingView(view, tracks, project, push2MidiCommunicator),
           escapeProcessorFocusButton("Back", 0.5, Colours::white),
           parameterPageLeftButton("Page parameters left", 0.5, Colours::white),
@@ -44,7 +44,7 @@ void Push2ProcessorView::resized() {
 
 void Push2ProcessorView::trackSelected(const ValueTree &track) {
     Push2TrackManagingView::trackSelected(track);
-    if (TracksState::getProcessorLaneForTrack(track).getNumChildren() == 0) {
+    if (Tracks::getProcessorLaneForTrack(track).getNumChildren() == 0) {
         parametersPanel->setProcessorWrapper(nullptr);
     }
 }
@@ -138,7 +138,7 @@ void Push2ProcessorView::updatePageButtonVisibility() {
 
 void Push2ProcessorView::updateProcessorButtons() {
     const auto &focusedTrack = tracks.getFocusedTrack();
-    const auto &focusedProcessorLane = TracksState::getProcessorLaneForTrack(focusedTrack);
+    const auto &focusedProcessorLane = Tracks::getProcessorLaneForTrack(focusedTrack);
 
     if (processorHasFocus || !focusedTrack.isValid()) { // TODO reset when processor changes
         for (auto *label : processorLabels)
@@ -152,9 +152,9 @@ void Push2ProcessorView::updateProcessorButtons() {
                 label->setVisible(false);
             } else if (processorIndex < focusedProcessorLane.getNumChildren()) {
                 const auto &processor = focusedProcessorLane.getChild(processorIndex);
-                if (processor.hasType(ProcessorStateIDs::PROCESSOR)) {
+                if (processor.hasType(ProcessorIDs::PROCESSOR)) {
                     label->setVisible(true);
-                    label->setText(processor[ProcessorStateIDs::name], dontSendNotification);
+                    label->setText(processor[ProcessorIDs::name], dontSendNotification);
                     label->setSelected(tracks.isProcessorFocused(processor));
                 }
             } else if (buttonIndex == 0 && focusedProcessorLane.getNumChildren() == 0) {
@@ -208,12 +208,12 @@ void Push2ProcessorView::pageProcessorsRight() {
 
 void Push2ProcessorView::valueTreePropertyChanged(ValueTree &tree, const Identifier &i) {
     Push2TrackManagingView::valueTreePropertyChanged(tree, i);
-    if (tree.hasType(ProcessorStateIDs::PROCESSOR)) {
+    if (tree.hasType(ProcessorIDs::PROCESSOR)) {
         int processorIndex = tree.getParent().indexOf(tree);
-        if (i == ProcessorStateIDs::name) {
+        if (i == ProcessorIDs::name) {
             auto buttonIndex = getButtonIndexForProcessorIndex(processorIndex);
             if (auto *processorLabel = processorLabels[buttonIndex]) {
-                processorLabel->setText(tree[ProcessorStateIDs::name], dontSendNotification);
+                processorLabel->setText(tree[ProcessorIDs::name], dontSendNotification);
             }
         }
     }
@@ -222,13 +222,13 @@ void Push2ProcessorView::valueTreePropertyChanged(ValueTree &tree, const Identif
 void Push2ProcessorView::trackColourChanged(const String &trackUuid, const Colour &colour) {
     Push2TrackManagingView::trackColourChanged(trackUuid, colour);
     auto track = tracks.findTrackWithUuid(trackUuid);
-    if (TracksState::doesTrackHaveSelections(track)) {
+    if (Tracks::doesTrackHaveSelections(track)) {
         updateColours();
     }
 }
 
 void Push2ProcessorView::selectProcessor(int processorIndex) {
-    const auto &focusedLane = TracksState::getProcessorLaneForTrack(tracks.getFocusedTrack());
+    const auto &focusedLane = Tracks::getProcessorLaneForTrack(tracks.getFocusedTrack());
     if (focusedLane.isValid() && processorIndex < focusedLane.getNumChildren()) {
         project.selectProcessor(focusedLane.getChild(processorIndex));
     }
