@@ -150,8 +150,7 @@ bool ProcessorGraph::removeConnection(const AudioProcessorGraph::Connection &con
     undoManager.beginNewTransaction();
     bool removed = undoManager.perform(new DeleteConnection(connectionState, true, true, connections));
     if (removed && connectionState.hasProperty(ConnectionIDs::isCustomConnection)) {
-        const auto &source = connectionState.getChildWithName(ConnectionSourceIDs::SOURCE);
-        const auto &sourceProcessor = getProcessorStateForNodeId(Processor::getNodeId(source));
+        const auto &sourceProcessor = getProcessorStateForNodeId(fg::Connection::getSourceNodeId(connectionState));
         undoManager.perform(new UpdateProcessorDefaultConnections(sourceProcessor, false, connections, output, *this));
         undoManager.perform(new ResetDefaultExternalInputConnectionsAction(connections, tracks, input, *this));
     }

@@ -45,10 +45,16 @@ ValueTree Connections::findDefaultDestinationProcessor(const ValueTree &sourcePr
 
 bool Connections::isNodeConnected(AudioProcessorGraph::NodeID nodeId) const {
     for (const auto &connection : state) {
-        if (Processor::getNodeId(connection.getChildWithName(ConnectionSourceIDs::SOURCE)) == nodeId)
+        if (fg::Connection::getSourceNodeId(connection) == nodeId)
             return true;
     }
     return false;
+}
+
+static bool channelMatchesConnectionType(int channel, ConnectionType connectionType) {
+    if (connectionType == all) return true;
+    return (connectionType == audio && channel != AudioProcessorGraph::midiChannelIndex) ||
+           (connectionType == midi && channel == AudioProcessorGraph::midiChannelIndex);
 }
 
 Array<ValueTree> Connections::getConnectionsForNode(const ValueTree &processor, ConnectionType connectionType, bool incoming, bool outgoing, bool includeCustom, bool includeDefault) {
@@ -57,14 +63,9 @@ Array<ValueTree> Connections::getConnectionsForNode(const ValueTree &processor, 
         if ((connection[ConnectionIDs::isCustomConnection] && !includeCustom) || (!connection[ConnectionIDs::isCustomConnection] && !includeDefault))
             continue;
 
-        int processorNodeId = int(Processor::getNodeId(processor).uid);
-        const auto &endpointType = connection.getChildWithProperty(ProcessorIDs::nodeId, processorNodeId);
-        bool directionIsAcceptable = (incoming && endpointType.hasType(ConnectionDestinationIDs::DESTINATION)) || (outgoing && endpointType.hasType(ConnectionSourceIDs::SOURCE));
-        bool typeIsAcceptable = connectionType == all ||
-                                (connectionType == audio && int(endpointType[ConnectionIDs::channel]) != AudioProcessorGraph::midiChannelIndex) ||
-                                (connectionType == midi && int(endpointType[ConnectionIDs::channel]) == AudioProcessorGraph::midiChannelIndex);
-
-        if (directionIsAcceptable && typeIsAcceptable)
+        auto processorNodeId = Processor::getNodeId(processor);
+        if ((incoming && fg::Connection::getDestinationNodeId(connection) == processorNodeId && channelMatchesConnectionType(fg::Connection::getDestinationChannel(connection), connectionType)) ||
+            (outgoing && fg::Connection::getSourceNodeId(connection) == processorNodeId && channelMatchesConnectionType(fg::Connection::getSourceChannel(connection), connectionType)))
             nodeConnections.add(connection);
     }
 

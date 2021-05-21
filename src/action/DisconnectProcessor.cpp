@@ -5,7 +5,7 @@ DisconnectProcessor::DisconnectProcessor(Connections &connections, const ValueTr
         : CreateOrDeleteConnections(connections) {
     const auto nodeConnections = connections.getConnectionsForNode(processor, connectionType, incoming, outgoing);
     for (const auto &connection : nodeConnections) {
-        const auto destinationNodeId = Processor::getNodeId(connection.getChildWithName(ConnectionDestinationIDs::DESTINATION));
+        const auto destinationNodeId = fg::Connection::getDestinationNodeId(connection);
         if (excludingRemovalTo != destinationNodeId) {
             coalesceWith(DeleteConnection(connection, custom, defaults, connections));
         }

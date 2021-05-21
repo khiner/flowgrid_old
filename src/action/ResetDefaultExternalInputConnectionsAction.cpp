@@ -73,7 +73,7 @@ bool ResetDefaultExternalInputConnectionsAction::isAvailableForExternalInput(con
     const auto &incomingConnections = connections.getConnectionsForNode(processor, connectionType, true, false);
     const auto defaultInputNodeId = input.getDefaultInputNodeIdForConnectionType(connectionType);
     for (const auto &incomingConnection : incomingConnections) {
-        if (Processor::getNodeId(incomingConnection.getChildWithName(ConnectionSourceIDs::SOURCE)) != defaultInputNodeId)
+        if (fg::Connection::getSourceNodeId(incomingConnection) != defaultInputNodeId)
             return false;
     }
     return true;
@@ -84,8 +84,8 @@ bool ResetDefaultExternalInputConnectionsAction::areProcessorsConnected(AudioPro
 
     Array<AudioProcessorGraph::NodeID> exploredDownstreamNodes;
     for (const auto &connection : connections.getState()) {
-        if (Processor::getNodeId(connection.getChildWithName(ConnectionSourceIDs::SOURCE)) == upstreamNodeId) {
-            auto otherDownstreamNodeId = Processor::getNodeId(connection.getChildWithName(ConnectionDestinationIDs::DESTINATION));
+        if (fg::Connection::getSourceNodeId(connection) == upstreamNodeId) {
+            auto otherDownstreamNodeId = fg::Connection::getDestinationNodeId(connection);
             if (!exploredDownstreamNodes.contains(otherDownstreamNodeId)) {
                 if (otherDownstreamNodeId == downstreamNodeId || areProcessorsConnected(otherDownstreamNodeId, downstreamNodeId))
                     return true;

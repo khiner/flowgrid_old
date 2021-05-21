@@ -90,9 +90,7 @@ struct Processor : public Stateful<Processor> {
     static void setPluginWindowType(ValueTree &state, int pluginWindowType) { state.setProperty(ProcessorIDs::pluginWindowType, pluginWindowType, nullptr); }
 
     static AudioProcessorGraph::Connection toProcessorGraphConnection(const ValueTree &state) {
-        const auto &source = state.getChildWithName(ConnectionSourceIDs::SOURCE);
-        const auto destination = state.getChildWithName(ConnectionDestinationIDs::DESTINATION);
-        return {{getNodeId(source), fg::Connection::getChannel(source)},
-                {getNodeId(destination), fg::Connection::getChannel(destination)}};
+        return {{fg::Connection::getSourceNodeId(state), fg::Connection::getSourceChannel(state)},
+                {fg::Connection::getDestinationNodeId(state), fg::Connection::getDestinationChannel(state)}};
     }
 };
