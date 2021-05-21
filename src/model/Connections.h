@@ -7,15 +7,10 @@
 namespace ConnectionsIDs {
 #define ID(name) const juce::Identifier name(#name);
 ID(CONNECTIONS)
-ID(SOURCE)
-ID(DESTINATION)
-ID(channel)
-ID(isCustomConnection)
 #undef ID
 }
 
-class Connections : public Stateful<Connections> {
-public:
+struct Connections : public Stateful<Connections> {
     explicit Connections(Tracks &tracks) : tracks(tracks) {}
 
     static Identifier getIdentifier() { return ConnectionIDs::CONNECTION; }
@@ -28,16 +23,9 @@ public:
                                            bool incoming = true, bool outgoing = true,
                                            bool includeCustom = true, bool includeDefault = true);
 
-    static AudioProcessorGraph::Connection stateToConnection(const ValueTree &connectionState) {
-        const auto &sourceState = connectionState.getChildWithName(ConnectionsIDs::SOURCE);
-        const auto &destState = connectionState.getChildWithName(ConnectionsIDs::DESTINATION);
-        return {{Tracks::getNodeIdForProcessor(sourceState), int(sourceState[ConnectionsIDs::channel])},
-                {Tracks::getNodeIdForProcessor(destState),   int(destState[ConnectionsIDs::channel])}};
-    }
-
     ValueTree getConnectionMatching(const AudioProcessorGraph::Connection &connection) const {
         for (auto connectionState : state)
-            if (stateToConnection(connectionState) == connection)
+            if (Processor::toProcessorGraphConnection(connectionState) == connection)
                 return connectionState;
         return {};
     }

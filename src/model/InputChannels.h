@@ -8,7 +8,6 @@ ID(INPUT_CHANNELS)
 #undef ID
 }
 
-class InputChannels : public Stateful<InputChannels> {
-public:
+struct InputChannels : public Stateful<InputChannels> {
     static Identifier getIdentifier() { return InputChannelsIDs::INPUT_CHANNELS; }
 };

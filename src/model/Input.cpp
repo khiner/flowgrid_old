@@ -17,7 +17,7 @@ Array<ValueTree> Input::syncInputDevicesWithDeviceManager() {
         if (deviceManager.isMidiInputEnabled(deviceName) &&
             !state.getChildWithProperty(ProcessorIDs::deviceName, deviceName).isValid()) {
             auto midiInputProcessor = CreateProcessor::createProcessor(MidiInputProcessor::getPluginDescription());
-            midiInputProcessor.setProperty(ProcessorIDs::deviceName, deviceName, nullptr);
+            Processor::setDeviceName(midiInputProcessor, deviceName);
             state.addChild(midiInputProcessor, -1, &undoManager);
         }
     }

@@ -212,9 +212,9 @@ LabelGraphEditorProcessor *GraphEditorPanel::findMidiOutputProcessorForNodeId(co
 }
 
 ResizableWindow *GraphEditorPanel::getOrCreateWindowFor(ValueTree &processorState, PluginWindow::Type type) {
-    auto nodeId = Tracks::getNodeIdForProcessor(processorState);
+    auto nodeId = Processor::getNodeId(processorState);
     for (auto *pluginWindow : activePluginWindows)
-        if (Tracks::getNodeIdForProcessor(pluginWindow->processor) == nodeId && pluginWindow->type == type)
+        if (Processor::getNodeId(pluginWindow->processor) == nodeId && pluginWindow->type == type)
             return pluginWindow;
 
     if (auto *processor = graph.getProcessorWrapperForNodeId(nodeId)->processor)
@@ -224,9 +224,9 @@ ResizableWindow *GraphEditorPanel::getOrCreateWindowFor(ValueTree &processorStat
 }
 
 void GraphEditorPanel::closeWindowFor(ValueTree &processor) {
-    auto nodeId = Tracks::getNodeIdForProcessor(processor);
+    auto nodeId = Processor::getNodeId(processor);
     for (int i = activePluginWindows.size(); --i >= 0;)
-        if (Tracks::getNodeIdForProcessor(activePluginWindows.getUnchecked(i)->processor) == nodeId)
+        if (Processor::getNodeId(activePluginWindows.getUnchecked(i)->processor) == nodeId)
             activePluginWindows.remove(i);
 }
 
@@ -325,7 +325,7 @@ void GraphEditorPanel::showPopupMenu(const ValueTree &track, int slot) {
 }
 
 void GraphEditorPanel::valueTreePropertyChanged(ValueTree &tree, const Identifier &i) {
-    if ((tree.hasType(ProcessorIDs::PROCESSOR) && i == ProcessorIDs::processorSlot) || i == ViewIDs::gridViewSlotOffset) {
+    if ((Processor::isType(tree) && i == ProcessorIDs::processorSlot) || i == ViewIDs::gridViewSlotOffset) {
         connectors->updateConnectors();
     } else if (i == ViewIDs::gridViewTrackOffset || i == ViewIDs::masterViewSlotOffset) {
         resized();
@@ -360,7 +360,7 @@ void GraphEditorPanel::valueTreePropertyChanged(ValueTree &tree, const Identifie
 }
 
 void GraphEditorPanel::valueTreeChildAdded(ValueTree &parent, ValueTree &child) {
-    if (Track::isType(child) || child.hasType(ProcessorIDs::PROCESSOR) || child.hasType(ConnectionIDs::CONNECTION)) {
+    if (Track::isType(child) || Processor::isType(child) || Connection::isType(child)) {
         connectors->updateConnectors();
     }
 }
@@ -368,17 +368,17 @@ void GraphEditorPanel::valueTreeChildAdded(ValueTree &parent, ValueTree &child) 
 void GraphEditorPanel::valueTreeChildRemoved(ValueTree &parent, ValueTree &child, int indexFromWhichChildWasRemoved) {
     if (Track::isType(child)) {
         connectors->updateConnectors();
-    } else if (child.hasType(ProcessorIDs::PROCESSOR)) {
+    } else if (Processor::isType(child)) {
         if (child[ProcessorIDs::name] == InternalPluginFormat::getMidiInputProcessorName()) {
-            midiInputProcessors.removeObject(findMidiInputProcessorForNodeId(Tracks::getNodeIdForProcessor(child)));
+            midiInputProcessors.removeObject(findMidiInputProcessorForNodeId(Processor::getNodeId(child)));
             resized();
         } else if (child[ProcessorIDs::name] == InternalPluginFormat::getMidiOutputProcessorName()) {
-            midiOutputProcessors.removeObject(findMidiOutputProcessorForNodeId(Tracks::getNodeIdForProcessor(child)));
+            midiOutputProcessors.removeObject(findMidiOutputProcessorForNodeId(Processor::getNodeId(child)));
             resized();
         } else {
             connectors->updateConnectors();
         }
-    } else if (child.hasType(ConnectionIDs::CONNECTION)) {
+    } else if (Connection::isType(child)) {
         connectors->updateConnectors();
     }
 }

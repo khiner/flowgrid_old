@@ -3,8 +3,8 @@
 DeleteTrack::DeleteTrack(const ValueTree &trackToDelete, Tracks &tracks, Connections &connections, ProcessorGraph &processorGraph)
         : trackToDelete(trackToDelete), trackIndex(trackToDelete.getParent().indexOf(trackToDelete)),
           tracks(tracks) {
-    for (const auto &processor : Tracks::getAllProcessorsForTrack(trackToDelete)) {
-        deleteProcessorActions.add(new DeleteProcessor(processor, tracks, connections, processorGraph));
+    for (const auto &processorState : Tracks::getAllProcessorsForTrack(trackToDelete)) {
+        deleteProcessorActions.add(new DeleteProcessor(processorState, tracks, connections, processorGraph));
         deleteProcessorActions.getLast()->performTemporary();
     }
     for (int i = deleteProcessorActions.size() - 1; i >= 0; i--) {

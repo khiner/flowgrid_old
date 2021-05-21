@@ -30,7 +30,7 @@ public:
     }
 
     StatefulAudioProcessorWrapper *getProcessorWrapperForState(const ValueTree &processorState) const {
-        return processorState.isValid() ? getProcessorWrapperForNodeId(Tracks::getNodeIdForProcessor(processorState)) : nullptr;
+        return processorState.isValid() ? getProcessorWrapperForNodeId(Processor::getNodeId(processorState)) : nullptr;
     }
 
     AudioProcessor *getAudioProcessorForState(const ValueTree &processorState) const {
@@ -85,7 +85,7 @@ public:
                           bool defaults, bool custom, bool incoming, bool outgoing, NodeID excludingRemovalTo = {});
 
     Node *getNodeForState(const ValueTree &processorState) const {
-        return getNodeForId(Tracks::getNodeIdForProcessor(processorState));
+        return getNodeForId(Processor::getNodeId(processorState));
     }
 
     void onProcessorCreated(const ValueTree &processor) {

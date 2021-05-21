@@ -18,7 +18,7 @@ public:
     }
 
     AudioProcessorGraph::NodeID getNodeId() const {
-        return Tracks::getNodeIdForProcessor(state);
+        return Processor::getNodeId(state);
     }
 
     virtual bool isInView() {

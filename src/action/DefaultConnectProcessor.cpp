@@ -11,7 +11,7 @@ static const Array<int> &getDefaultConnectionChannels(ConnectionType connectionT
 DefaultConnectProcessor::DefaultConnectProcessor(const ValueTree &fromProcessor, AudioProcessorGraph::NodeID toNodeId, ConnectionType connectionType, Connections &connections,
                                                  ProcessorGraph &processorGraph)
         : CreateOrDeleteConnections(connections) {
-    const auto fromNodeId = Tracks::getNodeIdForProcessor(fromProcessor);
+    const auto fromNodeId = Processor::getNodeId(fromProcessor);
     if (fromProcessor.isValid() && toNodeId.isValid()) {
         const auto &defaultConnectionChannels = getDefaultConnectionChannels(connectionType);
         for (auto channel : defaultConnectionChannels) {

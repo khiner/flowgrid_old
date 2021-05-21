@@ -13,7 +13,7 @@ UpdateProcessorDefaultConnections::UpdateProcessorDefaultConnections(const Value
         auto processorToConnectTo = connections.findDefaultDestinationProcessor(processor, connectionType);
         if (!processorToConnectTo.isValid())
             processorToConnectTo = output.getAudioOutputProcessorState();
-        auto nodeIdToConnectTo = Tracks::getNodeIdForProcessor(processorToConnectTo);
+        auto nodeIdToConnectTo = Processor::getNodeId(processorToConnectTo);
 
         auto disconnectDefaultsAction = DisconnectProcessor(connections, processor, connectionType, true, false, false, true, nodeIdToConnectTo);
         coalesceWith(disconnectDefaultsAction);
@@ -21,7 +21,7 @@ UpdateProcessorDefaultConnections::UpdateProcessorDefaultConnections(const Value
             if (!disconnectDefaultsAction.connectionsToDelete.isEmpty()) {
                 for (const auto &connectionToConvert : disconnectDefaultsAction.connectionsToDelete) {
                     auto customConnection = connectionToConvert.createCopy();
-                    customConnection.setProperty(ConnectionsIDs::isCustomConnection, true, nullptr);
+                    customConnection.setProperty(ConnectionIDs::isCustomConnection, true, nullptr);
                     connectionsToCreate.add(customConnection);
                 }
             }

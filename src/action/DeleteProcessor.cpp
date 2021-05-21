@@ -5,15 +5,15 @@
 DeleteProcessor::DeleteProcessor(const ValueTree &processorToDelete, Tracks &tracks, Connections &connections, ProcessorGraph &processorGraph)
         : tracks(tracks), trackIndex(tracks.indexOf(Tracks::getTrackForProcessor(processorToDelete))),
           processorToDelete(processorToDelete),
-          processorIndex(processorToDelete.getParent().indexOf(processorToDelete)),
-          pluginWindowType(processorToDelete[ProcessorIDs::pluginWindowType]),
+          processorIndex(Processor::getIndex(processorToDelete)),
+          pluginWindowType(Processor::getPluginWindowType(processorToDelete)),
           disconnectProcessorAction(DisconnectProcessor(connections, processorToDelete, all, true, true, true, true)),
           processorGraph(processorGraph) {}
 
 bool DeleteProcessor::perform() {
     processorGraph.saveProcessorStateInformationToState(processorToDelete);
     performTemporary();
-    processorToDelete.setProperty(ProcessorIDs::pluginWindowType, static_cast<int>(PluginWindow::Type::none), nullptr);
+    Processor::setPluginWindowType(processorToDelete, static_cast<int>(PluginWindow::Type::none));
     processorGraph.onProcessorDestroyed(processorToDelete);
     return true;
 }
@@ -25,7 +25,7 @@ bool DeleteProcessor::undo() {
     else
         Tracks::getProcessorLaneForTrack(track).addChild(processorToDelete, processorIndex, nullptr);
     processorGraph.onProcessorCreated(processorToDelete);
-    processorToDelete.setProperty(ProcessorIDs::pluginWindowType, pluginWindowType, nullptr);
+    Processor::setPluginWindowType(processorToDelete, pluginWindowType);
     disconnectProcessorAction.undo();
 
     return true;

@@ -110,6 +110,8 @@ target_sources(FlowGrid PRIVATE
     src/push2/Push2DisplayBridge.h
     src/push2/Push2MidiCommunicator.cpp
     src/push2/Push2UsbCommunicator.h
+    src/model/ConnectionSource.cpp
+    src/model/ConnectionDestination.cpp
     src/model/Connection.cpp
     src/model/Connections.cpp
     src/model/CopiedTracks.cpp

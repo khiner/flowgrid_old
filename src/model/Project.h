@@ -18,8 +18,7 @@ ID(name)
 #undef ID
 }
 
-class Project : public Stateful<Project>, public FileBasedDocument, private ChangeListener, private ValueTree::Listener {
-public:
+struct Project : public Stateful<Project>, public FileBasedDocument, private ChangeListener, private ValueTree::Listener {
     Project(View &view, Tracks &tracks, Connections &connections, Input &input, Output &output,
             ProcessorGraph &processorGraph, UndoManager &undoManager, PluginManager &pluginManager, AudioDeviceManager &deviceManager);
 
@@ -54,7 +53,7 @@ public:
     UndoManager &getUndoManager() { return undoManager; }
 
     bool isPush2MidiInputProcessorConnected() const {
-        return connections.isNodeConnected(Tracks::getNodeIdForProcessor(input.getPush2MidiInputProcessor()));
+        return connections.isNodeConnected(Processor::getNodeId(input.getPush2MidiInputProcessor()));
     }
 
     bool isShiftHeld() const { return shiftHeld || push2ShiftHeld; }
