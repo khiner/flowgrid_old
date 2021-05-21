@@ -186,7 +186,7 @@ void Insert::addAndPerformCreateTrackAction(const ValueTree &track, int fromTrac
     addAndPerformAction(new CreateTrack(toTrackIndex, false, track, tracks, view));
     // Create track-level processors
     for (const auto &processor : track)
-        if (processor.hasType(ProcessorIDs::PROCESSOR))
+        if (Processor::isType(processor))
             addAndPerformAction(new CreateProcessor(processor.createCopy(), toTrackIndex, -1, tracks, view, processorGraph));
 
     // Create in-lane processors

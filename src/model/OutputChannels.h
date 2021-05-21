@@ -9,7 +9,6 @@ ID(OUTPUT_CHANNELS)
 #undef ID
 }
 
-class OutputChannels : public Stateful<OutputChannels>, private ValueTree::Listener {
-public:
+struct OutputChannels : public Stateful<OutputChannels>, private ValueTree::Listener {
     static Identifier getIdentifier() { return OutputChannelsIDs::OUTPUT_CHANNELS; }
 };

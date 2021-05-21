@@ -26,7 +26,7 @@ Array<ValueTree> Output::syncOutputDevicesWithDeviceManager() {
         if (deviceManager.isMidiOutputEnabled(deviceName) &&
             !state.getChildWithProperty(ProcessorIDs::deviceName, deviceName).isValid()) {
             auto midiOutputProcessor = CreateProcessor::createProcessor(MidiOutputProcessor::getPluginDescription());
-            midiOutputProcessor.setProperty(ProcessorIDs::deviceName, deviceName, nullptr);
+            Processor::setDeviceName(midiOutputProcessor, deviceName);
             state.addChild(midiOutputProcessor, -1, &undoManager);
         }
     }

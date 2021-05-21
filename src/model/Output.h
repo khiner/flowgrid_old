@@ -15,8 +15,7 @@ ID(OUTPUT)
 }
 
 // TODO Should input/output be combined into a single IOState? (Almost all behavior is symmetrical.)
-class Output : public Stateful<Output>, private ValueTree::Listener {
-public:
+struct Output : public Stateful<Output>, private ValueTree::Listener {
     Output(PluginManager &pluginManager, UndoManager &undoManager, AudioDeviceManager &deviceManager);
 
     ~Output() override;

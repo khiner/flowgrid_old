@@ -18,8 +18,7 @@ ID(numProcessorSlots)
 #undef ID
 }
 
-class View : public Stateful<View> {
-public:
+struct View : public Stateful<View> {
     explicit View(UndoManager &undoManager) : undoManager(undoManager) {}
 
     static Identifier getIdentifier() { return ViewIDs::VIEW_STATE; }

@@ -17,7 +17,7 @@ GraphEditorChannel::~GraphEditorChannel() {
 }
 
 AudioProcessorGraph::NodeAndChannel GraphEditorChannel::getNodeAndChannel() const {
-    return {Tracks::getNodeIdForProcessor(getProcessor()), getChannelIndex()};
+    return {Processor::getNodeId(getProcessor()), getChannelIndex()};
 }
 
 juce::Point<float> GraphEditorChannel::getConnectPosition() const {
@@ -25,16 +25,9 @@ juce::Point<float> GraphEditorChannel::getConnectPosition() const {
     bool isLeftToRight = Tracks::isProcessorLeftToRightFlowing(getProcessor());
 
     if (isInput()) {
-        if (isLeftToRight)
-            return centre.withX(getX());
-        else
-            return centre.withY(getY());
-    } else {
-        if (isLeftToRight)
-            return centre.withX(getRight());
-        else
-            return centre.withY(getBottom());
+        return isLeftToRight ? centre.withX(getX()) : centre.withY(getY());
     }
+    return isLeftToRight ? centre.withX(getRight()) : centre.withY(getBottom());
 }
 
 void GraphEditorChannel::resized() {

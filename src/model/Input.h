@@ -14,8 +14,7 @@ ID(INPUT)
 #undef ID
 }
 
-class Input : public Stateful<Input>, private ValueTree::Listener {
-public:
+struct Input : public Stateful<Input>, private ValueTree::Listener {
     Input(PluginManager &pluginManager, UndoManager &undoManager, AudioDeviceManager &deviceManager)
             : pluginManager(pluginManager), undoManager(undoManager), deviceManager(deviceManager) {
         state.addListener(this);
@@ -38,8 +37,8 @@ public:
     }
 
     AudioProcessorGraph::NodeID getDefaultInputNodeIdForConnectionType(ConnectionType connectionType) const {
-        if (connectionType == audio) return Tracks::getNodeIdForProcessor(getAudioInputProcessorState());
-        if (connectionType == midi) return Tracks::getNodeIdForProcessor(getPush2MidiInputProcessor());
+        if (connectionType == audio) return Processor::getNodeId(getAudioInputProcessorState());
+        if (connectionType == midi) return Processor::getNodeId(getPush2MidiInputProcessor());
         return {};
     }
 

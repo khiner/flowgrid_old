@@ -12,8 +12,7 @@ ID(TRACKS)
 #undef ID
 }
 
-class Tracks : public Stateful<Tracks> {
-public:
+struct Tracks : public Stateful<Tracks> {
     Tracks(View &view, PluginManager &pluginManager, UndoManager &undoManager);
 
     static Identifier getIdentifier() { return TracksIDs::TRACKS; }
@@ -46,10 +45,6 @@ public:
 
     static ValueTree getTrackForProcessor(const ValueTree &processor) {
         return Track::isType(processor.getParent()) ? processor.getParent() : processor.getParent().getParent().getParent();
-    }
-
-    static AudioProcessorGraph::NodeID getNodeIdForProcessor(const ValueTree &processor) {
-        return processor.isValid() ? AudioProcessorGraph::NodeID(static_cast<uint32>(int(processor[ProcessorIDs::nodeId]))) : AudioProcessorGraph::NodeID{};
     }
 
     static ValueTree getInputProcessorForTrack(const ValueTree &track) {

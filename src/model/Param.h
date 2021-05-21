@@ -10,6 +10,6 @@ ID(value)
 #undef ID
 }
 
-class Param : public Stateful<Param> {
+struct Param : public Stateful<Param> {
     static Identifier getIdentifier() { return ParamIDs::PARAM; }
 };

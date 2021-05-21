@@ -5,8 +5,7 @@
 using namespace juce;
 
 template<typename Type>
-class Stateful {
-public:
+struct Stateful {
     Stateful() : state(Type::getIdentifier()) {}
 
     virtual ~Stateful() = default;
@@ -16,6 +15,8 @@ public:
     // TODO remove this method and remove any remaining accesses.
     //  (All state accesses should be done through accessor methods.)
     ValueTree &getState() { return state; }
+
+    bool isValid() { return state.isValid(); }
 
     virtual void loadFromState(const ValueTree &fromState) {
         state.copyPropertiesFrom(fromState, nullptr);

@@ -11,6 +11,6 @@ ID(abbreviatedName)
 #undef ID
 }
 
-class Channel : public Stateful<Channel> {
+struct Channel : public Stateful<Channel> {
     static Identifier getIdentifier() { return ChannelIDs::CHANNEL; }
 };
