@@ -197,10 +197,9 @@ MoveSelectedItems::MoveSelectionsAction::MoveSelectionsAction(juce::Point<int> t
                 continue; // track itself is being moved, so don't move its selected slots
             const auto &track = tracks.getTrack(i);
             const auto &lane = Track::getProcessorLane(track);
-            BigInteger selectedSlotsMask;
-            selectedSlotsMask.parseString(lane[ProcessorLaneIDs::selectedSlotsMask].toString(), 2);
+            auto selectedSlotsMask = ProcessorLane::getSelectedSlotsMask(lane);
             selectedSlotsMask.shiftBits(trackAndSlotDelta.y, 0);
-            newSelectedSlotsMasks.setUnchecked(i, selectedSlotsMask.toString(2));
+            newSelectedSlotsMasks.setUnchecked(i, selectedSlotsMask);
         }
     }
     if (trackAndSlotDelta.x != 0) {
@@ -210,7 +209,7 @@ MoveSelectedItems::MoveSelectionsAction::MoveSelectionsAction(juce::Point<int> t
                 newTrackSelections.setUnchecked(toTrackIndex, newTrackSelections.getUnchecked(fromTrackIndex));
                 newTrackSelections.setUnchecked(fromTrackIndex, false);
                 newSelectedSlotsMasks.setUnchecked(toTrackIndex, newSelectedSlotsMasks.getUnchecked(fromTrackIndex));
-                newSelectedSlotsMasks.setUnchecked(fromTrackIndex, BigInteger().toString(2));
+                newSelectedSlotsMasks.setUnchecked(fromTrackIndex, BigInteger());
             }
         };
         if (trackAndSlotDelta.x < 0) {

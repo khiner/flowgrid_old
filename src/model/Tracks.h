@@ -94,11 +94,11 @@ struct Tracks : public Stateful<Tracks> {
         return {};
     }
 
-    Array<String> getSelectedSlotsMasks() const {
-        Array<String> selectedSlotMasks;
+    Array<BigInteger> getSelectedSlotsMasks() const {
+        Array<BigInteger> selectedSlotMasks;
         for (const auto &track : state) {
             const auto &lane = Track::getProcessorLane(track);
-            selectedSlotMasks.add(lane[ProcessorLaneIDs::selectedSlotsMask]);
+            selectedSlotMasks.add(ProcessorLane::getSelectedSlotsMask(lane));
         }
         return selectedSlotMasks;
     }
@@ -111,10 +111,10 @@ struct Tracks : public Stateful<Tracks> {
         return trackSelections;
     }
 
-    String createFullSelectionBitmask(const ValueTree &track) const {
+    BigInteger createFullSelectionBitmask(const ValueTree &track) const {
         BigInteger selectedSlotsMask;
         selectedSlotsMask.setRange(0, getNumSlotsForTrack(track), true);
-        return selectedSlotsMask.toString(2);
+        return selectedSlotsMask;
     }
 
     Array<ValueTree> findAllSelectedItems() const;

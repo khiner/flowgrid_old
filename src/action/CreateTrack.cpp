@@ -39,7 +39,7 @@ CreateTrack::CreateTrack(int insertIndex, bool isMaster, const ValueTree &derive
 
     auto lanes = ValueTree(ProcessorLanesIDs::PROCESSOR_LANES);
     auto lane = ValueTree(ProcessorLaneIDs::PROCESSOR_LANE);
-    lane.setProperty(ProcessorLaneIDs::selectedSlotsMask, BigInteger().toString(2), nullptr);
+    ProcessorLane::setSelectedSlotsMask(lane, BigInteger());
     lanes.appendChild(lane, nullptr);
     newTrack.appendChild(lanes, nullptr);
 }

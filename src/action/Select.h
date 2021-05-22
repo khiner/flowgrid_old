@@ -29,7 +29,7 @@ protected:
     Input &input;
     ProcessorGraph &processorGraph;
 
-    Array<String> oldSelectedSlotsMasks, newSelectedSlotsMasks;
+    Array<BigInteger> oldSelectedSlotsMasks, newSelectedSlotsMasks;
     Array<bool> oldTrackSelections, newTrackSelections;
     juce::Point<int> oldFocusedSlot, newFocusedSlot;
 

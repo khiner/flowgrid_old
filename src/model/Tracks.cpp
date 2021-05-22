@@ -1,13 +1,10 @@
 #include "Tracks.h"
 
 Tracks::Tracks(View &view, PluginManager &pluginManager, UndoManager &undoManager)
-        : view(view), pluginManager(pluginManager), undoManager(undoManager) {
-    state.setProperty(TrackIDs::name, "Tracks", nullptr);
-}
+        : view(view), pluginManager(pluginManager), undoManager(undoManager) {}
 
 void Tracks::loadFromState(const ValueTree &fromState) {
     Stateful<Tracks>::loadFromState(fromState);
-
     // Re-save all non-string value types,
     // since type information is not saved in XML
     // Also, re-set some vars just to trigger the event (like selected slot mask)

@@ -40,13 +40,6 @@ ValueTree Track::findProcessorNearestToSlot(const ValueTree &state, int slot) {
     return nearestProcessor;
 }
 
-BigInteger Track::getSlotMask(const ValueTree &state) {
-    const auto &lane = getProcessorLane(state);
-    BigInteger selectedSlotsMask;
-    selectedSlotsMask.parseString(lane[ProcessorLaneIDs::selectedSlotsMask].toString(), 2);
-    return selectedSlotsMask;
-}
-
 ValueTree Track::findFirstSelectedProcessor(const ValueTree &state) {
     for (const auto &processor : getProcessorLane(state))
         if (isSlotSelected(state, Processor::getSlot(processor)))

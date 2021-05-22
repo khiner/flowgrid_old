@@ -201,16 +201,14 @@ Insert::MoveSelections::MoveSelections(const OwnedArray<UndoableAction> &createA
         : Select(tracks, connections, view, input, processorGraph) {
     for (int i = 0; i < newTrackSelections.size(); i++) {
         newTrackSelections.setUnchecked(i, false);
-        newSelectedSlotsMasks.setUnchecked(i, BigInteger().toString(2));
+        newSelectedSlotsMasks.setUnchecked(i, BigInteger());
     }
 
     for (auto *createAction : createActions) {
         if (auto *createProcessorAction = dynamic_cast<CreateProcessor *>(createAction)) {
-            String maskString = newSelectedSlotsMasks.getUnchecked(createProcessorAction->trackIndex);
-            BigInteger mask;
-            mask.parseString(maskString, 2);
+            BigInteger mask = newSelectedSlotsMasks.getUnchecked(createProcessorAction->trackIndex);
             mask.setBit(createProcessorAction->slot, true);
-            newSelectedSlotsMasks.setUnchecked(createProcessorAction->trackIndex, mask.toString(2));
+            newSelectedSlotsMasks.setUnchecked(createProcessorAction->trackIndex, mask);
         } else if (auto *createTrackAction = dynamic_cast<CreateTrack *>(createAction)) {
             newTrackSelections.setUnchecked(createTrackAction->insertIndex, true);
             const auto &track = tracks.getTrack(createTrackAction->insertIndex);

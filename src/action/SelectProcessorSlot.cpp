@@ -7,14 +7,14 @@ SelectProcessorSlot::SelectProcessorSlot(const ValueTree &track, int slot, bool 
     if (deselectOthers) {
         for (int i = 0; i < newTrackSelections.size(); i++) {
             newTrackSelections.setUnchecked(i, false);
-            newSelectedSlotsMasks.setUnchecked(i, BigInteger().toString(2));
+            newSelectedSlotsMasks.setUnchecked(i, BigInteger());
         }
     }
 
     auto newSlotMask = deselectOthers ? BigInteger() : currentSlotMask;
     newSlotMask.setBit(slot, selected);
     auto trackIndex = tracks.indexOf(track);
-    newSelectedSlotsMasks.setUnchecked(trackIndex, newSlotMask.toString(2));
+    newSelectedSlotsMasks.setUnchecked(trackIndex, newSlotMask);
     if (selected)
         setNewFocusedSlot({trackIndex, slot});
 }

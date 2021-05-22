@@ -16,7 +16,7 @@ SelectRectangle::SelectRectangle(const juce::Point<int> fromTrackAndSlot, const 
             BigInteger newSlotsMask;
             for (int otherSlot = 0; otherSlot < tracks.getNumSlotsForTrack(track); otherSlot++)
                 newSlotsMask.setBit(otherSlot, selectionRectangle.contains(tracks.trackAndSlotToGridPosition({trackIndex, otherSlot})));
-            newSelectedSlotsMasks.setUnchecked(trackIndex, newSlotsMask.toString(2));
+            newSelectedSlotsMasks.setUnchecked(trackIndex, newSlotsMask);
         }
     }
     int slotToFocus = toTrackAndSlot.y;

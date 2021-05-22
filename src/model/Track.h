@@ -25,7 +25,7 @@ public:
     static String getName(const ValueTree &state) { return state[TrackIDs::name]; }
     static bool isSelected(const ValueTree &state) { return state[TrackIDs::selected]; }
     static bool isMaster(const ValueTree &state) { return state[TrackIDs::isMaster]; }
-    static BigInteger getSlotMask(const ValueTree &state);
+    static BigInteger getSlotMask(const ValueTree &state) { return ProcessorLane::getSelectedSlotsMask(getProcessorLane(state)); }
     static bool isSlotSelected(const ValueTree &state, int slot) { return getSlotMask(state)[slot]; }
     static int firstSelectedSlot(const ValueTree &state) { return getSlotMask(state).getHighestBit(); }
     static bool hasAnySlotSelected(const ValueTree &state) { return firstSelectedSlot(state) != -1; }

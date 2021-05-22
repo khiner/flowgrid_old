@@ -14,14 +14,14 @@ SelectTrack::SelectTrack(const ValueTree &track, bool selected, bool deselectOth
         const ValueTree &firstProcessor = Track::getProcessorLane(track).getChild(0);
         setNewFocusedSlot({trackIndex, firstProcessor.isValid() ? Processor::getSlot(firstProcessor) : 0});
     } else {
-        newSelectedSlotsMasks.setUnchecked(trackIndex, BigInteger().toString(2));
+        newSelectedSlotsMasks.setUnchecked(trackIndex, BigInteger());
     }
     // take care of other tracks
     if (selected && deselectOthers) {
         for (int i = 0; i < newTrackSelections.size(); i++) {
             if (i != trackIndex) {
                 newTrackSelections.setUnchecked(i, false);
-                newSelectedSlotsMasks.setUnchecked(i, BigInteger().toString(2));
+                newSelectedSlotsMasks.setUnchecked(i, BigInteger());
             }
         }
     }
