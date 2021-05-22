@@ -98,9 +98,9 @@ void GraphEditorProcessorLane::valueTreePropertyChanged(ValueTree &tree, const I
         resized();
     } else if (i == TrackIDs::selected || i == TrackIDs::colour ||
                i == ProcessorLaneIDs::selectedSlotsMask || i == ViewIDs::focusedTrackIndex || i == ViewIDs::focusedProcessorSlot ||
-               i == ViewIDs::gridViewTrackOffset) {
+               i == ViewIDs::gridTrackOffset) {
         updateProcessorSlotColours();
-    } else if (i == ViewIDs::gridViewSlotOffset || (i == ViewIDs::masterViewSlotOffset && isMaster)) {
+    } else if (i == ViewIDs::gridSlotOffset || (i == ViewIDs::masterSlotOffset && isMaster)) {
         resized();
         updateProcessorSlotColours();
     } else if (i == ViewIDs::numProcessorSlots || (i == ViewIDs::numMasterProcessorSlots && isMaster)) {

@@ -110,9 +110,9 @@ void ContextPane::valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, i
 
 void ContextPane::valueTreePropertyChanged(ValueTree &tree, const Identifier &i) {
     if (View::isType(tree)) {
-        if (i == ViewIDs::numProcessorSlots || i == ViewIDs::numMasterProcessorSlots || i == ViewIDs::gridViewTrackOffset || i == ViewIDs::masterViewSlotOffset)
+        if (i == ViewIDs::numProcessorSlots || i == ViewIDs::numMasterProcessorSlots || i == ViewIDs::gridTrackOffset || i == ViewIDs::masterSlotOffset)
             resized();
-        else if (i == ViewIDs::focusedTrackIndex || i == ViewIDs::focusedProcessorSlot || i == ViewIDs::gridViewSlotOffset)
+        else if (i == ViewIDs::focusedTrackIndex || i == ViewIDs::focusedProcessorSlot || i == ViewIDs::gridSlotOffset)
             repaint();
     } else if (i == ProcessorLaneIDs::selectedSlotsMask) {
         repaint();

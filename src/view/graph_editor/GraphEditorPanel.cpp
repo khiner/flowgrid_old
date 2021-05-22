@@ -325,9 +325,9 @@ void GraphEditorPanel::showPopupMenu(const ValueTree &track, int slot) {
 }
 
 void GraphEditorPanel::valueTreePropertyChanged(ValueTree &tree, const Identifier &i) {
-    if ((Processor::isType(tree) && i == ProcessorIDs::slot) || i == ViewIDs::gridViewSlotOffset) {
+    if ((Processor::isType(tree) && i == ProcessorIDs::slot) || i == ViewIDs::gridSlotOffset) {
         connectors->updateConnectors();
-    } else if (i == ViewIDs::gridViewTrackOffset || i == ViewIDs::masterViewSlotOffset) {
+    } else if (i == ViewIDs::gridTrackOffset || i == ViewIDs::masterSlotOffset) {
         resized();
     } else if (i == ViewIDs::focusedPane) {
         unfocusOverlay.setVisible(!view.isGridPaneFocused());

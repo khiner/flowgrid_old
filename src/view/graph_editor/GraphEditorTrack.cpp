@@ -131,7 +131,7 @@ void GraphEditorTrack::valueTreeChildRemoved(ValueTree &exParent, ValueTree &chi
 }
 
 void GraphEditorTrack::valueTreePropertyChanged(ValueTree &tree, const Identifier &i) {
-    if (i == ViewIDs::gridViewSlotOffset || ((i == ViewIDs::gridViewTrackOffset || i == ViewIDs::masterViewSlotOffset) && isMaster()))
+    if (i == ViewIDs::gridSlotOffset || ((i == ViewIDs::gridTrackOffset || i == ViewIDs::masterSlotOffset) && isMaster()))
         resized();
 
     if (tree != state) return;

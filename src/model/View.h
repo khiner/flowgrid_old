@@ -10,9 +10,9 @@ ID(controlMode)
 ID(focusedPane)
 ID(focusedTrackIndex)
 ID(focusedProcessorSlot)
-ID(gridViewSlotOffset)
-ID(gridViewTrackOffset)
-ID(masterViewSlotOffset)
+ID(gridSlotOffset)
+ID(gridTrackOffset)
+ID(masterSlotOffset)
 ID(numMasterProcessorSlots)
 ID(numProcessorSlots)
 #undef ID
@@ -30,9 +30,9 @@ struct View : public Stateful<View> {
     juce::Point<int> getFocusedTrackAndSlot() const;
     int getTrackWidth() const { return trackWidth; }
     int getProcessorHeight() const { return processorHeight; }
-    int getGridViewTrackOffset() const { return state[ViewIDs::gridViewTrackOffset]; }
-    int getGridViewSlotOffset() const { return state[ViewIDs::gridViewSlotOffset]; }
-    int getMasterViewSlotOffset() const { return state[ViewIDs::masterViewSlotOffset]; }
+    int getGridViewTrackOffset() const { return state[ViewIDs::gridTrackOffset]; }
+    int getGridViewSlotOffset() const { return state[ViewIDs::gridSlotOffset]; }
+    int getMasterViewSlotOffset() const { return state[ViewIDs::masterSlotOffset]; }
     int getNumProcessorSlots(bool isMaster = false) const { return state[isMaster ? ViewIDs::numMasterProcessorSlots : ViewIDs::numProcessorSlots]; }
     int getSlotOffset(bool isMaster) const { return isMaster ? getMasterViewSlotOffset() : getGridViewSlotOffset(); }
     int getProcessorSlotSize(bool isMaster) const { return isMaster ? getTrackWidth() : getProcessorHeight(); }
@@ -47,9 +47,9 @@ struct View : public Stateful<View> {
                isTrackInView(trackIndex, isMaster);
     }
 
-    void setMasterViewSlotOffset(int masterViewSlotOffset) { state.setProperty(ViewIDs::masterViewSlotOffset, masterViewSlotOffset, &undoManager); }
-    void setGridViewSlotOffset(int gridViewSlotOffset) { state.setProperty(ViewIDs::gridViewSlotOffset, gridViewSlotOffset, &undoManager); }
-    void setGridViewTrackOffset(int gridViewTrackOffset) { state.setProperty(ViewIDs::gridViewTrackOffset, gridViewTrackOffset, &undoManager); }
+    void setMasterViewSlotOffset(int masterSlotOffset) { state.setProperty(ViewIDs::masterSlotOffset, masterSlotOffset, &undoManager); }
+    void setGridViewSlotOffset(int gridSlotOffset) { state.setProperty(ViewIDs::gridSlotOffset, gridSlotOffset, &undoManager); }
+    void setGridViewTrackOffset(int gridTrackOffset) { state.setProperty(ViewIDs::gridTrackOffset, gridTrackOffset, &undoManager); }
     void setTrackWidth(int trackWidth) { this->trackWidth = trackWidth; }
     void setProcessorHeight(int processorHeight) { this->processorHeight = processorHeight; }
     void setNoteMode() { state.setProperty(ViewIDs::controlMode, noteControlMode, nullptr); }

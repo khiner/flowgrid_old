@@ -104,7 +104,7 @@ private:
     ConnectorDragListener &connectorDragListener;
 
     void valueTreePropertyChanged(ValueTree &tree, const juce::Identifier &i) override {
-        if (i == ViewIDs::gridViewTrackOffset || i == ViewIDs::masterViewSlotOffset)
+        if (i == ViewIDs::gridTrackOffset || i == ViewIDs::masterSlotOffset)
             resized();
     }
 
