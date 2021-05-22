@@ -180,7 +180,6 @@ struct Tracks : public Stateful<Tracks> {
 
     static BigInteger getSlotMask(const ValueTree &track) {
         const auto &lane = getProcessorLaneForTrack(track);
-
         BigInteger selectedSlotsMask;
         selectedSlotsMask.parseString(lane[ProcessorLaneIDs::selectedSlotsMask].toString(), 2);
         return selectedSlotsMask;
@@ -194,7 +193,7 @@ struct Tracks : public Stateful<Tracks> {
 
     static ValueTree getProcessorAtSlot(const ValueTree &track, int slot) {
         const auto &lane = getProcessorLaneForTrack(track);
-        return track.isValid() ? lane.getChildWithProperty(ProcessorIDs::slot, slot) : ValueTree();
+        return lane.isValid() ? lane.getChildWithProperty(ProcessorIDs::slot, slot) : ValueTree();
     }
 
     static int getInsertIndexForProcessor(const ValueTree &track, const ValueTree &processor, int insertSlot);
@@ -232,15 +231,11 @@ struct Tracks : public Stateful<Tracks> {
     }
 
     juce::Point<int> trackAndSlotWithLeftRightDelta(int delta) const {
-        if (view.isGridPaneFocused()) return trackAndSlotWithGridDelta(delta, 0);
-
-        return selectionPaneTrackAndSlotWithLeftRightDelta(delta);
+        return view.isGridPaneFocused() ? trackAndSlotWithGridDelta(delta, 0) : selectionPaneTrackAndSlotWithLeftRightDelta(delta);
     }
 
     juce::Point<int> trackAndSlotWithUpDownDelta(int delta) const {
-        if (view.isGridPaneFocused())
-            return trackAndSlotWithGridDelta(0, delta);
-        return selectionPaneTrackAndSlotWithUpDownDelta(delta);
+        return view.isGridPaneFocused() ? trackAndSlotWithGridDelta(0, delta) : selectionPaneTrackAndSlotWithUpDownDelta(delta);
     }
 
     juce::Point<int> trackAndSlotWithGridDelta(int xDelta, int yDelta) const {
@@ -258,7 +253,7 @@ struct Tracks : public Stateful<Tracks> {
         const auto &focusedTrack = getTrack(focusedTrackAndSlot.x);
         if (!focusedTrack.isValid()) return INVALID_TRACK_AND_SLOT;
 
-        const ValueTree &focusedProcessor = Tracks::getProcessorAtSlot(focusedTrack, focusedTrackAndSlot.y);
+        const ValueTree &focusedProcessor = getProcessorAtSlot(focusedTrack, focusedTrackAndSlot.y);
         // down when track is selected deselects the track
         if (delta > 0 && Track::isSelected(focusedTrack)) return {focusedTrackAndSlot.x, focusedTrackAndSlot.y};
 
@@ -267,7 +262,7 @@ struct Tracks : public Stateful<Tracks> {
             siblingProcessorToSelect = focusedProcessor.getSibling(delta);
         } else { // no focused processor - selection is on empty slot
             for (int slot = focusedTrackAndSlot.y + delta; (delta < 0 ? slot >= 0 : slot < getNumSlotsForTrack(focusedTrack)); slot += delta) {
-                siblingProcessorToSelect = Tracks::getProcessorAtSlot(focusedTrack, slot);
+                siblingProcessorToSelect = getProcessorAtSlot(focusedTrack, slot);
                 if (siblingProcessorToSelect.isValid())
                     break;
             }
@@ -322,21 +317,10 @@ struct Tracks : public Stateful<Tracks> {
         return inView && isTrackInView(track);
     }
 
-    static int getNumVisibleSlotsForTrack(const ValueTree &track) {
-        return Track::isMaster(track) ? View::NUM_VISIBLE_MASTER_TRACK_SLOTS : View::NUM_VISIBLE_NON_MASTER_TRACK_SLOTS;
-    }
-
-    int getSlotOffsetForTrack(const ValueTree &track) const {
-        return Track::isMaster(track) ? view.getMasterViewSlotOffset() : view.getGridViewSlotOffset();
-    }
-
-    int getNumSlotsForTrack(const ValueTree &track) const {
-        return view.getNumProcessorSlots(Track::isMaster(track));
-    }
-
-    int getProcessorSlotSize(const ValueTree &track) const {
-        return Track::isMaster(track) ? view.getTrackWidth() : view.getProcessorHeight();
-    }
+    static int getNumVisibleSlotsForTrack(const ValueTree &track) { return Track::isMaster(track) ? View::NUM_VISIBLE_MASTER_TRACK_SLOTS : View::NUM_VISIBLE_NON_MASTER_TRACK_SLOTS; }
+    int getSlotOffsetForTrack(const ValueTree &track) const { return Track::isMaster(track) ? view.getMasterViewSlotOffset() : view.getGridViewSlotOffset(); }
+    int getNumSlotsForTrack(const ValueTree &track) const { return view.getNumProcessorSlots(Track::isMaster(track)); }
+    int getProcessorSlotSize(const ValueTree &track) const { return Track::isMaster(track) ? view.getTrackWidth() : view.getProcessorHeight(); }
 
     int findSlotAt(juce::Point<int> position, const ValueTree &track) const;
 

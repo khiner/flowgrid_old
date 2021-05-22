@@ -176,7 +176,7 @@ void ProcessorGraph::updateIoChannelEnabled(const ValueTree &channels, const Val
         deviceManager.getAudioDeviceSetup(config);
         auto &configChannels = isInput ? config.inputChannels : config.outputChannels;
         const auto &channelNames = isInput ? audioDevice->getInputChannelNames() : audioDevice->getOutputChannelNames();
-        auto channelIndex = channelNames.indexOf(channel[ChannelIDs::name].toString());
+        auto channelIndex = channelNames.indexOf(fg::Channel::getName(channel));
         if (channelIndex != -1 && ((enabled && !configChannels[channelIndex]) || (!enabled && configChannels[channelIndex]))) {
             configChannels.setBit(channelIndex, enabled);
             deviceManager.setAudioDeviceSetup(config, true);

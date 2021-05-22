@@ -16,11 +16,9 @@ struct GraphEditorChannel : public Component, public SettableTooltipClient, priv
 
     ValueTree getProcessor() const { return state.getParent().getParent(); }
 
-    int getChannelIndex() const { return state[ChannelIDs::channelIndex]; }
-
     bool isInput() const { return state.getParent().hasType(InputChannelsIDs::INPUT_CHANNELS); }
 
-    bool isMidi() const { return getChannelIndex() == AudioProcessorGraph::midiChannelIndex; }
+    bool isMidi() const { return fg::Channel::getChannelIndex(state) == AudioProcessorGraph::midiChannelIndex; }
 
     AudioProcessorGraph::NodeAndChannel getNodeAndChannel() const;
 

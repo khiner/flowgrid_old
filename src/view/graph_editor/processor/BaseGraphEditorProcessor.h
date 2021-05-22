@@ -41,7 +41,7 @@ public:
 
     juce::Point<float> getChannelConnectPosition(int index, bool isInput) const {
         for (auto *channel : channels)
-            if (channel->getChannelIndex() == index && isInput == channel->isInput())
+            if (fg::Channel::getChannelIndex(channel->getState()) == index && isInput == channel->isInput())
                 return channel->getConnectPosition();
 
         return {};

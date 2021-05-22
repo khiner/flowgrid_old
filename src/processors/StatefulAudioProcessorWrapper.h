@@ -182,13 +182,13 @@ private:
     struct Channel {
         Channel(AudioProcessor *processor, AudioDeviceManager &deviceManager, int channelIndex, bool isInput);
 
-        Channel(const ValueTree &channelState);
+        Channel(const ValueTree &state);
 
         ValueTree toState() const {
             ValueTree state(ChannelIDs::CHANNEL);
-            state.setProperty(ChannelIDs::channelIndex, channelIndex, nullptr);
-            state.setProperty(ChannelIDs::name, name, nullptr);
-            state.setProperty(ChannelIDs::abbreviatedName, abbreviatedName, nullptr);
+            fg::Channel::setChannelIndex(state, channelIndex);
+            fg::Channel::setName(state, name);
+            fg::Channel::setAbbreviatedName(state, abbreviatedName);
             return state;
         }
 

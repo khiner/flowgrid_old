@@ -476,8 +476,8 @@ StatefulAudioProcessorWrapper::Channel::Channel(AudioProcessor *processor, Audio
     }
 }
 
-StatefulAudioProcessorWrapper::Channel::Channel(const ValueTree &channelState) :
-        channelIndex(channelState[ChannelIDs::channelIndex]),
-        name(channelState[ChannelIDs::name]),
-        abbreviatedName(channelState[ChannelIDs::abbreviatedName]) {
+StatefulAudioProcessorWrapper::Channel::Channel(const ValueTree &state) :
+        channelIndex(fg::Channel::getChannelIndex(state)),
+        name(fg::Channel::getName(state)),
+        abbreviatedName(fg::Channel::getAbbreviatedName(state)) {
 }

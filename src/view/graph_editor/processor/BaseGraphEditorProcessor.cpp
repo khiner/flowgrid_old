@@ -77,7 +77,7 @@ Rectangle<int> BaseGraphEditorProcessor::getBoxBounds() const {
 void BaseGraphEditorProcessor::layoutChannel(AudioProcessor *processor, GraphEditorChannel *channel) const {
     const auto boxBounds = getBoxBounds();
     const bool isInput = channel->isInput();
-    auto channelIndex = channel->getChannelIndex();
+    auto channelIndex = fg::Channel::getChannelIndex(channel->getState());
     int busIndex = 0;
     processor->getOffsetInBusBufferForAbsoluteChannelIndex(isInput, channelIndex, busIndex);
     int total = isInput ? getNumInputChannels() : getNumOutputChannels();
@@ -103,7 +103,7 @@ void BaseGraphEditorProcessor::layoutChannel(AudioProcessor *processor, GraphEdi
 }
 
 void BaseGraphEditorProcessor::valueTreeChildAdded(ValueTree &parent, ValueTree &child) {
-    if (child.hasType(ChannelIDs::CHANNEL)) {
+    if (fg::Channel::isType(child)) {
         auto *channel = new GraphEditorChannel(child, connectorDragListener, Processor::isIoProcessor(state));
         addAndMakeVisible(channel);
         channels.add(channel);
@@ -112,7 +112,7 @@ void BaseGraphEditorProcessor::valueTreeChildAdded(ValueTree &parent, ValueTree 
 }
 
 void BaseGraphEditorProcessor::valueTreeChildRemoved(ValueTree &parent, ValueTree &child, int) {
-    if (child.hasType(ChannelIDs::CHANNEL)) {
+    if (fg::Channel::isType(child)) {
         auto *channelToRemove = findChannelWithState(child);
         channels.removeObject(channelToRemove);
         resized();

@@ -17,7 +17,7 @@ GraphEditorChannel::~GraphEditorChannel() {
 }
 
 AudioProcessorGraph::NodeAndChannel GraphEditorChannel::getNodeAndChannel() const {
-    return {Processor::getNodeId(getProcessor()), getChannelIndex()};
+    return {Processor::getNodeId(getProcessor()), fg::Channel::getChannelIndex(state)};
 }
 
 juce::Point<float> GraphEditorChannel::getConnectPosition() const {
@@ -75,7 +75,7 @@ void GraphEditorChannel::valueTreePropertyChanged(ValueTree &v, const Identifier
     if (v != state) return;
 
     if (i == ChannelIDs::abbreviatedName) {
-        const String &name = v[ChannelIDs::abbreviatedName];
+        const auto &name = fg::Channel::getAbbreviatedName(v);
         channelLabel.setText(name);
         setName(name);
         setTooltip(name);
