@@ -15,8 +15,6 @@ public:
 
     ValueTree getTrack() const { return parent.getParent().getParent(); }
 
-    bool isMasterTrack() const { return Tracks::isMasterTrack(getTrack()); }
-
     int getNumSlots() const { return tracks.getNumSlotsForTrack(getTrack()); }
 
     int getSlotOffset() const { return tracks.getSlotOffsetForTrack(getTrack()); }
@@ -25,9 +23,7 @@ public:
 
     void updateProcessorSlotColours();
 
-    bool isSuitableType(const ValueTree &v) const override {
-        return v.hasType(ProcessorIDs::PROCESSOR);
-    }
+    bool isSuitableType(const ValueTree &v) const override { return Processor::isType(v); }
 
     BaseGraphEditorProcessor *createEditorForProcessor(const ValueTree &processor);
 
@@ -75,7 +71,7 @@ private:
 
     BaseGraphEditorProcessor *findProcessorAtSlot(int slot) const {
         for (auto *processor : objects)
-            if (processor->getSlot() == slot)
+            if (Processor::getSlot(processor->getState()) == slot)
                 return processor;
         return nullptr;
     }

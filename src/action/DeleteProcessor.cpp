@@ -20,7 +20,7 @@ bool DeleteProcessor::perform() {
 
 bool DeleteProcessor::undo() {
     auto track = tracks.getTrack(trackIndex);
-    if (Tracks::isTrackIOProcessor(processorToDelete))
+    if (Processor::isTrackIOProcessor(processorToDelete))
         track.appendChild(processorToDelete, nullptr);
     else
         Tracks::getProcessorLaneForTrack(track).addChild(processorToDelete, processorIndex, nullptr);
@@ -34,7 +34,7 @@ bool DeleteProcessor::undo() {
 bool DeleteProcessor::performTemporary() {
     disconnectProcessorAction.perform();
     auto track = tracks.getTrack(trackIndex);
-    if (Tracks::isTrackIOProcessor(processorToDelete))
+    if (Processor::isTrackIOProcessor(processorToDelete))
         track.removeChild(processorToDelete, nullptr);
     else
         Tracks::getProcessorLaneForTrack(track).removeChild(processorToDelete, nullptr);
@@ -43,7 +43,7 @@ bool DeleteProcessor::performTemporary() {
 
 bool DeleteProcessor::undoTemporary() {
     auto track = tracks.getTrack(trackIndex);
-    if (Tracks::isTrackIOProcessor(processorToDelete))
+    if (Processor::isTrackIOProcessor(processorToDelete))
         track.appendChild(processorToDelete, nullptr);
     else
         Tracks::getProcessorLaneForTrack(track).addChild(processorToDelete, processorIndex, nullptr);

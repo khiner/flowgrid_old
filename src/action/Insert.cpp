@@ -25,7 +25,7 @@ static juce::Point<int> limitToTrackAndSlot(juce::Point<int> toTrackAndSlot, con
 static std::vector<int> findSelectedNonMasterTrackIndices(const ValueTree &copiedTracks) {
     std::vector<int> selectedTrackIndices;
     for (const auto &track : copiedTracks)
-        if (Track::isSelected(track) && !Tracks::isMasterTrack(track))
+        if (Track::isSelected(track) && !Track::isMaster(track))
             selectedTrackIndices.push_back(copiedTracks.indexOf(track));
     return selectedTrackIndices;
 }
@@ -191,7 +191,7 @@ void Insert::addAndPerformCreateTrackAction(const ValueTree &track, int fromTrac
 
     // Create in-lane processors
     for (const auto &processor : Tracks::getProcessorLaneForTrack(track)) {
-        int slot = processor[ProcessorIDs::processorSlot];
+        int slot = Processor::getSlot(processor);
         addAndPerformCreateProcessorAction(processor, fromTrackIndex, slot, toTrackIndex, slot);
     }
 }

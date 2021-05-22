@@ -97,7 +97,7 @@ void SelectionEditor::refreshProcessors(const ValueTree &singleProcessorToRefres
 }
 
 void SelectionEditor::assignProcessorToEditor(const ValueTree &processor, int processorSlot, bool onlyUpdateFocusState) const {
-    auto *processorEditor = processorEditors.getUnchecked(processorSlot != -1 ? processorSlot : int(processor[ProcessorIDs::processorSlot]));
+    auto *processorEditor = processorEditors.getUnchecked(processorSlot != -1 ? processorSlot : Processor::getSlot(processor));
     if (processor.isValid()) {
         if (auto *processorWrapper = audioGraphBuilder.getProcessorWrapperForState(processor)) {
             if (!onlyUpdateFocusState) {
@@ -114,7 +114,7 @@ void SelectionEditor::assignProcessorToEditor(const ValueTree &processor, int pr
 }
 
 void SelectionEditor::valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int) {
-    if (Track::isType(child) || child.hasType(ProcessorIDs::PROCESSOR)) {
+    if (Track::isType(child) || Processor::isType(child)) {
         refreshProcessors();
     }
 }

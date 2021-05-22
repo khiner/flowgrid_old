@@ -21,7 +21,7 @@ BaseGraphEditorProcessor::~BaseGraphEditorProcessor() {
 
 void BaseGraphEditorProcessor::paint(Graphics &g) {
     auto boxColour = findColour(TextEditor::backgroundColourId);
-    if (state[ProcessorIDs::bypassed])
+    if (Processor::isBypassed(state))
         boxColour = boxColour.brighter();
     else if (isSelected())
         boxColour = boxColour.brighter(0.02f);
@@ -104,7 +104,7 @@ void BaseGraphEditorProcessor::layoutChannel(AudioProcessor *processor, GraphEdi
 
 void BaseGraphEditorProcessor::valueTreeChildAdded(ValueTree &parent, ValueTree &child) {
     if (child.hasType(ChannelIDs::CHANNEL)) {
-        auto *channel = new GraphEditorChannel(child, connectorDragListener, isIoProcessor());
+        auto *channel = new GraphEditorChannel(child, connectorDragListener, Processor::isIoProcessor(state));
         addAndMakeVisible(channel);
         channels.add(channel);
         resized();

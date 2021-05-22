@@ -260,7 +260,7 @@ void Push2Component::valueTreeChildRemoved(ValueTree &exParent, ValueTree &child
             showChild(nullptr);
             processorView.processorFocused(nullptr);
         }
-    } else if (child.hasType(ProcessorIDs::PROCESSOR)) {
+    } else if (Processor::isType(child)) {
         updateFocusedProcessor();
         updatePush2SelectionDependentButtons();
     } else if (child.hasType(ConnectionIDs::CONNECTION)) {

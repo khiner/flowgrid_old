@@ -22,7 +22,7 @@ SelectRectangle::SelectRectangle(const juce::Point<int> fromTrackAndSlot, const 
     int slotToFocus = toTrackAndSlot.y;
     if (slotToFocus == -1) {
         const ValueTree &firstProcessor = tracks.getTrack(toTrackAndSlot.x).getChild(0);
-        slotToFocus = firstProcessor.isValid() ? int(firstProcessor[ProcessorIDs::processorSlot]) : 0;
+        slotToFocus = firstProcessor.isValid() ? Processor::getSlot(firstProcessor) : 0;
     }
     setNewFocusedSlot({toTrackAndSlot.x, slotToFocus});
 }

@@ -26,9 +26,8 @@ void ContextPane::paint(Graphics &g) {
 
     for (int trackIndex = 0; trackIndex < tracks.getNumTracks(); trackIndex++) {
         const auto &track = tracks.getTrack(trackIndex);
-        bool isMaster = Tracks::isMasterTrack(track);
+        bool isMaster = Track::isMaster(track);
         const int trackX = tracksOffset + trackIndex * cellWidth;
-
         const auto &trackColour = Track::getColour(track);
         g.setColour(trackColour);
         if (isMaster) {
@@ -98,19 +97,19 @@ Colour ContextPane::getFillColour(const Colour &trackColour, const ValueTree &tr
 void ContextPane::valueTreeChildAdded(ValueTree &parent, ValueTree &child) {
     if (Track::isType(child))
         resized();
-    else if (child.hasType(ProcessorIDs::PROCESSOR))
+    else if (Processor::isType(child))
         repaint();
 }
 
 void ContextPane::valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int index) {
     if (Track::isType(child))
         resized();
-    else if (child.hasType(ProcessorIDs::PROCESSOR))
+    else if (Processor::isType(child))
         repaint();
 }
 
 void ContextPane::valueTreePropertyChanged(ValueTree &tree, const Identifier &i) {
-    if (tree.hasType(ViewIDs::VIEW_STATE)) {
+    if (View::isType(tree)) {
         if (i == ViewIDs::numProcessorSlots || i == ViewIDs::numMasterProcessorSlots || i == ViewIDs::gridViewTrackOffset || i == ViewIDs::masterViewSlotOffset)
             resized();
         else if (i == ViewIDs::focusedTrackIndex || i == ViewIDs::focusedProcessorSlot || i == ViewIDs::gridViewSlotOffset)

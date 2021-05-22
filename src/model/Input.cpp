@@ -7,7 +7,7 @@ Array<ValueTree> Input::syncInputDevicesWithDeviceManager() {
     Array<ValueTree> inputProcessorsToDelete;
     for (const auto &inputProcessor : state) {
         if (inputProcessor.hasProperty(ProcessorIDs::deviceName)) {
-            const String &deviceName = inputProcessor[ProcessorIDs::deviceName];
+            const String &deviceName = Processor::getDeviceName(inputProcessor);
             if (!MidiInput::getDevices().contains(deviceName) || !deviceManager.isMidiInputEnabled(deviceName)) {
                 inputProcessorsToDelete.add(inputProcessor);
             }
@@ -30,20 +30,20 @@ void Input::initializeDefault() {
 }
 
 void Input::valueTreeChildAdded(ValueTree &parent, ValueTree &child) {
-    if (child[ProcessorIDs::name] == InternalPluginFormat::getMidiInputProcessorName() && !deviceManager.isMidiInputEnabled(child[ProcessorIDs::deviceName]))
-        deviceManager.setMidiInputEnabled(child[ProcessorIDs::deviceName], true);
+    if (Processor::isMidiInputProcessor(child) && !deviceManager.isMidiInputEnabled(Processor::getDeviceName(child)))
+        deviceManager.setMidiInputEnabled(Processor::getDeviceName(child), true);
 }
 
 void Input::valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int) {
-    if (child[ProcessorIDs::name] == InternalPluginFormat::getMidiInputProcessorName() && deviceManager.isMidiInputEnabled(child[ProcessorIDs::deviceName]))
-        deviceManager.setMidiInputEnabled(child[ProcessorIDs::deviceName], false);
+    if (Processor::isMidiInputProcessor(child) && deviceManager.isMidiInputEnabled(Processor::getDeviceName(child)))
+        deviceManager.setMidiInputEnabled(Processor::getDeviceName(child), false);
 }
 
 void Input::valueTreePropertyChanged(ValueTree &tree, const Identifier &i) {
     if (i == ProcessorIDs::deviceName && tree == state) {
         AudioDeviceManager::AudioDeviceSetup config;
         deviceManager.getAudioDeviceSetup(config);
-        config.inputDeviceName = tree[ProcessorIDs::deviceName];
+        config.inputDeviceName = Processor::getDeviceName(tree);
         deviceManager.setAudioDeviceSetup(config, true);
     }
 }

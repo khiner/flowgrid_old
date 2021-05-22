@@ -76,7 +76,7 @@ void Push2MixerView::valueTreePropertyChanged(ValueTree &tree, const Identifier 
 
 void Push2MixerView::valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int index) {
     Push2TrackManagingView::valueTreeChildRemoved(exParent, child, index);
-    if (child.hasType(ProcessorIDs::PROCESSOR)) {
+    if (Processor::isType(child)) {
         updateParameters();
     }
 }
@@ -86,7 +86,7 @@ void Push2MixerView::updateParameters() {
     panParametersPanel.clearParameters();
 
     const auto &focusedTrack = tracks.getFocusedTrack();
-    if (Tracks::isMasterTrack(focusedTrack)) {
+    if (Track::isMaster(focusedTrack)) {
         const auto &trackOutputProcessor = Tracks::getOutputProcessorForTrack(focusedTrack);
         if (auto *processorWrapper = processorGraph.getProcessorWrapperForState(trackOutputProcessor)) {
             volumeParametersPanel.addParameter(processorWrapper->getParameter(1));
@@ -94,16 +94,16 @@ void Push2MixerView::updateParameters() {
         }
     } else {
         for (const auto &track : tracks.getState()) {
-            if (Tracks::isMasterTrack(track))
-                continue;
-            const auto &trackOutputProcessor = Tracks::getOutputProcessorForTrack(track);
-            if (auto *processorWrapper = processorGraph.getProcessorWrapperForState(trackOutputProcessor)) {
-                // TODO use param identifiers instead of indexes
-                volumeParametersPanel.addParameter(processorWrapper->getParameter(1));
-                panParametersPanel.addParameter(processorWrapper->getParameter(0));
-            } else {
-                volumeParametersPanel.addParameter(nullptr);
-                panParametersPanel.addParameter(nullptr);
+            if (!Track::isMaster(track)) {
+                const auto &trackOutputProcessor = Tracks::getOutputProcessorForTrack(track);
+                if (auto *processorWrapper = processorGraph.getProcessorWrapperForState(trackOutputProcessor)) {
+                    // TODO use param identifiers instead of indexes
+                    volumeParametersPanel.addParameter(processorWrapper->getParameter(1));
+                    panParametersPanel.addParameter(processorWrapper->getParameter(0));
+                } else {
+                    volumeParametersPanel.addParameter(nullptr);
+                    panParametersPanel.addParameter(nullptr);
+                }
             }
         }
     }

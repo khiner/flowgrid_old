@@ -28,17 +28,9 @@ struct Input : public Stateful<Input>, private ValueTree::Listener {
 
     void initializeDefault();
 
-    ValueTree getAudioInputProcessorState() const {
-        return state.getChildWithProperty(ProcessorIDs::name, pluginManager.getAudioInputDescription().name);
-    }
-
-    ValueTree getPush2MidiInputProcessor() const {
-        return state.getChildWithProperty(ProcessorIDs::deviceName, Push2MidiDevice::getDeviceName());
-    }
-
     AudioProcessorGraph::NodeID getDefaultInputNodeIdForConnectionType(ConnectionType connectionType) const {
-        if (connectionType == audio) return Processor::getNodeId(getAudioInputProcessorState());
-        if (connectionType == midi) return Processor::getNodeId(getPush2MidiInputProcessor());
+        if (connectionType == audio) return Processor::getNodeId(state.getChildWithProperty(ProcessorIDs::name, pluginManager.getAudioInputDescription().name));
+        if (connectionType == midi) return Processor::getNodeId(state.getChildWithProperty(ProcessorIDs::deviceName, Push2MidiDevice::getDeviceName()));
         return {};
     }
 

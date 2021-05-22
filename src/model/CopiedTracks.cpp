@@ -7,7 +7,7 @@ void CopiedTracks::loadFromState(const ValueTree &fromState) {
         if (Track::isSelected(track)) {
             copiedTrack.copyPropertiesFrom(track, nullptr);
             for (auto processor : track)
-                if (processor.hasType(ProcessorIDs::PROCESSOR))
+                if (Processor::isType(processor))
                     copiedTrack.appendChild(processorGraph.copyProcessor(processor), nullptr);
         } else {
             Track::setMaster(copiedTrack,  Track::isMaster(track));

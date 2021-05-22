@@ -1,32 +1,29 @@
 #include "Connections.h"
 
 static bool canProcessorDefaultConnectTo(const ValueTree &processor, const ValueTree &otherProcessor, ConnectionType connectionType) {
-    return !(!otherProcessor.hasType(ProcessorIDs::PROCESSOR) || processor == otherProcessor) &&
+    return !(!Processor::isType(otherProcessor) || processor == otherProcessor) &&
            Connections::isProcessorAProducer(processor, connectionType) && Connections::isProcessorAnEffect(otherProcessor, connectionType);
 }
 
 ValueTree Connections::findDefaultDestinationProcessor(const ValueTree &sourceProcessor, ConnectionType connectionType) {
-    if (!isProcessorAProducer(sourceProcessor, connectionType))
-        return {};
+    if (!isProcessorAProducer(sourceProcessor, connectionType)) return {};
 
     const ValueTree &track = Tracks::getTrackForProcessor(sourceProcessor);
     const auto &masterTrack = tracks.getMasterTrack();
-    if (Tracks::isTrackOutputProcessor(sourceProcessor)) {
-        if (track == masterTrack)
-            return {};
-        if (masterTrack.isValid())
-            return Tracks::getInputProcessorForTrack(masterTrack);
+    if (Processor::isTrackOutputProcessor(sourceProcessor)) {
+        if (track == masterTrack) return {};
+        if (masterTrack.isValid()) return Tracks::getInputProcessorForTrack(masterTrack);
         return {};
     }
 
-    bool isTrackInputProcessor = Tracks::isTrackInputProcessor(sourceProcessor);
+    bool isTrackInputProcessor = Processor::isTrackInputProcessor(sourceProcessor);
     const auto &lane = Tracks::getProcessorLaneForProcessor(sourceProcessor);
     int siblingDelta = 0;
     ValueTree otherLane;
     while ((otherLane = lane.getSibling(siblingDelta++)).isValid()) {
         for (const auto &otherProcessor : otherLane) {
             if (otherProcessor == sourceProcessor) continue;
-            bool isOtherProcessorBelow = isTrackInputProcessor || int(otherProcessor[ProcessorIDs::processorSlot]) > int(sourceProcessor[ProcessorIDs::processorSlot]);
+            bool isOtherProcessorBelow = isTrackInputProcessor || Processor::getSlot(otherProcessor) > Processor::getSlot(sourceProcessor);
             if (!isOtherProcessorBelow) continue;
             if (canProcessorDefaultConnectTo(sourceProcessor, otherProcessor, connectionType) ||
                 // If a non-effect (another producer) is under this processor in the same track, and no effect processors
@@ -74,7 +71,7 @@ Array<ValueTree> Connections::getConnectionsForNode(const ValueTree &processor, 
 
 bool Connections::anyNonMasterTrackHasEffectProcessor(ConnectionType connectionType) {
     for (const auto &track : tracks.getState())
-        if (!Tracks::isMasterTrack(track))
+        if (!Track::isMaster(track))
             for (const auto &processor : Tracks::getProcessorLaneForTrack(track))
                 if (isProcessorAnEffect(processor, connectionType))
                     return true;

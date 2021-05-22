@@ -45,8 +45,7 @@ int Tracks::getInsertIndexForProcessor(const ValueTree &track, const ValueTree &
     bool sameLane = lane == getProcessorLaneForProcessor(processor);
     auto handleSameLane = [sameLane](int index) -> int { return sameLane ? std::max(0, index - 1) : index; };
     for (const auto &otherProcessor : lane) {
-        int otherSlot = otherProcessor[ProcessorIDs::processorSlot];
-        if (otherSlot >= insertSlot && otherProcessor != processor) {
+        if (Processor::getSlot(otherProcessor) >= insertSlot && otherProcessor != processor) {
             int otherIndex = lane.indexOf(otherProcessor);
             return sameLane && lane.indexOf(processor) < otherIndex ? handleSameLane(otherIndex) : otherIndex;
         }
@@ -70,15 +69,14 @@ ValueTree Tracks::findProcessorNearestToSlot(const ValueTree &track, int slot) {
     auto nearestSlot = INT_MAX;
     ValueTree nearestProcessor;
     for (const auto &processor : lane) {
-        int otherSlot = processor[ProcessorIDs::processorSlot];
+        int otherSlot = Processor::getSlot(processor);
         if (otherSlot == slot) return processor;
 
         if (abs(slot - otherSlot) < abs(slot - nearestSlot)) {
             nearestSlot = otherSlot;
             nearestProcessor = processor;
         }
-        if (otherSlot > slot)
-            break; // processors are ordered by slot.
+        if (otherSlot > slot) break; // processors are ordered by slot.
     }
     return nearestProcessor;
 }
@@ -110,7 +108,7 @@ juce::Point<int> Tracks::gridPositionToTrackAndSlot(const juce::Point<int> gridP
 }
 
 int Tracks::findSlotAt(const juce::Point<int> position, const ValueTree &track) const {
-    bool isMaster = isMasterTrack(track);
+    bool isMaster = Track::isMaster(track);
     int length = isMaster ? position.x : (position.y - View::TRACK_LABEL_HEIGHT);
     if (length < 0) return -1;
 

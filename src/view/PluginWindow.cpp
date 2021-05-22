@@ -5,7 +5,7 @@
 #include "model/Tracks.h"
 
 PluginWindow::PluginWindow(ValueTree &processorState, AudioProcessor *processor, Type type)
-        : DocumentWindow(processorState[ProcessorIDs::name],
+        : DocumentWindow(Processor::getName(processorState),
                          LookAndFeel::getDefaultLookAndFeel().findColour(ResizableWindow::backgroundColourId),
                          DocumentWindow::minimiseButton | DocumentWindow::closeButton),
           processor(processorState), type(type) {
@@ -20,8 +20,8 @@ PluginWindow::PluginWindow(ValueTree &processorState, AudioProcessor *processor,
         setContentOwned(ui, true);
     }
 
-    int xPosition = processorState.hasProperty(ProcessorIDs::pluginWindowX) ? int(processorState[ProcessorIDs::pluginWindowX]) : Random::getSystemRandom().nextInt(500);
-    int yPosition = processorState.hasProperty(ProcessorIDs::pluginWindowX) ? int(processorState[ProcessorIDs::pluginWindowY]) : Random::getSystemRandom().nextInt(500);
+    int xPosition = processorState.hasProperty(ProcessorIDs::pluginWindowX) ? Processor::getPluginWindowX(processorState) : Random::getSystemRandom().nextInt(500);
+    int yPosition = processorState.hasProperty(ProcessorIDs::pluginWindowX) ? Processor::getPluginWindowY(processorState) : Random::getSystemRandom().nextInt(500);
     setTopLeftPosition(xPosition, yPosition);
     setAlwaysOnTop(true);
     setVisible(true);
@@ -50,12 +50,12 @@ AudioProcessorEditor *PluginWindow::createProcessorEditor(AudioProcessor &proces
 }
 
 void PluginWindow::moved() {
-    processor.setProperty(ProcessorIDs::pluginWindowX, getX(), nullptr);
-    processor.setProperty(ProcessorIDs::pluginWindowY, getY(), nullptr);
+    Processor::setPluginWindowX(processor, getX());
+    Processor::setPluginWindowY(processor, getY());
 }
 
 void PluginWindow::closeButtonPressed() {
-    processor.setProperty(ProcessorIDs::pluginWindowType, static_cast<int>(Type::none), nullptr);
+    Processor::setPluginWindowType(processor, static_cast<int>(Type::none));
 }
 
 PluginWindow::ProgramAudioProcessorEditor::ProgramAudioProcessorEditor(AudioProcessor &p) : AudioProcessorEditor(p) {

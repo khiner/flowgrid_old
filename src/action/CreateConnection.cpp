@@ -4,8 +4,8 @@
 CreateConnection::CreateConnection(const AudioProcessorGraph::Connection &connection, bool isDefault, Connections &connections, ProcessorGraph &processorGraph)
         : CreateOrDeleteConnections(connections) {
     if (processorGraph.canAddConnection(connection) &&
-        (!isDefault || (processorGraph.getProcessorStateForNodeId(connection.source.nodeID)[ProcessorIDs::allowDefaultConnections] &&
-                        processorGraph.getProcessorStateForNodeId(connection.destination.nodeID)[ProcessorIDs::allowDefaultConnections]))) {
+        (!isDefault || (Processor::allowsDefaultConnections(processorGraph.getProcessorStateForNodeId(connection.source.nodeID)) &&
+                        Processor::allowsDefaultConnections(processorGraph.getProcessorStateForNodeId(connection.destination.nodeID))))) {
         addConnection(stateForConnection(connection, isDefault));
     }
 }

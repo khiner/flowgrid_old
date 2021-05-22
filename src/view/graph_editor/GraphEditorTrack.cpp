@@ -113,19 +113,19 @@ void GraphEditorTrack::trackOutputProcessorChanged() {
 }
 
 void GraphEditorTrack::valueTreeChildAdded(ValueTree &parent, ValueTree &child) {
-    if (child.hasType(ProcessorIDs::PROCESSOR)) {
-        if (child.getProperty(ProcessorIDs::name) == InternalPluginFormat::getTrackInputProcessorName())
+    if (Processor::isType(child)) {
+        if (Processor::isTrackInputProcessor(child))
             trackInputProcessorChanged();
-        else if (child.getProperty(ProcessorIDs::name) == InternalPluginFormat::getTrackOutputProcessorName())
+        else if (Processor::isTrackOutputProcessor(child))
             trackOutputProcessorChanged();
     }
 }
 
 void GraphEditorTrack::valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int) {
-    if (child.hasType(ProcessorIDs::PROCESSOR)) {
-        if (child.getProperty(ProcessorIDs::name) == InternalPluginFormat::getTrackInputProcessorName())
+    if (Processor::isType(child)) {
+        if (Processor::isTrackInputProcessor(child))
             trackInputProcessorChanged();
-        else if (child.getProperty(ProcessorIDs::name) == InternalPluginFormat::getTrackOutputProcessorName())
+        else if (Processor::isTrackOutputProcessor(child))
             trackOutputProcessorChanged();
     }
 }

@@ -23,10 +23,10 @@ void LabelGraphEditorProcessor::valueTreePropertyChanged(ValueTree &v, const Ide
     if (v != state) return;
 
     if (i == ProcessorIDs::deviceName) {
-        setName(v[ProcessorIDs::deviceName]);
+        setName(Processor::getDeviceName(v));
         nameLabel.setText(getName());
     } else if (i == ProcessorIDs::name) {
-        setName(v[ProcessorIDs::name]);
+        setName(Processor::getName(v));
         nameLabel.setText(getName());
     }
 

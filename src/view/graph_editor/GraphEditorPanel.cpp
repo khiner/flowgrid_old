@@ -252,7 +252,7 @@ void GraphEditorPanel::showPopupMenu(const ValueTree &track, int slot) {
         menu.addSubMenu("Insert new processor", processorSelectorSubmenu);
         menu.addSeparator();
 
-        if (InternalPluginFormat::isIoProcessor(processor[ProcessorIDs::name])) {
+        if (Processor::isIoProcessor(processor)) {
             menu.addItem(CONFIGURE_AUDIO_MIDI_MENU_ID, "Configure audio/MIDI IO");
         } else {
             menu.addItem(DELETE_MENU_ID, "Delete this processor");
@@ -339,20 +339,20 @@ void GraphEditorPanel::valueTreePropertyChanged(ValueTree &tree, const Identifie
         else if (auto *w = getOrCreateWindowFor(tree, type))
             w->toFront(true);
     } else if (i == ProcessorIDs::processorInitialized) {
-        if (tree[ProcessorIDs::name] == InternalPluginFormat::getMidiInputProcessorName()) {
+        if (Processor::isMidiInputProcessor(tree)) {
             auto *midiInputProcessor = new LabelGraphEditorProcessor(tree, view, tracks, graph, *this);
             addAndMakeVisible(midiInputProcessor, 0);
             midiInputProcessors.addSorted(processorComparator, midiInputProcessor);
             resized();
-        } else if (tree[ProcessorIDs::name] == InternalPluginFormat::getMidiOutputProcessorName()) {
+        } else if (Processor::isMidiOutputProcessor(tree)) {
             auto *midiOutputProcessor = new LabelGraphEditorProcessor(tree, view, tracks, graph, *this);
             addAndMakeVisible(midiOutputProcessor, 0);
             midiOutputProcessors.addSorted(processorComparator, midiOutputProcessor);
             resized();
-        } else if (tree[ProcessorIDs::name] == "Audio Input") {
+        } else if (Processor::getName(tree) == "Audio Input") {
             addAndMakeVisible(*(audioInputProcessor = std::make_unique<LabelGraphEditorProcessor>(tree, view, tracks, graph, *this)), 0);
             resized();
-        } else if (tree[ProcessorIDs::name] == "Audio Output") {
+        } else if (Processor::getName(tree) == "Audio Output") {
             addAndMakeVisible(*(audioOutputProcessor = std::make_unique<LabelGraphEditorProcessor>(tree, view, tracks, graph, *this)), 0);
             resized();
         }
@@ -369,10 +369,10 @@ void GraphEditorPanel::valueTreeChildRemoved(ValueTree &parent, ValueTree &child
     if (Track::isType(child)) {
         connectors->updateConnectors();
     } else if (Processor::isType(child)) {
-        if (child[ProcessorIDs::name] == InternalPluginFormat::getMidiInputProcessorName()) {
+        if (Processor::isMidiInputProcessor(child)) {
             midiInputProcessors.removeObject(findMidiInputProcessorForNodeId(Processor::getNodeId(child)));
             resized();
-        } else if (child[ProcessorIDs::name] == InternalPluginFormat::getMidiOutputProcessorName()) {
+        } else if (Processor::isMidiOutputProcessor(child)) {
             midiOutputProcessors.removeObject(findMidiOutputProcessorForNodeId(Processor::getNodeId(child)));
             resized();
         } else {

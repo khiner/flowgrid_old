@@ -10,13 +10,13 @@ SetDefaultConnectionsAllowed::SetDefaultConnectionsAllowed(const ValueTree &proc
 }
 
 bool SetDefaultConnectionsAllowed::perform() {
-    processor.setProperty(ProcessorIDs::allowDefaultConnections, defaultConnectionsAllowed, nullptr);
+    Processor::setAllowsDefaultConnections(processor, defaultConnectionsAllowed);
     CreateOrDeleteConnections::perform();
     return true;
 }
 
 bool SetDefaultConnectionsAllowed::undo() {
     CreateOrDeleteConnections::perform();
-    processor.setProperty(ProcessorIDs::allowDefaultConnections, defaultConnectionsAllowed, nullptr);
+    Processor::setAllowsDefaultConnections(processor, !defaultConnectionsAllowed);
     return true;
 }

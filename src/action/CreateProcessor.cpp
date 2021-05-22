@@ -2,10 +2,10 @@
 
 ValueTree CreateProcessor::createProcessor(const PluginDescription &description) {
     ValueTree processorToCreate(ProcessorIDs::PROCESSOR);
-    processorToCreate.setProperty(ProcessorIDs::id, description.createIdentifierString(), nullptr);
-    processorToCreate.setProperty(ProcessorIDs::name, description.name, nullptr);
-    processorToCreate.setProperty(ProcessorIDs::allowDefaultConnections, true, nullptr);
-    processorToCreate.setProperty(ProcessorIDs::pluginWindowType, static_cast<int>(PluginWindow::Type::none), nullptr);
+    Processor::setId(processorToCreate, description.createIdentifierString());
+    Processor::setName(processorToCreate, description.name);
+    Processor::setAllowsDefaultConnections(processorToCreate, true);
+    Processor::setPluginWindowType(processorToCreate, static_cast<int>(PluginWindow::Type::none));
     return processorToCreate;
 }
 
@@ -17,12 +17,12 @@ static int getInsertSlot(const PluginDescription &description, int trackIndex, T
     const auto &track = tracks.getTrack(trackIndex);
     const auto &lane = Tracks::getProcessorLaneForTrack(track);
     int indexToInsertProcessor = lane.getNumChildren();
-    return indexToInsertProcessor <= 0 ? 0 : int(lane.getChild(indexToInsertProcessor - 1)[ProcessorIDs::processorSlot]) + 1;
+    return indexToInsertProcessor <= 0 ? 0 : Processor::getSlot(lane.getChild(indexToInsertProcessor - 1)) + 1;
 }
 
 CreateProcessor::CreateProcessor(ValueTree processorToCreate, int trackIndex, int slot, Tracks &tracks, View &view, ProcessorGraph &processorGraph)
         : trackIndex(trackIndex), slot(slot), processorToCreate(std::move(processorToCreate)),
-          pluginWindowType(this->processorToCreate[ProcessorIDs::pluginWindowType]),
+          pluginWindowType(Processor::getPluginWindowType(this->processorToCreate)),
           insertAction(this->processorToCreate, trackIndex, slot, tracks, view),
           processorGraph(processorGraph) {}
 
@@ -37,7 +37,7 @@ bool CreateProcessor::perform() {
     performTemporary();
     if (processorToCreate.isValid()) {
         processorGraph.onProcessorCreated(processorToCreate);
-        processorToCreate.setProperty(ProcessorIDs::pluginWindowType, pluginWindowType, nullptr);
+        Processor::setPluginWindowType(processorToCreate, pluginWindowType);
     }
     return true;
 }
@@ -45,7 +45,7 @@ bool CreateProcessor::perform() {
 bool CreateProcessor::undo() {
     undoTemporary();
     if (processorToCreate.isValid()) {
-        processorToCreate.setProperty(ProcessorIDs::pluginWindowType, static_cast<int>(PluginWindow::Type::none), nullptr);
+        Processor::setPluginWindowType(processorToCreate, static_cast<int>(PluginWindow::Type::none));
         processorGraph.onProcessorDestroyed(processorToCreate);
     }
     return true;

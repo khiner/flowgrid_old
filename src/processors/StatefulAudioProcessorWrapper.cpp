@@ -328,7 +328,7 @@ void StatefulAudioProcessorWrapper::Parameter::parameterControlValueChanged(Para
 
 StatefulAudioProcessorWrapper::StatefulAudioProcessorWrapper(AudioPluginInstance *processor, AudioProcessorGraph::NodeID nodeId, ValueTree state, UndoManager &undoManager, AudioDeviceManager &deviceManager) :
         processor(processor), state(std::move(state)), undoManager(undoManager), deviceManager(deviceManager) {
-    this->state.setProperty(ProcessorIDs::nodeId, int(nodeId.uid), nullptr);
+    Processor::setNodeId(this->state, nodeId);
     processor->enableAllBuses();
     if (auto *ioProcessor = dynamic_cast<AudioProcessorGraph::AudioGraphIOProcessor *> (processor)) {
         if (ioProcessor->isInput()) {
@@ -421,9 +421,9 @@ void StatefulAudioProcessorWrapper::updateStateForProcessor(AudioProcessor *proc
     }
 
     if (processor->acceptsMidi())
-        state.setProperty(ProcessorIDs::acceptsMidi, true, nullptr);
+        Processor::setAcceptsMidi(state, true);
     if (processor->producesMidi())
-        state.setProperty(ProcessorIDs::producesMidi, true, nullptr);
+        Processor::setProducesMidi(state, true);
 
     updateChannels(oldInputs, newInputs, inputChannels);
     updateChannels(oldOutputs, newOutputs, outputChannels);

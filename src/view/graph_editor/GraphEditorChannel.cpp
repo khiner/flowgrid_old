@@ -61,9 +61,10 @@ void GraphEditorChannel::resized() {
 
 void GraphEditorChannel::updateColour() {
     bool mouseOver = isMouseOver(true);
+    bool allowsDefaultConnections = Processor::allowsDefaultConnections(getProcessor());
     auto colour = isMidi()
-                  ? findColour(!allowDefaultConnections() ? customMidiConnectionColourId : defaultMidiConnectionColourId)
-                  : findColour(!allowDefaultConnections() ? customAudioConnectionColourId : defaultAudioConnectionColourId);
+                  ? findColour(!allowsDefaultConnections ? customMidiConnectionColourId : defaultMidiConnectionColourId)
+                  : findColour(!allowsDefaultConnections ? customAudioConnectionColourId : defaultAudioConnectionColourId);
 
     auto pathColour = colour.withRotatedHue(busIdx / 5.0f);
     if (mouseOver)

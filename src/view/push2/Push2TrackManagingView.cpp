@@ -26,7 +26,7 @@ void Push2TrackManagingView::resized() {
 
 void Push2TrackManagingView::belowScreenButtonPressed(int buttonIndex) {
     auto track = tracks.getTrackWithViewIndex(buttonIndex);
-    if (track.isValid() && !Tracks::isMasterTrack(track))
+    if (track.isValid() && !Track::isMaster(track))
         project.setTrackSelected(track, true);
 }
 
@@ -65,7 +65,7 @@ void Push2TrackManagingView::valueTreePropertyChanged(ValueTree &tree, const Ide
             int trackIndex = tracks.getViewIndexForTrack(tree);
             if (trackIndex < 0 || trackIndex >= trackLabels.size()) return;
 
-            if (i == TrackIDs::name && !Tracks::isMasterTrack(tree))
+            if (i == TrackIDs::name && !Track::isMaster(tree))
                 trackLabels.getUnchecked(trackIndex)->setText(Track::getName(tree), dontSendNotification);
         } else if (i == TrackIDs::selected && Track::isSelected(tree)) {
             trackSelected(tree);
@@ -82,7 +82,7 @@ void Push2TrackManagingView::valueTreeChildOrderChanged(ValueTree &tree, int, in
 
 void Push2TrackManagingView::trackColourChanged(const String &trackUuid, const Colour &colour) {
     auto track = tracks.findTrackWithUuid(trackUuid);
-    if (!Tracks::isMasterTrack(track))
+    if (!Track::isMaster(track))
         if (auto *trackLabel = trackLabels[tracks.getViewIndexForTrack(track)])
             trackLabel->setMainColour(colour);
 }

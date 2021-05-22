@@ -89,7 +89,7 @@ bool Select::canCoalesceWith(Select *otherAction) {
 void Select::updateViewFocus(const juce::Point<int> focusedSlot) {
     view.focusOnProcessorSlot(focusedSlot);
     const auto &focusedTrack = tracks.getTrack(focusedSlot.x);
-    bool isMaster = Tracks::isMasterTrack(focusedTrack);
+    bool isMaster = Track::isMaster(focusedTrack);
     if (!isMaster)
         view.updateViewTrackOffsetToInclude(focusedSlot.x, tracks.getNumNonMasterTracks());
     view.updateViewSlotOffsetToInclude(focusedSlot.y, isMaster);

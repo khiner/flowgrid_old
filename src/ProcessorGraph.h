@@ -44,7 +44,7 @@ public:
             MemoryBlock memoryBlock;
             if (auto *processor = processorWrapper->processor) {
                 processor->getStateInformation(memoryBlock);
-                processorState.setProperty(ProcessorIDs::state, memoryBlock.toBase64Encoding(), nullptr);
+                Processor::setProcessorState(processorState, memoryBlock.toBase64Encoding());
             }
         }
     }

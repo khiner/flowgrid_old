@@ -12,7 +12,7 @@ bool InsertProcessor::undo() {
 }
 
 InsertProcessor::SetProcessorSlotAction::SetProcessorSlotAction(int trackIndex, const ValueTree &processor, int newSlot, Tracks &tracks, View &view)
-        : processor(processor), oldSlot(processor[ProcessorIDs::processorSlot]), newSlot(newSlot) {
+        : processor(processor), oldSlot(Processor::getSlot(processor)), newSlot(newSlot) {
     const auto &track = tracks.getTrack(trackIndex);
     int numNewRows = this->newSlot + 1 - tracks.getNumSlotsForTrack(track);
     for (int i = 0; i < numNewRows; i++)
@@ -30,13 +30,13 @@ bool InsertProcessor::SetProcessorSlotAction::perform() {
     if (pushConflictingProcessorAction)
         pushConflictingProcessorAction->perform();
     if (processor.isValid())
-        processor.setProperty(ProcessorIDs::processorSlot, newSlot, nullptr);
+        Processor::setSlot(processor, newSlot);
     return true;
 }
 
 bool InsertProcessor::SetProcessorSlotAction::undo() {
     if (processor.isValid())
-        processor.setProperty(ProcessorIDs::processorSlot, oldSlot, nullptr);
+        Processor::setSlot(processor, oldSlot);
     if (pushConflictingProcessorAction)
         pushConflictingProcessorAction->undo();
     for (auto *addProcessorRowAction : addProcessorRowActions)
@@ -49,7 +49,7 @@ InsertProcessor::SetProcessorSlotAction::AddProcessorRowAction::AddProcessorRowA
 
 bool InsertProcessor::SetProcessorSlotAction::AddProcessorRowAction::perform() {
     const auto &track = tracks.getTrack(trackIndex);
-    if (Tracks::isMasterTrack(track))
+    if (Track::isMaster(track))
         view.addProcessorSlots(1, true);
     else
         view.addProcessorSlots(1, false);
@@ -58,7 +58,7 @@ bool InsertProcessor::SetProcessorSlotAction::AddProcessorRowAction::perform() {
 
 bool InsertProcessor::SetProcessorSlotAction::AddProcessorRowAction::undo() {
     const auto &track = tracks.getTrack(trackIndex);
-    if (Tracks::isMasterTrack(track))
+    if (Track::isMaster(track))
         view.addProcessorSlots(-1, true);
     else
         view.addProcessorSlots(-1, false);
@@ -67,7 +67,7 @@ bool InsertProcessor::SetProcessorSlotAction::AddProcessorRowAction::undo() {
 
 InsertProcessor::AddOrMoveProcessorAction::AddOrMoveProcessorAction(const ValueTree &processor, int newTrackIndex, int newSlot, Tracks &tracks, View &view)
         : processor(processor), oldTrackIndex(tracks.indexOf(Tracks::getTrackForProcessor(processor))), newTrackIndex(newTrackIndex),
-          oldSlot(processor[ProcessorIDs::processorSlot]), newSlot(newSlot),
+          oldSlot(Processor::getSlot(processor)), newSlot(newSlot),
           oldIndex(processor.getParent().indexOf(processor)),
           newIndex(Tracks::getInsertIndexForProcessor(tracks.getTrack(newTrackIndex), processor, this->newSlot)),
           setProcessorSlotAction(std::make_unique<SetProcessorSlotAction>(newTrackIndex, processor, newSlot, tracks, view)),

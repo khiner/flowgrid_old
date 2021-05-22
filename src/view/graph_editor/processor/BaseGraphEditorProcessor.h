@@ -13,33 +13,17 @@ public:
 
     const ValueTree &getState() const { return state; }
 
-    ValueTree getTrack() const {
-        return Tracks::getTrackForProcessor(getState());
-    }
+    ValueTree getTrack() const { return Tracks::getTrackForProcessor(getState()); }
 
-    AudioProcessorGraph::NodeID getNodeId() const {
-        return Processor::getNodeId(state);
-    }
+    AudioProcessorGraph::NodeID getNodeId() const { return Processor::getNodeId(state); }
 
-    virtual bool isInView() {
-        return isIoProcessor() || tracks.isProcessorSlotInView(getTrack(), getSlot());
-    }
-
-    bool isMasterTrack() const { return Tracks::isMasterTrack(getTrack()); }
+    virtual bool isInView() { return Processor::isIoProcessor(state) || tracks.isProcessorSlotInView(getTrack(), Processor::getSlot(state)); }
 
     int getTrackIndex() const { return tracks.indexOf(getTrack()); }
-
-    int getSlot() const { return state[ProcessorIDs::processorSlot]; }
 
     int getNumInputChannels() const { return state.getChildWithName(InputChannelsIDs::INPUT_CHANNELS).getNumChildren(); }
 
     int getNumOutputChannels() const { return state.getChildWithName(OutputChannelsIDs::OUTPUT_CHANNELS).getNumChildren(); }
-
-    bool acceptsMidi() const { return state[ProcessorIDs::acceptsMidi]; }
-
-    bool producesMidi() const { return state[ProcessorIDs::producesMidi]; }
-
-    bool isIoProcessor() const { return InternalPluginFormat::isIoProcessor(state[ProcessorIDs::name]); }
 
     bool isSelected() { return Tracks::isProcessorSelected(state); }
 

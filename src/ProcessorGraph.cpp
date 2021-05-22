@@ -163,7 +163,7 @@ bool ProcessorGraph::doDisconnectNode(const ValueTree &processor, ConnectionType
 }
 
 void ProcessorGraph::updateIoChannelEnabled(const ValueTree &channels, const ValueTree &channel, bool enabled) {
-    String processorName = channels.getParent()[ProcessorIDs::name];
+    String processorName = Processor::getName(channels.getParent());
     bool isInput;
     if (processorName == "Audio Input" && Output::isType(channels))
         isInput = true;
@@ -195,10 +195,10 @@ void ProcessorGraph::resumeAudioGraphUpdatesAndApplyDiffSincePause() {
 }
 
 void ProcessorGraph::valueTreePropertyChanged(ValueTree &tree, const Identifier &i) {
-    if (tree.hasType(ProcessorIDs::PROCESSOR)) {
+    if (Processor::isType(tree)) {
         if (i == ProcessorIDs::bypassed) {
             if (auto node = getNodeForState(tree)) {
-                node->setBypassed(tree[ProcessorIDs::bypassed]);
+                node->setBypassed(Processor::isBypassed(tree));
             }
         }
     }

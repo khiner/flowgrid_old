@@ -43,7 +43,7 @@ void TrackOutputGraphEditorProcessor::paint(Graphics &g) {
     g.setColour(backgroundColour);
 
     const auto &r = getBoxBounds();
-    bool isMaster = isMasterTrack();
+    bool isMaster = Track::isMaster(getTrack());
     bool curveTopLeft = false, curveTopRight = isMaster, curveBottomLeft = !isMaster, curveBottomRight = true;
     Path p;
     p.addRoundedRectangle(r.getX(), r.getY(), r.getWidth(), r.getHeight(),
@@ -52,7 +52,7 @@ void TrackOutputGraphEditorProcessor::paint(Graphics &g) {
 }
 
 Rectangle<int> TrackOutputGraphEditorProcessor::getBoxBounds() const {
-    return isMasterTrack() ?
+    return Track::isMaster(getTrack()) ?
            getLocalBounds() :
            getLocalBounds().withTrimmedTop(channelSize / 2).withTrimmedBottom(View::TRACKS_MARGIN);
 }

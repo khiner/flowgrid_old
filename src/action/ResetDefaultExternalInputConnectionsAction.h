@@ -14,8 +14,6 @@ struct ResetDefaultExternalInputConnectionsAction : public CreateOrDeleteConnect
     ResetDefaultExternalInputConnectionsAction(Connections &connections, Tracks &tracks, Input &input, ProcessorGraph &processorGraph, ValueTree trackToTreatAsFocused = {});
 
 private:
-    ValueTree findTopmostEffectProcessor(const ValueTree &track, ConnectionType connectionType);
-
     // Find the upper-right-most effect processor that flows into the given processor
     // which doesn't already have incoming node connections.
     ValueTree findMostUpstreamAvailableProcessorConnectedTo(const ValueTree &processor, ConnectionType connectionType, Tracks &tracks, Input &input);

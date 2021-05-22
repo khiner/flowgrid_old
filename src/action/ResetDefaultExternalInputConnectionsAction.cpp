@@ -3,6 +3,13 @@
 #include "DisconnectProcessor.h"
 #include "DefaultConnectProcessor.h"
 
+static ValueTree findTopmostEffectProcessor(const ValueTree &track, ConnectionType connectionType) {
+    for (const auto &processor : Tracks::getProcessorLaneForTrack(track))
+        if (Connections::isProcessorAnEffect(processor, connectionType))
+            return processor;
+    return {};
+}
+
 ResetDefaultExternalInputConnectionsAction::ResetDefaultExternalInputConnectionsAction(Connections &connections, Tracks &tracks, Input &input, ProcessorGraph &processorGraph,
                                                                                        ValueTree trackToTreatAsFocused)
         : CreateOrDeleteConnections(connections) {
@@ -13,7 +20,7 @@ ResetDefaultExternalInputConnectionsAction::ResetDefaultExternalInputConnections
         const auto sourceNodeId = input.getDefaultInputNodeIdForConnectionType(connectionType);
 
         // If master track received focus, only change the default connections if no other tracks have effect processors
-        if (Tracks::isMasterTrack(trackToTreatAsFocused) && connections.anyNonMasterTrackHasEffectProcessor(connectionType)) continue;
+        if (Track::isMaster(trackToTreatAsFocused) && connections.anyNonMasterTrackHasEffectProcessor(connectionType)) continue;
 
         const ValueTree &inputProcessor = processorGraph.getProcessorStateForNodeId(sourceNodeId);
         AudioProcessorGraph::NodeID destinationNodeId;
@@ -27,13 +34,6 @@ ResetDefaultExternalInputConnectionsAction::ResetDefaultExternalInputConnections
         }
         coalesceWith(DisconnectProcessor(connections, inputProcessor, connectionType, true, false, false, true, destinationNodeId));
     }
-}
-
-ValueTree ResetDefaultExternalInputConnectionsAction::findTopmostEffectProcessor(const ValueTree &track, ConnectionType connectionType) {
-    for (const auto &processor : Tracks::getProcessorLaneForTrack(track))
-        if (Connections::isProcessorAnEffect(processor, connectionType))
-            return processor;
-    return {};
 }
 
 ValueTree ResetDefaultExternalInputConnectionsAction::findMostUpstreamAvailableProcessorConnectedTo(const ValueTree &processor, ConnectionType connectionType, Tracks &tracks, Input &input) {
@@ -54,7 +54,7 @@ ValueTree ResetDefaultExternalInputConnectionsAction::findMostUpstreamAvailableP
 
         const auto &firstProcessor = lane.getChild(0);
         auto firstProcessorNodeId = Processor::getNodeId(firstProcessor);
-        int slot = firstProcessor[ProcessorIDs::processorSlot];
+        int slot = Processor::getSlot(firstProcessor);
         if (slot < lowestSlot &&
             isAvailableForExternalInput(firstProcessor, connectionType, input) &&
             areProcessorsConnected(firstProcessorNodeId, processorNodeId)) {

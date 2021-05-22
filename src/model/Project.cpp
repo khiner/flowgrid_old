@@ -48,8 +48,8 @@ void Project::loadFromState(const ValueTree &fromState) {
 
     view.loadFromParentState(fromState);
 
-    const String &inputDeviceName = fromState.getChildWithName(InputIDs::INPUT)[ProcessorIDs::deviceName];
-    const String &outputDeviceName = fromState.getChildWithName(OutputIDs::OUTPUT)[ProcessorIDs::deviceName];
+    const String &inputDeviceName = Processor::getDeviceName(fromState.getChildWithName(InputIDs::INPUT));
+    const String &outputDeviceName = Processor::getDeviceName(fromState.getChildWithName(OutputIDs::OUTPUT));
 
     // TODO this should be replaced with the greyed-out IO processor behavior (keeping connections)
     static const String &failureMessage = TRANS("Could not open an Audio IO device used by this project.  "
@@ -139,7 +139,7 @@ void Project::duplicateSelectedItems() {
 
 void Project::beginDragging(const juce::Point<int> trackAndSlot) {
     if (trackAndSlot.x == Tracks::INVALID_TRACK_AND_SLOT.x ||
-        (trackAndSlot.y == -1 && Tracks::isMasterTrack(tracks.getTrack(trackAndSlot.x))))
+        (trackAndSlot.y == -1 && Track::isMaster(tracks.getTrack(trackAndSlot.x))))
         return;
 
     initialDraggingTrackAndSlot = trackAndSlot;
@@ -207,7 +207,7 @@ void Project::setTrackSelected(const ValueTree &track, bool selected, bool desel
 }
 
 void Project::selectProcessor(const ValueTree &processor) {
-    setProcessorSlotSelected(Tracks::getTrackForProcessor(processor), processor[ProcessorIDs::processorSlot], true);
+    setProcessorSlotSelected(Tracks::getTrackForProcessor(processor), Processor::getSlot(processor), true);
 }
 
 bool Project::disconnectCustom(const ValueTree &processor) {
@@ -223,7 +223,7 @@ void Project::setDefaultConnectionsAllowed(const ValueTree &processor, bool defa
 
 void Project::toggleProcessorBypass(ValueTree processor) {
     undoManager.beginNewTransaction();
-    processor.setProperty(ProcessorIDs::bypassed, !processor[ProcessorIDs::bypassed], &undoManager);
+    processor.setProperty(ProcessorIDs::bypassed, !Processor::isBypassed(processor), &undoManager);
 }
 
 void Project::selectTrackAndSlot(juce::Point<int> trackAndSlot) {

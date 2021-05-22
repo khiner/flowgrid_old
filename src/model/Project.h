@@ -53,7 +53,7 @@ struct Project : public Stateful<Project>, public FileBasedDocument, private Cha
     UndoManager &getUndoManager() { return undoManager; }
 
     bool isPush2MidiInputProcessorConnected() const {
-        return connections.isNodeConnected(Processor::getNodeId(input.getPush2MidiInputProcessor()));
+        return connections.isNodeConnected(Processor::getNodeId(input.getState().getChildWithProperty(ProcessorIDs::deviceName, Push2MidiDevice::getDeviceName())));
     }
 
     bool isShiftHeld() const { return shiftHeld || push2ShiftHeld; }
@@ -196,7 +196,7 @@ private:
     void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override {
         if (Track::isType(child))
             mostRecentlyCreatedTrack = child;
-        else if (child.hasType(ProcessorIDs::PROCESSOR))
+        else if (Processor::isType(child))
             mostRecentlyCreatedProcessor = child;
     }
 };
