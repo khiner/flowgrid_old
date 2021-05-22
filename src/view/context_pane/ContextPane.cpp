@@ -44,7 +44,7 @@ void ContextPane::paint(Graphics &g) {
             previousTrackBorderPosition = trackBorderPosition;
         }
 
-        const auto &outputProcessor = Tracks::getOutputProcessorForTrack(track);
+        const auto &outputProcessor = Track::getOutputProcessor(track);
         auto trackOutputIndex = tracks.getSlotOffsetForTrack(track) + Tracks::getNumVisibleSlotsForTrack(track);
         for (auto gridCellIndex = 0; gridCellIndex < tracks.getNumSlotsForTrack(track) + 1; gridCellIndex++) {
             Colour cellColour;
@@ -52,10 +52,10 @@ void ContextPane::paint(Graphics &g) {
                 cellColour = getFillColour(trackColour, track, outputProcessor, tracks.isTrackInView(track), true, false);
             } else {
                 int slot = gridCellIndex < trackOutputIndex ? gridCellIndex : gridCellIndex - 1;
-                const auto &processor = Tracks::getProcessorAtSlot(track, slot);
+                const auto &processor = Track::getProcessorAtSlot(track, slot);
                 cellColour = getFillColour(trackColour, track, processor,
                                            tracks.isProcessorSlotInView(track, slot),
-                                           Tracks::isSlotSelected(track, slot),
+                                           Track::isSlotSelected(track, slot),
                                            tracks.isSlotFocused(track, slot));
             }
             g.setColour(cellColour);
@@ -82,7 +82,7 @@ Colour ContextPane::getFillColour(const Colour &trackColour, const ValueTree &tr
 
     // this is the only part different than GraphEditorProcessorLane
     auto colour = processor.isValid() ? findColour(TextEditor::backgroundColourId) : baseColour;
-    if (Tracks::doesTrackHaveSelections(track))
+    if (Track::hasSelections(track))
         colour = colour.brighter(processor.isValid() ? 0.04f : 0.15f);
     if (slotSelected)
         colour = trackColour;

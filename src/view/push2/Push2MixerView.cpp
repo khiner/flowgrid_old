@@ -87,7 +87,7 @@ void Push2MixerView::updateParameters() {
 
     const auto &focusedTrack = tracks.getFocusedTrack();
     if (Track::isMaster(focusedTrack)) {
-        const auto &trackOutputProcessor = Tracks::getOutputProcessorForTrack(focusedTrack);
+        const auto &trackOutputProcessor = Track::getOutputProcessor(focusedTrack);
         if (auto *processorWrapper = processorGraph.getProcessorWrapperForState(trackOutputProcessor)) {
             volumeParametersPanel.addParameter(processorWrapper->getParameter(1));
             panParametersPanel.addParameter(processorWrapper->getParameter(0));
@@ -95,7 +95,7 @@ void Push2MixerView::updateParameters() {
     } else {
         for (const auto &track : tracks.getState()) {
             if (!Track::isMaster(track)) {
-                const auto &trackOutputProcessor = Tracks::getOutputProcessorForTrack(track);
+                const auto &trackOutputProcessor = Track::getOutputProcessor(track);
                 if (auto *processorWrapper = processorGraph.getProcessorWrapperForState(trackOutputProcessor)) {
                     // TODO use param identifiers instead of indexes
                     volumeParametersPanel.addParameter(processorWrapper->getParameter(1));

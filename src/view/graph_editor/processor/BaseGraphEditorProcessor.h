@@ -13,7 +13,7 @@ public:
 
     const ValueTree &getState() const { return state; }
 
-    ValueTree getTrack() const { return Tracks::getTrackForProcessor(getState()); }
+    ValueTree getTrack() const { return Track::getTrackForProcessor(getState()); }
 
     AudioProcessorGraph::NodeID getNodeId() const { return Processor::getNodeId(state); }
 
@@ -22,7 +22,7 @@ public:
     int getTrackIndex() const { return tracks.indexOf(getTrack()); }
     int getNumInputChannels() const { return state.getChildWithName(InputChannelsIDs::INPUT_CHANNELS).getNumChildren(); }
     int getNumOutputChannels() const { return state.getChildWithName(OutputChannelsIDs::OUTPUT_CHANNELS).getNumChildren(); }
-    bool isSelected() { return Tracks::isProcessorSelected(state); }
+    bool isSelected() { return Track::isProcessorSelected(state); }
     StatefulAudioProcessorWrapper *getProcessorWrapper() const { return processorGraph.getProcessorWrapperForState(state); }
 
     void paint(Graphics &g) override;

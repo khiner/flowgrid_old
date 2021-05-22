@@ -3,7 +3,7 @@
 #include "view/PluginWindow.h"
 
 DeleteProcessor::DeleteProcessor(const ValueTree &processorToDelete, Tracks &tracks, Connections &connections, ProcessorGraph &processorGraph)
-        : tracks(tracks), trackIndex(tracks.indexOf(Tracks::getTrackForProcessor(processorToDelete))),
+        : tracks(tracks), trackIndex(tracks.indexOf(Track::getTrackForProcessor(processorToDelete))),
           processorToDelete(processorToDelete),
           processorIndex(Processor::getIndex(processorToDelete)),
           pluginWindowType(Processor::getPluginWindowType(processorToDelete)),
@@ -23,7 +23,7 @@ bool DeleteProcessor::undo() {
     if (Processor::isTrackIOProcessor(processorToDelete))
         track.appendChild(processorToDelete, nullptr);
     else
-        Tracks::getProcessorLaneForTrack(track).addChild(processorToDelete, processorIndex, nullptr);
+        Track::getProcessorLane(track).addChild(processorToDelete, processorIndex, nullptr);
     processorGraph.onProcessorCreated(processorToDelete);
     Processor::setPluginWindowType(processorToDelete, pluginWindowType);
     disconnectProcessorAction.undo();
@@ -37,7 +37,7 @@ bool DeleteProcessor::performTemporary() {
     if (Processor::isTrackIOProcessor(processorToDelete))
         track.removeChild(processorToDelete, nullptr);
     else
-        Tracks::getProcessorLaneForTrack(track).removeChild(processorToDelete, nullptr);
+        Track::getProcessorLane(track).removeChild(processorToDelete, nullptr);
     return true;
 }
 
@@ -46,7 +46,7 @@ bool DeleteProcessor::undoTemporary() {
     if (Processor::isTrackIOProcessor(processorToDelete))
         track.appendChild(processorToDelete, nullptr);
     else
-        Tracks::getProcessorLaneForTrack(track).addChild(processorToDelete, processorIndex, nullptr);
+        Track::getProcessorLane(track).addChild(processorToDelete, processorIndex, nullptr);
     disconnectProcessorAction.undo();
     return true;
 }

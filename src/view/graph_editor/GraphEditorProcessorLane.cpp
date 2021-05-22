@@ -65,9 +65,9 @@ void GraphEditorProcessorLane::updateProcessorSlotColours() {
     laneDragRectangle.setFill(Track::getColour(track));
     for (int slot = 0; slot < processorSlotRectangles.size(); slot++) {
         auto fillColour = baseColour;
-        if (Tracks::doesTrackHaveSelections(track))
+        if (Track::hasSelections(track))
             fillColour = fillColour.brighter(0.2f);
-        if (Tracks::isSlotSelected(track, slot))
+        if (Track::isSlotSelected(track, slot))
             fillColour = Track::getColour(track);
         if (tracks.isSlotFocused(track, slot))
             fillColour = fillColour.brighter(0.16f);

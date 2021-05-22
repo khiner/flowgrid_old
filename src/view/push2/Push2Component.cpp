@@ -61,7 +61,7 @@ void Push2Component::shiftReleased() {
 }
 
 void Push2Component::masterEncoderRotated(float changeAmount) {
-    const auto &trackOutputProcessor = Tracks::getOutputProcessorForTrack(tracks.getMasterTrack());
+    const auto &trackOutputProcessor = Track::getOutputProcessor(tracks.getMasterTrack());
     if (auto *masterGainProcessor = processorGraph.getProcessorWrapperForState(trackOutputProcessor))
         if (auto *masterGainParameter = masterGainProcessor->getParameter(1))
             masterGainParameter->setValue(masterGainParameter->getValue() + changeAmount);

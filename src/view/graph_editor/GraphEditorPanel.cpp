@@ -36,7 +36,7 @@ void GraphEditorPanel::mouseDown(const MouseEvent &e) {
     const auto &track = tracks.getTrack(trackAndSlot.x);
     view.focusOnGridPane();
 
-    bool isSlotSelected = Tracks::isSlotSelected(track, trackAndSlot.y);
+    bool isSlotSelected = Track::isSlotSelected(track, trackAndSlot.y);
     project.setProcessorSlotSelected(track, trackAndSlot.y, !(isSlotSelected && e.mods.isCommandDown()), !(isSlotSelected || e.mods.isCommandDown()));
     if (e.mods.isPopupMenu() || e.getNumberOfClicks() == 2)
         showPopupMenu(track, trackAndSlot.y);
@@ -58,7 +58,7 @@ void GraphEditorPanel::mouseUp(const MouseEvent &e) {
     }
 
     if (e.getNumberOfClicks() == 2) {
-        const auto &processor = Tracks::getProcessorAtSlot(track, trackAndSlot.y);
+        const auto &processor = Track::getProcessorAtSlot(track, trackAndSlot.y);
         if (processor.isValid() && graph.getAudioProcessorForState(processor)->hasEditor()) {
             tracks.showWindow(processor, PluginWindow::Type::normal);
         }
@@ -243,7 +243,7 @@ static constexpr int
 
 void GraphEditorPanel::showPopupMenu(const ValueTree &track, int slot) {
     PopupMenu menu;
-    const auto &processor = Tracks::getProcessorAtSlot(track, slot);
+    const auto &processor = Track::getProcessorAtSlot(track, slot);
     auto &pluginManager = project.getPluginManager();
 
     if (processor.isValid()) {

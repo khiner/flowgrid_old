@@ -4,7 +4,7 @@
 #include "DefaultConnectProcessor.h"
 
 static ValueTree findTopmostEffectProcessor(const ValueTree &track, ConnectionType connectionType) {
-    for (const auto &processor : Tracks::getProcessorLaneForTrack(track))
+    for (const auto &processor : Track::getProcessorLane(track))
         if (Connections::isProcessorAnEffect(processor, connectionType))
             return processor;
     return {};
@@ -48,7 +48,7 @@ ValueTree ResetDefaultExternalInputConnectionsAction::findMostUpstreamAvailableP
 
     // TODO performance improvement: only iterate over connected processors
     for (int i = tracks.getNumTracks() - 1; i >= 0; i--) {
-        const auto &lane = Tracks::getProcessorLaneForTrack(tracks.getTrack(i));
+        const auto &lane = Track::getProcessorLane(tracks.getTrack(i));
         if (lane.getNumChildren() == 0)
             continue;
 

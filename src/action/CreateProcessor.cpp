@@ -15,7 +15,7 @@ static int getInsertSlot(const PluginDescription &description, int trackIndex, T
 
     // Insert new effect processors right after the lane's last processor
     const auto &track = tracks.getTrack(trackIndex);
-    const auto &lane = Tracks::getProcessorLaneForTrack(track);
+    const auto &lane = Track::getProcessorLane(track);
     int indexToInsertProcessor = lane.getNumChildren();
     return indexToInsertProcessor <= 0 ? 0 : Processor::getSlot(lane.getChild(indexToInsertProcessor - 1)) + 1;
 }

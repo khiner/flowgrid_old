@@ -44,7 +44,7 @@ void Push2ProcessorView::resized() {
 
 void Push2ProcessorView::trackSelected(const ValueTree &track) {
     Push2TrackManagingView::trackSelected(track);
-    if (Tracks::getProcessorLaneForTrack(track).getNumChildren() == 0) {
+    if (Track::getProcessorLane(track).getNumChildren() == 0) {
         parametersPanel->setProcessorWrapper(nullptr);
     }
 }
@@ -138,7 +138,7 @@ void Push2ProcessorView::updatePageButtonVisibility() {
 
 void Push2ProcessorView::updateProcessorButtons() {
     const auto &focusedTrack = tracks.getFocusedTrack();
-    const auto &focusedProcessorLane = Tracks::getProcessorLaneForTrack(focusedTrack);
+    const auto &focusedProcessorLane = Track::getProcessorLane(focusedTrack);
 
     if (processorHasFocus || !focusedTrack.isValid()) { // TODO reset when processor changes
         for (auto *label : processorLabels)
@@ -222,13 +222,13 @@ void Push2ProcessorView::valueTreePropertyChanged(ValueTree &tree, const Identif
 void Push2ProcessorView::trackColourChanged(const String &trackUuid, const Colour &colour) {
     Push2TrackManagingView::trackColourChanged(trackUuid, colour);
     auto track = tracks.findTrackWithUuid(trackUuid);
-    if (Tracks::doesTrackHaveSelections(track)) {
+    if (Track::hasSelections(track)) {
         updateColours();
     }
 }
 
 void Push2ProcessorView::selectProcessor(int processorIndex) {
-    const auto &focusedLane = Tracks::getProcessorLaneForTrack(tracks.getFocusedTrack());
+    const auto &focusedLane = Track::getProcessorLane(tracks.getFocusedTrack());
     if (focusedLane.isValid() && processorIndex < focusedLane.getNumChildren()) {
         project.selectProcessor(focusedLane.getChild(processorIndex));
     }

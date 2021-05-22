@@ -3,7 +3,7 @@
 GraphEditorTrack::GraphEditorTrack(const ValueTree &state, View &view, Tracks &tracks, Project &project, ProcessorGraph &processorGraph, PluginManager &pluginManager,
                                    ConnectorDragListener &connectorDragListener)
         : state(state), view(view), tracks(tracks), project(project), processorGraph(processorGraph), connectorDragListener(connectorDragListener),
-          lanes(Tracks::getProcessorLanesForTrack(state), view, tracks, processorGraph, connectorDragListener) {
+          lanes(Track::getProcessorLanes(state), view, tracks, processorGraph, connectorDragListener) {
     addAndMakeVisible(lanes);
     trackInputProcessorChanged();
     trackOutputProcessorChanged();
@@ -87,7 +87,7 @@ void GraphEditorTrack::onColourChanged() {
 }
 
 void GraphEditorTrack::trackInputProcessorChanged() {
-    const ValueTree &trackInputProcessor = Tracks::getInputProcessorForTrack(state);
+    const ValueTree &trackInputProcessor = Track::getInputProcessor(state);
     if (trackInputProcessor.isValid()) {
         trackInputProcessorView = std::make_unique<TrackInputGraphEditorProcessor>(trackInputProcessor, view, tracks, project, processorGraph, connectorDragListener);
         addAndMakeVisible(trackInputProcessorView.get());
@@ -100,7 +100,7 @@ void GraphEditorTrack::trackInputProcessorChanged() {
 }
 
 void GraphEditorTrack::trackOutputProcessorChanged() {
-    const ValueTree &trackOutputProcessor = Tracks::getOutputProcessorForTrack(state);
+    const ValueTree &trackOutputProcessor = Track::getOutputProcessor(state);
     if (trackOutputProcessor.isValid()) {
         trackOutputProcessorView = std::make_unique<TrackOutputGraphEditorProcessor>(trackOutputProcessor, view, tracks, processorGraph, connectorDragListener);
         addAndMakeVisible(trackOutputProcessorView.get());

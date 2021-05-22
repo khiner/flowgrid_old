@@ -207,7 +207,7 @@ void Project::setTrackSelected(const ValueTree &track, bool selected, bool desel
 }
 
 void Project::selectProcessor(const ValueTree &processor) {
-    setProcessorSlotSelected(Tracks::getTrackForProcessor(processor), Processor::getSlot(processor), true);
+    setProcessorSlotSelected(Track::getTrackForProcessor(processor), Processor::getSlot(processor), true);
 }
 
 bool Project::disconnectCustom(const ValueTree &processor) {
@@ -307,7 +307,7 @@ bool Project::isDeviceWithNamePresent(const String &deviceName) const {
 
 Result Project::saveDocument(const File &file) {
     for (const auto &track : tracks.getState())
-        for (auto processorState : Tracks::getProcessorLaneForTrack(track))
+        for (auto processorState : Track::getProcessorLane(track))
             processorGraph.saveProcessorStateInformationToState(processorState);
 
     if (auto xml = state.createXml())

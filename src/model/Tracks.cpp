@@ -15,7 +15,7 @@ void Tracks::loadFromState(const ValueTree &fromState) {
         resetVarToBool(track, TrackIDs::isMaster, nullptr);
         resetVarToBool(track, TrackIDs::selected, nullptr);
 
-        auto lane = getProcessorLaneForTrack(track);
+        auto lane = Track::getProcessorLane(track);
         lane.sendPropertyChangeMessage(ProcessorLaneIDs::selectedSlotsMask);
         for (auto processor : lane) {
             resetVarToInt(processor, ProcessorIDs::slot, nullptr);
@@ -29,29 +29,6 @@ void Tracks::loadFromState(const ValueTree &fromState) {
     }
 }
 
-Array<ValueTree> Tracks::getAllProcessorsForTrack(const ValueTree &track) {
-    Array<ValueTree> allProcessors;
-    allProcessors.add(getInputProcessorForTrack(track));
-    for (const auto &processor : getProcessorLaneForTrack(track)) {
-        allProcessors.add(processor);
-    }
-    allProcessors.add(getOutputProcessorForTrack(track));
-    return allProcessors;
-}
-
-int Tracks::getInsertIndexForProcessor(const ValueTree &track, const ValueTree &processor, int insertSlot) {
-    const auto &lane = getProcessorLaneForTrack(track);
-
-    bool sameLane = lane == getProcessorLaneForProcessor(processor);
-    auto handleSameLane = [sameLane](int index) -> int { return sameLane ? std::max(0, index - 1) : index; };
-    for (const auto &otherProcessor : lane) {
-        if (Processor::getSlot(otherProcessor) >= insertSlot && otherProcessor != processor) {
-            int otherIndex = lane.indexOf(otherProcessor);
-            return sameLane && lane.indexOf(processor) < otherIndex ? handleSameLane(otherIndex) : otherIndex;
-        }
-    }
-    return handleSameLane(lane.getNumChildren());
-}
 
 Array<ValueTree> Tracks::findAllSelectedItems() const {
     Array<ValueTree> selectedItems;
@@ -59,26 +36,9 @@ Array<ValueTree> Tracks::findAllSelectedItems() const {
         if (Track::isSelected(track))
             selectedItems.add(track);
         else
-            selectedItems.addArray(findSelectedProcessorsForTrack(track));
+            selectedItems.addArray(Track::findSelectedProcessors(track));
     }
     return selectedItems;
-}
-
-ValueTree Tracks::findProcessorNearestToSlot(const ValueTree &track, int slot) {
-    const auto &lane = getProcessorLaneForTrack(track);
-    auto nearestSlot = INT_MAX;
-    ValueTree nearestProcessor;
-    for (const auto &processor : lane) {
-        int otherSlot = Processor::getSlot(processor);
-        if (otherSlot == slot) return processor;
-
-        if (abs(slot - otherSlot) < abs(slot - nearestSlot)) {
-            nearestSlot = otherSlot;
-            nearestProcessor = processor;
-        }
-        if (otherSlot > slot) break; // processors are ordered by slot.
-    }
-    return nearestProcessor;
 }
 
 juce::Point<int> Tracks::gridPositionToTrackAndSlot(const juce::Point<int> gridPosition, bool allowUpFromMaster) const {

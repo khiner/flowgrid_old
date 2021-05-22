@@ -11,7 +11,7 @@ SelectTrack::SelectTrack(const ValueTree &track, bool selected, bool deselectOth
     if (selected) {
         newSelectedSlotsMasks.setUnchecked(trackIndex, tracks.createFullSelectionBitmask(track));
 
-        const ValueTree &firstProcessor = Tracks::getProcessorLaneForTrack(track).getChild(0);
+        const ValueTree &firstProcessor = Track::getProcessorLane(track).getChild(0);
         setNewFocusedSlot({trackIndex, firstProcessor.isValid() ? Processor::getSlot(firstProcessor) : 0});
     } else {
         newSelectedSlotsMasks.setUnchecked(trackIndex, BigInteger().toString(2));

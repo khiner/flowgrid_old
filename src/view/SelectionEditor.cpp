@@ -89,7 +89,7 @@ void SelectionEditor::refreshProcessors(const ValueTree &singleProcessorToRefres
         assignProcessorToEditor(singleProcessorToRefresh);
     } else {
         for (int processorSlot = 0; processorSlot < processorEditors.size(); processorSlot++) {
-            const auto &processor = Tracks::getProcessorAtSlot(focusedTrack, processorSlot);
+            const auto &processor = Track::getProcessorAtSlot(focusedTrack, processorSlot);
             assignProcessorToEditor(processor, processorSlot, onlyUpdateFocusState);
         }
     }
@@ -104,7 +104,7 @@ void SelectionEditor::assignProcessorToEditor(const ValueTree &processor, int pr
                 processorEditor->setProcessor(processorWrapper);
                 processorEditor->setVisible(true);
             }
-            processorEditor->setSelected(Tracks::isProcessorSelected(processor));
+            processorEditor->setSelected(Track::isProcessorSelected(processor));
             processorEditor->setFocused(tracks.isProcessorFocused(processor));
         }
     } else {

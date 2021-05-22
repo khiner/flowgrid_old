@@ -3,7 +3,7 @@
 SelectProcessorSlot::SelectProcessorSlot(const ValueTree &track, int slot, bool selected, bool deselectOthers, Tracks &tracks, Connections &connections, View &view, Input &input,
                                          ProcessorGraph &processorGraph)
         : Select(tracks, connections, view, input, processorGraph) {
-    const auto currentSlotMask = Tracks::getSlotMask(track);
+    const auto currentSlotMask = Track::getSlotMask(track);
     if (deselectOthers) {
         for (int i = 0; i < newTrackSelections.size(); i++) {
             newTrackSelections.setUnchecked(i, false);

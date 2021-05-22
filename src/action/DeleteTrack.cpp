@@ -3,7 +3,7 @@
 DeleteTrack::DeleteTrack(const ValueTree &trackToDelete, Tracks &tracks, Connections &connections, ProcessorGraph &processorGraph)
         : trackToDelete(trackToDelete), trackIndex(trackToDelete.getParent().indexOf(trackToDelete)),
           tracks(tracks) {
-    for (const auto &processorState : Tracks::getAllProcessorsForTrack(trackToDelete)) {
+    for (const auto &processorState : Track::getAllProcessors(trackToDelete)) {
         deleteProcessorActions.add(new DeleteProcessor(processorState, tracks, connections, processorGraph));
         deleteProcessorActions.getLast()->performTemporary();
     }

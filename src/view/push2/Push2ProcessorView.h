@@ -44,7 +44,7 @@ private:
     void pageProcessorsRight();
     bool canPageProcessorsLeft() const { return processorLabelOffset > 0; }
     bool canPageProcessorsRight() const {
-        const auto &focusedLane = Tracks::getProcessorLaneForTrack(tracks.getFocusedTrack());
+        const auto &focusedLane = Track::getProcessorLane(tracks.getFocusedTrack());
         return focusedLane.getNumChildren() > processorLabelOffset + (canPageProcessorsLeft() ? NUM_COLUMNS - 1 : NUM_COLUMNS);
     }
     void selectProcessor(int processorIndex);

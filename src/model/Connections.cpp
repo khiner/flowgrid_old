@@ -8,16 +8,16 @@ static bool canProcessorDefaultConnectTo(const ValueTree &processor, const Value
 ValueTree Connections::findDefaultDestinationProcessor(const ValueTree &sourceProcessor, ConnectionType connectionType) {
     if (!isProcessorAProducer(sourceProcessor, connectionType)) return {};
 
-    const ValueTree &track = Tracks::getTrackForProcessor(sourceProcessor);
+    const ValueTree &track = Track::getTrackForProcessor(sourceProcessor);
     const auto &masterTrack = tracks.getMasterTrack();
     if (Processor::isTrackOutputProcessor(sourceProcessor)) {
         if (track == masterTrack) return {};
-        if (masterTrack.isValid()) return Tracks::getInputProcessorForTrack(masterTrack);
+        if (masterTrack.isValid()) return Track::getInputProcessor(masterTrack);
         return {};
     }
 
     bool isTrackInputProcessor = Processor::isTrackInputProcessor(sourceProcessor);
-    const auto &lane = Tracks::getProcessorLaneForProcessor(sourceProcessor);
+    const auto &lane = Track::getProcessorLaneForProcessor(sourceProcessor);
     int siblingDelta = 0;
     ValueTree otherLane;
     while ((otherLane = lane.getSibling(siblingDelta++)).isValid()) {
@@ -34,7 +34,7 @@ ValueTree Connections::findDefaultDestinationProcessor(const ValueTree &sourcePr
             }
         }
         // TODO adapt this when there are multiple lanes
-        return Tracks::getOutputProcessorForTrack(track);
+        return Track::getOutputProcessor(track);
     }
 
     return {};
@@ -72,7 +72,7 @@ Array<ValueTree> Connections::getConnectionsForNode(const ValueTree &processor, 
 bool Connections::anyNonMasterTrackHasEffectProcessor(ConnectionType connectionType) {
     for (const auto &track : tracks.getState())
         if (!Track::isMaster(track))
-            for (const auto &processor : Tracks::getProcessorLaneForTrack(track))
+            for (const auto &processor : Track::getProcessorLane(track))
                 if (isProcessorAnEffect(processor, connectionType))
                     return true;
     return false;

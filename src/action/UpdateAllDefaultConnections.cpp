@@ -4,7 +4,7 @@ UpdateAllDefaultConnections::UpdateAllDefaultConnections(bool makeInvalidDefault
                                                          Output &output, ProcessorGraph &processorGraph, ValueTree trackToTreatAsFocused)
         : CreateOrDeleteConnections(connections) {
     for (const auto &track : tracks.getState()) {
-        for (const auto &processor : Tracks::getAllProcessorsForTrack(track))
+        for (const auto &processor : Track::getAllProcessors(track))
             coalesceWith(UpdateProcessorDefaultConnections(processor, makeInvalidDefaultsIntoCustom, connections, output, processorGraph));
     }
 

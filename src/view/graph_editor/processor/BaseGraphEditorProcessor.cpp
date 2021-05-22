@@ -48,7 +48,7 @@ void BaseGraphEditorProcessor::resized() {
 }
 
 juce::Point<float> BaseGraphEditorProcessor::getConnectorDirectionVector(bool isInput) const {
-    bool isLeftToRight = Tracks::isProcessorLeftToRightFlowing(getState());
+    bool isLeftToRight = Track::isProcessorLeftToRightFlowing(getState());
     if (isInput) {
         if (isLeftToRight) return {-1, 0};
         return {0, -1};
@@ -59,7 +59,7 @@ juce::Point<float> BaseGraphEditorProcessor::getConnectorDirectionVector(bool is
 
 Rectangle<int> BaseGraphEditorProcessor::getBoxBounds() const {
     auto r = getLocalBounds().reduced(1);
-    bool isLeftToRight = Tracks::isProcessorLeftToRightFlowing(getState());
+    bool isLeftToRight = Track::isProcessorLeftToRightFlowing(getState());
     if (isLeftToRight) {
         if (getNumInputChannels() > 0)
             r.setLeft(channelSize);
@@ -86,7 +86,7 @@ void BaseGraphEditorProcessor::layoutChannel(AudioProcessor *processor, GraphEdi
 
     int x = boxBounds.getX() + static_cast<int>(indexPosition * channelSize);
     int y = boxBounds.getY() + static_cast<int>(indexPosition * channelSize);
-    if (Tracks::isProcessorLeftToRightFlowing(getState()))
+    if (Track::isProcessorLeftToRightFlowing(getState()))
         channel->setSize(static_cast<int>(boxBounds.getWidth() / 2), channelSize);
     else
         channel->setSize(channelSize, static_cast<int>(boxBounds.getHeight() / 2));

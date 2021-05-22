@@ -22,7 +22,7 @@ AudioProcessorGraph::NodeAndChannel GraphEditorChannel::getNodeAndChannel() cons
 
 juce::Point<float> GraphEditorChannel::getConnectPosition() const {
     const auto &centre = getBounds().getCentre().toFloat();
-    bool isLeftToRight = Tracks::isProcessorLeftToRightFlowing(getProcessor());
+    bool isLeftToRight = Track::isProcessorLeftToRightFlowing(getProcessor());
 
     if (isInput()) {
         return isLeftToRight ? centre.withX(getX()) : centre.withY(getY());
@@ -40,7 +40,7 @@ void GraphEditorChannel::resized() {
 //  make IO processors smaller, left-align input processors and right-align output processors
 //  fix master trackoutput bottom channel label positioning
     if (channelLabel.getText().length() <= 1 || isMidi()) {
-        bool isLeftToRight = Tracks::isProcessorLeftToRightFlowing(getProcessor());
+        bool isLeftToRight = Track::isProcessorLeftToRightFlowing(getProcessor());
         if (isInput()) {
             if (isLeftToRight)
                 channelLabelBounds.setWidth(getHeight());
