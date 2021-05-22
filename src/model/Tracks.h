@@ -209,25 +209,12 @@ struct Tracks : public Stateful<Tracks> {
 
     juce::Point<int> gridPositionToTrackAndSlot(juce::Point<int> gridPosition, bool allowUpFromMaster = false) const;
 
-    bool isTrackInView(const ValueTree &track) const {
-        if (Track::isMaster(track)) return true;
-
-        auto trackIndex = track.getParent().indexOf(track);
-        auto trackViewOffset = view.getGridViewTrackOffset();
-        return trackIndex >= trackViewOffset && trackIndex < trackViewOffset + View::NUM_VISIBLE_TRACKS;
-    }
-
-    bool isProcessorSlotInView(const ValueTree &track, int slot) const {
-        bool inView = slot >= getSlotOffsetForTrack(track) &&
-                      slot < getSlotOffsetForTrack(track) + View::NUM_VISIBLE_NON_MASTER_TRACK_SLOTS + (Track::isMaster(track) ? 1 : 0);
-        return inView && isTrackInView(track);
-    }
-
-    static int getNumVisibleSlotsForTrack(const ValueTree &track) { return Track::isMaster(track) ? View::NUM_VISIBLE_MASTER_TRACK_SLOTS : View::NUM_VISIBLE_NON_MASTER_TRACK_SLOTS; }
-    int getSlotOffsetForTrack(const ValueTree &track) const { return Track::isMaster(track) ? view.getMasterViewSlotOffset() : view.getGridViewSlotOffset(); }
+    static int getNumVisibleSlotsForTrack(const ValueTree &track) { return View::getNumVisibleSlots(Track::isMaster(track)); }
+    bool isTrackInView(const ValueTree &track) const { return view.isTrackInView(Track::getIndex(track), Track::isMaster(track)); }
+    bool isProcessorSlotInView(const ValueTree &track, int slot) const { return view.isProcessorSlotInView(Track::getIndex(track), Track::isMaster(track), slot); }
+    int getSlotOffsetForTrack(const ValueTree &track) const { return view.getSlotOffset(Track::isMaster(track)); }
     int getNumSlotsForTrack(const ValueTree &track) const { return view.getNumProcessorSlots(Track::isMaster(track)); }
-    int getProcessorSlotSize(const ValueTree &track) const { return Track::isMaster(track) ? view.getTrackWidth() : view.getProcessorHeight(); }
-
+    int getProcessorSlotSize(const ValueTree &track) const { return view.getProcessorSlotSize(Track::isMaster(track)); }
     int findSlotAt(juce::Point<int> position, const ValueTree &track) const;
 
     static constexpr juce::Point<int> INVALID_TRACK_AND_SLOT = {-1, -1};
