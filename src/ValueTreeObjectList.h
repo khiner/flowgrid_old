@@ -35,13 +35,9 @@ public:
     virtual bool isSuitableType(const ValueTree &) const = 0;
 
     virtual ObjectType *createNewObject(const ValueTree &) = 0;
-
     virtual void deleteObject(ObjectType *) = 0;
-
     virtual void newObjectAdded(ObjectType *) = 0;
-
     virtual void objectRemoved(ObjectType *) = 0;
-
     virtual void objectOrderChanged() = 0;
 
     void valueTreeChildAdded(ValueTree &, ValueTree &tree) override {
@@ -73,7 +69,6 @@ public:
                 {
                     const ScopedLockType sl(arrayLock);
                     o = objects.removeAndReturn(oldIndex);
-
                     objectRemoved(o);
                     deleteObject(o);
                 }
@@ -93,9 +88,7 @@ public:
     }
 
     void valueTreePropertyChanged(ValueTree &, const Identifier &) override {}
-
     void valueTreeParentChanged(ValueTree &) override {}
-
     void valueTreeRedirected(ValueTree &) override { jassertfalse; } // may need to add handling if this is hit
 
     Array<ObjectType *> objects;
@@ -110,22 +103,17 @@ protected:
             deleteObject(objects.removeAndReturn(objects.size() - 1));
     }
 
-    bool isChildTree(ValueTree &tree) const {
-        return isSuitableType(tree) && tree.getParent() == parent;
-    }
+    bool isChildTree(ValueTree &tree) const { return isSuitableType(tree) && tree.getParent() == parent; }
 
     int indexOf(const ValueTree &tree) const noexcept {
         for (int i = 0; i < objects.size(); ++i)
             if (objects.getUnchecked(i)->getState() == tree)
                 return i;
-
         return -1;
     }
 
 public:
     int compareElements(ObjectType *first, ObjectType *second) const {
-        int index1 = parent.indexOf(first->getState());
-        int index2 = parent.indexOf(second->getState());
-        return index1 - index2;
+        return parent.indexOf(first->getState()) - parent.indexOf(second->getState());
     }
 };

@@ -5,19 +5,13 @@
 #include "ResetDefaultExternalInputConnectionsAction.h"
 
 struct Select : public UndoableAction {
-    Select(Tracks &tracks, Connections &connections, View &view, Input &input,
-           ProcessorGraph &processorGraph);
-
-    Select(Select *coalesceLeft, Select *coalesceRight,
-           Tracks &tracks, Connections &connections, View &view, Input &input,
-           ProcessorGraph &processorGraph);
+    Select(Tracks &tracks, Connections &connections, View &view, Input &input, ProcessorGraph &processorGraph);
+    Select(Select *coalesceLeft, Select *coalesceRight, Tracks &tracks, Connections &connections, View &view, Input &input, ProcessorGraph &processorGraph);
 
     void setNewFocusedSlot(juce::Point<int> newFocusedSlot, bool resetDefaultExternalInputs = true);
-
     ValueTree getNewFocusedTrack() { return tracks.getTrack(newFocusedSlot.x); }
 
     bool perform() override;
-
     bool undo() override;
 
     int getSizeInUnits() override { return (int) sizeof(*this); }
@@ -26,9 +20,7 @@ struct Select : public UndoableAction {
 
 protected:
     bool canCoalesceWith(Select *otherAction);
-
     void updateViewFocus(juce::Point<int> focusedSlot);
-
     bool changed();
 
     Tracks &tracks;

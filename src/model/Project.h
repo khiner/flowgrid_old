@@ -25,7 +25,9 @@ struct Project : public Stateful<Project>, public FileBasedDocument, private Cha
     ~Project() override;
 
     static Identifier getIdentifier() { return ProjectIDs::PROJECT; }
+    static String getFilenameSuffix() { return ".smp"; }
 
+    void createDefaultProject();
     void loadFromState(const ValueTree &fromState) override;
 
     void clear() override;
@@ -39,14 +41,11 @@ struct Project : public Stateful<Project>, public FileBasedDocument, private Cha
     }
 
     void undo() {
-        if (isCurrentlyDraggingProcessor())
-            endDraggingProcessor();
+        if (isCurrentlyDraggingProcessor()) endDraggingProcessor();
         undoManager.undo();
     }
-
     void redo() {
-        if (isCurrentlyDraggingProcessor())
-            endDraggingProcessor();
+        if (isCurrentlyDraggingProcessor()) endDraggingProcessor();
         undoManager.redo();
     }
 
@@ -57,20 +56,11 @@ struct Project : public Stateful<Project>, public FileBasedDocument, private Cha
     }
 
     bool isShiftHeld() const { return shiftHeld || push2ShiftHeld; }
-
     bool isAltHeld() const { return altHeld; }
 
-    void setShiftHeld(bool shiftHeld) {
-        this->shiftHeld = shiftHeld;
-    }
-
-    void setAltHeld(bool altHeld) {
-        this->altHeld = altHeld;
-    }
-
-    void setPush2ShiftHeld(bool push2ShiftHeld) {
-        this->push2ShiftHeld = push2ShiftHeld;
-    }
+    void setShiftHeld(bool shiftHeld) { this->shiftHeld = shiftHeld; }
+    void setAltHeld(bool altHeld) { this->altHeld = altHeld; }
+    void setPush2ShiftHeld(bool push2ShiftHeld) { this->push2ShiftHeld = push2ShiftHeld; }
 
     void createTrack(bool isMaster);
 
@@ -78,10 +68,7 @@ struct Project : public Stateful<Project>, public FileBasedDocument, private Cha
     void createProcessor(const PluginDescription &description, int slot = -1);
 
     void deleteSelectedItems();
-
-    void copySelectedItems() {
-        copiedTracks.copySelectedItems();
-    }
+    void copySelectedItems() { copiedTracks.copySelectedItems(); }
 
     bool hasCopy() { return copiedTracks.getState().isValid(); }
 
@@ -90,7 +77,6 @@ struct Project : public Stateful<Project>, public FileBasedDocument, private Cha
     void duplicateSelectedItems();
 
     void beginDragging(juce::Point<int> trackAndSlot);
-
     void dragToPosition(juce::Point<int> trackAndSlot);
 
     void endDraggingProcessor() {
@@ -100,41 +86,25 @@ struct Project : public Stateful<Project>, public FileBasedDocument, private Cha
         processorGraph.resumeAudioGraphUpdatesAndApplyDiffSincePause();
     }
 
-    bool isCurrentlyDraggingProcessor() {
-        return initialDraggingTrackAndSlot != Tracks::INVALID_TRACK_AND_SLOT;
-    }
+    bool isCurrentlyDraggingProcessor() { return initialDraggingTrackAndSlot != Tracks::INVALID_TRACK_AND_SLOT; }
 
     void setProcessorSlotSelected(const ValueTree &track, int slot, bool selected, bool deselectOthers = true);
-
     void setTrackSelected(const ValueTree &track, bool selected, bool deselectOthers = true);
-
     void selectProcessor(const ValueTree &processor);
-
     void selectTrackAndSlot(juce::Point<int> trackAndSlot);
-
     bool disconnectCustom(const ValueTree &processor);
-
     void setDefaultConnectionsAllowed(const ValueTree &processor, bool defaultConnectionsAllowed);
-
     void toggleProcessorBypass(ValueTree processor);
 
     void navigateUp() { selectTrackAndSlot(tracks.trackAndSlotWithUpDownDelta(-1)); }
-
     void navigateDown() { selectTrackAndSlot(tracks.trackAndSlotWithUpDownDelta(1)); }
-
     void navigateLeft() { selectTrackAndSlot(tracks.trackAndSlotWithLeftRightDelta(-1)); }
-
     void navigateRight() { selectTrackAndSlot(tracks.trackAndSlotWithLeftRightDelta(1)); }
 
     bool canNavigateUp() const { return tracks.trackAndSlotWithUpDownDelta(-1).x != Tracks::INVALID_TRACK_AND_SLOT.x; }
-
     bool canNavigateDown() const { return tracks.trackAndSlotWithUpDownDelta(1).x != Tracks::INVALID_TRACK_AND_SLOT.x; }
-
     bool canNavigateLeft() const { return tracks.trackAndSlotWithLeftRightDelta(-1).x != Tracks::INVALID_TRACK_AND_SLOT.x; }
-
     bool canNavigateRight() const { return tracks.trackAndSlotWithLeftRightDelta(1).x != Tracks::INVALID_TRACK_AND_SLOT.x; }
-
-    void createDefaultProject();
 
     PluginManager &getPluginManager() const { return pluginManager; }
 
@@ -146,23 +116,14 @@ struct Project : public Stateful<Project>, public FileBasedDocument, private Cha
     }
 
     String getDocumentTitle() override {
-        if (!getFile().exists())
-            return TRANS("Unnamed");
-
-        return getFile().getFileNameWithoutExtension();
+        return !getFile().exists() ? TRANS("Unnamed") : getFile().getFileNameWithoutExtension();
     }
 
     Result loadDocument(const File &file) override;
-
-    bool isDeviceWithNamePresent(const String &deviceName) const;
-
     Result saveDocument(const File &file) override;
-
     File getLastDocumentOpened() override;
-
     void setLastDocumentOpened(const File &file) override;
-
-    static String getFilenameSuffix() { return ".smp"; }
+    bool isDeviceWithNamePresent(const String &deviceName) const;
 
 private:
     View &view;

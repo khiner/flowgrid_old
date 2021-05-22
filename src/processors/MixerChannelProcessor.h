@@ -65,13 +65,8 @@ public:
         meterSource.measureBlock(buffer);
     }
 
-    LevelMeterSource *getMeterSource() override {
-        return &meterSource;
-    }
-
-    AudioProcessorParameter *getMeteredParameter() override {
-        return gainParameter;
-    }
+    LevelMeterSource *getMeterSource() override { return &meterSource; }
+    AudioProcessorParameter *getMeteredParameter() override { return gainParameter; }
 
 private:
     LinearSmoothedValue<float> balance{0.0};

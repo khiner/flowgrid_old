@@ -8,7 +8,6 @@ struct DeleteTrack : public UndoableAction {
     DeleteTrack(const ValueTree &trackToDelete, Tracks &tracks, Connections &connections, ProcessorGraph &processorGraph);
 
     bool perform() override;
-
     bool undo() override;
 
     int getSizeInUnits() override { return (int) sizeof(*this); }

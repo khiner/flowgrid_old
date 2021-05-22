@@ -43,37 +43,25 @@ struct View : public Stateful<View> {
     void updateViewSlotOffsetToInclude(int processorSlot, bool isMasterTrack);
 
     int getFocusedTrackIndex() const { return state[ViewIDs::focusedTrackIndex]; }
-
     int getFocusedProcessorSlot() const { return state[ViewIDs::focusedProcessorSlot]; }
-
     juce::Point<int> getFocusedTrackAndSlot() const;
-
+    int getTrackWidth() const { return trackWidth; }
+    int getProcessorHeight() const { return processorHeight; }
     int getGridViewTrackOffset() const { return state[ViewIDs::gridViewTrackOffset]; }
-
     int getGridViewSlotOffset() const { return state[ViewIDs::gridViewSlotOffset]; }
-
     int getMasterViewSlotOffset() const { return state[ViewIDs::masterViewSlotOffset]; }
-
     int getNumProcessorSlots(bool isMaster = false) const { return state[isMaster ? ViewIDs::numMasterProcessorSlots : ViewIDs::numProcessorSlots]; }
-
     bool isInNoteMode() const { return state[ViewIDs::controlMode] == noteControlMode; }
-
     bool isInSessionMode() const { return state[ViewIDs::controlMode] == sessionControlMode; }
-
     bool isGridPaneFocused() const { return state[ViewIDs::focusedPane] == gridPaneName; }
 
+    void setTrackWidth(int trackWidth) { this->trackWidth = trackWidth; }
+    void setProcessorHeight(int processorHeight) { this->processorHeight = processorHeight; }
     void setNoteMode() { state.setProperty(ViewIDs::controlMode, noteControlMode, nullptr); }
-
     void setSessionMode() { state.setProperty(ViewIDs::controlMode, sessionControlMode, nullptr); }
-
     void focusOnGridPane() { state.setProperty(ViewIDs::focusedPane, gridPaneName, nullptr); }
-
     void focusOnEditorPane() { state.setProperty(ViewIDs::focusedPane, editorPaneName, nullptr); }
-
-    void focusOnTrackIndex(const int trackIndex) {
-        state.setProperty(ViewIDs::focusedTrackIndex, trackIndex, nullptr);
-    }
-
+    void focusOnTrackIndex(const int trackIndex) { state.setProperty(ViewIDs::focusedTrackIndex, trackIndex, nullptr); }
     void focusOnProcessorSlot(const juce::Point<int> slot) {
         auto currentlyFocusedTrackAndSlot = getFocusedTrackAndSlot();
         focusOnTrackIndex(slot.x);
@@ -84,32 +72,20 @@ struct View : public Stateful<View> {
             state.setProperty(ViewIDs::focusedProcessorSlot, slot.y, nullptr);
         }
     }
-
     void focusOnProcessorSlot(const ValueTree &track, const int processorSlot) {
         auto trackIndex = track.isValid() ? track.getParent().indexOf(track) : 0;
         focusOnProcessorSlot({trackIndex, processorSlot});
     }
-
     void addProcessorSlots(int n = 1, bool isMaster = false) {
         state.setProperty(isMaster ? ViewIDs::numMasterProcessorSlots : ViewIDs::numProcessorSlots,
                           getNumProcessorSlots(isMaster) + n, nullptr);
     }
-
-
     void togglePaneFocus() {
         if (isGridPaneFocused())
             focusOnEditorPane();
         else
             focusOnGridPane();
     }
-
-    void setTrackWidth(int trackWidth) { this->trackWidth = trackWidth; }
-
-    void setProcessorHeight(int processorHeight) { this->processorHeight = processorHeight; }
-
-    int getTrackWidth() const { return trackWidth; }
-
-    int getProcessorHeight() const { return processorHeight; }
 
     const String sessionControlMode = "session", noteControlMode = "note";
     const String gridPaneName = "grid", editorPaneName = "editor";

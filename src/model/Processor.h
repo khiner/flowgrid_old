@@ -66,19 +66,19 @@ struct Processor : public Stateful<Processor> {
     void setPluginWindowX(int pluginWindowX) { state.setProperty(ProcessorIDs::pluginWindowX, pluginWindowX, nullptr); }
     void setPluginWindowY(int pluginWindowY) { state.setProperty(ProcessorIDs::pluginWindowY, pluginWindowY, nullptr); }
 
-    static String getId(const ValueTree& state) { return state[ProcessorIDs::id]; }
+    static String getId(const ValueTree &state) { return state[ProcessorIDs::id]; }
     static int getIndex(const ValueTree &state) { return state.getParent().indexOf(state); }
     static String getName(const ValueTree &state) { return state[ProcessorIDs::name]; }
     static String getDeviceName(const ValueTree &state) { return state[ProcessorIDs::deviceName]; }
     static int getSlot(const ValueTree &state) { return state[ProcessorIDs::slot]; }
-    static String getProcessorState(const ValueTree& state) { return state[ProcessorIDs::state]; }
-    static bool hasProcessorState(const ValueTree& state) { return state.hasProperty(ProcessorIDs::state); }
+    static String getProcessorState(const ValueTree &state) { return state[ProcessorIDs::state]; }
+    static bool hasProcessorState(const ValueTree &state) { return state.hasProperty(ProcessorIDs::state); }
     static AudioProcessorGraph::NodeID getNodeId(const ValueTree &state) { return state.isValid() ? AudioProcessorGraph::NodeID(static_cast<uint32>(int(state[ProcessorIDs::nodeId]))) : AudioProcessorGraph::NodeID{}; }
-    static bool hasNodeId(const ValueTree& state) { return state.hasProperty(ProcessorIDs::nodeId); }
+    static bool hasNodeId(const ValueTree &state) { return state.hasProperty(ProcessorIDs::nodeId); }
     static bool isBypassed(const ValueTree &state) { return state[ProcessorIDs::bypassed]; }
     static bool producesMidi(const ValueTree &state) { return state[ProcessorIDs::producesMidi]; }
     static bool acceptsMidi(const ValueTree &state) { return state[ProcessorIDs::acceptsMidi]; }
-    static bool allowsDefaultConnections(const ValueTree& state) { return state[ProcessorIDs::allowDefaultConnections]; }
+    static bool allowsDefaultConnections(const ValueTree &state) { return state[ProcessorIDs::allowDefaultConnections]; }
     static int getPluginWindowType(const ValueTree &state) { return state[ProcessorIDs::pluginWindowType]; }
     static int getPluginWindowX(const ValueTree &state) { return state[ProcessorIDs::pluginWindowX]; }
     static int getPluginWindowY(const ValueTree &state) { return state[ProcessorIDs::pluginWindowY]; }
@@ -94,19 +94,19 @@ struct Processor : public Stateful<Processor> {
 
     static void setId(ValueTree &state, const String &id) { state.setProperty(ProcessorIDs::id, id, nullptr); }
     static void setProcessorState(ValueTree &state, const String &processorState) { state.setProperty(ProcessorIDs::state, processorState, nullptr); }
-    static void setNodeId(ValueTree& state, AudioProcessorGraph::NodeID nodeId) { state.setProperty(ProcessorIDs::nodeId, int(nodeId.uid), nullptr); }
+    static void setNodeId(ValueTree &state, AudioProcessorGraph::NodeID nodeId) { state.setProperty(ProcessorIDs::nodeId, int(nodeId.uid), nullptr); }
     static void setName(ValueTree &state, const String &name) { state.setProperty(ProcessorIDs::name, name, nullptr); }
     static void setDeviceName(ValueTree &state, const String &deviceName) { state.setProperty(ProcessorIDs::deviceName, deviceName, nullptr); }
     static void setSlot(ValueTree &state, int slot) { state.setProperty(ProcessorIDs::slot, slot, nullptr); }
     static void setProducesMidi(ValueTree &state, bool producesMidi) { state.setProperty(ProcessorIDs::producesMidi, producesMidi, nullptr); }
     static void setAcceptsMidi(ValueTree &state, bool acceptsMidi) { state.setProperty(ProcessorIDs::acceptsMidi, acceptsMidi, nullptr); }
-    static void setAllowsDefaultConnections(ValueTree& state, bool allowsDefaultConnections) { state.setProperty(ProcessorIDs::allowDefaultConnections, allowsDefaultConnections, nullptr); }
+    static void setAllowsDefaultConnections(ValueTree &state, bool allowsDefaultConnections) { state.setProperty(ProcessorIDs::allowDefaultConnections, allowsDefaultConnections, nullptr); }
     static void setPluginWindowType(ValueTree &state, int pluginWindowType) { state.setProperty(ProcessorIDs::pluginWindowType, pluginWindowType, nullptr); }
     static void setPluginWindowX(ValueTree &state, int pluginWindowX) { state.setProperty(ProcessorIDs::pluginWindowX, pluginWindowX, nullptr); }
     static void setPluginWindowY(ValueTree &state, int pluginWindowY) { state.setProperty(ProcessorIDs::pluginWindowY, pluginWindowY, nullptr); }
 
     static AudioProcessorGraph::Connection toProcessorGraphConnection(const ValueTree &state) {
-        return {{fg::Connection::getSourceNodeId(state), fg::Connection::getSourceChannel(state)},
+        return {{fg::Connection::getSourceNodeId(state),      fg::Connection::getSourceChannel(state)},
                 {fg::Connection::getDestinationNodeId(state), fg::Connection::getDestinationChannel(state)}};
     }
 };

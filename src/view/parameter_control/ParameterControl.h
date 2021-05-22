@@ -55,14 +55,11 @@ public:
         virtual ~Listener() = default;
 
         virtual void parameterControlValueChanged(ParameterControl *) = 0;
-
         virtual void parameterControlDragStarted(ParameterControl *) = 0;
-
         virtual void parameterControlDragEnded(ParameterControl *) = 0;
     };
 
     void addListener(Listener *listener) { listeners.add(listener); }
-
     void removeListener(Listener *listener) { listeners.remove(listener); }
 
 protected:

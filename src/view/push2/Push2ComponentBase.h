@@ -7,8 +7,7 @@ using Push2 = Push2MidiCommunicator;
 
 class Push2ComponentBase : public Component, public Push2Listener, public Push2Colours::Listener {
 public:
-    Push2ComponentBase(View &view, Tracks &tracks, Push2MidiCommunicator &push2)
-            : view(view), tracks(tracks), push2(push2) {
+    Push2ComponentBase(View &view, Tracks &tracks, Push2MidiCommunicator &push2) : view(view), tracks(tracks), push2(push2) {
         push2.getPush2Colours().addListener(this);
     }
 
@@ -24,39 +23,22 @@ public:
     void handleIncomingMidiMessage(MidiInput *source, const MidiMessage &message) override {}
 
     void trackColourChanged(const String &trackUuid, const Colour &colour) override {}
-
     void colourAdded(const Colour &colour, uint8 index) override {}
-
     void shiftPressed() override { isShiftHeld = true; }
-
     void shiftReleased() override { isShiftHeld = false; }
-
     void masterEncoderRotated(float changeAmount) override {}
-
     void encoderRotated(int encoderIndex, float changeAmount) override {}
-
     void undoButtonPressed() override {}
-
     void addTrackButtonPressed() override {}
-
     void duplicateButtonPressed() override {}
-
     void deleteButtonPressed() override {}
-
     void addDeviceButtonPressed() override {}
-
     void mixButtonPressed() override {}
-
     void masterButtonPressed() override {}
-
     void aboveScreenButtonPressed(int buttonIndex) override {}
-
     void belowScreenButtonPressed(int buttonIndex) override {}
-
     void arrowPressed(int direction) override {}
-
     void noteButtonPressed() override {}
-
     void sessionButtonPressed() override {}
 
     void setVisible(bool visible) override {

@@ -26,9 +26,7 @@ public:
     }
 
     bool acceptsMidi() const override { return true; }
-
     bool producesMidi() const override { return true; }
-
     bool isMidiEffect() const override { return true; }
 
     void prepareToPlay(double sampleRate, int maximumExpectedSamplesPerBlock) override {

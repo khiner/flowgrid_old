@@ -62,9 +62,8 @@ protected:
                 std::cerr << "could not submit frame header transfer" << '\n';
                 headerNeedsSending.store(true);
                 return;
-            } else {
-                headerNeedsSending.store(false);
             }
+            headerNeedsSending.store(false);
         }
 
         // Copy the next slice of the source data (represented by currentLine)

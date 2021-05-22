@@ -15,11 +15,9 @@ public:
     bool isMaster() const { return Track::isMaster(state); }
 
     void paint(Graphics &g) override;
-
     void resized() override;
 
     BaseGraphEditorProcessor *getProcessorForNodeId(AudioProcessorGraph::NodeID nodeId) const override;
-
     GraphEditorChannel *findChannelAt(const MouseEvent &e);
 
 private:
@@ -28,7 +26,6 @@ private:
     ValueTree state;
     View &view;
     Tracks &tracks;
-
     Project &project;
     ProcessorGraph &processorGraph;
     std::unique_ptr<TrackInputGraphEditorProcessor> trackInputProcessorView;
@@ -37,14 +34,10 @@ private:
     GraphEditorProcessorLanes lanes;
 
     void onColourChanged();
-
     void trackInputProcessorChanged();
-
     void trackOutputProcessorChanged();
 
     void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override;
-
     void valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int) override;
-
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override;
 };

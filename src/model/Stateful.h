@@ -27,17 +27,10 @@ struct Stateful {
         loadFromState(parent.getChildWithName(Type::getIdentifier()));
     }
 
-    virtual void clear() {
-        state.removeAllChildren(nullptr);
-    }
+    virtual void clear() { state.removeAllChildren(nullptr); }
 
-    void addListener(ValueTree::Listener *listener) {
-        state.addListener(listener);
-    }
-
-    void removeListener(ValueTree::Listener *listener) {
-        state.removeListener(listener);
-    }
+    void addListener(ValueTree::Listener *listener) { state.addListener(listener); }
+    void removeListener(ValueTree::Listener *listener) { state.removeListener(listener); }
 
 protected:
     ValueTree state;
@@ -45,7 +38,6 @@ protected:
     static void resetVarToInt(ValueTree &tree, const Identifier &id, ValueTree::Listener *listenerToExclude) {
         tree.setPropertyExcludingListener(listenerToExclude, id, int(tree.getProperty(id)), nullptr);
     }
-
     static void resetVarToBool(ValueTree &tree, const Identifier &id, ValueTree::Listener *listenerToExclude) {
         tree.setPropertyExcludingListener(listenerToExclude, id, bool(tree.getProperty(id)), nullptr);
     }

@@ -27,9 +27,7 @@ public:
 
     static String name() { return "Parameter Types Test"; }
 
-    static PluginDescription getPluginDescription() {
-        return DefaultAudioProcessor::getPluginDescription(name(), false, false);
-    }
+    static PluginDescription getPluginDescription() { return DefaultAudioProcessor::getPluginDescription(name(), false, false); }
 
     void processBlock(AudioSampleBuffer &buffer, MidiBuffer &midiMessages) override {}
 

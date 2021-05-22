@@ -20,9 +20,7 @@ public:
     const String getName() const override { return midiOutput != nullptr ? midiOutput->getName() : DefaultAudioProcessor::getName(); }
 
     bool acceptsMidi() const override { return true; }
-
     bool producesMidi() const override { return false; }
-
     bool isMidiEffect() const override { return false; }
 
     void prepareToPlay(double sampleRate, int maximumExpectedSamplesPerBlock) override {}

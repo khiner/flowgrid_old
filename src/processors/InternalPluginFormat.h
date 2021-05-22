@@ -11,52 +11,29 @@ public:
     PluginDescription audioInDesc, audioOutDesc;
 
     String getName() const override { return "Internal"; }
-
-    Array<PluginDescription> &getInternalPluginDescriptions() {
-        return internalPluginDescriptions;
-    }
-
+    Array<PluginDescription> &getInternalPluginDescriptions() { return internalPluginDescriptions; }
     bool fileMightContainThisPluginType(const String &) override { return true; }
-
     FileSearchPath getDefaultLocationsToSearch() override { return {}; }
-
     bool canScanForPlugins() const override { return false; }
-
     void findAllTypesForFile(OwnedArray<PluginDescription> &, const String &) override {}
-
     bool doesPluginStillExist(const PluginDescription &) override { return true; }
-
     String getNameOfPluginFromIdentifier(const String &fileOrIdentifier) override { return fileOrIdentifier; }
-
     bool pluginNeedsRescanning(const PluginDescription &) override { return false; }
-
     StringArray searchPathsForPlugins(const FileSearchPath &, bool, bool) override { return {}; }
-
     bool isTrivialToScan() const override { return true; }
-
     static bool isIoProcessor(const String &name);
-
     static bool isTrackIOProcessor(const String &name);
-
     static String getTrackInputProcessorName();
-
     static String getTrackOutputProcessorName();
-
     static String getMidiInputProcessorName();
-
     static String getMidiOutputProcessorName();
-
     static String getMixerChannelProcessorName();
 
 private:
     Array<PluginDescription> internalPluginDescriptions;
 
-    void createPluginInstance(const PluginDescription &desc, double initialSampleRate, int initialBufferSize,
-                              PluginCreationCallback callback) override;
-
+    void createPluginInstance(const PluginDescription &desc, double initialSampleRate, int initialBufferSize, PluginCreationCallback callback) override;
     std::unique_ptr<AudioPluginInstance> createInstance(const String &name) const;
 
-    bool requiresUnblockedMessageThreadDuringCreation(const PluginDescription &) const noexcept override {
-        return false;
-    }
+    bool requiresUnblockedMessageThreadDuringCreation(const PluginDescription &) const noexcept override { return false; }
 };

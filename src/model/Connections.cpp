@@ -57,7 +57,7 @@ static bool channelMatchesConnectionType(int channel, ConnectionType connectionT
 Array<ValueTree> Connections::getConnectionsForNode(const ValueTree &processor, ConnectionType connectionType, bool incoming, bool outgoing, bool includeCustom, bool includeDefault) {
     Array<ValueTree> nodeConnections;
     for (const auto &connection : state) {
-        if ((fg::Connection::isCustom(connection) && !includeCustom) || (!fg::Connection::isCustom(connection)  && !includeDefault))
+        if ((fg::Connection::isCustom(connection) && !includeCustom) || (!fg::Connection::isCustom(connection) && !includeDefault))
             continue;
 
         auto processorNodeId = Processor::getNodeId(processor);

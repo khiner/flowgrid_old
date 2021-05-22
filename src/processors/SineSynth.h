@@ -37,14 +37,11 @@ private:
         SineWaveSound() = default;
 
         bool appliesToNote(int /*midiNoteNumber*/) override { return true; }
-
         bool appliesToChannel(int /*midiChannel*/) override { return true; }
     };
 
     struct SineWaveVoice : public SynthesiserVoice {
-        SineWaveVoice()
-                : currentAngle(0), angleDelta(0), level(0), tailOff(0) {
-        }
+        SineWaveVoice() : currentAngle(0), angleDelta(0), level(0), tailOff(0) {}
 
         bool canPlaySound(SynthesiserSound *sound) override {
             return dynamic_cast<SineWaveSound *> (sound) != nullptr;
@@ -67,13 +64,11 @@ private:
             if (allowTailOff) {
                 // start a tail-off by setting this flag. The render callback will pick up on
                 // this and do a fade out, calling clearCurrentNote() when it's finished.
-
                 if (tailOff == 0.0) // we only need to begin a tail-off if it's not already doing so - the
                     // stopNote method could be called more than once.
                     tailOff = 1.0;
             } else {
                 // we're being told to stop playing immediately, so reset everything..
-
                 clearCurrentNote();
                 angleDelta = 0.0;
             }
@@ -97,13 +92,10 @@ private:
 
                         currentAngle += angleDelta;
                         ++startSample;
-
                         tailOff *= 0.99;
-
                         if (tailOff <= 0.005) {
                             // tells the synth that this voice has stopped
                             clearCurrentNote();
-
                             angleDelta = 0.0;
                             break;
                         }

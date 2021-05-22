@@ -17,11 +17,8 @@ public:
     ~SelectionEditor() override;
 
     void mouseDown(const MouseEvent &event) override;
-
     void paint(Graphics &g) override;
-
     void resized() override;
-
     void buttonClicked(Button *b) override;
 
 private:
@@ -32,7 +29,6 @@ private:
     Project &project;
     View &view;
     Tracks &tracks;
-
     PluginManager &pluginManager;
     ProcessorGraph &audioGraphBuilder;
 
@@ -46,10 +42,8 @@ private:
     std::unique_ptr<PopupMenu> addProcessorMenu;
 
     void refreshProcessors(const ValueTree &singleProcessorToRefresh = {}, bool onlyUpdateFocusState = false);
-
     void assignProcessorToEditor(const ValueTree &processor, int processorSlot = -1, bool onlyUpdateFocusState = false) const;
 
     void valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int) override;
-
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override;
 };

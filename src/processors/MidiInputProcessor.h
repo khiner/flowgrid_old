@@ -5,16 +5,7 @@
 
 class MidiInputProcessor : public DefaultAudioProcessor {
 public:
-    explicit MidiInputProcessor() :
-            DefaultAudioProcessor(getPluginDescription(), AudioChannelSet::disabled()) {}
-
-    void setDeviceName(const String &deviceName) {
-        this->deviceName = deviceName;
-    }
-
-    MidiMessageCollector &getMidiMessageCollector() {
-        return messageCollector;
-    }
+    explicit MidiInputProcessor() : DefaultAudioProcessor(getPluginDescription(), AudioChannelSet::disabled()) {}
 
     static String name() { return "MIDI Input"; }
 
@@ -23,12 +14,13 @@ public:
     }
 
     const String getName() const override { return !deviceName.isEmpty() ? deviceName : DefaultAudioProcessor::getName(); }
-
     bool acceptsMidi() const override { return false; }
-
     bool producesMidi() const override { return true; }
-
     bool isMidiEffect() const override { return false; }
+
+    MidiMessageCollector &getMidiMessageCollector() { return messageCollector; }
+
+    void setDeviceName(const String &deviceName) { this->deviceName = deviceName; }
 
     void prepareToPlay(double sampleRate, int maximumExpectedSamplesPerBlock) override {
         messageCollector.reset(sampleRate);

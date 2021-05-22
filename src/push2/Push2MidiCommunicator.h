@@ -36,33 +36,20 @@ public:
     void setPush2Listener(Push2Listener *push2Listener) { this->push2Listener = push2Listener; }
 
     void handleIncomingMidiMessage(MidiInput *source, const MidiMessage &message) override;
-
     void handleButtonPressMidiCcNumber(int ccNumber);
-
     void handleButtonReleaseMidiCcNumber(int ccNumber);
 
     void setAboveScreenButtonColour(int buttonIndex, const Colour &colour);
-
     void setBelowScreenButtonColour(int buttonIndex, const Colour &colour);
-
     void setAboveScreenButtonEnabled(int buttonIndex, bool enabled);
-
     void setBelowScreenButtonEnabled(int buttonIndex, bool enabled);
-
     void enableWhiteLedButton(int buttonCcNumber) const;
-
     void disableWhiteLedButton(int buttonCcNumber) const;
-
     void activateWhiteLedButton(int buttonCcNumber) const;
-
     void setColourButtonEnabled(int buttonCcNumber, bool enabled);
-
     void setButtonColour(int buttonCcNumber, const Colour &colour);
-
     void disablePad(int noteNumber);
-
     void setPadColour(int noteNumber, const Colour &colour);
-
     static uint8 ccNumberForArrowButton(int direction);
 
 private:
@@ -75,18 +62,13 @@ private:
     Push2Listener *push2Listener{};
 
     int currentlyHeldRepeatableButtonCcNumber{0};
-
     bool holdRepeatIsHappeningNow{false};
 
     void sendMessageChecked(const MidiMessage &message) const;
-
     void registerAllIndexedColours();
 
     void colourAdded(const Colour &colour, uint8 colourIndex) override;
-
     void trackColourChanged(const String &trackUuid, const Colour &colour) override {}
-
     void buttonHoldStopped();
-
     void timerCallback() override;
 };

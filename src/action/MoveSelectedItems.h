@@ -9,7 +9,6 @@ struct MoveSelectedItems : UndoableAction {
                       Input &input, Output &output, ProcessorGraph &processorGraph);
 
     bool perform() override;
-
     bool undo() override;
 
     int getSizeInUnits() override { return (int) sizeof(*this); }
@@ -25,7 +24,6 @@ private:
         InsertTrackAction(int fromTrackIndex, int toTrackIndex, Tracks &tracks);
 
         bool perform() override;
-
         bool undo() override;
 
         int fromTrackIndex, toTrackIndex;

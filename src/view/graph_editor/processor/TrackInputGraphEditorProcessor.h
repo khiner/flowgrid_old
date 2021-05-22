@@ -10,16 +10,11 @@ public:
 
     ~TrackInputGraphEditorProcessor() override;
 
-    void setTrackName(const String &trackName) {
-        nameLabel.setText(trackName, dontSendNotification);
-    }
+    void setTrackName(const String &trackName) { nameLabel.setText(trackName, dontSendNotification); }
 
     void mouseDown(const MouseEvent &e) override;
-
     void mouseUp(const MouseEvent &e) override;
-
     void resized() override;
-
     void paint(Graphics &g) override;
 
     bool isInView() override { return true; }

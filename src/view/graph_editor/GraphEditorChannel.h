@@ -13,38 +13,24 @@ struct GraphEditorChannel : public Component, public SettableTooltipClient, priv
     const ValueTree &getState() { return state; }
 
     ValueTree getTrack() const { return Tracks::getTrackForProcessor(getProcessor()); }
-
     ValueTree getProcessor() const { return state.getParent().getParent(); }
-
     bool isInput() const { return state.getParent().hasType(InputChannelsIDs::INPUT_CHANNELS); }
-
     bool isMidi() const { return fg::Channel::getChannelIndex(state) == AudioProcessorGraph::midiChannelIndex; }
-
     AudioProcessorGraph::NodeAndChannel getNodeAndChannel() const;
-
     juce::Point<float> getConnectPosition() const;
-
-    void resized() override;
 
     void updateColour();
 
+    void resized() override;
     void mouseEnter(const MouseEvent &e) override { updateColour(); }
-
     void mouseExit(const MouseEvent &e) override { updateColour(); }
-
     void mouseDown(const MouseEvent &e) override {
         static const AudioProcessorGraph::NodeAndChannel dummy{juce::AudioProcessorGraph::NodeID(), 0};
         AudioProcessorGraph::NodeAndChannel nodeAndChannel = getNodeAndChannel();
         connectorDragListener.beginConnectorDrag(isInput() ? dummy : nodeAndChannel, isInput() ? nodeAndChannel : dummy, e);
     }
-
-    void mouseDrag(const MouseEvent &e) override {
-        connectorDragListener.dragConnector(e);
-    }
-
-    void mouseUp(const MouseEvent &e) override {
-        connectorDragListener.endDraggingConnector(e);
-    }
+    void mouseDrag(const MouseEvent &e) override { connectorDragListener.dragConnector(e); }
+    void mouseUp(const MouseEvent &e) override { connectorDragListener.endDraggingConnector(e); }
 
     // Rotate text to draw vertically if the box is taller than it is wide.
     static Parallelogram<float> rotateRectIfNarrow(const Rectangle<float> &rectangle) {
@@ -86,13 +72,8 @@ private:
             }
         }
 
-        const String &getText() const {
-            return text.getText();
-        }
-
-        void setText(const String &text) {
-            this->text.setText(text);
-        }
+        const String &getText() const { return text.getText(); }
+        void setText(const String &text) { this->text.setText(text); }
 
         DrawableText text;
         DrawableImage image;

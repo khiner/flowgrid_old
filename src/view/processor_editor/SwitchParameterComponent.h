@@ -15,16 +15,12 @@ public:
 
     explicit SwitchParameterComponent(const StringArray &labels);
 
+    String getText() const;
     int getNumItems() const { return buttons.size(); }
-
     int getSelectedItemIndex() const;
-
     void setSelectedItemIndex(int index, NotificationType notificationType);
 
-    String getText() const;
-
     void addListener(Listener *l) { listeners.add(l); }
-
     void removeListener(Listener *l) { listeners.remove(l); }
 
     void resized() override {

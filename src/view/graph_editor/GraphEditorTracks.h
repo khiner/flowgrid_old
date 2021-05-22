@@ -43,13 +43,10 @@ public:
         for (auto *track : objects)
             if (track->isMaster())
                 return track;
-
         return nullptr;
     }
 
-    bool isSuitableType(const ValueTree &tree) const override {
-        return Track::isType(tree);
-    }
+    bool isSuitableType(const ValueTree &tree) const override { return Track::isType(tree); }
 
     GraphEditorTrack *createNewObject(const ValueTree &tree) override {
         auto *track = new GraphEditorTrack(tree, view, tracks, project, processorGraph, pluginManager, connectorDragListener);
@@ -57,14 +54,9 @@ public:
         return track;
     }
 
-    void deleteObject(GraphEditorTrack *track) override {
-        delete track;
-    }
-
+    void deleteObject(GraphEditorTrack *track) override { delete track; }
     void newObjectAdded(GraphEditorTrack *track) override { resized(); }
-
     void objectRemoved(GraphEditorTrack *) override { resized(); }
-
     void objectOrderChanged() override {
         resized();
         connectorDragListener.update();

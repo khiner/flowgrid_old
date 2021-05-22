@@ -40,13 +40,10 @@ public:
 
     void timerCallback() override { repaint(); }
 
-    void setMeterSource(LevelMeterSource *source) {
-        this->source = source;
-    }
+    void setMeterSource(LevelMeterSource *source) { this->source = source; }
 
 protected:
     LevelMeter::Orientation orientation;
-
     ShapeButton thumb;
 
     float getValueForPosition(juce::Point<int> localPosition) const override {

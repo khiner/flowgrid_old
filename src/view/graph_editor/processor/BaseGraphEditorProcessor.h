@@ -20,21 +20,13 @@ public:
     virtual bool isInView() { return Processor::isIoProcessor(state) || tracks.isProcessorSlotInView(getTrack(), Processor::getSlot(state)); }
 
     int getTrackIndex() const { return tracks.indexOf(getTrack()); }
-
     int getNumInputChannels() const { return state.getChildWithName(InputChannelsIDs::INPUT_CHANNELS).getNumChildren(); }
-
     int getNumOutputChannels() const { return state.getChildWithName(OutputChannelsIDs::OUTPUT_CHANNELS).getNumChildren(); }
-
     bool isSelected() { return Tracks::isProcessorSelected(state); }
-
-    StatefulAudioProcessorWrapper *getProcessorWrapper() const {
-        return processorGraph.getProcessorWrapperForState(state);
-    }
+    StatefulAudioProcessorWrapper *getProcessorWrapper() const { return processorGraph.getProcessorWrapperForState(state); }
 
     void paint(Graphics &g) override;
-
     bool hitTest(int x, int y) override;
-
     void resized() override;
 
     virtual juce::Point<float> getConnectorDirectionVector(bool isInput) const;
@@ -43,7 +35,6 @@ public:
         for (auto *channel : channels)
             if (fg::Channel::getChannelIndex(channel->getState()) == index && isInput == channel->isInput())
                 return channel->getConnectPosition();
-
         return {};
     }
 
@@ -51,7 +42,6 @@ public:
         for (auto *channel : channels)
             if (channel->contains(e.getEventRelativeTo(channel).getPosition()))
                 return channel;
-
         return nullptr;
     }
 
@@ -73,9 +63,7 @@ protected:
     virtual void layoutChannel(AudioProcessor *processor, GraphEditorChannel *channel) const;
 
     void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override;
-
     void valueTreeChildRemoved(ValueTree &parent, ValueTree &child, int) override;
-
     void valueTreePropertyChanged(ValueTree &v, const Identifier &i) override;
 
 protected:
@@ -89,7 +77,6 @@ private:
         for (auto *channel : channels)
             if (channel->getState() == state)
                 return channel;
-
         return nullptr;
     }
 };

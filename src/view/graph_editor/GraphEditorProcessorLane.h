@@ -13,22 +13,18 @@ public:
 
     const ValueTree &getState() const { return state; }
 
+    void updateProcessorSlotColours();
+
     ValueTree getTrack() const { return parent.getParent().getParent(); }
-
     int getNumSlots() const { return tracks.getNumSlotsForTrack(getTrack()); }
-
     int getSlotOffset() const { return tracks.getSlotOffsetForTrack(getTrack()); }
 
     void resized() override;
 
-    void updateProcessorSlotColours();
-
     bool isSuitableType(const ValueTree &v) const override { return Processor::isType(v); }
 
     BaseGraphEditorProcessor *createEditorForProcessor(const ValueTree &processor);
-
     BaseGraphEditorProcessor *createNewObject(const ValueTree &processor) override;
-
     void deleteObject(BaseGraphEditorProcessor *graphEditorProcessor) override { delete graphEditorProcessor; }
 
     void newObjectAdded(BaseGraphEditorProcessor *processor) override {
@@ -59,10 +55,8 @@ public:
 
 private:
     ValueTree state;
-
     View &view;
     Tracks &tracks;
-
     ProcessorGraph &processorGraph;
     ConnectorDragListener &connectorDragListener;
 
@@ -77,6 +71,5 @@ private:
     }
 
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override;
-
     void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override;
 };

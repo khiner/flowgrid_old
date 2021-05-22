@@ -13,11 +13,9 @@ public:
                                             valueFromString)) {}
 
     AudioParameterFloat *getAmpParameter() { return ampParameter; }
-
     AudioParameterFloat *getFreqParameter() { return freqParameter; }
 
     void setAmplitude(float valueInDb) { source->setAmplitude(Decibels::decibelsToGain(valueInDb)); }
-
     void setFrequency(float value) { source->setFrequency(value); }
 
     ToneGeneratorAudioSource *get() { return source.get(); }

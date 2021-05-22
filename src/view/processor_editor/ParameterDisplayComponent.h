@@ -26,15 +26,10 @@ public:
     }
 
     Slider *getSlider() const { return dynamic_cast<Slider *>(parameterComponent.get()); }
-
     DraggableValueLabel *getDraggableValueLabel() const { return dynamic_cast<DraggableValueLabel *>(parameterComponent.get()); }
-
     Button *getButton() const { return dynamic_cast<Button *>(parameterComponent.get()); }
-
     ComboBox *getCombobox() const { return dynamic_cast<ComboBox *>(parameterComponent.get()); }
-
     SwitchParameterComponent *getSwitch() const { return dynamic_cast<SwitchParameterComponent *>(parameterComponent.get()); }
-
     LevelMeter *getLevelMeter() const { return dynamic_cast<LevelMeter *>(parameterComponent.get()); }
 
 private:

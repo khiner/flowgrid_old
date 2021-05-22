@@ -11,7 +11,6 @@ public:
     ~TrackOutputGraphEditorProcessor() override;
 
     void resized() override;
-
     void paint(Graphics &g) override;
 
     bool isInView() override { return true; }

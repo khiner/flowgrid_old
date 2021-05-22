@@ -14,13 +14,11 @@ public:
     Push2DisplayBridge() : image(Image::RGB, Push2Display::WIDTH, Push2Display::HEIGHT, false),
                            graphics(image), usbCommunicator(PUSH_2_VENDOR_ID, PUSH_2_PRODUCT_ID) {}
 
-    juce::Graphics &getGraphics() {
-        return graphics;
-    }
+    juce::Graphics &getGraphics() { return graphics; }
 
     inline void writeFrameToDisplay() {
-        if (!usbCommunicator.isValid())
-            return;
+        if (!usbCommunicator.isValid()) return;
+
         static const Push2Display::pixel_t xOrMasks[2] = {0xf3e7, 0xffe7};
         for (int y = 0; y < Push2Display::HEIGHT; y++) {
             for (int x = 0; x < Push2Display::WIDTH; x++) {

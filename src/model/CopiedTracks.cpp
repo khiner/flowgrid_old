@@ -10,7 +10,7 @@ void CopiedTracks::loadFromState(const ValueTree &fromState) {
                 if (Processor::isType(processor))
                     copiedTrack.appendChild(processorGraph.copyProcessor(processor), nullptr);
         } else {
-            Track::setMaster(copiedTrack,  Track::isMaster(track));
+            Track::setMaster(copiedTrack, Track::isMaster(track));
         }
 
         auto copiedLanes = ValueTree(ProcessorLanesIDs::PROCESSOR_LANES);

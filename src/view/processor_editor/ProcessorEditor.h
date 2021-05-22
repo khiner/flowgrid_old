@@ -18,7 +18,6 @@ public:
     ValueTree getProcessorState() const { return parametersPanel->getProcessorState(); }
 
     void paint(Graphics &g) override;
-
     void resized() override;
 
     void setProcessor(StatefulAudioProcessorWrapper *processorWrapper);

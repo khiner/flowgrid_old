@@ -52,7 +52,5 @@ public:
 };
 
 ApplicationCommandManager &getCommandManager();
-
 ApplicationProperties &getApplicationProperties();
-
 PropertiesFile *getUserSettings();

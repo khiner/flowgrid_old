@@ -8,7 +8,6 @@ struct TooltipBar : public Component, private Timer {
     TooltipBar();
 
     void paint(Graphics &g) override;
-
     void timerCallback() override;
 
     String tip;

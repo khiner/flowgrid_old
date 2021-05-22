@@ -33,7 +33,6 @@ protected:
                                                             unsigned char *buffer, int bufferSize, unsigned char endpoint);
 
     virtual void startSending() = 0;
-
     virtual void sendNextSlice(libusb_transfer *transfer) = 0;
 
     /*!

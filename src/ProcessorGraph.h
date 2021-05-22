@@ -63,13 +63,10 @@ public:
     }
 
     void pauseAudioGraphUpdates() { graphUpdatesArePaused = true; }
-
     void resumeAudioGraphUpdatesAndApplyDiffSincePause();
 
     bool canAddConnection(const Connection &connection);
-
     bool removeConnection(const Connection &connection) override;
-
     bool addConnection(const Connection &connection) override;
 
     bool disconnectProcessor(const ValueTree &processor) {
@@ -115,21 +112,14 @@ private:
     CreateOrDeleteConnections connectionsSincePause{connections};
 
     void addProcessor(const ValueTree &processorState);
-
     void removeProcessor(const ValueTree &processor);
-
     void recursivelyAddProcessors(const ValueTree &state);
-
     bool canAddConnection(Node *source, int sourceChannel, Node *dest, int destChannel);
-
     bool hasConnectionMatching(const Connection &connection);
-
     void updateIoChannelEnabled(const ValueTree &channels, const ValueTree &channel, bool enabled);
 
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override;
-
     void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override;
-
     void valueTreeChildRemoved(ValueTree &parent, ValueTree &child, int indexFromWhichChildWasRemoved) override;
 
     void timerCallback() override;

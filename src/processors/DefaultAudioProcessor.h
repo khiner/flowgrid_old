@@ -40,53 +40,31 @@ public:
         this->setPlayConfigDetails(getTotalNumInputChannels(), getTotalNumOutputChannels(), sampleRate, estimatedSamplesPerBlock);
     }
 
-    const String getName() const override { return name; }
-
-    int getNumParameters() override { return getParameters().size(); }
-
-    double getTailLengthSeconds() const override { return 0.0; }
-
-    bool acceptsMidi() const override { return hasMidi; }
-
-    bool producesMidi() const override { return hasMidi; }
-
     AudioProcessorEditor *createEditor() override { return nullptr; }
 
+    const String getName() const override { return name; }
+    int getNumParameters() override { return getParameters().size(); }
+    double getTailLengthSeconds() const override { return 0.0; }
+    bool acceptsMidi() const override { return hasMidi; }
+    bool producesMidi() const override { return hasMidi; }
     bool hasEditor() const override { return false; }
-
     int getNumPrograms() override { return 0; }
-
     int getCurrentProgram() override { return 0; }
-
-    void setCurrentProgram(int) override {}
-
     const String getProgramName(int) override { return {}; }
-
-    void changeProgramName(int, const String &) override {}
-
     void getStateInformation(juce::MemoryBlock &) override {}
-
-    void setStateInformation(const void *, int) override {}
-
-    void releaseResources() override {}
-
     bool isBusesLayoutSupported(const BusesLayout &layout) const override {
-        if (!isGenerator) {
-            if (layout.getMainOutputChannelSet() != channelSet)
-                return false;
-        }
-
-        return !(layout.getMainInputChannelSet() != channelSet);
+        return !(!isGenerator && layout.getMainOutputChannelSet() != channelSet) && !(layout.getMainInputChannelSet() != channelSet);
     }
-
-
-    void fillInPluginDescription(PluginDescription &description) const override {
-        description = getPluginDescription(name + ":" + state, isGenerator, hasMidi, channelSet);
-    }
-
     static PluginDescription getPluginDescription(const String &identifier, bool registerAsGenerator, bool acceptsMidi,
                                                   const AudioChannelSet &channelSetToUse = AudioChannelSet::stereo());
 
+    void setCurrentProgram(int) override {}
+    void changeProgramName(int, const String &) override {}
+    void setStateInformation(const void *, int) override {}
+    void releaseResources() override {}
+    void fillInPluginDescription(PluginDescription &description) const override {
+        description = getPluginDescription(name + ":" + state, isGenerator, hasMidi, channelSet);
+    }
     static AudioParameterFloat *createDefaultGainParameter(const String &id, const String &name, float defaultValue = 0.0f) {
         return new AudioParameterFloat(id, name, NormalisableRange<float>(float(Decibels::defaultMinusInfinitydB), 6.0f, 0.0f, 4.0f), defaultValue, "dB",
                                        AudioProcessorParameter::genericParameter, defaultStringFromDbValue, defaultValueFromDbString);

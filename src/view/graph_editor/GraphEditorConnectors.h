@@ -17,9 +17,7 @@ public:
 
     void resized() override {}
 
-    bool isSuitableType(const ValueTree &v) const override {
-        return Connection::isType(v);
-    }
+    bool isSuitableType(const ValueTree &v) const override { return Connection::isType(v); }
 
     GraphEditorConnector *createNewObject(const ValueTree &v) override {
         auto *connector = new GraphEditorConnector(v, connectorDragListener, graphEditorProcessorContainer);
@@ -27,16 +25,10 @@ public:
         return connector;
     }
 
-    void deleteObject(GraphEditorConnector *connector) override {
-        delete connector;
-    }
-
+    void deleteObject(GraphEditorConnector *connector) override { delete connector; }
     void newObjectAdded(GraphEditorConnector *) override {}
-
     void objectRemoved(GraphEditorConnector *) override {}
-
     void objectOrderChanged() override {}
-
     void updateConnectors() {
         {
             const ScopedLockType sl(arrayLock);

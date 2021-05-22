@@ -5,17 +5,11 @@
 #include "ProcessorGraph.h"
 
 struct CreateProcessor : public UndoableAction {
-    CreateProcessor(ValueTree processorToCreate, int trackIndex, int slot,
-                    Tracks &tracks, View &view, ProcessorGraph &processorGraph);
-
-    CreateProcessor(const PluginDescription &description, int trackIndex, int slot,
-                    Tracks &tracks, View &view, ProcessorGraph &processorGraph);
-
-    CreateProcessor(const PluginDescription &description, int trackIndex,
-                    Tracks &tracks, View &view, ProcessorGraph &processorGraph);
+    CreateProcessor(ValueTree processorToCreate, int trackIndex, int slot, Tracks &tracks, View &view, ProcessorGraph &processorGraph);
+    CreateProcessor(const PluginDescription &description, int trackIndex, int slot, Tracks &tracks, View &view, ProcessorGraph &processorGraph);
+    CreateProcessor(const PluginDescription &description, int trackIndex, Tracks &tracks, View &view, ProcessorGraph &processorGraph);
 
     bool perform() override;
-
     bool undo() override;
 
     // The temporary versions of the perform/undo methods are used only to change the grid state

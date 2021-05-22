@@ -11,9 +11,7 @@ public:
 
     void setProcessorWrapper(StatefulAudioProcessorWrapper *processorWrapper);
 
-    ValueTree getProcessorState() const {
-        return processorWrapper != nullptr ? processorWrapper->state : ValueTree();
-    }
+    ValueTree getProcessorState() const { return processorWrapper != nullptr ? processorWrapper->state : ValueTree(); }
 
     void addParameter(StatefulAudioProcessorWrapper::Parameter *parameter);
 
@@ -24,31 +22,25 @@ public:
         return parameters[pageCorrectedParameterIndex];
     }
 
-    void pageLeft();
-
-    void pageRight();
-
     bool canPageLeft() const { return currentPage > 0; }
-
     bool canPageRight() const { return (currentPage + 1) * maxRows * numColumns < parameters.size(); }
+    void pageLeft();
+    void pageRight();
 
     // todo switch to adding new LookAndFeel colour IDs
     void setBackgroundColour(const Colour &backgroundColour) {
         this->backgroundColour = backgroundColour;
         repaint();
     }
-
     void setOutlineColour(const Colour &outlineColour) {
         this->outlineColour = outlineColour;
         repaint();
     }
 
     void paint(Graphics &g) override;
-
     void resized() override;
 
     int getParameterWidth() { return getLocalBounds().getWidth() / numColumns; }
-
     int getParameterHeight() { return maxRows == 1 ? getLocalBounds().getHeight() : getParameterWidth() * 7 / 5; }
 
 private:

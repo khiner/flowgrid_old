@@ -48,7 +48,6 @@ private:
         explicit ProgramAudioProcessorEditor(AudioProcessor &p);
 
         void paint(Graphics &g) override;
-
         void resized() override;
 
     private:
@@ -61,7 +60,6 @@ private:
             void refresh() override {}
 
             void audioProcessorChanged(AudioProcessor *, const ChangeDetails &details) override {}
-
             void audioProcessorParameterChanged(AudioProcessor *, int, float) override {}
 
             AudioProcessor &owner;

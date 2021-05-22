@@ -14,26 +14,20 @@ struct GraphEditorConnector : public Component, public SettableTooltipClient {
 
     const ValueTree &getState() const { return state; }
 
-    void dragTo(const juce::Point<float> &position);
-
-    void dragTo(AudioProcessorGraph::NodeAndChannel nodeAndChannel, bool isInput);
-
     void update();
+
+    void dragTo(const juce::Point<float> &position);
+    void dragTo(AudioProcessorGraph::NodeAndChannel nodeAndChannel, bool isInput);
+    bool isDragging() const { return dragAnchor.nodeID.uid != 0; }
 
     void getPoints(juce::Point<float> &p1, juce::Point<float> &p2) const;
 
-    bool isDragging() const { return dragAnchor.nodeID.uid != 0; }
-
+    void resized() override;
     void paint(Graphics &g) override;
-
     bool hitTest(int x, int y) override { return hoverPath.contains({float(x), float(y)}); }
-
     void mouseEnter(const MouseEvent &e) override { repaint(); }
-
     void mouseExit(const MouseEvent &e) override { repaint(); }
-
     void mouseDown(const MouseEvent &) override { dragAnchor.nodeID.uid = 0; }
-
     void mouseDrag(const MouseEvent &e) override {
         if (isDragging()) {
             connectorDragListener.dragConnector(e);
@@ -50,7 +44,6 @@ struct GraphEditorConnector : public Component, public SettableTooltipClient {
                                                      e);
         }
     }
-
     void mouseUp(const MouseEvent &e) override {
         if (isDragging()) {
             dragAnchor.nodeID.uid = 0;
@@ -58,11 +51,8 @@ struct GraphEditorConnector : public Component, public SettableTooltipClient {
         }
     }
 
-    void resized() override;
-
 private:
     ValueTree state;
-
     ConnectorDragListener &connectorDragListener;
     GraphEditorProcessorContainer &graphEditorProcessorContainer;
 
