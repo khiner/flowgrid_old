@@ -59,10 +59,10 @@ void ProcessorGraph::addProcessor(const ValueTree &processorState) {
             midiOutputProcessor->setMidiOutput(enabledMidiOutput);
     }
     ValueTree mutableProcessor = processorState;
-    if (mutableProcessor.hasProperty(ProcessorIDs::processorInitialized))
-        mutableProcessor.sendPropertyChangeMessage(ProcessorIDs::processorInitialized);
+    if (mutableProcessor.hasProperty(ProcessorIDs::initialized))
+        mutableProcessor.sendPropertyChangeMessage(ProcessorIDs::initialized);
     else
-        mutableProcessor.setProperty(ProcessorIDs::processorInitialized, true, nullptr);
+        mutableProcessor.setProperty(ProcessorIDs::initialized, true, nullptr);
 
 }
 
@@ -144,12 +144,12 @@ bool ProcessorGraph::hasConnectionMatching(const Connection &connection) {
 bool ProcessorGraph::removeConnection(const AudioProcessorGraph::Connection &connection) {
     const ValueTree &connectionState = connections.getConnectionMatching(connection);
     // TODO add back isShiftHeld after refactoring key/midi event tracking into a non-project class
-//    if (!connectionState[IDs::isCustomConnection] && isShiftHeld())
+//    if (!Connection::isCustom(connectionState) && isShiftHeld())
 //        return false; // no default connection stuff while shift is held
 
     undoManager.beginNewTransaction();
     bool removed = undoManager.perform(new DeleteConnection(connectionState, true, true, connections));
-    if (removed && connectionState.hasProperty(ConnectionIDs::isCustomConnection)) {
+    if (removed && fg::Connection::isCustom(connectionState)) {
         const auto &sourceProcessor = getProcessorStateForNodeId(fg::Connection::getSourceNodeId(connectionState));
         undoManager.perform(new UpdateProcessorDefaultConnections(sourceProcessor, false, connections, output, *this));
         undoManager.perform(new ResetDefaultExternalInputConnectionsAction(connections, tracks, input, *this));

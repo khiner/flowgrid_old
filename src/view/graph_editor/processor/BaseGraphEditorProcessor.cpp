@@ -122,6 +122,6 @@ void BaseGraphEditorProcessor::valueTreeChildRemoved(ValueTree &parent, ValueTre
 void BaseGraphEditorProcessor::valueTreePropertyChanged(ValueTree &v, const Identifier &i) {
     if (v != state) return;
 
-    if (i == ProcessorIDs::processorInitialized)
+    if (i == ProcessorIDs::initialized)
         resized();
 }

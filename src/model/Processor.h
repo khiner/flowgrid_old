@@ -14,8 +14,8 @@ namespace ProcessorIDs {
 ID(PROCESSOR)
 ID(id)
 ID(name)
-ID(processorInitialized)
-ID(processorSlot)
+ID(initialized)
+ID(slot)
 ID(nodeId)
 ID(bypassed)
 ID(acceptsMidi)
@@ -54,8 +54,8 @@ struct Processor : public Stateful<Processor> {
     bool hasProcessorState() const { return state.hasProperty(ProcessorIDs::state); }
     void setProcessorState(const String &processorState) { state.setProperty(ProcessorIDs::state, processorState, nullptr); }
 
-    bool isInitialized() const { return state[ProcessorIDs::processorInitialized]; }
-    void setInitialized(bool initialized) { state.setProperty(ProcessorIDs::processorInitialized, initialized, nullptr); }
+    bool isInitialized() const { return state[ProcessorIDs::initialized]; }
+    void setInitialized(bool initialized) { state.setProperty(ProcessorIDs::initialized, initialized, nullptr); }
 
     bool isBypassed() const { return state[ProcessorIDs::bypassed]; }
     void setBypassed(bool bypassed) { state.setProperty(ProcessorIDs::bypassed, bypassed, nullptr); }
@@ -92,8 +92,8 @@ struct Processor : public Stateful<Processor> {
     static void setDeviceName(ValueTree &state, const String &deviceName) { state.setProperty(ProcessorIDs::deviceName, deviceName, nullptr); }
     static int getPluginWindowType(const ValueTree &state) { return state[ProcessorIDs::pluginWindowType]; }
     static int getIndex(const ValueTree &state) { return state.getParent().indexOf(state); }
-    static int getSlot(const ValueTree &state) { return state[ProcessorIDs::processorSlot]; }
-    static void setSlot(ValueTree &state, int slot) { state.setProperty(ProcessorIDs::processorSlot, slot, nullptr); }
+    static int getSlot(const ValueTree &state) { return state[ProcessorIDs::slot]; }
+    static void setSlot(ValueTree &state, int slot) { state.setProperty(ProcessorIDs::slot, slot, nullptr); }
     static bool isBypassed(const ValueTree &state) { return state[ProcessorIDs::bypassed]; }
     static bool producesMidi(const ValueTree &state) { return state[ProcessorIDs::producesMidi]; }
     static bool acceptsMidi(const ValueTree &state) { return state[ProcessorIDs::acceptsMidi]; }

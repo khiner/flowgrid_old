@@ -59,19 +59,13 @@ struct Tracks : public Stateful<Tracks> {
 
     int getViewIndexForTrack(const ValueTree &track) const { return indexOf(track) - view.getGridViewTrackOffset(); }
 
-    ValueTree getTrackWithViewIndex(int trackViewIndex) const {
-        return getTrack(trackViewIndex + view.getGridViewTrackOffset());
-    }
+    ValueTree getTrackWithViewIndex(int trackViewIndex) const { return getTrack(trackViewIndex + view.getGridViewTrackOffset()); }
 
-    ValueTree getMasterTrack() const { return state.getChildWithProperty(TrackIDs::isMasterTrack, true); }
+    ValueTree getMasterTrack() const { return state.getChildWithProperty(TrackIDs::isMaster, true); }
 
-    int getNumNonMasterTracks() const {
-        return getMasterTrack().isValid() ? state.getNumChildren() - 1 : state.getNumChildren();
-    }
+    int getNumNonMasterTracks() const { return getMasterTrack().isValid() ? state.getNumChildren() - 1 : state.getNumChildren(); }
 
-    static bool doesTrackHaveSelections(const ValueTree &track) {
-        return Track::isSelected(track) || trackHasAnySlotSelected(track);
-    }
+    static bool doesTrackHaveSelections(const ValueTree &track) { return Track::isSelected(track) || trackHasAnySlotSelected(track); }
 
     bool anyTrackSelected() const {
         for (const auto &track : state)
@@ -200,7 +194,7 @@ struct Tracks : public Stateful<Tracks> {
 
     static ValueTree getProcessorAtSlot(const ValueTree &track, int slot) {
         const auto &lane = getProcessorLaneForTrack(track);
-        return track.isValid() ? lane.getChildWithProperty(ProcessorIDs::processorSlot, slot) : ValueTree();
+        return track.isValid() ? lane.getChildWithProperty(ProcessorIDs::slot, slot) : ValueTree();
     }
 
     static int getInsertIndexForProcessor(const ValueTree &track, const ValueTree &processor, int insertSlot);

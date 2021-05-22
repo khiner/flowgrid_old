@@ -16,7 +16,7 @@ ValueTree CreateConnection::stateForConnection(const AudioProcessorGraph::Connec
     Connection::setSourceChannel(connectionState, connection.source.channelIndex);
     Connection::setDestinationNodeId(connectionState, connection.destination.nodeID);
     Connection::setDestinationChannel(connectionState, connection.destination.channelIndex);
-    if (!isDefault) connectionState.setProperty(ConnectionIDs::isCustomConnection, true, nullptr);
+    if (!isDefault) Connection::setCustom(connectionState, true);
 
     return connectionState;
 }

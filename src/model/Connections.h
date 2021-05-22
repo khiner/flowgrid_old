@@ -13,7 +13,7 @@ ID(CONNECTIONS)
 struct Connections : public Stateful<Connections> {
     explicit Connections(Tracks &tracks) : tracks(tracks) {}
 
-    static Identifier getIdentifier() { return ConnectionIDs::CONNECTION; }
+    static Identifier getIdentifier() { return ConnectionsIDs::CONNECTIONS; }
 
     ValueTree findDefaultDestinationProcessor(const ValueTree &sourceProcessor, ConnectionType connectionType);
 

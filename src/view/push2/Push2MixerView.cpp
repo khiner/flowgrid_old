@@ -70,7 +70,7 @@ void Push2MixerView::trackRemoved(const ValueTree &track) {
 
 void Push2MixerView::valueTreePropertyChanged(ValueTree &tree, const Identifier &i) {
     Push2TrackManagingView::valueTreePropertyChanged(tree, i);
-    if (i == ProcessorIDs::processorInitialized && tree[i])
+    if (i == ProcessorIDs::initialized && tree[i])
         updateParameters();
 }
 

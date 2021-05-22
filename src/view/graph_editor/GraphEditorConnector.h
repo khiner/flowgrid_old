@@ -14,10 +14,6 @@ struct GraphEditorConnector : public Component, public SettableTooltipClient {
 
     const ValueTree &getState() const { return state; }
 
-    bool isCustom() const {
-        return !state.isValid() || state[ConnectionIDs::isCustomConnection];
-    }
-
     void dragTo(const juce::Point<float> &position);
 
     void dragTo(AudioProcessorGraph::NodeAndChannel nodeAndChannel, bool isInput);

@@ -7,11 +7,11 @@
 namespace ConnectionIDs {
 #define ID(name) const juce::Identifier name(#name);
 ID(CONNECTION)
-ID(sourceChannel)
-ID(destinationChannel)
+ID(sourceChannelIndex)
+ID(destinationChannelIndex)
 ID(sourceNodeId)
 ID(destinationNodeId)
-ID(isCustomConnection)
+ID(isCustom)
 #undef ID
 }
 
@@ -19,10 +19,13 @@ namespace fg {
 struct Connection : public Stateful<Connection> {
     static Identifier getIdentifier() { return ConnectionIDs::CONNECTION; }
 
-    static int getSourceChannel(const ValueTree& state) { return state[ConnectionIDs::sourceChannel]; }
-    static void setSourceChannel(ValueTree& state, int channel) { state.setProperty(ConnectionIDs::sourceChannel, channel, nullptr); }
-    static int getDestinationChannel(const ValueTree& state) { return state[ConnectionIDs::destinationChannel]; }
-    static void setDestinationChannel(ValueTree& state, int channel) { state.setProperty(ConnectionIDs::destinationChannel, channel, nullptr); }
+    static bool isCustom(const ValueTree& state) { return state.hasProperty(ConnectionIDs::isCustom) && state[ConnectionIDs::isCustom]; }
+    static void setCustom(ValueTree& state, bool isCustom) { state.setProperty(ConnectionIDs::isCustom, isCustom, nullptr); }
+
+    static int getSourceChannel(const ValueTree& state) { return state[ConnectionIDs::sourceChannelIndex]; }
+    static void setSourceChannel(ValueTree& state, int channel) { state.setProperty(ConnectionIDs::sourceChannelIndex, channel, nullptr); }
+    static int getDestinationChannel(const ValueTree& state) { return state[ConnectionIDs::destinationChannelIndex]; }
+    static void setDestinationChannel(ValueTree& state, int channel) { state.setProperty(ConnectionIDs::destinationChannelIndex, channel, nullptr); }
 
     static AudioProcessorGraph::NodeID getSourceNodeId(const ValueTree& state) { return state.isValid() ? AudioProcessorGraph::NodeID(static_cast<uint32>(int(state[ConnectionIDs::sourceNodeId]))) : AudioProcessorGraph::NodeID{}; }
     static void setSourceNodeId(ValueTree& state, AudioProcessorGraph::NodeID sourceNodeId) { state.setProperty(ConnectionIDs::sourceNodeId, int(sourceNodeId.uid), nullptr); }

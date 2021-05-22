@@ -94,7 +94,7 @@ BaseGraphEditorProcessor *GraphEditorProcessorLane::createNewObject(const ValueT
 //  might be an over-early optimization though
 void GraphEditorProcessorLane::valueTreePropertyChanged(ValueTree &tree, const Identifier &i) {
     bool isMaster = Track::isMaster(getTrack());
-    if (isSuitableType(tree) && i == ProcessorIDs::processorSlot) {
+    if (isSuitableType(tree) && i == ProcessorIDs::slot) {
         resized();
     } else if (i == TrackIDs::selected || i == TrackIDs::colour ||
                i == ProcessorLaneIDs::selectedSlotsMask || i == ViewIDs::focusedTrackIndex || i == ViewIDs::focusedProcessorSlot ||

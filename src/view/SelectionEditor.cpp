@@ -123,7 +123,7 @@ void SelectionEditor::valueTreePropertyChanged(ValueTree &tree, const Identifier
     if (i == ViewIDs::focusedTrackIndex) {
         addProcessorButton.setVisible(tracks.getFocusedTrack().isValid());
         refreshProcessors();
-    } else if (i == ProcessorIDs::processorInitialized) {
+    } else if (i == ProcessorIDs::initialized) {
         refreshProcessors(); // TODO only the new processor
     } else if (i == ViewIDs::focusedProcessorSlot) {
         refreshProcessors({}, true);
@@ -135,7 +135,7 @@ void SelectionEditor::valueTreePropertyChanged(ValueTree &tree, const Identifier
             processorEditors.add(processorEditor);
         }
         processorEditors.removeLast(processorEditors.size() - numProcessorSlots);
-    } else if (i == ProcessorIDs::processorSlot) {
+    } else if (i == ProcessorIDs::slot) {
         refreshProcessors();
     } else if (i == ViewIDs::focusedPane) {
         unfocusOverlay.setVisible(view.isGridPaneFocused());

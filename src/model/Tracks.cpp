@@ -12,15 +12,15 @@ void Tracks::loadFromState(const ValueTree &fromState) {
     // since type information is not saved in XML
     // Also, re-set some vars just to trigger the event (like selected slot mask)
     for (auto track : state) {
-        resetVarToBool(track, TrackIDs::isMasterTrack, nullptr);
+        resetVarToBool(track, TrackIDs::isMaster, nullptr);
         resetVarToBool(track, TrackIDs::selected, nullptr);
 
         auto lane = getProcessorLaneForTrack(track);
         lane.sendPropertyChangeMessage(ProcessorLaneIDs::selectedSlotsMask);
         for (auto processor : lane) {
-            resetVarToInt(processor, ProcessorIDs::processorSlot, nullptr);
+            resetVarToInt(processor, ProcessorIDs::slot, nullptr);
             resetVarToInt(processor, ProcessorIDs::nodeId, nullptr);
-            resetVarToInt(processor, ProcessorIDs::processorInitialized, nullptr);
+            resetVarToInt(processor, ProcessorIDs::initialized, nullptr);
             resetVarToBool(processor, ProcessorIDs::bypassed, nullptr);
             resetVarToBool(processor, ProcessorIDs::acceptsMidi, nullptr);
             resetVarToBool(processor, ProcessorIDs::producesMidi, nullptr);

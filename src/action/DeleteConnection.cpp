@@ -1,8 +1,7 @@
 #include "DeleteConnection.h"
 
 static bool canRemoveConnection(const ValueTree &connection, bool allowDefaults, bool allowCustom) {
-    return (allowCustom && connection.hasProperty(ConnectionIDs::isCustomConnection)) ||
-           (allowDefaults && !connection.hasProperty(ConnectionIDs::isCustomConnection));
+    return (allowCustom && fg::Connection::isCustom(connection)) || (allowDefaults && !fg::Connection::isCustom(connection));
 }
 
 DeleteConnection::DeleteConnection(const ValueTree &connection, bool allowCustom, bool allowDefaults, Connections &connections)

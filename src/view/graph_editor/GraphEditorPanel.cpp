@@ -325,7 +325,7 @@ void GraphEditorPanel::showPopupMenu(const ValueTree &track, int slot) {
 }
 
 void GraphEditorPanel::valueTreePropertyChanged(ValueTree &tree, const Identifier &i) {
-    if ((Processor::isType(tree) && i == ProcessorIDs::processorSlot) || i == ViewIDs::gridViewSlotOffset) {
+    if ((Processor::isType(tree) && i == ProcessorIDs::slot) || i == ViewIDs::gridViewSlotOffset) {
         connectors->updateConnectors();
     } else if (i == ViewIDs::gridViewTrackOffset || i == ViewIDs::masterViewSlotOffset) {
         resized();
@@ -338,7 +338,7 @@ void GraphEditorPanel::valueTreePropertyChanged(ValueTree &tree, const Identifie
             closeWindowFor(tree);
         else if (auto *w = getOrCreateWindowFor(tree, type))
             w->toFront(true);
-    } else if (i == ProcessorIDs::processorInitialized) {
+    } else if (i == ProcessorIDs::initialized) {
         if (Processor::isMidiInputProcessor(tree)) {
             auto *midiInputProcessor = new LabelGraphEditorProcessor(tree, view, tracks, graph, *this);
             addAndMakeVisible(midiInputProcessor, 0);

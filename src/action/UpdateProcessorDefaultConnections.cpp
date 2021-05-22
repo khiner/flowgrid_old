@@ -21,7 +21,7 @@ UpdateProcessorDefaultConnections::UpdateProcessorDefaultConnections(const Value
             if (!disconnectDefaultsAction.connectionsToDelete.isEmpty()) {
                 for (const auto &connectionToConvert : disconnectDefaultsAction.connectionsToDelete) {
                     auto customConnection = connectionToConvert.createCopy();
-                    customConnection.setProperty(ConnectionIDs::isCustomConnection, true, nullptr);
+                    Connection::setCustom(customConnection, true);
                     connectionsToCreate.add(customConnection);
                 }
             }
