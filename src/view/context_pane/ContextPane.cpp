@@ -29,7 +29,7 @@ void ContextPane::paint(Graphics &g) {
         bool isMaster = Tracks::isMasterTrack(track);
         const int trackX = tracksOffset + trackIndex * cellWidth;
 
-        const auto &trackColour = Tracks::getTrackColour(track);
+        const auto &trackColour = Track::getColour(track);
         g.setColour(trackColour);
         if (isMaster) {
             const int slotOffsetX = view.getMasterViewSlotOffset() * cellWidth;

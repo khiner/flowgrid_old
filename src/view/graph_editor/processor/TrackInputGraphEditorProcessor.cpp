@@ -9,7 +9,7 @@ TrackInputGraphEditorProcessor::TrackInputGraphEditorProcessor(const ValueTree &
     addAndMakeVisible(nameLabel);
     nameLabel.addMouseListener(this, false);
 
-    nameLabel.setText(getTrackName(), dontSendNotification);
+    nameLabel.setText(Track::getName(state), dontSendNotification);
     nameLabel.setEditable(false, true);
     nameLabel.onTextChange = [this] { this->tracks.setTrackName(this->state, nameLabel.getText(false)); };
 }

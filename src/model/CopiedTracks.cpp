@@ -4,13 +4,13 @@ void CopiedTracks::loadFromState(const ValueTree &fromState) {
     state = ValueTree(getIdentifier());
     for (const auto &track : fromState) {
         auto copiedTrack = ValueTree(TrackIDs::TRACK);
-        if (track[TrackIDs::selected]) {
+        if (Track::isSelected(track)) {
             copiedTrack.copyPropertiesFrom(track, nullptr);
             for (auto processor : track)
                 if (processor.hasType(ProcessorIDs::PROCESSOR))
                     copiedTrack.appendChild(processorGraph.copyProcessor(processor), nullptr);
         } else {
-            copiedTrack.setProperty(TrackIDs::isMasterTrack, track[TrackIDs::isMasterTrack], nullptr);
+            Track::setMaster(copiedTrack,  Track::isMaster(track));
         }
 
         auto copiedLanes = ValueTree(ProcessorLanesIDs::PROCESSOR_LANES);
@@ -18,7 +18,7 @@ void CopiedTracks::loadFromState(const ValueTree &fromState) {
             auto copiedLane = ValueTree(ProcessorLaneIDs::PROCESSOR_LANE);
             copiedLane.setProperty(ProcessorLaneIDs::selectedSlotsMask, lane[ProcessorLaneIDs::selectedSlotsMask].toString(), nullptr);
             for (auto processor : lane)
-                if (track[TrackIDs::selected] || Tracks::isProcessorSelected(processor))
+                if (Track::isSelected(track) || Tracks::isProcessorSelected(processor))
                     copiedLane.appendChild(processorGraph.copyProcessor(processor), nullptr);
             copiedLanes.appendChild(copiedLane, nullptr);
         }

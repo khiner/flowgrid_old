@@ -31,7 +31,7 @@ private:
     bool processorHasFocus{false};
 
     static Colour getColourForTrack(const ValueTree &track) {
-        return track.isValid() ? Tracks::getTrackColour(track) : Colours::black;
+        return track.isValid() ? Track::getColour(track) : Colours::black;
     }
 
     int getProcessorIndexForButtonIndex(int buttonIndex) {

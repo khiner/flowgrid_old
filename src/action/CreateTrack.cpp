@@ -3,7 +3,7 @@
 // NOTE: assumes the track hasn't been added yet!
 String makeTrackNameUnique(Tracks &tracks, const String &trackName) {
     for (const auto &track : tracks.getState()) {
-        String otherTrackName = track[TrackIDs::name];
+        String otherTrackName = Track::getName(track);
         if (otherTrackName == trackName) {
             if (trackName.contains("-")) {
                 int i = trackName.getLastCharacters(trackName.length() - trackName.lastIndexOf("-") - 1).getIntValue();
@@ -29,16 +29,13 @@ CreateTrack::CreateTrack(int insertIndex, bool isMaster, const ValueTree &derive
         : insertIndex(insertIndex), tracks(tracks) {
     // TODO move into method and construct in initializer list
     newTrack = ValueTree(TrackIDs::TRACK);
-    newTrack.setProperty(TrackIDs::isMasterTrack, isMaster, nullptr);
-    newTrack.setProperty(TrackIDs::uuid, Uuid().toString(), nullptr);
+    Track::setMaster(newTrack, isMaster);
+    Track::setUuid(newTrack, Uuid().toString());
     bool isSubTrack = !isMaster && derivedFromTrack.isValid();
-    if (isMaster) {
-        newTrack.setProperty(TrackIDs::name, "Master", nullptr);
-    } else {
-        newTrack.setProperty(TrackIDs::name, isSubTrack ? makeTrackNameUnique(tracks, derivedFromTrack[TrackIDs::name]) : ("Track " + String(tracks.getNumNonMasterTracks() + 1)), nullptr);
-    }
-    newTrack.setProperty(TrackIDs::colour, isSubTrack ? derivedFromTrack[TrackIDs::colour].toString() : Colour::fromHSV((1.0f / 8.0f) * tracks.getNumTracks(), 0.65f, 0.65f, 1.0f).toString(), nullptr);
-    newTrack.setProperty(TrackIDs::selected, false, nullptr);
+    const String name = isMaster ? "Master" : (isSubTrack ? makeTrackNameUnique(tracks, Track::getName(derivedFromTrack)) : ("Track " + String(tracks.getNumNonMasterTracks() + 1)));
+    Track::setName(newTrack, name);
+    Track::setColour(newTrack, isSubTrack ? Track::getColour(derivedFromTrack) : Colour::fromHSV((1.0f / 8.0f) * tracks.getNumTracks(), 0.65f, 0.65f, 1.0f));
+    Track::setSelected(newTrack, false);
 
     auto lanes = ValueTree(ProcessorLanesIDs::PROCESSOR_LANES);
     auto lane = ValueTree(ProcessorLaneIDs::PROCESSOR_LANE);

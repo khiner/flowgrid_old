@@ -5,7 +5,7 @@
 
 static int getIndexOfFirstCopiedTrackWithSelections(const ValueTree &copiedTracks) {
     for (const auto &track : copiedTracks)
-        if (track[TrackIDs::selected] || Tracks::trackHasAnySlotSelected(track))
+        if (Track::isSelected(track) || Tracks::trackHasAnySlotSelected(track))
             return copiedTracks.indexOf(track);
 
     assert(false); // Copied state, by definition, must have a selection.
@@ -13,7 +13,7 @@ static int getIndexOfFirstCopiedTrackWithSelections(const ValueTree &copiedTrack
 
 static bool anyCopiedTrackSelected(const ValueTree &copiedTracks) {
     for (const ValueTree &track : copiedTracks)
-        if (track[TrackIDs::selected])
+        if (Track::isSelected(track))
             return true;
     return false;
 }
@@ -25,7 +25,7 @@ static juce::Point<int> limitToTrackAndSlot(juce::Point<int> toTrackAndSlot, con
 static std::vector<int> findSelectedNonMasterTrackIndices(const ValueTree &copiedTracks) {
     std::vector<int> selectedTrackIndices;
     for (const auto &track : copiedTracks)
-        if (track[TrackIDs::selected] && !Tracks::isMasterTrack(track))
+        if (Track::isSelected(track) && !Tracks::isMasterTrack(track))
             selectedTrackIndices.push_back(copiedTracks.indexOf(track));
     return selectedTrackIndices;
 }
@@ -75,11 +75,11 @@ Insert::Insert(bool duplicate, const ValueTree &copiedTracks, const juce::Point<
         // First pass: insert processors that are selected without their parent track also selected.
         // This is done because adding new tracks changes the track indices relative to their current position.
         for (const auto &copiedTrack : copiedTracks) {
-            if (!copiedTrack[TrackIDs::selected]) {
+            if (!Track::isSelected(copiedTrack)) {
                 int fromTrackIndex = copiedTracks.indexOf(copiedTrack);
                 if (duplicate) {
                     duplicateSelectedProcessors(copiedTrack, copiedTracks);
-                } else if (Tracks::isMasterTrack(copiedTrack)) {
+                } else if (Track::isMaster(copiedTrack)) {
                     // Processors copied from master track can only get inserted into master track.
                     const auto &masterTrack = tracks.getMasterTrack();
                     if (masterTrack.isValid())

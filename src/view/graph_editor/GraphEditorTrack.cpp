@@ -18,18 +18,16 @@ GraphEditorTrack::~GraphEditorTrack() {
 }
 
 void GraphEditorTrack::paint(Graphics &g) {
-    if (trackInputProcessorView == nullptr || trackOutputProcessorView == nullptr)
-        return;
+    if (trackInputProcessorView == nullptr || trackOutputProcessorView == nullptr) return;
 
-    const auto &colour = getColour();
-    g.setColour(colour);
+    g.setColour(Track::getDisplayColour(state));
 
     auto inBounds = trackInputProcessorView->getBoxBounds();
     auto outBounds = trackOutputProcessorView->getBoxBounds();
     inBounds.setPosition(inBounds.getPosition() + trackInputProcessorView->getPosition());
     outBounds.setPosition(outBounds.getPosition() + trackOutputProcessorView->getPosition());
 
-    bool isMaster = isMasterTrack();
+    bool isMaster = Track::isMaster(state);
     float x = inBounds.getX();
     float y = isMaster ? outBounds.getY() : inBounds.getY();
     float width = isMaster ? outBounds.getRight() - inBounds.getX() : outBounds.getWidth();
@@ -44,12 +42,12 @@ void GraphEditorTrack::paint(Graphics &g) {
 void GraphEditorTrack::resized() {
     auto r = getLocalBounds();
 
-    auto trackInputBounds = isMasterTrack() ?
+    auto trackInputBounds = isMaster() ?
                             r.removeFromTop(View::TRACK_INPUT_HEIGHT)
                                     .withSize(view.getTrackWidth(), View::TRACK_INPUT_HEIGHT) :
                             r.removeFromTop(View::TRACK_INPUT_HEIGHT);
 
-    const auto &trackOutputBounds = isMasterTrack()
+    const auto &trackOutputBounds = isMaster()
                                     ? r.removeFromRight(tracks.getProcessorSlotSize(getState()))
                                     : r.removeFromBottom(tracks.getProcessorSlotSize(getState()));
 
@@ -57,7 +55,7 @@ void GraphEditorTrack::resized() {
         trackInputProcessorView->setBounds(trackInputBounds);
     if (trackOutputProcessorView != nullptr)
         trackOutputProcessorView->setBounds(trackOutputBounds);
-    const auto &laneBounds = isMasterTrack() ? r.reduced(0, 2) : r.reduced(2, 0);
+    const auto &laneBounds = isMaster() ? r.reduced(0, 2) : r.reduced(2, 0);
     lanes.setBounds(laneBounds);
 }
 
@@ -71,23 +69,21 @@ BaseGraphEditorProcessor *GraphEditorTrack::getProcessorForNodeId(const AudioPro
 
 GraphEditorChannel *GraphEditorTrack::findChannelAt(const MouseEvent &e) {
     auto *channel = lanes.findChannelAt(e);
-    if (channel != nullptr)
-        return channel;
+    if (channel != nullptr) return channel;
+
     if (trackInputProcessorView != nullptr)
         channel = trackInputProcessorView->findChannelAt(e);
-    if (channel != nullptr)
-        return channel;
-    if (trackOutputProcessorView != nullptr)
-        return trackOutputProcessorView->findChannelAt(e);
+    if (channel != nullptr) return channel;
+    if (trackOutputProcessorView != nullptr) return trackOutputProcessorView->findChannelAt(e);
+
     return nullptr;
 }
 
 void GraphEditorTrack::onColourChanged() {
-    const auto &colour = getColour();
     if (trackInputProcessorView != nullptr)
-        trackInputProcessorView->setColour(ResizableWindow::backgroundColourId, colour);
+        trackInputProcessorView->setColour(ResizableWindow::backgroundColourId, Track::getColour(state));
     if (trackOutputProcessorView != nullptr)
-        trackOutputProcessorView->setColour(ResizableWindow::backgroundColourId, colour);
+        trackOutputProcessorView->setColour(ResizableWindow::backgroundColourId, Track::getColour(state));
 }
 
 void GraphEditorTrack::trackInputProcessorChanged() {
@@ -135,15 +131,15 @@ void GraphEditorTrack::valueTreeChildRemoved(ValueTree &exParent, ValueTree &chi
 }
 
 void GraphEditorTrack::valueTreePropertyChanged(ValueTree &tree, const Identifier &i) {
-    if (i == ViewIDs::gridViewSlotOffset || ((i == ViewIDs::gridViewTrackOffset || i == ViewIDs::masterViewSlotOffset) && isMasterTrack()))
+    if (i == ViewIDs::gridViewSlotOffset || ((i == ViewIDs::gridViewTrackOffset || i == ViewIDs::masterViewSlotOffset) && isMaster()))
         resized();
 
-    if (tree != state)
-        return;
+    if (tree != state) return;
 
     if (i == TrackIDs::name) {
         if (trackInputProcessorView != nullptr)
-            trackInputProcessorView->setTrackName(tree[TrackIDs::name].toString());
+            // TODO processor should listen to this itself, then remove `ssetTrackName` method
+            trackInputProcessorView->setTrackName(Track::getName(tree));
     } else if (i == TrackIDs::colour || i == TrackIDs::selected) {
         onColourChanged();
     }

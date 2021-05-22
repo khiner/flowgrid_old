@@ -12,14 +12,7 @@ public:
 
     const ValueTree &getState() const { return state; }
 
-    bool isMasterTrack() const { return Tracks::isMasterTrack(state); }
-
-    Colour getColour() const {
-        const Colour &trackColour = Tracks::getTrackColour(state);
-        return isSelected() ? trackColour.brighter(0.25) : trackColour;
-    }
-
-    bool isSelected() const { return state.getProperty(TrackIDs::selected); }
+    bool isMaster() const { return Track::isMaster(state); }
 
     void paint(Graphics &g) override;
 

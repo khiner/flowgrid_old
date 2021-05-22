@@ -57,7 +57,7 @@ int Tracks::getInsertIndexForProcessor(const ValueTree &track, const ValueTree &
 Array<ValueTree> Tracks::findAllSelectedItems() const {
     Array<ValueTree> selectedItems;
     for (const auto &track : state) {
-        if (track[TrackIDs::selected])
+        if (Track::isSelected(track))
             selectedItems.add(track);
         else
             selectedItems.addArray(findSelectedProcessorsForTrack(track));

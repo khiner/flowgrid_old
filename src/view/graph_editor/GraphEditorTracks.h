@@ -28,10 +28,10 @@ public:
         trackBounds.setX(-view.getGridViewTrackOffset() * view.getTrackWidth() + View::TRACKS_MARGIN);
 
         for (auto *track : objects) {
-            if (track->isMasterTrack())
-                continue;
-            track->setBounds(trackBounds);
-            trackBounds.setX(trackBounds.getX() + view.getTrackWidth());
+            if (!track->isMaster()) {
+                track->setBounds(trackBounds);
+                trackBounds.setX(trackBounds.getX() + view.getTrackWidth());
+            }
         }
 
         if (auto *masterTrack = findMasterTrack()) {
@@ -41,7 +41,7 @@ public:
 
     GraphEditorTrack *findMasterTrack() const {
         for (auto *track : objects)
-            if (track->isMasterTrack())
+            if (track->isMaster())
                 return track;
 
         return nullptr;
@@ -119,7 +119,7 @@ private:
     Array<GraphEditorTrack *> getNonMasterTrackObjects() {
         Array<GraphEditorTrack *> nonMasterTrackObjects;
         for (auto *trackObject : objects)
-            if (!trackObject->isMasterTrack())
+            if (!trackObject->isMaster())
                 nonMasterTrackObjects.add(trackObject);
         return nonMasterTrackObjects;
     }

@@ -61,13 +61,13 @@ void GraphEditorProcessorLane::updateProcessorSlotColours() {
     const static auto &baseColour = findColour(ResizableWindow::backgroundColourId).brighter(0.4f);
     const auto &track = getTrack();
 
-    laneDragRectangle.setFill(Tracks::getTrackColour(track));
+    laneDragRectangle.setFill(Track::getColour(track));
     for (int slot = 0; slot < processorSlotRectangles.size(); slot++) {
         auto fillColour = baseColour;
         if (Tracks::doesTrackHaveSelections(track))
             fillColour = fillColour.brighter(0.2f);
         if (Tracks::isSlotSelected(track, slot))
-            fillColour = Tracks::getTrackColour(track);
+            fillColour = Track::getColour(track);
         if (tracks.isSlotFocused(track, slot))
             fillColour = fillColour.brighter(0.16f);
         if (!tracks.isProcessorSlotInView(track, slot))

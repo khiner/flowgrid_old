@@ -43,8 +43,8 @@ void Push2TrackManagingView::updateEnabledPush2Buttons() {
         const auto &track = tracks.getTrackWithViewIndex(i);
         // TODO left/right buttons
         label->setVisible(true);
-        label->setMainColour(Tracks::getTrackColour(track));
-        label->setText(track[TrackIDs::name], dontSendNotification);
+        label->setMainColour(Track::getColour(track));
+        label->setText(Track::getName(track), dontSendNotification);
         label->setSelected(track == focusedTrack);
     }
 }
@@ -63,11 +63,11 @@ void Push2TrackManagingView::valueTreePropertyChanged(ValueTree &tree, const Ide
     if (Track::isType(tree)) {
         if (i == TrackIDs::name || i == TrackIDs::colour) {
             int trackIndex = tracks.getViewIndexForTrack(tree);
-            if (trackIndex < 0 || trackIndex >= trackLabels.size())
-                return;
+            if (trackIndex < 0 || trackIndex >= trackLabels.size()) return;
+
             if (i == TrackIDs::name && !Tracks::isMasterTrack(tree))
-                trackLabels.getUnchecked(trackIndex)->setText(tree[TrackIDs::name], dontSendNotification);
-        } else if (i == TrackIDs::selected && tree[TrackIDs::selected]) {
+                trackLabels.getUnchecked(trackIndex)->setText(Track::getName(tree), dontSendNotification);
+        } else if (i == TrackIDs::selected && Track::isSelected(tree)) {
             trackSelected(tree);
         }
     } else if (i == ViewIDs::gridViewTrackOffset) {

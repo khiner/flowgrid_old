@@ -87,19 +87,19 @@ struct Tracks : public Stateful<Tracks> {
 
     ValueTree getMasterTrack() const { return state.getChildWithProperty(TrackIDs::isMasterTrack, true); }
 
-    static bool isMasterTrack(const ValueTree &track) { return track[TrackIDs::isMasterTrack]; }
+    static bool isMasterTrack(const ValueTree &track) { return Track::isMaster(track); }
 
     int getNumNonMasterTracks() const {
         return getMasterTrack().isValid() ? state.getNumChildren() - 1 : state.getNumChildren();
     }
 
     static bool doesTrackHaveSelections(const ValueTree &track) {
-        return track[TrackIDs::selected] || trackHasAnySlotSelected(track);
+        return Track::isSelected(track) || trackHasAnySlotSelected(track);
     }
 
     bool anyTrackSelected() const {
         for (const auto &track : state)
-            if (track[TrackIDs::selected])
+            if (Track::isSelected(track))
                 return true;
         return false;
     }
@@ -124,40 +124,27 @@ struct Tracks : public Stateful<Tracks> {
 
     ValueTree findTrackWithUuid(const String &uuid) {
         for (const auto &track : state)
-            if (track[TrackIDs::uuid] == uuid)
+            if (Track::getUuid(track) == uuid)
                 return track;
         return {};
     }
 
-    static int firstSelectedSlotForTrack(const ValueTree &track) {
-        return getSlotMask(track).getHighestBit();
-    }
+    static int firstSelectedSlotForTrack(const ValueTree &track) { return getSlotMask(track).getHighestBit(); }
 
-    static bool trackHasAnySlotSelected(const ValueTree &track) {
-        return firstSelectedSlotForTrack(track) != -1;
-    }
-
-    static Colour getTrackColour(const ValueTree &track) {
-        return Colour::fromString(track[TrackIDs::colour].toString());
-    }
+    static bool trackHasAnySlotSelected(const ValueTree &track) { return firstSelectedSlotForTrack(track) != -1; }
 
     void setTrackColour(ValueTree &track, const Colour &colour) {
         track.setProperty(TrackIDs::colour, colour.toString(), &undoManager);
     }
 
-    static bool isSlotSelected(const ValueTree &track, int slot) {
-        return getSlotMask(track)[slot];
-    }
+    static bool isSlotSelected(const ValueTree &track, int slot) { return getSlotMask(track)[slot]; }
 
     static bool isProcessorSelected(const ValueTree &processor) {
         return processor.hasType(ProcessorIDs::PROCESSOR) &&
                isSlotSelected(getTrackForProcessor(processor), processor[ProcessorIDs::processorSlot]);
     }
 
-    ValueTree getFocusedTrack() const {
-        auto trackAndSlot = view.getFocusedTrackAndSlot();
-        return getTrack(trackAndSlot.x);
-    }
+    ValueTree getFocusedTrack() const { return getTrack(view.getFocusedTrackAndSlot().x); }
 
     ValueTree getFocusedProcessor() const {
         juce::Point<int> trackAndSlot = view.getFocusedTrackAndSlot();
@@ -165,9 +152,7 @@ struct Tracks : public Stateful<Tracks> {
         return getProcessorAtSlot(track, trackAndSlot.y);
     }
 
-    bool isProcessorFocused(const ValueTree &processor) const {
-        return getFocusedProcessor() == processor;
-    }
+    bool isProcessorFocused(const ValueTree &processor) const { return getFocusedProcessor() == processor; }
 
     bool isSlotFocused(const ValueTree &track, int slot) const {
         auto trackAndSlot = view.getFocusedTrackAndSlot();
@@ -219,7 +204,7 @@ struct Tracks : public Stateful<Tracks> {
     Array<bool> getTrackSelections() const {
         Array<bool> trackSelections;
         for (const auto &track : state) {
-            trackSelections.add(track[TrackIDs::selected]);
+            trackSelections.add(Track::isSelected(track));
         }
         return trackSelections;
     }
@@ -292,7 +277,7 @@ struct Tracks : public Stateful<Tracks> {
     juce::Point<int> trackAndSlotWithGridDelta(int xDelta, int yDelta) const {
         auto focusedTrackAndSlot = view.getFocusedTrackAndSlot();
         const auto &focusedTrack = getTrack(focusedTrackAndSlot.x);
-        if (focusedTrack[TrackIDs::selected])
+        if (Track::isSelected(focusedTrack))
             focusedTrackAndSlot.y = -1;
 
         const auto fromGridPosition = trackAndSlotToGridPosition(focusedTrackAndSlot);
@@ -306,7 +291,7 @@ struct Tracks : public Stateful<Tracks> {
 
         const ValueTree &focusedProcessor = Tracks::getProcessorAtSlot(focusedTrack, focusedTrackAndSlot.y);
         // down when track is selected deselects the track
-        if (delta > 0 && focusedTrack[TrackIDs::selected]) return {focusedTrackAndSlot.x, focusedTrackAndSlot.y};
+        if (delta > 0 && Track::isSelected(focusedTrack)) return {focusedTrackAndSlot.x, focusedTrackAndSlot.y};
 
         ValueTree siblingProcessorToSelect;
         if (focusedProcessor.isValid()) {
@@ -333,7 +318,7 @@ struct Tracks : public Stateful<Tracks> {
 
         int siblingTrackIndex = indexOf(siblingTrackToSelect);
         const auto &focusedProcessorLane = getProcessorLaneForTrack(focusedTrack);
-        if (focusedTrack[TrackIDs::selected] || focusedProcessorLane.getNumChildren() == 0)
+        if (Track::isSelected(focusedTrack) || focusedProcessorLane.getNumChildren() == 0)
             return {siblingTrackIndex, -1};
 
         if (focusedTrackAndSlot.y != -1) {
