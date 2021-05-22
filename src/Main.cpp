@@ -592,7 +592,7 @@ private:
             deviceManager.updateEnabledMidiInputsAndOutputs();
             Array<ValueTree> inputProcessorsToDelete = input.syncInputDevicesWithDeviceManager();
             for (const auto &inputProcessor : inputProcessorsToDelete) {
-                undoManager.perform(new DeleteProcessor(inputProcessor, tracks, connections, processorGraph));
+                undoManager.perform(new DeleteProcessor(inputProcessor, connections, processorGraph));
             }
             AudioDeviceManager::AudioDeviceSetup config;
             deviceManager.getAudioDeviceSetup(config);
@@ -603,7 +603,7 @@ private:
             deviceManager.updateEnabledMidiInputsAndOutputs();
             Array<ValueTree> outputProcessorsToDelete = output.syncOutputDevicesWithDeviceManager();
             for (const auto &outputProcessor : outputProcessorsToDelete) {
-                undoManager.perform(new DeleteProcessor(outputProcessor, tracks, connections, processorGraph));
+                undoManager.perform(new DeleteProcessor(outputProcessor, connections, processorGraph));
             }
             // TODO the undomanager behavior around this needs more thinking.
             //  This should be done along with the work to keep disabled IO devices in the graph if they still have connections

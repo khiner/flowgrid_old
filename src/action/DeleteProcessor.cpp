@@ -2,8 +2,8 @@
 
 #include "view/PluginWindow.h"
 
-DeleteProcessor::DeleteProcessor(const ValueTree &processorToDelete, Tracks &tracks, Connections &connections, ProcessorGraph &processorGraph)
-        : tracks(tracks), trackIndex(tracks.indexOf(Track::getTrackForProcessor(processorToDelete))),
+DeleteProcessor::DeleteProcessor(const ValueTree &processorToDelete, Connections &connections, ProcessorGraph &processorGraph)
+        : track(Track::getTrackForProcessor(processorToDelete)), trackIndex(Track::getIndex(track)),
           processorToDelete(processorToDelete),
           processorIndex(Processor::getIndex(processorToDelete)),
           pluginWindowType(Processor::getPluginWindowType(processorToDelete)),
@@ -19,7 +19,6 @@ bool DeleteProcessor::perform() {
 }
 
 bool DeleteProcessor::undo() {
-    auto track = tracks.getTrack(trackIndex);
     if (Processor::isTrackIOProcessor(processorToDelete))
         track.appendChild(processorToDelete, nullptr);
     else
@@ -33,7 +32,6 @@ bool DeleteProcessor::undo() {
 
 bool DeleteProcessor::performTemporary() {
     disconnectProcessorAction.perform();
-    auto track = tracks.getTrack(trackIndex);
     if (Processor::isTrackIOProcessor(processorToDelete))
         track.removeChild(processorToDelete, nullptr);
     else
@@ -42,7 +40,6 @@ bool DeleteProcessor::performTemporary() {
 }
 
 bool DeleteProcessor::undoTemporary() {
-    auto track = tracks.getTrack(trackIndex);
     if (Processor::isTrackIOProcessor(processorToDelete))
         track.appendChild(processorToDelete, nullptr);
     else

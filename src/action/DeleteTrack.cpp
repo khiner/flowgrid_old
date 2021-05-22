@@ -1,10 +1,9 @@
 #include "DeleteTrack.h"
 
 DeleteTrack::DeleteTrack(const ValueTree &trackToDelete, Tracks &tracks, Connections &connections, ProcessorGraph &processorGraph)
-        : trackToDelete(trackToDelete), trackIndex(trackToDelete.getParent().indexOf(trackToDelete)),
-          tracks(tracks) {
+        : trackToDelete(trackToDelete), trackIndex(trackToDelete.getParent().indexOf(trackToDelete)), tracks(tracks) {
     for (const auto &processorState : Track::getAllProcessors(trackToDelete)) {
-        deleteProcessorActions.add(new DeleteProcessor(processorState, tracks, connections, processorGraph));
+        deleteProcessorActions.add(new DeleteProcessor(processorState, connections, processorGraph));
         deleteProcessorActions.getLast()->performTemporary();
     }
     for (int i = deleteProcessorActions.size() - 1; i >= 0; i--) {

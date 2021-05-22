@@ -18,6 +18,7 @@ class Track : public Stateful<Track> {
 public:
     static Identifier getIdentifier() { return TrackIDs::TRACK; }
 
+    static int getIndex(const ValueTree &state) { return state.getParent().indexOf(state); }
     static String getUuid(const ValueTree &state) { return state[TrackIDs::uuid]; }
     static Colour getColour(const ValueTree &state) { return Colour::fromString(state[TrackIDs::colour].toString()); }
     static Colour getDisplayColour(const ValueTree &state) { return isSelected(state) ? getColour(state).brighter(0.25) : getColour(state); }
