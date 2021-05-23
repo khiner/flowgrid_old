@@ -12,8 +12,8 @@ struct Stateful {
 
     static bool isType(const ValueTree &state) { return state.hasType(Type::getIdentifier()); }
 
-    // TODO remove this method and remove any remaining accesses.
-    //  (All state accesses should be done through accessor methods.)
+    // GOAL: remove this method and remove any remaining accesses.
+    //  (All state reads/writes should be done through methods.)
     ValueTree &getState() { return state; }
 
     bool isValid() { return state.isValid(); }

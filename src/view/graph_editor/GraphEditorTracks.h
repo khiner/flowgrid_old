@@ -3,14 +3,14 @@
 #include "model/Project.h"
 #include "GraphEditorTrack.h"
 #include "ConnectorDragListener.h"
-#include "ValueTreeObjectList.h"
+#include "model/StatefulList.h"
 
 class GraphEditorTracks : public Component,
-                          private ValueTreeObjectList<GraphEditorTrack>,
-                          public GraphEditorProcessorContainer {
+                          public GraphEditorProcessorContainer,
+                          private StatefulList<GraphEditorTrack> {
 public:
     explicit GraphEditorTracks(View &view, Tracks &tracks, Project &project, ProcessorGraph &processorGraph, PluginManager &pluginManager, ConnectorDragListener &connectorDragListener)
-            : ValueTreeObjectList<GraphEditorTrack>(tracks.getState()),
+            : StatefulList<GraphEditorTrack>(tracks.getState()),
               view(view), tracks(tracks), project(project), processorGraph(processorGraph), pluginManager(pluginManager), connectorDragListener(connectorDragListener) {
         rebuildObjects();
         view.addListener(this);
@@ -19,6 +19,16 @@ public:
     ~GraphEditorTracks() override {
         view.removeListener(this);
         freeObjects();
+    }
+
+    bool isChildType(const ValueTree &tree) const override { return Track::isType(tree); }
+
+    void deleteObject(GraphEditorTrack *track) override { delete track; }
+    void newObjectAdded(GraphEditorTrack *track) override { resized(); }
+    void objectRemoved(GraphEditorTrack *) override { resized(); }
+    void objectOrderChanged() override {
+        resized();
+        connectorDragListener.update();
     }
 
     void resized() override {
@@ -46,20 +56,10 @@ public:
         return nullptr;
     }
 
-    bool isSuitableType(const ValueTree &tree) const override { return Track::isType(tree); }
-
     GraphEditorTrack *createNewObject(const ValueTree &tree) override {
         auto *track = new GraphEditorTrack(tree, view, tracks, project, processorGraph, pluginManager, connectorDragListener);
         addAndMakeVisible(track);
         return track;
-    }
-
-    void deleteObject(GraphEditorTrack *track) override { delete track; }
-    void newObjectAdded(GraphEditorTrack *track) override { resized(); }
-    void objectRemoved(GraphEditorTrack *) override { resized(); }
-    void objectOrderChanged() override {
-        resized();
-        connectorDragListener.update();
     }
 
     BaseGraphEditorProcessor *getProcessorForNodeId(AudioProcessorGraph::NodeID nodeId) const override {

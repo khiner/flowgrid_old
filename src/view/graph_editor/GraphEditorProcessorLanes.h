@@ -1,13 +1,13 @@
 #pragma once
 
-#include "ValueTreeObjectList.h"
+#include "model/StatefulList.h"
 #include "GraphEditorProcessorLane.h"
 
-class GraphEditorProcessorLanes : public Component, public ValueTreeObjectList<GraphEditorProcessorLane>,
+class GraphEditorProcessorLanes : public Component, public StatefulList<GraphEditorProcessorLane>,
                                   public GraphEditorProcessorContainer {
 public:
     explicit GraphEditorProcessorLanes(ValueTree state, View &view, Tracks &tracks, ProcessorGraph &processorGraph, ConnectorDragListener &connectorDragListener)
-            : ValueTreeObjectList<GraphEditorProcessorLane>(std::move(state)),
+            : StatefulList<GraphEditorProcessorLane>(std::move(state)),
               view(view), tracks(tracks), processorGraph(processorGraph), connectorDragListener(connectorDragListener) {
         rebuildObjects();
     }
@@ -36,7 +36,7 @@ public:
             objects.getFirst()->setBounds(getLocalBounds());
     }
 
-    bool isSuitableType(const ValueTree &v) const override {
+    bool isChildType(const ValueTree &v) const override {
         return v.hasType(ProcessorLaneIDs::PROCESSOR_LANE);
     }
 

@@ -5,7 +5,7 @@ SelectTrack::SelectTrack(const ValueTree &track, bool selected, bool deselectOth
         : Select(tracks, connections, view, input, processorGraph) {
     if (!track.isValid()) return; // no-op
 
-    auto trackIndex = tracks.indexOf(track);
+    auto trackIndex = tracks.indexOfTrack(track);
     // take care of this track
     newTrackSelections.setUnchecked(trackIndex, selected);
     if (selected) {

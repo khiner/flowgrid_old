@@ -5,6 +5,7 @@
 #include "view/PluginWindow.h"
 #include "Stateful.h"
 #include "PluginManager.h"
+#include "StatefulList.h"
 
 namespace TracksIDs {
 #define ID(name) const juce::Identifier name(#name);
@@ -13,16 +14,28 @@ ID(TRACKS)
 }
 
 struct Tracks : public Stateful<Tracks> {
+//                private StatefulList<Track> {
     Tracks(View &view, PluginManager &pluginManager, UndoManager &undoManager);
 
-    static Identifier getIdentifier() { return TracksIDs::TRACKS; }
+//    ~Tracks() override {
+//        freeObjects();
+//    }
 
+    static Identifier getIdentifier() { return TracksIDs::TRACKS; }
     void loadFromState(const ValueTree &fromState) override;
 
+//    bool isChildType(const ValueTree &tree) const override { return Track::isType(tree); }
+
+//    void deleteObject(Track *track) override { delete track; }
+//    void newObjectAdded(Track *track) override {}
+//    void objectRemoved(Track *) override {}
+//    void objectOrderChanged() override {}
+
     int getNumTracks() const { return state.getNumChildren(); }
-    int indexOf(const ValueTree &track) const { return state.indexOf(track); }
+    int indexOfTrack(const ValueTree &track) const { return state.indexOf(track); }
+
     ValueTree getTrack(int trackIndex) const { return state.getChild(trackIndex); }
-    int getViewIndexForTrack(const ValueTree &track) const { return indexOf(track) - view.getGridViewTrackOffset(); }
+    int getViewIndexForTrack(const ValueTree &track) const { return indexOfTrack(track) - view.getGridViewTrackOffset(); }
     ValueTree getTrackWithViewIndex(int trackViewIndex) const { return getTrack(trackViewIndex + view.getGridViewTrackOffset()); }
     ValueTree getMasterTrack() const { return state.getChildWithProperty(TrackIDs::isMaster, true); }
     int getNumNonMasterTracks() const { return getMasterTrack().isValid() ? state.getNumChildren() - 1 : state.getNumChildren(); }
@@ -75,7 +88,7 @@ struct Tracks : public Stateful<Tracks> {
 
     bool isSlotFocused(const ValueTree &track, int slot) const {
         auto trackAndSlot = view.getFocusedTrackAndSlot();
-        return indexOf(track) == trackAndSlot.x && slot == trackAndSlot.y;
+        return indexOfTrack(track) == trackAndSlot.x && slot == trackAndSlot.y;
     }
 
     ValueTree findFirstTrackWithSelections() {
@@ -186,7 +199,7 @@ struct Tracks : public Stateful<Tracks> {
         const auto &siblingTrackToSelect = focusedTrack.getSibling(delta);
         if (!siblingTrackToSelect.isValid()) return INVALID_TRACK_AND_SLOT;
 
-        int siblingTrackIndex = indexOf(siblingTrackToSelect);
+        int siblingTrackIndex = indexOfTrack(siblingTrackToSelect);
         const auto &focusedProcessorLane = Track::getProcessorLane(focusedTrack);
         if (Track::isSelected(focusedTrack) || focusedProcessorLane.getNumChildren() == 0)
             return {siblingTrackIndex, -1};

@@ -67,7 +67,6 @@ target_sources(FlowGrid PRIVATE
     src/DeviceManagerUtilities.h
     src/PluginManager.cpp
     src/ProcessorGraph.cpp
-    src/ValueTreeObjectList.h
     src/action/CreateConnection.cpp
     src/action/CreateOrDeleteConnections.cpp
     src/action/CreateProcessor.cpp
@@ -120,7 +119,6 @@ target_sources(FlowGrid PRIVATE
     src/model/OutputChannels.cpp
     src/model/Param.cpp
     src/model/Project.cpp
-    src/model/Stateful.cpp
     src/model/Processor.cpp
     src/model/ProcessorLane.cpp
     src/model/ProcessorLanes.cpp

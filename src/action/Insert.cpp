@@ -83,7 +83,7 @@ Insert::Insert(bool duplicate, const ValueTree &copiedTracks, const juce::Point<
                     // Processors copied from master track can only get inserted into master track.
                     const auto &masterTrack = tracks.getMasterTrack();
                     if (masterTrack.isValid())
-                        copyProcessorsFromTrack(copiedTrack, fromTrackIndex, tracks.indexOf(masterTrack), trackAndSlotDiff.y);
+                        copyProcessorsFromTrack(copiedTrack, fromTrackIndex, tracks.indexOfTrack(masterTrack), trackAndSlotDiff.y);
                 } else {
                     int toTrackIndex = copiedTracks.indexOf(copiedTrack) + trackAndSlotDiff.x;
                     const auto &lane = Track::getProcessorLane(copiedTrack);

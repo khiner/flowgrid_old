@@ -91,9 +91,9 @@ void Project::createTrack(bool isMaster) {
 
     undoManager.perform(new CreateTrack(isMaster, {}, tracks, view));
     undoManager.perform(new CreateProcessor(TrackInputProcessor::getPluginDescription(),
-                                            tracks.indexOf(mostRecentlyCreatedTrack), tracks, view, processorGraph));
+                                            tracks.indexOfTrack(mostRecentlyCreatedTrack), tracks, view, processorGraph));
     undoManager.perform(new CreateProcessor(TrackOutputProcessor::getPluginDescription(),
-                                            tracks.indexOf(mostRecentlyCreatedTrack), tracks, view, processorGraph));
+                                            tracks.indexOfTrack(mostRecentlyCreatedTrack), tracks, view, processorGraph));
 
     setTrackSelected(mostRecentlyCreatedTrack, true);
     updateAllDefaultConnections();
@@ -187,7 +187,7 @@ void Project::setProcessorSlotSelected(const ValueTree &track, int slot, bool se
 
     Select *selectAction = nullptr;
     if (selected) {
-        const juce::Point<int> trackAndSlot(tracks.indexOf(track), slot);
+        const juce::Point<int> trackAndSlot(tracks.indexOfTrack(track), slot);
         if (push2ShiftHeld || shiftHeld)
             selectAction = new SelectRectangle(selectionStartTrackAndSlot, trackAndSlot, tracks, connections, view, input, processorGraph);
         else
@@ -258,9 +258,9 @@ void Project::doCreateAndAddProcessor(const PluginDescription &description, Valu
     }
 
     if (slot == -1)
-        undoManager.perform(new CreateProcessor(description, tracks.indexOf(track), tracks, view, processorGraph));
+        undoManager.perform(new CreateProcessor(description, tracks.indexOfTrack(track), tracks, view, processorGraph));
     else
-        undoManager.perform(new CreateProcessor(description, tracks.indexOf(track), slot, tracks, view, processorGraph));
+        undoManager.perform(new CreateProcessor(description, tracks.indexOfTrack(track), slot, tracks, view, processorGraph));
 
     selectProcessor(mostRecentlyCreatedProcessor);
     updateAllDefaultConnections();

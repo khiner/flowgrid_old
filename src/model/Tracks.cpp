@@ -43,7 +43,7 @@ juce::Point<int> Tracks::gridPositionToTrackAndSlot(const juce::Point<int> gridP
 
     int trackIndex, slot;
     if (gridPosition.y == view.getNumProcessorSlots()) {
-        trackIndex = indexOf(getMasterTrack());
+        trackIndex = indexOfTrack(getMasterTrack());
         slot = gridPosition.x + view.getMasterViewSlotOffset() - view.getGridViewTrackOffset();
     } else {
         trackIndex = gridPosition.x;

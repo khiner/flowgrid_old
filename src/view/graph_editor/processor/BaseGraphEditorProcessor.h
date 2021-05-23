@@ -19,7 +19,7 @@ public:
 
     virtual bool isInView() { return Processor::isIoProcessor(state) || tracks.isProcessorSlotInView(getTrack(), Processor::getSlot(state)); }
 
-    int getTrackIndex() const { return tracks.indexOf(getTrack()); }
+    int getTrackIndex() const { return tracks.indexOfTrack(getTrack()); }
     int getNumInputChannels() const { return state.getChildWithName(InputChannelsIDs::INPUT_CHANNELS).getNumChildren(); }
     int getNumOutputChannels() const { return state.getChildWithName(OutputChannelsIDs::OUTPUT_CHANNELS).getNumChildren(); }
     bool isSelected() { return Track::isProcessorSelected(state); }

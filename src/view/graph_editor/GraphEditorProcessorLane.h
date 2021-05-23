@@ -1,11 +1,11 @@
 #pragma once
 
-#include "ValueTreeObjectList.h"
+#include "model/StatefulList.h"
 #include "GraphEditorProcessorContainer.h"
 #include "ConnectorDragListener.h"
 #include "GraphEditorChannel.h"
 
-class GraphEditorProcessorLane : public Component, ValueTreeObjectList<BaseGraphEditorProcessor>, GraphEditorProcessorContainer {
+class GraphEditorProcessorLane : public Component, StatefulList<BaseGraphEditorProcessor>, GraphEditorProcessorContainer {
 public:
     explicit GraphEditorProcessorLane(const ValueTree &state, View &view, Tracks &tracks, ProcessorGraph &processorGraph, ConnectorDragListener &connectorDragListener);
 
@@ -21,7 +21,7 @@ public:
 
     void resized() override;
 
-    bool isSuitableType(const ValueTree &v) const override { return Processor::isType(v); }
+    bool isChildType(const ValueTree &v) const override { return Processor::isType(v); }
 
     BaseGraphEditorProcessor *createEditorForProcessor(const ValueTree &processor);
     BaseGraphEditorProcessor *createNewObject(const ValueTree &processor) override;

@@ -4,7 +4,7 @@
 #include "view/graph_editor/processor/ParameterPanelGraphEditorProcessor.h"
 
 GraphEditorProcessorLane::GraphEditorProcessorLane(const ValueTree &state, View &view, Tracks &tracks, ProcessorGraph &processorGraph, ConnectorDragListener &connectorDragListener)
-        : ValueTreeObjectList<BaseGraphEditorProcessor>(state),
+        : StatefulList<BaseGraphEditorProcessor>(state),
           state(state), view(view), tracks(tracks),
           processorGraph(processorGraph), connectorDragListener(connectorDragListener) {
     rebuildObjects();
@@ -94,7 +94,7 @@ BaseGraphEditorProcessor *GraphEditorProcessorLane::createNewObject(const ValueT
 //  might be an over-early optimization though
 void GraphEditorProcessorLane::valueTreePropertyChanged(ValueTree &tree, const Identifier &i) {
     bool isMaster = Track::isMaster(getTrack());
-    if (isSuitableType(tree) && i == ProcessorIDs::slot) {
+    if (isChildType(tree) && i == ProcessorIDs::slot) {
         resized();
     } else if (i == TrackIDs::selected || i == TrackIDs::colour ||
                i == ProcessorLaneIDs::selectedSlotsMask || i == ViewIDs::focusedTrackIndex || i == ViewIDs::focusedProcessorSlot ||
@@ -116,11 +116,11 @@ void GraphEditorProcessorLane::valueTreePropertyChanged(ValueTree &tree, const I
         resized();
         updateProcessorSlotColours();
     }
-    ValueTreeObjectList<BaseGraphEditorProcessor>::valueTreePropertyChanged(tree, i);
+    StatefulList<BaseGraphEditorProcessor>::valueTreePropertyChanged(tree, i);
 }
 
 void GraphEditorProcessorLane::valueTreeChildAdded(ValueTree &parent, ValueTree &child) {
-    ValueTreeObjectList::valueTreeChildAdded(parent, child);
-    if (this->parent == parent && isSuitableType(child))
+    StatefulList::valueTreeChildAdded(parent, child);
+    if (this->parent == parent && isChildType(child))
         resized();
 }

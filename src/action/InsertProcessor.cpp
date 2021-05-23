@@ -66,7 +66,7 @@ bool InsertProcessor::SetProcessorSlotAction::AddProcessorRowAction::undo() {
 }
 
 InsertProcessor::AddOrMoveProcessorAction::AddOrMoveProcessorAction(const ValueTree &processor, int newTrackIndex, int newSlot, Tracks &tracks, View &view)
-        : processor(processor), oldTrackIndex(tracks.indexOf(Track::getTrackForProcessor(processor))), newTrackIndex(newTrackIndex),
+        : processor(processor), oldTrackIndex(tracks.indexOfTrack(Track::getTrackForProcessor(processor))), newTrackIndex(newTrackIndex),
           oldSlot(Processor::getSlot(processor)), newSlot(newSlot),
           oldIndex(processor.getParent().indexOf(processor)),
           newIndex(Track::getInsertIndexForProcessor(tracks.getTrack(newTrackIndex), processor, this->newSlot)),

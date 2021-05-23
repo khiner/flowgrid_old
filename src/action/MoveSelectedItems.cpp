@@ -11,8 +11,8 @@ static int limitTrackDelta(int originalTrackDelta, bool anyTrackSelected, bool m
     const auto &firstTrackWithSelections = tracks.findFirstTrackWithSelections();
     const auto &lastTrackWithSelections = tracks.findLastTrackWithSelections();
 
-    return std::clamp(originalTrackDelta, -tracks.indexOf(firstTrackWithSelections),
-                      maxAllowedTrackIndex - tracks.indexOf(lastTrackWithSelections));
+    return std::clamp(originalTrackDelta, -tracks.indexOfTrack(firstTrackWithSelections),
+                      maxAllowedTrackIndex - tracks.indexOfTrack(lastTrackWithSelections));
 }
 
 static ValueTree lastNonSelectedProcessorWithSlotLessThan(const ValueTree &track, int slot) {
@@ -49,7 +49,7 @@ static int limitSlotDelta(int originalSlotDelta, int limitedTrackDelta, Tracks &
         if (!lastSelectedProcessor.isValid())
             continue; // no processors to move
 
-        const auto &toTrack = tracks.getTrack(tracks.indexOf(fromTrack) + limitedTrackDelta);
+        const auto &toTrack = tracks.getTrack(tracks.indexOfTrack(fromTrack) + limitedTrackDelta);
         const auto &firstSelectedProcessor = Track::findFirstSelectedProcessor(fromTrack); // valid since lastSelected is valid
         int maxAllowedSlot = tracks.getNumSlotsForTrack(toTrack) - 1;
         limitedSlotDelta = std::clamp(limitedSlotDelta, -Processor::getSlot(firstSelectedProcessor), maxAllowedSlot - Processor::getSlot(lastSelectedProcessor));

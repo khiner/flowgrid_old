@@ -13,7 +13,7 @@ SelectProcessorSlot::SelectProcessorSlot(const ValueTree &track, int slot, bool 
 
     auto newSlotMask = deselectOthers ? BigInteger() : currentSlotMask;
     newSlotMask.setBit(slot, selected);
-    auto trackIndex = tracks.indexOf(track);
+    auto trackIndex = tracks.indexOfTrack(track);
     newSelectedSlotsMasks.setUnchecked(trackIndex, newSlotMask);
     if (selected)
         setNewFocusedSlot({trackIndex, slot});

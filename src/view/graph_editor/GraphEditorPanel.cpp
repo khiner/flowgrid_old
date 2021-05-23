@@ -233,7 +233,7 @@ void GraphEditorPanel::closeWindowFor(ValueTree &processor) {
 juce::Point<int> GraphEditorPanel::trackAndSlotAt(const MouseEvent &e) {
     auto position = e.getEventRelativeTo(graphEditorTracks.get()).position.toInt();
     const auto &track = graphEditorTracks->findTrackAt(position);
-    return {tracks.indexOf(track), tracks.findSlotAt(position, track)};
+    return {tracks.indexOfTrack(track), tracks.findSlotAt(position, track)};
 }
 
 static constexpr int
