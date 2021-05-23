@@ -29,7 +29,7 @@ CreateProcessor::CreateProcessor(const PluginDescription &description, int track
         : CreateProcessor(createProcessor(description), trackIndex, slot, tracks, view, processorGraph) {}
 
 CreateProcessor::CreateProcessor(const PluginDescription &description, int trackIndex, Tracks &tracks, View &view, ProcessorGraph &processorGraph)
-        : CreateProcessor(createProcessor(description), trackIndex, getInsertSlot(description, tracks.getTrack(trackIndex)), tracks, view, processorGraph) {}
+        : CreateProcessor(createProcessor(description), trackIndex, getInsertSlot(description, tracks.getTrackState(trackIndex)), tracks, view, processorGraph) {}
 
 bool CreateProcessor::perform() {
     performTemporary();

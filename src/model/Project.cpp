@@ -37,9 +37,11 @@ Project::Project(View &view, Tracks &tracks, Connections &connections, Input &in
     state.appendChild(view.getState(), nullptr);
     undoManager.addChangeListener(this);
     tracks.addListener(this);
+    tracks.addTracksListener(this);
 }
 
 Project::~Project() {
+    tracks.removeTracksListener(this);
     tracks.removeListener(this);
 }
 
@@ -84,16 +86,14 @@ void Project::clear() {
 }
 
 void Project::createTrack(bool isMaster) {
-    if (isMaster && tracks.getMasterTrack().isValid()) return; // only one master track allowed!
+    if (isMaster && tracks.getMasterTrackState().isValid()) return; // only one master track allowed!
 
     setShiftHeld(false); // prevent rectangle-select behavior when doing cmd+shift+t
     undoManager.beginNewTransaction();
 
     undoManager.perform(new CreateTrack(isMaster, {}, tracks, view));
-    undoManager.perform(new CreateProcessor(TrackInputProcessor::getPluginDescription(),
-                                            tracks.indexOfTrack(mostRecentlyCreatedTrack), tracks, view, processorGraph));
-    undoManager.perform(new CreateProcessor(TrackOutputProcessor::getPluginDescription(),
-                                            tracks.indexOfTrack(mostRecentlyCreatedTrack), tracks, view, processorGraph));
+    undoManager.perform(new CreateProcessor(TrackInputProcessor::getPluginDescription(), mostRecentlyCreatedTrack->getIndex(), tracks, view, processorGraph));
+    undoManager.perform(new CreateProcessor(TrackOutputProcessor::getPluginDescription(), mostRecentlyCreatedTrack->getIndex(), tracks, view, processorGraph));
 
     setTrackSelected(mostRecentlyCreatedTrack, true);
     updateAllDefaultConnections();
@@ -101,8 +101,8 @@ void Project::createTrack(bool isMaster) {
 
 void Project::createProcessor(const PluginDescription &description, int slot) {
     undoManager.beginNewTransaction();
-    auto focusedTrack = tracks.getFocusedTrack();
-    if (focusedTrack.isValid()) {
+    auto *focusedTrack = tracks.getFocusedTrack();
+    if (focusedTrack != nullptr) {
         doCreateAndAddProcessor(description, focusedTrack, slot);
     }
 }
@@ -113,8 +113,8 @@ void Project::deleteSelectedItems() {
 
     undoManager.beginNewTransaction();
     undoManager.perform(new DeleteSelectedItems(tracks, connections, processorGraph));
-    if (view.getFocusedTrackIndex() >= tracks.getNumTracks() && tracks.getNumTracks() > 0)
-        setTrackSelected(tracks.getTrack(tracks.getNumTracks() - 1), true);
+    if (view.getFocusedTrackIndex() >= tracks.size() && tracks.size() > 0)
+        setTrackSelected(tracks.getChild(tracks.size() - 1), true);
     updateAllDefaultConnections();
 }
 
@@ -139,7 +139,7 @@ void Project::duplicateSelectedItems() {
 
 void Project::beginDragging(const juce::Point<int> trackAndSlot) {
     if (trackAndSlot.x == Tracks::INVALID_TRACK_AND_SLOT.x ||
-        (trackAndSlot.y == -1 && Track::isMaster(tracks.getTrack(trackAndSlot.x))))
+        (trackAndSlot.y == -1 && Track::isMaster(tracks.getTrackState(trackAndSlot.x))))
         return;
 
     initialDraggingTrackAndSlot = trackAndSlot;
@@ -182,12 +182,12 @@ void Project::dragToPosition(juce::Point<int> trackAndSlot) {
     }
 }
 
-void Project::setProcessorSlotSelected(const ValueTree &track, int slot, bool selected, bool deselectOthers) {
-    if (!track.isValid()) return;
+void Project::setProcessorSlotSelected(Track *track, int slot, bool selected, bool deselectOthers) {
+    if (track == nullptr) return;
 
     Select *selectAction = nullptr;
     if (selected) {
-        const juce::Point<int> trackAndSlot(tracks.indexOfTrack(track), slot);
+        const juce::Point<int> trackAndSlot(track->getIndex(), slot);
         if (push2ShiftHeld || shiftHeld)
             selectAction = new SelectRectangle(selectionStartTrackAndSlot, trackAndSlot, tracks, connections, view, input, processorGraph);
         else
@@ -195,19 +195,19 @@ void Project::setProcessorSlotSelected(const ValueTree &track, int slot, bool se
     }
     if (selectAction == nullptr) {
         if (slot == -1)
-            selectAction = new SelectTrack(track, selected, deselectOthers, tracks, connections, view, input, processorGraph);
+            selectAction = new SelectTrack(track->getState(), selected, deselectOthers, tracks, connections, view, input, processorGraph);
         else
-            selectAction = new SelectProcessorSlot(track, slot, selected, selected && deselectOthers, tracks, connections, view, input, processorGraph);
+            selectAction = new SelectProcessorSlot(track->getState(), slot, selected, selected && deselectOthers, tracks, connections, view, input, processorGraph);
     }
     undoManager.perform(selectAction);
 }
 
-void Project::setTrackSelected(const ValueTree &track, bool selected, bool deselectOthers) {
+void Project::setTrackSelected(Track *track, bool selected, bool deselectOthers) {
     setProcessorSlotSelected(track, -1, selected, deselectOthers);
 }
 
 void Project::selectProcessor(const ValueTree &processor) {
-    setProcessorSlotSelected(Track::getTrackForProcessor(processor), Processor::getSlot(processor), true);
+    setProcessorSlotSelected(tracks.getTrackForProcessor(processor), Processor::getSlot(processor), true);
 }
 
 bool Project::disconnectCustom(const ValueTree &processor) {
@@ -227,9 +227,9 @@ void Project::toggleProcessorBypass(ValueTree processor) {
 }
 
 void Project::selectTrackAndSlot(juce::Point<int> trackAndSlot) {
-    if (trackAndSlot.x < 0 || trackAndSlot.x >= tracks.getNumTracks()) return;
+    if (trackAndSlot.x < 0 || trackAndSlot.x >= tracks.size()) return;
 
-    const auto &track = tracks.getTrack(trackAndSlot.x);
+    auto *track = tracks.getChild(trackAndSlot.x);
     const int slot = trackAndSlot.y;
     if (slot != -1)
         setProcessorSlotSelected(track, slot, true);
@@ -250,17 +250,16 @@ void Project::createDefaultProject() {
     sendChangeMessage();
 }
 
-void Project::doCreateAndAddProcessor(const PluginDescription &description, ValueTree &track, int slot) {
-    if (PluginManager::isGeneratorOrInstrument(&description) &&
-        tracks.doesTrackAlreadyHaveGeneratorOrInstrument(track)) {
-        undoManager.perform(new CreateTrack(false, track, tracks, view));
+void Project::doCreateAndAddProcessor(const PluginDescription &description, Track *track, int slot) {
+    if (PluginManager::isGeneratorOrInstrument(&description) && tracks.doesTrackAlreadyHaveGeneratorOrInstrument(track)) {
+        undoManager.perform(new CreateTrack(false, track->getState(), tracks, view));
         return doCreateAndAddProcessor(description, mostRecentlyCreatedTrack, slot);
     }
 
     if (slot == -1)
-        undoManager.perform(new CreateProcessor(description, tracks.indexOfTrack(track), tracks, view, processorGraph));
+        undoManager.perform(new CreateProcessor(description, track->getIndex(), tracks, view, processorGraph));
     else
-        undoManager.perform(new CreateProcessor(description, tracks.indexOfTrack(track), slot, tracks, view, processorGraph));
+        undoManager.perform(new CreateProcessor(description, track->getIndex(), slot, tracks, view, processorGraph));
 
     selectProcessor(mostRecentlyCreatedProcessor);
     updateAllDefaultConnections();
@@ -306,8 +305,8 @@ bool Project::isDeviceWithNamePresent(const String &deviceName) const {
 }
 
 Result Project::saveDocument(const File &file) {
-    for (const auto &track : tracks.getState())
-        for (auto processorState : Track::getProcessorLane(track))
+    for (const auto *track : tracks.getChildren())
+        for (auto processorState : track->getProcessorLane())
             processorGraph.saveProcessorStateInformationToState(processorState);
 
     if (auto xml = state.createXml())

@@ -17,7 +17,7 @@ public:
 
     PluginListComponent *makePluginListComponent();
     void setPluginSortMethod(const KnownPluginList::SortMethod pluginSortMethod) { this->pluginSortMethod = pluginSortMethod; }
-    void addPluginsToMenu(PopupMenu &menu, const ValueTree &track);
+    void addPluginsToMenu(PopupMenu &menu);
 
     static bool isGeneratorOrInstrument(const PluginDescription *description) {
         return description->isInstrument || description->category.equalsIgnoreCase("generator") || description->category.equalsIgnoreCase("synth");

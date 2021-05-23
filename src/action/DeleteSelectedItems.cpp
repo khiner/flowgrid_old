@@ -5,7 +5,7 @@ DeleteSelectedItems::DeleteSelectedItems(Tracks &tracks, Connections &connection
         if (Track::isType(selectedItem)) {
             deleteTrackActions.add(new DeleteTrack(selectedItem, tracks, connections, processorGraph));
         } else if (Processor::isType(selectedItem)) {
-            deleteProcessorActions.add(new DeleteProcessor(selectedItem, connections, processorGraph));
+            deleteProcessorActions.add(new DeleteProcessor(selectedItem, tracks.getTrackForProcessor(selectedItem), connections, processorGraph));
             deleteProcessorActions.getLast()->performTemporary();
         }
     }

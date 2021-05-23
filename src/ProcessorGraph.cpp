@@ -13,6 +13,7 @@ ProcessorGraph::ProcessorGraph(PluginManager &pluginManager, Tracks &tracks, Con
           undoManager(undoManager), deviceManager(deviceManager), pluginManager(pluginManager), push2MidiCommunicator(push2MidiCommunicator) {
     enableAllBuses();
 
+    tracks.addTracksListener(this);
     tracks.addListener(this);
     connections.addListener(this);
     input.addListener(this);
@@ -24,6 +25,7 @@ ProcessorGraph::~ProcessorGraph() {
     input.removeListener(this);
     connections.removeListener(this);
     tracks.removeListener(this);
+    tracks.removeTracksListener(this);
 }
 
 void ProcessorGraph::addProcessor(const ValueTree &processorState) {
@@ -210,8 +212,8 @@ void ProcessorGraph::valueTreeChildAdded(ValueTree &parent, ValueTree &child) {
             connectionsSincePause.addConnection(child);
         else
             AudioProcessorGraph::addConnection(Processor::toProcessorGraphConnection(child));
-    } else if (Track::isType(child) || Input::isType(parent) || Output::isType(parent)) {
-        recursivelyAddProcessors(child); // TODO might be a problem for moving tracks
+    } else if (Input::isType(parent) || Output::isType(parent)) {
+        recursivelyAddProcessors(child);
     } else if (Channel::isType(child)) {
         updateIoChannelEnabled(parent, child, true);
         // TODO shouldn't affect state in state listeners - trace back to specific user actions and do this in the action method

@@ -6,7 +6,7 @@
 
 class TrackInputGraphEditorProcessor : public BaseGraphEditorProcessor, private ChangeListener {
 public:
-    TrackInputGraphEditorProcessor(const ValueTree &state, View &view, Tracks &tracks, Project &project, ProcessorGraph &processorGraph, ConnectorDragListener &connectorDragListener);
+    TrackInputGraphEditorProcessor(const ValueTree &state, Track *track, View &view, Project &project, ProcessorGraph &processorGraph, ConnectorDragListener &connectorDragListener);
 
     ~TrackInputGraphEditorProcessor() override;
 

@@ -2,11 +2,15 @@
 
 #include <juce_data_structures/juce_data_structures.h>
 
+#include <utility>
+
 using namespace juce;
 
 template<typename Type>
 struct Stateful {
     Stateful() : state(Type::getIdentifier()) {}
+
+    explicit Stateful(ValueTree state): state(std::move(state)) {}
 
     virtual ~Stateful() = default;
 

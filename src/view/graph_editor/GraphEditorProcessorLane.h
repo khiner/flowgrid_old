@@ -7,7 +7,7 @@
 
 class GraphEditorProcessorLane : public Component, StatefulList<BaseGraphEditorProcessor>, GraphEditorProcessorContainer {
 public:
-    explicit GraphEditorProcessorLane(const ValueTree &state, View &view, Tracks &tracks, ProcessorGraph &processorGraph, ConnectorDragListener &connectorDragListener);
+    explicit GraphEditorProcessorLane(const ValueTree &state, Track *track, View &view, ProcessorGraph &processorGraph, ConnectorDragListener &connectorDragListener);
 
     ~GraphEditorProcessorLane() override;
 
@@ -15,9 +15,9 @@ public:
 
     void updateProcessorSlotColours();
 
-    ValueTree getTrack() const { return parent.getParent().getParent(); }
-    int getNumSlots() const { return tracks.getNumSlotsForTrack(getTrack()); }
-    int getSlotOffset() const { return tracks.getSlotOffsetForTrack(getTrack()); }
+    Track *getTrack() const { return track; }
+    int getNumSlots() const { return view.getNumProcessorSlots(track->isMaster()); }
+    int getSlotOffset() const { return view.getSlotOffset(track->isMaster()); }
 
     void resized() override;
 
@@ -32,7 +32,7 @@ public:
         resized();
     }
 
-    void objectRemoved(BaseGraphEditorProcessor *processor) override {
+    void objectRemoved(BaseGraphEditorProcessor *processor, int oldIndex) override {
         processor->removeMouseListener(this);
         resized();
     }
@@ -40,14 +40,14 @@ public:
     void objectOrderChanged() override { resized(); }
 
     BaseGraphEditorProcessor *getProcessorForNodeId(AudioProcessorGraph::NodeID nodeId) const override {
-        for (auto *processor : objects)
+        for (auto *processor : children)
             if (processor->getNodeId() == nodeId)
                 return processor;
         return nullptr;
     }
 
     GraphEditorChannel *findChannelAt(const MouseEvent &e) const {
-        for (auto *processor : objects)
+        for (auto *processor : children)
             if (auto *channel = processor->findChannelAt(e))
                 return channel;
         return nullptr;
@@ -55,8 +55,8 @@ public:
 
 private:
     ValueTree state;
+    Track *track;
     View &view;
-    Tracks &tracks;
     ProcessorGraph &processorGraph;
     ConnectorDragListener &connectorDragListener;
 
@@ -64,7 +64,7 @@ private:
     OwnedArray<DrawableRectangle> processorSlotRectangles;
 
     BaseGraphEditorProcessor *findProcessorAtSlot(int slot) const {
-        for (auto *processor : objects)
+        for (auto *processor : children)
             if (Processor::getSlot(processor->getState()) == slot)
                 return processor;
         return nullptr;

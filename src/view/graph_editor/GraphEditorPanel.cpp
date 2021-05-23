@@ -33,10 +33,11 @@ GraphEditorPanel::~GraphEditorPanel() {
 
 void GraphEditorPanel::mouseDown(const MouseEvent &e) {
     const auto &trackAndSlot = trackAndSlotAt(e);
-    const auto &track = tracks.getTrack(trackAndSlot.x);
+    auto *track = tracks.getChild(trackAndSlot.x);
+
     view.focusOnGridPane();
 
-    bool isSlotSelected = Track::isSlotSelected(track, trackAndSlot.y);
+    bool isSlotSelected = track->isSlotSelected(trackAndSlot.y);
     project.setProcessorSlotSelected(track, trackAndSlot.y, !(isSlotSelected && e.mods.isCommandDown()), !(isSlotSelected || e.mods.isCommandDown()));
     if (e.mods.isPopupMenu() || e.getNumberOfClicks() == 2)
         showPopupMenu(track, trackAndSlot.y);
@@ -51,14 +52,14 @@ void GraphEditorPanel::mouseDrag(const MouseEvent &e) {
 
 void GraphEditorPanel::mouseUp(const MouseEvent &e) {
     const auto &trackAndSlot = trackAndSlotAt(e);
-    const auto &track = tracks.getTrack(trackAndSlot.x);
+    auto *track = tracks.getChild(trackAndSlot.x);
     if (e.mouseWasClicked() && !e.mods.isCommandDown()) {
         // single click deselects other tracks/processors
         project.setProcessorSlotSelected(track, trackAndSlot.y, true);
     }
 
     if (e.getNumberOfClicks() == 2) {
-        const auto &processor = Track::getProcessorAtSlot(track, trackAndSlot.y);
+        const auto &processor = track->getProcessorAtSlot(trackAndSlot.y);
         if (processor.isValid() && graph.getAudioProcessorForState(processor)->hasEditor()) {
             tracks.showWindow(processor, PluginWindow::Type::normal);
         }
@@ -241,14 +242,14 @@ static constexpr int
         DISABLE_DEFAULTS_MENU_ID = 5, DISCONNECT_CUSTOM_MENU_ID = 6,
         SHOW_PLUGIN_GUI_MENU_ID = 10, SHOW_ALL_PROGRAMS_MENU_ID = 11, CONFIGURE_AUDIO_MIDI_MENU_ID = 12;
 
-void GraphEditorPanel::showPopupMenu(const ValueTree &track, int slot) {
+void GraphEditorPanel::showPopupMenu(const Track *track, int slot) {
     PopupMenu menu;
-    const auto &processor = Track::getProcessorAtSlot(track, slot);
+    const auto &processor = track->getProcessorAtSlot(slot);
     auto &pluginManager = project.getPluginManager();
 
     if (processor.isValid()) {
         PopupMenu processorSelectorSubmenu;
-        pluginManager.addPluginsToMenu(processorSelectorSubmenu, track);
+        pluginManager.addPluginsToMenu(processorSelectorSubmenu);
         menu.addSubMenu("Insert new processor", processorSelectorSubmenu);
         menu.addSeparator();
 
@@ -313,7 +314,7 @@ void GraphEditorPanel::showPopupMenu(const ValueTree &track, int slot) {
                     }
                 }));
     } else { // no processor in this slot
-        pluginManager.addPluginsToMenu(menu, track);
+        pluginManager.addPluginsToMenu(menu);
 
         menu.showMenuAsync({}, ModalCallbackFunction::create([this, slot, &pluginManager](int result) {
             const auto &description = pluginManager.getChosenType(result);
@@ -340,20 +341,20 @@ void GraphEditorPanel::valueTreePropertyChanged(ValueTree &tree, const Identifie
             w->toFront(true);
     } else if (i == ProcessorIDs::initialized) {
         if (Processor::isMidiInputProcessor(tree)) {
-            auto *midiInputProcessor = new LabelGraphEditorProcessor(tree, view, tracks, graph, *this);
+            auto *midiInputProcessor = new LabelGraphEditorProcessor(tree, tracks.getTrackForProcessor(tree), view, graph, *this);
             addAndMakeVisible(midiInputProcessor, 0);
             midiInputProcessors.addSorted(processorComparator, midiInputProcessor);
             resized();
         } else if (Processor::isMidiOutputProcessor(tree)) {
-            auto *midiOutputProcessor = new LabelGraphEditorProcessor(tree, view, tracks, graph, *this);
+            auto *midiOutputProcessor = new LabelGraphEditorProcessor(tree, tracks.getTrackForProcessor(tree), view, graph, *this);
             addAndMakeVisible(midiOutputProcessor, 0);
             midiOutputProcessors.addSorted(processorComparator, midiOutputProcessor);
             resized();
         } else if (Processor::getName(tree) == "Audio Input") {
-            addAndMakeVisible(*(audioInputProcessor = std::make_unique<LabelGraphEditorProcessor>(tree, view, tracks, graph, *this)), 0);
+            addAndMakeVisible(*(audioInputProcessor = std::make_unique<LabelGraphEditorProcessor>(tree, tracks.getTrackForProcessor(tree), view, graph, *this)), 0);
             resized();
         } else if (Processor::getName(tree) == "Audio Output") {
-            addAndMakeVisible(*(audioOutputProcessor = std::make_unique<LabelGraphEditorProcessor>(tree, view, tracks, graph, *this)), 0);
+            addAndMakeVisible(*(audioOutputProcessor = std::make_unique<LabelGraphEditorProcessor>(tree, tracks.getTrackForProcessor(tree), view, graph, *this)), 0);
             resized();
         }
     }

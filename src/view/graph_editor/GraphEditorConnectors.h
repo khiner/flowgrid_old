@@ -27,12 +27,12 @@ public:
 
     void deleteObject(GraphEditorConnector *connector) override { delete connector; }
     void newObjectAdded(GraphEditorConnector *) override {}
-    void objectRemoved(GraphEditorConnector *) override {}
+    void objectRemoved(GraphEditorConnector *, int) override {}
     void objectOrderChanged() override {}
     void updateConnectors() {
         {
             const ScopedLockType sl(arrayLock);
-            for (auto *connector : objects) {
+            for (auto *connector : children) {
                 connector->update();
             }
         }

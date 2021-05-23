@@ -20,7 +20,7 @@ Select::Select(Select *coalesceLeft, Select *coalesceRight, Tracks &tracks, Conn
           oldFocusedSlot(coalesceLeft->oldFocusedSlot), newFocusedSlot(coalesceRight->newFocusedSlot) {
     jassert(this->oldTrackSelections.size() == this->newTrackSelections.size());
     jassert(this->newTrackSelections.size() == this->newSelectedSlotsMasks.size());
-    jassert(this->newSelectedSlotsMasks.size() == this->tracks.getNumTracks());
+    jassert(this->newSelectedSlotsMasks.size() == this->tracks.size());
 
     if (coalesceLeft->resetInputsAction != nullptr) {
         this->resetInputsAction = std::move(coalesceLeft->resetInputsAction);
@@ -45,7 +45,7 @@ bool Select::perform() {
     if (!changed()) return false;
 
     for (int i = 0; i < newTrackSelections.size(); i++) {
-        auto track = tracks.getTrack(i);
+        auto track = tracks.getTrackState(i);
         auto lane = Track::getProcessorLane(track);
         Track::setSelected(track, newTrackSelections.getUnchecked(i));
         ProcessorLane::setSelectedSlotsMask(lane, newSelectedSlotsMasks.getUnchecked(i));
@@ -64,7 +64,7 @@ bool Select::undo() {
     if (resetInputsAction != nullptr)
         resetInputsAction->undo();
     for (int i = 0; i < oldTrackSelections.size(); i++) {
-        auto track = tracks.getTrack(i);
+        auto track = tracks.getTrackState(i);
         auto lane = Track::getProcessorLane(track);
         Track::setSelected(track, oldTrackSelections.getUnchecked(i));
         ProcessorLane::setSelectedSlotsMask(lane, oldSelectedSlotsMasks.getUnchecked(i));
@@ -88,7 +88,7 @@ bool Select::canCoalesceWith(Select *otherAction) {
 
 void Select::updateViewFocus(const juce::Point<int> focusedSlot) {
     view.focusOnProcessorSlot(focusedSlot);
-    const auto &focusedTrack = tracks.getTrack(focusedSlot.x);
+    const auto &focusedTrack = tracks.getTrackState(focusedSlot.x);
     bool isMaster = Track::isMaster(focusedTrack);
     if (!isMaster)
         view.updateViewTrackOffsetToInclude(focusedSlot.x, tracks.getNumNonMasterTracks());

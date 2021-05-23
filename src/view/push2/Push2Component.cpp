@@ -13,7 +13,9 @@ Push2Component::Push2Component(View &view, Tracks &tracks, Connections &connecti
     addChildComponent(processorSelector);
     addChildComponent(mixerView);
 
+    tracks.addTracksListener(this);
     tracks.addListener(this);
+    tracks.addTracksListener(this);
     connections.addListener(this);
     view.addListener(this);
     this->project.getUndoManager().addChangeListener(this);
@@ -32,6 +34,7 @@ Push2Component::~Push2Component() {
     view.removeListener(this);
     connections.removeListener(this);
     tracks.removeListener(this);
+    tracks.removeTracksListener(this);
 }
 
 void Push2Component::handleIncomingMidiMessage(MidiInput *source, const MidiMessage &message) {
@@ -61,7 +64,7 @@ void Push2Component::shiftReleased() {
 }
 
 void Push2Component::masterEncoderRotated(float changeAmount) {
-    const auto &trackOutputProcessor = Track::getOutputProcessor(tracks.getMasterTrack());
+    const auto &trackOutputProcessor = Track::getOutputProcessor(tracks.getMasterTrackState());
     if (auto *masterGainProcessor = processorGraph.getProcessorWrapperForState(trackOutputProcessor))
         if (auto *masterGainParameter = masterGainProcessor->getParameter(1))
             masterGainParameter->setValue(masterGainParameter->getValue() + changeAmount);
@@ -166,7 +169,7 @@ void Push2Component::drawFrame() {
 }
 
 void Push2Component::updatePush2SelectionDependentButtons() {
-    const auto &focusedTrack = tracks.getFocusedTrack();
+    const auto &focusedTrack = tracks.getFocusedTrackState();
     if (focusedTrack.isValid()) {
         push2.activateWhiteLedButton(Push2MidiCommunicator::delete_);
         push2.enableWhiteLedButton(Push2MidiCommunicator::addDevice);
@@ -180,9 +183,9 @@ void Push2Component::updatePush2SelectionDependentButtons() {
     else
         push2.disableWhiteLedButton(Push2::duplicate);
 
-    if (!tracks.getMasterTrack().isValid())
+    if (!tracks.getMasterTrackState().isValid())
         push2.disableWhiteLedButton(Push2MidiCommunicator::master);
-    else if (focusedTrack != tracks.getMasterTrack())
+    else if (focusedTrack != tracks.getMasterTrackState())
         push2.enableWhiteLedButton(Push2MidiCommunicator::master);
     else
         push2.activateWhiteLedButton(Push2MidiCommunicator::master);
@@ -217,6 +220,8 @@ void Push2Component::updatePush2NoteModePadLedManagerVisibility() {
 
 void Push2Component::updateFocusedProcessor() {
     auto *focusedProcessorWrapper = processorGraph.getProcessorWrapperForState(tracks.getFocusedProcessor());
+    if (focusedProcessorWrapper == nullptr) return;
+
     if (currentlyViewingChild != &mixerView || focusedProcessorWrapper->processor->getName() != InternalPluginFormat::getTrackOutputProcessorName()) {
         processorView.processorFocused(focusedProcessorWrapper);
         showChild(&processorView);
@@ -234,6 +239,30 @@ void Push2Component::showChild(Push2ComponentBase *child) {
         currentlyViewingChild->setVisible(true);
 }
 
+void Push2Component::trackAdded(Track *track) {
+    updatePush2SelectionDependentButtons();
+}
+void Push2Component::trackRemoved(Track *track, int oldIndex) {
+    updatePush2SelectionDependentButtons();
+    if (!tracks.getFocusedTrackState().isValid()) {
+        showChild(nullptr);
+        processorView.processorFocused(nullptr);
+    }
+}
+
+void Push2Component::valueTreeChildAdded(ValueTree &parent, ValueTree &child) {
+    if (Connection::isType(child)) {
+        updatePush2NoteModePadLedManagerVisibility();
+    }
+}
+void Push2Component::valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int) {
+    if (Processor::isType(child)) {
+        updateFocusedProcessor();
+        updatePush2SelectionDependentButtons();
+    } else if (Connection::isType(child)) {
+        updatePush2NoteModePadLedManagerVisibility();
+    }
+}
 void Push2Component::valueTreePropertyChanged(ValueTree &tree, const Identifier &i) {
     if (i == ViewIDs::focusedTrackIndex) {
         updatePush2SelectionDependentButtons();
@@ -241,29 +270,6 @@ void Push2Component::valueTreePropertyChanged(ValueTree &tree, const Identifier 
         updateFocusedProcessor();
     } else if (i == ViewIDs::controlMode) {
         updateEnabledPush2Buttons();
-        updatePush2NoteModePadLedManagerVisibility();
-    }
-}
-
-void Push2Component::valueTreeChildAdded(ValueTree &parent, ValueTree &child) {
-    if (Track::isType(child)) {
-        updatePush2SelectionDependentButtons();
-    } else if (Connection::isType(child)) {
-        updatePush2NoteModePadLedManagerVisibility();
-    }
-}
-
-void Push2Component::valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int) {
-    if (Track::isType(child)) {
-        updatePush2SelectionDependentButtons();
-        if (!tracks.getFocusedTrack().isValid()) {
-            showChild(nullptr);
-            processorView.processorFocused(nullptr);
-        }
-    } else if (Processor::isType(child)) {
-        updateFocusedProcessor();
-        updatePush2SelectionDependentButtons();
-    } else if (Connection::isType(child)) {
         updatePush2NoteModePadLedManagerVisibility();
     }
 }

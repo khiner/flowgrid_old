@@ -3,8 +3,8 @@
 UpdateAllDefaultConnections::UpdateAllDefaultConnections(bool makeInvalidDefaultsIntoCustom, bool resetDefaultExternalInputConnections, Tracks &tracks, Connections &connections, Input &input,
                                                          Output &output, ProcessorGraph &processorGraph, ValueTree trackToTreatAsFocused)
         : CreateOrDeleteConnections(connections) {
-    for (const auto &track : tracks.getState()) {
-        for (const auto &processor : Track::getAllProcessors(track))
+    for (const auto *track : tracks.getChildren()) {
+        for (const auto &processor : track->getAllProcessors())
             coalesceWith(UpdateProcessorDefaultConnections(processor, makeInvalidDefaultsIntoCustom, connections, output, processorGraph));
     }
 

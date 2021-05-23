@@ -24,11 +24,11 @@ void ContextPane::paint(Graphics &g) {
     auto masterRowY = getHeight() - cellHeight;
     const int tracksOffset = jmax(0, view.getMasterViewSlotOffset() - view.getGridViewTrackOffset()) * cellWidth;
 
-    for (int trackIndex = 0; trackIndex < tracks.getNumTracks(); trackIndex++) {
-        const auto &track = tracks.getTrack(trackIndex);
-        bool isMaster = Track::isMaster(track);
+    for (int trackIndex = 0; trackIndex < tracks.size(); trackIndex++) {
+        const auto *track = tracks.getChild(trackIndex);
+        bool isMaster = track->isMaster();
         const int trackX = tracksOffset + trackIndex * cellWidth;
-        const auto &trackColour = Track::getColour(track);
+        const auto &trackColour = track->getColour();
         g.setColour(trackColour);
         if (isMaster) {
             const int slotOffsetX = view.getMasterViewSlotOffset() * cellWidth;
@@ -44,19 +44,20 @@ void ContextPane::paint(Graphics &g) {
             previousTrackBorderPosition = trackBorderPosition;
         }
 
-        const auto &outputProcessor = Track::getOutputProcessor(track);
-        auto trackOutputIndex = tracks.getSlotOffsetForTrack(track) + Tracks::getNumVisibleSlotsForTrack(track);
-        for (auto gridCellIndex = 0; gridCellIndex < tracks.getNumSlotsForTrack(track) + 1; gridCellIndex++) {
+        const auto &outputProcessor = track->getOutputProcessor();
+
+        auto trackOutputIndex = view.getSlotOffset(track->isMaster()) + View::getNumVisibleSlots(track->isMaster());
+        for (auto gridCellIndex = 0; gridCellIndex < view.getNumProcessorSlots(track->isMaster()) + 1; gridCellIndex++) {
             Colour cellColour;
             if (gridCellIndex == trackOutputIndex) {
-                cellColour = getFillColour(trackColour, track, outputProcessor, tracks.isTrackInView(track), true, false);
+                cellColour = getFillColour(trackColour, track, outputProcessor, view.isTrackInView(track->getIndex(), track->isMaster()), true, false);
             } else {
                 int slot = gridCellIndex < trackOutputIndex ? gridCellIndex : gridCellIndex - 1;
-                const auto &processor = Track::getProcessorAtSlot(track, slot);
-                cellColour = getFillColour(trackColour, track, processor,
-                                           tracks.isProcessorSlotInView(track, slot),
-                                           Track::isSlotSelected(track, slot),
-                                           tracks.isSlotFocused(track, slot));
+                const auto &processor = track->getProcessorAtSlot(slot);
+                // TODO should be method on track once it has a `view`
+                auto trackAndSlot = view.getFocusedTrackAndSlot();
+                bool slotFocused = track->getIndex() == trackAndSlot.x && slot == trackAndSlot.y;
+                cellColour = getFillColour(trackColour, track, processor, view.isProcessorSlotInView(track->getIndex(), track->isMaster(), slot),track->isSlotSelected(slot),slotFocused);
             }
             g.setColour(cellColour);
             const auto &cellPosition = isMaster ? juce::Point<int>(gridCellIndex * cellWidth, masterRowY) : juce::Point<int>(trackX, gridCellIndex * cellHeight);
@@ -77,12 +78,12 @@ void ContextPane::resized() {
     setSize(cellWidth * numColumns, cellHeight * numRows);
 }
 
-Colour ContextPane::getFillColour(const Colour &trackColour, const ValueTree &track, const ValueTree &processor, bool inView, bool slotSelected, bool slotFocused) {
+Colour ContextPane::getFillColour(const Colour &trackColour, const Track *track, const ValueTree &processor, bool inView, bool slotSelected, bool slotFocused) {
     const static auto &baseColour = findColour(ResizableWindow::backgroundColourId).brighter(0.4f);
 
     // this is the only part different than GraphEditorProcessorLane
     auto colour = processor.isValid() ? findColour(TextEditor::backgroundColourId) : baseColour;
-    if (Track::hasSelections(track))
+    if (track->hasSelections())
         colour = colour.brighter(processor.isValid() ? 0.04f : 0.15f);
     if (slotSelected)
         colour = trackColour;

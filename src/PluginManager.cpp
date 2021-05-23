@@ -30,7 +30,7 @@ std::unique_ptr<PluginDescription> PluginManager::getDescriptionForIdentifier(co
     return description != nullptr ? std::move(description) : knownPluginListExternal.getTypeForIdentifierString(identifier);
 }
 
-void PluginManager::addPluginsToMenu(PopupMenu &menu, const ValueTree &track) {
+void PluginManager::addPluginsToMenu(PopupMenu &menu) {
     PopupMenu internalSubMenu;
     PopupMenu externalSubMenu;
 

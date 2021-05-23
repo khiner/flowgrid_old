@@ -2,16 +2,16 @@
 
 #include "BinaryData.h"
 
-TrackInputGraphEditorProcessor::TrackInputGraphEditorProcessor(const ValueTree &state, View &view, Tracks &tracks, Project &project, ProcessorGraph &processorGraph, ConnectorDragListener &connectorDragListener)
+TrackInputGraphEditorProcessor::TrackInputGraphEditorProcessor(const ValueTree &state, Track *track, View &view, Project &project, ProcessorGraph &processorGraph, ConnectorDragListener &connectorDragListener)
         :
-        BaseGraphEditorProcessor(state, view, tracks, processorGraph, connectorDragListener), project(project) {
+        BaseGraphEditorProcessor(state, track, view, processorGraph, connectorDragListener), project(project) {
     nameLabel.setJustificationType(Justification::centred);
     addAndMakeVisible(nameLabel);
     nameLabel.addMouseListener(this, false);
 
-    nameLabel.setText(Track::getName(state), dontSendNotification);
+    nameLabel.setText(track->getName(), dontSendNotification);
     nameLabel.setEditable(false, true);
-    nameLabel.onTextChange = [this] { this->tracks.setTrackName(this->state, nameLabel.getText(false)); };
+    nameLabel.onTextChange = [this] { this->track->setName(nameLabel.getText(false)); };
 }
 
 TrackInputGraphEditorProcessor::~TrackInputGraphEditorProcessor() {
@@ -41,7 +41,7 @@ void TrackInputGraphEditorProcessor::mouseDown(const MouseEvent &e) {
             CallOutBox::launchAsynchronously(std::move(colourSelector), getScreenBounds(), nullptr);
         } else {
             bool isTrackSelected = isSelected();
-            project.setTrackSelected(getTrack(), !(isTrackSelected && e.mods.isCommandDown()), !(isTrackSelected || e.mods.isCommandDown()));
+            project.setTrackSelected(track, !(isTrackSelected && e.mods.isCommandDown()), !(isTrackSelected || e.mods.isCommandDown()));
             project.beginDragging({getTrackIndex(), -1});
         }
     }
@@ -51,7 +51,7 @@ void TrackInputGraphEditorProcessor::mouseUp(const MouseEvent &e) {
     if (e.eventComponent == &nameLabel) {
         if (e.mouseWasClicked() && !e.mods.isCommandDown()) {
             // single click deselects other tracks/processors
-            project.setTrackSelected(getTrack(), true);
+            project.setTrackSelected(track, true);
         }
     }
 }
@@ -125,6 +125,6 @@ void TrackInputGraphEditorProcessor::valueTreePropertyChanged(ValueTree &v, cons
 
 void TrackInputGraphEditorProcessor::changeListenerCallback(ChangeBroadcaster *source) {
     if (auto *cs = dynamic_cast<ColourSelector *> (source)) {
-        tracks.setTrackColour(state, cs->getCurrentColour());
+        track->setColour(cs->getCurrentColour());
     }
 }

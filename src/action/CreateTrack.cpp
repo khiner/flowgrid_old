@@ -1,9 +1,9 @@
 #include "CreateTrack.h"
 
 // NOTE: assumes the track hasn't been added yet!
-String makeTrackNameUnique(Tracks &tracks, const String &trackName) {
-    for (const auto &track : tracks.getState()) {
-        String otherTrackName = Track::getName(track);
+String makeTrackNameUnique(const Tracks &tracks, const String &trackName) {
+    for (const auto *track : tracks.getChildren()) {
+        const auto &otherTrackName = track->getName();
         if (otherTrackName == trackName) {
             if (trackName.contains("-")) {
                 int i = trackName.getLastCharacters(trackName.length() - trackName.lastIndexOf("-") - 1).getIntValue();
@@ -34,7 +34,7 @@ CreateTrack::CreateTrack(int insertIndex, bool isMaster, const ValueTree &derive
     bool isSubTrack = !isMaster && derivedFromTrack.isValid();
     const String name = isMaster ? "Master" : (isSubTrack ? makeTrackNameUnique(tracks, Track::getName(derivedFromTrack)) : ("Track " + String(tracks.getNumNonMasterTracks() + 1)));
     Track::setName(newTrack, name);
-    Track::setColour(newTrack, isSubTrack ? Track::getColour(derivedFromTrack) : Colour::fromHSV((1.0f / 8.0f) * tracks.getNumTracks(), 0.65f, 0.65f, 1.0f));
+    Track::setColour(newTrack, isSubTrack ? Track::getColour(derivedFromTrack) : Colour::fromHSV((1.0f / 8.0f) * tracks.size(), 0.65f, 0.65f, 1.0f));
     Track::setSelected(newTrack, false);
 
     auto lanes = ValueTree(ProcessorLanesIDs::PROCESSOR_LANES);

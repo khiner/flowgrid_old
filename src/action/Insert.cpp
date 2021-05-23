@@ -68,7 +68,7 @@ Insert::Insert(bool duplicate, const ValueTree &copiedTracks, const juce::Point<
           oldFocusedTrackAndSlot(view.getFocusedTrackAndSlot()), newFocusedTrackAndSlot(oldFocusedTrackAndSlot) {
     auto trackAndSlotDiff = this->toTrackAndSlot - this->fromTrackAndSlot;
 
-    if (!duplicate && tracks.getMasterTrack().isValid() && toTrackAndSlot.x == tracks.getNumNonMasterTracks()) {
+    if (!duplicate && tracks.getMasterTrackState().isValid() && toTrackAndSlot.x == tracks.getNumNonMasterTracks()) {
         // When inserting into master track, only insert the processors of the first track with selections
         copyProcessorsFromTrack(copiedTracks.getChild(fromTrackAndSlot.x), fromTrackAndSlot.x, tracks.getNumNonMasterTracks(), trackAndSlotDiff.y);
     } else {
@@ -81,7 +81,7 @@ Insert::Insert(bool duplicate, const ValueTree &copiedTracks, const juce::Point<
                     duplicateSelectedProcessors(copiedTrack, copiedTracks);
                 } else if (Track::isMaster(copiedTrack)) {
                     // Processors copied from master track can only get inserted into master track.
-                    const auto &masterTrack = tracks.getMasterTrack();
+                    const auto &masterTrack = tracks.getMasterTrackState();
                     if (masterTrack.isValid())
                         copyProcessorsFromTrack(copiedTrack, fromTrackIndex, tracks.indexOfTrack(masterTrack), trackAndSlotDiff.y);
                 } else {
@@ -211,7 +211,7 @@ Insert::MoveSelections::MoveSelections(const OwnedArray<UndoableAction> &createA
             newSelectedSlotsMasks.setUnchecked(createProcessorAction->trackIndex, mask);
         } else if (auto *createTrackAction = dynamic_cast<CreateTrack *>(createAction)) {
             newTrackSelections.setUnchecked(createTrackAction->insertIndex, true);
-            const auto &track = tracks.getTrack(createTrackAction->insertIndex);
+            const auto &track = tracks.getTrackState(createTrackAction->insertIndex);
             newSelectedSlotsMasks.setUnchecked(createTrackAction->insertIndex, tracks.createFullSelectionBitmask(track));
         }
     }

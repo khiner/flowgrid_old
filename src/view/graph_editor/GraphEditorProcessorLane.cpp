@@ -3,14 +3,12 @@
 #include "view/graph_editor/processor/LabelGraphEditorProcessor.h"
 #include "view/graph_editor/processor/ParameterPanelGraphEditorProcessor.h"
 
-GraphEditorProcessorLane::GraphEditorProcessorLane(const ValueTree &state, View &view, Tracks &tracks, ProcessorGraph &processorGraph, ConnectorDragListener &connectorDragListener)
-        : StatefulList<BaseGraphEditorProcessor>(state),
-          state(state), view(view), tracks(tracks),
-          processorGraph(processorGraph), connectorDragListener(connectorDragListener) {
+GraphEditorProcessorLane::GraphEditorProcessorLane(const ValueTree &state, Track *track, View &view, ProcessorGraph &processorGraph, ConnectorDragListener &connectorDragListener)
+        : StatefulList<BaseGraphEditorProcessor>(state), state(state), track(track), view(view), processorGraph(processorGraph), connectorDragListener(connectorDragListener) {
     rebuildObjects();
     view.addListener(this);
     // TODO shouldn't need to do this
-    valueTreePropertyChanged(view.getState(), Track::isMaster(getTrack()) ? ViewIDs::numMasterProcessorSlots : ViewIDs::numProcessorSlots);
+    valueTreePropertyChanged(view.getState(), track->isMaster() ? ViewIDs::numMasterProcessorSlots : ViewIDs::numProcessorSlots);
     addAndMakeVisible(laneDragRectangle);
     setInterceptsMouseClicks(false, false);
 }
@@ -21,10 +19,11 @@ GraphEditorProcessorLane::~GraphEditorProcessorLane() {
 }
 
 void GraphEditorProcessorLane::resized() {
+    bool isMaster = track->isMaster();
     auto slotOffset = getSlotOffset();
-    auto processorSlotSize = tracks.getProcessorSlotSize(getTrack());
+    auto processorSlotSize = view.getProcessorSlotSize(isMaster);
     auto r = getLocalBounds();
-    if (Track::isMaster(getTrack())) {
+    if (isMaster) {
         r.setWidth(processorSlotSize);
         r.setX(-slotOffset * processorSlotSize - View::TRACK_LABEL_HEIGHT);
     } else {
@@ -35,7 +34,6 @@ void GraphEditorProcessorLane::resized() {
         r.setY(r.getY() - slotOffset * processorSlotSize - View::TRACK_LABEL_HEIGHT);
     }
 
-    bool isMaster = Track::isMaster(getTrack());
     for (int slot = 0; slot < processorSlotRectangles.size(); slot++) {
         if (slot == slotOffset) {
             if (isMaster)
@@ -62,16 +60,18 @@ void GraphEditorProcessorLane::updateProcessorSlotColours() {
     const static auto &baseColour = findColour(ResizableWindow::backgroundColourId).brighter(0.4f);
     const auto &track = getTrack();
 
-    laneDragRectangle.setFill(Track::getColour(track));
+    laneDragRectangle.setFill(track->getColour());
     for (int slot = 0; slot < processorSlotRectangles.size(); slot++) {
+        // TODO should be method on track when it has a `view`
         auto fillColour = baseColour;
-        if (Track::hasSelections(track))
+        if (track->hasSelections())
             fillColour = fillColour.brighter(0.2f);
-        if (Track::isSlotSelected(track, slot))
-            fillColour = Track::getColour(track);
-        if (tracks.isSlotFocused(track, slot))
+        if (track->isSlotSelected(slot))
+            fillColour = track->getColour();
+        auto focusedTrackAndSlot = view.getFocusedTrackAndSlot();
+        if (track->getIndex() == focusedTrackAndSlot.x && slot == focusedTrackAndSlot.y)
             fillColour = fillColour.brighter(0.16f);
-        if (!tracks.isProcessorSlotInView(track, slot))
+        if (!view.isProcessorSlotInView(track->getIndex(), track->isMaster(), slot))
             fillColour = fillColour.darker(0.3f);
         processorSlotRectangles.getUnchecked(slot)->setFill(fillColour);
     }
@@ -79,9 +79,9 @@ void GraphEditorProcessorLane::updateProcessorSlotColours() {
 
 BaseGraphEditorProcessor *GraphEditorProcessorLane::createEditorForProcessor(const ValueTree &processor) {
     if (Processor::getName(processor) == InternalPluginFormat::getMixerChannelProcessorName()) {
-        return new ParameterPanelGraphEditorProcessor(processor, view, tracks, processorGraph, connectorDragListener);
+        return new ParameterPanelGraphEditorProcessor(processor, track, view, processorGraph, connectorDragListener);
     }
-    return new LabelGraphEditorProcessor(processor, view, tracks, processorGraph, connectorDragListener);
+    return new LabelGraphEditorProcessor(processor, track, view, processorGraph, connectorDragListener);
 }
 
 BaseGraphEditorProcessor *GraphEditorProcessorLane::createNewObject(const ValueTree &processor) {
@@ -93,7 +93,7 @@ BaseGraphEditorProcessor *GraphEditorProcessorLane::createNewObject(const ValueT
 // TODO only instantiate 64 slot rects (and maybe another set for the boundary perimeter)
 //  might be an over-early optimization though
 void GraphEditorProcessorLane::valueTreePropertyChanged(ValueTree &tree, const Identifier &i) {
-    bool isMaster = Track::isMaster(getTrack());
+    bool isMaster = track->isMaster();
     if (isChildType(tree) && i == ProcessorIDs::slot) {
         resized();
     } else if (i == TrackIDs::selected || i == TrackIDs::colour ||

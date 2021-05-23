@@ -14,7 +14,7 @@ ResetDefaultExternalInputConnectionsAction::ResetDefaultExternalInputConnections
                                                                                        ValueTree trackToTreatAsFocused)
         : CreateOrDeleteConnections(connections) {
     if (!trackToTreatAsFocused.isValid())
-        trackToTreatAsFocused = tracks.getFocusedTrack();
+        trackToTreatAsFocused = tracks.getFocusedTrackState();
 
     for (auto connectionType : {audio, midi}) {
         const auto sourceNodeId = input.getDefaultInputNodeIdForConnectionType(connectionType);
@@ -47,8 +47,8 @@ ValueTree ResetDefaultExternalInputConnectionsAction::findMostUpstreamAvailableP
         upperRightMostProcessor = processor;
 
     // TODO performance improvement: only iterate over connected processors
-    for (int i = tracks.getNumTracks() - 1; i >= 0; i--) {
-        const auto &lane = Track::getProcessorLane(tracks.getTrack(i));
+    for (int i = tracks.size() - 1; i >= 0; i--) {
+        const auto &lane = Track::getProcessorLane(tracks.getTrackState(i));
         if (lane.getNumChildren() == 0)
             continue;
 

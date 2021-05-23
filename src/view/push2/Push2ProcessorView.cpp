@@ -42,9 +42,9 @@ void Push2ProcessorView::resized() {
     }
 }
 
-void Push2ProcessorView::trackSelected(const ValueTree &track) {
+void Push2ProcessorView::trackSelected(Track *track) {
     Push2TrackManagingView::trackSelected(track);
-    if (Track::getProcessorLane(track).getNumChildren() == 0) {
+    if (track->getProcessorLane().getNumChildren() == 0) {
         parametersPanel->setProcessorWrapper(nullptr);
     }
 }
@@ -104,7 +104,7 @@ void Push2ProcessorView::updateEnabledPush2Buttons() {
 }
 
 void Push2ProcessorView::updatePageButtonVisibility() {
-    const auto &focusedTrack = tracks.getFocusedTrack();
+    const auto &focusedTrack = tracks.getFocusedTrackState();
     Colour trackColour = getColourForTrack(focusedTrack);
 
     if (processorHasFocus) { // TODO reset when processor changes
@@ -137,7 +137,7 @@ void Push2ProcessorView::updatePageButtonVisibility() {
 }
 
 void Push2ProcessorView::updateProcessorButtons() {
-    const auto &focusedTrack = tracks.getFocusedTrack();
+    const auto &focusedTrack = tracks.getFocusedTrackState();
     const auto &focusedProcessorLane = Track::getProcessorLane(focusedTrack);
 
     if (processorHasFocus || !focusedTrack.isValid()) { // TODO reset when processor changes
@@ -170,7 +170,7 @@ void Push2ProcessorView::updateProcessorButtons() {
 }
 
 void Push2ProcessorView::updateColours() {
-    const auto &focusedTrack = tracks.getFocusedTrack();
+    const auto &focusedTrack = tracks.getFocusedTrackState();
     if (focusedTrack.isValid()) {
         const auto &colour = getColourForTrack(focusedTrack);
         for (auto *processorLabel : processorLabels) {
@@ -228,7 +228,7 @@ void Push2ProcessorView::trackColourChanged(const String &trackUuid, const Colou
 }
 
 void Push2ProcessorView::selectProcessor(int processorIndex) {
-    const auto &focusedLane = Track::getProcessorLane(tracks.getFocusedTrack());
+    const auto &focusedLane = Track::getProcessorLane(tracks.getFocusedTrackState());
     if (focusedLane.isValid() && processorIndex < focusedLane.getNumChildren()) {
         project.selectProcessor(focusedLane.getChild(processorIndex));
     }

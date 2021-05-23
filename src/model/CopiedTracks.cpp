@@ -18,7 +18,7 @@ void CopiedTracks::loadFromState(const ValueTree &fromState) {
             auto copiedLane = ValueTree(ProcessorLaneIDs::PROCESSOR_LANE);
             ProcessorLane::setSelectedSlotsMask(copiedLane, ProcessorLane::getSelectedSlotsMask(lane));
             for (auto processor : lane)
-                if (Track::isSelected(track) || Track::isProcessorSelected(processor))
+                if (Track::isSelected(track) || Track::isProcessorSelected(track, processor))
                     copiedLane.appendChild(processorGraph.copyProcessor(processor), nullptr);
             copiedLanes.appendChild(copiedLane, nullptr);
         }

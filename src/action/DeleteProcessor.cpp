@@ -2,8 +2,8 @@
 
 #include "view/PluginWindow.h"
 
-DeleteProcessor::DeleteProcessor(const ValueTree &processorToDelete, Connections &connections, ProcessorGraph &processorGraph)
-        : track(Track::getTrackForProcessor(processorToDelete)), trackIndex(Track::getIndex(track)),
+DeleteProcessor::DeleteProcessor(const ValueTree &processorToDelete, Track *track, Connections &connections, ProcessorGraph &processorGraph)
+        : track(track->getState()), trackIndex(track->getIndex()),
           processorToDelete(processorToDelete),
           processorIndex(Processor::getIndex(processorToDelete)),
           pluginWindowType(Processor::getPluginWindowType(processorToDelete)),

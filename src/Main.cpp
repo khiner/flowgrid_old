@@ -267,7 +267,7 @@ public:
                 result.setInfo("Delete selected item(s)", String(), category, 0);
                 result.addDefaultKeypress(KeyPress::deleteKey, ModifierKeys::noModifiers);
                 result.addDefaultKeypress(KeyPress::backspaceKey, ModifierKeys::noModifiers);
-                result.setActive(tracks.getFocusedTrack().isValid());
+                result.setActive(tracks.getFocusedTrackState().isValid());
                 break;
             case CommandIDs::insertTrack:
                 result.setInfo("Insert track", String(), category, 0);
@@ -280,7 +280,7 @@ public:
             case CommandIDs::createMasterTrack:
                 result.setInfo("Create master track", String(), category, 0);
                 result.addDefaultKeypress('m', ModifierKeys::commandModifier | ModifierKeys::shiftModifier);
-                result.setActive(!tracks.getMasterTrack().isValid());
+                result.setActive(!tracks.getMasterTrackState().isValid());
                 break;
             case CommandIDs::showPush2MirrorWindow:
                 result.setInfo("Open a window mirroring a Push 2 display", String(), category, 0);
@@ -592,7 +592,7 @@ private:
             deviceManager.updateEnabledMidiInputsAndOutputs();
             Array<ValueTree> inputProcessorsToDelete = input.syncInputDevicesWithDeviceManager();
             for (const auto &inputProcessor : inputProcessorsToDelete) {
-                undoManager.perform(new DeleteProcessor(inputProcessor, connections, processorGraph));
+                undoManager.perform(new DeleteProcessor(inputProcessor, tracks.getTrackForProcessor(inputProcessor), connections, processorGraph));
             }
             AudioDeviceManager::AudioDeviceSetup config;
             deviceManager.getAudioDeviceSetup(config);
@@ -603,7 +603,7 @@ private:
             deviceManager.updateEnabledMidiInputsAndOutputs();
             Array<ValueTree> outputProcessorsToDelete = output.syncOutputDevicesWithDeviceManager();
             for (const auto &outputProcessor : outputProcessorsToDelete) {
-                undoManager.perform(new DeleteProcessor(outputProcessor, connections, processorGraph));
+                undoManager.perform(new DeleteProcessor(outputProcessor, tracks.getTrackForProcessor(outputProcessor), connections, processorGraph));
             }
             // TODO the undomanager behavior around this needs more thinking.
             //  This should be done along with the work to keep disabled IO devices in the graph if they still have connections

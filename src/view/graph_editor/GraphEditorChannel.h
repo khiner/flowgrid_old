@@ -1,18 +1,17 @@
 #pragma once
 
 #include <juce_audio_processors/juce_audio_processors.h>
-#include "model/Tracks.h"
+#include "model/Track.h"
 #include "view/CustomColourIds.h"
 #include "ConnectorDragListener.h"
 
 struct GraphEditorChannel : public Component, public SettableTooltipClient, private ValueTree::Listener {
-    GraphEditorChannel(ValueTree state, ConnectorDragListener &connectorDragListener, bool showChannelText = false);
+    GraphEditorChannel(ValueTree state, Track *track, ConnectorDragListener &connectorDragListener, bool showChannelText = false);
 
     ~GraphEditorChannel() override;
 
     const ValueTree &getState() { return state; }
 
-    ValueTree getTrack() const { return Track::getTrackForProcessor(getProcessor()); }
     ValueTree getProcessor() const { return state.getParent().getParent(); }
     bool isInput() const { return state.getParent().hasType(InputChannelsIDs::INPUT_CHANNELS); }
     bool isMidi() const { return fg::Channel::getChannelIndex(state) == AudioProcessorGraph::midiChannelIndex; }
@@ -42,6 +41,7 @@ private:
     static constexpr float smallFontHeight = 15.0f;
 
     ValueTree state;
+    Track *track;
     int busIdx = 0;
     ConnectorDragListener &connectorDragListener;
 

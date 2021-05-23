@@ -11,7 +11,7 @@ public:
 
     void resized() override;
 
-    void trackSelected(const ValueTree &track) override;
+    void trackSelected(Track *track) override;
     void processorFocused(StatefulAudioProcessorWrapper *processorWrapper);
     void aboveScreenButtonPressed(int buttonIndex) override;
     void encoderRotated(int encoderIndex, float changeAmount) override;
@@ -44,7 +44,7 @@ private:
     void pageProcessorsRight();
     bool canPageProcessorsLeft() const { return processorLabelOffset > 0; }
     bool canPageProcessorsRight() const {
-        const auto &focusedLane = Track::getProcessorLane(tracks.getFocusedTrack());
+        const auto &focusedLane = Track::getProcessorLane(tracks.getFocusedTrackState());
         return focusedLane.getNumChildren() > processorLabelOffset + (canPageProcessorsLeft() ? NUM_COLUMNS - 1 : NUM_COLUMNS);
     }
     void selectProcessor(int processorIndex);

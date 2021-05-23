@@ -1,14 +1,16 @@
 #include "Tracks.h"
 
 Tracks::Tracks(View &view, PluginManager &pluginManager, UndoManager &undoManager)
-        : view(view), pluginManager(pluginManager), undoManager(undoManager) {}
+        : StatefulList<Track>(state), view(view), pluginManager(pluginManager), undoManager(undoManager) {
+    rebuildObjects();
+}
 
 void Tracks::loadFromState(const ValueTree &fromState) {
     Stateful<Tracks>::loadFromState(fromState);
     // Re-save all non-string value types,
     // since type information is not saved in XML
     // Also, re-set some vars just to trigger the event (like selected slot mask)
-    for (auto track : state) {
+    for (auto track : parent) {
         resetVarToBool(track, TrackIDs::isMaster, nullptr);
         resetVarToBool(track, TrackIDs::selected, nullptr);
 
@@ -29,7 +31,7 @@ void Tracks::loadFromState(const ValueTree &fromState) {
 
 Array<ValueTree> Tracks::findAllSelectedItems() const {
     Array<ValueTree> selectedItems;
-    for (const auto &track : state) {
+    for (const auto &track : parent) {
         if (Track::isSelected(track))
             selectedItems.add(track);
         else
@@ -43,7 +45,7 @@ juce::Point<int> Tracks::gridPositionToTrackAndSlot(const juce::Point<int> gridP
 
     int trackIndex, slot;
     if (gridPosition.y == view.getNumProcessorSlots()) {
-        trackIndex = indexOfTrack(getMasterTrack());
+        trackIndex = indexOfTrack(getMasterTrackState());
         slot = gridPosition.x + view.getMasterViewSlotOffset() - view.getGridViewTrackOffset();
     } else {
         trackIndex = gridPosition.x;
@@ -58,7 +60,7 @@ juce::Point<int> Tracks::gridPositionToTrackAndSlot(const juce::Point<int> gridP
         slot = gridPosition.y;
     }
 
-    if (trackIndex < 0 || slot < -1 || slot >= getNumSlotsForTrack(getTrack(trackIndex)))
+    if (trackIndex < 0 || slot < -1 || slot >= getNumSlotsForTrack(getTrackState(trackIndex)))
         return INVALID_TRACK_AND_SLOT;
 
     return {trackIndex, slot};

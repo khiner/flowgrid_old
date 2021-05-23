@@ -13,7 +13,7 @@ bool InsertProcessor::undo() {
 
 InsertProcessor::SetProcessorSlotAction::SetProcessorSlotAction(int trackIndex, const ValueTree &processor, int newSlot, Tracks &tracks, View &view)
         : processor(processor), oldSlot(Processor::getSlot(processor)), newSlot(newSlot) {
-    const auto &track = tracks.getTrack(trackIndex);
+    const auto &track = tracks.getTrackState(trackIndex);
     int numNewRows = this->newSlot + 1 - tracks.getNumSlotsForTrack(track);
     for (int i = 0; i < numNewRows; i++)
         addProcessorRowActions.add(new AddProcessorRowAction(trackIndex, tracks, view));
@@ -48,7 +48,7 @@ InsertProcessor::SetProcessorSlotAction::AddProcessorRowAction::AddProcessorRowA
         : trackIndex(trackIndex), tracks(tracks), view(view) {}
 
 bool InsertProcessor::SetProcessorSlotAction::AddProcessorRowAction::perform() {
-    const auto &track = tracks.getTrack(trackIndex);
+    const auto &track = tracks.getTrackState(trackIndex);
     if (Track::isMaster(track))
         view.addProcessorSlots(1, true);
     else
@@ -57,7 +57,7 @@ bool InsertProcessor::SetProcessorSlotAction::AddProcessorRowAction::perform() {
 }
 
 bool InsertProcessor::SetProcessorSlotAction::AddProcessorRowAction::undo() {
-    const auto &track = tracks.getTrack(trackIndex);
+    const auto &track = tracks.getTrackState(trackIndex);
     if (Track::isMaster(track))
         view.addProcessorSlots(-1, true);
     else
@@ -66,22 +66,22 @@ bool InsertProcessor::SetProcessorSlotAction::AddProcessorRowAction::undo() {
 }
 
 InsertProcessor::AddOrMoveProcessorAction::AddOrMoveProcessorAction(const ValueTree &processor, int newTrackIndex, int newSlot, Tracks &tracks, View &view)
-        : processor(processor), oldTrackIndex(tracks.indexOfTrack(Track::getTrackForProcessor(processor))), newTrackIndex(newTrackIndex),
+        : processor(processor), oldTrackIndex(tracks.getTrackIndexForProcessor(processor)), newTrackIndex(newTrackIndex),
           oldSlot(Processor::getSlot(processor)), newSlot(newSlot),
           oldIndex(processor.getParent().indexOf(processor)),
-          newIndex(Track::getInsertIndexForProcessor(tracks.getTrack(newTrackIndex), processor, this->newSlot)),
+          newIndex(Track::getInsertIndexForProcessor(tracks.getTrackState(newTrackIndex), processor, this->newSlot)),
           setProcessorSlotAction(std::make_unique<SetProcessorSlotAction>(newTrackIndex, processor, newSlot, tracks, view)),
           tracks(tracks) {}
 
 bool InsertProcessor::AddOrMoveProcessorAction::perform() {
     if (processor.isValid()) {
-        auto newTrack = tracks.getTrack(newTrackIndex);
+        auto newTrack = tracks.getTrackState(newTrackIndex);
         if (newSlot == -1) {
             newTrack.appendChild(processor, nullptr);
             return true;
         }
 
-        const auto &oldTrack = tracks.getTrack(oldTrackIndex);
+        const auto &oldTrack = tracks.getTrackState(oldTrackIndex);
         const auto oldLane = Track::getProcessorLane(oldTrack);
         auto newLane = Track::getProcessorLane(newTrack);
 
@@ -103,13 +103,13 @@ bool InsertProcessor::AddOrMoveProcessorAction::undo() {
         setProcessorSlotAction->undo();
 
     if (processor.isValid()) {
-        auto newTrack = tracks.getTrack(newTrackIndex);
+        auto newTrack = tracks.getTrackState(newTrackIndex);
         if (newSlot == -1) {
             newTrack.removeChild(processor, nullptr);
             return true;
         }
 
-        const auto &oldTrack = tracks.getTrack(oldTrackIndex);
+        const auto &oldTrack = tracks.getTrackState(oldTrackIndex);
         auto oldLane = Track::getProcessorLane(oldTrack);
         auto newLane = Track::getProcessorLane(newTrack);
 

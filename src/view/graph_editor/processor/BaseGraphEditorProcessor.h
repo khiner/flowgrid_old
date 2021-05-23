@@ -6,23 +6,24 @@
 
 class BaseGraphEditorProcessor : public Component, public ValueTree::Listener {
 public:
-    BaseGraphEditorProcessor(const ValueTree &state, View &view, Tracks &tracks,
-                             ProcessorGraph &processorGraph, ConnectorDragListener &connectorDragListener);
+    BaseGraphEditorProcessor(const ValueTree &state, Track *track, View &view, ProcessorGraph &processorGraph, ConnectorDragListener &connectorDragListener);
 
     ~BaseGraphEditorProcessor() override;
 
     const ValueTree &getState() const { return state; }
 
-    ValueTree getTrack() const { return Track::getTrackForProcessor(getState()); }
+    Track *getTrack() const { return track; }
 
     AudioProcessorGraph::NodeID getNodeId() const { return Processor::getNodeId(state); }
 
-    virtual bool isInView() { return Processor::isIoProcessor(state) || tracks.isProcessorSlotInView(getTrack(), Processor::getSlot(state)); }
+    virtual bool isInView() {
+        return Processor::isIoProcessor(state) || view.isProcessorSlotInView(track->getIndex(), track->isMaster(), Processor::getSlot(state));
+    }
 
-    int getTrackIndex() const { return tracks.indexOfTrack(getTrack()); }
+    int getTrackIndex() const { return track->getIndex(); }
     int getNumInputChannels() const { return state.getChildWithName(InputChannelsIDs::INPUT_CHANNELS).getNumChildren(); }
     int getNumOutputChannels() const { return state.getChildWithName(OutputChannelsIDs::OUTPUT_CHANNELS).getNumChildren(); }
-    bool isSelected() { return Track::isProcessorSelected(state); }
+    bool isSelected() { return track != nullptr && track->isProcessorSelected(state); }
     StatefulAudioProcessorWrapper *getProcessorWrapper() const { return processorGraph.getProcessorWrapperForState(state); }
 
     void paint(Graphics &g) override;
@@ -67,8 +68,8 @@ protected:
     void valueTreePropertyChanged(ValueTree &v, const Identifier &i) override;
 
 protected:
+    Track *track;
     View &view;
-    Tracks &tracks;
     ProcessorGraph &processorGraph;
     ConnectorDragListener &connectorDragListener;
 

@@ -7,19 +7,51 @@ using namespace juce;
 
 // TODO merge with Stateful
 template<typename ObjectType, typename CriticalSectionType = DummyCriticalSection>
-class StatefulList : public ValueTree::Listener {
-public:
+struct StatefulList : protected ValueTree::Listener {
     explicit StatefulList(ValueTree parentTree) : parent(std::move(parentTree)) {
         parent.addListener(this);
     }
 
     ~StatefulList() override {
-        jassert(objects.size() == 0); // must call freeObjects() in the subclass destructor!
+        jassert(size() == 0); // must call freeObjects() in the subclass destructor!
     }
+
+    virtual bool isChildType(const ValueTree &) const = 0;
+
+    int size() const noexcept { return children.size(); }
+    int indexOf(ObjectType *object) const { return children.indexOf(object); }
+
+    ObjectType *getChild(int index) const noexcept { return children[index]; }
+    const Array<ObjectType *> &getChildren() const { return children; }
+
+    int compareElements(ObjectType *first, ObjectType *second) const {
+        return parent.indexOf(first->getState()) - parent.indexOf(second->getState());
+    }
+
+    ObjectType *getChildForState(const ValueTree &state) const {
+        for (int i = 0; i < children.size(); ++i) {
+            auto *child = children.getUnchecked(i);
+            if (child->getState() == state) return child;
+        }
+        return nullptr;
+    }
+
+protected:
+    ValueTree parent;
+
+    Array<ObjectType *> children;
+    CriticalSectionType arrayLock;
+    typedef typename CriticalSectionType::ScopedLockType ScopedLockType;
+
+    virtual ObjectType *createNewObject(const ValueTree &) = 0;
+    virtual void deleteObject(ObjectType *) = 0;
+    virtual void newObjectAdded(ObjectType *) = 0;
+    virtual void objectRemoved(ObjectType *, int oldIndex) = 0;
+    virtual void objectOrderChanged() = 0;
 
     // call in the sub-class when being created
     void rebuildObjects() {
-        jassert(objects.size() == 0); // must only call this method once at construction
+        jassert(size() == 0); // must only call this method once at construction
         for (auto child : parent) {
             valueTreeChildAdded(parent, child);
         }
@@ -31,13 +63,20 @@ public:
         deleteAllObjects();
     }
 
-    virtual bool isChildType(const ValueTree &) const = 0;
+    void deleteAllObjects() {
+        const ScopedLockType sl(arrayLock);
+        while (children.size() > 0)
+            deleteObject(children.removeAndReturn(children.size() - 1));
+    }
 
-    virtual ObjectType *createNewObject(const ValueTree &) = 0;
-    virtual void deleteObject(ObjectType *) = 0;
-    virtual void newObjectAdded(ObjectType *) = 0;
-    virtual void objectRemoved(ObjectType *) = 0;
-    virtual void objectOrderChanged() = 0;
+    bool isChildTree(ValueTree &tree) const { return isChildType(tree) && tree.getParent() == parent; }
+
+    int indexOf(const ValueTree &tree) const noexcept {
+        for (int i = 0; i < children.size(); ++i)
+            if (children.getUnchecked(i)->getState() == tree)
+                return i;
+        return -1;
+    }
 
     void valueTreeChildAdded(ValueTree &, ValueTree &tree) override {
         if (isChildTree(tree)) {
@@ -46,9 +85,9 @@ public:
                 {
                     const ScopedLockType sl(arrayLock);
                     if (index == parent.getNumChildren() - 1)
-                        objects.add(newObject);
+                        children.add(newObject);
                     else
-                        objects.addSorted(*this, newObject);
+                        children.addSorted(*this, newObject);
                 }
 
                 newObjectAdded(newObject);
@@ -62,8 +101,8 @@ public:
             if (oldIndex >= 0) {
                 {
                     const ScopedLockType sl(arrayLock);
-                    ObjectType *o = objects.removeAndReturn(oldIndex);
-                    objectRemoved(o);
+                    ObjectType *o = children.removeAndReturn(oldIndex);
+                    objectRemoved(o, oldIndex);
                     deleteObject(o);
                 }
             }
@@ -74,35 +113,9 @@ public:
         if (tree == parent) {
             {
                 const ScopedLockType sl(arrayLock);
-                objects.sort(*this);
+                children.sort(*this);
             }
             objectOrderChanged();
         }
-    }
-
-    Array<ObjectType *> objects;
-    CriticalSectionType arrayLock;
-    typedef typename CriticalSectionType::ScopedLockType ScopedLockType;
-protected:
-    ValueTree parent;
-
-    void deleteAllObjects() {
-        const ScopedLockType sl(arrayLock);
-        while (objects.size() > 0)
-            deleteObject(objects.removeAndReturn(objects.size() - 1));
-    }
-
-    bool isChildTree(ValueTree &tree) const { return isChildType(tree) && tree.getParent() == parent; }
-
-    int indexOf(const ValueTree &tree) const noexcept {
-        for (int i = 0; i < objects.size(); ++i)
-            if (objects.getUnchecked(i)->getState() == tree)
-                return i;
-        return -1;
-    }
-
-public:
-    int compareElements(ObjectType *first, ObjectType *second) const {
-        return parent.indexOf(first->getState()) - parent.indexOf(second->getState());
     }
 };

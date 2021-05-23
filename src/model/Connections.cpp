@@ -8,11 +8,11 @@ static bool canProcessorDefaultConnectTo(const ValueTree &processor, const Value
 ValueTree Connections::findDefaultDestinationProcessor(const ValueTree &sourceProcessor, ConnectionType connectionType) {
     if (!isProcessorAProducer(sourceProcessor, connectionType)) return {};
 
-    const ValueTree &track = Track::getTrackForProcessor(sourceProcessor);
-    const auto &masterTrack = tracks.getMasterTrack();
+    const auto *track = tracks.getTrackForProcessor(sourceProcessor);
+    const auto *masterTrack = tracks.getMasterTrack();
     if (Processor::isTrackOutputProcessor(sourceProcessor)) {
         if (track == masterTrack) return {};
-        if (masterTrack.isValid()) return Track::getInputProcessor(masterTrack);
+        if (masterTrack != nullptr) return masterTrack->getInputProcessor();
         return {};
     }
 
@@ -34,7 +34,7 @@ ValueTree Connections::findDefaultDestinationProcessor(const ValueTree &sourcePr
             }
         }
         // TODO adapt this when there are multiple lanes
-        return Track::getOutputProcessor(track);
+        return track->getOutputProcessor();
     }
 
     return {};
@@ -65,14 +65,13 @@ Array<ValueTree> Connections::getConnectionsForNode(const ValueTree &processor, 
             (outgoing && fg::Connection::getSourceNodeId(connection) == processorNodeId && channelMatchesConnectionType(fg::Connection::getSourceChannel(connection), connectionType)))
             nodeConnections.add(connection);
     }
-
     return nodeConnections;
 }
 
 bool Connections::anyNonMasterTrackHasEffectProcessor(ConnectionType connectionType) {
-    for (const auto &track : tracks.getState())
-        if (!Track::isMaster(track))
-            for (const auto &processor : Track::getProcessorLane(track))
+    for (const auto *track : tracks.getChildren())
+        if (!track->isMaster())
+            for (const auto &processor : track->getProcessorLane())
                 if (isProcessorAnEffect(processor, connectionType))
                     return true;
     return false;

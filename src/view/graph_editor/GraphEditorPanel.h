@@ -66,7 +66,7 @@ private:
 
     void closeWindowFor(ValueTree &processor);
 
-    void showPopupMenu(const ValueTree &track, int slot);
+    void showPopupMenu(const Track *track, int slot);
 
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override;
     void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override;

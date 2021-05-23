@@ -6,9 +6,8 @@
 class GraphEditorProcessorLanes : public Component, public StatefulList<GraphEditorProcessorLane>,
                                   public GraphEditorProcessorContainer {
 public:
-    explicit GraphEditorProcessorLanes(ValueTree state, View &view, Tracks &tracks, ProcessorGraph &processorGraph, ConnectorDragListener &connectorDragListener)
-            : StatefulList<GraphEditorProcessorLane>(std::move(state)),
-              view(view), tracks(tracks), processorGraph(processorGraph), connectorDragListener(connectorDragListener) {
+    explicit GraphEditorProcessorLanes(ValueTree state, Track *track, View &view, ProcessorGraph &processorGraph, ConnectorDragListener &connectorDragListener)
+            : StatefulList<GraphEditorProcessorLane>(std::move(state)), track(track), view(view), processorGraph(processorGraph), connectorDragListener(connectorDragListener) {
         rebuildObjects();
     }
 
@@ -17,14 +16,14 @@ public:
     }
 
     BaseGraphEditorProcessor *getProcessorForNodeId(AudioProcessorGraph::NodeID nodeId) const override {
-        for (auto *lane : objects)
+        for (auto *lane : children)
             if (auto *processor = lane->getProcessorForNodeId(nodeId))
                 return processor;
         return nullptr;
     }
 
     GraphEditorChannel *findChannelAt(const MouseEvent &e) {
-        for (auto *lane : objects)
+        for (auto *lane : children)
             if (auto *channel = lane->findChannelAt(e))
                 return channel;
         return nullptr;
@@ -32,8 +31,8 @@ public:
 
     void resized() override {
         // Assuming only one lane for now
-        if (!objects.isEmpty())
-            objects.getFirst()->setBounds(getLocalBounds());
+        if (!children.isEmpty())
+            children.getFirst()->setBounds(getLocalBounds());
     }
 
     bool isChildType(const ValueTree &v) const override {
@@ -41,7 +40,7 @@ public:
     }
 
     GraphEditorProcessorLane *createNewObject(const ValueTree &v) override {
-        auto *lane = new GraphEditorProcessorLane(v, view, tracks, processorGraph, connectorDragListener);
+        auto *lane = new GraphEditorProcessorLane(v, track, view, processorGraph, connectorDragListener);
         addAndMakeVisible(lane);
         return lane;
     }
@@ -52,13 +51,13 @@ public:
 
     void newObjectAdded(GraphEditorProcessorLane *) override {}
 
-    void objectRemoved(GraphEditorProcessorLane *) override {}
+    void objectRemoved(GraphEditorProcessorLane *, int oldIndex) override {}
 
     void objectOrderChanged() override {}
 
 private:
+    Track *track;
     View &view;
-    Tracks &tracks;
     ProcessorGraph &processorGraph;
     ConnectorDragListener &connectorDragListener;
 };

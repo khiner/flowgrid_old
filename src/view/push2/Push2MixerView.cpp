@@ -58,13 +58,13 @@ void Push2MixerView::updateEnabledPush2Buttons() {
         push2.enableWhiteLedButton(Push2::mix);
 }
 
-void Push2MixerView::trackAdded(const ValueTree &track) {
+void Push2MixerView::trackAdded(Track *track) {
     Push2TrackManagingView::trackAdded(track);
     updateParameters();
 }
 
-void Push2MixerView::trackRemoved(const ValueTree &track) {
-    Push2TrackManagingView::trackRemoved(track);
+void Push2MixerView::trackRemoved(Track *track, int oldIndex) {
+    Push2TrackManagingView::trackRemoved(track, oldIndex);
     updateParameters();
 }
 
@@ -85,7 +85,7 @@ void Push2MixerView::updateParameters() {
     volumeParametersPanel.clearParameters();
     panParametersPanel.clearParameters();
 
-    const auto &focusedTrack = tracks.getFocusedTrack();
+    const auto &focusedTrack = tracks.getFocusedTrackState();
     if (Track::isMaster(focusedTrack)) {
         const auto &trackOutputProcessor = Track::getOutputProcessor(focusedTrack);
         if (auto *processorWrapper = processorGraph.getProcessorWrapperForState(trackOutputProcessor)) {
@@ -93,9 +93,9 @@ void Push2MixerView::updateParameters() {
             panParametersPanel.addParameter(processorWrapper->getParameter(0));
         }
     } else {
-        for (const auto &track : tracks.getState()) {
-            if (!Track::isMaster(track)) {
-                const auto &trackOutputProcessor = Track::getOutputProcessor(track);
+        for (const auto *track : tracks.getChildren()) {
+            if (!track->isMaster()) {
+                const auto &trackOutputProcessor = track->getOutputProcessor();
                 if (auto *processorWrapper = processorGraph.getProcessorWrapperForState(trackOutputProcessor)) {
                     // TODO use param identifiers instead of indexes
                     volumeParametersPanel.addParameter(processorWrapper->getParameter(1));

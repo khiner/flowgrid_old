@@ -12,7 +12,8 @@ class Push2Component :
         public Timer,
         public Push2ComponentBase,
         private ChangeListener,
-        private ValueTree::Listener {
+        private ValueTree::Listener,
+        private Tracks::Listener {
 public:
     explicit Push2Component(View &view, Tracks &tracks, Connections &connections, Project &project, ProcessorGraph &processorGraph, Push2MidiCommunicator &push2MidiCommunicator);
 
@@ -65,8 +66,13 @@ private:
 
     void showChild(Push2ComponentBase *child);
 
-    void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override;
+    void trackAdded(Track *track) override;
+    void trackRemoved(Track *track, int oldIndex) override;
+    void trackOrderChanged() override {}
+
     void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override;
     void valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int) override;
+    void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override;
+
     void changeListenerCallback(ChangeBroadcaster *source) override;
 };

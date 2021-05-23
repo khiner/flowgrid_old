@@ -5,8 +5,8 @@
 
 #include "TrackOutputGraphEditorProcessor.h"
 
-TrackOutputGraphEditorProcessor::TrackOutputGraphEditorProcessor(const ValueTree &state, View &view, Tracks &tracks, ProcessorGraph &processorGraph, ConnectorDragListener &connectorDragListener) :
-        BaseGraphEditorProcessor(state, view, tracks, processorGraph, connectorDragListener) {
+TrackOutputGraphEditorProcessor::TrackOutputGraphEditorProcessor(const ValueTree &state, Track *track, View &view, ProcessorGraph &processorGraph, ConnectorDragListener &connectorDragListener) :
+        BaseGraphEditorProcessor(state, track, view, processorGraph, connectorDragListener) {
 }
 
 TrackOutputGraphEditorProcessor::~TrackOutputGraphEditorProcessor() {
@@ -43,7 +43,7 @@ void TrackOutputGraphEditorProcessor::paint(Graphics &g) {
     g.setColour(backgroundColour);
 
     const auto &r = getBoxBounds();
-    bool isMaster = Track::isMaster(getTrack());
+    bool isMaster = track->isMaster();
     bool curveTopLeft = false, curveTopRight = isMaster, curveBottomLeft = !isMaster, curveBottomRight = true;
     Path p;
     p.addRoundedRectangle(r.getX(), r.getY(), r.getWidth(), r.getHeight(),
@@ -52,9 +52,7 @@ void TrackOutputGraphEditorProcessor::paint(Graphics &g) {
 }
 
 Rectangle<int> TrackOutputGraphEditorProcessor::getBoxBounds() const {
-    return Track::isMaster(getTrack()) ?
-           getLocalBounds() :
-           getLocalBounds().withTrimmedTop(channelSize / 2).withTrimmedBottom(View::TRACKS_MARGIN);
+    return track->isMaster() ? getLocalBounds() : getLocalBounds().withTrimmedTop(channelSize / 2).withTrimmedBottom(View::TRACKS_MARGIN);
 }
 
 void TrackOutputGraphEditorProcessor::valueTreePropertyChanged(ValueTree &v, const Identifier &i) {

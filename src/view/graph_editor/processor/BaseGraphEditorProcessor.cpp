@@ -1,8 +1,7 @@
 #include "BaseGraphEditorProcessor.h"
 
-BaseGraphEditorProcessor::BaseGraphEditorProcessor(const ValueTree &state, View &view, Tracks &tracks,
-                                                   ProcessorGraph &processorGraph, ConnectorDragListener &connectorDragListener)
-        : state(state), view(view), tracks(tracks), processorGraph(processorGraph), connectorDragListener(connectorDragListener) {
+BaseGraphEditorProcessor::BaseGraphEditorProcessor(const ValueTree &state, Track *track, View &view, ProcessorGraph &processorGraph, ConnectorDragListener &connectorDragListener)
+        : state(state), track(track), view(view), processorGraph(processorGraph), connectorDragListener(connectorDragListener) {
     this->state.addListener(this);
 
     for (auto child : state) {
@@ -48,7 +47,7 @@ void BaseGraphEditorProcessor::resized() {
 }
 
 juce::Point<float> BaseGraphEditorProcessor::getConnectorDirectionVector(bool isInput) const {
-    bool isLeftToRight = Track::isProcessorLeftToRightFlowing(getState());
+    bool isLeftToRight = track != nullptr && track->isProcessorLeftToRightFlowing(state);
     if (isInput) {
         if (isLeftToRight) return {-1, 0};
         return {0, -1};
@@ -59,7 +58,7 @@ juce::Point<float> BaseGraphEditorProcessor::getConnectorDirectionVector(bool is
 
 Rectangle<int> BaseGraphEditorProcessor::getBoxBounds() const {
     auto r = getLocalBounds().reduced(1);
-    bool isLeftToRight = Track::isProcessorLeftToRightFlowing(getState());
+    bool isLeftToRight = track != nullptr && track->isProcessorLeftToRightFlowing(state);
     if (isLeftToRight) {
         if (getNumInputChannels() > 0)
             r.setLeft(channelSize);
@@ -86,7 +85,7 @@ void BaseGraphEditorProcessor::layoutChannel(AudioProcessor *processor, GraphEdi
 
     int x = boxBounds.getX() + static_cast<int>(indexPosition * channelSize);
     int y = boxBounds.getY() + static_cast<int>(indexPosition * channelSize);
-    if (Track::isProcessorLeftToRightFlowing(getState()))
+    if (track != nullptr && track->isProcessorLeftToRightFlowing(state))
         channel->setSize(static_cast<int>(boxBounds.getWidth() / 2), channelSize);
     else
         channel->setSize(channelSize, static_cast<int>(boxBounds.getHeight() / 2));
@@ -104,7 +103,7 @@ void BaseGraphEditorProcessor::layoutChannel(AudioProcessor *processor, GraphEdi
 
 void BaseGraphEditorProcessor::valueTreeChildAdded(ValueTree &parent, ValueTree &child) {
     if (fg::Channel::isType(child)) {
-        auto *channel = new GraphEditorChannel(child, connectorDragListener, Processor::isIoProcessor(state));
+        auto *channel = new GraphEditorChannel(child, track, connectorDragListener, Processor::isIoProcessor(state));
         addAndMakeVisible(channel);
         channels.add(channel);
         resized();

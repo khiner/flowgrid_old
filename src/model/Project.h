@@ -18,13 +18,14 @@ ID(name)
 #undef ID
 }
 
-struct Project : public Stateful<Project>, public FileBasedDocument, private ChangeListener, private ValueTree::Listener {
+struct Project : public Stateful<Project>, public FileBasedDocument, private ChangeListener, private ValueTree::Listener, private Tracks::Listener {
     Project(View &view, Tracks &tracks, Connections &connections, Input &input, Output &output,
             ProcessorGraph &processorGraph, UndoManager &undoManager, PluginManager &pluginManager, AudioDeviceManager &deviceManager);
 
     ~Project() override;
 
     static Identifier getIdentifier() { return ProjectIDs::PROJECT; }
+    // TODO change to .fgp (flowgrid project)
     static String getFilenameSuffix() { return ".smp"; }
 
     void createDefaultProject();
@@ -88,8 +89,8 @@ struct Project : public Stateful<Project>, public FileBasedDocument, private Cha
 
     bool isCurrentlyDraggingProcessor() { return initialDraggingTrackAndSlot != Tracks::INVALID_TRACK_AND_SLOT; }
 
-    void setProcessorSlotSelected(const ValueTree &track, int slot, bool selected, bool deselectOthers = true);
-    void setTrackSelected(const ValueTree &track, bool selected, bool deselectOthers = true);
+    void setProcessorSlotSelected(Track *track, int slot, bool selected, bool deselectOthers = true);
+    void setTrackSelected(Track *track, bool selected, bool deselectOthers = true);
     void selectProcessor(const ValueTree &processor);
     void selectTrackAndSlot(juce::Point<int> trackAndSlot);
     bool disconnectCustom(const ValueTree &processor);
@@ -144,20 +145,23 @@ private:
     juce::Point<int> initialDraggingTrackAndSlot = Tracks::INVALID_TRACK_AND_SLOT,
             currentlyDraggingTrackAndSlot = Tracks::INVALID_TRACK_AND_SLOT;
 
-    ValueTree mostRecentlyCreatedTrack, mostRecentlyCreatedProcessor;
+    Track *mostRecentlyCreatedTrack;
+    ValueTree mostRecentlyCreatedProcessor;
 
     CopiedTracks copiedTracks;
 
-    void doCreateAndAddProcessor(const PluginDescription &description, ValueTree &track, int slot = -1);
+    void doCreateAndAddProcessor(const PluginDescription &description, Track *track, int slot = -1);
 
     void changeListenerCallback(ChangeBroadcaster *source) override;
 
     void updateAllDefaultConnections();
 
     void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override {
-        if (Track::isType(child))
-            mostRecentlyCreatedTrack = child;
-        else if (Processor::isType(child))
+        if (Processor::isType(child))
             mostRecentlyCreatedProcessor = child;
     }
+
+    void trackAdded(Track *track) override { mostRecentlyCreatedTrack = track; }
+    void trackRemoved(Track *track, int oldIndex) override {}
+    void trackOrderChanged() override {}
 };

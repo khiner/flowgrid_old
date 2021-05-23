@@ -1,33 +1,33 @@
 #include "GraphEditorTrack.h"
 
-GraphEditorTrack::GraphEditorTrack(const ValueTree &state, View &view, Tracks &tracks, Project &project, ProcessorGraph &processorGraph, PluginManager &pluginManager,
+GraphEditorTrack::GraphEditorTrack(Track *track, View &view, Project &project, ProcessorGraph &processorGraph, PluginManager &pluginManager,
                                    ConnectorDragListener &connectorDragListener)
-        : state(state), view(view), tracks(tracks), project(project), processorGraph(processorGraph), connectorDragListener(connectorDragListener),
-          lanes(Track::getProcessorLanes(state), view, tracks, processorGraph, connectorDragListener) {
+        : track(track), view(view),  project(project), processorGraph(processorGraph), connectorDragListener(connectorDragListener),
+          lanes(track->getProcessorLanes(), track, view, processorGraph, connectorDragListener) {
     addAndMakeVisible(lanes);
     trackInputProcessorChanged();
     trackOutputProcessorChanged();
 
-    this->state.addListener(this);
+    track->addListener(this);
     view.addListener(this);
 }
 
 GraphEditorTrack::~GraphEditorTrack() {
     view.removeListener(this);
-    this->state.removeListener(this);
+    track->removeListener(this);
 }
 
 void GraphEditorTrack::paint(Graphics &g) {
     if (trackInputProcessorView == nullptr || trackOutputProcessorView == nullptr) return;
 
-    g.setColour(Track::getDisplayColour(state));
+    g.setColour(track->getDisplayColour());
 
     auto inBounds = trackInputProcessorView->getBoxBounds();
     auto outBounds = trackOutputProcessorView->getBoxBounds();
     inBounds.setPosition(inBounds.getPosition() + trackInputProcessorView->getPosition());
     outBounds.setPosition(outBounds.getPosition() + trackOutputProcessorView->getPosition());
 
-    bool isMaster = Track::isMaster(state);
+    bool isMaster = track->isMaster();
     float x = inBounds.getX();
     float y = isMaster ? outBounds.getY() : inBounds.getY();
     float width = isMaster ? outBounds.getRight() - inBounds.getX() : outBounds.getWidth();
@@ -46,10 +46,8 @@ void GraphEditorTrack::resized() {
                             r.removeFromTop(View::TRACK_INPUT_HEIGHT)
                                     .withSize(view.getTrackWidth(), View::TRACK_INPUT_HEIGHT) :
                             r.removeFromTop(View::TRACK_INPUT_HEIGHT);
-
-    const auto &trackOutputBounds = isMaster()
-                                    ? r.removeFromRight(tracks.getProcessorSlotSize(getState()))
-                                    : r.removeFromBottom(tracks.getProcessorSlotSize(getState()));
+    const auto processorSlotSize = view.getProcessorSlotSize(track->isMaster());
+    const auto &trackOutputBounds = isMaster() ? r.removeFromRight(processorSlotSize) : r.removeFromBottom(processorSlotSize);
 
     if (trackInputProcessorView != nullptr)
         trackInputProcessorView->setBounds(trackInputBounds);
@@ -81,15 +79,15 @@ GraphEditorChannel *GraphEditorTrack::findChannelAt(const MouseEvent &e) {
 
 void GraphEditorTrack::onColourChanged() {
     if (trackInputProcessorView != nullptr)
-        trackInputProcessorView->setColour(ResizableWindow::backgroundColourId, Track::getColour(state));
+        trackInputProcessorView->setColour(ResizableWindow::backgroundColourId, track->getColour());
     if (trackOutputProcessorView != nullptr)
-        trackOutputProcessorView->setColour(ResizableWindow::backgroundColourId, Track::getColour(state));
+        trackOutputProcessorView->setColour(ResizableWindow::backgroundColourId, track->getColour());
 }
 
 void GraphEditorTrack::trackInputProcessorChanged() {
-    const ValueTree &trackInputProcessor = Track::getInputProcessor(state);
+    const ValueTree &trackInputProcessor = track->getInputProcessor();
     if (trackInputProcessor.isValid()) {
-        trackInputProcessorView = std::make_unique<TrackInputGraphEditorProcessor>(trackInputProcessor, view, tracks, project, processorGraph, connectorDragListener);
+        trackInputProcessorView = std::make_unique<TrackInputGraphEditorProcessor>(trackInputProcessor, track, view, project, processorGraph, connectorDragListener);
         addAndMakeVisible(trackInputProcessorView.get());
         resized();
     } else {
@@ -100,9 +98,9 @@ void GraphEditorTrack::trackInputProcessorChanged() {
 }
 
 void GraphEditorTrack::trackOutputProcessorChanged() {
-    const ValueTree &trackOutputProcessor = Track::getOutputProcessor(state);
+    const ValueTree &trackOutputProcessor = track->getOutputProcessor();
     if (trackOutputProcessor.isValid()) {
-        trackOutputProcessorView = std::make_unique<TrackOutputGraphEditorProcessor>(trackOutputProcessor, view, tracks, processorGraph, connectorDragListener);
+        trackOutputProcessorView = std::make_unique<TrackOutputGraphEditorProcessor>(trackOutputProcessor, track, view, processorGraph, connectorDragListener);
         addAndMakeVisible(trackOutputProcessorView.get());
         resized();
     } else {
@@ -131,12 +129,9 @@ void GraphEditorTrack::valueTreeChildRemoved(ValueTree &exParent, ValueTree &chi
 }
 
 void GraphEditorTrack::valueTreePropertyChanged(ValueTree &tree, const Identifier &i) {
-    if (i == ViewIDs::gridSlotOffset || ((i == ViewIDs::gridTrackOffset || i == ViewIDs::masterSlotOffset) && isMaster()))
+    if (i == ViewIDs::gridSlotOffset || ((i == ViewIDs::gridTrackOffset || i == ViewIDs::masterSlotOffset) && isMaster())) {
         resized();
-
-    if (tree != state) return;
-
-    if (i == TrackIDs::name) {
+    } else if (i == TrackIDs::name) {
         if (trackInputProcessorView != nullptr)
             // TODO processor should listen to this itself, then remove `ssetTrackName` method
             trackInputProcessorView->setTrackName(Track::getName(tree));

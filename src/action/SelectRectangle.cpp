@@ -6,8 +6,8 @@ SelectRectangle::SelectRectangle(const juce::Point<int> fromTrackAndSlot, const 
     Rectangle<int> selectionRectangle(tracks.trackAndSlotToGridPosition(fromTrackAndSlot), tracks.trackAndSlotToGridPosition(toTrackAndSlot));
     selectionRectangle.setSize(selectionRectangle.getWidth() + 1, selectionRectangle.getHeight() + 1);
 
-    for (int trackIndex = 0; trackIndex < tracks.getNumTracks(); trackIndex++) {
-        auto track = tracks.getTrack(trackIndex);
+    for (int trackIndex = 0; trackIndex < tracks.size(); trackIndex++) {
+        auto track = tracks.getTrackState(trackIndex);
         bool trackSelected = selectionRectangle.contains(tracks.trackAndSlotToGridPosition({trackIndex, -1}));
         newTrackSelections.setUnchecked(trackIndex, trackSelected);
         if (trackSelected) {
@@ -21,7 +21,7 @@ SelectRectangle::SelectRectangle(const juce::Point<int> fromTrackAndSlot, const 
     }
     int slotToFocus = toTrackAndSlot.y;
     if (slotToFocus == -1) {
-        const ValueTree &firstProcessor = tracks.getTrack(toTrackAndSlot.x).getChild(0);
+        const ValueTree &firstProcessor = tracks.getTrackState(toTrackAndSlot.x).getChild(0);
         slotToFocus = firstProcessor.isValid() ? Processor::getSlot(firstProcessor) : 0;
     }
     setNewFocusedSlot({toTrackAndSlot.x, slotToFocus});

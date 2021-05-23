@@ -7,28 +7,18 @@
 
 class GraphEditorTracks : public Component,
                           public GraphEditorProcessorContainer,
-                          private StatefulList<GraphEditorTrack> {
+                          private ValueTree::Listener,
+                          private Tracks::Listener {
 public:
     explicit GraphEditorTracks(View &view, Tracks &tracks, Project &project, ProcessorGraph &processorGraph, PluginManager &pluginManager, ConnectorDragListener &connectorDragListener)
-            : StatefulList<GraphEditorTrack>(tracks.getState()),
-              view(view), tracks(tracks), project(project), processorGraph(processorGraph), pluginManager(pluginManager), connectorDragListener(connectorDragListener) {
-        rebuildObjects();
+              : view(view), tracks(tracks), project(project), processorGraph(processorGraph), pluginManager(pluginManager), connectorDragListener(connectorDragListener) {
+        tracks.addTracksListener(this);
         view.addListener(this);
     }
 
     ~GraphEditorTracks() override {
         view.removeListener(this);
-        freeObjects();
-    }
-
-    bool isChildType(const ValueTree &tree) const override { return Track::isType(tree); }
-
-    void deleteObject(GraphEditorTrack *track) override { delete track; }
-    void newObjectAdded(GraphEditorTrack *track) override { resized(); }
-    void objectRemoved(GraphEditorTrack *) override { resized(); }
-    void objectOrderChanged() override {
-        resized();
-        connectorDragListener.update();
+        tracks.removeTracksListener(this);
     }
 
     void resized() override {
@@ -37,7 +27,7 @@ public:
         trackBounds.setWidth(view.getTrackWidth());
         trackBounds.setX(-view.getGridViewTrackOffset() * view.getTrackWidth() + View::TRACKS_MARGIN);
 
-        for (auto *track : objects) {
+        for (auto *track : children) {
             if (!track->isMaster()) {
                 track->setBounds(trackBounds);
                 trackBounds.setX(trackBounds.getX() + view.getTrackWidth());
@@ -50,20 +40,14 @@ public:
     }
 
     GraphEditorTrack *findMasterTrack() const {
-        for (auto *track : objects)
+        for (auto *track : children)
             if (track->isMaster())
                 return track;
         return nullptr;
     }
 
-    GraphEditorTrack *createNewObject(const ValueTree &tree) override {
-        auto *track = new GraphEditorTrack(tree, view, tracks, project, processorGraph, pluginManager, connectorDragListener);
-        addAndMakeVisible(track);
-        return track;
-    }
-
     BaseGraphEditorProcessor *getProcessorForNodeId(AudioProcessorGraph::NodeID nodeId) const override {
-        for (auto *track : objects)
+        for (auto *track : children)
             if (auto *processor = track->getProcessorForNodeId(nodeId))
                 return processor;
 
@@ -71,7 +55,7 @@ public:
     }
 
     GraphEditorChannel *findChannelAt(const MouseEvent &e) const {
-        for (auto *track : objects)
+        for (auto *track : children)
             if (auto *channel = track->findChannelAt(e))
                 return channel;
 
@@ -95,13 +79,35 @@ public:
         return {};
     }
 
+    // XXX Not sure if we need this (try deleting)
+    int compareElements(GraphEditorTrack *first, GraphEditorTrack *second) const {
+        return tracks.indexOf(first->getTrack()) - tracks.indexOf(second->getTrack());
+    }
+
 private:
+    Array<GraphEditorTrack *> children;
+
     View &view;
     Tracks &tracks;
     Project &project;
     ProcessorGraph &processorGraph;
     PluginManager &pluginManager;
     ConnectorDragListener &connectorDragListener;
+
+    void trackAdded(Track *track) override {
+        auto *graphEditorTrack = new GraphEditorTrack(track, view, project, processorGraph, pluginManager, connectorDragListener);
+        children.insert(track->getIndex(), graphEditorTrack);
+        addAndMakeVisible(graphEditorTrack);
+        resized();
+    }
+    void trackRemoved(Track *track, int oldIndex) override {
+        children.remove(oldIndex);
+    }
+    void trackOrderChanged() override {
+        children.sort(*this);
+        resized();
+        connectorDragListener.update();
+    }
 
     void valueTreePropertyChanged(ValueTree &tree, const juce::Identifier &i) override {
         if (i == ViewIDs::gridTrackOffset || i == ViewIDs::masterSlotOffset)
@@ -110,7 +116,7 @@ private:
 
     Array<GraphEditorTrack *> getNonMasterTrackObjects() {
         Array<GraphEditorTrack *> nonMasterTrackObjects;
-        for (auto *trackObject : objects)
+        for (auto *trackObject : children)
             if (!trackObject->isMaster())
                 nonMasterTrackObjects.add(trackObject);
         return nonMasterTrackObjects;

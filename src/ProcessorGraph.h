@@ -11,9 +11,7 @@
 
 using namespace fg; // Only to disambiguate `Connection` currently
 
-class ProcessorGraph : public AudioProcessorGraph,
-                       private ValueTree::Listener, private Timer {
-public:
+struct ProcessorGraph : public AudioProcessorGraph, private ValueTree::Listener, private Timer, private Tracks::Listener {
     explicit ProcessorGraph(PluginManager &pluginManager, Tracks &tracks, Connections &connections,
                             Input &input, Output &output, UndoManager &undoManager, AudioDeviceManager &deviceManager,
                             Push2MidiCommunicator &push2MidiCommunicator);
@@ -121,6 +119,12 @@ private:
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override;
     void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override;
     void valueTreeChildRemoved(ValueTree &parent, ValueTree &child, int indexFromWhichChildWasRemoved) override;
+
+    void trackAdded(Track *track) override {
+        recursivelyAddProcessors(track->getState()); // TODO might be a problem for moving tracks
+    }
+    void trackRemoved(Track *track, int oldIndex) override {}
+    void trackOrderChanged() override {}
 
     void timerCallback() override;
 };
