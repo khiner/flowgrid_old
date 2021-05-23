@@ -9,8 +9,7 @@ StatefulAudioProcessorWrapper::Parameter::Parameter(AudioProcessorParameter *par
           sourceParameter(parameter),
           defaultValue(parameter->getDefaultValue()), value(parameter->getDefaultValue()),
           valueToTextFunction([this](float value) {
-              return sourceParameter->getCurrentValueAsText() +
-                     (sourceParameter->getLabel().isEmpty() ? "" : " " + sourceParameter->getLabel());
+              return sourceParameter->getCurrentValueAsText() + (sourceParameter->getLabel().isEmpty() ? "" : " " + sourceParameter->getLabel());
           }),
           textToValueFunction([this](const String &text) {
               const String &trimmedText = sourceParameter->getLabel().isEmpty()
@@ -118,8 +117,7 @@ void StatefulAudioProcessorWrapper::Parameter::postUnnormalizedValue(float unnor
 }
 
 void StatefulAudioProcessorWrapper::Parameter::updateFromValueTree() {
-    const float unnormalizedValue = float(state.getProperty(ParamIDs::value, defaultValue));
-    setUnnormalizedValue(unnormalizedValue);
+    setUnnormalizedValue(Param::getValue(state, defaultValue));
 }
 
 void StatefulAudioProcessorWrapper::Parameter::setNewState(const ValueTree &v, UndoManager *undoManager) {
@@ -142,22 +140,23 @@ void StatefulAudioProcessorWrapper::Parameter::copyValueToValueTree() {
 //                    }
         }
     } else {
-        state.setProperty(ParamIDs::value, value, nullptr);
+        Param::setValue(state, value);
     }
 }
 
 void StatefulAudioProcessorWrapper::Parameter::attachLabel(Label *valueLabel) {
-    if (valueLabel != nullptr) {
-        attachedLabels.add(valueLabel);
-        valueLabel->onTextChange = [this, valueLabel] { textChanged(valueLabel); };
+    if (valueLabel == nullptr) return;
 
-        setAttachedComponentValues(value);
-    }
+    attachedLabels.add(valueLabel);
+    valueLabel->onTextChange = [this, valueLabel] { textChanged(valueLabel); };
+
+    setAttachedComponentValues(value);
 }
 
 void StatefulAudioProcessorWrapper::Parameter::detachLabel(Label *valueLabel) {
-    if (valueLabel != nullptr)
-        attachedLabels.removeObject(valueLabel, false);
+    if (valueLabel == nullptr) return;
+
+    attachedLabels.removeObject(valueLabel, false);
 }
 
 static NormalisableRange<double> doubleRangeFromFloatRange(NormalisableRange<float> &floatRange) {
@@ -165,91 +164,91 @@ static NormalisableRange<double> doubleRangeFromFloatRange(NormalisableRange<flo
 }
 
 void StatefulAudioProcessorWrapper::Parameter::attachSlider(Slider *slider) {
-    if (slider != nullptr) {
-        slider->textFromValueFunction = nullptr;
-        slider->valueFromTextFunction = nullptr;
-        slider->setNormalisableRange(doubleRangeFromFloatRange(range));
-        slider->textFromValueFunction = valueToTextFunction;
-        slider->valueFromTextFunction = textToValueFunction;
-        attachedSliders.add(slider);
-        slider->addListener(this);
+    if (slider == nullptr) return;
 
-        setAttachedComponentValues(value);
-    }
+    slider->textFromValueFunction = nullptr;
+    slider->valueFromTextFunction = nullptr;
+    slider->setNormalisableRange(doubleRangeFromFloatRange(range));
+    slider->textFromValueFunction = valueToTextFunction;
+    slider->valueFromTextFunction = textToValueFunction;
+    attachedSliders.add(slider);
+    slider->addListener(this);
+
+    setAttachedComponentValues(value);
 }
 
 void StatefulAudioProcessorWrapper::Parameter::detachSlider(Slider *slider) {
-    if (slider != nullptr) {
-        slider->removeListener(this);
-        slider->textFromValueFunction = nullptr;
-        slider->valueFromTextFunction = nullptr;
-        attachedSliders.removeObject(slider, false);
-    }
+    if (slider == nullptr) return;
+
+    slider->removeListener(this);
+    slider->textFromValueFunction = nullptr;
+    slider->valueFromTextFunction = nullptr;
+    attachedSliders.removeObject(slider, false);
 }
 
 void StatefulAudioProcessorWrapper::Parameter::attachButton(Button *button) {
-    if (button != nullptr) {
-        attachedButtons.add(button);
-        button->addListener(this);
+    if (button == nullptr) return;
 
-        setAttachedComponentValues(value);
-    }
+    attachedButtons.add(button);
+    button->addListener(this);
+
+    setAttachedComponentValues(value);
 }
 
 void StatefulAudioProcessorWrapper::Parameter::detachButton(Button *button) {
-    if (button != nullptr) {
-        button->removeListener(this);
-        attachedButtons.removeObject(button, false);
-    }
+    if (button == nullptr) return;
+
+    button->removeListener(this);
+    attachedButtons.removeObject(button, false);
 }
 
 void StatefulAudioProcessorWrapper::Parameter::attachComboBox(ComboBox *comboBox) {
-    if (comboBox != nullptr) {
-        attachedComboBoxes.add(comboBox);
-        comboBox->addListener(this);
+    if (comboBox == nullptr) return;
 
-        setAttachedComponentValues(value);
-    }
+    attachedComboBoxes.add(comboBox);
+    comboBox->addListener(this);
+
+    setAttachedComponentValues(value);
 }
 
 void StatefulAudioProcessorWrapper::Parameter::detachComboBox(ComboBox *comboBox) {
-    if (comboBox != nullptr) {
-        comboBox->removeListener(this);
-        attachedComboBoxes.removeObject(comboBox, false);
-    }
+    if (comboBox == nullptr) return;
+
+    comboBox->removeListener(this);
+    attachedComboBoxes.removeObject(comboBox, false);
 }
 
 void StatefulAudioProcessorWrapper::Parameter::attachSwitch(SwitchParameterComponent *parameterSwitch) {
-    if (parameterSwitch != nullptr) {
-        attachedSwitches.add(parameterSwitch);
-        parameterSwitch->addListener(this);
+    if (parameterSwitch == nullptr) return;
 
-        setAttachedComponentValues(value);
-    }
+    attachedSwitches.add(parameterSwitch);
+    parameterSwitch->addListener(this);
+
+    setAttachedComponentValues(value);
 }
 
 void StatefulAudioProcessorWrapper::Parameter::detachSwitch(SwitchParameterComponent *parameterSwitch) {
-    if (parameterSwitch != nullptr) {
-        parameterSwitch->removeListener(this);
-        attachedSwitches.removeObject(parameterSwitch, false);
-    }
+    if (parameterSwitch == nullptr) return;
+
+    parameterSwitch->removeListener(this);
+    attachedSwitches.removeObject(parameterSwitch, false);
 }
 
 void StatefulAudioProcessorWrapper::Parameter::attachParameterControl(ParameterControl *parameterControl) {
-    if (parameterControl != nullptr) {
-        parameterControl->setNormalisableRange(range);
-        attachedParameterControls.add(parameterControl);
-        parameterControl->addListener(this);
+    if (parameterControl == nullptr) return;
 
-        setAttachedComponentValues(value);
-    }
+    parameterControl->setNormalisableRange(range);
+    attachedParameterControls.add(parameterControl);
+    parameterControl->addListener(this);
+
+    setAttachedComponentValues(value);
 }
 
 void StatefulAudioProcessorWrapper::Parameter::detachParameterControl(ParameterControl *parameterControl) {
-    if (parameterControl != nullptr) {
-        parameterControl->removeListener(this);
-        attachedParameterControls.removeObject(parameterControl, false);
-    }
+    if (parameterControl == nullptr) return;
+
+    parameterControl->removeListener(this);
+    attachedParameterControls.removeObject(parameterControl, false);
 }
 
 LevelMeterSource *StatefulAudioProcessorWrapper::Parameter::getLevelMeterSource() const {
@@ -262,7 +261,6 @@ LevelMeterSource *StatefulAudioProcessorWrapper::Parameter::getLevelMeterSource(
 
 void StatefulAudioProcessorWrapper::Parameter::valueTreePropertyChanged(ValueTree &tree, const Identifier &p) {
     if (ignoreParameterChangedCallbacks) return;
-
     if (p == ParamIDs::value) {
         updateFromValueTree();
     }
@@ -270,60 +268,54 @@ void StatefulAudioProcessorWrapper::Parameter::valueTreePropertyChanged(ValueTre
 
 void StatefulAudioProcessorWrapper::Parameter::textChanged(Label *valueLabel) {
     const ScopedLock selfCallbackLock(selfCallbackMutex);
+    if (ignoreCallbacks) return;
 
+    beginParameterChange();
     auto newValue = convertNormalizedToUnnormalized(textToValueFunction(valueLabel->getText()));
-    if (!ignoreCallbacks) {
-        beginParameterChange();
-        setUnnormalizedValue(newValue);
-        endParameterChange();
-    }
+    setUnnormalizedValue(newValue);
+    endParameterChange();
 }
 
 void StatefulAudioProcessorWrapper::Parameter::sliderValueChanged(Slider *slider) {
     const ScopedLock selfCallbackLock(selfCallbackMutex);
+    if (ignoreCallbacks) return;
 
-    if (!ignoreCallbacks)
-        setUnnormalizedValue((float) slider->getValue());
+    setUnnormalizedValue((float) slider->getValue());
 }
 
 void StatefulAudioProcessorWrapper::Parameter::buttonClicked(Button *button) {
     const ScopedLock selfCallbackLock(selfCallbackMutex);
+    if (ignoreCallbacks) return;
 
-    if (!ignoreCallbacks) {
-        beginParameterChange();
-        setUnnormalizedValue(button->getToggleState() ? 1.0f : 0.0f);
-        endParameterChange();
-    }
+    beginParameterChange();
+    setUnnormalizedValue(button->getToggleState() ? 1.0f : 0.0f);
+    endParameterChange();
 }
 
 void StatefulAudioProcessorWrapper::Parameter::comboBoxChanged(ComboBox *comboBox) {
     const ScopedLock selfCallbackLock(selfCallbackMutex);
+    if (ignoreCallbacks || sourceParameter->getCurrentValueAsText() == comboBox->getText()) return;
 
-    if (!ignoreCallbacks) {
-        if (sourceParameter->getCurrentValueAsText() != comboBox->getText()) {
-            beginParameterChange();
-            setUnnormalizedValue(sourceParameter->getValueForText(comboBox->getText()));
-            endParameterChange();
-        }
-    }
+    beginParameterChange();
+    setUnnormalizedValue(sourceParameter->getValueForText(comboBox->getText()));
+    endParameterChange();
 }
 
 void StatefulAudioProcessorWrapper::Parameter::switchChanged(SwitchParameterComponent *parameterSwitch) {
     const ScopedLock selfCallbackLock(selfCallbackMutex);
+    if (ignoreCallbacks) return;
 
-    if (!ignoreCallbacks) {
-        beginParameterChange();
-        float newValue = float(parameterSwitch->getSelectedItemIndex()) / float((parameterSwitch->getNumItems() - 1));
-        setUnnormalizedValue(newValue);
-        endParameterChange();
-    }
+    beginParameterChange();
+    float newValue = float(parameterSwitch->getSelectedItemIndex()) / float((parameterSwitch->getNumItems() - 1));
+    setUnnormalizedValue(newValue);
+    endParameterChange();
 }
 
 void StatefulAudioProcessorWrapper::Parameter::parameterControlValueChanged(ParameterControl *control) {
     const ScopedLock selfCallbackLock(selfCallbackMutex);
+    if (ignoreCallbacks) return;
 
-    if (!ignoreCallbacks)
-        setUnnormalizedValue(control->getValue());
+    setUnnormalizedValue(control->getValue());
 }
 
 StatefulAudioProcessorWrapper::StatefulAudioProcessorWrapper(AudioPluginInstance *processor, AudioProcessorGraph::NodeID nodeId, ValueTree state, UndoManager &undoManager, AudioDeviceManager &deviceManager) :
@@ -350,27 +342,21 @@ StatefulAudioProcessorWrapper::~StatefulAudioProcessorWrapper() {
 void StatefulAudioProcessorWrapper::updateValueTree() {
     for (auto parameter : processor->getParameters()) {
         auto *parameterWrapper = new Parameter(parameter, this);
-        parameterWrapper->setNewState(getOrCreateChildValueTree(parameterWrapper->paramID), &undoManager);
+        ValueTree paramState = state.getChildWithProperty(ParamIDs::id, parameterWrapper->paramID);
+        if (!paramState.isValid()) {
+            paramState = ValueTree(ParamIDs::PARAM);
+            Param::setId(paramState, parameterWrapper->paramID);
+            state.appendChild(paramState, nullptr);
+        }
+        parameterWrapper->setNewState(paramState, &undoManager);
         parameters.add(parameterWrapper);
         if (parameter->isAutomatable())
             automatableParameters.add(parameterWrapper);
     }
     audioProcessorChanged(processor, AudioProcessorListener::ChangeDetails().withParameterInfoChanged(true));
-    // Also a little hacky, but maybe the best we can do.
-    // If we're loading from state, bypass state needs to make its way to the processor graph to actually mute.
+    // XXX A little hacky, but maybe the best we can do.
+    //  If we're loading from state, bypass state needs to make its way to the processor graph to actually mute.
     state.sendPropertyChangeMessage(ProcessorIDs::bypassed);
-}
-
-ValueTree StatefulAudioProcessorWrapper::getOrCreateChildValueTree(const String &paramID) {
-    ValueTree v(state.getChildWithProperty(ProcessorIDs::id, paramID));
-
-    if (!v.isValid()) {
-        v = ValueTree(ParamIDs::PARAM);
-        v.setProperty(ParamIDs::id, paramID, nullptr);
-        state.appendChild(v, nullptr);
-    }
-
-    return v;
 }
 
 bool StatefulAudioProcessorWrapper::flushParameterValuesToValueTree() {

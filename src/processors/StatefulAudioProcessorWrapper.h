@@ -124,7 +124,6 @@ public:
     Parameter *getAutomatableParameter(int parameterIndex) { return automatableParameters[parameterIndex]; }
 
     void updateValueTree();
-    ValueTree getOrCreateChildValueTree(const String &paramID);
     bool flushParameterValuesToValueTree();
 
     AudioPluginInstance *processor;
