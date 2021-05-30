@@ -10,31 +10,26 @@ TrackOutputGraphEditorProcessor::TrackOutputGraphEditorProcessor(const ValueTree
 }
 
 TrackOutputGraphEditorProcessor::~TrackOutputGraphEditorProcessor() {
-    if (auto *processorWrapper = getProcessorWrapper()) {
-        if (panSlider != nullptr) {
-            const auto &parameterWrapper = processorWrapper->getParameter(0);
-            parameterWrapper->detachParameterControl(panSlider.get());
-        }
-        if (levelMeter != nullptr) {
-            const auto &parameterWrapper = processorWrapper->getParameter(1);
-            parameterWrapper->detachParameterControl(levelMeter.get());
-        }
+    if (panSlider != nullptr && panParameter != nullptr) {
+        panParameter->detachParameterControl(panSlider.get());
     }
+    if (levelMeter != nullptr && gainParameter != nullptr) {
+        gainParameter->detachParameterControl(levelMeter.get());
+    }
+    panParameter = nullptr;
+    gainParameter = nullptr;
 }
 
 void TrackOutputGraphEditorProcessor::resized() {
     BaseGraphEditorProcessor::resized();
+
     const auto &boxBounds = getBoxBounds();
     auto remainingBounds = boxBounds.reduced(5);
-
     if (panSlider != nullptr) {
-        const auto panBounds = remainingBounds.removeFromTop(remainingBounds.getHeight() / 2).reduced(0, boxBounds.getHeight() / 7);
-        panSlider->setBounds(panBounds);
+        panSlider->setBounds(remainingBounds.removeFromTop(remainingBounds.getHeight() / 2).reduced(0, boxBounds.getHeight() / 7));
     }
-
     if (levelMeter != nullptr) {
-        const auto levelMeterBounds = remainingBounds.reduced(0, boxBounds.getHeight() / 14);
-        levelMeter->setBounds(levelMeterBounds);
+        levelMeter->setBounds(remainingBounds.reduced(0, boxBounds.getHeight() / 14));
     }
 }
 
@@ -58,18 +53,20 @@ Rectangle<int> TrackOutputGraphEditorProcessor::getBoxBounds() const {
 void TrackOutputGraphEditorProcessor::valueTreePropertyChanged(ValueTree &v, const Identifier &i) {
     if (v != state) return;
 
+    // XXX should be done in constructor, but track/processor views are currently instantiated before the processor graph.
+    // XXX also, this level meter should be a ParameterDisplayComponent - then we wouldn't have to search for the parameter wrapper.
     if (levelMeter == nullptr) {
         if (auto *processorWrapper = getProcessorWrapper()) {
             if (auto *trackOutputProcessor = dynamic_cast<TrackOutputProcessor *>(processorWrapper->processor)) {
                 if (auto *levelMeterSource = trackOutputProcessor->getMeterSource()) {
                     addAndMakeVisible((panSlider = std::make_unique<MinimalSliderControl>(SliderControl::Orientation::horizontal, true)).get());
-                    const auto &panParameter = processorWrapper->getParameter(0);
+                    panParameter = processorWrapper->getParameter(0);
                     panParameter->attachParameterControl(panSlider.get());
                     panSlider->getProperties().set("fromCentre", true);
 
                     addAndMakeVisible((levelMeter = std::make_unique<MinimalLevelMeter>(LevelMeter::horizontal)).get());
                     levelMeter->setMeterSource(levelMeterSource);
-                    const auto &gainParameter = processorWrapper->getParameter(1);
+                    gainParameter = processorWrapper->getParameter(1);
                     gainParameter->attachParameterControl(levelMeter.get());
                 }
             }

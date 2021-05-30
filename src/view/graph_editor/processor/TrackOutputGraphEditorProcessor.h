@@ -20,7 +20,8 @@ public:
 private:
     std::unique_ptr<LevelMeter> levelMeter;
     std::unique_ptr<SliderControl> panSlider;
-
+    StatefulAudioProcessorWrapper::Parameter *gainParameter;
+    StatefulAudioProcessorWrapper::Parameter *panParameter;
     void colourChanged() override { repaint(); }
 
     void valueTreePropertyChanged(ValueTree &v, const Identifier &i) override;

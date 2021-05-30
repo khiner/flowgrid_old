@@ -16,16 +16,14 @@ TrackInputGraphEditorProcessor::TrackInputGraphEditorProcessor(const ValueTree &
 
 TrackInputGraphEditorProcessor::~TrackInputGraphEditorProcessor() {
     nameLabel.removeMouseListener(this);
-    if (auto *processorWrapper = getProcessorWrapper()) {
-        if (audioMonitorToggle != nullptr) {
-            const auto &parameterWrapper = processorWrapper->getParameter(0);
-            parameterWrapper->detachButton(audioMonitorToggle.get());
-        }
-        if (midiMonitorToggle != nullptr) {
-            const auto &parameterWrapper = processorWrapper->getParameter(1);
-            parameterWrapper->detachButton(midiMonitorToggle.get());
-        }
+    if (audioMonitorToggle != nullptr && audioMonitorParameter != nullptr) {
+        audioMonitorParameter->detachButton(audioMonitorToggle.get());
     }
+    if (midiMonitorToggle != nullptr && midiMonitorParameter != nullptr) {
+        midiMonitorParameter->detachButton(midiMonitorToggle.get());
+    }
+    audioMonitorParameter = nullptr;
+    midiMonitorParameter = nullptr;
 }
 
 void TrackInputGraphEditorProcessor::mouseDown(const MouseEvent &e) {
@@ -94,6 +92,8 @@ void TrackInputGraphEditorProcessor::paint(Graphics &g) {
 void TrackInputGraphEditorProcessor::valueTreePropertyChanged(ValueTree &v, const Identifier &i) {
     if (v != state) return;
 
+    // XXX should be done in constructor, but track/processor views are currently instantiated before the processor graph.
+    // XXX also, this level meter should be a ParameterDisplayComponent - then we wouldn't have to search for the parameter wrapper.
     if (audioMonitorToggle == nullptr && midiMonitorToggle == nullptr) {
         if (auto *processorWrapper = getProcessorWrapper()) {
             addAndMakeVisible((audioMonitorToggle = std::make_unique<ImageButton>()).get());
@@ -104,8 +104,8 @@ void TrackInputGraphEditorProcessor::valueTreePropertyChanged(ValueTree &v, cons
                                           {}, 1.0, Colours::transparentBlack,
                                           audioImage, 1.0, findColour(CustomColourIds::defaultAudioConnectionColourId));
 
-            const auto &monitorAudioParameter = processorWrapper->getParameter(0);
-            monitorAudioParameter->attachButton(audioMonitorToggle.get());
+            audioMonitorParameter = processorWrapper->getParameter(0);
+            audioMonitorParameter->attachButton(audioMonitorToggle.get());
 
             addAndMakeVisible((midiMonitorToggle = std::make_unique<ImageButton>()).get());
             midiMonitorToggle->setClickingTogglesState(true);
@@ -115,8 +115,8 @@ void TrackInputGraphEditorProcessor::valueTreePropertyChanged(ValueTree &v, cons
                                          {}, 1.0, Colours::transparentBlack,
                                          midiImage, 1.0, findColour(CustomColourIds::defaultMidiConnectionColourId));
 
-            const auto &monitorMidiParameter = processorWrapper->getParameter(1);
-            monitorMidiParameter->attachButton(midiMonitorToggle.get());
+            midiMonitorParameter = processorWrapper->getParameter(1);
+            midiMonitorParameter->attachButton(midiMonitorToggle.get());
         }
     }
 

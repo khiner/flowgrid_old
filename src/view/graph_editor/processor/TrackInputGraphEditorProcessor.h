@@ -25,6 +25,8 @@ private:
     Project &project;
     Label nameLabel;
     std::unique_ptr<ImageButton> audioMonitorToggle, midiMonitorToggle;
+    StatefulAudioProcessorWrapper::Parameter *audioMonitorParameter;
+    StatefulAudioProcessorWrapper::Parameter *midiMonitorParameter;
 
     void colourChanged() override { repaint(); }
 
