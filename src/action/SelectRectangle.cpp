@@ -7,14 +7,15 @@ SelectRectangle::SelectRectangle(const juce::Point<int> fromTrackAndSlot, const 
     selectionRectangle.setSize(selectionRectangle.getWidth() + 1, selectionRectangle.getHeight() + 1);
 
     for (int trackIndex = 0; trackIndex < tracks.size(); trackIndex++) {
-        auto track = tracks.getTrackState(trackIndex);
+        auto *track = tracks.getChild(trackIndex);
+        int numSlots = view.getNumProcessorSlots(track != nullptr && track->isMaster());
         bool trackSelected = selectionRectangle.contains(tracks.trackAndSlotToGridPosition({trackIndex, -1}));
         newTrackSelections.setUnchecked(trackIndex, trackSelected);
         if (trackSelected) {
-            newSelectedSlotsMasks.setUnchecked(trackIndex, tracks.createFullSelectionBitmask(track));
+            newSelectedSlotsMasks.setUnchecked(trackIndex, Track::createFullSelectionBitmask(numSlots));
         } else {
             BigInteger newSlotsMask;
-            for (int otherSlot = 0; otherSlot < tracks.getNumSlotsForTrack(track); otherSlot++)
+            for (int otherSlot = 0; otherSlot < numSlots; otherSlot++)
                 newSlotsMask.setBit(otherSlot, selectionRectangle.contains(tracks.trackAndSlotToGridPosition({trackIndex, otherSlot})));
             newSelectedSlotsMasks.setUnchecked(trackIndex, newSlotsMask);
         }

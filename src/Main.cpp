@@ -60,7 +60,7 @@ public:
         mainWindow = std::make_unique<MainWindow>(*this, "FlowGrid", new GraphEditor(view, tracks, connections, input, output, processorGraph, project, pluginManager));
         mainWindow->setBoundsRelative(0.02f, 0.02f, 0.96f, 0.96f);
 
-        push2Component = std::make_unique<Push2Component>(view, tracks, connections, project, processorGraph, push2MidiCommunicator);
+        push2Component = std::make_unique<Push2Component>(view, tracks, connections, project, processorGraph.getProcessorWrappers(), push2MidiCommunicator);
 
         push2MidiCommunicator.setPush2Listener(push2Component.get());
 

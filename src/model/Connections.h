@@ -30,18 +30,6 @@ struct Connections : public Stateful<Connections> {
         return {};
     }
 
-    bool anyNonMasterTrackHasEffectProcessor(ConnectionType connectionType);
-
-    static bool isProcessorAnEffect(const ValueTree &processor, ConnectionType connectionType) {
-        return (connectionType == audio && Processor::getNumInputChannels(processor) > 0) ||
-               (connectionType == midi && Processor::acceptsMidi(processor));
-    }
-
-    static bool isProcessorAProducer(const ValueTree &processor, ConnectionType connectionType) {
-        return (connectionType == audio && Processor::getNumOutputChannels(processor) > 0) ||
-               (connectionType == midi && Processor::producesMidi(processor));
-    }
-
 private:
     Tracks &tracks;
 };

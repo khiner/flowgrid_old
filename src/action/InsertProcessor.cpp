@@ -13,12 +13,12 @@ bool InsertProcessor::undo() {
 
 InsertProcessor::SetProcessorSlotAction::SetProcessorSlotAction(int trackIndex, const ValueTree &processor, int newSlot, Tracks &tracks, View &view)
         : processor(processor), oldSlot(Processor::getSlot(processor)), newSlot(newSlot) {
-    const auto &track = tracks.getTrackState(trackIndex);
-    int numNewRows = this->newSlot + 1 - tracks.getNumSlotsForTrack(track);
+    const auto *track = tracks.getChild(trackIndex);
+    int numNewRows = this->newSlot + 1 - view.getNumProcessorSlots(track != nullptr && track->isMaster());
     for (int i = 0; i < numNewRows; i++)
         addProcessorRowActions.add(new AddProcessorRowAction(trackIndex, tracks, view));
     if (addProcessorRowActions.isEmpty()) {
-        const auto &conflictingProcessor = Track::getProcessorAtSlot(track, newSlot);
+        const auto &conflictingProcessor = track != nullptr ? track->getProcessorAtSlot(newSlot) : ValueTree();
         if (conflictingProcessor.isValid())
             pushConflictingProcessorAction = std::make_unique<SetProcessorSlotAction>(trackIndex, conflictingProcessor, newSlot + 1, tracks, view);
     }

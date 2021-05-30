@@ -6,7 +6,7 @@
 
 class GraphEditorTrack : public Component, public ValueTree::Listener, public GraphEditorProcessorContainer {
 public:
-    explicit GraphEditorTrack(Track *track, View &view, Project &project, ProcessorGraph &processorGraph, PluginManager &pluginManager, ConnectorDragListener &connectorDragListener);
+    explicit GraphEditorTrack(Track *track, View &view, Project &project, StatefulAudioProcessorWrappers &processorWrappers, PluginManager &pluginManager, ConnectorDragListener &connectorDragListener);
 
     ~GraphEditorTrack() override;
 
@@ -27,7 +27,7 @@ private:
     Track *track;
     View &view;
     Project &project;
-    ProcessorGraph &processorGraph;
+    StatefulAudioProcessorWrappers &processorWrappers;
     std::unique_ptr<TrackInputGraphEditorProcessor> trackInputProcessorView;
     std::unique_ptr<TrackOutputGraphEditorProcessor> trackOutputProcessorView;
     ConnectorDragListener &connectorDragListener;

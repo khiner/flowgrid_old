@@ -3,7 +3,7 @@
 #include "model/Tracks.h"
 #include "unordered_map"
 
-class Push2Colours : ValueTree::Listener, Tracks::Listener {
+class Push2Colours : Tracks::Listener {
 public:
     class Listener {
     public:
@@ -15,7 +15,7 @@ public:
 
     explicit Push2Colours(Tracks &tracks);
 
-    ~Push2Colours() override;
+    ~Push2Colours();
 
     uint8 findIndexForColourAddingIfNeeded(const Colour &colour);
 
@@ -34,5 +34,5 @@ private:
 
     void trackAdded(Track *track) override;
     void trackRemoved(Track *track, int oldIndex) override;
-    void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override;
+    void trackPropertyChanged(Track *track, const Identifier &i) override;
 };

@@ -15,7 +15,7 @@ class Push2Component :
         private ValueTree::Listener,
         private Tracks::Listener {
 public:
-    explicit Push2Component(View &view, Tracks &tracks, Connections &connections, Project &project, ProcessorGraph &processorGraph, Push2MidiCommunicator &push2MidiCommunicator);
+    explicit Push2Component(View &view, Tracks &tracks, Connections &connections, Project &project, StatefulAudioProcessorWrappers &processorWrappers, Push2MidiCommunicator &push2MidiCommunicator);
 
     ~Push2Component() override;
 
@@ -45,7 +45,7 @@ private:
     Project &project;
     Connections &connections;
     Push2DisplayBridge displayBridge;
-    ProcessorGraph &processorGraph;
+    StatefulAudioProcessorWrappers &processorWrappers;
     Push2ProcessorView processorView;
     Push2ProcessorSelector processorSelector;
     Push2MixerView mixerView;

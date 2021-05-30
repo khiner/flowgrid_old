@@ -10,8 +10,8 @@ class GraphEditorTracks : public Component,
                           private ValueTree::Listener,
                           private Tracks::Listener {
 public:
-    explicit GraphEditorTracks(View &view, Tracks &tracks, Project &project, ProcessorGraph &processorGraph, PluginManager &pluginManager, ConnectorDragListener &connectorDragListener)
-              : view(view), tracks(tracks), project(project), processorGraph(processorGraph), pluginManager(pluginManager), connectorDragListener(connectorDragListener) {
+    explicit GraphEditorTracks(View &view, Tracks &tracks, Project &project, StatefulAudioProcessorWrappers &processorWrappers, PluginManager &pluginManager, ConnectorDragListener &connectorDragListener)
+              : view(view), tracks(tracks), project(project), processorWrappers(processorWrappers), pluginManager(pluginManager), connectorDragListener(connectorDragListener) {
         tracks.addTracksListener(this);
         view.addListener(this);
     }
@@ -90,12 +90,12 @@ private:
     View &view;
     Tracks &tracks;
     Project &project;
-    ProcessorGraph &processorGraph;
+    StatefulAudioProcessorWrappers &processorWrappers;
     PluginManager &pluginManager;
     ConnectorDragListener &connectorDragListener;
 
     void trackAdded(Track *track) override {
-        addAndMakeVisible(children.insert(track->getIndex(), new GraphEditorTrack(track, view, project, processorGraph, pluginManager, connectorDragListener)));
+        addAndMakeVisible(children.insert(track->getIndex(), new GraphEditorTrack(track, view, project, processorWrappers, pluginManager, connectorDragListener)));
         resized();
     }
     void trackRemoved(Track *track, int oldIndex) override {

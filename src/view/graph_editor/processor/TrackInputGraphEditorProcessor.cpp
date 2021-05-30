@@ -2,16 +2,16 @@
 
 #include "BinaryData.h"
 
-TrackInputGraphEditorProcessor::TrackInputGraphEditorProcessor(const ValueTree &state, Track *track, View &view, Project &project, ProcessorGraph &processorGraph, ConnectorDragListener &connectorDragListener)
+TrackInputGraphEditorProcessor::TrackInputGraphEditorProcessor(const ValueTree &state, Track *track, View &view, Project &project, StatefulAudioProcessorWrappers &processorWrappers, ConnectorDragListener &connectorDragListener)
         :
-        BaseGraphEditorProcessor(state, track, view, processorGraph, connectorDragListener), project(project) {
+        BaseGraphEditorProcessor(state, track, view, processorWrappers, connectorDragListener), project(project) {
     nameLabel.setJustificationType(Justification::centred);
     addAndMakeVisible(nameLabel);
     nameLabel.addMouseListener(this, false);
 
     nameLabel.setText(track->getName(), dontSendNotification);
     nameLabel.setEditable(false, true);
-    nameLabel.onTextChange = [this] { this->track->setName(nameLabel.getText(false)); };
+    nameLabel.onTextChange = [this] { this->track->setName(nameLabel.getText(false), &this->project.getUndoManager()); };
 }
 
 TrackInputGraphEditorProcessor::~TrackInputGraphEditorProcessor() {

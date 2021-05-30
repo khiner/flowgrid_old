@@ -3,8 +3,8 @@
 #include "view/graph_editor/processor/LabelGraphEditorProcessor.h"
 #include "view/graph_editor/processor/ParameterPanelGraphEditorProcessor.h"
 
-GraphEditorProcessorLane::GraphEditorProcessorLane(const ValueTree &state, Track *track, View &view, ProcessorGraph &processorGraph, ConnectorDragListener &connectorDragListener)
-        : StatefulList<BaseGraphEditorProcessor>(state), state(state), track(track), view(view), processorGraph(processorGraph), connectorDragListener(connectorDragListener) {
+GraphEditorProcessorLane::GraphEditorProcessorLane(const ValueTree &state, Track *track, View &view, StatefulAudioProcessorWrappers &processorWrappers, ConnectorDragListener &connectorDragListener)
+        : StatefulList<BaseGraphEditorProcessor>(state), state(state), track(track), view(view), processorWrappers(processorWrappers), connectorDragListener(connectorDragListener) {
     rebuildObjects();
     view.addListener(this);
     // TODO shouldn't need to do this
@@ -79,9 +79,9 @@ void GraphEditorProcessorLane::updateProcessorSlotColours() {
 
 BaseGraphEditorProcessor *GraphEditorProcessorLane::createEditorForProcessor(const ValueTree &processor) {
     if (Processor::getName(processor) == InternalPluginFormat::getMixerChannelProcessorName()) {
-        return new ParameterPanelGraphEditorProcessor(processor, track, view, processorGraph, connectorDragListener);
+        return new ParameterPanelGraphEditorProcessor(processor, track, view, processorWrappers, connectorDragListener);
     }
-    return new LabelGraphEditorProcessor(processor, track, view, processorGraph, connectorDragListener);
+    return new LabelGraphEditorProcessor(processor, track, view, processorWrappers, connectorDragListener);
 }
 
 BaseGraphEditorProcessor *GraphEditorProcessorLane::createNewObject(const ValueTree &processor) {

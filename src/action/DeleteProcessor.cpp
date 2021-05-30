@@ -11,7 +11,7 @@ DeleteProcessor::DeleteProcessor(const ValueTree &processorToDelete, Track *trac
           processorGraph(processorGraph) {}
 
 bool DeleteProcessor::perform() {
-    processorGraph.saveProcessorStateInformationToState(processorToDelete);
+    processorGraph.getProcessorWrappers().saveProcessorStateInformationToState(processorToDelete);
     performTemporary();
     Processor::setPluginWindowType(processorToDelete, static_cast<int>(PluginWindow::Type::none));
     processorGraph.onProcessorDestroyed(processorToDelete);

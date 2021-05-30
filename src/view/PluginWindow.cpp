@@ -1,8 +1,8 @@
 #include "ApplicationPropertiesAndCommandManager.h"
 #include "PluginWindow.h"
 
+#include "model/Processor.h"
 #include "processors/MidiKeyboardProcessor.h"
-#include "model/Tracks.h"
 
 PluginWindow::PluginWindow(ValueTree &processorState, AudioProcessor *processor, Type type)
         : DocumentWindow(Processor::getName(processorState),

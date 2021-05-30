@@ -12,8 +12,8 @@ GraphEditorPanel::GraphEditorPanel(View &view, Tracks &tracks, Connections &conn
     input.addListener(this);
     output.addListener(this);
 
-    addAndMakeVisible(*(graphEditorTracks = std::make_unique<GraphEditorTracks>(view, tracks, project, processorGraph, pluginManager, *this)));
-    addAndMakeVisible(*(connectors = std::make_unique<GraphEditorConnectors>(connections, *this, *this, processorGraph)));
+    addAndMakeVisible(*(graphEditorTracks = std::make_unique<GraphEditorTracks>(view, tracks, project, processorGraph.getProcessorWrappers(), pluginManager, *this)));
+    addAndMakeVisible(*(connectors = std::make_unique<GraphEditorConnectors>(connections, *this, *this)));
     unfocusOverlay.setFill(findColour(CustomColourIds::unfocusedOverlayColourId));
     addChildComponent(unfocusOverlay);
     addMouseListener(this, true);
@@ -60,7 +60,7 @@ void GraphEditorPanel::mouseUp(const MouseEvent &e) {
 
     if (e.getNumberOfClicks() == 2) {
         const auto &processor = track->getProcessorAtSlot(trackAndSlot.y);
-        if (processor.isValid() && graph.getAudioProcessorForState(processor)->hasEditor()) {
+        if (processor.isValid() && graph.getProcessorWrappers().getAudioProcessorForState(processor)->hasEditor()) {
             tracks.showWindow(processor, PluginWindow::Type::normal);
         }
     }
@@ -218,7 +218,7 @@ ResizableWindow *GraphEditorPanel::getOrCreateWindowFor(ValueTree &processorStat
         if (Processor::getNodeId(pluginWindow->processor) == nodeId && pluginWindow->type == type)
             return pluginWindow;
 
-    if (auto *processor = graph.getProcessorWrapperForNodeId(nodeId)->processor)
+    if (auto *processor = graph.getProcessorWrappers().getProcessorWrapperForNodeId(nodeId)->processor)
         return activePluginWindows.add(new PluginWindow(processorState, processor, type));
 
     return nullptr;
@@ -267,7 +267,7 @@ void GraphEditorPanel::showPopupMenu(const Track *track, int slot) {
         menu.addItem(DISCONNECT_ALL_MENU_ID, "Disconnect all");
         menu.addItem(DISCONNECT_CUSTOM_MENU_ID, "Disconnect all custom");
 
-        if (graph.getAudioProcessorForState(processor)->hasEditor()) {
+        if (graph.getProcessorWrappers().getAudioProcessorForState(processor)->hasEditor()) {
             menu.addSeparator();
             menu.addItem(SHOW_PLUGIN_GUI_MENU_ID, "Show plugin GUI");
             menu.addItem(SHOW_ALL_PROGRAMS_MENU_ID, "Show all programs");
@@ -363,20 +363,20 @@ void GraphEditorPanel::valueTreePropertyChanged(ValueTree &tree, const Identifie
             w->toFront(true);
     } else if (i == ProcessorIDs::initialized) {
         if (Processor::isMidiInputProcessor(tree)) {
-            auto *midiInputProcessor = new LabelGraphEditorProcessor(tree, tracks.getTrackForProcessor(tree), view, graph, *this);
+            auto *midiInputProcessor = new LabelGraphEditorProcessor(tree, tracks.getTrackForProcessor(tree), view, graph.getProcessorWrappers(), *this);
             addAndMakeVisible(midiInputProcessor, 0);
             midiInputProcessors.addSorted(processorComparator, midiInputProcessor);
             resized();
         } else if (Processor::isMidiOutputProcessor(tree)) {
-            auto *midiOutputProcessor = new LabelGraphEditorProcessor(tree, tracks.getTrackForProcessor(tree), view, graph, *this);
+            auto *midiOutputProcessor = new LabelGraphEditorProcessor(tree, tracks.getTrackForProcessor(tree), view, graph.getProcessorWrappers(), *this);
             addAndMakeVisible(midiOutputProcessor, 0);
             midiOutputProcessors.addSorted(processorComparator, midiOutputProcessor);
             resized();
         } else if (Processor::getName(tree) == "Audio Input") {
-            addAndMakeVisible(*(audioInputProcessor = std::make_unique<LabelGraphEditorProcessor>(tree, tracks.getTrackForProcessor(tree), view, graph, *this)), 0);
+            addAndMakeVisible(*(audioInputProcessor = std::make_unique<LabelGraphEditorProcessor>(tree, tracks.getTrackForProcessor(tree), view, graph.getProcessorWrappers(), *this)), 0);
             resized();
         } else if (Processor::getName(tree) == "Audio Output") {
-            addAndMakeVisible(*(audioOutputProcessor = std::make_unique<LabelGraphEditorProcessor>(tree, tracks.getTrackForProcessor(tree), view, graph, *this)), 0);
+            addAndMakeVisible(*(audioOutputProcessor = std::make_unique<LabelGraphEditorProcessor>(tree, tracks.getTrackForProcessor(tree), view, graph.getProcessorWrappers(), *this)), 0);
             resized();
         }
     }

@@ -3,9 +3,10 @@
 // TODO iterate through state instead of getProcessorStateForNodeId
 CreateConnection::CreateConnection(const AudioProcessorGraph::Connection &connection, bool isDefault, Connections &connections, ProcessorGraph &processorGraph)
         : CreateOrDeleteConnections(connections) {
+    const auto &processorWrappers = processorGraph.getProcessorWrappers();
     if (processorGraph.canAddConnection(connection) &&
-        (!isDefault || (Processor::allowsDefaultConnections(processorGraph.getProcessorStateForNodeId(connection.source.nodeID)) &&
-                        Processor::allowsDefaultConnections(processorGraph.getProcessorStateForNodeId(connection.destination.nodeID))))) {
+        (!isDefault || (Processor::allowsDefaultConnections(processorWrappers.getProcessorStateForNodeId(connection.source.nodeID)) &&
+                        Processor::allowsDefaultConnections(processorWrappers.getProcessorStateForNodeId(connection.destination.nodeID))))) {
         addConnection(stateForConnection(connection, isDefault));
     }
 }

@@ -111,7 +111,6 @@ target_sources(FlowGrid PRIVATE
     src/push2/Push2UsbCommunicator.h
     src/model/Connection.cpp
     src/model/Connections.cpp
-    src/model/CopiedTracks.cpp
     src/model/Input.cpp
     src/model/Output.cpp
     src/model/Channel.cpp
@@ -120,6 +119,7 @@ target_sources(FlowGrid PRIVATE
     src/model/Param.cpp
     src/model/Project.cpp
     src/model/Processor.cpp
+    src/model/StatefulAudioProcessorWrappers.cpp
     src/model/ProcessorLane.cpp
     src/model/ProcessorLanes.cpp
     src/model/Track.cpp

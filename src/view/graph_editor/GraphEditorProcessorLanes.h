@@ -6,8 +6,8 @@
 class GraphEditorProcessorLanes : public Component, public StatefulList<GraphEditorProcessorLane>,
                                   public GraphEditorProcessorContainer {
 public:
-    explicit GraphEditorProcessorLanes(ValueTree state, Track *track, View &view, ProcessorGraph &processorGraph, ConnectorDragListener &connectorDragListener)
-            : StatefulList<GraphEditorProcessorLane>(std::move(state)), track(track), view(view), processorGraph(processorGraph), connectorDragListener(connectorDragListener) {
+    explicit GraphEditorProcessorLanes(ValueTree state, Track *track, View &view, StatefulAudioProcessorWrappers &processorWrappers, ConnectorDragListener &connectorDragListener)
+            : StatefulList<GraphEditorProcessorLane>(std::move(state)), track(track), view(view), processorWrappers(processorWrappers), connectorDragListener(connectorDragListener) {
         rebuildObjects();
     }
 
@@ -40,7 +40,7 @@ public:
     }
 
     GraphEditorProcessorLane *createNewObject(const ValueTree &v) override {
-        auto *lane = new GraphEditorProcessorLane(v, track, view, processorGraph, connectorDragListener);
+        auto *lane = new GraphEditorProcessorLane(v, track, view, processorWrappers, connectorDragListener);
         addAndMakeVisible(lane);
         return lane;
     }
@@ -58,6 +58,6 @@ public:
 private:
     Track *track;
     View &view;
-    ProcessorGraph &processorGraph;
+    StatefulAudioProcessorWrappers &processorWrappers;
     ConnectorDragListener &connectorDragListener;
 };

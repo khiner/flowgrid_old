@@ -2,11 +2,11 @@
 
 static bool canProcessorDefaultConnectTo(const ValueTree &processor, const ValueTree &otherProcessor, ConnectionType connectionType) {
     return !(!Processor::isType(otherProcessor) || processor == otherProcessor) &&
-           Connections::isProcessorAProducer(processor, connectionType) && Connections::isProcessorAnEffect(otherProcessor, connectionType);
+           Processor::isProcessorAProducer(processor, connectionType) && Processor::isProcessorAnEffect(otherProcessor, connectionType);
 }
 
 ValueTree Connections::findDefaultDestinationProcessor(const ValueTree &sourceProcessor, ConnectionType connectionType) {
-    if (!isProcessorAProducer(sourceProcessor, connectionType)) return {};
+    if (!Processor::isProcessorAProducer(sourceProcessor, connectionType)) return {};
 
     const auto *track = tracks.getTrackForProcessor(sourceProcessor);
     const auto *masterTrack = tracks.getMasterTrack();
@@ -66,13 +66,4 @@ Array<ValueTree> Connections::getConnectionsForNode(const ValueTree &processor, 
             nodeConnections.add(connection);
     }
     return nodeConnections;
-}
-
-bool Connections::anyNonMasterTrackHasEffectProcessor(ConnectionType connectionType) {
-    for (const auto *track : tracks.getChildren())
-        if (!track->isMaster())
-            for (const auto &processor : track->getProcessorLane())
-                if (isProcessorAnEffect(processor, connectionType))
-                    return true;
-    return false;
 }

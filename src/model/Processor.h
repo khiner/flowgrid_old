@@ -8,6 +8,7 @@
 #include "Param.h"
 #include "Connection.h"
 #include "processors/InternalPluginFormat.h"
+#include "ConnectionType.h"
 
 namespace ProcessorIDs {
 #define ID(name) const juce::Identifier name(#name);
@@ -108,5 +109,15 @@ struct Processor : public Stateful<Processor> {
     static AudioProcessorGraph::Connection toProcessorGraphConnection(const ValueTree &state) {
         return {{fg::Connection::getSourceNodeId(state),      fg::Connection::getSourceChannel(state)},
                 {fg::Connection::getDestinationNodeId(state), fg::Connection::getDestinationChannel(state)}};
+    }
+
+    static bool isProcessorAnEffect(const ValueTree &state, ConnectionType connectionType) {
+        return (connectionType == audio && Processor::getNumInputChannels(state) > 0) ||
+               (connectionType == midi && Processor::acceptsMidi(state));
+    }
+
+    static bool isProcessorAProducer(const ValueTree &state, ConnectionType connectionType) {
+        return (connectionType == audio && Processor::getNumOutputChannels(state) > 0) ||
+               (connectionType == midi && Processor::producesMidi(state));
     }
 };

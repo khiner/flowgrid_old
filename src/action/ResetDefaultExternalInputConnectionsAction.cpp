@@ -5,7 +5,7 @@
 
 static ValueTree findTopmostEffectProcessor(const ValueTree &track, ConnectionType connectionType) {
     for (const auto &processor : Track::getProcessorLane(track))
-        if (Connections::isProcessorAnEffect(processor, connectionType))
+        if (Processor::isProcessorAnEffect(processor, connectionType))
             return processor;
     return {};
 }
@@ -18,11 +18,10 @@ ResetDefaultExternalInputConnectionsAction::ResetDefaultExternalInputConnections
 
     for (auto connectionType : {audio, midi}) {
         const auto sourceNodeId = input.getDefaultInputNodeIdForConnectionType(connectionType);
-
         // If master track received focus, only change the default connections if no other tracks have effect processors
-        if (Track::isMaster(trackToTreatAsFocused) && connections.anyNonMasterTrackHasEffectProcessor(connectionType)) continue;
+        if (Track::isMaster(trackToTreatAsFocused) && tracks.anyNonMasterTrackHasEffectProcessor(connectionType)) continue;
 
-        const ValueTree &inputProcessor = processorGraph.getProcessorStateForNodeId(sourceNodeId);
+        const ValueTree &inputProcessor = processorGraph.getProcessorWrappers().getProcessorStateForNodeId(sourceNodeId);
         AudioProcessorGraph::NodeID destinationNodeId;
 
         const ValueTree &topmostEffectProcessor = findTopmostEffectProcessor(trackToTreatAsFocused, connectionType);
@@ -37,8 +36,7 @@ ResetDefaultExternalInputConnectionsAction::ResetDefaultExternalInputConnections
 }
 
 ValueTree ResetDefaultExternalInputConnectionsAction::findMostUpstreamAvailableProcessorConnectedTo(const ValueTree &processor, ConnectionType connectionType, Tracks &tracks, Input &input) {
-    if (!processor.isValid())
-        return {};
+    if (!processor.isValid()) return {};
 
     int lowestSlot = INT_MAX;
     ValueTree upperRightMostProcessor;
@@ -49,8 +47,7 @@ ValueTree ResetDefaultExternalInputConnectionsAction::findMostUpstreamAvailableP
     // TODO performance improvement: only iterate over connected processors
     for (int i = tracks.size() - 1; i >= 0; i--) {
         const auto &lane = Track::getProcessorLane(tracks.getTrackState(i));
-        if (lane.getNumChildren() == 0)
-            continue;
+        if (lane.getNumChildren() == 0) continue;
 
         const auto &firstProcessor = lane.getChild(0);
         auto firstProcessorNodeId = Processor::getNodeId(firstProcessor);
@@ -68,7 +65,7 @@ ValueTree ResetDefaultExternalInputConnectionsAction::findMostUpstreamAvailableP
 }
 
 bool ResetDefaultExternalInputConnectionsAction::isAvailableForExternalInput(const ValueTree &processor, ConnectionType connectionType, Input &input) {
-    if (!Connections::isProcessorAnEffect(processor, connectionType)) return false;
+    if (!Processor::isProcessorAnEffect(processor, connectionType)) return false;
 
     const auto &incomingConnections = connections.getConnectionsForNode(processor, connectionType, true, false);
     const auto defaultInputNodeId = input.getDefaultInputNodeIdForConnectionType(connectionType);

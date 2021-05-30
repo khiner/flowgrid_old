@@ -1,7 +1,7 @@
 #include "BaseGraphEditorProcessor.h"
 
-BaseGraphEditorProcessor::BaseGraphEditorProcessor(const ValueTree &state, Track *track, View &view, ProcessorGraph &processorGraph, ConnectorDragListener &connectorDragListener)
-        : state(state), track(track), view(view), processorGraph(processorGraph), connectorDragListener(connectorDragListener) {
+BaseGraphEditorProcessor::BaseGraphEditorProcessor(const ValueTree &state, Track *track, View &view, StatefulAudioProcessorWrappers &processorWrappers, ConnectorDragListener &connectorDragListener)
+        : state(state), track(track), view(view), processorWrappers(processorWrappers), connectorDragListener(connectorDragListener) {
     this->state.addListener(this);
 
     for (auto child : state) {
@@ -38,7 +38,7 @@ bool BaseGraphEditorProcessor::hitTest(int x, int y) {
 }
 
 void BaseGraphEditorProcessor::resized() {
-    if (auto *processor = processorGraph.getAudioProcessorForState(state)) {
+    if (auto *processor = processorWrappers.getAudioProcessorForState(state)) {
         for (auto *channel : channels)
             layoutChannel(processor, channel);
         repaint();

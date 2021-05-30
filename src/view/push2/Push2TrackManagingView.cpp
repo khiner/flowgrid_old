@@ -51,25 +51,22 @@ void Push2TrackManagingView::updateEnabledPush2Buttons() {
     }
 }
 
-void Push2TrackManagingView::valueTreePropertyChanged(ValueTree &tree, const Identifier &i) {
-    if (Track::isType(tree)) {
-        if (i == TrackIDs::name || i == TrackIDs::colour) {
-            int trackIndex = tracks.getViewIndexForTrack(tree);
-            if (trackIndex < 0 || trackIndex >= trackLabels.size()) return;
+void Push2TrackManagingView::trackPropertyChanged(Track *track, const Identifier &i) {
+    if (i == TrackIDs::name || i == TrackIDs::colour) {
+        int trackIndex = tracks.getViewIndexForTrack(track);
+        if (trackIndex < 0 || trackIndex >= trackLabels.size()) return;
 
-            if (i == TrackIDs::name && !Track::isMaster(tree))
-                trackLabels.getUnchecked(trackIndex)->setText(Track::getName(tree), dontSendNotification);
-        } else if (i == TrackIDs::selected && Track::isSelected(tree)) {
-            trackSelected(tracks.getChildForState(tree));
-        }
-    } else if (i == ViewIDs::gridTrackOffset) {
-        updateEnabledPush2Buttons();
+        if (i == TrackIDs::name && !track->isMaster())
+            trackLabels.getUnchecked(trackIndex)->setText(track->getName(), dontSendNotification);
+    } else if (i == TrackIDs::selected && track->isSelected()) {
+        trackSelected(track);
     }
 }
 
 void Push2TrackManagingView::trackColourChanged(const String &trackUuid, const Colour &colour) {
-    auto track = tracks.findTrackWithUuid(trackUuid);
-    if (!Track::isMaster(track))
+    auto *track = tracks.findTrackWithUuid(trackUuid);
+    if (track == nullptr) return;
+    if (!track->isMaster())
         if (auto *trackLabel = trackLabels[tracks.getViewIndexForTrack(track)])
             trackLabel->setMainColour(colour);
 }

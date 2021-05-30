@@ -84,7 +84,8 @@ static juce::Point<int> limitedDelta(juce::Point<int> fromTrackAndSlot, juce::Po
     bool multipleTracksWithSelections = tracks.moreThanOneTrackHasSelections();
     // In the special case that multiple tracks have selections and the master track is one of them,
     // disallow movement because it doesn't make sense dragging horizontally and vertically at the same time.
-    if (multipleTracksWithSelections && Track::hasSelections(tracks.getMasterTrackState()))
+    const auto *masterTrack = tracks.getMasterTrack();
+    if (multipleTracksWithSelections && masterTrack != nullptr && masterTrack->hasSelections())
         return {0, 0};
 
     bool anyTrackSelected = tracks.anyTrackSelected();
@@ -143,10 +144,11 @@ OwnedArray<UndoableAction> MoveSelectedItems::createInserts(Tracks &tracks, View
         return insertActions;
 
     auto addInsertsForTrackIndex = [&](int fromTrackIndex) {
-        const auto &fromTrack = tracks.getTrackState(fromTrackIndex);
+        const auto *fromTrack = tracks.getChild(fromTrackIndex);
         const int toTrackIndex = fromTrackIndex + trackAndSlotDelta.x;
 
-        if (Track::isSelected(fromTrack)) {
+        if (fromTrack == nullptr) return;
+        if (fromTrack->isSelected()) {
             if (fromTrackIndex != toTrackIndex) {
                 insertActions.add(new InsertTrackAction(fromTrackIndex, toTrackIndex, tracks));
                 insertActions.getLast()->perform();
@@ -154,9 +156,9 @@ OwnedArray<UndoableAction> MoveSelectedItems::createInserts(Tracks &tracks, View
             return;
         }
 
-        if (!Track::findFirstSelectedProcessor(fromTrack).isValid()) return;
+        if (!fromTrack->findFirstSelectedProcessor().isValid()) return;
 
-        const auto selectedProcessors = Track::findSelectedProcessors(fromTrack);
+        const auto selectedProcessors = fromTrack->findSelectedProcessors();
         auto addInsertsForProcessor = [&](const ValueTree &processor) {
             auto toSlot = Processor::getSlot(processor) + trackAndSlotDelta.y;
             insertActions.add(new InsertProcessor(processor, toTrackIndex, toSlot, tracks, view));

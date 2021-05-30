@@ -1,17 +1,18 @@
 #include "SelectTrack.h"
 
-SelectTrack::SelectTrack(const ValueTree &track, bool selected, bool deselectOthers, Tracks &tracks, Connections &connections, View &view, Input &input,
+SelectTrack::SelectTrack(const Track *track, bool selected, bool deselectOthers, Tracks &tracks, Connections &connections, View &view, Input &input,
                          ProcessorGraph &processorGraph)
         : Select(tracks, connections, view, input, processorGraph) {
-    if (!track.isValid()) return; // no-op
+    if (track == nullptr) return; // no-op
 
-    auto trackIndex = tracks.indexOfTrack(track);
+    auto trackIndex = track->getIndex();
     // take care of this track
     newTrackSelections.setUnchecked(trackIndex, selected);
     if (selected) {
-        newSelectedSlotsMasks.setUnchecked(trackIndex, tracks.createFullSelectionBitmask(track));
+        auto fullSelectionBitmask = Track::createFullSelectionBitmask(view.getNumProcessorSlots(track->isMaster()));
+        newSelectedSlotsMasks.setUnchecked(trackIndex, fullSelectionBitmask);
 
-        const ValueTree &firstProcessor = Track::getProcessorLane(track).getChild(0);
+        const auto &firstProcessor = track->getProcessorLane().getChild(0);
         setNewFocusedSlot({trackIndex, firstProcessor.isValid() ? Processor::getSlot(firstProcessor) : 0});
     } else {
         newSelectedSlotsMasks.setUnchecked(trackIndex, BigInteger());

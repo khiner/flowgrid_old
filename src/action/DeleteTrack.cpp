@@ -1,8 +1,8 @@
 #include "DeleteTrack.h"
 
-DeleteTrack::DeleteTrack(const ValueTree &trackToDelete, Tracks &tracks, Connections &connections, ProcessorGraph &processorGraph)
-        : trackToDelete(trackToDelete), trackIndex(trackToDelete.getParent().indexOf(trackToDelete)), tracks(tracks) {
-    for (const auto &processorState : Track::getAllProcessors(trackToDelete)) {
+DeleteTrack::DeleteTrack(Track *trackToDelete, Tracks &tracks, Connections &connections, ProcessorGraph &processorGraph)
+        : deletedTrackState(trackToDelete->getState()), trackIndex(trackToDelete->getIndex()), tracks(tracks) {
+    for (const auto &processorState : trackToDelete->getAllProcessors()) {
         deleteProcessorActions.add(new DeleteProcessor(processorState, tracks.getTrackForProcessor(processorState), connections, processorGraph));
         deleteProcessorActions.getLast()->performTemporary();
     }
@@ -14,12 +14,12 @@ DeleteTrack::DeleteTrack(const ValueTree &trackToDelete, Tracks &tracks, Connect
 bool DeleteTrack::perform() {
     for (auto *deleteProcessorAction : deleteProcessorActions)
         deleteProcessorAction->perform();
-    tracks.getState().removeChild(trackIndex, nullptr);
+    tracks.remove(trackIndex);
     return true;
 }
 
 bool DeleteTrack::undo() {
-    tracks.getState().addChild(trackToDelete, trackIndex, nullptr);
+    tracks.add(deletedTrackState, trackIndex);
     for (int i = deleteProcessorActions.size() - 1; i >= 0; i--)
         deleteProcessorActions.getUnchecked(i)->undo();
     return true;

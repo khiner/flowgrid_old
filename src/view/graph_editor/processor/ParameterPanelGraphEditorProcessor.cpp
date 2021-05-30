@@ -1,7 +1,7 @@
 #include "ParameterPanelGraphEditorProcessor.h"
 
-ParameterPanelGraphEditorProcessor::ParameterPanelGraphEditorProcessor(const ValueTree &state, Track *track, View &view, ProcessorGraph &processorGraph, ConnectorDragListener &connectorDragListener) :
-        BaseGraphEditorProcessor(state, track, view, processorGraph, connectorDragListener) {
+ParameterPanelGraphEditorProcessor::ParameterPanelGraphEditorProcessor(const ValueTree &state, Track *track, View &view, StatefulAudioProcessorWrappers &processorWrappers, ConnectorDragListener &connectorDragListener) :
+        BaseGraphEditorProcessor(state, track, view, processorWrappers, connectorDragListener) {
 //        parametersPanel->addMouseListener(this);
 }
 

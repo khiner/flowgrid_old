@@ -7,7 +7,7 @@
 
 class GraphEditorProcessorLane : public Component, StatefulList<BaseGraphEditorProcessor>, GraphEditorProcessorContainer {
 public:
-    explicit GraphEditorProcessorLane(const ValueTree &state, Track *track, View &view, ProcessorGraph &processorGraph, ConnectorDragListener &connectorDragListener);
+    explicit GraphEditorProcessorLane(const ValueTree &state, Track *track, View &view, StatefulAudioProcessorWrappers &processorWrappers, ConnectorDragListener &connectorDragListener);
 
     ~GraphEditorProcessorLane() override;
 
@@ -57,7 +57,7 @@ private:
     ValueTree state;
     Track *track;
     View &view;
-    ProcessorGraph &processorGraph;
+    StatefulAudioProcessorWrappers &processorWrappers;
     ConnectorDragListener &connectorDragListener;
 
     DrawableRectangle laneDragRectangle;

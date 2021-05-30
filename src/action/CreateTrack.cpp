@@ -17,24 +17,24 @@ String makeTrackNameUnique(const Tracks &tracks, const String &trackName) {
     return trackName;
 }
 
-static int calculateInsertIndex(bool isMaster, const ValueTree &derivedFromTrack, Tracks &tracks) {
+static int calculateInsertIndex(bool isMaster, const Track *derivedFromTrack, Tracks &tracks) {
     if (isMaster) return tracks.getNumNonMasterTracks();
-    return derivedFromTrack.isValid() ? derivedFromTrack.getParent().indexOf(derivedFromTrack) : tracks.getNumNonMasterTracks();
+    return derivedFromTrack != nullptr ? derivedFromTrack->getIndex() : tracks.getNumNonMasterTracks();
 }
 
-CreateTrack::CreateTrack(bool isMaster, const ValueTree &derivedFromTrack, Tracks &tracks, View &view)
+CreateTrack::CreateTrack(bool isMaster, const Track *derivedFromTrack, Tracks &tracks, View &view)
         : CreateTrack(calculateInsertIndex(isMaster, derivedFromTrack, tracks), isMaster, derivedFromTrack, tracks, view) {}
 
-CreateTrack::CreateTrack(int insertIndex, bool isMaster, const ValueTree &derivedFromTrack, Tracks &tracks, View &view)
+CreateTrack::CreateTrack(int insertIndex, bool isMaster, const Track *derivedFromTrack, Tracks &tracks, View &view)
         : insertIndex(insertIndex), tracks(tracks) {
     // TODO move into method and construct in initializer list
     newTrack = ValueTree(TrackIDs::TRACK);
     Track::setMaster(newTrack, isMaster);
     Track::setUuid(newTrack, Uuid().toString());
-    bool isSubTrack = !isMaster && derivedFromTrack.isValid();
-    const String name = isMaster ? "Master" : (isSubTrack ? makeTrackNameUnique(tracks, Track::getName(derivedFromTrack)) : ("Track " + String(tracks.getNumNonMasterTracks() + 1)));
+    bool isSubTrack = !isMaster && derivedFromTrack != nullptr;
+    const String name = isMaster ? "Master" : (isSubTrack ? makeTrackNameUnique(tracks, derivedFromTrack->getName()) : ("Track " + String(tracks.getNumNonMasterTracks() + 1)));
     Track::setName(newTrack, name);
-    Track::setColour(newTrack, isSubTrack ? Track::getColour(derivedFromTrack) : Colour::fromHSV((1.0f / 8.0f) * tracks.size(), 0.65f, 0.65f, 1.0f));
+    Track::setColour(newTrack, isSubTrack ? derivedFromTrack->getColour() : Colour::fromHSV((1.0f / 8.0f) * tracks.size(), 0.65f, 0.65f, 1.0f));
     Track::setSelected(newTrack, false);
 
     auto lanes = ValueTree(ProcessorLanesIDs::PROCESSOR_LANES);

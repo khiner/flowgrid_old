@@ -9,7 +9,6 @@
 #include "model/Output.h"
 #include "PluginManager.h"
 #include "ProcessorGraph.h"
-#include "CopiedTracks.h"
 
 namespace ProjectIDs {
 #define ID(name) const juce::Identifier name(#name);
@@ -69,9 +68,9 @@ struct Project : public Stateful<Project>, public FileBasedDocument, private Cha
     void createProcessor(const PluginDescription &description, int slot = -1);
 
     void deleteSelectedItems();
-    void copySelectedItems() { copiedTracks.copySelectedItems(); }
+    void copySelectedItems() { tracks.copySelectedItemsInto(copiedTracks, processorGraph.getProcessorWrappers()); }
 
-    bool hasCopy() { return copiedTracks.getState().isValid(); }
+    bool hasCopy() { return !copiedTracks.isEmpty(); }
 
     void insert();
 
@@ -148,7 +147,7 @@ private:
     Track *mostRecentlyCreatedTrack;
     ValueTree mostRecentlyCreatedProcessor;
 
-    CopiedTracks copiedTracks;
+    OwnedArray<Track> copiedTracks;
 
     void doCreateAndAddProcessor(const PluginDescription &description, Track *track, int slot = -1);
 

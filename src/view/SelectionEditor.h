@@ -2,7 +2,6 @@
 
 #include "model/Project.h"
 #include "PluginManager.h"
-#include "ProcessorGraph.h"
 #include "processor_editor/ProcessorEditor.h"
 #include "view/graph_editor/TooltipBar.h"
 #include "view/context_pane/ContextPane.h"
@@ -13,7 +12,7 @@ class SelectionEditor : public Component,
                         private ValueTree::Listener,
                         private Tracks::Listener {
 public:
-    SelectionEditor(Project &project, View &view, Tracks &tracks, ProcessorGraph &audioGraphBuilder);
+    SelectionEditor(Project &project, View &view, Tracks &tracks, StatefulAudioProcessorWrappers &processorWrappers);
 
     ~SelectionEditor() override;
 
@@ -31,7 +30,7 @@ private:
     View &view;
     Tracks &tracks;
     PluginManager &pluginManager;
-    ProcessorGraph &audioGraphBuilder;
+    StatefulAudioProcessorWrappers &processorWrappers;
 
     Viewport contextPaneViewport, processorEditorsViewport;
     ContextPane contextPane;

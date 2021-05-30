@@ -24,8 +24,12 @@ struct StatefulList : protected ValueTree::Listener {
     ObjectType *getChild(int index) const noexcept { return children[index]; }
     const Array<ObjectType *> &getChildren() const { return children; }
 
-    int compareElements(ObjectType *first, ObjectType *second) const {
-        return parent.indexOf(first->getState()) - parent.indexOf(second->getState());
+    void add(const ValueTree& child, int index) {
+        parent.addChild(child, index, nullptr);
+    }
+
+    void remove(int index) {
+        parent.removeChild(index, nullptr);
     }
 
     ObjectType *getChildForState(const ValueTree &state) const {
@@ -34,6 +38,10 @@ struct StatefulList : protected ValueTree::Listener {
             if (child->getState() == state) return child;
         }
         return nullptr;
+    }
+
+    int compareElements(ObjectType *first, ObjectType *second) const {
+        return parent.indexOf(first->getState()) - parent.indexOf(second->getState());
     }
 
 protected:

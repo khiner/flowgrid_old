@@ -41,9 +41,9 @@ void ProcessorGraph::addProcessor(const ValueTree &processorState) {
     const Node::Ptr &newNode = Processor::hasNodeId(processorState) ?
                                addNode(std::move(audioProcessor), Processor::getNodeId(processorState)) :
                                addNode(std::move(audioProcessor));
-    processorWrapperForNodeId[newNode->nodeID] = std::make_unique<StatefulAudioProcessorWrapper>
-            (dynamic_cast<AudioPluginInstance *>(newNode->getProcessor()), newNode->nodeID, processorState, undoManager, deviceManager);
-    if (processorWrapperForNodeId.size() == 1)
+    processorWrappers.set(newNode->nodeID, std::make_unique<StatefulAudioProcessorWrapper>
+            (dynamic_cast<AudioPluginInstance *>(newNode->getProcessor()), newNode->nodeID, processorState, undoManager, deviceManager));
+    if (processorWrappers.size() == 1)
         // Added the first processor. Start the timer that flushes new processor state to their value trees.
         startTimerHz(10);
 
@@ -78,7 +78,7 @@ void ProcessorGraph::recursivelyAddProcessors(const ValueTree &processorState) {
 }
 
 void ProcessorGraph::removeProcessor(const ValueTree &processor) {
-    auto *processorWrapper = getProcessorWrapperForState(processor);
+    auto *processorWrapper = processorWrappers.getProcessorWrapperForState(processor);
     const NodeID nodeId = Processor::getNodeId(processor);
     // disconnect should have already been called before delete! (to avoid nested undo actions)
     if (Processor::getName(processor) == MidiInputProcessor::name()) {
@@ -91,7 +91,7 @@ void ProcessorGraph::removeProcessor(const ValueTree &processor) {
             }
         }
     }
-    processorWrapperForNodeId.erase(nodeId);
+    processorWrappers.erase(nodeId);
     nodes.removeObject(AudioProcessorGraph::getNodeForId(nodeId));
     topologyChanged();
 }
@@ -126,7 +126,7 @@ bool ProcessorGraph::canAddConnection(Node *source, int sourceChannel, Node *des
 bool ProcessorGraph::addConnection(const AudioProcessorGraph::Connection &connection) {
     undoManager.beginNewTransaction();
     ConnectionType connectionType = connection.source.isMIDI() ? midi : audio;
-    const auto &sourceProcessor = getProcessorStateForNodeId(connection.source.nodeID);
+    const auto &sourceProcessor = processorWrappers.getProcessorStateForNodeId(connection.source.nodeID);
     // disconnect default outgoing
     undoManager.perform(new DisconnectProcessor(connections, sourceProcessor, connectionType, true, false, false, true));
     if (undoManager.perform(new CreateConnection(connection, false, connections, *this))) {
@@ -152,7 +152,7 @@ bool ProcessorGraph::removeConnection(const AudioProcessorGraph::Connection &con
     undoManager.beginNewTransaction();
     bool removed = undoManager.perform(new DeleteConnection(connectionState, true, true, connections));
     if (removed && fg::Connection::isCustom(connectionState)) {
-        const auto &sourceProcessor = getProcessorStateForNodeId(fg::Connection::getSourceNodeId(connectionState));
+        const auto &sourceProcessor = processorWrappers.getProcessorStateForNodeId(fg::Connection::getSourceNodeId(connectionState));
         undoManager.perform(new UpdateProcessorDefaultConnections(sourceProcessor, false, connections, output, *this));
         undoManager.perform(new ResetDefaultExternalInputConnectionsAction(connections, tracks, input, *this));
     }
@@ -234,11 +234,5 @@ void ProcessorGraph::valueTreeChildRemoved(ValueTree &parent, ValueTree &child, 
 }
 
 void ProcessorGraph::timerCallback() {
-    bool anythingUpdated = false;
-
-    for (auto &nodeIdAndProcessorWrapper : processorWrapperForNodeId)
-        if (nodeIdAndProcessorWrapper.second->flushParameterValuesToValueTree())
-            anythingUpdated = true;
-
-    startTimer(anythingUpdated ? 1000 / 50 : std::clamp(getTimerInterval() + 20, 50, 500));
+    startTimer(processorWrappers.flushAllParameterValuesToValueTree() ? 1000 / 50 : std::clamp(getTimerInterval() + 20, 50, 500));
 }

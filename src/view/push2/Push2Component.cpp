@@ -2,11 +2,11 @@
 
 #include "ApplicationPropertiesAndCommandManager.h"
 
-Push2Component::Push2Component(View &view, Tracks &tracks, Connections &connections, Project &project, ProcessorGraph &processorGraph, Push2MidiCommunicator &push2MidiCommunicator)
+Push2Component::Push2Component(View &view, Tracks &tracks, Connections &connections, Project &project, StatefulAudioProcessorWrappers &processorWrappers, Push2MidiCommunicator &push2MidiCommunicator)
         : Push2ComponentBase(view, tracks, push2MidiCommunicator),
-          project(project), connections(connections), processorGraph(processorGraph),
+          project(project), connections(connections), processorWrappers(processorWrappers),
           processorView(view, tracks, project, push2MidiCommunicator), processorSelector(view, tracks, project, push2MidiCommunicator),
-          mixerView(view, tracks, project, processorGraph, push2MidiCommunicator), push2NoteModePadLedManager(tracks, push2MidiCommunicator) {
+          mixerView(view, tracks, project, processorWrappers, push2MidiCommunicator), push2NoteModePadLedManager(tracks, push2MidiCommunicator) {
     startTimer(60);
 
     addChildComponent(processorView);
@@ -65,7 +65,7 @@ void Push2Component::shiftReleased() {
 
 void Push2Component::masterEncoderRotated(float changeAmount) {
     const auto &trackOutputProcessor = Track::getOutputProcessor(tracks.getMasterTrackState());
-    if (auto *masterGainProcessor = processorGraph.getProcessorWrapperForState(trackOutputProcessor))
+    if (auto *masterGainProcessor = processorWrappers.getProcessorWrapperForState(trackOutputProcessor))
         if (auto *masterGainParameter = masterGainProcessor->getParameter(1))
             masterGainParameter->setValue(masterGainParameter->getValue() + changeAmount);
 }
@@ -169,8 +169,8 @@ void Push2Component::drawFrame() {
 }
 
 void Push2Component::updatePush2SelectionDependentButtons() {
-    const auto &focusedTrack = tracks.getFocusedTrackState();
-    if (focusedTrack.isValid()) {
+    const auto *focusedTrack = tracks.getFocusedTrack();
+    if (focusedTrack != nullptr) {
         push2.activateWhiteLedButton(Push2MidiCommunicator::delete_);
         push2.enableWhiteLedButton(Push2MidiCommunicator::addDevice);
     } else {
@@ -183,9 +183,9 @@ void Push2Component::updatePush2SelectionDependentButtons() {
     else
         push2.disableWhiteLedButton(Push2::duplicate);
 
-    if (!tracks.getMasterTrackState().isValid())
+    if (tracks.getMasterTrack() == nullptr)
         push2.disableWhiteLedButton(Push2MidiCommunicator::master);
-    else if (focusedTrack != tracks.getMasterTrackState())
+    else if (focusedTrack != tracks.getMasterTrack())
         push2.enableWhiteLedButton(Push2MidiCommunicator::master);
     else
         push2.activateWhiteLedButton(Push2MidiCommunicator::master);
@@ -219,7 +219,7 @@ void Push2Component::updatePush2NoteModePadLedManagerVisibility() {
 }
 
 void Push2Component::updateFocusedProcessor() {
-    auto *focusedProcessorWrapper = processorGraph.getProcessorWrapperForState(tracks.getFocusedProcessor());
+    auto *focusedProcessorWrapper = processorWrappers.getProcessorWrapperForState(tracks.getFocusedProcessor());
     if (focusedProcessorWrapper == nullptr) return;
 
     if (currentlyViewingChild != &mixerView || focusedProcessorWrapper->processor->getName() != InternalPluginFormat::getTrackOutputProcessorName()) {

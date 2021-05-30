@@ -27,8 +27,7 @@ Project::Project(View &view, Tracks &tracks, Connections &connections, Input &in
           processorGraph(processorGraph),
           undoManager(undoManager),
           pluginManager(pluginManager),
-          deviceManager(deviceManager),
-          copiedTracks(tracks, processorGraph) {
+          deviceManager(deviceManager) {
     state.setProperty(ProjectIDs::name, "My Project", nullptr);
     state.appendChild(input.getState(), nullptr);
     state.appendChild(output.getState(), nullptr);
@@ -122,18 +121,17 @@ void Project::insert() {
     if (isCurrentlyDraggingProcessor())
         endDraggingProcessor();
     undoManager.beginNewTransaction();
-    undoManager.perform(new Insert(false, copiedTracks.getState(), view.getFocusedTrackAndSlot(), tracks, connections, view, input, processorGraph));
+    undoManager.perform(new Insert(false, copiedTracks, view.getFocusedTrackAndSlot(), tracks, connections, view, input, processorGraph));
     updateAllDefaultConnections();
 }
 
 void Project::duplicateSelectedItems() {
     if (isCurrentlyDraggingProcessor())
         endDraggingProcessor();
-    CopiedTracks duplicateState(tracks, processorGraph);
-    duplicateState.copySelectedItems();
-
+    OwnedArray<Track> duplicateTracks;
+    tracks.copySelectedItemsInto(duplicateTracks, processorGraph.getProcessorWrappers());
     undoManager.beginNewTransaction();
-    undoManager.perform(new Insert(true, duplicateState.getState(), view.getFocusedTrackAndSlot(), tracks, connections, view, input, processorGraph));
+    undoManager.perform(new Insert(true, duplicateTracks, view.getFocusedTrackAndSlot(), tracks, connections, view, input, processorGraph));
     updateAllDefaultConnections();
 }
 
@@ -195,9 +193,9 @@ void Project::setProcessorSlotSelected(Track *track, int slot, bool selected, bo
     }
     if (selectAction == nullptr) {
         if (slot == -1)
-            selectAction = new SelectTrack(track->getState(), selected, deselectOthers, tracks, connections, view, input, processorGraph);
+            selectAction = new SelectTrack(track, selected, deselectOthers, tracks, connections, view, input, processorGraph);
         else
-            selectAction = new SelectProcessorSlot(track->getState(), slot, selected, selected && deselectOthers, tracks, connections, view, input, processorGraph);
+            selectAction = new SelectProcessorSlot(track, slot, selected, selected && deselectOthers, tracks, connections, view, input, processorGraph);
     }
     undoManager.perform(selectAction);
 }
@@ -252,7 +250,7 @@ void Project::createDefaultProject() {
 
 void Project::doCreateAndAddProcessor(const PluginDescription &description, Track *track, int slot) {
     if (PluginManager::isGeneratorOrInstrument(&description) && tracks.doesTrackAlreadyHaveGeneratorOrInstrument(track)) {
-        undoManager.perform(new CreateTrack(false, track->getState(), tracks, view));
+        undoManager.perform(new CreateTrack(false, track, tracks, view));
         return doCreateAndAddProcessor(description, mostRecentlyCreatedTrack, slot);
     }
 
@@ -307,7 +305,7 @@ bool Project::isDeviceWithNamePresent(const String &deviceName) const {
 Result Project::saveDocument(const File &file) {
     for (const auto *track : tracks.getChildren())
         for (auto processorState : track->getProcessorLane())
-            processorGraph.saveProcessorStateInformationToState(processorState);
+            processorGraph.getProcessorWrappers().saveProcessorStateInformationToState(processorState);
 
     if (auto xml = state.createXml())
         if (!xml->writeTo(file))

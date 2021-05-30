@@ -4,8 +4,8 @@
 #include "model/Tracks.h"
 
 struct CreateTrack : public UndoableAction {
-    CreateTrack(bool isMaster, const ValueTree &derivedFromTrack, Tracks &tracks, View &view);
-    CreateTrack(int insertIndex, bool isMaster, const ValueTree &derivedFromTrack, Tracks &tracks, View &view);
+    CreateTrack(bool isMaster, const Track *derivedFromTrack, Tracks &tracks, View &view);
+    CreateTrack(int insertIndex, bool isMaster, const Track *derivedFromTrack, Tracks &tracks, View &view);
 
     bool perform() override;
     bool undo() override;

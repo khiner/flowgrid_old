@@ -6,6 +6,8 @@
 #include "Stateful.h"
 #include "PluginManager.h"
 #include "StatefulList.h"
+#include "ConnectionType.h"
+#include "StatefulAudioProcessorWrappers.h"
 
 namespace TracksIDs {
 #define ID(name) const juce::Identifier name(#name);
@@ -22,7 +24,6 @@ struct Tracks : public Stateful<Tracks>,
         virtual void trackPropertyChanged(Track *track, const Identifier &i) {}
     };
 
-
     Tracks(View &view, PluginManager &pluginManager, UndoManager &undoManager);
 
     ~Tracks() override {
@@ -37,16 +38,48 @@ struct Tracks : public Stateful<Tracks>,
     void addTracksListener(Listener *listener) { listeners.add(listener); }
     void removeTracksListener(Listener *listener) { listeners.remove(listener); }
 
-    Track *createNewObject(const ValueTree &tree) override { return new Track(tree); }
-    void deleteObject(Track *track) override { delete track; }
-    void newObjectAdded(Track *track) override { listeners.call([track](Listener &l) { l.trackAdded(track); }); }
-    void objectRemoved(Track *track, int oldIndex) override { listeners.call([track, oldIndex](Listener &l) { l.trackRemoved(track, oldIndex); }); }
-    void objectOrderChanged() override { listeners.call([](Listener &l) { l.trackOrderChanged(); }); }
-
     int indexOfTrack(const ValueTree &track) const { return parent.indexOf(track); }
 
+    bool anyNonMasterTrackHasEffectProcessor(ConnectionType connectionType) {
+        for (const auto *track : children)
+            if (!track->isMaster())
+                for (const auto &processor : track->getProcessorLane())
+                    if (Processor::isProcessorAnEffect(processor, connectionType))
+                        return true;
+        return false;
+    }
+
+    // Clears and populates the passed in array
+    void copySelectedItemsInto(OwnedArray<Track> &copiedTracks, StatefulAudioProcessorWrappers &processorWrappers) {
+        copiedTracks.clear();
+        for (auto *track : children) {
+            auto copiedTrack = track->copy();
+            if (track->isSelected()) {
+                copiedTrack.getState().copyPropertiesFrom(track->getState(), nullptr);
+                for (auto processor : track->getState())
+                    if (Processor::isType(processor))
+                        copiedTrack.getState().appendChild(processorWrappers.copyProcessor(processor), nullptr);
+            } else {
+                copiedTrack.setMaster(track->isMaster());
+            }
+
+            auto copiedLanes = ValueTree(ProcessorLanesIDs::PROCESSOR_LANES);
+            for (const auto &lane : track->getProcessorLanes()) {
+                auto copiedLane = ValueTree(ProcessorLaneIDs::PROCESSOR_LANE);
+                ProcessorLane::setSelectedSlotsMask(copiedLane, ProcessorLane::getSelectedSlotsMask(lane));
+                for (auto processor : lane)
+                    if (track->isSelected() || track->isProcessorSelected(processor))
+                        copiedLane.appendChild(processorWrappers.copyProcessor(processor), nullptr);
+                copiedLanes.appendChild(copiedLane, nullptr);
+            }
+
+            copiedTrack.getState().appendChild(copiedLanes, nullptr);
+            copiedTracks.add(std::make_unique<Track>(copiedTrack));
+        }
+    }
+
     ValueTree getTrackState(int trackIndex) const { return parent.getChild(trackIndex); }
-    int getViewIndexForTrack(const ValueTree &track) const { return indexOfTrack(track) - view.getGridViewTrackOffset(); }
+    int getViewIndexForTrack(const Track *track) const { return track->getIndex() - view.getGridViewTrackOffset(); }
     Track *getTrackWithViewIndex(int trackViewIndex) const { return getChild(trackViewIndex + view.getGridViewTrackOffset()); }
     Track *getMasterTrack() const {
         for (auto *track : children)
@@ -87,10 +120,10 @@ struct Tracks : public Stateful<Tracks>,
         return false;
     }
 
-    ValueTree findTrackWithUuid(const String &uuid) {
+    Track *findTrackWithUuid(const String &uuid) {
         for (auto *track : children)
             if (track->getUuid() == uuid)
-                return track->getState();
+                return track;
         return {};
     }
 
@@ -150,18 +183,8 @@ struct Tracks : public Stateful<Tracks>,
         return trackSelections;
     }
 
-    BigInteger createFullSelectionBitmask(const ValueTree &track) const {
-        BigInteger selectedSlotsMask;
-        selectedSlotsMask.setRange(0, getNumSlotsForTrack(track), true);
-        return selectedSlotsMask;
-    }
-
-    Array<ValueTree> findAllSelectedItems() const;
-
-    void setTrackName(ValueTree track, const String &name) {
-        undoManager.beginNewTransaction();
-        track.setProperty(TrackIDs::name, name, &undoManager);
-    }
+    Array<Track *> findAllSelectedTracks() const;
+    Array<ValueTree> findAllSelectedProcessors() const;
 
     void showWindow(ValueTree processor, PluginWindow::Type type) {
         processor.setProperty(ProcessorIDs::pluginWindowType, int(type), &undoManager);
@@ -249,7 +272,7 @@ struct Tracks : public Stateful<Tracks>,
 
     juce::Point<int> gridPositionToTrackAndSlot(juce::Point<int> gridPosition, bool allowUpFromMaster = false) const;
 
-    int getNumSlotsForTrack(const ValueTree &track) const { return view.getNumProcessorSlots(Track::isMaster(track)); }
+    int getNumSlotsForTrack(const Track *track) const { return view.getNumProcessorSlots(track != nullptr && track->isMaster()); }
     int findSlotAt(juce::Point<int> position, const Track *track) const;
 
     static constexpr juce::Point<int> INVALID_TRACK_AND_SLOT = {-1, -1};
@@ -262,6 +285,13 @@ struct Tracks : public Stateful<Tracks>,
             }
         }
     }
+
+protected:
+    Track *createNewObject(const ValueTree &tree) override { return new Track(tree); }
+    void deleteObject(Track *track) override { delete track; }
+    void newObjectAdded(Track *track) override { listeners.call([track](Listener &l) { l.trackAdded(track); }); }
+    void objectRemoved(Track *track, int oldIndex) override { listeners.call([track, oldIndex](Listener &l) { l.trackRemoved(track, oldIndex); }); }
+    void objectOrderChanged() override { listeners.call([](Listener &l) { l.trackOrderChanged(); }); }
 
 private:
     View &view;

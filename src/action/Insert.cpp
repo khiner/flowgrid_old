@@ -3,40 +3,39 @@
 #include "CreateTrack.h"
 #include "CreateProcessor.h"
 
-static int getIndexOfFirstCopiedTrackWithSelections(const ValueTree &copiedTracks) {
-    for (const auto &track : copiedTracks)
-        if (Track::isSelected(track) || Track::hasAnySlotSelected(track))
+static int getIndexOfFirstCopiedTrackWithSelections(const OwnedArray<Track> &copiedTracks) {
+    for (const auto *track : copiedTracks)
+        if (track->isSelected() || track->hasAnySlotSelected())
             return copiedTracks.indexOf(track);
-
     assert(false); // Copied state, by definition, must have a selection.
 }
 
-static bool anyCopiedTrackSelected(const ValueTree &copiedTracks) {
-    for (const ValueTree &track : copiedTracks)
-        if (Track::isSelected(track))
+static bool anyCopiedTrackSelected(const OwnedArray<Track> &copiedTracks) {
+    for (const auto *track : copiedTracks)
+        if (track->isSelected())
             return true;
     return false;
 }
 
-static juce::Point<int> limitToTrackAndSlot(juce::Point<int> toTrackAndSlot, const ValueTree &copiedTracks) {
+static juce::Point<int> limitToTrackAndSlot(juce::Point<int> toTrackAndSlot, const OwnedArray<Track> &copiedTracks) {
     return {toTrackAndSlot.x, anyCopiedTrackSelected(copiedTracks) ? 0 : toTrackAndSlot.y};
 }
 
-static std::vector<int> findSelectedNonMasterTrackIndices(const ValueTree &copiedTracks) {
+static std::vector<int> findSelectedNonMasterTrackIndices(const OwnedArray<Track> &copiedTracks) {
     std::vector<int> selectedTrackIndices;
-    for (const auto &track : copiedTracks)
-        if (Track::isSelected(track) && !Track::isMaster(track))
+    for (auto *track : copiedTracks)
+        if (track->isSelected() && !track->isMaster())
             selectedTrackIndices.push_back(copiedTracks.indexOf(track));
     return selectedTrackIndices;
 }
 
-static juce::Point<int> findFromTrackAndSlot(const ValueTree &copiedTracks) {
+static juce::Point<int> findFromTrackAndSlot(const OwnedArray<Track> &copiedTracks) {
     int fromTrackIndex = getIndexOfFirstCopiedTrackWithSelections(copiedTracks);
     if (anyCopiedTrackSelected(copiedTracks)) return {fromTrackIndex, 0};
 
     int fromSlot = INT_MAX;
-    for (const auto &track : copiedTracks) {
-        int lowestSelectedSlotForTrack = Track::getSlotMask(track).findNextSetBit(0);
+    for (const auto *track : copiedTracks) {
+        int lowestSelectedSlotForTrack = track->getSlotMask().findNextSetBit(0);
         if (lowestSelectedSlotForTrack != -1)
             fromSlot = std::min(fromSlot, lowestSelectedSlotForTrack);
     }
@@ -61,7 +60,7 @@ static std::vector<int> findDuplicationIndices(std::vector<int> currentIndices) 
     return duplicationIndices;
 }
 
-Insert::Insert(bool duplicate, const ValueTree &copiedTracks, const juce::Point<int> toTrackAndSlot,
+Insert::Insert(bool duplicate, const OwnedArray<Track> &copiedTracks, const juce::Point<int> toTrackAndSlot,
                Tracks &tracks, Connections &connections, View &view, Input &input, ProcessorGraph &processorGraph)
         : tracks(tracks), view(view), processorGraph(processorGraph),
           fromTrackAndSlot(findFromTrackAndSlot(copiedTracks)), toTrackAndSlot(limitToTrackAndSlot(toTrackAndSlot, copiedTracks)),
@@ -70,23 +69,23 @@ Insert::Insert(bool duplicate, const ValueTree &copiedTracks, const juce::Point<
 
     if (!duplicate && tracks.getMasterTrackState().isValid() && toTrackAndSlot.x == tracks.getNumNonMasterTracks()) {
         // When inserting into master track, only insert the processors of the first track with selections
-        copyProcessorsFromTrack(copiedTracks.getChild(fromTrackAndSlot.x), fromTrackAndSlot.x, tracks.getNumNonMasterTracks(), trackAndSlotDiff.y);
+        copyProcessorsFromTrack(copiedTracks[fromTrackAndSlot.x], fromTrackAndSlot.x, tracks.getNumNonMasterTracks(), trackAndSlotDiff.y);
     } else {
         // First pass: insert processors that are selected without their parent track also selected.
         // This is done because adding new tracks changes the track indices relative to their current position.
-        for (const auto &copiedTrack : copiedTracks) {
-            if (!Track::isSelected(copiedTrack)) {
+        for (const auto *copiedTrack : copiedTracks) {
+            if (!copiedTrack->isSelected()) {
                 int fromTrackIndex = copiedTracks.indexOf(copiedTrack);
                 if (duplicate) {
                     duplicateSelectedProcessors(copiedTrack, copiedTracks);
-                } else if (Track::isMaster(copiedTrack)) {
+                } else if (copiedTrack->isMaster()) {
                     // Processors copied from master track can only get inserted into master track.
                     const auto &masterTrack = tracks.getMasterTrackState();
                     if (masterTrack.isValid())
                         copyProcessorsFromTrack(copiedTrack, fromTrackIndex, tracks.indexOfTrack(masterTrack), trackAndSlotDiff.y);
                 } else {
                     int toTrackIndex = copiedTracks.indexOf(copiedTrack) + trackAndSlotDiff.x;
-                    const auto &lane = Track::getProcessorLane(copiedTrack);
+                    const auto &lane = copiedTrack->getProcessorLane();
                     if (lane.getNumChildren() > 0) { // create tracks to make room
                         while (toTrackIndex >= tracks.getNumNonMasterTracks()) {
                             addAndPerformAction(new CreateTrack(false, {}, tracks, view));
@@ -102,7 +101,7 @@ Insert::Insert(bool duplicate, const ValueTree &copiedTracks, const juce::Point<
         const auto duplicatedTrackIndices = findDuplicationIndices(selectedTrackIndices);
         for (unsigned long i = 0; i < selectedTrackIndices.size(); i++) {
             int fromTrackIndex = selectedTrackIndices[i];
-            const ValueTree &fromTrack = copiedTracks.getChild(fromTrackIndex);
+            Track *fromTrack = copiedTracks[fromTrackIndex];
             if (duplicate) {
                 addAndPerformCreateTrackAction(fromTrack, fromTrackIndex, duplicatedTrackIndices[i]);
             } else {
@@ -144,8 +143,8 @@ bool Insert::undo() {
     return true;
 }
 
-void Insert::duplicateSelectedProcessors(const ValueTree &track, const ValueTree &copiedTracks) {
-    const BigInteger slotsMask = Track::getSlotMask(track);
+void Insert::duplicateSelectedProcessors(const Track *track, const OwnedArray<Track> &copiedTracks) {
+    const BigInteger slotsMask = track->getSlotMask();
     std::vector<int> selectedSlots;
     for (int slot = 0; slot <= std::min(tracks.getNumSlotsForTrack(track) - 1, slotsMask.getHighestBit()); slot++)
         if (slotsMask[slot])
@@ -154,17 +153,17 @@ void Insert::duplicateSelectedProcessors(const ValueTree &track, const ValueTree
     auto duplicatedSlots = findDuplicationIndices(selectedSlots);
     int trackIndex = copiedTracks.indexOf(track);
     for (unsigned long i = 0; i < selectedSlots.size(); i++) {
-        const auto &processor = Track::getProcessorAtSlot(track, selectedSlots[i]);
+        const auto &processor = track->getProcessorAtSlot(selectedSlots[i]);
         addAndPerformCreateProcessorAction(processor, trackIndex, selectedSlots[i], trackIndex, duplicatedSlots[i]);
     }
 }
 
-void Insert::copyProcessorsFromTrack(const ValueTree &fromTrack, int fromTrackIndex, int toTrackIndex, int slotDiff) {
-    const BigInteger slotsMask = Track::getSlotMask(fromTrack);
+void Insert::copyProcessorsFromTrack(const Track *fromTrack, int fromTrackIndex, int toTrackIndex, int slotDiff) {
+    const BigInteger slotsMask = fromTrack->getSlotMask();
     for (int fromSlot = 0; fromSlot <= slotsMask.getHighestBit(); fromSlot++) {
-        if (slotsMask[fromSlot])
-            addAndPerformCreateProcessorAction(Track::getProcessorAtSlot(fromTrack, fromSlot), fromTrackIndex, fromSlot,
-                                               toTrackIndex, fromSlot + slotDiff);
+        if (slotsMask[fromSlot]) {
+            addAndPerformCreateProcessorAction(fromTrack->getProcessorAtSlot(fromSlot), fromTrackIndex, fromSlot, toTrackIndex, fromSlot + slotDiff);
+        }
     }
 }
 
@@ -182,15 +181,17 @@ void Insert::addAndPerformCreateProcessorAction(const ValueTree &processor, int 
         newFocusedTrackAndSlot = {toTrackIndex, toSlot};
 }
 
-void Insert::addAndPerformCreateTrackAction(const ValueTree &track, int fromTrackIndex, int toTrackIndex) {
+void Insert::addAndPerformCreateTrackAction(Track *track, int fromTrackIndex, int toTrackIndex) {
     addAndPerformAction(new CreateTrack(toTrackIndex, false, track, tracks, view));
+    if (track == nullptr) return;
+
     // Create track-level processors
-    for (const auto &processor : track)
+    for (const auto &processor : track->getState())
         if (Processor::isType(processor))
             addAndPerformAction(new CreateProcessor(processor.createCopy(), toTrackIndex, -1, tracks, view, processorGraph));
 
     // Create in-lane processors
-    for (const auto &processor : Track::getProcessorLane(track)) {
+    for (const auto &processor : track->getProcessorLane()) {
         int slot = Processor::getSlot(processor);
         addAndPerformCreateProcessorAction(processor, fromTrackIndex, slot, toTrackIndex, slot);
     }
@@ -211,8 +212,9 @@ Insert::MoveSelections::MoveSelections(const OwnedArray<UndoableAction> &createA
             newSelectedSlotsMasks.setUnchecked(createProcessorAction->trackIndex, mask);
         } else if (auto *createTrackAction = dynamic_cast<CreateTrack *>(createAction)) {
             newTrackSelections.setUnchecked(createTrackAction->insertIndex, true);
-            const auto &track = tracks.getTrackState(createTrackAction->insertIndex);
-            newSelectedSlotsMasks.setUnchecked(createTrackAction->insertIndex, tracks.createFullSelectionBitmask(track));
+            const auto *track = tracks.getChild(createTrackAction->insertIndex);
+            const auto fullSelectionBitmask = Track::createFullSelectionBitmask(view.getNumProcessorSlots(track != nullptr && track->isMaster()));
+            newSelectedSlotsMasks.setUnchecked(createTrackAction->insertIndex, fullSelectionBitmask);
         }
     }
 }

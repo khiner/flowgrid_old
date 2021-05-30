@@ -5,8 +5,8 @@
 
 #include "TrackOutputGraphEditorProcessor.h"
 
-TrackOutputGraphEditorProcessor::TrackOutputGraphEditorProcessor(const ValueTree &state, Track *track, View &view, ProcessorGraph &processorGraph, ConnectorDragListener &connectorDragListener) :
-        BaseGraphEditorProcessor(state, track, view, processorGraph, connectorDragListener) {
+TrackOutputGraphEditorProcessor::TrackOutputGraphEditorProcessor(const ValueTree &state, Track *track, View &view, StatefulAudioProcessorWrappers &processorWrappers, ConnectorDragListener &connectorDragListener) :
+        BaseGraphEditorProcessor(state, track, view, processorWrappers, connectorDragListener) {
 }
 
 TrackOutputGraphEditorProcessor::~TrackOutputGraphEditorProcessor() {

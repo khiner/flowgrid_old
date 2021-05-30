@@ -5,7 +5,7 @@
 
 class GraphEditorConnectors : public Component, public StatefulList<GraphEditorConnector> {
 public:
-    explicit GraphEditorConnectors(Connections &connections, ConnectorDragListener &connectorDragListener, GraphEditorProcessorContainer &graphEditorProcessorContainer, ProcessorGraph &graph)
+    explicit GraphEditorConnectors(Connections &connections, ConnectorDragListener &connectorDragListener, GraphEditorProcessorContainer &graphEditorProcessorContainer)
             : StatefulList<GraphEditorConnector>(connections.getState()), connectorDragListener(connectorDragListener), graphEditorProcessorContainer(graphEditorProcessorContainer) {
         rebuildObjects();
         setInterceptsMouseClicks(false, true);

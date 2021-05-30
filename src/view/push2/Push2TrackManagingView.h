@@ -20,10 +20,13 @@ protected:
     void trackAdded(Track *track) override { updateEnabledPush2Buttons(); }
     void trackRemoved(Track *track, int oldIndex) override { updateEnabledPush2Buttons(); }
     void trackOrderChanged() override { updateEnabledPush2Buttons(); }
+    void trackPropertyChanged(Track *track, const Identifier &i) override;
 
     virtual void trackSelected(Track *track) { updateEnabledPush2Buttons(); }
 
-    void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override;
+    void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {
+        if (i == ViewIDs::gridTrackOffset) updateEnabledPush2Buttons();
+    }
 
 protected:
     Project &project;

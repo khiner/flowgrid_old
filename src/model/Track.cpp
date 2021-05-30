@@ -68,16 +68,6 @@ Array<ValueTree> Track::getAllProcessors() const {
     return allProcessors;
 }
 
-Array<ValueTree> Track::getAllProcessors(const ValueTree &state) {
-    Array<ValueTree> allProcessors;
-    allProcessors.add(getInputProcessor(state));
-    for (const auto &processor : getProcessorLane(state)) {
-        allProcessors.add(processor);
-    }
-    allProcessors.add(getOutputProcessor(state));
-    return allProcessors;
-}
-
 int Track::getInsertIndexForProcessor(const ValueTree &state, const ValueTree &processor, int insertSlot) {
     const auto &lane = Track::getProcessorLane(state);
     bool sameLane = lane == Track::getProcessorLaneForProcessor(processor);
@@ -91,37 +81,10 @@ int Track::getInsertIndexForProcessor(const ValueTree &state, const ValueTree &p
     return handleSameLane(lane.getNumChildren());
 }
 
-ValueTree Track::findProcessorNearestToSlot(const ValueTree &state, int slot) {
-    const auto &lane = Track::getProcessorLane(state);
-    auto nearestSlot = INT_MAX;
-    ValueTree nearestProcessor;
-    for (const auto &processor : lane) {
-        int otherSlot = Processor::getSlot(processor);
-        if (otherSlot == slot) return processor;
-
-        if (abs(slot - otherSlot) < abs(slot - nearestSlot)) {
-            nearestSlot = otherSlot;
-            nearestProcessor = processor;
-        }
-        if (otherSlot > slot) break; // processors are ordered by slot.
-    }
-    return nearestProcessor;
-}
-
 ValueTree Track::findFirstSelectedProcessor(const ValueTree &state) {
     for (const auto &processor : getProcessorLane(state))
         if (isSlotSelected(state, Processor::getSlot(processor)))
             return processor;
-    return {};
-}
-
-ValueTree Track::findLastSelectedProcessor(const ValueTree &state) {
-    const auto &lane = getProcessorLane(state);
-    for (int i = lane.getNumChildren() - 1; i >= 0; i--) {
-        const auto &processor = lane.getChild(i);
-        if (isSlotSelected(state, Processor::getSlot(processor)))
-            return processor;
-    }
     return {};
 }
 

@@ -104,9 +104,7 @@ void Push2ProcessorView::updateEnabledPush2Buttons() {
 }
 
 void Push2ProcessorView::updatePageButtonVisibility() {
-    const auto &focusedTrack = tracks.getFocusedTrackState();
-    Colour trackColour = getColourForTrack(focusedTrack);
-
+    const auto &trackColour = getColourForTrack(tracks.getFocusedTrack());
     if (processorHasFocus) { // TODO reset when processor changes
         processorPageLeftButton.setVisible(false);
         processorPageRightButton.setVisible(false);
@@ -170,18 +168,15 @@ void Push2ProcessorView::updateProcessorButtons() {
 }
 
 void Push2ProcessorView::updateColours() {
-    const auto &focusedTrack = tracks.getFocusedTrackState();
-    if (focusedTrack.isValid()) {
-        const auto &colour = getColourForTrack(focusedTrack);
-        for (auto *processorLabel : processorLabels) {
-            processorLabel->setMainColour(colour);
-        }
-        escapeProcessorFocusButton.setColour(colour);
-        parameterPageLeftButton.setColour(colour);
-        parameterPageRightButton.setColour(colour);
-        processorPageLeftButton.setColour(colour);
-        processorPageRightButton.setColour(colour);
+    const auto &colour = getColourForTrack(tracks.getFocusedTrack());
+    for (auto *processorLabel : processorLabels) {
+        processorLabel->setMainColour(colour);
     }
+    escapeProcessorFocusButton.setColour(colour);
+    parameterPageLeftButton.setColour(colour);
+    parameterPageRightButton.setColour(colour);
+    processorPageLeftButton.setColour(colour);
+    processorPageRightButton.setColour(colour);
 }
 
 void Push2ProcessorView::pageParametersLeft() {
@@ -221,8 +216,8 @@ void Push2ProcessorView::valueTreePropertyChanged(ValueTree &tree, const Identif
 
 void Push2ProcessorView::trackColourChanged(const String &trackUuid, const Colour &colour) {
     Push2TrackManagingView::trackColourChanged(trackUuid, colour);
-    auto track = tracks.findTrackWithUuid(trackUuid);
-    if (Track::hasSelections(track)) {
+    auto *track = tracks.findTrackWithUuid(trackUuid);
+    if (track != nullptr && track->hasSelections()) {
         updateColours();
     }
 }

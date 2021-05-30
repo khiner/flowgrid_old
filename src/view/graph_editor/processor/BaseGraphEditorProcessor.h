@@ -2,11 +2,12 @@
 
 #include "view/graph_editor/ConnectorDragListener.h"
 #include "view/graph_editor/GraphEditorChannel.h"
-#include "ProcessorGraph.h"
+#include "model/View.h"
+#include "model/StatefulAudioProcessorWrappers.h"
 
 class BaseGraphEditorProcessor : public Component, public ValueTree::Listener {
 public:
-    BaseGraphEditorProcessor(const ValueTree &state, Track *track, View &view, ProcessorGraph &processorGraph, ConnectorDragListener &connectorDragListener);
+    BaseGraphEditorProcessor(const ValueTree &state, Track *track, View &view, StatefulAudioProcessorWrappers &processorWrappers, ConnectorDragListener &connectorDragListener);
 
     ~BaseGraphEditorProcessor() override;
 
@@ -24,7 +25,7 @@ public:
     int getNumInputChannels() const { return state.getChildWithName(InputChannelsIDs::INPUT_CHANNELS).getNumChildren(); }
     int getNumOutputChannels() const { return state.getChildWithName(OutputChannelsIDs::OUTPUT_CHANNELS).getNumChildren(); }
     bool isSelected() { return track != nullptr && track->isProcessorSelected(state); }
-    StatefulAudioProcessorWrapper *getProcessorWrapper() const { return processorGraph.getProcessorWrapperForState(state); }
+    StatefulAudioProcessorWrapper *getProcessorWrapper() const { return processorWrappers.getProcessorWrapperForState(state); }
 
     void paint(Graphics &g) override;
     bool hitTest(int x, int y) override;
@@ -70,7 +71,7 @@ protected:
 protected:
     Track *track;
     View &view;
-    ProcessorGraph &processorGraph;
+    StatefulAudioProcessorWrappers &processorWrappers;
     ConnectorDragListener &connectorDragListener;
 
 private:

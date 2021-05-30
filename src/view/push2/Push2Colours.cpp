@@ -1,14 +1,14 @@
 #include "Push2Colours.h"
 
 Push2Colours::Push2Colours(Tracks &tracks) : tracks(tracks) {
-    this->tracks.addListener(this);
+    this->tracks.addTracksListener(this);
     for (uint8 colourIndex = 1; colourIndex < CHAR_MAX - 1; colourIndex++) {
         availableColourIndexes.add(colourIndex);
     }
 }
 
 Push2Colours::~Push2Colours() {
-    tracks.removeListener(this);
+    tracks.removeTracksListener(this);
 }
 
 uint8 Push2Colours::findIndexForColourAddingIfNeeded(const Colour &colour) {
@@ -45,11 +45,11 @@ void Push2Colours::trackRemoved(Track *track, int oldIndex) {
     availableColourIndexes.add(index);
     indexForTrackUuid.erase(uuid);
 }
-void Push2Colours::valueTreePropertyChanged(ValueTree &tree, const Identifier &i) {
-    if (Track::isType(tree) && i == TrackIDs::colour) {
-        const String &uuid = Track::getUuid(tree);
+void Push2Colours::trackPropertyChanged(Track *track, const Identifier &i) {
+    if (i == TrackIDs::colour) {
+        const String &uuid = track->getUuid();
         auto index = indexForTrackUuid[uuid];
-        const auto &colour = Track::getColour(tree);
+        const auto &colour = track->getColour();
         setColour(index, colour);
         listeners.call([uuid, colour](Listener &listener) { listener.trackColourChanged(uuid, colour); });
     }

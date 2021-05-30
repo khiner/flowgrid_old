@@ -64,8 +64,8 @@ void GraphEditorConnector::getPoints(juce::Point<float> &p1, juce::Point<float> 
 
 void GraphEditorConnector::paint(Graphics &g) {
     auto pathColour = connection.source.isMIDI() || connection.destination.isMIDI()
-                      ? findColour(Connection::isCustom(state) ? customMidiConnectionColourId : defaultMidiConnectionColourId)
-                      : findColour(Connection::isCustom(state) ? customAudioConnectionColourId : defaultAudioConnectionColourId);
+                      ? findColour(fg::Connection::isCustom(state) ? customMidiConnectionColourId : defaultMidiConnectionColourId)
+                      : findColour(fg::Connection::isCustom(state) ? customAudioConnectionColourId : defaultAudioConnectionColourId);
 
     bool mouseOver = isMouseOver(false);
     g.setColour(mouseOver ? pathColour.brighter(0.1f) : pathColour);

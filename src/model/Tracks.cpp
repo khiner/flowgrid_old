@@ -28,16 +28,22 @@ void Tracks::loadFromState(const ValueTree &fromState) {
     }
 }
 
-
-Array<ValueTree> Tracks::findAllSelectedItems() const {
-    Array<ValueTree> selectedItems;
-    for (const auto &track : parent) {
-        if (Track::isSelected(track))
-            selectedItems.add(track);
-        else
-            selectedItems.addArray(Track::findSelectedProcessors(track));
+Array<Track *> Tracks::findAllSelectedTracks() const {
+    Array<Track *> selectedTracks;
+    for (auto *track : children) {
+        if (track->isSelected())
+            selectedTracks.add(track);
     }
-    return selectedItems;
+    return selectedTracks;
+}
+
+Array<ValueTree> Tracks::findAllSelectedProcessors() const {
+    Array<ValueTree> selectedProcessors;
+    for (auto *track : children) {
+        if (!track->isSelected())
+            selectedProcessors.addArray(track->findSelectedProcessors());
+    }
+    return selectedProcessors;
 }
 
 juce::Point<int> Tracks::gridPositionToTrackAndSlot(const juce::Point<int> gridPosition, bool allowUpFromMaster) const {
@@ -60,7 +66,7 @@ juce::Point<int> Tracks::gridPositionToTrackAndSlot(const juce::Point<int> gridP
         slot = gridPosition.y;
     }
 
-    if (trackIndex < 0 || slot < -1 || slot >= getNumSlotsForTrack(getTrackState(trackIndex)))
+    if (trackIndex < 0 || slot < -1 || slot >= getNumSlotsForTrack(getChild(trackIndex)))
         return INVALID_TRACK_AND_SLOT;
 
     return {trackIndex, slot};

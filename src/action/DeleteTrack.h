@@ -5,7 +5,7 @@
 #include "action/DeleteProcessor.h"
 
 struct DeleteTrack : public UndoableAction {
-    DeleteTrack(const ValueTree &trackToDelete, Tracks &tracks, Connections &connections, ProcessorGraph &processorGraph);
+    DeleteTrack(Track *trackToDelete, Tracks &tracks, Connections &connections, ProcessorGraph &processorGraph);
 
     bool perform() override;
     bool undo() override;
@@ -13,7 +13,7 @@ struct DeleteTrack : public UndoableAction {
     int getSizeInUnits() override { return (int) sizeof(*this); }
 
 private:
-    ValueTree trackToDelete;
+    ValueTree deletedTrackState;
     int trackIndex;
     Tracks &tracks;
     OwnedArray<DeleteProcessor> deleteProcessorActions;

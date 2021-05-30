@@ -2,9 +2,9 @@
 
 #include "view/CustomColourIds.h"
 
-SelectionEditor::SelectionEditor(Project &project, View &view, Tracks &tracks, ProcessorGraph &audioGraphBuilder)
+SelectionEditor::SelectionEditor(Project &project, View &view, Tracks &tracks, StatefulAudioProcessorWrappers &processorWrappers)
         : project(project), view(view), tracks(tracks), pluginManager(project.getPluginManager()),
-          audioGraphBuilder(audioGraphBuilder), contextPane(tracks, view) {
+          processorWrappers(processorWrappers), contextPane(tracks, view) {
     tracks.addListener(this);
     view.addListener(this);
 
@@ -99,7 +99,7 @@ void SelectionEditor::refreshProcessors(const ValueTree &singleProcessorToRefres
 void SelectionEditor::assignProcessorToEditor(const ValueTree &processor, int processorSlot, bool onlyUpdateFocusState) const {
     auto *processorEditor = processorEditors.getUnchecked(processorSlot != -1 ? processorSlot : Processor::getSlot(processor));
     if (processor.isValid()) {
-        if (auto *processorWrapper = audioGraphBuilder.getProcessorWrapperForState(processor)) {
+        if (auto *processorWrapper = processorWrappers.getProcessorWrapperForState(processor)) {
             if (!onlyUpdateFocusState) {
                 processorEditor->setProcessor(processorWrapper);
                 processorEditor->setVisible(true);

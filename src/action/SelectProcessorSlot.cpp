@@ -1,9 +1,9 @@
 #include "SelectProcessorSlot.h"
 
-SelectProcessorSlot::SelectProcessorSlot(const ValueTree &track, int slot, bool selected, bool deselectOthers, Tracks &tracks, Connections &connections, View &view, Input &input,
+SelectProcessorSlot::SelectProcessorSlot(const Track *track, int slot, bool selected, bool deselectOthers, Tracks &tracks, Connections &connections, View &view, Input &input,
                                          ProcessorGraph &processorGraph)
         : Select(tracks, connections, view, input, processorGraph) {
-    const auto currentSlotMask = Track::getSlotMask(track);
+    const auto currentSlotMask = track->getSlotMask();
     if (deselectOthers) {
         for (int i = 0; i < newTrackSelections.size(); i++) {
             newTrackSelections.setUnchecked(i, false);
@@ -13,7 +13,7 @@ SelectProcessorSlot::SelectProcessorSlot(const ValueTree &track, int slot, bool 
 
     auto newSlotMask = deselectOthers ? BigInteger() : currentSlotMask;
     newSlotMask.setBit(slot, selected);
-    auto trackIndex = tracks.indexOfTrack(track);
+    auto trackIndex = track->getIndex();
     newSelectedSlotsMasks.setUnchecked(trackIndex, newSlotMask);
     if (selected)
         setNewFocusedSlot({trackIndex, slot});

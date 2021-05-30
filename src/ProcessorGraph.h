@@ -7,6 +7,7 @@
 #include "model/Input.h"
 #include "model/Output.h"
 #include "model/Connections.h"
+#include "model/StatefulAudioProcessorWrappers.h"
 #include "PluginManager.h"
 
 using namespace fg; // Only to disambiguate `Connection` currently
@@ -18,47 +19,7 @@ struct ProcessorGraph : public AudioProcessorGraph, private ValueTree::Listener,
 
     ~ProcessorGraph() override;
 
-    StatefulAudioProcessorWrapper *getProcessorWrapperForNodeId(NodeID nodeId) const {
-        if (!nodeId.isValid()) return nullptr;
-
-        auto nodeIdAndProcessorWrapper = processorWrapperForNodeId.find(nodeId);
-        if (nodeIdAndProcessorWrapper == processorWrapperForNodeId.end()) return nullptr;
-
-        return nodeIdAndProcessorWrapper->second.get();
-    }
-
-    StatefulAudioProcessorWrapper *getProcessorWrapperForState(const ValueTree &processorState) const {
-        return processorState.isValid() ? getProcessorWrapperForNodeId(Processor::getNodeId(processorState)) : nullptr;
-    }
-
-    AudioProcessor *getAudioProcessorForState(const ValueTree &processorState) const {
-        if (auto *processorWrapper = getProcessorWrapperForState(processorState))
-            return processorWrapper->processor;
-        return {};
-    }
-
-    void saveProcessorStateInformationToState(ValueTree &processorState) const {
-        if (auto *processorWrapper = getProcessorWrapperForState(processorState)) {
-            MemoryBlock memoryBlock;
-            if (auto *processor = processorWrapper->processor) {
-                processor->getStateInformation(memoryBlock);
-                Processor::setProcessorState(processorState, memoryBlock.toBase64Encoding());
-            }
-        }
-    }
-
-    ValueTree copyProcessor(ValueTree &fromProcessor) const {
-        saveProcessorStateInformationToState(fromProcessor);
-        auto copiedProcessor = fromProcessor.createCopy();
-        copiedProcessor.removeProperty(ProcessorIDs::nodeId, nullptr);
-        return copiedProcessor;
-    }
-
-    ValueTree getProcessorStateForNodeId(NodeID nodeId) const {
-        if (auto processorWrapper = getProcessorWrapperForNodeId(nodeId))
-            return processorWrapper->state;
-        return {};
-    }
+    StatefulAudioProcessorWrappers &getProcessorWrappers() { return processorWrappers; }
 
     void pauseAudioGraphUpdates() { graphUpdatesArePaused = true; }
     void resumeAudioGraphUpdatesAndApplyDiffSincePause();
@@ -73,7 +34,7 @@ struct ProcessorGraph : public AudioProcessorGraph, private ValueTree::Listener,
     }
 
     bool disconnectNode(NodeID nodeId) override {
-        return disconnectProcessor(getProcessorStateForNodeId(nodeId));
+        return disconnectProcessor(processorWrappers.getProcessorStateForNodeId(nodeId));
     }
 
     bool doDisconnectNode(const ValueTree &processor, ConnectionType connectionType,
@@ -84,7 +45,7 @@ struct ProcessorGraph : public AudioProcessorGraph, private ValueTree::Listener,
     }
 
     void onProcessorCreated(const ValueTree &processor) {
-        if (getProcessorWrapperForState(processor) == nullptr)
+        if (processorWrappers.getProcessorWrapperForState(processor) == nullptr)
             addProcessor(processor);
     }
 
@@ -93,7 +54,7 @@ struct ProcessorGraph : public AudioProcessorGraph, private ValueTree::Listener,
     }
 
 private:
-    std::map<NodeID, std::unique_ptr<StatefulAudioProcessorWrapper> > processorWrapperForNodeId;
+    StatefulAudioProcessorWrappers processorWrappers;
 
     Tracks &tracks;
     Connections &connections;

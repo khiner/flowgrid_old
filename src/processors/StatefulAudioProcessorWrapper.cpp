@@ -1,3 +1,4 @@
+#include "model/Processor.h"
 #include "StatefulAudioProcessorWrapper.h"
 
 #include "DefaultAudioProcessor.h"

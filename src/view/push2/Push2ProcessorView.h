@@ -26,7 +26,7 @@ private:
     int processorLabelOffset = 0;
     bool processorHasFocus{false};
 
-    static Colour getColourForTrack(const ValueTree &track) { return track.isValid() ? Track::getColour(track) : Colours::black; }
+    static Colour getColourForTrack(const Track *track) { return track != nullptr ? track->getColour() : Colours::black; }
     int getProcessorIndexForButtonIndex(int buttonIndex) { return buttonIndex + processorLabelOffset - (canPageProcessorsLeft() ? 1 : 0); }
     int getButtonIndexForProcessorIndex(int processorIndex) { return processorIndex - processorLabelOffset + (canPageProcessorsLeft() ? 1 : 0); }
 

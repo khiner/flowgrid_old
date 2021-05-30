@@ -26,16 +26,17 @@ public:
         updatePadColours();
     }
 
-    void trackSelected(const ValueTree &track) {
-        if (track.isValid()) {
-            selectedTrackColour = Track::getColour(track);
+    void trackSelected(const Track *track) {
+        if (track != nullptr) {
+            selectedTrackColour = track->getColour();
             updatePadColours();
         }
     }
 
     void trackColourChanged(const String &trackUuid, const Colour &colour) override {
         // TODO a bit slow. might want to pass this all down from parent instead of listening directly
-        if (Track::hasSelections(tracks.findTrackWithUuid(trackUuid))) {
+        const auto *track = tracks.findTrackWithUuid(trackUuid);
+        if (track != nullptr && track->hasSelections()) {
             selectedTrackColour = colour;
             updatePadColours();
         }
