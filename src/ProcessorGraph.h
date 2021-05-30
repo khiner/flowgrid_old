@@ -124,7 +124,6 @@ private:
         recursivelyAddProcessors(track->getState()); // TODO might be a problem for moving tracks
     }
     void trackRemoved(Track *track, int oldIndex) override {}
-    void trackOrderChanged() override {}
 
     void timerCallback() override;
 };

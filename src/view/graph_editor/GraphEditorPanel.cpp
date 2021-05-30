@@ -233,8 +233,8 @@ void GraphEditorPanel::closeWindowFor(ValueTree &processor) {
 
 juce::Point<int> GraphEditorPanel::trackAndSlotAt(const MouseEvent &e) {
     auto position = e.getEventRelativeTo(graphEditorTracks.get()).position.toInt();
-    const auto &track = graphEditorTracks->findTrackAt(position);
-    return {tracks.indexOfTrack(track), tracks.findSlotAt(position, track)};
+    auto *track = graphEditorTracks->findTrackAt(position);
+    return {tracks.indexOf(track), tracks.findSlotAt(position, track)};
 }
 
 static constexpr int
@@ -325,6 +325,28 @@ void GraphEditorPanel::showPopupMenu(const Track *track, int slot) {
     }
 }
 
+void GraphEditorPanel::valueTreeChildAdded(ValueTree &parent, ValueTree &child) {
+    if (Processor::isType(child) || Connection::isType(child)) {
+        connectors->updateConnectors();
+    }
+}
+
+void GraphEditorPanel::valueTreeChildRemoved(ValueTree &parent, ValueTree &child, int indexFromWhichChildWasRemoved) {
+    if (Processor::isType(child)) {
+        if (Processor::isMidiInputProcessor(child)) {
+            midiInputProcessors.removeObject(findMidiInputProcessorForNodeId(Processor::getNodeId(child)));
+            resized();
+        } else if (Processor::isMidiOutputProcessor(child)) {
+            midiOutputProcessors.removeObject(findMidiOutputProcessorForNodeId(Processor::getNodeId(child)));
+            resized();
+        } else {
+            connectors->updateConnectors();
+        }
+    } else if (Connection::isType(child)) {
+        connectors->updateConnectors();
+    }
+}
+
 void GraphEditorPanel::valueTreePropertyChanged(ValueTree &tree, const Identifier &i) {
     if ((Processor::isType(tree) && i == ProcessorIDs::slot) || i == ViewIDs::gridSlotOffset) {
         connectors->updateConnectors();
@@ -357,35 +379,5 @@ void GraphEditorPanel::valueTreePropertyChanged(ValueTree &tree, const Identifie
             addAndMakeVisible(*(audioOutputProcessor = std::make_unique<LabelGraphEditorProcessor>(tree, tracks.getTrackForProcessor(tree), view, graph, *this)), 0);
             resized();
         }
-    }
-}
-
-void GraphEditorPanel::valueTreeChildAdded(ValueTree &parent, ValueTree &child) {
-    if (Track::isType(child) || Processor::isType(child) || Connection::isType(child)) {
-        connectors->updateConnectors();
-    }
-}
-
-void GraphEditorPanel::valueTreeChildRemoved(ValueTree &parent, ValueTree &child, int indexFromWhichChildWasRemoved) {
-    if (Track::isType(child)) {
-        connectors->updateConnectors();
-    } else if (Processor::isType(child)) {
-        if (Processor::isMidiInputProcessor(child)) {
-            midiInputProcessors.removeObject(findMidiInputProcessorForNodeId(Processor::getNodeId(child)));
-            resized();
-        } else if (Processor::isMidiOutputProcessor(child)) {
-            midiOutputProcessors.removeObject(findMidiOutputProcessorForNodeId(Processor::getNodeId(child)));
-            resized();
-        } else {
-            connectors->updateConnectors();
-        }
-    } else if (Connection::isType(child)) {
-        connectors->updateConnectors();
-    }
-}
-
-void GraphEditorPanel::valueTreeChildOrderChanged(ValueTree &parent, int oldIndex, int newIndex) {
-    if (Tracks::isType(parent)) {
-        connectors->updateConnectors();
     }
 }

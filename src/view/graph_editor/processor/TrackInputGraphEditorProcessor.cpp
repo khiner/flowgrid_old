@@ -125,6 +125,6 @@ void TrackInputGraphEditorProcessor::valueTreePropertyChanged(ValueTree &v, cons
 
 void TrackInputGraphEditorProcessor::changeListenerCallback(ChangeBroadcaster *source) {
     if (auto *cs = dynamic_cast<ColourSelector *> (source)) {
-        track->setColour(cs->getCurrentColour());
+        track->setColour(cs->getCurrentColour(), &project.getUndoManager());
     }
 }

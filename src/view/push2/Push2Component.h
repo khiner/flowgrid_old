@@ -68,7 +68,6 @@ private:
 
     void trackAdded(Track *track) override;
     void trackRemoved(Track *track, int oldIndex) override;
-    void trackOrderChanged() override {}
 
     void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override;
     void valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int) override;

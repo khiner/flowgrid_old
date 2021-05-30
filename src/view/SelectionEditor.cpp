@@ -113,12 +113,6 @@ void SelectionEditor::assignProcessorToEditor(const ValueTree &processor, int pr
     }
 }
 
-void SelectionEditor::valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int) {
-    if (Track::isType(child) || Processor::isType(child)) {
-        refreshProcessors();
-    }
-}
-
 void SelectionEditor::valueTreePropertyChanged(ValueTree &tree, const Identifier &i) {
     if (i == ViewIDs::focusedTrackIndex) {
         addProcessorButton.setVisible(tracks.getFocusedTrackState().isValid());

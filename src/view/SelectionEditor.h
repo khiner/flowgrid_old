@@ -10,7 +10,8 @@
 class SelectionEditor : public Component,
                         public DragAndDropContainer,
                         private Button::Listener,
-                        private ValueTree::Listener {
+                        private ValueTree::Listener,
+                        private Tracks::Listener {
 public:
     SelectionEditor(Project &project, View &view, Tracks &tracks, ProcessorGraph &audioGraphBuilder);
 
@@ -44,6 +45,10 @@ private:
     void refreshProcessors(const ValueTree &singleProcessorToRefresh = {}, bool onlyUpdateFocusState = false);
     void assignProcessorToEditor(const ValueTree &processor, int processorSlot = -1, bool onlyUpdateFocusState = false) const;
 
-    void valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int) override;
+    void trackAdded(Track *track) override { }
+    void trackRemoved(Track *track, int oldIndex) override { refreshProcessors(); }
+    void valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int) override {
+        if (Processor::isType(child)) refreshProcessors();
+    }
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override;
 };

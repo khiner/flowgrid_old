@@ -9,7 +9,7 @@
 
 class GraphEditorPanel
         : public Component, public ConnectorDragListener, public GraphEditorProcessorContainer,
-          private ValueTree::Listener {
+          private ValueTree::Listener, Tracks::Listener {
 public:
     GraphEditorPanel(View &view, Tracks &tracks, Connections &connections, Input &input, Output &output, ProcessorGraph &processorGraph, Project &project, PluginManager &pluginManager);
 
@@ -68,8 +68,10 @@ private:
 
     void showPopupMenu(const Track *track, int slot);
 
-    void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override;
+    void trackAdded(Track *track) override { connectors->updateConnectors(); }
+    void trackRemoved(Track *track, int oldIndex) override { connectors->updateConnectors(); }
+    void trackOrderChanged() override { connectors->updateConnectors(); }
     void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override;
     void valueTreeChildRemoved(ValueTree &parent, ValueTree &child, int indexFromWhichChildWasRemoved) override;
-    void valueTreeChildOrderChanged(ValueTree &parent, int oldIndex, int newIndex) override;
+    void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override;
 };

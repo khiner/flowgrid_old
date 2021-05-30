@@ -95,20 +95,6 @@ Colour ContextPane::getFillColour(const Colour &trackColour, const Track *track,
     return colour;
 }
 
-void ContextPane::valueTreeChildAdded(ValueTree &parent, ValueTree &child) {
-    if (Track::isType(child))
-        resized();
-    else if (Processor::isType(child))
-        repaint();
-}
-
-void ContextPane::valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int index) {
-    if (Track::isType(child))
-        resized();
-    else if (Processor::isType(child))
-        repaint();
-}
-
 void ContextPane::valueTreePropertyChanged(ValueTree &tree, const Identifier &i) {
     if (View::isType(tree)) {
         if (i == ViewIDs::numProcessorSlots || i == ViewIDs::numMasterProcessorSlots || i == ViewIDs::gridTrackOffset || i == ViewIDs::masterSlotOffset)

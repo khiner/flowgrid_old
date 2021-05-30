@@ -57,9 +57,8 @@ struct Track : public Stateful<Track> {
         return state.getChildWithProperty(ProcessorIDs::name, InternalPluginFormat::getTrackOutputProcessorName());
     }
 
-    void setUuid(const String &uuid) { state.setProperty(TrackIDs::uuid, uuid, nullptr); }
     void setName(const String &name) { state.setProperty(TrackIDs::name, name, nullptr); }
-    void setColour(const Colour &colour) { state.setProperty(TrackIDs::colour, colour.toString(), nullptr); }
+    void setColour(const Colour &colour, UndoManager *undoManager) { state.setProperty(TrackIDs::colour, colour.toString(), undoManager); }
     void setSelected(bool selected) { state.setProperty(TrackIDs::selected, selected, nullptr); }
     void setMaster(bool isMaster) { state.setProperty(TrackIDs::isMaster, isMaster, nullptr); }
 
@@ -67,7 +66,6 @@ struct Track : public Stateful<Track> {
     static int getIndex(const ValueTree &state) { return state.getParent().indexOf(state); }
     static String getUuid(const ValueTree &state) { return state[TrackIDs::uuid]; }
     static Colour getColour(const ValueTree &state) { return Colour::fromString(state[TrackIDs::colour].toString()); }
-    static Colour getDisplayColour(const ValueTree &state) { return isSelected(state) ? getColour(state).brighter(0.25) : getColour(state); }
     static String getName(const ValueTree &state) { return state[TrackIDs::name]; }
     static bool isSelected(const ValueTree &state) { return state[TrackIDs::selected]; }
     static bool isMaster(const ValueTree &state) { return state[TrackIDs::isMaster]; }

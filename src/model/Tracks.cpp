@@ -66,12 +66,12 @@ juce::Point<int> Tracks::gridPositionToTrackAndSlot(const juce::Point<int> gridP
     return {trackIndex, slot};
 }
 
-int Tracks::findSlotAt(const juce::Point<int> position, const ValueTree &track) const {
-    bool isMaster = Track::isMaster(track);
+int Tracks::findSlotAt(const juce::Point<int> position, const Track *track) const {
+    bool isMaster = track != nullptr && track->isMaster();
     int length = isMaster ? position.x : (position.y - View::TRACK_LABEL_HEIGHT);
     if (length < 0) return -1;
 
     int processorSlotSize = isMaster ? view.getTrackWidth() : view.getProcessorHeight();
-    int slot = getSlotOffsetForTrack(track) + length / processorSlotSize;
-    return std::clamp(slot, 0, getNumSlotsForTrack(track) - 1);
+    int slot = view.getSlotOffset(isMaster) + length / processorSlotSize;
+    return std::clamp(slot, 0, view.getNumProcessorSlots(isMaster) - 1);
 }

@@ -62,21 +62,21 @@ public:
         return nullptr;
     }
 
-    ValueTree findTrackAt(const juce::Point<int> position) {
+    Track *findTrackAt(const juce::Point<int> position) {
         auto *masterTrack = findMasterTrack();
         if (masterTrack != nullptr && masterTrack->getPosition().y <= position.y)
-            return masterTrack->getState();
+            return masterTrack->getTrack();
 
         const auto &nonMasterTrackObjects = getNonMasterTrackObjects();
         for (auto *track : nonMasterTrackObjects)
             if (position.x <= track->getRight())
-                return track->getState();
+                return track->getTrack();
 
         auto *lastNonMasterTrack = nonMasterTrackObjects.getLast();
         if (lastNonMasterTrack != nullptr)
-            return lastNonMasterTrack->getState();
+            return lastNonMasterTrack->getTrack();
 
-        return {};
+        return nullptr;
     }
 
     // XXX Not sure if we need this (try deleting)

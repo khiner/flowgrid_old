@@ -163,5 +163,4 @@ private:
 
     void trackAdded(Track *track) override { mostRecentlyCreatedTrack = track; }
     void trackRemoved(Track *track, int oldIndex) override {}
-    void trackOrderChanged() override {}
 };
