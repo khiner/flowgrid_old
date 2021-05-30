@@ -85,7 +85,7 @@ public:
     }
 
 private:
-    Array<GraphEditorTrack *> children;
+    OwnedArray<GraphEditorTrack> children;
 
     View &view;
     Tracks &tracks;
@@ -95,13 +95,12 @@ private:
     ConnectorDragListener &connectorDragListener;
 
     void trackAdded(Track *track) override {
-        auto *graphEditorTrack = new GraphEditorTrack(track, view, project, processorGraph, pluginManager, connectorDragListener);
-        children.insert(track->getIndex(), graphEditorTrack);
-        addAndMakeVisible(graphEditorTrack);
+        addAndMakeVisible(children.insert(track->getIndex(), new GraphEditorTrack(track, view, project, processorGraph, pluginManager, connectorDragListener)));
         resized();
     }
     void trackRemoved(Track *track, int oldIndex) override {
         children.remove(oldIndex);
+        resized();
     }
     void trackOrderChanged() override {
         children.sort(*this);

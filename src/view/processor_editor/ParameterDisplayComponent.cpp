@@ -17,14 +17,11 @@ void ParameterDisplayComponent::setParameter(StatefulAudioProcessorWrapper::Para
     detachParameterComponent();
 
     this->parameterWrapper = parameterWrapper;
-
-    if (this->parameterWrapper == nullptr)
-        return;
+    if (this->parameterWrapper == nullptr) return;
 
     this->parameterWrapper->addListener(this);
 
     auto *parameter = parameterWrapper->sourceParameter;
-
     parameterName.setText(parameter->getName(128), dontSendNotification);
     parameterName.setJustificationType(Justification::centred);
     addAndMakeVisible(parameterName);

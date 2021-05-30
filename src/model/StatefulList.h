@@ -65,8 +65,17 @@ protected:
 
     void deleteAllObjects() {
         const ScopedLockType sl(arrayLock);
-        while (children.size() > 0)
-            deleteObject(children.removeAndReturn(children.size() - 1));
+        while (children.size() > 0) {
+            {
+                // TODO can we just delete the value trees one-by-one
+                //  and have this trigger the same behavior in valueTreeChildRemoved?
+                const ScopedLockType sl(arrayLock);
+                int oldIndex = children.size() - 1;
+                ObjectType *o = children.removeAndReturn(oldIndex);
+                objectRemoved(o, oldIndex);
+                deleteObject(o);
+            }
+        }
     }
 
     bool isChildTree(ValueTree &tree) const { return isChildType(tree) && tree.getParent() == parent; }
