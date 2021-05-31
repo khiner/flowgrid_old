@@ -24,13 +24,9 @@ struct StatefulList : protected ValueTree::Listener {
     ObjectType *getChild(int index) const noexcept { return children[index]; }
     const Array<ObjectType *> &getChildren() const { return children; }
 
-    void add(const ValueTree& child, int index) {
-        parent.addChild(child, index, nullptr);
-    }
-
-    void remove(int index) {
-        parent.removeChild(index, nullptr);
-    }
+    void add(const ValueTree &child, int index) { parent.addChild(child, index, nullptr); }
+    void remove(int index) { parent.removeChild(index, nullptr); }
+    void remove(const ValueTree &child) { parent.removeChild(child, nullptr); }
 
     ObjectType *getChildForState(const ValueTree &state) const {
         for (int i = 0; i < children.size(); ++i) {

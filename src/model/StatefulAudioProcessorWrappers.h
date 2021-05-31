@@ -8,19 +8,6 @@
 struct StatefulAudioProcessorWrappers {
     unsigned long size() const { return processorWrapperForNodeId.size(); }
 
-    void set(juce::AudioProcessorGraph::NodeID nodeId, std::unique_ptr<StatefulAudioProcessorWrapper> processorWrapper) {
-        processorWrapperForNodeId[nodeId] = std::move(processorWrapper);
-    }
-    void erase(juce::AudioProcessorGraph::NodeID nodeId) {
-        processorWrapperForNodeId.erase(nodeId);
-    }
-    bool flushAllParameterValuesToValueTree() {
-        for (auto &nodeIdAndProcessorWrapper : processorWrapperForNodeId)
-            if (nodeIdAndProcessorWrapper.second->flushParameterValuesToValueTree())
-                return true;
-        return false;
-    }
-
     StatefulAudioProcessorWrapper *getProcessorWrapperForNodeId(juce::AudioProcessorGraph::NodeID nodeId) const {
         if (!nodeId.isValid()) return nullptr;
 
@@ -40,28 +27,17 @@ struct StatefulAudioProcessorWrappers {
         return {};
     }
 
-    void saveProcessorStateInformationToState(ValueTree &processorState) const {
-        if (auto *processorWrapper = getProcessorWrapperForState(processorState)) {
-            MemoryBlock memoryBlock;
-            if (auto *processor = processorWrapper->processor) {
-                processor->getStateInformation(memoryBlock);
-                Processor::setProcessorState(processorState, memoryBlock.toBase64Encoding());
-            }
-        }
-    }
-
-    ValueTree copyProcessor(ValueTree &fromProcessor) const {
-        saveProcessorStateInformationToState(fromProcessor);
-        auto copiedProcessor = fromProcessor.createCopy();
-        copiedProcessor.removeProperty(ProcessorIDs::nodeId, nullptr);
-        return copiedProcessor;
-    }
-
     ValueTree getProcessorStateForNodeId(juce::AudioProcessorGraph::NodeID nodeId) const {
-        if (auto processorWrapper = getProcessorWrapperForNodeId(nodeId))
+        if (auto *processorWrapper = getProcessorWrapperForNodeId(nodeId))
             return processorWrapper->state;
         return {};
     }
+
+    void set(juce::AudioProcessorGraph::NodeID nodeId, std::unique_ptr<StatefulAudioProcessorWrapper> processorWrapper) { processorWrapperForNodeId[nodeId] = std::move(processorWrapper); }
+    void erase(juce::AudioProcessorGraph::NodeID nodeId) { processorWrapperForNodeId.erase(nodeId); }
+    void saveProcessorStateInformationToState(ValueTree &processorState) const;
+    ValueTree copyProcessor(ValueTree &fromProcessor) const;
+    bool flushAllParameterValuesToValueTree();
 
 private:
     std::map<juce::AudioProcessorGraph::NodeID, std::unique_ptr<StatefulAudioProcessorWrapper> > processorWrapperForNodeId;

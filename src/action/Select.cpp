@@ -45,9 +45,9 @@ bool Select::perform() {
     if (!changed()) return false;
 
     for (int i = 0; i < newTrackSelections.size(); i++) {
-        auto track = tracks.getTrackState(i);
-        auto lane = Track::getProcessorLane(track);
-        Track::setSelected(track, newTrackSelections.getUnchecked(i));
+        auto *track = tracks.getChild(i);
+        auto lane = track->getProcessorLane();
+        track->setSelected(newTrackSelections.getUnchecked(i));
         ProcessorLane::setSelectedSlotsMask(lane, newSelectedSlotsMasks.getUnchecked(i));
     }
     if (newFocusedSlot != oldFocusedSlot)
@@ -64,9 +64,9 @@ bool Select::undo() {
     if (resetInputsAction != nullptr)
         resetInputsAction->undo();
     for (int i = 0; i < oldTrackSelections.size(); i++) {
-        auto track = tracks.getTrackState(i);
-        auto lane = Track::getProcessorLane(track);
-        Track::setSelected(track, oldTrackSelections.getUnchecked(i));
+        auto *track = tracks.getChild(i);
+        auto lane = track->getProcessorLane();
+        track->setSelected(oldTrackSelections.getUnchecked(i));
         ProcessorLane::setSelectedSlotsMask(lane, oldSelectedSlotsMasks.getUnchecked(i));
     }
     if (oldFocusedSlot != newFocusedSlot)
@@ -88,10 +88,11 @@ bool Select::canCoalesceWith(Select *otherAction) {
 
 void Select::updateViewFocus(const juce::Point<int> focusedSlot) {
     view.focusOnProcessorSlot(focusedSlot);
-    const auto &focusedTrack = tracks.getTrackState(focusedSlot.x);
-    bool isMaster = Track::isMaster(focusedTrack);
-    if (!isMaster)
+    const auto *focusedTrack = tracks.getChild(focusedSlot.x);
+    bool isMaster = focusedTrack != nullptr && focusedTrack->isMaster();
+    if (!isMaster) {
         view.updateViewTrackOffsetToInclude(focusedSlot.x, tracks.getNumNonMasterTracks());
+    }
     view.updateViewSlotOffsetToInclude(focusedSlot.y, isMaster);
 }
 

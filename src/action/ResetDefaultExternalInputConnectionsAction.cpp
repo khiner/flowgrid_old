@@ -3,23 +3,22 @@
 #include "DisconnectProcessor.h"
 #include "DefaultConnectProcessor.h"
 
-static ValueTree findTopmostEffectProcessor(const ValueTree &track, ConnectionType connectionType) {
-    for (const auto &processor : Track::getProcessorLane(track))
+static ValueTree findTopmostEffectProcessor(const Track *track, ConnectionType connectionType) {
+    for (const auto &processor : track->getProcessorLane())
         if (Processor::isProcessorAnEffect(processor, connectionType))
             return processor;
     return {};
 }
 
-ResetDefaultExternalInputConnectionsAction::ResetDefaultExternalInputConnectionsAction(Connections &connections, Tracks &tracks, Input &input, ProcessorGraph &processorGraph,
-                                                                                       ValueTree trackToTreatAsFocused)
+ResetDefaultExternalInputConnectionsAction::ResetDefaultExternalInputConnectionsAction(Connections &connections, Tracks &tracks, Input &input, ProcessorGraph &processorGraph, Track *trackToTreatAsFocused)
         : CreateOrDeleteConnections(connections) {
-    if (!trackToTreatAsFocused.isValid())
-        trackToTreatAsFocused = tracks.getFocusedTrackState();
+    if (trackToTreatAsFocused == nullptr)
+        trackToTreatAsFocused = tracks.getFocusedTrack();
 
     for (auto connectionType : {audio, midi}) {
         const auto sourceNodeId = input.getDefaultInputNodeIdForConnectionType(connectionType);
         // If master track received focus, only change the default connections if no other tracks have effect processors
-        if (Track::isMaster(trackToTreatAsFocused) && tracks.anyNonMasterTrackHasEffectProcessor(connectionType)) continue;
+        if (trackToTreatAsFocused->isMaster() && tracks.anyNonMasterTrackHasEffectProcessor(connectionType)) continue;
 
         const ValueTree &inputProcessor = processorGraph.getProcessorWrappers().getProcessorStateForNodeId(sourceNodeId);
         AudioProcessorGraph::NodeID destinationNodeId;
@@ -46,10 +45,10 @@ ValueTree ResetDefaultExternalInputConnectionsAction::findMostUpstreamAvailableP
 
     // TODO performance improvement: only iterate over connected processors
     for (int i = tracks.size() - 1; i >= 0; i--) {
-        const auto &lane = Track::getProcessorLane(tracks.getTrackState(i));
-        if (lane.getNumChildren() == 0) continue;
+        const auto *track = tracks.getChild(i);
+        const auto &firstProcessor = track->getFirstProcessor();
+        if (!firstProcessor.isValid()) continue;
 
-        const auto &firstProcessor = lane.getChild(0);
         auto firstProcessorNodeId = Processor::getNodeId(firstProcessor);
         int slot = Processor::getSlot(firstProcessor);
         if (slot < lowestSlot &&

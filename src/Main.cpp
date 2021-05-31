@@ -13,7 +13,7 @@
 class FlowGridApplication : public JUCEApplication, public MenuBarModel, public ChangeListener {
 public:
     FlowGridApplication() : view(undoManager),
-                            tracks(view, pluginManager, undoManager),
+                            tracks(view, undoManager),
                             connections(tracks),
                             input(pluginManager, undoManager, deviceManager),
                             output(pluginManager, undoManager, deviceManager),
@@ -267,7 +267,7 @@ public:
                 result.setInfo("Delete selected item(s)", String(), category, 0);
                 result.addDefaultKeypress(KeyPress::deleteKey, ModifierKeys::noModifiers);
                 result.addDefaultKeypress(KeyPress::backspaceKey, ModifierKeys::noModifiers);
-                result.setActive(tracks.getFocusedTrackState().isValid());
+                result.setActive(tracks.getFocusedTrack() != nullptr);
                 break;
             case CommandIDs::insertTrack:
                 result.setInfo("Insert track", String(), category, 0);
@@ -280,7 +280,7 @@ public:
             case CommandIDs::createMasterTrack:
                 result.setInfo("Create master track", String(), category, 0);
                 result.addDefaultKeypress('m', ModifierKeys::commandModifier | ModifierKeys::shiftModifier);
-                result.setActive(!tracks.getMasterTrackState().isValid());
+                result.setActive(tracks.getMasterTrack() == nullptr);
                 break;
             case CommandIDs::showPush2MirrorWindow:
                 result.setInfo("Open a window mirroring a Push 2 display", String(), category, 0);

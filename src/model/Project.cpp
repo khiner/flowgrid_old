@@ -85,7 +85,7 @@ void Project::clear() {
 }
 
 void Project::createTrack(bool isMaster) {
-    if (isMaster && tracks.getMasterTrackState().isValid()) return; // only one master track allowed!
+    if (isMaster && tracks.getMasterTrack() != nullptr) return; // only one master track allowed!
 
     setShiftHeld(false); // prevent rectangle-select behavior when doing cmd+shift+t
     undoManager.beginNewTransaction();
@@ -136,9 +136,10 @@ void Project::duplicateSelectedItems() {
 }
 
 void Project::beginDragging(const juce::Point<int> trackAndSlot) {
-    if (trackAndSlot.x == Tracks::INVALID_TRACK_AND_SLOT.x ||
-        (trackAndSlot.y == -1 && Track::isMaster(tracks.getTrackState(trackAndSlot.x))))
-        return;
+    if (trackAndSlot.x == Tracks::INVALID_TRACK_AND_SLOT.x) return;
+
+    const auto *track = tracks.getChild(trackAndSlot.x);
+    if (trackAndSlot.y == -1 && track != nullptr && track->isMaster()) return;
 
     initialDraggingTrackAndSlot = trackAndSlot;
     currentlyDraggingTrackAndSlot = initialDraggingTrackAndSlot;
@@ -249,7 +250,7 @@ void Project::createDefaultProject() {
 }
 
 void Project::doCreateAndAddProcessor(const PluginDescription &description, Track *track, int slot) {
-    if (PluginManager::isGeneratorOrInstrument(&description) && tracks.doesTrackAlreadyHaveGeneratorOrInstrument(track)) {
+    if (PluginManager::isGeneratorOrInstrument(&description) && track != nullptr && track->hasProducerProcessor()) {
         undoManager.perform(new CreateTrack(false, track, tracks, view));
         return doCreateAndAddProcessor(description, mostRecentlyCreatedTrack, slot);
     }

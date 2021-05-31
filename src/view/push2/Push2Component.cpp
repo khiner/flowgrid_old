@@ -64,7 +64,10 @@ void Push2Component::shiftReleased() {
 }
 
 void Push2Component::masterEncoderRotated(float changeAmount) {
-    const auto &trackOutputProcessor = Track::getOutputProcessor(tracks.getMasterTrackState());
+    const auto *masterTrack = tracks.getMasterTrack();
+    if (masterTrack == nullptr) return;
+
+    const auto &trackOutputProcessor = masterTrack->getOutputProcessor();
     if (auto *masterGainProcessor = processorWrappers.getProcessorWrapperForState(trackOutputProcessor))
         if (auto *masterGainParameter = masterGainProcessor->getParameter(1))
             masterGainParameter->setValue(masterGainParameter->getValue() + changeAmount);
@@ -244,7 +247,7 @@ void Push2Component::trackAdded(Track *track) {
 }
 void Push2Component::trackRemoved(Track *track, int oldIndex) {
     updatePush2SelectionDependentButtons();
-    if (!tracks.getFocusedTrackState().isValid()) {
+    if (tracks.getFocusedTrack() == nullptr) {
         showChild(nullptr);
         processorView.processorFocused(nullptr);
     }

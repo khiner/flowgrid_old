@@ -135,36 +135,36 @@ void Push2ProcessorView::updatePageButtonVisibility() {
 }
 
 void Push2ProcessorView::updateProcessorButtons() {
-    const auto &focusedTrack = tracks.getFocusedTrackState();
-    const auto &focusedProcessorLane = Track::getProcessorLane(focusedTrack);
-
-    if (processorHasFocus || !focusedTrack.isValid()) { // TODO reset when processor changes
+    const auto *focusedTrack = tracks.getFocusedTrack();
+    if (processorHasFocus || focusedTrack == nullptr) { // TODO reset when processor changes
         for (auto *label : processorLabels)
             label->setVisible(false);
-    } else {
-        for (int buttonIndex = 0; buttonIndex < processorLabels.size(); buttonIndex++) {
-            auto *label = processorLabels.getUnchecked(buttonIndex);
-            auto processorIndex = getProcessorIndexForButtonIndex(buttonIndex);
-            if ((buttonIndex == 0 && canPageProcessorsLeft()) ||
-                (buttonIndex == NUM_COLUMNS - 1 && canPageProcessorsRight())) {
-                label->setVisible(false);
-            } else if (processorIndex < focusedProcessorLane.getNumChildren()) {
-                const auto &processor = focusedProcessorLane.getChild(processorIndex);
-                if (Processor::isType(processor)) {
-                    label->setVisible(true);
-                    label->setText(Processor::getName(processor), dontSendNotification);
-                    label->setSelected(tracks.isProcessorFocused(processor));
-                }
-            } else if (buttonIndex == 0 && focusedProcessorLane.getNumChildren() == 0) {
-                label->setVisible(true);
-                label->setText("No processors", dontSendNotification);
-                label->setSelected(false);
-            } else {
-                label->setVisible(false);
-            }
-        }
-        updateColours();
+        return;
     }
+
+    const auto &focusedProcessorLane = focusedTrack->getProcessorLane();
+    for (int buttonIndex = 0; buttonIndex < processorLabels.size(); buttonIndex++) {
+        auto *label = processorLabels.getUnchecked(buttonIndex);
+        auto processorIndex = getProcessorIndexForButtonIndex(buttonIndex);
+        if ((buttonIndex == 0 && canPageProcessorsLeft()) ||
+            (buttonIndex == NUM_COLUMNS - 1 && canPageProcessorsRight())) {
+            label->setVisible(false);
+        } else if (processorIndex < focusedProcessorLane.getNumChildren()) {
+            const auto &processor = focusedProcessorLane.getChild(processorIndex);
+            if (Processor::isType(processor)) {
+                label->setVisible(true);
+                label->setText(Processor::getName(processor), dontSendNotification);
+                label->setSelected(tracks.isProcessorFocused(processor));
+            }
+        } else if (buttonIndex == 0 && focusedProcessorLane.getNumChildren() == 0) {
+            label->setVisible(true);
+            label->setText("No processors", dontSendNotification);
+            label->setSelected(false);
+        } else {
+            label->setVisible(false);
+        }
+    }
+    updateColours();
 }
 
 void Push2ProcessorView::updateColours() {
@@ -223,7 +223,10 @@ void Push2ProcessorView::trackColourChanged(const String &trackUuid, const Colou
 }
 
 void Push2ProcessorView::selectProcessor(int processorIndex) {
-    const auto &focusedLane = Track::getProcessorLane(tracks.getFocusedTrackState());
+    const auto *focusedTrack = tracks.getFocusedTrack();
+    if (focusedTrack == nullptr) return;
+
+    const auto &focusedLane = focusedTrack->getProcessorLane();
     if (focusedLane.isValid() && processorIndex < focusedLane.getNumChildren()) {
         project.selectProcessor(focusedLane.getChild(processorIndex));
     }

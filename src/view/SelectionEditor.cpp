@@ -53,8 +53,8 @@ void SelectionEditor::resized() {
     unfocusOverlay.setRectangle(processorEditorsViewport.getBounds().toFloat());
 
     r.removeFromRight(8);
-    processorEditorsComponent.setBounds(0, 0, r.getWidth(), PROCESSOR_EDITOR_HEIGHT *
-            tracks.getFocusedTrackState().getNumChildren());
+    const auto *focusedTrack = tracks.getFocusedTrack();
+    processorEditorsComponent.setBounds(0, 0, r.getWidth(), PROCESSOR_EDITOR_HEIGHT * (focusedTrack == nullptr ? 0 : focusedTrack->getNumProcessors()));
     r = processorEditorsComponent.getBounds();
     for (auto *editor : processorEditors) {
         if (editor->isVisible())
@@ -64,8 +64,8 @@ void SelectionEditor::resized() {
 
 void SelectionEditor::buttonClicked(Button *b) {
     if (b == &addProcessorButton) {
-        const auto &focusedTrack = tracks.getFocusedTrackState();
-        if (focusedTrack.isValid()) {
+        const auto *focusedTrack = tracks.getFocusedTrack();
+        if (focusedTrack != nullptr) {
             addProcessorMenu = std::make_unique<PopupMenu>();
             pluginManager.addPluginsToMenu(*addProcessorMenu);
             addProcessorMenu->showMenuAsync({}, ModalCallbackFunction::create([this](int r) {
@@ -79,8 +79,8 @@ void SelectionEditor::buttonClicked(Button *b) {
 }
 
 void SelectionEditor::refreshProcessors(const ValueTree &singleProcessorToRefresh, bool onlyUpdateFocusState) {
-    const ValueTree &focusedTrack = tracks.getFocusedTrackState();
-    if (!focusedTrack.isValid()) {
+    const auto *focusedTrack = tracks.getFocusedTrack();
+    if (focusedTrack == nullptr) {
         for (auto *editor : processorEditors) {
             editor->setVisible(false);
             editor->setProcessor(nullptr);
@@ -89,7 +89,7 @@ void SelectionEditor::refreshProcessors(const ValueTree &singleProcessorToRefres
         assignProcessorToEditor(singleProcessorToRefresh);
     } else {
         for (int processorSlot = 0; processorSlot < processorEditors.size(); processorSlot++) {
-            const auto &processor = Track::getProcessorAtSlot(focusedTrack, processorSlot);
+            const auto &processor = focusedTrack->getProcessorAtSlot(processorSlot);
             assignProcessorToEditor(processor, processorSlot, onlyUpdateFocusState);
         }
     }
@@ -115,7 +115,7 @@ void SelectionEditor::assignProcessorToEditor(const ValueTree &processor, int pr
 
 void SelectionEditor::valueTreePropertyChanged(ValueTree &tree, const Identifier &i) {
     if (i == ViewIDs::focusedTrackIndex) {
-        addProcessorButton.setVisible(tracks.getFocusedTrackState().isValid());
+        addProcessorButton.setVisible(tracks.getFocusedTrack() != nullptr);
         refreshProcessors();
     } else if (i == ProcessorIDs::initialized) {
         refreshProcessors(); // TODO only the new processor

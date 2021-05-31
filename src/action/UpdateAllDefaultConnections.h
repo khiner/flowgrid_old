@@ -8,5 +8,5 @@
 struct UpdateAllDefaultConnections : public CreateOrDeleteConnections {
     UpdateAllDefaultConnections(bool makeInvalidDefaultsIntoCustom, bool resetDefaultExternalInputConnections,
                                 Tracks &tracks, Connections &connections, Input &input, Output &output,
-                                ProcessorGraph &processorGraph, ValueTree trackToTreatAsFocused = {});
+                                ProcessorGraph &processorGraph, Track *trackToTreatAsFocused = nullptr);
 };

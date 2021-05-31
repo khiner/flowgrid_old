@@ -16,7 +16,7 @@ struct DeleteProcessor : public UndoableAction {
     int getSizeInUnits() override { return (int) sizeof(*this); }
 
 private:
-    ValueTree track;
+    Track track;
     int trackIndex;
     ValueTree processorToDelete;
     int processorIndex, pluginWindowType;

@@ -67,33 +67,3 @@ Array<ValueTree> Track::getAllProcessors() const {
     allProcessors.add(getOutputProcessor());
     return allProcessors;
 }
-
-int Track::getInsertIndexForProcessor(const ValueTree &state, const ValueTree &processor, int insertSlot) {
-    const auto &lane = Track::getProcessorLane(state);
-    bool sameLane = lane == Track::getProcessorLaneForProcessor(processor);
-    auto handleSameLane = [sameLane](int index) -> int { return sameLane ? std::max(0, index - 1) : index; };
-    for (const auto &otherProcessor : lane) {
-        if (Processor::getSlot(otherProcessor) >= insertSlot && otherProcessor != processor) {
-            int otherIndex = lane.indexOf(otherProcessor);
-            return sameLane && lane.indexOf(processor) < otherIndex ? handleSameLane(otherIndex) : otherIndex;
-        }
-    }
-    return handleSameLane(lane.getNumChildren());
-}
-
-ValueTree Track::findFirstSelectedProcessor(const ValueTree &state) {
-    for (const auto &processor : getProcessorLane(state))
-        if (isSlotSelected(state, Processor::getSlot(processor)))
-            return processor;
-    return {};
-}
-
-Array<ValueTree> Track::findSelectedProcessors(const ValueTree &state) {
-    const auto &lane = getProcessorLane(state);
-    Array<ValueTree> selectedProcessors;
-    auto selectedSlotsMask = getSlotMask(state);
-    for (const auto &processor : lane)
-        if (selectedSlotsMask[Processor::getSlot(processor)])
-            selectedProcessors.add(processor);
-    return selectedProcessors;
-}

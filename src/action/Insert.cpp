@@ -67,33 +67,33 @@ Insert::Insert(bool duplicate, const OwnedArray<Track> &copiedTracks, const juce
           oldFocusedTrackAndSlot(view.getFocusedTrackAndSlot()), newFocusedTrackAndSlot(oldFocusedTrackAndSlot) {
     auto trackAndSlotDiff = this->toTrackAndSlot - this->fromTrackAndSlot;
 
-    if (!duplicate && tracks.getMasterTrackState().isValid() && toTrackAndSlot.x == tracks.getNumNonMasterTracks()) {
+    if (!duplicate && tracks.getMasterTrack() != nullptr && toTrackAndSlot.x == tracks.getNumNonMasterTracks()) {
         // When inserting into master track, only insert the processors of the first track with selections
         copyProcessorsFromTrack(copiedTracks[fromTrackAndSlot.x], fromTrackAndSlot.x, tracks.getNumNonMasterTracks(), trackAndSlotDiff.y);
     } else {
         // First pass: insert processors that are selected without their parent track also selected.
         // This is done because adding new tracks changes the track indices relative to their current position.
         for (const auto *copiedTrack : copiedTracks) {
-            if (!copiedTrack->isSelected()) {
-                int fromTrackIndex = copiedTracks.indexOf(copiedTrack);
-                if (duplicate) {
-                    duplicateSelectedProcessors(copiedTrack, copiedTracks);
-                } else if (copiedTrack->isMaster()) {
-                    // Processors copied from master track can only get inserted into master track.
-                    const auto &masterTrack = tracks.getMasterTrackState();
-                    if (masterTrack.isValid())
-                        copyProcessorsFromTrack(copiedTrack, fromTrackIndex, tracks.indexOfTrack(masterTrack), trackAndSlotDiff.y);
-                } else {
-                    int toTrackIndex = copiedTracks.indexOf(copiedTrack) + trackAndSlotDiff.x;
-                    const auto &lane = copiedTrack->getProcessorLane();
-                    if (lane.getNumChildren() > 0) { // create tracks to make room
-                        while (toTrackIndex >= tracks.getNumNonMasterTracks()) {
-                            addAndPerformAction(new CreateTrack(false, {}, tracks, view));
-                        }
+            if (copiedTrack->isSelected()) continue;
+
+            int fromTrackIndex = copiedTracks.indexOf(copiedTrack);
+            if (duplicate) {
+                duplicateSelectedProcessors(copiedTrack, copiedTracks);
+            } else if (copiedTrack->isMaster()) {
+                // Processors copied from master track can only get inserted into master track.
+                auto *masterTrack = tracks.getMasterTrack();
+                if (masterTrack != nullptr)
+                    copyProcessorsFromTrack(copiedTrack, fromTrackIndex, tracks.indexOf(masterTrack), trackAndSlotDiff.y);
+            } else {
+                int toTrackIndex = copiedTracks.indexOf(copiedTrack) + trackAndSlotDiff.x;
+                const auto &lane = copiedTrack->getProcessorLane();
+                if (lane.getNumChildren() > 0) { // create tracks to make room
+                    while (toTrackIndex >= tracks.getNumNonMasterTracks()) {
+                        addAndPerformAction(new CreateTrack(false, {}, tracks, view));
                     }
-                    if (toTrackIndex < tracks.getNumNonMasterTracks())
-                        copyProcessorsFromTrack(copiedTrack, fromTrackIndex, toTrackIndex, trackAndSlotDiff.y);
                 }
+                if (toTrackIndex < tracks.getNumNonMasterTracks())
+                    copyProcessorsFromTrack(copiedTrack, fromTrackIndex, toTrackIndex, trackAndSlotDiff.y);
             }
         }
         // Second pass: insert selected tracks (along with their processors)
@@ -101,12 +101,7 @@ Insert::Insert(bool duplicate, const OwnedArray<Track> &copiedTracks, const juce
         const auto duplicatedTrackIndices = findDuplicationIndices(selectedTrackIndices);
         for (unsigned long i = 0; i < selectedTrackIndices.size(); i++) {
             int fromTrackIndex = selectedTrackIndices[i];
-            Track *fromTrack = copiedTracks[fromTrackIndex];
-            if (duplicate) {
-                addAndPerformCreateTrackAction(fromTrack, fromTrackIndex, duplicatedTrackIndices[i]);
-            } else {
-                addAndPerformCreateTrackAction(fromTrack, fromTrackIndex, fromTrackIndex + trackAndSlotDiff.x + 1);
-            }
+            addAndPerformCreateTrackAction(copiedTracks[fromTrackIndex], fromTrackIndex, duplicate ? duplicatedTrackIndices[i] : fromTrackIndex + trackAndSlotDiff.x + 1);
         }
     }
 

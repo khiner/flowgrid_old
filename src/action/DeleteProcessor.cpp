@@ -3,7 +3,7 @@
 #include "view/PluginWindow.h"
 
 DeleteProcessor::DeleteProcessor(const ValueTree &processorToDelete, Track *track, Connections &connections, ProcessorGraph &processorGraph)
-        : track(track->getState()), trackIndex(track->getIndex()),
+        : track(track->copy()), trackIndex(track->getIndex()),
           processorToDelete(processorToDelete),
           processorIndex(Processor::getIndex(processorToDelete)),
           pluginWindowType(Processor::getPluginWindowType(processorToDelete)),
@@ -20,9 +20,9 @@ bool DeleteProcessor::perform() {
 
 bool DeleteProcessor::undo() {
     if (Processor::isTrackIOProcessor(processorToDelete))
-        track.appendChild(processorToDelete, nullptr);
+        track.getState().appendChild(processorToDelete, nullptr);
     else
-        Track::getProcessorLane(track).addChild(processorToDelete, processorIndex, nullptr);
+        track.getProcessorLane().addChild(processorToDelete, processorIndex, nullptr);
     processorGraph.onProcessorCreated(processorToDelete);
     Processor::setPluginWindowType(processorToDelete, pluginWindowType);
     disconnectProcessorAction.undo();
@@ -33,17 +33,17 @@ bool DeleteProcessor::undo() {
 bool DeleteProcessor::performTemporary() {
     disconnectProcessorAction.perform();
     if (Processor::isTrackIOProcessor(processorToDelete))
-        track.removeChild(processorToDelete, nullptr);
+        track.getState().removeChild(processorToDelete, nullptr);
     else
-        Track::getProcessorLane(track).removeChild(processorToDelete, nullptr);
+        track.getProcessorLane().removeChild(processorToDelete, nullptr);
     return true;
 }
 
 bool DeleteProcessor::undoTemporary() {
     if (Processor::isTrackIOProcessor(processorToDelete))
-        track.appendChild(processorToDelete, nullptr);
+        track.getState().appendChild(processorToDelete, nullptr);
     else
-        Track::getProcessorLane(track).addChild(processorToDelete, processorIndex, nullptr);
+        track.getProcessorLane().addChild(processorToDelete, processorIndex, nullptr);
     disconnectProcessorAction.undo();
     return true;
 }

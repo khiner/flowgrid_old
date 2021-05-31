@@ -12,7 +12,7 @@ SelectTrack::SelectTrack(const Track *track, bool selected, bool deselectOthers,
         auto fullSelectionBitmask = Track::createFullSelectionBitmask(view.getNumProcessorSlots(track->isMaster()));
         newSelectedSlotsMasks.setUnchecked(trackIndex, fullSelectionBitmask);
 
-        const auto &firstProcessor = track->getProcessorLane().getChild(0);
+        const auto &firstProcessor = track->getFirstProcessor();
         setNewFocusedSlot({trackIndex, firstProcessor.isValid() ? Processor::getSlot(firstProcessor) : 0});
     } else {
         newSelectedSlotsMasks.setUnchecked(trackIndex, BigInteger());

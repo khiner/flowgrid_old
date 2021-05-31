@@ -28,28 +28,27 @@ CreateTrack::CreateTrack(bool isMaster, const Track *derivedFromTrack, Tracks &t
 CreateTrack::CreateTrack(int insertIndex, bool isMaster, const Track *derivedFromTrack, Tracks &tracks, View &view)
         : insertIndex(insertIndex), tracks(tracks) {
     // TODO move into method and construct in initializer list
-    newTrack = ValueTree(TrackIDs::TRACK);
-    Track::setMaster(newTrack, isMaster);
-    Track::setUuid(newTrack, Uuid().toString());
+    newTrack.setMaster(isMaster);
+    newTrack.setUuid(Uuid().toString());
     bool isSubTrack = !isMaster && derivedFromTrack != nullptr;
     const String name = isMaster ? "Master" : (isSubTrack ? makeTrackNameUnique(tracks, derivedFromTrack->getName()) : ("Track " + String(tracks.getNumNonMasterTracks() + 1)));
-    Track::setName(newTrack, name);
-    Track::setColour(newTrack, isSubTrack ? derivedFromTrack->getColour() : Colour::fromHSV((1.0f / 8.0f) * tracks.size(), 0.65f, 0.65f, 1.0f));
-    Track::setSelected(newTrack, false);
+    newTrack.setName(name);
+    newTrack.setColour(isSubTrack ? derivedFromTrack->getColour() : Colour::fromHSV((1.0f / 8.0f) * tracks.size(), 0.65f, 0.65f, 1.0f));
+    newTrack.setSelected(false);
 
     auto lanes = ValueTree(ProcessorLanesIDs::PROCESSOR_LANES);
     auto lane = ValueTree(ProcessorLaneIDs::PROCESSOR_LANE);
     ProcessorLane::setSelectedSlotsMask(lane, BigInteger());
     lanes.appendChild(lane, nullptr);
-    newTrack.appendChild(lanes, nullptr);
+    newTrack.getState().appendChild(lanes, nullptr);
 }
 
 bool CreateTrack::perform() {
-    tracks.getState().addChild(newTrack, insertIndex, nullptr);
+    tracks.add(newTrack.getState(), insertIndex);
     return true;
 }
 
 bool CreateTrack::undo() {
-    tracks.getState().removeChild(newTrack, nullptr);
+    tracks.remove(newTrack.getState());
     return true;
 }

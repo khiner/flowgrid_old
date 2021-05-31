@@ -9,12 +9,13 @@ ValueTree CreateProcessor::createProcessor(const PluginDescription &description)
     return processorToCreate;
 }
 
-static int getInsertSlot(const PluginDescription &description, const ValueTree &track) {
+static int getInsertSlot(const PluginDescription &description, const Track *track) {
     if (InternalPluginFormat::isTrackIOProcessor(description.name)) return -1;
     if (description.numInputChannels == 0) return 0;
+    if (track == nullptr) return -1;
 
     // Insert new effect processors right after the lane's last processor
-    const auto &lane = Track::getProcessorLane(track);
+    const auto &lane = track->getProcessorLane();
     int indexToInsertProcessor = lane.getNumChildren();
     return indexToInsertProcessor <= 0 ? 0 : Processor::getSlot(lane.getChild(indexToInsertProcessor - 1)) + 1;
 }
@@ -29,7 +30,7 @@ CreateProcessor::CreateProcessor(const PluginDescription &description, int track
         : CreateProcessor(createProcessor(description), trackIndex, slot, tracks, view, processorGraph) {}
 
 CreateProcessor::CreateProcessor(const PluginDescription &description, int trackIndex, Tracks &tracks, View &view, ProcessorGraph &processorGraph)
-        : CreateProcessor(createProcessor(description), trackIndex, getInsertSlot(description, tracks.getTrackState(trackIndex)), tracks, view, processorGraph) {}
+        : CreateProcessor(createProcessor(description), trackIndex, getInsertSlot(description, tracks.getChild(trackIndex)), tracks, view, processorGraph) {}
 
 bool CreateProcessor::perform() {
     performTemporary();
