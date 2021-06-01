@@ -3,18 +3,13 @@
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_gui_basics/juce_gui_basics.h>
 
+#include "PluginWindowType.h"
+
 using namespace juce;
 
 class PluginWindow : public DocumentWindow {
 public:
-    enum class Type {
-        none = -1,
-        normal = 0,
-        programs,
-        audioIO,
-    };
-
-    PluginWindow(ValueTree &processorState, AudioProcessor *processor, Type type);
+    PluginWindow(ValueTree &processorState, AudioProcessor *processor, PluginWindowType type);
 
     ~PluginWindow() override;
 
@@ -23,22 +18,22 @@ public:
     void closeButtonPressed() override;
 
     ValueTree processor;
-    const Type type;
+    const PluginWindowType type;
 
 private:
     float getDesktopScaleFactor() const override { return 1.0f; }
 
-    static AudioProcessorEditor *createProcessorEditor(AudioProcessor &processor, PluginWindow::Type type);
+    static AudioProcessorEditor *createProcessorEditor(AudioProcessor &processor, PluginWindowType type);
 
-    static String getTypeName(Type type) {
+    static String getTypeName(PluginWindowType type) {
         switch (type) {
-            case Type::normal:
+            case PluginWindowType::normal:
                 return "Normal";
-            case Type::programs:
+            case PluginWindowType::programs:
                 return "Programs";
-            case Type::audioIO:
+            case PluginWindowType::audioIO:
                 return "IO";
-            case Type::none:
+            case PluginWindowType::none:
             default:
                 return {};
         }

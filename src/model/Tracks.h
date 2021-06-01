@@ -2,7 +2,7 @@
 
 #include "model/Track.h"
 #include "model/View.h"
-#include "view/PluginWindow.h"
+#include "view/PluginWindowType.h"
 #include "Stateful.h"
 #include "StatefulList.h"
 #include "ConnectionType.h"
@@ -138,7 +138,7 @@ struct Tracks : public Stateful<Tracks>,
     Array<Track *> findAllSelectedTracks() const;
     Array<ValueTree> findAllSelectedProcessors() const;
 
-    void showWindow(ValueTree processor, PluginWindow::Type type) {
+    void showWindow(ValueTree processor, PluginWindowType type) {
         processor.setProperty(ProcessorIDs::pluginWindowType, int(type), &undoManager);
     }
 

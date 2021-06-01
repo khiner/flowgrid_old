@@ -5,7 +5,7 @@ ValueTree CreateProcessor::createProcessor(const PluginDescription &description)
     Processor::setId(processorToCreate, description.createIdentifierString());
     Processor::setName(processorToCreate, description.name);
     Processor::setAllowsDefaultConnections(processorToCreate, true);
-    Processor::setPluginWindowType(processorToCreate, static_cast<int>(PluginWindow::Type::none));
+    Processor::setPluginWindowType(processorToCreate, static_cast<int>(PluginWindowType::none));
     return processorToCreate;
 }
 
@@ -44,7 +44,7 @@ bool CreateProcessor::perform() {
 bool CreateProcessor::undo() {
     undoTemporary();
     if (processorToCreate.isValid()) {
-        Processor::setPluginWindowType(processorToCreate, static_cast<int>(PluginWindow::Type::none));
+        Processor::setPluginWindowType(processorToCreate, static_cast<int>(PluginWindowType::none));
         processorGraph.onProcessorDestroyed(processorToCreate);
     }
     return true;

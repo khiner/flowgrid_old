@@ -61,7 +61,7 @@ void GraphEditorPanel::mouseUp(const MouseEvent &e) {
     if (e.getNumberOfClicks() == 2) {
         const auto &processor = track->getProcessorAtSlot(trackAndSlot.y);
         if (processor.isValid() && graph.getProcessorWrappers().getAudioProcessorForState(processor)->hasEditor()) {
-            tracks.showWindow(processor, PluginWindow::Type::normal);
+            tracks.showWindow(processor, PluginWindowType::normal);
         }
     }
 
@@ -212,7 +212,7 @@ LabelGraphEditorProcessor *GraphEditorPanel::findMidiOutputProcessorForNodeId(co
     return nullptr;
 }
 
-ResizableWindow *GraphEditorPanel::getOrCreateWindowFor(ValueTree &processorState, PluginWindow::Type type) {
+ResizableWindow *GraphEditorPanel::getOrCreateWindowFor(ValueTree &processorState, PluginWindowType type) {
     auto nodeId = Processor::getNodeId(processorState);
     for (auto *pluginWindow : activePluginWindows)
         if (Processor::getNodeId(pluginWindow->processor) == nodeId && pluginWindow->type == type)
@@ -301,10 +301,10 @@ void GraphEditorPanel::showPopupMenu(const Track *track, int slot) {
                             project.disconnectCustom(processor);
                             break;
                         case SHOW_PLUGIN_GUI_MENU_ID:
-                            tracks.showWindow(processor, PluginWindow::Type::normal);
+                            tracks.showWindow(processor, PluginWindowType::normal);
                             break;
                         case SHOW_ALL_PROGRAMS_MENU_ID:
-                            tracks.showWindow(processor, PluginWindow::Type::programs);
+                            tracks.showWindow(processor, PluginWindowType::programs);
                             break;
                         case CONFIGURE_AUDIO_MIDI_MENU_ID:
                             getCommandManager().invokeDirectly(CommandIDs::showAudioMidiSettings, false);
@@ -356,8 +356,8 @@ void GraphEditorPanel::valueTreePropertyChanged(ValueTree &tree, const Identifie
         unfocusOverlay.setVisible(!view.isGridPaneFocused());
         unfocusOverlay.toFront(false);
     } else if (i == ProcessorIDs::pluginWindowType) {
-        const auto type = static_cast<PluginWindow::Type>(int(tree[i]));
-        if (type == PluginWindow::Type::none)
+        const auto type = static_cast<PluginWindowType>(int(tree[i]));
+        if (type == PluginWindowType::none)
             closeWindowFor(tree);
         else if (auto *w = getOrCreateWindowFor(tree, type))
             w->toFront(true);

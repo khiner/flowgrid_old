@@ -23,7 +23,6 @@ void ContextPane::paint(Graphics &g) {
 
     auto masterRowY = getHeight() - cellHeight;
     const int tracksOffset = jmax(0, view.getMasterViewSlotOffset() - view.getGridViewTrackOffset()) * cellWidth;
-
     for (int trackIndex = 0; trackIndex < tracks.size(); trackIndex++) {
         const auto *track = tracks.getChild(trackIndex);
         bool isMaster = track->isMaster();
@@ -45,7 +44,6 @@ void ContextPane::paint(Graphics &g) {
         }
 
         const auto &outputProcessor = track->getOutputProcessor();
-
         auto trackOutputIndex = view.getSlotOffset(track->isMaster()) + View::getNumVisibleSlots(track->isMaster());
         for (auto gridCellIndex = 0; gridCellIndex < view.getNumProcessorSlots(track->isMaster()) + 1; gridCellIndex++) {
             Colour cellColour;

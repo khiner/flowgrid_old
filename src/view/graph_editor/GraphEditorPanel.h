@@ -62,7 +62,7 @@ private:
     GraphEditorChannel *findChannelAt(const MouseEvent &e) const;
     LabelGraphEditorProcessor *findMidiInputProcessorForNodeId(AudioProcessorGraph::NodeID nodeId) const;
     LabelGraphEditorProcessor *findMidiOutputProcessorForNodeId(AudioProcessorGraph::NodeID nodeId) const;
-    ResizableWindow *getOrCreateWindowFor(ValueTree &processorState, PluginWindow::Type type);
+    ResizableWindow *getOrCreateWindowFor(ValueTree &processorState, PluginWindowType type);
 
     void closeWindowFor(ValueTree &processor);
 

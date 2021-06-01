@@ -4,7 +4,7 @@
 #include "model/Processor.h"
 #include "processors/MidiKeyboardProcessor.h"
 
-PluginWindow::PluginWindow(ValueTree &processorState, AudioProcessor *processor, Type type)
+PluginWindow::PluginWindow(ValueTree &processorState, AudioProcessor *processor, PluginWindowType type)
         : DocumentWindow(Processor::getName(processorState),
                          LookAndFeel::getDefaultLookAndFeel().findColour(ResizableWindow::backgroundColourId),
                          DocumentWindow::minimiseButton | DocumentWindow::closeButton),
@@ -34,12 +34,12 @@ PluginWindow::~PluginWindow() {
     clearContentComponent();
 }
 
-AudioProcessorEditor *PluginWindow::createProcessorEditor(AudioProcessor &processor, PluginWindow::Type type) {
-    if (type == PluginWindow::Type::normal)
+AudioProcessorEditor *PluginWindow::createProcessorEditor(AudioProcessor &processor, PluginWindowType type) {
+    if (type == PluginWindowType::normal)
         if (auto *ui = processor.createEditorIfNeeded())
             return ui;
 
-    if (type == PluginWindow::Type::programs)
+    if (type == PluginWindowType::programs)
         return new ProgramAudioProcessorEditor(processor);
 
 //        if (type == PluginWindow::Type::audioIO)
@@ -55,7 +55,7 @@ void PluginWindow::moved() {
 }
 
 void PluginWindow::closeButtonPressed() {
-    Processor::setPluginWindowType(processor, static_cast<int>(Type::none));
+    Processor::setPluginWindowType(processor, static_cast<int>(PluginWindowType::none));
 }
 
 PluginWindow::ProgramAudioProcessorEditor::ProgramAudioProcessorEditor(AudioProcessor &p) : AudioProcessorEditor(p) {

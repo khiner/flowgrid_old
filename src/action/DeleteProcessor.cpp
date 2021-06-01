@@ -1,6 +1,6 @@
 #include "DeleteProcessor.h"
 
-#include "view/PluginWindow.h"
+#include "view/PluginWindowType.h"
 
 DeleteProcessor::DeleteProcessor(const ValueTree &processorToDelete, Track *track, Connections &connections, ProcessorGraph &processorGraph)
         : track(track->copy()), trackIndex(track->getIndex()),
@@ -13,7 +13,7 @@ DeleteProcessor::DeleteProcessor(const ValueTree &processorToDelete, Track *trac
 bool DeleteProcessor::perform() {
     processorGraph.getProcessorWrappers().saveProcessorStateInformationToState(processorToDelete);
     performTemporary();
-    Processor::setPluginWindowType(processorToDelete, static_cast<int>(PluginWindow::Type::none));
+    Processor::setPluginWindowType(processorToDelete, static_cast<int>(PluginWindowType::none));
     processorGraph.onProcessorDestroyed(processorToDelete);
     return true;
 }
