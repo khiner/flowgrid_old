@@ -15,12 +15,23 @@ ID(OUTPUT)
 }
 
 // TODO Should input/output be combined into a single IOState? (Almost all behavior is symmetrical.)
-struct Output : public Stateful<Output>, private ValueTree::Listener {
+struct Output : public Stateful<Output>, private StatefulList<Processor> {
+    struct Listener {
+        virtual void processorAdded(Processor *processor) = 0;
+        virtual void processorRemoved(Processor *processor, int oldIndex) = 0;
+        virtual void processorOrderChanged() {}
+        virtual void processorPropertyChanged(Processor *processor, const Identifier &i) {}
+    };
+
+    void addOutputListener(Listener *listener) { listeners.add(listener); }
+    void removeOutputListener(Listener *listener) { listeners.remove(listener); }
+
     Output(PluginManager &pluginManager, UndoManager &undoManager, AudioDeviceManager &deviceManager);
 
     ~Output() override;
 
     static Identifier getIdentifier() { return OutputIDs::OUTPUT; }
+    bool isChildType(const ValueTree &tree) const override { return Processor::isType(tree); }
 
     void initializeDefault();
 
@@ -32,11 +43,35 @@ struct Output : public Stateful<Output>, private ValueTree::Listener {
     Array<ValueTree> syncOutputDevicesWithDeviceManager();
 
 private:
+    ListenerList<Listener> listeners;
+
     PluginManager &pluginManager;
     UndoManager &undoManager;
     AudioDeviceManager &deviceManager;
 
-    void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override;
-    void valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int) override;
-    void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override;
+    Processor *createNewObject(const ValueTree &tree) override { return new Processor(tree); }
+    void deleteObject(Processor *processor) override { delete processor; }
+    void newObjectAdded(Processor *processor) override {
+        if (processor->isMidiOutputProcessor() && !deviceManager.isMidiOutputEnabled(processor->getDeviceName()))
+            deviceManager.setMidiOutputEnabled(processor->getDeviceName(), true);
+        listeners.call([processor](Listener &l) { l.processorAdded(processor); });
+    }
+    void objectRemoved(Processor *processor, int oldIndex) override {
+        if (processor->isMidiOutputProcessor() && deviceManager.isMidiOutputEnabled(processor->getDeviceName()))
+            deviceManager.setMidiOutputEnabled(processor->getDeviceName(), false);
+        listeners.call([processor, oldIndex](Listener &l) { l.processorRemoved(processor, oldIndex); });
+    }
+    void objectOrderChanged() override {
+        listeners.call([](Listener &l) { l.processorOrderChanged(); });
+    }
+
+    void objectChanged(Processor *processor, const Identifier &i) override {
+        if (i == ProcessorIDs::deviceName) {
+            AudioDeviceManager::AudioDeviceSetup config;
+            deviceManager.getAudioDeviceSetup(config);
+            config.outputDeviceName = processor->getDeviceName();
+            deviceManager.setAudioDeviceSetup(config, true);
+        }
+        listeners.call([processor, i](Listener &l) { l.processorPropertyChanged(processor, i); });
+    }
 };

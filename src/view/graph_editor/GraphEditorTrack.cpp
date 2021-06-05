@@ -5,16 +5,14 @@ GraphEditorTrack::GraphEditorTrack(Track *track, View &view, Project &project, S
         : track(track), view(view),  project(project), processorWrappers(processorWrappers), connectorDragListener(connectorDragListener),
           lanes(track->getProcessorLanes(), track, view, processorWrappers, connectorDragListener) {
     addAndMakeVisible(lanes);
-    trackInputProcessorChanged();
-    trackOutputProcessorChanged();
 
-    track->addListener(this);
+    track->addTrackListener(this);
     view.addListener(this);
 }
 
 GraphEditorTrack::~GraphEditorTrack() {
     view.removeListener(this);
-    track->removeListener(this);
+    track->removeTrackListener(this);
 }
 
 void GraphEditorTrack::paint(Graphics &g) {
@@ -85,8 +83,8 @@ void GraphEditorTrack::onColourChanged() {
 }
 
 void GraphEditorTrack::trackInputProcessorChanged() {
-    const ValueTree &trackInputProcessor = track->getInputProcessor();
-    if (trackInputProcessor.isValid()) {
+    auto *trackInputProcessor = track->getInputProcessor();
+    if (trackInputProcessor != nullptr) {
         trackInputProcessorView = std::make_unique<TrackInputGraphEditorProcessor>(trackInputProcessor, track, view, project, processorWrappers, connectorDragListener);
         addAndMakeVisible(trackInputProcessorView.get());
         resized();
@@ -98,8 +96,8 @@ void GraphEditorTrack::trackInputProcessorChanged() {
 }
 
 void GraphEditorTrack::trackOutputProcessorChanged() {
-    const ValueTree &trackOutputProcessor = track->getOutputProcessor();
-    if (trackOutputProcessor.isValid()) {
+    auto *trackOutputProcessor = track->getOutputProcessor();
+    if (trackOutputProcessor != nullptr) {
         trackOutputProcessorView = std::make_unique<TrackOutputGraphEditorProcessor>(trackOutputProcessor, track, view, processorWrappers, connectorDragListener);
         addAndMakeVisible(trackOutputProcessorView.get());
         resized();
@@ -108,34 +106,4 @@ void GraphEditorTrack::trackOutputProcessorChanged() {
         trackOutputProcessorView = nullptr;
     }
     onColourChanged();
-}
-
-void GraphEditorTrack::valueTreeChildAdded(ValueTree &parent, ValueTree &child) {
-    if (Processor::isType(child)) {
-        if (Processor::isTrackInputProcessor(child))
-            trackInputProcessorChanged();
-        else if (Processor::isTrackOutputProcessor(child))
-            trackOutputProcessorChanged();
-    }
-}
-
-void GraphEditorTrack::valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int) {
-    if (Processor::isType(child)) {
-        if (Processor::isTrackInputProcessor(child))
-            trackInputProcessorChanged();
-        else if (Processor::isTrackOutputProcessor(child))
-            trackOutputProcessorChanged();
-    }
-}
-
-void GraphEditorTrack::valueTreePropertyChanged(ValueTree &tree, const Identifier &i) {
-    if (i == ViewIDs::gridSlotOffset || ((i == ViewIDs::gridTrackOffset || i == ViewIDs::masterSlotOffset) && isMaster())) {
-        resized();
-    } else if (i == TrackIDs::name) {
-        if (trackInputProcessorView != nullptr)
-            // TODO processor should listen to this itself, then remove `ssetTrackName` method
-            trackInputProcessorView->setTrackName(tree.getProperty(i));
-    } else if (i == TrackIDs::colour || i == TrackIDs::selected) {
-        onColourChanged();
-    }
 }

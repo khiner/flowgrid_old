@@ -1,10 +1,10 @@
 #include "BaseGraphEditorProcessor.h"
 
-BaseGraphEditorProcessor::BaseGraphEditorProcessor(const ValueTree &state, Track *track, View &view, StatefulAudioProcessorWrappers &processorWrappers, ConnectorDragListener &connectorDragListener)
-        : state(state), track(track), view(view), processorWrappers(processorWrappers), connectorDragListener(connectorDragListener) {
-    this->state.addListener(this);
+BaseGraphEditorProcessor::BaseGraphEditorProcessor(Processor *processor, Track *track, View &view, StatefulAudioProcessorWrappers &processorWrappers, ConnectorDragListener &connectorDragListener)
+        : processor(processor), track(track), view(view), processorWrappers(processorWrappers), connectorDragListener(connectorDragListener) {
+    this->processor->getState().addListener(this);
 
-    for (auto child : state) {
+    for (auto child : this->processor->getState()) {
         if (InputChannels::isType(child) || OutputChannels::isType(child)) {
             for (auto channel : child) {
                 // TODO shouldn't have to do this kind of thing
@@ -15,12 +15,12 @@ BaseGraphEditorProcessor::BaseGraphEditorProcessor(const ValueTree &state, Track
 }
 
 BaseGraphEditorProcessor::~BaseGraphEditorProcessor() {
-    state.removeListener(this);
+    this->processor->getState().removeListener(this);
 }
 
 void BaseGraphEditorProcessor::paint(Graphics &g) {
     auto boxColour = findColour(TextEditor::backgroundColourId);
-    if (Processor::isBypassed(state))
+    if (processor->isBypassed())
         boxColour = boxColour.brighter();
     else if (isSelected())
         boxColour = boxColour.brighter(0.02f);
@@ -38,16 +38,16 @@ bool BaseGraphEditorProcessor::hitTest(int x, int y) {
 }
 
 void BaseGraphEditorProcessor::resized() {
-    if (auto *processor = processorWrappers.getAudioProcessorForState(state)) {
+    if (auto *audioProcessor = processorWrappers.getAudioProcessorForProcessor(processor)) {
         for (auto *channel : channels)
-            layoutChannel(processor, channel);
+            layoutChannel(audioProcessor, channel);
         repaint();
         connectorDragListener.update();
     }
 }
 
 juce::Point<float> BaseGraphEditorProcessor::getConnectorDirectionVector(bool isInput) const {
-    bool isLeftToRight = track != nullptr && track->isProcessorLeftToRightFlowing(state);
+    bool isLeftToRight = track != nullptr && track->isProcessorLeftToRightFlowing(processor);
     if (isInput) {
         if (isLeftToRight) return {-1, 0};
         return {0, -1};
@@ -58,7 +58,7 @@ juce::Point<float> BaseGraphEditorProcessor::getConnectorDirectionVector(bool is
 
 Rectangle<int> BaseGraphEditorProcessor::getBoxBounds() const {
     auto r = getLocalBounds().reduced(1);
-    bool isLeftToRight = track != nullptr && track->isProcessorLeftToRightFlowing(state);
+    bool isLeftToRight = track != nullptr && track->isProcessorLeftToRightFlowing(processor);
     if (isLeftToRight) {
         if (getNumInputChannels() > 0)
             r.setLeft(channelSize);
@@ -73,19 +73,19 @@ Rectangle<int> BaseGraphEditorProcessor::getBoxBounds() const {
     return r;
 }
 
-void BaseGraphEditorProcessor::layoutChannel(AudioProcessor *processor, GraphEditorChannel *channel) const {
+void BaseGraphEditorProcessor::layoutChannel(AudioProcessor *audioProcessor, GraphEditorChannel *channel) const {
     const auto boxBounds = getBoxBounds();
     const bool isInput = channel->isInput();
     auto channelIndex = fg::Channel::getChannelIndex(channel->getState());
     int busIndex = 0;
-    processor->getOffsetInBusBufferForAbsoluteChannelIndex(isInput, channelIndex, busIndex);
+    audioProcessor->getOffsetInBusBufferForAbsoluteChannelIndex(isInput, channelIndex, busIndex);
     int total = isInput ? getNumInputChannels() : getNumOutputChannels();
     const int index = channel->isMidi() ? (total - 1) : channelIndex;
     auto indexPosition = index + busIndex / 2;
 
     int x = boxBounds.getX() + static_cast<int>(indexPosition * channelSize);
     int y = boxBounds.getY() + static_cast<int>(indexPosition * channelSize);
-    if (track != nullptr && track->isProcessorLeftToRightFlowing(state))
+    if (track != nullptr && track->isProcessorLeftToRightFlowing(processor))
         channel->setSize(static_cast<int>(boxBounds.getWidth() / 2), channelSize);
     else
         channel->setSize(channelSize, static_cast<int>(boxBounds.getHeight() / 2));
@@ -103,7 +103,7 @@ void BaseGraphEditorProcessor::layoutChannel(AudioProcessor *processor, GraphEdi
 
 void BaseGraphEditorProcessor::valueTreeChildAdded(ValueTree &parent, ValueTree &child) {
     if (fg::Channel::isType(child)) {
-        auto *channel = new GraphEditorChannel(child, track, connectorDragListener, Processor::isIoProcessor(state));
+        auto *channel = new GraphEditorChannel(child, track, connectorDragListener, processor->isIoProcessor());
         addAndMakeVisible(channel);
         channels.add(channel);
         resized();
@@ -119,7 +119,7 @@ void BaseGraphEditorProcessor::valueTreeChildRemoved(ValueTree &parent, ValueTre
 }
 
 void BaseGraphEditorProcessor::valueTreePropertyChanged(ValueTree &v, const Identifier &i) {
-    if (v != state) return;
+    if (v != processor->getState()) return;
 
     if (i == ProcessorIDs::initialized)
         resized();

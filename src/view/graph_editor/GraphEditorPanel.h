@@ -4,6 +4,8 @@
 #include "view/graph_editor/processor/LabelGraphEditorProcessor.h"
 #include "ProcessorGraph.h"
 #include "GraphEditorChannel.h"
+#include "GraphEditorInput.h"
+#include "GraphEditorOutput.h"
 #include "GraphEditorTracks.h"
 #include "GraphEditorConnectors.h"
 
@@ -44,13 +46,10 @@ private:
                                                            {ProcessorGraph::NodeID(0), 0}};
     std::unique_ptr<GraphEditorConnectors> connectors;
     GraphEditorConnector *draggingConnector{};
+    GraphEditorInput graphEditorInput;
+    GraphEditorOutput graphEditorOutput;
     std::unique_ptr<GraphEditorTracks> graphEditorTracks;
-    std::unique_ptr<LabelGraphEditorProcessor> audioInputProcessor;
-    std::unique_ptr<LabelGraphEditorProcessor> audioOutputProcessor;
-    OwnedArray<LabelGraphEditorProcessor> midiInputProcessors;
-    OwnedArray<LabelGraphEditorProcessor> midiOutputProcessors;
     AudioProcessorGraph::Connection initialDraggingConnection{EMPTY_CONNECTION};
-    LabelGraphEditorProcessor::ElementComparator processorComparator;
     DrawableRectangle unfocusOverlay;
     OwnedArray<PluginWindow> activePluginWindows;
 
@@ -60,18 +59,42 @@ private:
     int getProcessorHeight() { return (getHeight() - View::TRACK_LABEL_HEIGHT - View::TRACK_INPUT_HEIGHT) / (View::NUM_VISIBLE_PROCESSOR_SLOTS + 1); }
 
     GraphEditorChannel *findChannelAt(const MouseEvent &e) const;
-    LabelGraphEditorProcessor *findMidiInputProcessorForNodeId(AudioProcessorGraph::NodeID nodeId) const;
-    LabelGraphEditorProcessor *findMidiOutputProcessorForNodeId(AudioProcessorGraph::NodeID nodeId) const;
-    ResizableWindow *getOrCreateWindowFor(ValueTree &processorState, PluginWindowType type);
 
-    void closeWindowFor(ValueTree &processor);
-
+    ResizableWindow *getOrCreateWindowFor(Processor *processorState, PluginWindowType type);
+    void closeWindowFor(const Processor *processor);
     void showPopupMenu(const Track *track, int slot);
 
     void trackAdded(Track *track) override { connectors->updateConnectors(); }
     void trackRemoved(Track *track, int oldIndex) override { connectors->updateConnectors(); }
     void trackOrderChanged() override { connectors->updateConnectors(); }
-    void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override;
-    void valueTreeChildRemoved(ValueTree &parent, ValueTree &child, int indexFromWhichChildWasRemoved) override;
-    void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override;
+    void processorAdded(Processor *processor) override { connectors->updateConnectors(); }
+    void processorRemoved(Processor *processor, int oldIndex) override { connectors->updateConnectors(); }
+    void processorPropertyChanged(Processor *processor, const Identifier &i) override {
+        if (i == ProcessorIDs::slot) {
+            connectors->updateConnectors();
+        } else if (i == ProcessorIDs::pluginWindowType) {
+            const auto type = static_cast<PluginWindowType>(processor->getPluginWindowType());
+            if (type == PluginWindowType::none) {
+                closeWindowFor(processor);
+            } else if (auto *w = getOrCreateWindowFor(processor, type)) {
+                w->toFront(true);
+            }
+        }
+    }
+    void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override {
+        if (Connection::isType(child)) connectors->updateConnectors();
+    }
+    void valueTreeChildRemoved(ValueTree &parent, ValueTree &child, int oldIndex) override {
+        if (Connection::isType(child)) connectors->updateConnectors();
+    }
+    void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {
+        if (i == ViewIDs::gridSlotOffset) {
+            connectors->updateConnectors();
+        } else if (i == ViewIDs::gridTrackOffset || i == ViewIDs::masterSlotOffset) {
+            resized();
+        } else if (i == ViewIDs::focusedPane) {
+            unfocusOverlay.setVisible(!view.isGridPaneFocused());
+            unfocusOverlay.toFront(false);
+        }
+    }
 };

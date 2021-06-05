@@ -4,12 +4,12 @@
 #include <juce_audio_devices/juce_audio_devices.h>
 
 #include "model/Channel.h"
+#include "model/Processor.h"
 #include "view/parameter_control/ParameterControl.h"
 #include "view/parameter_control/level_meter/LevelMeterSource.h"
 #include "view/processor_editor/SwitchParameterComponent.h"
 
-class StatefulAudioProcessorWrapper : private AudioProcessorListener {
-public:
+struct StatefulAudioProcessorWrapper : private AudioProcessorListener {
     struct Parameter
             : public AudioProcessorParameterWithID,
               private ValueTree::Listener,
@@ -113,7 +113,7 @@ public:
         }
     };
 
-    StatefulAudioProcessorWrapper(AudioPluginInstance *processor, AudioProcessorGraph::NodeID nodeId, ValueTree state, UndoManager &undoManager, AudioDeviceManager &deviceManager);
+    StatefulAudioProcessorWrapper(AudioPluginInstance *audioProcessor, AudioProcessorGraph::NodeID nodeId, Processor *processor, UndoManager &undoManager, AudioDeviceManager &deviceManager);
 
     ~StatefulAudioProcessorWrapper() override;
 
@@ -126,9 +126,11 @@ public:
     void updateValueTree();
     bool flushParameterValuesToValueTree();
 
-    AudioPluginInstance *processor;
-    ValueTree state;
+    AudioPluginInstance *audioProcessor;
+    Processor *processor;
+
 private:
+
     UndoManager &undoManager;
     AudioDeviceManager &deviceManager;
 
@@ -138,7 +140,7 @@ private:
     CriticalSection valueTreeChanging;
 
     struct Channel {
-        Channel(AudioProcessor *processor, AudioDeviceManager &deviceManager, int channelIndex, bool isInput);
+        Channel(AudioProcessor *audioProcessor, AudioDeviceManager &deviceManager, int channelIndex, bool isInput);
         Channel(const ValueTree &state);
 
         ValueTree toState() const {
@@ -156,7 +158,7 @@ private:
         String abbreviatedName;
     };
 
-    void updateStateForProcessor(AudioProcessor *processor);
+    void updateStateForProcessor(AudioProcessor *audioProcessor);
     void updateChannels(Array<Channel> &oldChannels, Array<Channel> &newChannels, ValueTree &channelsState);
 
     void audioProcessorChanged(AudioProcessor *processor, const ChangeDetails &details) override;

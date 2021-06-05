@@ -35,13 +35,10 @@ Project::Project(View &view, Tracks &tracks, Connections &connections, Input &in
     state.appendChild(connections.getState(), nullptr);
     state.appendChild(view.getState(), nullptr);
     undoManager.addChangeListener(this);
-    tracks.addListener(this);
-    tracks.addTracksListener(this);
 }
 
 Project::~Project() {
-    tracks.removeTracksListener(this);
-    tracks.removeListener(this);
+    undoManager.removeChangeListener(this);
 }
 
 void Project::loadFromState(const ValueTree &fromState) {
@@ -90,7 +87,8 @@ void Project::createTrack(bool isMaster) {
     setShiftHeld(false); // prevent rectangle-select behavior when doing cmd+shift+t
     undoManager.beginNewTransaction();
 
-    undoManager.perform(new CreateTrack(isMaster, {}, tracks, view));
+    undoManager.perform(new CreateTrack(isMaster, -1, tracks, view));
+    auto *mostRecentlyCreatedTrack = tracks.getMostRecentlyCreatedTrack();
     undoManager.perform(new CreateProcessor(TrackInputProcessor::getPluginDescription(), mostRecentlyCreatedTrack->getIndex(), tracks, view, processorGraph));
     undoManager.perform(new CreateProcessor(TrackOutputProcessor::getPluginDescription(), mostRecentlyCreatedTrack->getIndex(), tracks, view, processorGraph));
 
@@ -205,24 +203,24 @@ void Project::setTrackSelected(Track *track, bool selected, bool deselectOthers)
     setProcessorSlotSelected(track, -1, selected, deselectOthers);
 }
 
-void Project::selectProcessor(const ValueTree &processor) {
-    setProcessorSlotSelected(tracks.getTrackForProcessor(processor), Processor::getSlot(processor), true);
+void Project::selectProcessor(const Processor *processor) {
+    setProcessorSlotSelected(tracks.getTrackForProcessor(processor), processor->getSlot(), true);
 }
 
-bool Project::disconnectCustom(const ValueTree &processor) {
+bool Project::disconnectCustom(Processor *processor) {
     undoManager.beginNewTransaction();
     return processorGraph.doDisconnectNode(processor, all, false, true, true, true);
 }
 
-void Project::setDefaultConnectionsAllowed(const ValueTree &processor, bool defaultConnectionsAllowed) {
+void Project::setDefaultConnectionsAllowed(Processor *processor, bool defaultConnectionsAllowed) {
     undoManager.beginNewTransaction();
     undoManager.perform(new SetDefaultConnectionsAllowed(processor, defaultConnectionsAllowed, connections));
     undoManager.perform(new ResetDefaultExternalInputConnectionsAction(connections, tracks, input, processorGraph));
 }
 
-void Project::toggleProcessorBypass(ValueTree processor) {
+void Project::toggleProcessorBypass(Processor *processor) {
     undoManager.beginNewTransaction();
-    processor.setProperty(ProcessorIDs::bypassed, !Processor::isBypassed(processor), &undoManager);
+    processor->setBypassed(!processor->isBypassed(), &undoManager);
 }
 
 void Project::selectTrackAndSlot(juce::Point<int> trackAndSlot) {
@@ -242,7 +240,7 @@ void Project::createDefaultProject() {
     output.initializeDefault();
     createTrack(true);
     createTrack(false);
-    doCreateAndAddProcessor(SineBank::getPluginDescription(), mostRecentlyCreatedTrack, 0);
+    doCreateAndAddProcessor(SineBank::getPluginDescription(), tracks.getMostRecentlyCreatedTrack(), 0);
     // Select action only does this if the focused track changes, so we just need to do this once ourselves
     undoManager.perform(new ResetDefaultExternalInputConnectionsAction(connections, tracks, input, processorGraph));
     undoManager.clearUndoHistory();
@@ -251,8 +249,8 @@ void Project::createDefaultProject() {
 
 void Project::doCreateAndAddProcessor(const PluginDescription &description, Track *track, int slot) {
     if (PluginManager::isGeneratorOrInstrument(&description) && track != nullptr && track->hasProducerProcessor()) {
-        undoManager.perform(new CreateTrack(false, track, tracks, view));
-        return doCreateAndAddProcessor(description, mostRecentlyCreatedTrack, slot);
+        undoManager.perform(new CreateTrack(false, track->getIndex(), tracks, view));
+        return doCreateAndAddProcessor(description, tracks.getMostRecentlyCreatedTrack(), slot);
     }
 
     if (slot == -1)
@@ -260,7 +258,10 @@ void Project::doCreateAndAddProcessor(const PluginDescription &description, Trac
     else
         undoManager.perform(new CreateProcessor(description, track->getIndex(), slot, tracks, view, processorGraph));
 
-    selectProcessor(mostRecentlyCreatedProcessor);
+    if (auto *mostRecentlyCreatedProcessor = tracks.getMostRecentlyCreatedProcessor()) {
+        setProcessorSlotSelected(track, mostRecentlyCreatedProcessor->getSlot(), true);
+    }
+
     updateAllDefaultConnections();
 }
 
@@ -305,7 +306,7 @@ bool Project::isDeviceWithNamePresent(const String &deviceName) const {
 
 Result Project::saveDocument(const File &file) {
     for (const auto *track : tracks.getChildren())
-        for (auto processorState : track->getProcessorLane())
+        for (auto processorState : track->getProcessorLane()->getState())
             processorGraph.getProcessorWrappers().saveProcessorStateInformationToState(processorState);
 
     if (auto xml = state.createXml())

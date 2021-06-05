@@ -1,10 +1,20 @@
 #include "StatefulAudioProcessorWrappers.h"
 
+void StatefulAudioProcessorWrappers::saveProcessorInformationToState(Processor *processor) const {
+    if (auto *processorWrapper = getProcessorWrapperForProcessor(processor)) {
+        if (auto *audioProcessor = processorWrapper->audioProcessor) {
+            MemoryBlock memoryBlock;
+            audioProcessor->getStateInformation(memoryBlock);
+            processor->setProcessorState(memoryBlock.toBase64Encoding());
+        }
+    }
+}
+
 void StatefulAudioProcessorWrappers::saveProcessorStateInformationToState(ValueTree &processorState) const {
     if (auto *processorWrapper = getProcessorWrapperForState(processorState)) {
-        if (auto *processor = processorWrapper->processor) {
+        if (auto *audioProcessor = processorWrapper->audioProcessor) {
             MemoryBlock memoryBlock;
-            processor->getStateInformation(memoryBlock);
+            audioProcessor->getStateInformation(memoryBlock);
             Processor::setProcessorState(processorState, memoryBlock.toBase64Encoding());
         }
     }

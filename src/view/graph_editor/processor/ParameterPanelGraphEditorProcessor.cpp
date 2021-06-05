@@ -1,7 +1,7 @@
 #include "ParameterPanelGraphEditorProcessor.h"
 
-ParameterPanelGraphEditorProcessor::ParameterPanelGraphEditorProcessor(const ValueTree &state, Track *track, View &view, StatefulAudioProcessorWrappers &processorWrappers, ConnectorDragListener &connectorDragListener) :
-        BaseGraphEditorProcessor(state, track, view, processorWrappers, connectorDragListener) {
+ParameterPanelGraphEditorProcessor::ParameterPanelGraphEditorProcessor(Processor *processor, Track *track, View &view, StatefulAudioProcessorWrappers &processorWrappers, ConnectorDragListener &connectorDragListener) :
+        BaseGraphEditorProcessor(processor, track, view, processorWrappers, connectorDragListener) {
 //        parametersPanel->addMouseListener(this);
 }
 
@@ -20,7 +20,7 @@ void ParameterPanelGraphEditorProcessor::resized() {
 }
 
 void ParameterPanelGraphEditorProcessor::valueTreePropertyChanged(ValueTree &v, const Identifier &i) {
-    if (v != state) return;
+    if (v != processor->getState()) return;
 
     if (parametersPanel == nullptr) {
         if (auto *processorWrapper = getProcessorWrapper()) {

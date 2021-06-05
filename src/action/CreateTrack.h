@@ -4,17 +4,17 @@
 #include "model/Tracks.h"
 
 struct CreateTrack : public UndoableAction {
-    CreateTrack(bool isMaster, const Track *derivedFromTrack, Tracks &tracks, View &view);
-    CreateTrack(int insertIndex, bool isMaster, const Track *derivedFromTrack, Tracks &tracks, View &view);
+    CreateTrack(bool isMaster, int derivedFromTrackIndex, Tracks &tracks, View &view);
+    CreateTrack(int insertIndex, bool isMaster, int derivedFromTrackIndex, Tracks &tracks, View &view);
 
     bool perform() override;
     bool undo() override;
 
     int getSizeInUnits() override { return (int) sizeof(*this); }
 
-    Track newTrack;
     int insertIndex;
-
+    int derivedFromTrackIndex;
+    bool isMaster;
 protected:
     Tracks &tracks;
 };

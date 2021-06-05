@@ -41,8 +41,8 @@ private:
     DrawableRectangle unfocusOverlay;
     std::unique_ptr<PopupMenu> addProcessorMenu;
 
-    void refreshProcessors(const ValueTree &singleProcessorToRefresh = {}, bool onlyUpdateFocusState = false);
-    void assignProcessorToEditor(const ValueTree &processor, int processorSlot = -1, bool onlyUpdateFocusState = false) const;
+    void refreshProcessors(const Processor *singleProcessorToRefresh = nullptr, bool onlyUpdateFocusState = false);
+    void assignProcessorToEditor(const Processor *processor, int processorSlot = -1, bool onlyUpdateFocusState = false) const;
 
     void trackAdded(Track *track) override { }
     void trackRemoved(Track *track, int oldIndex) override { refreshProcessors(); }

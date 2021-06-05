@@ -7,25 +7,25 @@
 
 class BaseGraphEditorProcessor : public Component, public ValueTree::Listener {
 public:
-    BaseGraphEditorProcessor(const ValueTree &state, Track *track, View &view, StatefulAudioProcessorWrappers &processorWrappers, ConnectorDragListener &connectorDragListener);
+    BaseGraphEditorProcessor(Processor *processor, Track *track, View &view, StatefulAudioProcessorWrappers &processorWrappers, ConnectorDragListener  &connectorDragListener);
 
     ~BaseGraphEditorProcessor() override;
 
-    const ValueTree &getState() const { return state; }
+    Processor *getProcessor() const { return processor; }
 
     Track *getTrack() const { return track; }
 
-    AudioProcessorGraph::NodeID getNodeId() const { return Processor::getNodeId(state); }
+    AudioProcessorGraph::NodeID getNodeId() const { return processor->getNodeId(); }
 
     virtual bool isInView() {
-        return Processor::isIoProcessor(state) || view.isProcessorSlotInView(track->getIndex(), track->isMaster(), Processor::getSlot(state));
+        return processor->isIoProcessor() || view.isProcessorSlotInView(track->getIndex(), track->isMaster(), processor->getSlot());
     }
 
     int getTrackIndex() const { return track->getIndex(); }
-    int getNumInputChannels() const { return state.getChildWithName(InputChannelsIDs::INPUT_CHANNELS).getNumChildren(); }
-    int getNumOutputChannels() const { return state.getChildWithName(OutputChannelsIDs::OUTPUT_CHANNELS).getNumChildren(); }
-    bool isSelected() { return track != nullptr && track->isProcessorSelected(state); }
-    StatefulAudioProcessorWrapper *getProcessorWrapper() const { return processorWrappers.getProcessorWrapperForState(state); }
+    int getNumInputChannels() const { return processor->getState().getChildWithName(InputChannelsIDs::INPUT_CHANNELS).getNumChildren(); }
+    int getNumOutputChannels() const { return processor->getState().getChildWithName(OutputChannelsIDs::OUTPUT_CHANNELS).getNumChildren(); }
+    bool isSelected() { return track != nullptr && track->isProcessorSelected(processor); }
+    StatefulAudioProcessorWrapper *getProcessorWrapper() const { return processorWrappers.getProcessorWrapperForProcessor(processor); }
 
     void paint(Graphics &g) override;
     bool hitTest(int x, int y) override;
@@ -57,12 +57,12 @@ public:
     };
 
 protected:
-    ValueTree state;
+    Processor *processor;
     static constexpr float largeFontHeight = 18.0f;
     static constexpr int channelSize = 10;
     OwnedArray<GraphEditorChannel> channels;
 
-    virtual void layoutChannel(AudioProcessor *processor, GraphEditorChannel *channel) const;
+    virtual void layoutChannel(AudioProcessor *audioProcessor, GraphEditorChannel *channel) const;
 
     void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override;
     void valueTreeChildRemoved(ValueTree &parent, ValueTree &child, int) override;

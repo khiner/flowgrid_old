@@ -134,6 +134,8 @@ target_sources(FlowGrid PRIVATE
     src/view/context_pane/ContextPane.cpp
     src/view/graph_editor/ConnectorDragListener.h
     src/view/graph_editor/GraphEditor.h
+    src/view/graph_editor/GraphEditorInput.cpp
+    src/view/graph_editor/GraphEditorOutput.cpp
     src/view/graph_editor/GraphEditorChannel.cpp
     src/view/graph_editor/GraphEditorConnector.cpp
     src/view/graph_editor/GraphEditorConnectors.h

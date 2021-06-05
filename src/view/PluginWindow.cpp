@@ -4,24 +4,22 @@
 #include "model/Processor.h"
 #include "processors/MidiKeyboardProcessor.h"
 
-PluginWindow::PluginWindow(ValueTree &processorState, AudioProcessor *processor, PluginWindowType type)
-        : DocumentWindow(Processor::getName(processorState),
-                         LookAndFeel::getDefaultLookAndFeel().findColour(ResizableWindow::backgroundColourId),
-                         DocumentWindow::minimiseButton | DocumentWindow::closeButton),
-          processor(processorState), type(type) {
+PluginWindow::PluginWindow(Processor *processor, AudioProcessor *audioProcessor, PluginWindowType type)
+        : DocumentWindow(processor->getName(), LookAndFeel::getDefaultLookAndFeel().findColour(ResizableWindow::backgroundColourId), DocumentWindow::minimiseButton | DocumentWindow::closeButton),
+          processor(processor), type(type) {
     setSize(400, 300);
 
     Component *keyboardComponent{};
-    if (auto *midiKeyboardProcessor = dynamic_cast<MidiKeyboardProcessor *>(processor)) {
+    if (auto *midiKeyboardProcessor = dynamic_cast<MidiKeyboardProcessor *>(audioProcessor)) {
         keyboardComponent = midiKeyboardProcessor->createKeyboard();
         keyboardComponent->setSize(800, 1);
         setContentOwned(keyboardComponent, true);
-    } else if (auto *ui = createProcessorEditor(*processor, type)) {
+    } else if (auto *ui = createProcessorEditor(*audioProcessor, type)) {
         setContentOwned(ui, true);
     }
 
-    int xPosition = processorState.hasProperty(ProcessorIDs::pluginWindowX) ? Processor::getPluginWindowX(processorState) : Random::getSystemRandom().nextInt(500);
-    int yPosition = processorState.hasProperty(ProcessorIDs::pluginWindowX) ? Processor::getPluginWindowY(processorState) : Random::getSystemRandom().nextInt(500);
+    int xPosition = processor->hasPluginWindowX() ? processor->getPluginWindowX() : Random::getSystemRandom().nextInt(500);
+    int yPosition = processor->hasPluginWindowY() ? processor->getPluginWindowY() : Random::getSystemRandom().nextInt(500);
     setTopLeftPosition(xPosition, yPosition);
     setAlwaysOnTop(true);
     setVisible(true);
@@ -50,24 +48,21 @@ AudioProcessorEditor *PluginWindow::createProcessorEditor(AudioProcessor &proces
 }
 
 void PluginWindow::moved() {
-    Processor::setPluginWindowX(processor, getX());
-    Processor::setPluginWindowY(processor, getY());
+    processor->setPluginWindowX(getX());
+    processor->setPluginWindowY(getY());
 }
 
 void PluginWindow::closeButtonPressed() {
-    Processor::setPluginWindowType(processor, static_cast<int>(PluginWindowType::none));
+    processor->setPluginWindowType(static_cast<int>(PluginWindowType::none));
 }
 
 PluginWindow::ProgramAudioProcessorEditor::ProgramAudioProcessorEditor(AudioProcessor &p) : AudioProcessorEditor(p) {
     setOpaque(true);
-
     addAndMakeVisible(panel);
 
     Array<PropertyComponent *> programs;
-
     auto numPrograms = p.getNumPrograms();
     int totalHeight = 0;
-
     for (int i = 0; i < numPrograms; ++i) {
         auto name = p.getProgramName(i).trim();
         if (name.isEmpty())

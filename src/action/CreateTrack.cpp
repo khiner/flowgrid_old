@@ -17,38 +17,38 @@ String makeTrackNameUnique(const Tracks &tracks, const String &trackName) {
     return trackName;
 }
 
-static int calculateInsertIndex(bool isMaster, const Track *derivedFromTrack, Tracks &tracks) {
+static int calculateInsertIndex(bool isMaster, int derivedFromTrackIndex, Tracks &tracks) {
     if (isMaster) return tracks.getNumNonMasterTracks();
-    return derivedFromTrack != nullptr ? derivedFromTrack->getIndex() : tracks.getNumNonMasterTracks();
+    return derivedFromTrackIndex != -1 ? derivedFromTrackIndex : tracks.getNumNonMasterTracks();
 }
 
-CreateTrack::CreateTrack(bool isMaster, const Track *derivedFromTrack, Tracks &tracks, View &view)
-        : CreateTrack(calculateInsertIndex(isMaster, derivedFromTrack, tracks), isMaster, derivedFromTrack, tracks, view) {}
+CreateTrack::CreateTrack(bool isMaster, int derivedFromTrackIndex, Tracks &tracks, View &view)
+        : CreateTrack(calculateInsertIndex(isMaster, derivedFromTrackIndex, tracks), isMaster, derivedFromTrackIndex, tracks, view) {}
 
-CreateTrack::CreateTrack(int insertIndex, bool isMaster, const Track *derivedFromTrack, Tracks &tracks, View &view)
-        : insertIndex(insertIndex), tracks(tracks) {
-    // TODO move into method and construct in initializer list
-    newTrack.setMaster(isMaster);
-    newTrack.setUuid(Uuid().toString());
+CreateTrack::CreateTrack(int insertIndex, bool isMaster, int derivedFromTrackIndex, Tracks &tracks, View &view)
+        : insertIndex(insertIndex), derivedFromTrackIndex(derivedFromTrackIndex), isMaster(isMaster), tracks(tracks) {
+}
+
+static ValueTree create(bool isMaster, const Track *derivedFromTrack, Tracks &tracks) {
+    ValueTree state(Track::getIdentifier());
+    state.appendChild(ValueTree(ProcessorLanesIDs::PROCESSOR_LANES), nullptr);
+    state.setProperty(TrackIDs::isMaster, isMaster, nullptr);
+    state.setProperty(TrackIDs::uuid, Uuid().toString(), nullptr);
     bool isSubTrack = !isMaster && derivedFromTrack != nullptr;
-    const String name = isMaster ? "Master" : (isSubTrack ? makeTrackNameUnique(tracks, derivedFromTrack->getName()) : ("Track " + String(tracks.getNumNonMasterTracks() + 1)));
-    newTrack.setName(name);
-    newTrack.setColour(isSubTrack ? derivedFromTrack->getColour() : Colour::fromHSV((1.0f / 8.0f) * tracks.size(), 0.65f, 0.65f, 1.0f));
-    newTrack.setSelected(false);
+    const String name = isMaster ? "Master" : (derivedFromTrack != nullptr ? makeTrackNameUnique(tracks, derivedFromTrack->getName()) : ("Track " + String(tracks.getNumNonMasterTracks() + 1)));
+    state.setProperty(TrackIDs::name, name, nullptr);
+    state.setProperty(TrackIDs::colour, isSubTrack ? derivedFromTrack->getColour().toString() : Colour::fromHSV((1.0f / 8.0f) * tracks.size(), 0.65f, 0.65f, 1.0f).toString(), nullptr);
+    state.setProperty(TrackIDs::selected, false, nullptr);
 
-    auto lanes = ValueTree(ProcessorLanesIDs::PROCESSOR_LANES);
-    auto lane = ValueTree(ProcessorLaneIDs::PROCESSOR_LANE);
-    ProcessorLane::setSelectedSlotsMask(lane, BigInteger());
-    lanes.appendChild(lane, nullptr);
-    newTrack.getState().appendChild(lanes, nullptr);
+    return state;
 }
 
 bool CreateTrack::perform() {
-    tracks.add(newTrack.getState(), insertIndex);
+    tracks.add(create(isMaster, tracks.getChild(derivedFromTrackIndex), tracks), insertIndex);
     return true;
 }
 
 bool CreateTrack::undo() {
-    tracks.remove(newTrack.getState());
+    tracks.remove(insertIndex);
     return true;
 }

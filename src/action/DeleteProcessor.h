@@ -5,7 +5,7 @@
 #include "ProcessorGraph.h"
 
 struct DeleteProcessor : public UndoableAction {
-    DeleteProcessor(const ValueTree &processorToDelete, Track *track, Connections &connections, ProcessorGraph &processorGraph);
+    DeleteProcessor(Processor processorToDelete, Track *track, Connections &connections, ProcessorGraph &processorGraph);
 
     bool perform() override;
     bool undo() override;
@@ -18,7 +18,7 @@ struct DeleteProcessor : public UndoableAction {
 private:
     Track track;
     int trackIndex;
-    ValueTree processorToDelete;
+    Processor processorToDelete;
     int processorIndex, pluginWindowType;
     DisconnectProcessor disconnectProcessorAction;
     ProcessorGraph &processorGraph;

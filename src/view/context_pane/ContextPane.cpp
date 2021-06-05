@@ -43,15 +43,14 @@ void ContextPane::paint(Graphics &g) {
             previousTrackBorderPosition = trackBorderPosition;
         }
 
-        const auto &outputProcessor = track->getOutputProcessor();
         auto trackOutputIndex = view.getSlotOffset(track->isMaster()) + View::getNumVisibleSlots(track->isMaster());
         for (auto gridCellIndex = 0; gridCellIndex < view.getNumProcessorSlots(track->isMaster()) + 1; gridCellIndex++) {
             Colour cellColour;
             if (gridCellIndex == trackOutputIndex) {
-                cellColour = getFillColour(trackColour, track, outputProcessor, view.isTrackInView(track->getIndex(), track->isMaster()), true, false);
+                cellColour = getFillColour(trackColour, track, track->getOutputProcessor(), view.isTrackInView(track->getIndex(), track->isMaster()), true, false);
             } else {
                 int slot = gridCellIndex < trackOutputIndex ? gridCellIndex : gridCellIndex - 1;
-                const auto &processor = track->getProcessorAtSlot(slot);
+                const auto *processor = track->getProcessorAtSlot(slot);
                 // TODO should be method on track once it has a `view`
                 auto trackAndSlot = view.getFocusedTrackAndSlot();
                 bool slotFocused = track->getIndex() == trackAndSlot.x && slot == trackAndSlot.y;
@@ -76,13 +75,13 @@ void ContextPane::resized() {
     setSize(cellWidth * numColumns, cellHeight * numRows);
 }
 
-Colour ContextPane::getFillColour(const Colour &trackColour, const Track *track, const ValueTree &processor, bool inView, bool slotSelected, bool slotFocused) {
+Colour ContextPane::getFillColour(const Colour &trackColour, const Track *track, const Processor *processor, bool inView, bool slotSelected, bool slotFocused) {
     const static auto &baseColour = findColour(ResizableWindow::backgroundColourId).brighter(0.4f);
 
     // this is the only part different than GraphEditorProcessorLane
-    auto colour = processor.isValid() ? findColour(TextEditor::backgroundColourId) : baseColour;
+    auto colour = processor != nullptr ? findColour(TextEditor::backgroundColourId) : baseColour;
     if (track->hasSelections())
-        colour = colour.brighter(processor.isValid() ? 0.04f : 0.15f);
+        colour = colour.brighter(processor != nullptr ? 0.04f : 0.15f);
     if (slotSelected)
         colour = trackColour;
     if (slotFocused)

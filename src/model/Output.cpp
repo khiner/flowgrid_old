@@ -1,15 +1,14 @@
 #include "Output.h"
 
-#include "action/CreateProcessor.h"
 #include "processors/MidiOutputProcessor.h"
 
 Output::Output(PluginManager &pluginManager, UndoManager &undoManager, AudioDeviceManager &deviceManager)
-        : pluginManager(pluginManager), undoManager(undoManager), deviceManager(deviceManager) {
-    state.addListener(this);
+        : StatefulList<Processor>(state), pluginManager(pluginManager), undoManager(undoManager), deviceManager(deviceManager) {
+    rebuildObjects();
 }
 
 Output::~Output() {
-    state.removeListener(this);
+    freeObjects();
 }
 
 Array<ValueTree> Output::syncOutputDevicesWithDeviceManager() {
@@ -25,36 +24,14 @@ Array<ValueTree> Output::syncOutputDevicesWithDeviceManager() {
     for (const auto &deviceName : MidiOutput::getDevices()) {
         if (deviceManager.isMidiOutputEnabled(deviceName) &&
             !state.getChildWithProperty(ProcessorIDs::deviceName, deviceName).isValid()) {
-            auto midiOutputProcessor = CreateProcessor::createProcessor(MidiOutputProcessor::getPluginDescription());
-            Processor::setDeviceName(midiOutputProcessor, deviceName);
-            state.addChild(midiOutputProcessor, -1, &undoManager);
+            auto processorState = Processor::initState(MidiOutputProcessor::getPluginDescription());
+            processorState.setProperty(ProcessorIDs::deviceName, deviceName, nullptr);
+            state.appendChild(processorState, &undoManager);
         }
     }
     return outputProcessorsToDelete;
 }
 
 void Output::initializeDefault() {
-    auto outputProcessor = CreateProcessor::createProcessor(pluginManager.getAudioOutputDescription());
-    state.appendChild(outputProcessor, &undoManager);
-}
-
-void Output::valueTreeChildAdded(ValueTree &parent, ValueTree &child) {
-    if (Processor::isMidiOutputProcessor(child) &&
-        !deviceManager.isMidiOutputEnabled(Processor::getDeviceName(child)))
-        deviceManager.setMidiOutputEnabled(Processor::getDeviceName(child), true);
-}
-
-void Output::valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int) {
-    if (Processor::isMidiOutputProcessor(child) &&
-        deviceManager.isMidiOutputEnabled(Processor::getDeviceName(child)))
-        deviceManager.setMidiOutputEnabled(Processor::getDeviceName(child), false);
-}
-
-void Output::valueTreePropertyChanged(ValueTree &tree, const Identifier &i) {
-    if (i == ProcessorIDs::deviceName && tree == state) {
-        AudioDeviceManager::AudioDeviceSetup config;
-        deviceManager.getAudioDeviceSetup(config);
-        config.outputDeviceName = Processor::getDeviceName(tree);
-        deviceManager.setAudioDeviceSetup(config, true);
-    }
+    state.appendChild(Processor::initState(pluginManager.getAudioOutputDescription()), &undoManager);
 }

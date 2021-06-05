@@ -20,6 +20,8 @@ struct Stateful {
     //  (All state reads/writes should be done through methods.)
     ValueTree &getState() { return state; }
 
+    const ValueTree &getState() const { return state; }
+
     bool isValid() { return state.isValid(); }
 
     virtual void loadFromState(const ValueTree &fromState) {

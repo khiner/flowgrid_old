@@ -58,8 +58,24 @@ std::unique_ptr<AudioPluginInstance> InternalPluginFormat::createInstance(const 
     return {};
 }
 
+bool InternalPluginFormat::isAudioInputProcessor(const String &name) {
+    return name == "Audio Output";
+}
+
+bool InternalPluginFormat::isAudioOutputProcessor(const String &name) {
+    return name == "Audio Output";
+}
+
+bool InternalPluginFormat::isMidiInputProcessor(const String &name) {
+    return name == MidiInputProcessor::name();
+}
+
+bool InternalPluginFormat::isMidiOutputProcessor(const String &name) {
+    return name == MidiOutputProcessor::name();
+}
+
 bool InternalPluginFormat::isIoProcessor(const String &name) {
-    return name == "Audio Output" || name == "Audio Input" || name == MidiInputProcessor::name() || name == MidiOutputProcessor::name();
+    return isAudioInputProcessor(name) || isAudioOutputProcessor(name) || name == MidiInputProcessor::name() || name == MidiOutputProcessor::name();
 }
 
 bool InternalPluginFormat::isTrackIOProcessor(const String &name) {

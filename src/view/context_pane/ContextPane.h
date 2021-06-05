@@ -19,7 +19,7 @@ private:
     View &view;
     Path cellPath, trackBorderPath, masterTrackBorderPath;
 
-    Colour getFillColour(const Colour &trackColour, const Track *track, const ValueTree &processor, bool inView, bool slotSelected, bool slotFocused);
+    Colour getFillColour(const Colour &trackColour, const Track *track, const Processor *processor, bool inView, bool slotSelected, bool slotFocused);
 
     void trackAdded(Track *track) override { resized(); }
     void trackRemoved(Track *track, int oldIndex) override { resized(); }

@@ -15,13 +15,20 @@ ID(TRACKS)
 }
 
 struct Tracks : public Stateful<Tracks>,
-                public StatefulList<Track> {
+                public StatefulList<Track>,
+                private Track::Listener {
     struct Listener {
         virtual void trackAdded(Track *track) = 0;
         virtual void trackRemoved(Track *track, int oldIndex) = 0;
         virtual void trackOrderChanged() {}
         virtual void trackPropertyChanged(Track *track, const Identifier &i) {}
+        virtual void processorAdded(Processor *processor) {}
+        virtual void processorRemoved(Processor *processor, int oldIndex) {}
+        virtual void processorPropertyChanged(Processor *processor, const Identifier &i) {}
     };
+
+    void addTracksListener(Listener *listener) { listeners.add(listener); }
+    void removeTracksListener(Listener *listener) { listeners.remove(listener); }
 
     Tracks(View &view, UndoManager &undoManager);
 
@@ -33,15 +40,14 @@ struct Tracks : public Stateful<Tracks>,
     void loadFromState(const ValueTree &fromState) override;
     bool isChildType(const ValueTree &tree) const override { return Track::isType(tree); }
 
-    void addTracksListener(Listener *listener) { listeners.add(listener); }
-    void removeTracksListener(Listener *listener) { listeners.remove(listener); }
-
     bool anyNonMasterTrackHasEffectProcessor(ConnectionType connectionType);
 
     // Clears and populates the passed in array
     void copySelectedItemsInto(OwnedArray<Track> &copiedTracks, StatefulAudioProcessorWrappers &processorWrappers);
 
     int getViewIndexForTrack(const Track *track) const { return track->getIndex() - view.getGridViewTrackOffset(); }
+    Track *getMostRecentlyCreatedTrack() { return mostRecentlyCreatedTrack; }
+    Processor *getMostRecentlyCreatedProcessor() { return mostRecentlyCreatedProcessor; }
     Track *getTrackWithViewIndex(int trackViewIndex) const { return getChild(trackViewIndex + view.getGridViewTrackOffset()); }
     Track *getMasterTrack() const {
         for (auto *track : children)
@@ -82,25 +88,35 @@ struct Tracks : public Stateful<Tracks>,
                 return track;
         return {};
     }
-    Track *getTrackForProcessor(const ValueTree &processor) {
+    Track *getTrackForProcessor(const Processor *processor) {
+        return processor != nullptr ? getTrackForProcessorState(processor->getState()) : nullptr;
+    }
+    Track *getTrackForProcessorState(const ValueTree &processor) {
         const auto &trackState = Track::isType(processor.getParent()) ? processor.getParent() : processor.getParent().getParent().getParent();
         return getChildForState(trackState);
     }
-    int getTrackIndexForProcessor(const ValueTree &processor) {
-        auto *track = getTrackForProcessor(processor);
-        return track == nullptr ? -1 : children.indexOf(track);
-    }
     Track *getFocusedTrack() const { return getChild(view.getFocusedTrackAndSlot().x); }
 
-    ValueTree getFocusedProcessor() const {
+    Processor *getFocusedProcessor() const {
         juce::Point<int> trackAndSlot = view.getFocusedTrackAndSlot();
         const Track *track = getChild(trackAndSlot.x);
-        if (track == nullptr) return {};
+        if (track == nullptr) return nullptr;
 
         return track->getProcessorAtSlot(trackAndSlot.y);
     }
 
-    bool isProcessorFocused(const ValueTree &processor) const { return getFocusedProcessor() == processor; }
+    Processor *getProcessorAt(int trackIndex, int slot) const {
+        const Track *track = getChild(trackIndex);
+        if (track == nullptr) return nullptr;
+
+        return track->getProcessorAtSlot(slot);
+    }
+
+    Processor *getProcessorAt(juce::Point<int> trackAndSlot) const {
+        return getProcessorAt(trackAndSlot.x, trackAndSlot.y);
+    }
+
+    bool isProcessorFocused(const Processor *processor) const { return getFocusedProcessor() == processor; }
 
     Track *findFirstTrackWithSelections() {
         for (auto *track : children)
@@ -121,8 +137,7 @@ struct Tracks : public Stateful<Tracks>,
     Array<BigInteger> getSelectedSlotsMasks() const {
         Array<BigInteger> selectedSlotMasks;
         for (const auto *track : children) {
-            const auto &lane = track->getProcessorLane();
-            selectedSlotMasks.add(ProcessorLane::getSelectedSlotsMask(lane));
+            selectedSlotMasks.add(track->getProcessorLane()->getSelectedSlotsMask());
         }
         return selectedSlotMasks;
     }
@@ -136,10 +151,10 @@ struct Tracks : public Stateful<Tracks>,
     }
 
     Array<Track *> findAllSelectedTracks() const;
-    Array<ValueTree> findAllSelectedProcessors() const;
+    Array<Processor *> findAllSelectedProcessors() const;
 
-    void showWindow(ValueTree processor, PluginWindowType type) {
-        processor.setProperty(ProcessorIDs::pluginWindowType, int(type), &undoManager);
+    void showWindow(Processor *processor, PluginWindowType type) {
+        processor->setPluginWindowType(int(type), &undoManager);
     }
 
     juce::Point<int> trackAndSlotWithLeftRightDelta(int delta) const {
@@ -176,20 +191,44 @@ struct Tracks : public Stateful<Tracks>,
     int getNumSlotsForTrack(const Track *track) const { return view.getNumProcessorSlots(track != nullptr && track->isMaster()); }
     int findSlotAt(juce::Point<int> position, const Track *track) const;
 
-    void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override;
-
     static constexpr juce::Point<int> INVALID_TRACK_AND_SLOT = {-1, -1};
 
 protected:
-    Track *createNewObject(const ValueTree &tree) override { return new Track(tree); }
+    Track *createNewObject(const ValueTree &tree) override {
+        return new Track(tree);
+    }
     void deleteObject(Track *track) override { delete track; }
-    void newObjectAdded(Track *track) override { listeners.call([track](Listener &l) { l.trackAdded(track); }); }
-    void objectRemoved(Track *track, int oldIndex) override { listeners.call([track, oldIndex](Listener &l) { l.trackRemoved(track, oldIndex); }); }
+    void newObjectAdded(Track *track) override {
+        mostRecentlyCreatedTrack = track;
+        track->addTrackListener(this);
+        listeners.call([track](Listener &l) { l.trackAdded(track); });
+    }
+    void objectRemoved(Track *track, int oldIndex) override {
+        listeners.call([track, oldIndex](Listener &l) { l.trackRemoved(track, oldIndex); });
+        track->removeTrackListener(this);
+        if (track == mostRecentlyCreatedTrack) mostRecentlyCreatedTrack = nullptr;
+    }
     void objectOrderChanged() override { listeners.call([](Listener &l) { l.trackOrderChanged(); }); }
+    void objectChanged(Track *track, const Identifier &i) override { listeners.call([track, i](Listener &l) { l.trackPropertyChanged(track, i); }); }
 
 private:
     View &view;
     UndoManager &undoManager;
 
     ListenerList<Listener> listeners;
+
+    Track *mostRecentlyCreatedTrack = nullptr;
+    Processor *mostRecentlyCreatedProcessor = nullptr;
+
+    void processorAdded(Processor *processor) override {
+        mostRecentlyCreatedProcessor = processor;
+        listeners.call([processor](Listener &l) { l.processorAdded(processor); });
+    }
+    void processorRemoved(Processor *processor, int oldIndex) override {
+        listeners.call([processor, oldIndex](Listener &l) { l.processorRemoved(processor, oldIndex); });
+        if (processor == mostRecentlyCreatedProcessor) mostRecentlyCreatedProcessor = nullptr;
+    }
+    void processorPropertyChanged(Processor *processor, const Identifier &i) override {
+        listeners.call([processor, i](Listener &l) { l.processorPropertyChanged(processor, i); });
+    }
 };

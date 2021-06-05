@@ -3,10 +3,10 @@
 #include "view/graph_editor/processor/LabelGraphEditorProcessor.h"
 #include "view/graph_editor/processor/ParameterPanelGraphEditorProcessor.h"
 
-GraphEditorProcessorLane::GraphEditorProcessorLane(const ValueTree &state, Track *track, View &view, StatefulAudioProcessorWrappers &processorWrappers, ConnectorDragListener &connectorDragListener)
-        : StatefulList<BaseGraphEditorProcessor>(state), state(state), track(track), view(view), processorWrappers(processorWrappers), connectorDragListener(connectorDragListener) {
-    rebuildObjects();
+GraphEditorProcessorLane::GraphEditorProcessorLane(ProcessorLane *lane, Track *track, View &view, StatefulAudioProcessorWrappers &processorWrappers, ConnectorDragListener &connectorDragListener)
+        : lane(lane), track(track), view(view), processorWrappers(processorWrappers), connectorDragListener(connectorDragListener) {
     view.addListener(this);
+    lane->addProcessorLaneListener(this);
     // TODO shouldn't need to do this
     valueTreePropertyChanged(view.getState(), track->isMaster() ? ViewIDs::numMasterProcessorSlots : ViewIDs::numProcessorSlots);
     addAndMakeVisible(laneDragRectangle);
@@ -14,8 +14,8 @@ GraphEditorProcessorLane::GraphEditorProcessorLane(const ValueTree &state, Track
 }
 
 GraphEditorProcessorLane::~GraphEditorProcessorLane() {
+    lane->removeProcessorLaneListener(this);
     view.removeListener(this);
-    freeObjects();
 }
 
 void GraphEditorProcessorLane::resized() {
@@ -77,26 +77,18 @@ void GraphEditorProcessorLane::updateProcessorSlotColours() {
     }
 }
 
-BaseGraphEditorProcessor *GraphEditorProcessorLane::createEditorForProcessor(const ValueTree &processor) {
-    if (Processor::getName(processor) == InternalPluginFormat::getMixerChannelProcessorName()) {
+BaseGraphEditorProcessor *GraphEditorProcessorLane::createEditorForProcessor(Processor *processor) {
+    if (processor->getName() == InternalPluginFormat::getMixerChannelProcessorName()) {
         return new ParameterPanelGraphEditorProcessor(processor, track, view, processorWrappers, connectorDragListener);
     }
     return new LabelGraphEditorProcessor(processor, track, view, processorWrappers, connectorDragListener);
-}
-
-BaseGraphEditorProcessor *GraphEditorProcessorLane::createNewObject(const ValueTree &processor) {
-    auto *graphEditorProcessor = createEditorForProcessor(processor);
-    addAndMakeVisible(graphEditorProcessor);
-    return graphEditorProcessor;
 }
 
 // TODO only instantiate 64 slot rects (and maybe another set for the boundary perimeter)
 //  might be an over-early optimization though
 void GraphEditorProcessorLane::valueTreePropertyChanged(ValueTree &tree, const Identifier &i) {
     bool isMaster = track->isMaster();
-    if (isChildType(tree) && i == ProcessorIDs::slot) {
-        resized();
-    } else if (i == TrackIDs::selected || i == TrackIDs::colour ||
+    if (i == TrackIDs::selected || i == TrackIDs::colour ||
                i == ProcessorLaneIDs::selectedSlotsMask || i == ViewIDs::focusedTrackIndex || i == ViewIDs::focusedProcessorSlot ||
                i == ViewIDs::gridTrackOffset) {
         updateProcessorSlotColours();
@@ -116,11 +108,4 @@ void GraphEditorProcessorLane::valueTreePropertyChanged(ValueTree &tree, const I
         resized();
         updateProcessorSlotColours();
     }
-    StatefulList<BaseGraphEditorProcessor>::valueTreePropertyChanged(tree, i);
-}
-
-void GraphEditorProcessorLane::valueTreeChildAdded(ValueTree &parent, ValueTree &child) {
-    StatefulList::valueTreeChildAdded(parent, child);
-    if (this->parent == parent && isChildType(child))
-        resized();
 }

@@ -4,7 +4,7 @@
 #include "view/graph_editor/processor/TrackOutputGraphEditorProcessor.h"
 #include "GraphEditorProcessorLanes.h"
 
-class GraphEditorTrack : public Component, public ValueTree::Listener, public GraphEditorProcessorContainer {
+class GraphEditorTrack : public Component, public ValueTree::Listener, public GraphEditorProcessorContainer, private Track::Listener {
 public:
     explicit GraphEditorTrack(Track *track, View &view, Project &project, StatefulAudioProcessorWrappers &processorWrappers, PluginManager &pluginManager, ConnectorDragListener &connectorDragListener);
 
@@ -37,7 +37,30 @@ private:
     void trackInputProcessorChanged();
     void trackOutputProcessorChanged();
 
-    void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override;
-    void valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int) override;
-    void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override;
+    void processorAdded(Processor *processor) override {
+        if (processor->isTrackInputProcessor())
+            trackInputProcessorChanged();
+        else if (processor->isTrackOutputProcessor())
+            trackOutputProcessorChanged();
+    }
+    void processorRemoved(Processor *processor, int oldIndex) override {
+        if (processor->isTrackInputProcessor())
+            trackInputProcessorChanged();
+        else if (processor->isTrackOutputProcessor())
+            trackOutputProcessorChanged();
+    }
+    void trackPropertyChanged(Track *track, const Identifier &i) override {
+        if (i == TrackIDs::name) {
+            if (trackInputProcessorView != nullptr)
+                // TODO processor should listen to this itself, then remove `setTrackName` method
+                trackInputProcessorView->setTrackName(track->getName());
+        } else if (i == TrackIDs::colour || i == TrackIDs::selected) {
+            onColourChanged();
+        }
+    }
+    void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {
+        if (i == ViewIDs::gridSlotOffset || ((i == ViewIDs::gridTrackOffset || i == ViewIDs::masterSlotOffset) && isMaster())) {
+            resized();
+        }
+    }
 };

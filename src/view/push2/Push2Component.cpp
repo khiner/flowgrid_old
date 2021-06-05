@@ -67,8 +67,7 @@ void Push2Component::masterEncoderRotated(float changeAmount) {
     const auto *masterTrack = tracks.getMasterTrack();
     if (masterTrack == nullptr) return;
 
-    const auto &trackOutputProcessor = masterTrack->getOutputProcessor();
-    if (auto *masterGainProcessor = processorWrappers.getProcessorWrapperForState(trackOutputProcessor))
+    if (auto *masterGainProcessor = processorWrappers.getProcessorWrapperForProcessor(masterTrack->getOutputProcessor()))
         if (auto *masterGainParameter = masterGainProcessor->getParameter(1))
             masterGainParameter->setValue(masterGainParameter->getValue() + changeAmount);
 }
@@ -222,11 +221,13 @@ void Push2Component::updatePush2NoteModePadLedManagerVisibility() {
 }
 
 void Push2Component::updateFocusedProcessor() {
-    auto *focusedProcessorWrapper = processorWrappers.getProcessorWrapperForState(tracks.getFocusedProcessor());
-    if (focusedProcessorWrapper == nullptr) return;
-
-    if (currentlyViewingChild != &mixerView || focusedProcessorWrapper->processor->getName() != InternalPluginFormat::getTrackOutputProcessorName()) {
-        processorView.processorFocused(focusedProcessorWrapper);
+    auto *focusedProcessor = tracks.getFocusedProcessor();
+    if (focusedProcessor == nullptr)  {
+        processorView.processorFocused(nullptr);
+        return;
+    }
+    if (currentlyViewingChild != &mixerView || focusedProcessor->getName() != InternalPluginFormat::getTrackOutputProcessorName()) {
+        processorView.processorFocused(processorWrappers.getProcessorWrapperForProcessor(focusedProcessor));
         showChild(&processorView);
     }
 }

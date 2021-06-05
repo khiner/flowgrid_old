@@ -2,9 +2,8 @@
 
 #include "BinaryData.h"
 
-TrackInputGraphEditorProcessor::TrackInputGraphEditorProcessor(const ValueTree &state, Track *track, View &view, Project &project, StatefulAudioProcessorWrappers &processorWrappers, ConnectorDragListener &connectorDragListener)
-        :
-        BaseGraphEditorProcessor(state, track, view, processorWrappers, connectorDragListener), project(project) {
+TrackInputGraphEditorProcessor::TrackInputGraphEditorProcessor(Processor *processor, Track *track, View &view, Project &project, StatefulAudioProcessorWrappers &processorWrappers, ConnectorDragListener &connectorDragListener)
+        : BaseGraphEditorProcessor(processor, track, view, processorWrappers, connectorDragListener), project(project) {
     nameLabel.setJustificationType(Justification::centred);
     addAndMakeVisible(nameLabel);
     nameLabel.addMouseListener(this, false);
@@ -90,7 +89,7 @@ void TrackInputGraphEditorProcessor::paint(Graphics &g) {
 }
 
 void TrackInputGraphEditorProcessor::valueTreePropertyChanged(ValueTree &v, const Identifier &i) {
-    if (v != state) return;
+    if (v != processor->getState()) return;
 
     // XXX should be done in constructor, but track/processor views are currently instantiated before the processor graph.
     // XXX also, this level meter should be a ParameterDisplayComponent - then we wouldn't have to search for the parameter wrapper.

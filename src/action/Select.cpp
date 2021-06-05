@@ -46,9 +46,8 @@ bool Select::perform() {
 
     for (int i = 0; i < newTrackSelections.size(); i++) {
         auto *track = tracks.getChild(i);
-        auto lane = track->getProcessorLane();
         track->setSelected(newTrackSelections.getUnchecked(i));
-        ProcessorLane::setSelectedSlotsMask(lane, newSelectedSlotsMasks.getUnchecked(i));
+        track->getProcessorLane()->setSelectedSlotsMask(newSelectedSlotsMasks.getUnchecked(i));
     }
     if (newFocusedSlot != oldFocusedSlot)
         updateViewFocus(newFocusedSlot);
@@ -65,9 +64,8 @@ bool Select::undo() {
         resetInputsAction->undo();
     for (int i = 0; i < oldTrackSelections.size(); i++) {
         auto *track = tracks.getChild(i);
-        auto lane = track->getProcessorLane();
         track->setSelected(oldTrackSelections.getUnchecked(i));
-        ProcessorLane::setSelectedSlotsMask(lane, oldSelectedSlotsMasks.getUnchecked(i));
+        track->getProcessorLane()->setSelectedSlotsMask(oldSelectedSlotsMasks.getUnchecked(i));
     }
     if (oldFocusedSlot != newFocusedSlot)
         updateViewFocus(oldFocusedSlot);

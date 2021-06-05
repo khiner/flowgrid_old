@@ -21,6 +21,10 @@ public:
     bool pluginNeedsRescanning(const PluginDescription &) override { return false; }
     StringArray searchPathsForPlugins(const FileSearchPath &, bool, bool) override { return {}; }
     bool isTrivialToScan() const override { return true; }
+    static bool isAudioInputProcessor(const String &name);
+    static bool isAudioOutputProcessor(const String &name);
+    static bool isMidiInputProcessor(const String &name);
+    static bool isMidiOutputProcessor(const String &name);
     static bool isIoProcessor(const String &name);
     static bool isTrackIOProcessor(const String &name);
     static String getTrackInputProcessorName();

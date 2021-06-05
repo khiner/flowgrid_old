@@ -31,7 +31,7 @@ SelectionEditor::~SelectionEditor() {
 void SelectionEditor::mouseDown(const MouseEvent &event) {
     view.focusOnEditorPane();
     if (auto *processorEditor = dynamic_cast<ProcessorEditor *>(event.originalComponent)) {
-        project.selectProcessor(processorEditor->getProcessorState());
+        project.selectProcessor(processorEditor->getProcessor());
     }
 }
 
@@ -78,28 +78,28 @@ void SelectionEditor::buttonClicked(Button *b) {
     }
 }
 
-void SelectionEditor::refreshProcessors(const ValueTree &singleProcessorToRefresh, bool onlyUpdateFocusState) {
+void SelectionEditor::refreshProcessors(const Processor *singleProcessorToRefresh, bool onlyUpdateFocusState) {
     const auto *focusedTrack = tracks.getFocusedTrack();
     if (focusedTrack == nullptr) {
         for (auto *editor : processorEditors) {
             editor->setVisible(false);
             editor->setProcessor(nullptr);
         }
-    } else if (singleProcessorToRefresh.isValid()) {
+    } else if (singleProcessorToRefresh != nullptr) {
         assignProcessorToEditor(singleProcessorToRefresh);
     } else {
         for (int processorSlot = 0; processorSlot < processorEditors.size(); processorSlot++) {
-            const auto &processor = focusedTrack->getProcessorAtSlot(processorSlot);
+            const auto *processor = focusedTrack->getProcessorAtSlot(processorSlot);
             assignProcessorToEditor(processor, processorSlot, onlyUpdateFocusState);
         }
     }
     resized();
 }
 
-void SelectionEditor::assignProcessorToEditor(const ValueTree &processor, int processorSlot, bool onlyUpdateFocusState) const {
-    auto *processorEditor = processorEditors.getUnchecked(processorSlot != -1 ? processorSlot : Processor::getSlot(processor));
-    if (processor.isValid()) {
-        if (auto *processorWrapper = processorWrappers.getProcessorWrapperForState(processor)) {
+void SelectionEditor::assignProcessorToEditor(const Processor *processor, int processorSlot, bool onlyUpdateFocusState) const {
+    auto *processorEditor = processorEditors.getUnchecked(processorSlot != -1 ? processorSlot : processor != nullptr ? processor->getSlot() : 0);
+    if (processor != nullptr) {
+        if (auto *processorWrapper = processorWrappers.getProcessorWrapperForProcessor(processor)) {
             if (!onlyUpdateFocusState) {
                 processorEditor->setProcessor(processorWrapper);
                 processorEditor->setVisible(true);

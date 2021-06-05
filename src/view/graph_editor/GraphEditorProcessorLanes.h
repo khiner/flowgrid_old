@@ -3,16 +3,34 @@
 #include "model/StatefulList.h"
 #include "GraphEditorProcessorLane.h"
 
-class GraphEditorProcessorLanes : public Component, public StatefulList<GraphEditorProcessorLane>,
-                                  public GraphEditorProcessorContainer {
+class GraphEditorProcessorLanes : public Component,
+                                  public GraphEditorProcessorContainer,
+                                  private ProcessorLanes::Listener {
 public:
-    explicit GraphEditorProcessorLanes(ValueTree state, Track *track, View &view, StatefulAudioProcessorWrappers &processorWrappers, ConnectorDragListener &connectorDragListener)
-            : StatefulList<GraphEditorProcessorLane>(std::move(state)), track(track), view(view), processorWrappers(processorWrappers), connectorDragListener(connectorDragListener) {
-        rebuildObjects();
+    explicit GraphEditorProcessorLanes(ProcessorLanes &lanes, Track *track, View &view, StatefulAudioProcessorWrappers &processorWrappers, ConnectorDragListener &connectorDragListener)
+            : lanes(lanes), track(track), view(view), processorWrappers(processorWrappers), connectorDragListener(connectorDragListener) {
+        lanes.addProcessorLanesListener(this);
+        for (auto *lane : lanes.getChildren()) {
+            processorLaneAdded(lane);
+        }
     }
 
     ~GraphEditorProcessorLanes() override {
-        freeObjects();
+        lanes.removeProcessorLanesListener(this);
+    }
+
+    void processorLaneAdded(ProcessorLane *lane) override {
+        addAndMakeVisible(children.insert(lane->getIndex(), new GraphEditorProcessorLane(lane, track, view, processorWrappers, connectorDragListener)));
+        resized();
+    }
+    void processorLaneRemoved(ProcessorLane *processorLane, int oldIndex) override {
+        children.remove(oldIndex);
+        resized();
+    }
+    void processorLaneOrderChanged() override {
+        children.sort(*this);
+        resized();
+        connectorDragListener.update();
     }
 
     BaseGraphEditorProcessor *getProcessorForNodeId(AudioProcessorGraph::NodeID nodeId) const override {
@@ -35,27 +53,14 @@ public:
             children.getFirst()->setBounds(getLocalBounds());
     }
 
-    bool isChildType(const ValueTree &v) const override {
-        return v.hasType(ProcessorLaneIDs::PROCESSOR_LANE);
+    int compareElements(GraphEditorProcessorLane *first, GraphEditorProcessorLane *second) const {
+        return lanes.indexOf(first->getLane()) - lanes.indexOf(second->getLane());
     }
-
-    GraphEditorProcessorLane *createNewObject(const ValueTree &v) override {
-        auto *lane = new GraphEditorProcessorLane(v, track, view, processorWrappers, connectorDragListener);
-        addAndMakeVisible(lane);
-        return lane;
-    }
-
-    void deleteObject(GraphEditorProcessorLane *lane) override {
-        delete lane;
-    }
-
-    void newObjectAdded(GraphEditorProcessorLane *) override {}
-
-    void objectRemoved(GraphEditorProcessorLane *, int oldIndex) override {}
-
-    void objectOrderChanged() override {}
 
 private:
+    OwnedArray<GraphEditorProcessorLane> children;
+
+    ProcessorLanes &lanes;
     Track *track;
     View &view;
     StatefulAudioProcessorWrappers &processorWrappers;

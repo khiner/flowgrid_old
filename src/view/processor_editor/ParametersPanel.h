@@ -11,7 +11,7 @@ public:
 
     void setProcessorWrapper(StatefulAudioProcessorWrapper *processorWrapper);
 
-    ValueTree getProcessorState() const { return processorWrapper != nullptr ? processorWrapper->state : ValueTree(); }
+    Processor *getProcessor() const { return processorWrapper != nullptr ? processorWrapper->processor : nullptr; }
 
     void addParameter(StatefulAudioProcessorWrapper::Parameter *parameter);
 

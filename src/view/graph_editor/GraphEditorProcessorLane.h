@@ -5,39 +5,44 @@
 #include "ConnectorDragListener.h"
 #include "GraphEditorChannel.h"
 
-class GraphEditorProcessorLane : public Component, StatefulList<BaseGraphEditorProcessor>, GraphEditorProcessorContainer {
+class GraphEditorProcessorLane : public Component, GraphEditorProcessorContainer, public ProcessorLane::Listener, public ValueTree::Listener {
 public:
-    explicit GraphEditorProcessorLane(const ValueTree &state, Track *track, View &view, StatefulAudioProcessorWrappers &processorWrappers, ConnectorDragListener &connectorDragListener);
+    explicit GraphEditorProcessorLane(ProcessorLane *lane, Track *track, View &view, StatefulAudioProcessorWrappers &processorWrappers, ConnectorDragListener &connectorDragListener);
 
     ~GraphEditorProcessorLane() override;
 
-    const ValueTree &getState() const { return state; }
+    void processorAdded(Processor *processor) override {
+        addAndMakeVisible(children.insert(track->getIndex(), createEditorForProcessor(processor)));
+        children.getLast()->addMouseListener(this, true);
+        resized();
+    }
+    void processorRemoved(Processor *processor, int oldIndex) override {
+        children.getUnchecked(oldIndex)->removeMouseListener(this);
+        children.remove(oldIndex);
+        resized();
+    }
+    void processorOrderChanged() override {
+        children.sort(*this);
+        resized();
+        connectorDragListener.update();
+    }
+
+    void processorPropertyChanged(Processor *processor, const Identifier &i) override {
+        if (i == ProcessorIDs::slot) {
+            resized();
+        }
+    }
 
     void updateProcessorSlotColours();
 
+    ProcessorLane *getLane() const { return lane; }
     Track *getTrack() const { return track; }
     int getNumSlots() const { return view.getNumProcessorSlots(track->isMaster()); }
     int getSlotOffset() const { return view.getSlotOffset(track->isMaster()); }
 
     void resized() override;
 
-    bool isChildType(const ValueTree &v) const override { return Processor::isType(v); }
-
-    BaseGraphEditorProcessor *createEditorForProcessor(const ValueTree &processor);
-    BaseGraphEditorProcessor *createNewObject(const ValueTree &processor) override;
-    void deleteObject(BaseGraphEditorProcessor *graphEditorProcessor) override { delete graphEditorProcessor; }
-
-    void newObjectAdded(BaseGraphEditorProcessor *processor) override {
-        processor->addMouseListener(this, true);
-        resized();
-    }
-
-    void objectRemoved(BaseGraphEditorProcessor *processor, int oldIndex) override {
-        processor->removeMouseListener(this);
-        resized();
-    }
-
-    void objectOrderChanged() override { resized(); }
+    BaseGraphEditorProcessor *createEditorForProcessor(Processor *processor);
 
     BaseGraphEditorProcessor *getProcessorForNodeId(AudioProcessorGraph::NodeID nodeId) const override {
         for (auto *processor : children)
@@ -53,8 +58,14 @@ public:
         return nullptr;
     }
 
+    int compareElements(BaseGraphEditorProcessor *first, BaseGraphEditorProcessor *second) const {
+        return lane->indexOf(first->getProcessor()) - lane->indexOf(second->getProcessor());
+    }
+
 private:
-    ValueTree state;
+    OwnedArray<BaseGraphEditorProcessor> children;
+
+    ProcessorLane *lane;
     Track *track;
     View &view;
     StatefulAudioProcessorWrappers &processorWrappers;
@@ -65,11 +76,10 @@ private:
 
     BaseGraphEditorProcessor *findProcessorAtSlot(int slot) const {
         for (auto *processor : children)
-            if (Processor::getSlot(processor->getState()) == slot)
+            if (processor->getProcessor()->getSlot() == slot)
                 return processor;
         return nullptr;
     }
 
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override;
-    void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override;
 };

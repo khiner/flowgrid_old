@@ -44,7 +44,7 @@ void Push2ProcessorView::resized() {
 
 void Push2ProcessorView::trackSelected(Track *track) {
     Push2TrackManagingView::trackSelected(track);
-    if (track->getProcessorLane().getNumChildren() == 0) {
+    if (track->getProcessorLane()->size() == 0) {
         parametersPanel->setProcessorWrapper(nullptr);
     }
 }
@@ -55,7 +55,7 @@ void Push2ProcessorView::processorFocused(StatefulAudioProcessorWrapper *process
         updateEnabledPush2Buttons();
         return;
     }
-    const auto processorIndex = processorWrapper->state.getParent().indexOf(processorWrapper->state);
+    const auto processorIndex = processorWrapper->processor->getIndex();
     bool hasPaged = false;
     while ((getButtonIndexForProcessorIndex(processorIndex)) <= 0 && canPageProcessorsLeft()) {
         pageProcessorsLeft();
@@ -142,21 +142,21 @@ void Push2ProcessorView::updateProcessorButtons() {
         return;
     }
 
-    const auto &focusedProcessorLane = focusedTrack->getProcessorLane();
+    const auto *focusedProcessorLane = focusedTrack->getProcessorLane();
     for (int buttonIndex = 0; buttonIndex < processorLabels.size(); buttonIndex++) {
         auto *label = processorLabels.getUnchecked(buttonIndex);
         auto processorIndex = getProcessorIndexForButtonIndex(buttonIndex);
         if ((buttonIndex == 0 && canPageProcessorsLeft()) ||
             (buttonIndex == NUM_COLUMNS - 1 && canPageProcessorsRight())) {
             label->setVisible(false);
-        } else if (processorIndex < focusedProcessorLane.getNumChildren()) {
-            const auto &processor = focusedProcessorLane.getChild(processorIndex);
-            if (Processor::isType(processor)) {
+        } else if (processorIndex < focusedProcessorLane->size()) {
+            auto *processor = focusedProcessorLane->getChild(processorIndex);
+            if (processor != nullptr) {
                 label->setVisible(true);
-                label->setText(Processor::getName(processor), dontSendNotification);
+                label->setText(processor->getName(), dontSendNotification);
                 label->setSelected(tracks.isProcessorFocused(processor));
             }
-        } else if (buttonIndex == 0 && focusedProcessorLane.getNumChildren() == 0) {
+        } else if (buttonIndex == 0 && focusedProcessorLane->size() == 0) {
             label->setVisible(true);
             label->setText("No processors", dontSendNotification);
             label->setSelected(false);
@@ -226,8 +226,8 @@ void Push2ProcessorView::selectProcessor(int processorIndex) {
     const auto *focusedTrack = tracks.getFocusedTrack();
     if (focusedTrack == nullptr) return;
 
-    const auto &focusedLane = focusedTrack->getProcessorLane();
-    if (focusedLane.isValid() && processorIndex < focusedLane.getNumChildren()) {
-        project.selectProcessor(focusedLane.getChild(processorIndex));
+    const auto *focusedLane = focusedTrack->getProcessorLane();
+    if (focusedLane != nullptr && processorIndex < focusedLane->size()) {
+        project.selectProcessor(focusedLane->getChild(processorIndex));
     }
 }

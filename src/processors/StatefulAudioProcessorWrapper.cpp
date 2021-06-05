@@ -253,7 +253,7 @@ void StatefulAudioProcessorWrapper::Parameter::detachParameterControl(ParameterC
 }
 
 LevelMeterSource *StatefulAudioProcessorWrapper::Parameter::getLevelMeterSource() const {
-    if (auto *defaultProcessor = dynamic_cast<DefaultAudioProcessor *>(processorWrapper->processor))
+    if (auto *defaultProcessor = dynamic_cast<DefaultAudioProcessor *>(processorWrapper->audioProcessor))
         if (sourceParameter == defaultProcessor->getMeteredParameter())
             return defaultProcessor->getMeterSource();
 
@@ -319,45 +319,45 @@ void StatefulAudioProcessorWrapper::Parameter::parameterControlValueChanged(Para
     setUnnormalizedValue(control->getValue());
 }
 
-StatefulAudioProcessorWrapper::StatefulAudioProcessorWrapper(AudioPluginInstance *processor, AudioProcessorGraph::NodeID nodeId, ValueTree state, UndoManager &undoManager, AudioDeviceManager &deviceManager) :
-        processor(processor), state(std::move(state)), undoManager(undoManager), deviceManager(deviceManager) {
-    Processor::setNodeId(this->state, nodeId);
-    processor->enableAllBuses();
-    if (auto *ioProcessor = dynamic_cast<AudioProcessorGraph::AudioGraphIOProcessor *> (processor)) {
+StatefulAudioProcessorWrapper::StatefulAudioProcessorWrapper(AudioPluginInstance *audioProcessor, AudioProcessorGraph::NodeID nodeId, Processor *processor, UndoManager &undoManager, AudioDeviceManager &deviceManager) :
+        audioProcessor(audioProcessor), processor(processor), undoManager(undoManager), deviceManager(deviceManager) {
+    processor->setNodeId(nodeId);
+    audioProcessor->enableAllBuses();
+    if (auto *ioProcessor = dynamic_cast<AudioProcessorGraph::AudioGraphIOProcessor *>(audioProcessor)) {
         if (ioProcessor->isInput()) {
-            processor->setPlayConfigDetails(0, processor->getTotalNumOutputChannels(), processor->getSampleRate(), processor->getBlockSize());
+            audioProcessor->setPlayConfigDetails(0, audioProcessor->getTotalNumOutputChannels(), audioProcessor->getSampleRate(), audioProcessor->getBlockSize());
         } else if (ioProcessor->isOutput()) {
-            processor->setPlayConfigDetails(processor->getTotalNumInputChannels(), 0, processor->getSampleRate(), processor->getBlockSize());
+            audioProcessor->setPlayConfigDetails(audioProcessor->getTotalNumInputChannels(), 0, audioProcessor->getSampleRate(), audioProcessor->getBlockSize());
         }
     }
 
     updateValueTree();
-    processor->addListener(this);
+    audioProcessor->addListener(this);
 }
 
 StatefulAudioProcessorWrapper::~StatefulAudioProcessorWrapper() {
-    processor->removeListener(this);
+    audioProcessor->removeListener(this);
     automatableParameters.clear(false);
 }
 
 void StatefulAudioProcessorWrapper::updateValueTree() {
-    for (auto parameter : processor->getParameters()) {
+    for (auto parameter : audioProcessor->getParameters()) {
         auto *parameterWrapper = new Parameter(parameter, this);
-        ValueTree paramState = state.getChildWithProperty(ParamIDs::id, parameterWrapper->paramID);
+        auto paramState = processor->getState().getChildWithProperty(ParamIDs::id, parameterWrapper->paramID);
         if (!paramState.isValid()) {
             paramState = ValueTree(ParamIDs::PARAM);
             Param::setId(paramState, parameterWrapper->paramID);
-            state.appendChild(paramState, nullptr);
+            processor->getState().appendChild(paramState, nullptr);
         }
         parameterWrapper->setNewState(paramState, &undoManager);
         parameters.add(parameterWrapper);
         if (parameter->isAutomatable())
             automatableParameters.add(parameterWrapper);
     }
-    audioProcessorChanged(processor, AudioProcessorListener::ChangeDetails().withParameterInfoChanged(true));
+    audioProcessorChanged(audioProcessor, AudioProcessorListener::ChangeDetails().withParameterInfoChanged(true));
     // XXX A little hacky, but maybe the best we can do.
     //  If we're loading from state, bypass state needs to make its way to the processor graph to actually mute.
-    state.sendPropertyChangeMessage(ProcessorIDs::bypassed);
+    processor->getState().sendPropertyChangeMessage(ProcessorIDs::bypassed);
 }
 
 bool StatefulAudioProcessorWrapper::flushParameterValuesToValueTree() {
@@ -375,26 +375,26 @@ bool StatefulAudioProcessorWrapper::flushParameterValuesToValueTree() {
     return anythingUpdated;
 }
 
-void StatefulAudioProcessorWrapper::updateStateForProcessor(AudioProcessor *processor) {
+void StatefulAudioProcessorWrapper::updateStateForProcessor(AudioProcessor *audioProcessor) {
     Array<Channel> newInputs, newOutputs;
-    for (int i = 0; i < processor->getTotalNumInputChannels(); i++)
-        newInputs.add({processor, deviceManager, i, true});
-    if (processor->acceptsMidi())
-        newInputs.add({processor, deviceManager, AudioProcessorGraph::midiChannelIndex, true});
-    for (int i = 0; i < processor->getTotalNumOutputChannels(); i++)
-        newOutputs.add({processor, deviceManager, i, false});
-    if (processor->producesMidi())
-        newOutputs.add({processor, deviceManager, AudioProcessorGraph::midiChannelIndex, false});
+    for (int i = 0; i < audioProcessor->getTotalNumInputChannels(); i++)
+        newInputs.add({audioProcessor, deviceManager, i, true});
+    if (audioProcessor->acceptsMidi())
+        newInputs.add({audioProcessor, deviceManager, AudioProcessorGraph::midiChannelIndex, true});
+    for (int i = 0; i < audioProcessor->getTotalNumOutputChannels(); i++)
+        newOutputs.add({audioProcessor, deviceManager, i, false});
+    if (audioProcessor->producesMidi())
+        newOutputs.add({audioProcessor, deviceManager, AudioProcessorGraph::midiChannelIndex, false});
 
-    ValueTree inputChannels = state.getChildWithName(InputChannelsIDs::INPUT_CHANNELS);
-    ValueTree outputChannels = state.getChildWithName(OutputChannelsIDs::OUTPUT_CHANNELS);
+    ValueTree inputChannels = processor->getState().getChildWithName(InputChannelsIDs::INPUT_CHANNELS);
+    ValueTree outputChannels = processor->getState().getChildWithName(OutputChannelsIDs::OUTPUT_CHANNELS);
     if (!inputChannels.isValid()) {
         inputChannels = ValueTree(InputChannelsIDs::INPUT_CHANNELS);
-        state.appendChild(inputChannels, nullptr);
+        processor->getState().appendChild(inputChannels, nullptr);
     }
     if (!outputChannels.isValid()) {
         outputChannels = ValueTree(OutputChannelsIDs::OUTPUT_CHANNELS);
-        state.appendChild(outputChannels, nullptr);
+        processor->getState().appendChild(outputChannels, nullptr);
     }
 
     Array<Channel> oldInputs, oldOutputs;
@@ -407,10 +407,10 @@ void StatefulAudioProcessorWrapper::updateStateForProcessor(AudioProcessor *proc
         oldOutputs.add({channel});
     }
 
-    if (processor->acceptsMidi())
-        Processor::setAcceptsMidi(state, true);
-    if (processor->producesMidi())
-        Processor::setProducesMidi(state, true);
+    if (audioProcessor->acceptsMidi())
+        processor->setAcceptsMidi(true);
+    if (audioProcessor->producesMidi())
+        processor->setProducesMidi(true);
 
     updateChannels(oldInputs, newInputs, inputChannels);
     updateChannels(oldOutputs, newOutputs, outputChannels);

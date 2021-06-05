@@ -21,20 +21,25 @@ struct StatefulAudioProcessorWrappers {
         return processorState.isValid() ? getProcessorWrapperForNodeId(Processor::getNodeId(processorState)) : nullptr;
     }
 
-    AudioProcessor *getAudioProcessorForState(const ValueTree &processorState) const {
-        if (auto *processorWrapper = getProcessorWrapperForState(processorState))
-            return processorWrapper->processor;
+    StatefulAudioProcessorWrapper *getProcessorWrapperForProcessor(const Processor *processor) const {
+        return processor != nullptr ? getProcessorWrapperForNodeId(processor->getNodeId()) : nullptr;
+    }
+
+    AudioProcessor *getAudioProcessorForProcessor(const Processor *processor) const {
+        if (auto *processorWrapper = getProcessorWrapperForProcessor(processor))
+            return processorWrapper->audioProcessor;
         return {};
     }
 
-    ValueTree getProcessorStateForNodeId(juce::AudioProcessorGraph::NodeID nodeId) const {
+    Processor *getProcessorForNodeId(juce::AudioProcessorGraph::NodeID nodeId) const {
         if (auto *processorWrapper = getProcessorWrapperForNodeId(nodeId))
-            return processorWrapper->state;
-        return {};
+            return processorWrapper->processor;
+        return nullptr;
     }
 
     void set(juce::AudioProcessorGraph::NodeID nodeId, std::unique_ptr<StatefulAudioProcessorWrapper> processorWrapper) { processorWrapperForNodeId[nodeId] = std::move(processorWrapper); }
     void erase(juce::AudioProcessorGraph::NodeID nodeId) { processorWrapperForNodeId.erase(nodeId); }
+    void saveProcessorInformationToState(Processor *processor) const;
     void saveProcessorStateInformationToState(ValueTree &processorState) const;
     ValueTree copyProcessor(ValueTree &fromProcessor) const;
     bool flushAllParameterValuesToValueTree();

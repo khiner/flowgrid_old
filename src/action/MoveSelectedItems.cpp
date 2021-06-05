@@ -11,21 +11,21 @@ static int limitTrackDelta(int originalTrackDelta, bool anyTrackSelected, bool m
                       maxAllowedTrackIndex - tracks.indexOf(tracks.findLastTrackWithSelections()));
 }
 
-static ValueTree lastNonSelectedProcessorWithSlotLessThan(const Track *track, int slot) {
-    const auto &lane = track->getProcessorLane();
-    for (int i = lane.getNumChildren() - 1; i >= 0; i--) {
-        const auto &processor = lane.getChild(i);
-        if (Processor::getSlot(processor) < slot && !track->isProcessorSelected(processor))
+static Processor *lastNonSelectedProcessorWithSlotLessThan(const Track *track, int slot) {
+    const auto *lane = track->getProcessorLane();
+    for (int i = lane->size() - 1; i >= 0; i--) {
+        auto *processor = lane->getChild(i);
+        if (processor->getSlot() < slot && !track->isProcessorSelected(processor))
             return processor;
     }
-    return {};
+    return nullptr;
 }
 
-static Array<ValueTree> getFirstProcessorInEachContiguousSelectedGroup(const Track *track) {
-    Array<ValueTree> firstProcessorInEachContiguousSelectedGroup;
+static Array<Processor *> getFirstProcessorInEachContiguousSelectedGroup(const Track *track) {
+    Array<Processor *> firstProcessorInEachContiguousSelectedGroup;
     int lastSelectedProcessorSlot = -2;
-    for (const auto &processor : track->getProcessorLane()) {
-        int slot = Processor::getSlot(processor);
+    for (auto *processor : track->getProcessorLane()->getChildren()) {
+        int slot = processor->getSlot();
         if (slot > lastSelectedProcessorSlot + 1 && track->isSlotSelected(slot)) {
             lastSelectedProcessorSlot = slot;
             firstProcessorInEachContiguousSelectedGroup.add(processor);
@@ -40,12 +40,12 @@ static int limitSlotDelta(int originalSlotDelta, int limitedTrackDelta, Tracks &
         if (fromTrack->isSelected()) continue; // entire track will be moved, so it shouldn't restrict other slot movements
 
         const auto &lastSelectedProcessor = fromTrack->findLastSelectedProcessor();
-        if (!lastSelectedProcessor.isValid()) continue; // no processors to move
+        if (lastSelectedProcessor == nullptr) continue; // no processors to move
 
         const auto *toTrack = tracks.getChild(fromTrack->getIndex() + limitedTrackDelta);
-        const auto &firstSelectedProcessor = fromTrack->findFirstSelectedProcessor(); // valid since lastSelected is valid
+        const auto *firstSelectedProcessor = fromTrack->findFirstSelectedProcessor(); // valid since lastSelected is valid
         int maxAllowedSlot = view.getNumProcessorSlots(toTrack->isMaster()) - 1;
-        limitedSlotDelta = std::clamp(limitedSlotDelta, -Processor::getSlot(firstSelectedProcessor), maxAllowedSlot - Processor::getSlot(lastSelectedProcessor));
+        limitedSlotDelta = std::clamp(limitedSlotDelta, -firstSelectedProcessor->getSlot(), maxAllowedSlot - lastSelectedProcessor->getSlot());
 
         // ---------- Expand processor movement while limiting dynamic processor row creation ---------- //
 
@@ -56,10 +56,10 @@ static int limitSlotDelta(int originalSlotDelta, int limitedTrackDelta, Tracks &
         // Find the largest slot-delta, less than the original given slot-delta, such that a contiguous selected
         // group in the pre-move track would end up completely below a non-selected processor in
         // the post-move track.
-        for (const auto &processor : getFirstProcessorInEachContiguousSelectedGroup(fromTrack)) {
-            const auto &lastNonSelected = lastNonSelectedProcessorWithSlotLessThan(toTrack, Processor::getSlot(processor) + originalSlotDelta);
-            if (lastNonSelected.isValid()) {
-                int candidateSlotDelta = Processor::getSlot(lastNonSelected) + 1 - Processor::getSlot(processor);
+        for (auto *processor : getFirstProcessorInEachContiguousSelectedGroup(fromTrack)) {
+            auto *lastNonSelected = lastNonSelectedProcessorWithSlotLessThan(toTrack, processor->getSlot() + originalSlotDelta);
+            if (lastNonSelected != nullptr) {
+                int candidateSlotDelta = lastNonSelected->getSlot() + 1 - processor->getSlot();
                 if (candidateSlotDelta <= originalSlotDelta)
                     limitedSlotDelta = std::max(limitedSlotDelta, candidateSlotDelta);
             }
@@ -143,9 +143,9 @@ OwnedArray<UndoableAction> MoveSelectedItems::createInserts(Tracks &tracks, View
 
     auto addInsertsForTrackIndex = [&](int fromTrackIndex) {
         const auto *fromTrack = tracks.getChild(fromTrackIndex);
-        const int toTrackIndex = fromTrackIndex + trackAndSlotDelta.x;
-
         if (fromTrack == nullptr) return;
+
+        const int toTrackIndex = fromTrackIndex + trackAndSlotDelta.x;
         if (fromTrack->isSelected()) {
             if (fromTrackIndex != toTrackIndex) {
                 insertActions.add(new InsertTrackAction(fromTrackIndex, toTrackIndex, tracks));
@@ -154,12 +154,11 @@ OwnedArray<UndoableAction> MoveSelectedItems::createInserts(Tracks &tracks, View
             return;
         }
 
-        if (!fromTrack->findFirstSelectedProcessor().isValid()) return;
+        if (fromTrack->findFirstSelectedProcessor() == nullptr) return;
 
         const auto selectedProcessors = fromTrack->findSelectedProcessors();
-        auto addInsertsForProcessor = [&](const ValueTree &processor) {
-            auto toSlot = Processor::getSlot(processor) + trackAndSlotDelta.y;
-            insertActions.add(new InsertProcessor(processor, toTrackIndex, toSlot, tracks, view));
+        auto addInsertsForProcessor = [&](Processor *processor) {
+            insertActions.add(new InsertProcessor(juce::Point(fromTrackIndex, processor->getSlot()), toTrackIndex, processor->getSlot() + trackAndSlotDelta.y, tracks, view));
             // Need to actually _do_ the move for each processor, since this could affect the results of
             // a later track's slot moves. i.e. if trackAndSlotDelta.x == -1, then we need to move selected processors
             // out of this track before advancing to the next track. (This action is undone later.)
@@ -194,8 +193,8 @@ MoveSelectedItems::MoveSelectionsAction::MoveSelectionsAction(juce::Point<int> t
             if (oldTrackSelections.getUnchecked(i)) continue; // track itself is being moved, so don't move its selected slots
 
             const auto *track = tracks.getChild(i);
-            const auto &lane = track->getProcessorLane();
-            auto selectedSlotsMask = ProcessorLane::getSelectedSlotsMask(lane);
+            const auto *lane = track->getProcessorLane();
+            auto selectedSlotsMask = lane->getSelectedSlotsMask();
             selectedSlotsMask.shiftBits(trackAndSlotDelta.y, 0);
             newSelectedSlotsMasks.setUnchecked(i, selectedSlotsMask);
         }

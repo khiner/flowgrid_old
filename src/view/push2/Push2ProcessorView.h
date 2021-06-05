@@ -47,8 +47,8 @@ private:
         const auto *focusedTrack = tracks.getFocusedTrack();
         if (focusedTrack == nullptr) return false;
 
-        const auto &focusedLane = focusedTrack->getProcessorLane();
-        return focusedLane.getNumChildren() > processorLabelOffset + (canPageProcessorsLeft() ? NUM_COLUMNS - 1 : NUM_COLUMNS);
+        const auto *focusedLane = focusedTrack->getProcessorLane();
+        return focusedLane->size() > processorLabelOffset + (canPageProcessorsLeft() ? NUM_COLUMNS - 1 : NUM_COLUMNS);
     }
     void selectProcessor(int processorIndex);
 

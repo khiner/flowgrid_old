@@ -79,7 +79,6 @@ public:
         return nullptr;
     }
 
-    // XXX Not sure if we need this (try deleting)
     int compareElements(GraphEditorTrack *first, GraphEditorTrack *second) const {
         return tracks.indexOf(first->getTrack()) - tracks.indexOf(second->getTrack());
     }

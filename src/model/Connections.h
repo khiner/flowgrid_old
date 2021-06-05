@@ -15,11 +15,11 @@ struct Connections : public Stateful<Connections> {
 
     static Identifier getIdentifier() { return ConnectionsIDs::CONNECTIONS; }
 
-    ValueTree findDefaultDestinationProcessor(const ValueTree &sourceProcessor, ConnectionType connectionType);
+    Processor *findDefaultDestinationProcessor(const Processor *sourceProcessor, ConnectionType connectionType);
 
     bool isNodeConnected(AudioProcessorGraph::NodeID nodeId) const;
 
-    Array<ValueTree> getConnectionsForNode(const ValueTree &processor, ConnectionType connectionType,
+    Array<ValueTree> getConnectionsForNode(const Processor *processor, ConnectionType connectionType,
                                            bool incoming = true, bool outgoing = true,
                                            bool includeCustom = true, bool includeDefault = true);
 

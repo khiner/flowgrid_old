@@ -5,8 +5,8 @@
 
 #include "TrackOutputGraphEditorProcessor.h"
 
-TrackOutputGraphEditorProcessor::TrackOutputGraphEditorProcessor(const ValueTree &state, Track *track, View &view, StatefulAudioProcessorWrappers &processorWrappers, ConnectorDragListener &connectorDragListener) :
-        BaseGraphEditorProcessor(state, track, view, processorWrappers, connectorDragListener) {
+TrackOutputGraphEditorProcessor::TrackOutputGraphEditorProcessor(Processor *processor, Track *track, View &view, StatefulAudioProcessorWrappers &processorWrappers, ConnectorDragListener &connectorDragListener) :
+        BaseGraphEditorProcessor(processor, track, view, processorWrappers, connectorDragListener) {
 }
 
 TrackOutputGraphEditorProcessor::~TrackOutputGraphEditorProcessor() {
@@ -51,13 +51,13 @@ Rectangle<int> TrackOutputGraphEditorProcessor::getBoxBounds() const {
 }
 
 void TrackOutputGraphEditorProcessor::valueTreePropertyChanged(ValueTree &v, const Identifier &i) {
-    if (v != state) return;
+    if (v != processor->getState()) return;
 
     // XXX should be done in constructor, but track/processor views are currently instantiated before the processor graph.
     // XXX also, this level meter should be a ParameterDisplayComponent - then we wouldn't have to search for the parameter wrapper.
     if (levelMeter == nullptr) {
         if (auto *processorWrapper = getProcessorWrapper()) {
-            if (auto *trackOutputProcessor = dynamic_cast<TrackOutputProcessor *>(processorWrapper->processor)) {
+            if (auto *trackOutputProcessor = dynamic_cast<TrackOutputProcessor *>(processorWrapper->audioProcessor)) {
                 if (auto *levelMeterSource = trackOutputProcessor->getMeterSource()) {
                     addAndMakeVisible((panSlider = std::make_unique<MinimalSliderControl>(SliderControl::Orientation::horizontal, true)).get());
                     panParameter = processorWrapper->getParameter(0);

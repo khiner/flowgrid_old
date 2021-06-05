@@ -17,7 +17,7 @@ GraphEditorChannel::~GraphEditorChannel() {
 }
 
 AudioProcessorGraph::NodeAndChannel GraphEditorChannel::getNodeAndChannel() const {
-    return {Processor::getNodeId(getProcessor()), fg::Channel::getChannelIndex(state)};
+    return {getProcessor()->getNodeId(), fg::Channel::getChannelIndex(state)};
 }
 
 juce::Point<float> GraphEditorChannel::getConnectPosition() const {
@@ -61,7 +61,7 @@ void GraphEditorChannel::resized() {
 
 void GraphEditorChannel::updateColour() {
     bool mouseOver = isMouseOver(true);
-    bool allowsDefaultConnections = Processor::allowsDefaultConnections(getProcessor());
+    bool allowsDefaultConnections = getProcessor()->allowsDefaultConnections();
     auto colour = isMidi()
                   ? findColour(!allowsDefaultConnections ? customMidiConnectionColourId : defaultMidiConnectionColourId)
                   : findColour(!allowsDefaultConnections ? customAudioConnectionColourId : defaultAudioConnectionColourId);

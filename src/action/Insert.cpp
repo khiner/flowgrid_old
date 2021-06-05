@@ -7,7 +7,7 @@ static int getIndexOfFirstCopiedTrackWithSelections(const OwnedArray<Track> &cop
     for (const auto *track : copiedTracks)
         if (track->isSelected() || track->hasAnySlotSelected())
             return copiedTracks.indexOf(track);
-    assert(false); // Copied state, by definition, must have a selection.
+    assert(false); // Copied state must have a selection.
 }
 
 static bool anyCopiedTrackSelected(const OwnedArray<Track> &copiedTracks) {
@@ -86,8 +86,8 @@ Insert::Insert(bool duplicate, const OwnedArray<Track> &copiedTracks, const juce
                     copyProcessorsFromTrack(copiedTrack, fromTrackIndex, tracks.indexOf(masterTrack), trackAndSlotDiff.y);
             } else {
                 int toTrackIndex = copiedTracks.indexOf(copiedTrack) + trackAndSlotDiff.x;
-                const auto &lane = copiedTrack->getProcessorLane();
-                if (lane.getNumChildren() > 0) { // create tracks to make room
+                const auto *lane = copiedTrack->getProcessorLane();
+                if (lane->size() > 0) { // create tracks to make room
                     while (toTrackIndex >= tracks.getNumNonMasterTracks()) {
                         addAndPerformAction(new CreateTrack(false, {}, tracks, view));
                     }
@@ -101,7 +101,7 @@ Insert::Insert(bool duplicate, const OwnedArray<Track> &copiedTracks, const juce
         const auto duplicatedTrackIndices = findDuplicationIndices(selectedTrackIndices);
         for (unsigned long i = 0; i < selectedTrackIndices.size(); i++) {
             int fromTrackIndex = selectedTrackIndices[i];
-            addAndPerformCreateTrackAction(copiedTracks[fromTrackIndex], fromTrackIndex, duplicate ? duplicatedTrackIndices[i] : fromTrackIndex + trackAndSlotDiff.x + 1);
+            addAndPerformCreateTrackAction(fromTrackIndex, duplicate ? duplicatedTrackIndices[i] : fromTrackIndex + trackAndSlotDiff.x + 1);
         }
     }
 
@@ -148,8 +148,7 @@ void Insert::duplicateSelectedProcessors(const Track *track, const OwnedArray<Tr
     auto duplicatedSlots = findDuplicationIndices(selectedSlots);
     int trackIndex = copiedTracks.indexOf(track);
     for (unsigned long i = 0; i < selectedSlots.size(); i++) {
-        const auto &processor = track->getProcessorAtSlot(selectedSlots[i]);
-        addAndPerformCreateProcessorAction(processor, trackIndex, selectedSlots[i], trackIndex, duplicatedSlots[i]);
+        addAndPerformCreateProcessorAction(trackIndex, selectedSlots[i], trackIndex, duplicatedSlots[i]);
     }
 }
 
@@ -157,7 +156,7 @@ void Insert::copyProcessorsFromTrack(const Track *fromTrack, int fromTrackIndex,
     const BigInteger slotsMask = fromTrack->getSlotMask();
     for (int fromSlot = 0; fromSlot <= slotsMask.getHighestBit(); fromSlot++) {
         if (slotsMask[fromSlot]) {
-            addAndPerformCreateProcessorAction(fromTrack->getProcessorAtSlot(fromSlot), fromTrackIndex, fromSlot, toTrackIndex, fromSlot + slotDiff);
+            addAndPerformCreateProcessorAction(fromTrackIndex, fromSlot, toTrackIndex, fromSlot + slotDiff);
         }
     }
 }
@@ -170,25 +169,26 @@ void Insert::addAndPerformAction(UndoableAction *action) {
     createActions.add(action);
 }
 
-void Insert::addAndPerformCreateProcessorAction(const ValueTree &processor, int fromTrackIndex, int fromSlot, int toTrackIndex, int toSlot) {
-    addAndPerformAction(new CreateProcessor(processor.createCopy(), toTrackIndex, toSlot, tracks, view, processorGraph));
+void Insert::addAndPerformCreateProcessorAction(int fromTrackIndex, int fromSlot, int toTrackIndex, int toSlot) {
+    addAndPerformAction(new CreateProcessor(juce::Point(fromTrackIndex, fromSlot), toTrackIndex, toSlot, tracks, view, processorGraph));
     if (oldFocusedTrackAndSlot.x == fromTrackIndex && oldFocusedTrackAndSlot.y == fromSlot)
         newFocusedTrackAndSlot = {toTrackIndex, toSlot};
 }
 
-void Insert::addAndPerformCreateTrackAction(Track *track, int fromTrackIndex, int toTrackIndex) {
-    addAndPerformAction(new CreateTrack(toTrackIndex, false, track, tracks, view));
+void Insert::addAndPerformCreateTrackAction(int fromTrackIndex, int toTrackIndex) {
+    addAndPerformAction(new CreateTrack(toTrackIndex, false, fromTrackIndex, tracks, view));
+    const auto *track = tracks.getMostRecentlyCreatedTrack();
     if (track == nullptr) return;
 
     // Create track-level processors
-    for (const auto &processor : track->getState())
-        if (Processor::isType(processor))
-            addAndPerformAction(new CreateProcessor(processor.createCopy(), toTrackIndex, -1, tracks, view, processorGraph));
+    for (auto *processor : track->getAllProcessors())
+        if (processor->isIoProcessor())
+            addAndPerformAction(new CreateProcessor(juce::Point(fromTrackIndex, -1), toTrackIndex, -1, tracks, view, processorGraph));
 
     // Create in-lane processors
-    for (const auto &processor : track->getProcessorLane()) {
-        int slot = Processor::getSlot(processor);
-        addAndPerformCreateProcessorAction(processor, fromTrackIndex, slot, toTrackIndex, slot);
+    for (auto *processor : track->getProcessorLane()->getChildren()) {
+        int slot = processor->getSlot();
+        addAndPerformCreateProcessorAction(fromTrackIndex, slot, toTrackIndex, slot);
     }
 }
 

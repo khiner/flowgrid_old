@@ -17,7 +17,7 @@ ID(name)
 #undef ID
 }
 
-struct Project : public Stateful<Project>, public FileBasedDocument, private ChangeListener, private ValueTree::Listener, private Tracks::Listener {
+struct Project : public Stateful<Project>, public FileBasedDocument, private ChangeListener {
     Project(View &view, Tracks &tracks, Connections &connections, Input &input, Output &output,
             ProcessorGraph &processorGraph, UndoManager &undoManager, PluginManager &pluginManager, AudioDeviceManager &deviceManager);
 
@@ -90,11 +90,11 @@ struct Project : public Stateful<Project>, public FileBasedDocument, private Cha
 
     void setProcessorSlotSelected(Track *track, int slot, bool selected, bool deselectOthers = true);
     void setTrackSelected(Track *track, bool selected, bool deselectOthers = true);
-    void selectProcessor(const ValueTree &processor);
+    void selectProcessor(const Processor *processor);
     void selectTrackAndSlot(juce::Point<int> trackAndSlot);
-    bool disconnectCustom(const ValueTree &processor);
-    void setDefaultConnectionsAllowed(const ValueTree &processor, bool defaultConnectionsAllowed);
-    void toggleProcessorBypass(ValueTree processor);
+    bool disconnectCustom(Processor *processor);
+    void setDefaultConnectionsAllowed(Processor *processor, bool defaultConnectionsAllowed);
+    void toggleProcessorBypass(Processor *processor);
 
     void navigateUp() { selectTrackAndSlot(tracks.trackAndSlotWithUpDownDelta(-1)); }
     void navigateDown() { selectTrackAndSlot(tracks.trackAndSlotWithUpDownDelta(1)); }
@@ -144,9 +144,6 @@ private:
     juce::Point<int> initialDraggingTrackAndSlot = Tracks::INVALID_TRACK_AND_SLOT,
             currentlyDraggingTrackAndSlot = Tracks::INVALID_TRACK_AND_SLOT;
 
-    Track *mostRecentlyCreatedTrack;
-    ValueTree mostRecentlyCreatedProcessor;
-
     OwnedArray<Track> copiedTracks;
 
     void doCreateAndAddProcessor(const PluginDescription &description, Track *track, int slot = -1);
@@ -154,12 +151,4 @@ private:
     void changeListenerCallback(ChangeBroadcaster *source) override;
 
     void updateAllDefaultConnections();
-
-    void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override {
-        if (Processor::isType(child))
-            mostRecentlyCreatedProcessor = child;
-    }
-
-    void trackAdded(Track *track) override { mostRecentlyCreatedTrack = track; }
-    void trackRemoved(Track *track, int oldIndex) override {}
 };

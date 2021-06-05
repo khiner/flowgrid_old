@@ -3,18 +3,15 @@
 #include "DefaultConnectProcessor.h"
 #include "DisconnectProcessor.h"
 
-UpdateProcessorDefaultConnections::UpdateProcessorDefaultConnections(const ValueTree &processor, bool makeInvalidDefaultsIntoCustom,
+UpdateProcessorDefaultConnections::UpdateProcessorDefaultConnections(const Processor *processor, bool makeInvalidDefaultsIntoCustom,
                                                                      Connections &connections, Output &output, ProcessorGraph &processorGraph)
         : CreateOrDeleteConnections(connections) {
     for (auto connectionType : {audio, midi}) {
         auto customOutgoingConnections = connections.getConnectionsForNode(processor, connectionType, false, true, true, false);
         if (!customOutgoingConnections.isEmpty()) continue;
 
-        auto processorToConnectTo = connections.findDefaultDestinationProcessor(processor, connectionType);
-        if (!processorToConnectTo.isValid())
-            processorToConnectTo = output.getAudioOutputProcessorState();
-        auto nodeIdToConnectTo = Processor::getNodeId(processorToConnectTo);
-
+        auto *processorToConnectTo = connections.findDefaultDestinationProcessor(processor, connectionType);
+        auto nodeIdToConnectTo = processorToConnectTo == nullptr ? Processor::getNodeId(output.getAudioOutputProcessorState()) : processorToConnectTo->getNodeId();
         auto disconnectDefaultsAction = DisconnectProcessor(connections, processor, connectionType, true, false, false, true, nodeIdToConnectTo);
         coalesceWith(disconnectDefaultsAction);
         if (makeInvalidDefaultsIntoCustom) {

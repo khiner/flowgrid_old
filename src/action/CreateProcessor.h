@@ -5,7 +5,7 @@
 #include "ProcessorGraph.h"
 
 struct CreateProcessor : public UndoableAction {
-    CreateProcessor(ValueTree processorToCreate, int trackIndex, int slot, Tracks &tracks, View &view, ProcessorGraph &processorGraph);
+    CreateProcessor(juce::Point<int> derivedFromTrackAndSlot, int trackIndex, int slot, Tracks &tracks, View &view, ProcessorGraph &processorGraph);
     CreateProcessor(const PluginDescription &description, int trackIndex, int slot, Tracks &tracks, View &view, ProcessorGraph &processorGraph);
     CreateProcessor(const PluginDescription &description, int trackIndex, Tracks &tracks, View &view, ProcessorGraph &processorGraph);
 
@@ -20,12 +20,11 @@ struct CreateProcessor : public UndoableAction {
 
     int getSizeInUnits() override { return (int) sizeof(*this); }
 
-    static ValueTree createProcessor(const PluginDescription &description);
-
     int trackIndex, slot;
 private:
-    ValueTree processorToCreate;
+    const PluginDescription description;
+    Processor *createdProcessor;
     int pluginWindowType;
     InsertProcessor insertAction;
-    ProcessorGraph &processorGraph;
+    Tracks &tracks;
 };

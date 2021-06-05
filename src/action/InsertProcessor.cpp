@@ -1,7 +1,10 @@
 #include "InsertProcessor.h"
 
-InsertProcessor::InsertProcessor(const ValueTree &processor, int toTrackIndex, int toSlot, Tracks &tracks, View &view)
-        : addOrMoveProcessorAction(processor, toTrackIndex, toSlot, tracks, view) {}
+InsertProcessor::InsertProcessor(juce::Point<int> derivedFromTrackAndSlot, int toTrackIndex, int toSlot, Tracks &tracks, View &view)
+        : addOrMoveProcessorAction(derivedFromTrackAndSlot, toTrackIndex, toSlot, tracks, view) {}
+
+InsertProcessor::InsertProcessor(const PluginDescription &description, int toTrackIndex, int toSlot, Tracks &tracks, View &view)
+        : addOrMoveProcessorAction(description, toTrackIndex, toSlot, tracks, view) {}
 
 bool InsertProcessor::perform() {
     return addOrMoveProcessorAction.perform();
@@ -11,16 +14,16 @@ bool InsertProcessor::undo() {
     return addOrMoveProcessorAction.undo();
 }
 
-InsertProcessor::SetProcessorSlotAction::SetProcessorSlotAction(int trackIndex, const ValueTree &processor, int newSlot, Tracks &tracks, View &view)
-        : processor(processor), oldSlot(Processor::getSlot(processor)), newSlot(newSlot) {
+InsertProcessor::SetProcessorSlotAction::SetProcessorSlotAction(int trackIndex, int processorIndex, int oldSlot, int newSlot, Tracks &tracks, View &view)
+        : trackIndex(trackIndex), processorIndex(processorIndex), oldSlot(oldSlot), newSlot(newSlot), tracks(tracks) {
     const auto *track = tracks.getChild(trackIndex);
     int numNewRows = this->newSlot + 1 - view.getNumProcessorSlots(track != nullptr && track->isMaster());
     for (int i = 0; i < numNewRows; i++)
         addProcessorRowActions.add(new AddProcessorRowAction(trackIndex, tracks, view));
     if (addProcessorRowActions.isEmpty()) {
-        const auto &conflictingProcessor = track != nullptr ? track->getProcessorAtSlot(newSlot) : ValueTree();
-        if (conflictingProcessor.isValid())
-            pushConflictingProcessorAction = std::make_unique<SetProcessorSlotAction>(trackIndex, conflictingProcessor, newSlot + 1, tracks, view);
+        auto *conflictingProcessor = track != nullptr ? track->getProcessorAtSlot(newSlot) : nullptr;
+        if (conflictingProcessor != nullptr)
+            pushConflictingProcessorAction = std::make_unique<SetProcessorSlotAction>(trackIndex, processorIndex, newSlot, newSlot + 1, tracks, view);
     }
 }
 
@@ -29,14 +32,13 @@ bool InsertProcessor::SetProcessorSlotAction::perform() {
         addProcessorRowAction->perform();
     if (pushConflictingProcessorAction)
         pushConflictingProcessorAction->perform();
-    if (processor.isValid())
-        Processor::setSlot(processor, newSlot);
+    const auto *track = tracks.getChild(trackIndex);
+    track->getProcessorLane()->getChild(processorIndex)->setSlot(newSlot);
     return true;
 }
 
 bool InsertProcessor::SetProcessorSlotAction::undo() {
-    if (processor.isValid())
-        Processor::setSlot(processor, oldSlot);
+    tracks.getProcessorAt(trackIndex, newSlot)->setSlot(oldSlot);
     if (pushConflictingProcessorAction)
         pushConflictingProcessorAction->undo();
     for (auto *addProcessorRowAction : addProcessorRowActions)
@@ -59,64 +61,67 @@ bool InsertProcessor::SetProcessorSlotAction::AddProcessorRowAction::undo() {
     return true;
 }
 
-InsertProcessor::AddOrMoveProcessorAction::AddOrMoveProcessorAction(const ValueTree &processor, int newTrackIndex, int newSlot, Tracks &tracks, View &view)
-        : processor(processor), oldTrackIndex(tracks.getTrackIndexForProcessor(processor)), newTrackIndex(newTrackIndex),
-          oldSlot(Processor::getSlot(processor)), newSlot(newSlot),
-          oldIndex(processor.getParent().indexOf(processor)),
-          newIndex(tracks.getChild(newTrackIndex)->getInsertIndexForProcessor(processor, this->newSlot)),
-          setProcessorSlotAction(std::make_unique<SetProcessorSlotAction>(newTrackIndex, processor, newSlot, tracks, view)),
+InsertProcessor::AddOrMoveProcessorAction::AddOrMoveProcessorAction(juce::Point<int> derivedFromTrackAndSlot, int newTrackIndex, int newSlot, Tracks &tracks, View &view)
+        : oldTrackIndex(derivedFromTrackAndSlot.getX()), newTrackIndex(newTrackIndex),
+          oldSlot(derivedFromTrackAndSlot.getY()), newSlot(newSlot), oldIndex(tracks.getProcessorAt(derivedFromTrackAndSlot)->getIndex()),
+          newIndex(tracks.getChild(newTrackIndex)->getInsertIndexForProcessor(tracks.getProcessorAt(derivedFromTrackAndSlot), tracks.getChild(oldTrackIndex)->getProcessorLane(), this->newSlot)),
+          setProcessorSlotAction(newTrackIndex, newIndex, derivedFromTrackAndSlot.getY(), newSlot, tracks, view),
+          tracks(tracks) {}
+
+InsertProcessor::AddOrMoveProcessorAction::AddOrMoveProcessorAction(const PluginDescription &description, int newTrackIndex, int newSlot, Tracks &tracks, View &view)
+        : description(description), oldTrackIndex(-1), newTrackIndex(newTrackIndex),
+          oldSlot(-1), newSlot(newSlot), oldIndex(-1),
+          newIndex(tracks.getChild(newTrackIndex)->getInsertIndexForProcessor(nullptr, nullptr, this->newSlot)),
+          setProcessorSlotAction(newTrackIndex, newIndex, oldSlot, newSlot, tracks, view),
           tracks(tracks) {}
 
 bool InsertProcessor::AddOrMoveProcessorAction::perform() {
-    if (processor.isValid()) {
-        auto *newTrack = tracks.getChild(newTrackIndex);
-        if (newSlot == -1) {
-            newTrack->getState().appendChild(processor, nullptr);
-            return true;
-        }
-
-        const auto *oldTrack = tracks.getChild(oldTrackIndex);
-        auto newLane = newTrack->getProcessorLane();
-        if (oldTrack == nullptr) {
-            // only inserting, not moving from another track
-            newLane.addChild(processor, newIndex, nullptr);
-        } else {
-            const auto oldLane = oldTrack->getProcessorLane();
-            if (oldLane == newLane)
-                newLane.moveChild(oldIndex, newIndex, nullptr);
-            else
-                newLane.moveChildFromParent(oldLane, oldIndex, newIndex, nullptr);
-        }
+    auto *derivedFromProcessor = tracks.getProcessorAt(oldTrackIndex, oldSlot);
+    const auto state = derivedFromProcessor != nullptr ? derivedFromProcessor->getState() : Processor::initState(description);
+    auto *newTrack = tracks.getChild(newTrackIndex);
+    if (newSlot == -1) {
+        newTrack->getState().appendChild(state, nullptr);
+        return true;
     }
-    if (setProcessorSlotAction != nullptr)
-        setProcessorSlotAction->perform();
+
+    const auto *oldTrack = tracks.getChild(oldTrackIndex);
+    auto *newLane = newTrack->getProcessorLane();
+    if (oldTrack == nullptr) {
+        // only inserting, not moving from another track
+        newLane->add(state, newIndex);
+    } else {
+        const auto oldLane = oldTrack->getProcessorLane();
+        if (oldLane == newLane)
+            newLane->getState().moveChild(oldIndex, newIndex, nullptr);
+        else
+            newLane->getState().moveChildFromParent(oldLane->getState(), oldIndex, newIndex, nullptr);
+    }
+    setProcessorSlotAction.perform();
 
     return true;
 }
 
 bool InsertProcessor::AddOrMoveProcessorAction::undo() {
-    if (setProcessorSlotAction != nullptr)
-        setProcessorSlotAction->undo();
+    setProcessorSlotAction.undo();
 
-    if (processor.isValid()) {
-        auto *newTrack = tracks.getChild(newTrackIndex);
-        if (newSlot == -1) {
-            newTrack->getState().removeChild(processor, nullptr);
-            return true;
-        }
+    auto *newTrack = tracks.getChild(newTrackIndex);
+    if (newSlot == -1) {
+        newTrack->getState().removeChild(newIndex, nullptr);
+        return true;
+    }
 
-        const auto *oldTrack = tracks.getChild(oldTrackIndex);
-        auto newLane = newTrack->getProcessorLane();
-        if (oldTrack == nullptr) {
-            // only inserting, not moving from another track
-            newLane.removeChild(processor, nullptr);
-        } else {
-            auto oldLane = oldTrack->getProcessorLane();
-            if (oldLane == newLane)
-                newLane.moveChild(newIndex, oldIndex, nullptr);
-            else
-                oldLane.moveChildFromParent(newLane, newIndex, oldIndex, nullptr);
-        }
+    auto *newLane = newTrack->getProcessorLane();
+    auto *newProcessor = newLane->getChild(newIndex);
+    const auto *oldTrack = tracks.getChild(oldTrackIndex);
+    if (oldTrack == nullptr) {
+        // only inserting, not moving from another track
+        newLane->remove(newProcessor->getIndex());
+    } else {
+        auto oldLane = oldTrack->getProcessorLane();
+        if (oldLane == newLane)
+            newLane->getState().moveChild(newIndex, oldIndex, nullptr);
+        else
+            oldLane->getState().moveChildFromParent(newLane->getState(), newIndex, oldIndex, nullptr);
     }
 
     return true;

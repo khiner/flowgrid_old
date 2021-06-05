@@ -3,13 +3,14 @@
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_gui_basics/juce_gui_basics.h>
 
+#include "model/Processor.h"
 #include "PluginWindowType.h"
 
 using namespace juce;
 
 class PluginWindow : public DocumentWindow {
 public:
-    PluginWindow(ValueTree &processorState, AudioProcessor *processor, PluginWindowType type);
+    PluginWindow(Processor *processor, AudioProcessor *audioProcessor, PluginWindowType type);
 
     ~PluginWindow() override;
 
@@ -17,7 +18,7 @@ public:
 
     void closeButtonPressed() override;
 
-    ValueTree processor;
+    Processor *processor;
     const PluginWindowType type;
 
 private:

@@ -5,5 +5,5 @@
 #include "ProcessorGraph.h"
 
 struct UpdateProcessorDefaultConnections : public CreateOrDeleteConnections {
-    UpdateProcessorDefaultConnections(const ValueTree &processor, bool makeInvalidDefaultsIntoCustom, Connections &connections, Output &output, ProcessorGraph &processorGraph);
+    UpdateProcessorDefaultConnections(const Processor *processor, bool makeInvalidDefaultsIntoCustom, Connections &connections, Output &output, ProcessorGraph &processorGraph);
 };

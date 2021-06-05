@@ -4,8 +4,8 @@ DeleteSelectedItems::DeleteSelectedItems(Tracks &tracks, Connections &connection
     for (auto *selectedTrack : tracks.findAllSelectedTracks()) {
         deleteTrackActions.add(new DeleteTrack(selectedTrack, tracks, connections, processorGraph));
     }
-    for (const auto &selectedItem : tracks.findAllSelectedProcessors()) {
-        deleteProcessorActions.add(new DeleteProcessor(selectedItem, tracks.getTrackForProcessor(selectedItem), connections, processorGraph));
+    for (const auto *selectedProcessor : tracks.findAllSelectedProcessors()) {
+        deleteProcessorActions.add(new DeleteProcessor(*selectedProcessor, tracks.getTrackForProcessor(selectedProcessor), connections, processorGraph));
         deleteProcessorActions.getLast()->performTemporary();
     }
     for (int i = deleteProcessorActions.size() - 1; i >= 0; i--)

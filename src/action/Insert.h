@@ -22,14 +22,12 @@ private:
     std::unique_ptr<Select> selectAction;
 
     struct MoveSelections : public Select {
-        MoveSelections(const OwnedArray<UndoableAction> &createActions,
-                       Tracks &tracks, Connections &connections, View &view,
-                       Input &input, ProcessorGraph &processorGraph);
+        MoveSelections(const OwnedArray<UndoableAction> &createActions, Tracks &tracks, Connections &connections, View &view, Input &input, ProcessorGraph &processorGraph);
     };
 
     void duplicateSelectedProcessors(const Track *track, const OwnedArray<Track> &copiedTracks);
     void copyProcessorsFromTrack(const Track *fromTrack, int fromTrackIndex, int toTrackIndex, int slotDiff);
     void addAndPerformAction(UndoableAction *action);
-    void addAndPerformCreateProcessorAction(const ValueTree &processor, int fromTrackIndex, int fromSlot, int toTrackIndex, int toSlot);
-    void addAndPerformCreateTrackAction(Track *track, int fromTrackIndex, int toTrackIndex);
+    void addAndPerformCreateProcessorAction(int fromTrackIndex, int fromSlot, int toTrackIndex, int toSlot);
+    void addAndPerformCreateTrackAction(int fromTrackIndex, int toTrackIndex);
 };

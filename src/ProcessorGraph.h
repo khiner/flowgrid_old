@@ -12,7 +12,7 @@
 
 using namespace fg; // Only to disambiguate `Connection` currently
 
-struct ProcessorGraph : public AudioProcessorGraph, private ValueTree::Listener, private Timer, private Tracks::Listener {
+struct ProcessorGraph : public AudioProcessorGraph, private ValueTree::Listener, private Timer, private Tracks::Listener, private Output::Listener, private Input::Listener {
     explicit ProcessorGraph(PluginManager &pluginManager, Tracks &tracks, Connections &connections,
                             Input &input, Output &output, UndoManager &undoManager, AudioDeviceManager &deviceManager,
                             Push2MidiCommunicator &push2MidiCommunicator);
@@ -28,28 +28,28 @@ struct ProcessorGraph : public AudioProcessorGraph, private ValueTree::Listener,
     bool removeConnection(const Connection &connection) override;
     bool addConnection(const Connection &connection) override;
 
-    bool disconnectProcessor(const ValueTree &processor) {
+    bool disconnectProcessor(const Processor *processor) {
         undoManager.beginNewTransaction();
         return doDisconnectNode(processor, all, true, true, true, true);
     }
 
     bool disconnectNode(NodeID nodeId) override {
-        return disconnectProcessor(processorWrappers.getProcessorStateForNodeId(nodeId));
+        return disconnectProcessor(processorWrappers.getProcessorForNodeId(nodeId));
     }
 
-    bool doDisconnectNode(const ValueTree &processor, ConnectionType connectionType,
+    bool doDisconnectNode(const Processor *processor, ConnectionType connectionType,
                           bool defaults, bool custom, bool incoming, bool outgoing, NodeID excludingRemovalTo = {});
 
     Node *getNodeForState(const ValueTree &processorState) const {
         return getNodeForId(Processor::getNodeId(processorState));
     }
 
-    void onProcessorCreated(const ValueTree &processor) {
-        if (processorWrappers.getProcessorWrapperForState(processor) == nullptr)
+    void onProcessorCreated(Processor *processor) {
+        if (processorWrappers.getProcessorWrapperForProcessor(processor) == nullptr)
             addProcessor(processor);
     }
 
-    void onProcessorDestroyed(const ValueTree &processor) {
+    void onProcessorDestroyed(const Processor *processor) {
         removeProcessor(processor);
     }
 
@@ -70,8 +70,8 @@ private:
 
     CreateOrDeleteConnections connectionsSincePause{connections};
 
-    void addProcessor(const ValueTree &processorState);
-    void removeProcessor(const ValueTree &processor);
+    void addProcessor(Processor *processor);
+    void removeProcessor(const Processor *processor);
     void recursivelyAddProcessors(const ValueTree &state);
     bool canAddConnection(Node *source, int sourceChannel, Node *dest, int destChannel);
     bool hasConnectionMatching(const Connection &connection);
@@ -81,10 +81,10 @@ private:
     void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override;
     void valueTreeChildRemoved(ValueTree &parent, ValueTree &child, int indexFromWhichChildWasRemoved) override;
 
-    void trackAdded(Track *track) override {
-        recursivelyAddProcessors(track->getState()); // TODO might be a problem for moving tracks
-    }
+    void trackAdded(Track *track) override {}
     void trackRemoved(Track *track, int oldIndex) override {}
+    void processorAdded(Processor *processor) override { onProcessorCreated(processor); }
+    void processorRemoved(Processor *processor, int oldIndex) override { onProcessorDestroyed(processor); }
 
     void timerCallback() override;
 };

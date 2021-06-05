@@ -25,10 +25,13 @@ struct StatefulList : protected ValueTree::Listener {
     const Array<ObjectType *> &getChildren() const { return children; }
 
     void add(const ValueTree &child, int index) { parent.addChild(child, index, nullptr); }
+    void append(const ValueTree &child) { parent.appendChild(child, nullptr); }
     void remove(int index) { parent.removeChild(index, nullptr); }
     void remove(const ValueTree &child) { parent.removeChild(child, nullptr); }
 
     ObjectType *getChildForState(const ValueTree &state) const {
+        if (!state.isValid()) return nullptr;
+
         for (int i = 0; i < children.size(); ++i) {
             auto *child = children.getUnchecked(i);
             if (child->getState() == state) return child;
@@ -52,6 +55,7 @@ protected:
     virtual void newObjectAdded(ObjectType *) = 0;
     virtual void objectRemoved(ObjectType *, int oldIndex) = 0;
     virtual void objectOrderChanged() = 0;
+    virtual void objectChanged(ObjectType *, const Identifier &i) {}
 
     // call in the sub-class when being created
     void rebuildObjects() {
@@ -129,6 +133,12 @@ protected:
                 children.sort(*this);
             }
             objectOrderChanged();
+        }
+    }
+
+    void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {
+        if (isChildTree(tree)) {
+            objectChanged(getChildForState(tree), i);
         }
     }
 };

@@ -26,7 +26,7 @@ SelectRectangle::SelectRectangle(const juce::Point<int> fromTrackAndSlot, const 
         if (track == nullptr) {
             slotToFocus = 0;
         } else {
-            const auto &firstProcessor = track->getFirstProcessor();
+            const auto &firstProcessor = track->getFirstProcessorState();
             slotToFocus = firstProcessor.isValid() ? Processor::getSlot(firstProcessor) : 0;
         }
     }

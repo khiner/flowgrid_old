@@ -12,7 +12,8 @@ using namespace juce;
 // Doesn't take care of any select actions! (Caller is responsible for that.)
 struct InsertProcessor : UndoableAction {
     // slot of -1 used for track-level processors (track IO processors that aren't in a lane).
-    InsertProcessor(const ValueTree &processor, int toTrackIndex, int toSlot, Tracks &tracks, View &view);
+    InsertProcessor(juce::Point<int> derivedFromTrackAndSlot, int toTrackIndex, int toSlot, Tracks &tracks, View &view);
+    InsertProcessor(const PluginDescription &description, int toTrackIndex, int toSlot, Tracks &tracks, View &view);
 
     bool perform() override;
     bool undo() override;
@@ -21,16 +22,15 @@ struct InsertProcessor : UndoableAction {
 
 private:
     struct SetProcessorSlotAction : public UndoableAction {
-        SetProcessorSlotAction(int trackIndex, const ValueTree &processor, int newSlot,
-                               Tracks &tracks, View &view);
+        SetProcessorSlotAction(int trackIndex, int processorIndex, int oldSlot, int newSlot, Tracks &tracks, View &view);
 
         bool perform() override;
         bool undo() override;
 
     private:
-        ValueTree processor;
-        int oldSlot, newSlot;
+        int trackIndex, processorIndex, oldSlot, newSlot;
         std::unique_ptr<SetProcessorSlotAction> pushConflictingProcessorAction;
+        Tracks &tracks;
 
         struct AddProcessorRowAction : public UndoableAction {
             AddProcessorRowAction(int trackIndex, Tracks &tracks, View &view);
@@ -48,17 +48,18 @@ private:
     };
 
     struct AddOrMoveProcessorAction : public UndoableAction {
-        AddOrMoveProcessorAction(const ValueTree &processor, int newTrackIndex, int newSlot, Tracks &tracks, View &view);
+        AddOrMoveProcessorAction(juce::Point<int> derivedFromTrackAndSlot, int newTrackIndex, int newSlot, Tracks &tracks, View &view);
+        AddOrMoveProcessorAction(const PluginDescription &description, int newTrackIndex, int newSlot, Tracks &tracks, View &view);
 
         bool perform() override;
         bool undo() override;
 
     private:
-        ValueTree processor;
+        const PluginDescription description;
         int oldTrackIndex, newTrackIndex;
         int oldSlot, newSlot;
         int oldIndex, newIndex;
-        std::unique_ptr<SetProcessorSlotAction> setProcessorSlotAction;
+        SetProcessorSlotAction setProcessorSlotAction;
         Tracks &tracks;
     };
 

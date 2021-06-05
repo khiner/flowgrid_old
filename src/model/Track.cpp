@@ -1,67 +1,64 @@
 #include "Track.h"
 
-int Track::getInsertIndexForProcessor(const ValueTree &processor, int insertSlot) const {
-    const auto &lane = getProcessorLane();
-    bool sameLane = lane == Track::getProcessorLaneForProcessor(processor);
+int Track::getInsertIndexForProcessor(Processor *processor, const ProcessorLane *lane, int insertSlot) const {
+    const auto *myLane = getProcessorLane();
+    bool sameLane = myLane == lane;
     auto handleSameLane = [sameLane](int index) -> int { return sameLane ? std::max(0, index - 1) : index; };
-    for (const auto &otherProcessor : lane) {
-        if (Processor::getSlot(otherProcessor) >= insertSlot && otherProcessor != processor) {
-            int otherIndex = lane.indexOf(otherProcessor);
-            return sameLane && lane.indexOf(processor) < otherIndex ? handleSameLane(otherIndex) : otherIndex;
+    for (const auto *otherProcessor : myLane->getChildren()) {
+        if (otherProcessor->getSlot() >= insertSlot && otherProcessor != processor) {
+            int otherIndex = otherProcessor->getIndex();
+            return sameLane && myLane->indexOf(processor) < otherIndex ? handleSameLane(otherIndex) : otherIndex;
         }
     }
-    return handleSameLane(lane.getNumChildren());
+    return handleSameLane(myLane->size());
 }
 
-
-ValueTree Track::findProcessorNearestToSlot(int slot) const {
-    const auto &lane = getProcessorLane();
+Processor *Track::findProcessorNearestToSlot(int slot) const {
     auto nearestSlot = INT_MAX;
-    ValueTree nearestProcessor;
-    for (const auto &processor : lane) {
-        int otherSlot = Processor::getSlot(processor);
+    Processor *nearestProcessor = nullptr;
+    for (auto *processor : getProcessorLane()->getChildren()) {
+        int otherSlot = processor->getSlot();
         if (otherSlot == slot) return processor;
 
         if (abs(slot - otherSlot) < abs(slot - nearestSlot)) {
             nearestSlot = otherSlot;
             nearestProcessor = processor;
         }
-        if (otherSlot > slot) break; // processors are ordered by slot.
+        if (otherSlot > slot) break;
     }
     return nearestProcessor;
 }
 
-ValueTree Track::findFirstSelectedProcessor() const {
-    for (const auto &processor : getProcessorLane())
-        if (isSlotSelected(Processor::getSlot(processor)))
+Processor *Track::findFirstSelectedProcessor() const {
+    for (auto *processor : getProcessorLane()->getChildren())
+        if (isSlotSelected(processor->getSlot()))
             return processor;
     return {};
 }
 
-ValueTree Track::findLastSelectedProcessor() const {
-    const auto &lane = getProcessorLane();
-    for (int i = lane.getNumChildren() - 1; i >= 0; i--) {
-        const auto &processor = lane.getChild(i);
-        if (isSlotSelected(Processor::getSlot(processor)))
+Processor *Track::findLastSelectedProcessor() const {
+    const auto *lane = getProcessorLane();
+    for (int i = lane->size() - 1; i >= 0; i--) {
+        auto *processor = lane->getChild(i);
+        if (isSlotSelected(processor->getSlot()))
             return processor;
     }
     return {};
 }
 
-Array<ValueTree> Track::findSelectedProcessors() const {
-    const auto &lane = getProcessorLane();
-    Array<ValueTree> selectedProcessors;
+Array<Processor *> Track::findSelectedProcessors() const {
+    Array<Processor *> selectedProcessors;
     auto selectedSlotsMask = getSlotMask();
-    for (const auto &processor : lane)
-        if (selectedSlotsMask[Processor::getSlot(processor)])
+    for (auto *processor : getProcessorLane()->getChildren())
+        if (selectedSlotsMask[processor->getSlot()])
             selectedProcessors.add(processor);
     return selectedProcessors;
 }
 
-Array<ValueTree> Track::getAllProcessors() const {
-    Array<ValueTree> allProcessors;
+Array<Processor *> Track::getAllProcessors() const {
+    Array<Processor *> allProcessors;
     allProcessors.add(getInputProcessor());
-    for (const auto &processor : getProcessorLane()) {
+    for (auto *processor : getProcessorLane()->getChildren()) {
         allProcessors.add(processor);
     }
     allProcessors.add(getOutputProcessor());

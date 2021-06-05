@@ -3,11 +3,11 @@
 #include "DisconnectProcessor.h"
 #include "DefaultConnectProcessor.h"
 
-static ValueTree findTopmostEffectProcessor(const Track *track, ConnectionType connectionType) {
-    for (const auto &processor : track->getProcessorLane())
-        if (Processor::isProcessorAnEffect(processor, connectionType))
+static const Processor *findTopmostEffectProcessor(const Track *track, ConnectionType connectionType) {
+    for (const auto *processor : track->getProcessorLane()->getChildren())
+        if (processor->isProcessorAnEffect(connectionType))
             return processor;
-    return {};
+    return nullptr;
 }
 
 ResetDefaultExternalInputConnectionsAction::ResetDefaultExternalInputConnectionsAction(Connections &connections, Tracks &tracks, Input &input, ProcessorGraph &processorGraph, Track *trackToTreatAsFocused)
@@ -16,41 +16,38 @@ ResetDefaultExternalInputConnectionsAction::ResetDefaultExternalInputConnections
         trackToTreatAsFocused = tracks.getFocusedTrack();
 
     for (auto connectionType : {audio, midi}) {
-        const auto sourceNodeId = input.getDefaultInputNodeIdForConnectionType(connectionType);
         // If master track received focus, only change the default connections if no other tracks have effect processors
         if (trackToTreatAsFocused->isMaster() && tracks.anyNonMasterTrackHasEffectProcessor(connectionType)) continue;
+        const auto *sourceProcessor = input.getDefaultInputProcessorForConnectionType(connectionType);
+        if (sourceProcessor == nullptr) continue;
 
-        const ValueTree &inputProcessor = processorGraph.getProcessorWrappers().getProcessorStateForNodeId(sourceNodeId);
         AudioProcessorGraph::NodeID destinationNodeId;
-
-        const ValueTree &topmostEffectProcessor = findTopmostEffectProcessor(trackToTreatAsFocused, connectionType);
-        const auto &destinationProcessor = findMostUpstreamAvailableProcessorConnectedTo(topmostEffectProcessor, connectionType, tracks, input);
-        destinationNodeId = Processor::getNodeId(destinationProcessor);
-
-        if (destinationNodeId.isValid()) {
-            coalesceWith(DefaultConnectProcessor(inputProcessor, destinationNodeId, connectionType, connections, processorGraph));
+        const auto *topmostEffectProcessor = findTopmostEffectProcessor(trackToTreatAsFocused, connectionType);
+        if (const auto *destinationProcessor = findMostUpstreamAvailableProcessorConnectedTo(topmostEffectProcessor, connectionType, tracks, input)) {
+            destinationNodeId = destinationProcessor->getNodeId();
+            coalesceWith(DefaultConnectProcessor(sourceProcessor, destinationNodeId, connectionType, connections, processorGraph));
         }
-        coalesceWith(DisconnectProcessor(connections, inputProcessor, connectionType, true, false, false, true, destinationNodeId));
+        coalesceWith(DisconnectProcessor(connections, sourceProcessor, connectionType, true, false, false, true, destinationNodeId));
     }
 }
 
-ValueTree ResetDefaultExternalInputConnectionsAction::findMostUpstreamAvailableProcessorConnectedTo(const ValueTree &processor, ConnectionType connectionType, Tracks &tracks, Input &input) {
-    if (!processor.isValid()) return {};
+const Processor *ResetDefaultExternalInputConnectionsAction::findMostUpstreamAvailableProcessorConnectedTo(const Processor *processor, ConnectionType connectionType, Tracks &tracks, Input &input) {
+    if (processor == nullptr) return {};
 
     int lowestSlot = INT_MAX;
-    ValueTree upperRightMostProcessor;
-    AudioProcessorGraph::NodeID processorNodeId = Processor::getNodeId(processor);
+    const Processor *upperRightMostProcessor = nullptr;
+    AudioProcessorGraph::NodeID processorNodeId = processor->getNodeId();
     if (isAvailableForExternalInput(processor, connectionType, input))
         upperRightMostProcessor = processor;
 
     // TODO performance improvement: only iterate over connected processors
     for (int i = tracks.size() - 1; i >= 0; i--) {
         const auto *track = tracks.getChild(i);
-        const auto &firstProcessor = track->getFirstProcessor();
-        if (!firstProcessor.isValid()) continue;
+        const auto *firstProcessor = track->getFirstProcessor();
+        if (firstProcessor == nullptr) continue;
 
-        auto firstProcessorNodeId = Processor::getNodeId(firstProcessor);
-        int slot = Processor::getSlot(firstProcessor);
+        auto firstProcessorNodeId = firstProcessor->getNodeId();
+        int slot = firstProcessor->getSlot();
         if (slot < lowestSlot &&
             isAvailableForExternalInput(firstProcessor, connectionType, input) &&
             areProcessorsConnected(firstProcessorNodeId, processorNodeId)) {
@@ -63,13 +60,15 @@ ValueTree ResetDefaultExternalInputConnectionsAction::findMostUpstreamAvailableP
     return upperRightMostProcessor;
 }
 
-bool ResetDefaultExternalInputConnectionsAction::isAvailableForExternalInput(const ValueTree &processor, ConnectionType connectionType, Input &input) {
-    if (!Processor::isProcessorAnEffect(processor, connectionType)) return false;
+bool ResetDefaultExternalInputConnectionsAction::isAvailableForExternalInput(const Processor *processor, ConnectionType connectionType, Input &input) {
+    if (processor == nullptr || !processor->isProcessorAnEffect(connectionType)) return false;
 
     const auto &incomingConnections = connections.getConnectionsForNode(processor, connectionType, true, false);
-    const auto defaultInputNodeId = input.getDefaultInputNodeIdForConnectionType(connectionType);
+    const auto *inputProcessor = input.getDefaultInputProcessorForConnectionType(connectionType);
+    if (inputProcessor == nullptr) return false;
+
     for (const auto &incomingConnection : incomingConnections) {
-        if (fg::Connection::getSourceNodeId(incomingConnection) != defaultInputNodeId)
+        if (fg::Connection::getSourceNodeId(incomingConnection) != inputProcessor->getNodeId())
             return false;
     }
     return true;

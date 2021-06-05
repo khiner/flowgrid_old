@@ -15,7 +15,7 @@ public:
         parametersPanel->setBackgroundColour(findColour(ResizableWindow::backgroundColourId).brighter(focused ? 0.6f : 0.1f));
     }
 
-    ValueTree getProcessorState() const { return parametersPanel->getProcessorState(); }
+    Processor *getProcessor() const { return parametersPanel->getProcessor(); }
 
     void paint(Graphics &g) override;
     void resized() override;
