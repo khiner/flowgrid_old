@@ -21,9 +21,9 @@ struct ProcessorLanes : public Stateful<ProcessorLanes>, public StatefulList<Pro
     void addProcessorLanesListener(Listener *listener) { listeners.add(listener); }
     void removeProcessorLanesListener(Listener *listener) { listeners.remove(listener); }
 
-    ProcessorLanes();
+    ProcessorLanes(UndoManager &undoManager, AudioDeviceManager &deviceManager);
 
-    explicit ProcessorLanes(const ValueTree &state);
+    explicit ProcessorLanes(const ValueTree &state, UndoManager &undoManager, AudioDeviceManager &deviceManager);
 
     ~ProcessorLanes() override {
         freeObjects();
@@ -35,7 +35,7 @@ struct ProcessorLanes : public Stateful<ProcessorLanes>, public StatefulList<Pro
     bool isChildType(const ValueTree &tree) const override { return ProcessorLane::isType(tree); }
 
 protected:
-    ProcessorLane *createNewObject(const ValueTree &tree) override { return new ProcessorLane(tree); }
+    ProcessorLane *createNewObject(const ValueTree &tree) override { return new ProcessorLane(tree, undoManager, deviceManager); }
     void deleteObject(ProcessorLane *processorLane) override { delete processorLane; }
     void newObjectAdded(ProcessorLane *processorLane) override {
         listeners.call([processorLane](Listener &l) { l.processorLaneAdded(processorLane); });
@@ -48,4 +48,6 @@ protected:
 
 private:
     ListenerList<Listener> listeners;
+    UndoManager &undoManager;
+    AudioDeviceManager &deviceManager;
 };

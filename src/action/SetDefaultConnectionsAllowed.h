@@ -3,7 +3,7 @@
 #include "CreateOrDeleteConnections.h"
 
 struct SetDefaultConnectionsAllowed : public CreateOrDeleteConnections {
-    SetDefaultConnectionsAllowed(Processor *processor, bool defaultConnectionsAllowed, Connections &connections);
+    SetDefaultConnectionsAllowed(Processor *, bool defaultConnectionsAllowed, Connections &);
 
     bool perform() override;
     bool undo() override;

@@ -19,7 +19,7 @@ ID(name)
 
 struct Project : public Stateful<Project>, public FileBasedDocument, private ChangeListener {
     Project(View &view, Tracks &tracks, Connections &connections, Input &input, Output &output,
-            ProcessorGraph &processorGraph, UndoManager &undoManager, PluginManager &pluginManager, AudioDeviceManager &deviceManager);
+            AllProcessors &allProcessors, ProcessorGraph &processorGraph, UndoManager &undoManager, PluginManager &pluginManager, AudioDeviceManager &deviceManager);
 
     ~Project() override;
 
@@ -131,6 +131,7 @@ private:
     Connections &connections;
     Input &input;
     Output &output;
+    AllProcessors &allProcessors;
 
     ProcessorGraph &processorGraph;
     UndoManager &undoManager;

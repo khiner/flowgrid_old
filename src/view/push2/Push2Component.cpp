@@ -223,11 +223,11 @@ void Push2Component::updatePush2NoteModePadLedManagerVisibility() {
 void Push2Component::updateFocusedProcessor() {
     auto *focusedProcessor = tracks.getFocusedProcessor();
     if (focusedProcessor == nullptr)  {
-        processorView.processorFocused(nullptr);
+        processorView.processorFocused(nullptr, nullptr);
         return;
     }
     if (currentlyViewingChild != &mixerView || focusedProcessor->getName() != InternalPluginFormat::getTrackOutputProcessorName()) {
-        processorView.processorFocused(processorWrappers.getProcessorWrapperForProcessor(focusedProcessor));
+        processorView.processorFocused(processorWrappers.getProcessorWrapperForProcessor(focusedProcessor), focusedProcessor);
         showChild(&processorView);
     }
 }
@@ -250,7 +250,7 @@ void Push2Component::trackRemoved(Track *track, int oldIndex) {
     updatePush2SelectionDependentButtons();
     if (tracks.getFocusedTrack() == nullptr) {
         showChild(nullptr);
-        processorView.processorFocused(nullptr);
+        processorView.processorFocused(nullptr, nullptr);
     }
 }
 

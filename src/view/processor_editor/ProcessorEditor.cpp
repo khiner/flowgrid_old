@@ -45,11 +45,11 @@ void ProcessorEditor::resized() {
     parametersPanel->setBounds(r);
 }
 
-void ProcessorEditor::setProcessor(StatefulAudioProcessorWrapper *processorWrapper) {
-    if (processorWrapper != nullptr) {
-        titleLabel.setText(processorWrapper->processor->getName());
+void ProcessorEditor::setProcessor(StatefulAudioProcessorWrapper *processorWrapper, const Processor *processor) {
+    if (processor != nullptr) {
+        titleLabel.setText(processor->getName());
     }
-    parametersPanel->setProcessorWrapper(processorWrapper);
+    parametersPanel->setProcessor(processorWrapper, processor);
     parametersPanel->resized();
     updatePageButtonVisibility();
 }

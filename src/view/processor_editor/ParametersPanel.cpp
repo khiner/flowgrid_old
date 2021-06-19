@@ -13,12 +13,13 @@ ParametersPanel::~ParametersPanel() {
     clearParameters();
 }
 
-void ParametersPanel::setProcessorWrapper(StatefulAudioProcessorWrapper *processorWrapper) {
+void ParametersPanel::setProcessor(StatefulAudioProcessorWrapper *processorWrapper, const Processor *processor) {
     if (this->processorWrapper == processorWrapper) return;
 
     parameters.clear(false);
     currentPage = 0;
     this->processorWrapper = processorWrapper;
+    this->processor = processor;
     if (processorWrapper != nullptr) {
         for (int i = 0; i < processorWrapper->getNumAutomatableParameters(); i++) {
             parameters.add(processorWrapper->getAutomatableParameter(i));

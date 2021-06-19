@@ -1,9 +1,10 @@
 #pragma once
 
-#include <action/DeleteConnection.h>
+#include "action/DeleteConnection.h"
 #include "action/CreateOrDeleteConnections.h"
 #include "push2/Push2MidiCommunicator.h"
 #include "processors/StatefulAudioProcessorWrapper.h"
+#include "model/AllProcessors.h"
 #include "model/Input.h"
 #include "model/Output.h"
 #include "model/Connections.h"
@@ -13,7 +14,7 @@
 using namespace fg; // Only to disambiguate `Connection` currently
 
 struct ProcessorGraph : public AudioProcessorGraph, private ValueTree::Listener, private Timer, private Tracks::Listener, private Output::Listener, private Input::Listener {
-    explicit ProcessorGraph(PluginManager &pluginManager, Tracks &tracks, Connections &connections,
+    explicit ProcessorGraph(AllProcessors &allProcessors, PluginManager &pluginManager, Tracks &tracks, Connections &connections,
                             Input &input, Output &output, UndoManager &undoManager, AudioDeviceManager &deviceManager,
                             Push2MidiCommunicator &push2MidiCommunicator);
 
@@ -23,6 +24,7 @@ struct ProcessorGraph : public AudioProcessorGraph, private ValueTree::Listener,
 
     void pauseAudioGraphUpdates() { graphUpdatesArePaused = true; }
     void resumeAudioGraphUpdatesAndApplyDiffSincePause();
+    bool areAudioGraphUpdatesPaused() const { return graphUpdatesArePaused; }
 
     bool canAddConnection(const Connection &connection);
     bool removeConnection(const Connection &connection) override;
@@ -34,7 +36,7 @@ struct ProcessorGraph : public AudioProcessorGraph, private ValueTree::Listener,
     }
 
     bool disconnectNode(NodeID nodeId) override {
-        return disconnectProcessor(processorWrappers.getProcessorForNodeId(nodeId));
+        return disconnectProcessor(allProcessors.getProcessorByNodeId(nodeId));
     }
 
     bool doDisconnectNode(const Processor *processor, ConnectionType connectionType,
@@ -49,13 +51,14 @@ struct ProcessorGraph : public AudioProcessorGraph, private ValueTree::Listener,
             addProcessor(processor);
     }
 
-    void onProcessorDestroyed(const Processor *processor) {
+    void onProcessorDestroyed(Processor *processor) {
         removeProcessor(processor);
     }
 
 private:
     StatefulAudioProcessorWrappers processorWrappers;
 
+    AllProcessors &allProcessors;
     Tracks &tracks;
     Connections &connections;
     Input &input;
@@ -71,7 +74,7 @@ private:
     CreateOrDeleteConnections connectionsSincePause{connections};
 
     void addProcessor(Processor *processor);
-    void removeProcessor(const Processor *processor);
+    void removeProcessor(Processor *processor);
     void recursivelyAddProcessors(const ValueTree &state);
     bool canAddConnection(Node *source, int sourceChannel, Node *dest, int destChannel);
     bool hasConnectionMatching(const Connection &connection);
@@ -83,8 +86,12 @@ private:
 
     void trackAdded(Track *track) override {}
     void trackRemoved(Track *track, int oldIndex) override {}
-    void processorAdded(Processor *processor) override { onProcessorCreated(processor); }
-    void processorRemoved(Processor *processor, int oldIndex) override { onProcessorDestroyed(processor); }
+    void processorAdded(Processor *processor) override {
+        if (!graphUpdatesArePaused) onProcessorCreated(processor);
+    }
+    void processorRemoved(Processor *processor, int oldIndex) override {
+        if (!graphUpdatesArePaused) onProcessorDestroyed(processor);
+    }
 
     void timerCallback() override;
 };

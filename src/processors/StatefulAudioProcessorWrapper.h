@@ -9,7 +9,7 @@
 #include "view/parameter_control/level_meter/LevelMeterSource.h"
 #include "view/processor_editor/SwitchParameterComponent.h"
 
-struct StatefulAudioProcessorWrapper : private AudioProcessorListener {
+struct StatefulAudioProcessorWrapper {
     struct Parameter
             : public AudioProcessorParameterWithID,
               private ValueTree::Listener,
@@ -113,9 +113,11 @@ struct StatefulAudioProcessorWrapper : private AudioProcessorListener {
         }
     };
 
-    StatefulAudioProcessorWrapper(AudioPluginInstance *audioProcessor, AudioProcessorGraph::NodeID nodeId, Processor *processor, UndoManager &undoManager, AudioDeviceManager &deviceManager);
+    StatefulAudioProcessorWrapper(AudioPluginInstance *audioProcessor, Processor *processor, UndoManager &undoManager);
 
-    ~StatefulAudioProcessorWrapper() override;
+    ~StatefulAudioProcessorWrapper();
+
+    juce::AudioProcessorGraph::NodeID getNodeId() const { return nodeId; }
 
     int getNumParameters() const { return parameters.size(); }
     int getNumAutomatableParameters() const { return automatableParameters.size(); }
@@ -123,46 +125,15 @@ struct StatefulAudioProcessorWrapper : private AudioProcessorListener {
     Parameter *getParameter(int parameterIndex) { return parameters[parameterIndex]; }
     Parameter *getAutomatableParameter(int parameterIndex) { return automatableParameters[parameterIndex]; }
 
-    void updateValueTree();
     bool flushParameterValuesToValueTree();
 
     AudioPluginInstance *audioProcessor;
-    Processor *processor;
 
 private:
-
-    UndoManager &undoManager;
-    AudioDeviceManager &deviceManager;
+    juce::AudioProcessorGraph::NodeID nodeId;
 
     OwnedArray<Parameter> parameters;
     OwnedArray<Parameter> automatableParameters;
 
     CriticalSection valueTreeChanging;
-
-    struct Channel {
-        Channel(AudioProcessor *audioProcessor, AudioDeviceManager &deviceManager, int channelIndex, bool isInput);
-        Channel(const ValueTree &state);
-
-        ValueTree toState() const {
-            ValueTree state(ChannelIDs::CHANNEL);
-            fg::Channel::setChannelIndex(state, channelIndex);
-            fg::Channel::setName(state, name);
-            fg::Channel::setAbbreviatedName(state, abbreviatedName);
-            return state;
-        }
-
-        bool operator==(const Channel &other) const noexcept { return name == other.name; }
-
-        int channelIndex;
-        String name;
-        String abbreviatedName;
-    };
-
-    void updateStateForProcessor(AudioProcessor *audioProcessor);
-    void updateChannels(Array<Channel> &oldChannels, Array<Channel> &newChannels, ValueTree &channelsState);
-
-    void audioProcessorChanged(AudioProcessor *processor, const ChangeDetails &details) override;
-    void audioProcessorParameterChanged(AudioProcessor *processor, int parameterIndex, float newValue) override {}
-    void audioProcessorParameterChangeGestureBegin(AudioProcessor *processor, int parameterIndex) override {}
-    void audioProcessorParameterChangeGestureEnd(AudioProcessor *processor, int parameterIndex) override {}
 };

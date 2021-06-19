@@ -45,17 +45,17 @@ void Push2ProcessorView::resized() {
 void Push2ProcessorView::trackSelected(Track *track) {
     Push2TrackManagingView::trackSelected(track);
     if (track->getProcessorLane()->size() == 0) {
-        parametersPanel->setProcessorWrapper(nullptr);
+        parametersPanel->setProcessor(nullptr, nullptr);
     }
 }
 
-void Push2ProcessorView::processorFocused(StatefulAudioProcessorWrapper *processorWrapper) {
-    parametersPanel->setProcessorWrapper(processorWrapper);
+void Push2ProcessorView::processorFocused(StatefulAudioProcessorWrapper *processorWrapper, const Processor *processor) {
+    parametersPanel->setProcessor(processorWrapper, processor);
     if (processorWrapper == nullptr) {
         updateEnabledPush2Buttons();
         return;
     }
-    const auto processorIndex = processorWrapper->processor->getIndex();
+    const auto processorIndex = processor->getIndex();
     bool hasPaged = false;
     while ((getButtonIndexForProcessorIndex(processorIndex)) <= 0 && canPageProcessorsLeft()) {
         pageProcessorsLeft();

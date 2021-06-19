@@ -83,7 +83,7 @@ void SelectionEditor::refreshProcessors(const Processor *singleProcessorToRefres
     if (focusedTrack == nullptr) {
         for (auto *editor : processorEditors) {
             editor->setVisible(false);
-            editor->setProcessor(nullptr);
+            editor->setProcessor(nullptr, nullptr);
         }
     } else if (singleProcessorToRefresh != nullptr) {
         assignProcessorToEditor(singleProcessorToRefresh);
@@ -101,7 +101,7 @@ void SelectionEditor::assignProcessorToEditor(const Processor *processor, int pr
     if (processor != nullptr) {
         if (auto *processorWrapper = processorWrappers.getProcessorWrapperForProcessor(processor)) {
             if (!onlyUpdateFocusState) {
-                processorEditor->setProcessor(processorWrapper);
+                processorEditor->setProcessor(processorWrapper, processor);
                 processorEditor->setVisible(true);
             }
             processorEditor->setSelected(tracks.getTrackForProcessor(processor)->isProcessorSelected(processor));
@@ -109,7 +109,7 @@ void SelectionEditor::assignProcessorToEditor(const Processor *processor, int pr
         }
     } else {
         processorEditor->setVisible(false);
-        processorEditor->setProcessor(nullptr);
+        processorEditor->setProcessor(nullptr, nullptr);
     }
 }
 

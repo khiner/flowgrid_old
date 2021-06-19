@@ -1,8 +1,8 @@
 #include "SelectRectangle.h"
 
 SelectRectangle::SelectRectangle(const juce::Point<int> fromTrackAndSlot, const juce::Point<int> toTrackAndSlot,
-                                 Tracks &tracks, Connections &connections, View &view, Input &input, ProcessorGraph &processorGraph)
-        : Select(tracks, connections, view, input, processorGraph) {
+                                 Tracks &tracks, Connections &connections, View &view, Input &input, AllProcessors &allProcessors, ProcessorGraph &processorGraph)
+        : Select(tracks, connections, view, input, allProcessors, processorGraph) {
     Rectangle<int> selectionRectangle(tracks.trackAndSlotToGridPosition(fromTrackAndSlot), tracks.trackAndSlotToGridPosition(toTrackAndSlot));
     selectionRectangle.setSize(selectionRectangle.getWidth() + 1, selectionRectangle.getHeight() + 1);
 

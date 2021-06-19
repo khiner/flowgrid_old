@@ -61,7 +61,7 @@ static std::vector<int> findDuplicationIndices(std::vector<int> currentIndices) 
 }
 
 Insert::Insert(bool duplicate, const OwnedArray<Track> &copiedTracks, const juce::Point<int> toTrackAndSlot,
-               Tracks &tracks, Connections &connections, View &view, Input &input, ProcessorGraph &processorGraph)
+               Tracks &tracks, Connections &connections, View &view, Input &input, AllProcessors &allProcessors, ProcessorGraph &processorGraph)
         : tracks(tracks), view(view), processorGraph(processorGraph),
           fromTrackAndSlot(findFromTrackAndSlot(copiedTracks)), toTrackAndSlot(limitToTrackAndSlot(toTrackAndSlot, copiedTracks)),
           oldFocusedTrackAndSlot(view.getFocusedTrackAndSlot()), newFocusedTrackAndSlot(oldFocusedTrackAndSlot) {
@@ -105,7 +105,7 @@ Insert::Insert(bool duplicate, const OwnedArray<Track> &copiedTracks, const juce
         }
     }
 
-    selectAction = std::make_unique<MoveSelections>(createActions, tracks, connections, view, input, processorGraph);
+    selectAction = std::make_unique<MoveSelections>(createActions, tracks, connections, view, input, allProcessors, processorGraph);
     selectAction->setNewFocusedSlot(newFocusedTrackAndSlot);
 
     // Cleanup
@@ -193,8 +193,8 @@ void Insert::addAndPerformCreateTrackAction(int fromTrackIndex, int toTrackIndex
 }
 
 Insert::MoveSelections::MoveSelections(const OwnedArray<UndoableAction> &createActions, Tracks &tracks, Connections &connections,
-                                       View &view, Input &input, ProcessorGraph &processorGraph)
-        : Select(tracks, connections, view, input, processorGraph) {
+                                       View &view, Input &input, AllProcessors &allProcessors, ProcessorGraph &processorGraph)
+        : Select(tracks, connections, view, input, allProcessors, processorGraph) {
     for (int i = 0; i < newTrackSelections.size(); i++) {
         newTrackSelections.setUnchecked(i, false);
         newSelectedSlotsMasks.setUnchecked(i, BigInteger());

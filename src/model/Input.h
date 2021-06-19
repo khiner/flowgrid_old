@@ -40,6 +40,15 @@ struct Input : public Stateful<Input>, private StatefulList<Processor> {
 
     void initializeDefault();
 
+    void setDeviceName(const String &deviceName) { state.setProperty(ProcessorIDs::deviceName, deviceName, nullptr); }
+
+    Processor *getProcessorByNodeId(juce::AudioProcessorGraph::NodeID nodeId) const {
+        for (auto *processor : children)
+            if (processor->getNodeId() == nodeId)
+                return processor;
+        return nullptr;
+    }
+
     Processor *getDefaultInputProcessorForConnectionType(ConnectionType connectionType) const {
         if (connectionType == audio) return getChildForState(state.getChildWithProperty(ProcessorIDs::name, pluginManager.getAudioInputDescription().name));
         if (connectionType == midi) return getChildForState(state.getChildWithProperty(ProcessorIDs::deviceName, Push2MidiDevice::getDeviceName()));
@@ -47,7 +56,7 @@ struct Input : public Stateful<Input>, private StatefulList<Processor> {
     }
 
     // Returns input processors to delete
-    Array<ValueTree> syncInputDevicesWithDeviceManager();
+    Array<Processor *> syncInputDevicesWithDeviceManager();
 
 private:
     ListenerList<Listener> listeners;
@@ -56,7 +65,7 @@ private:
     UndoManager &undoManager;
     AudioDeviceManager &deviceManager;
 
-    Processor *createNewObject(const ValueTree &tree) override { return new Processor(tree); }
+    Processor *createNewObject(const ValueTree &tree) override { return new Processor(tree, undoManager, deviceManager); }
     void deleteObject(Processor *processor) override { delete processor; }
     void newObjectAdded(Processor *processor) override {
         if (processor->isMidiInputProcessor() && !deviceManager.isMidiInputEnabled(processor->getDeviceName()))

@@ -5,8 +5,7 @@
 
 struct MoveSelectedItems : UndoableAction {
     MoveSelectedItems(juce::Point<int> fromTrackAndSlot, juce::Point<int> toTrackAndSlot, bool makeInvalidDefaultsIntoCustom,
-                      Tracks &tracks, Connections &connections, View &view,
-                      Input &input, Output &output, ProcessorGraph &processorGraph);
+                      Tracks &, Connections &, View &, Input &, Output &, AllProcessors &, ProcessorGraph &);
 
     bool perform() override;
     bool undo() override;
@@ -15,9 +14,7 @@ struct MoveSelectedItems : UndoableAction {
 
 private:
     struct MoveSelectionsAction : public Select {
-        MoveSelectionsAction(juce::Point<int> trackAndSlotDelta,
-                             Tracks &tracks, Connections &connections, View &view,
-                             Input &input, ProcessorGraph &processorGraph);
+        MoveSelectionsAction(juce::Point<int> trackAndSlotDelta, Tracks &, Connections &, View &, Input &, AllProcessors &, ProcessorGraph &);
     };
 
     struct InsertTrackAction : UndoableAction {

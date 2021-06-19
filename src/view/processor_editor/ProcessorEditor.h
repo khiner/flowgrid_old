@@ -15,12 +15,12 @@ public:
         parametersPanel->setBackgroundColour(findColour(ResizableWindow::backgroundColourId).brighter(focused ? 0.6f : 0.1f));
     }
 
-    Processor *getProcessor() const { return parametersPanel->getProcessor(); }
+    const Processor *getProcessor() const { return parametersPanel->getProcessor(); }
 
     void paint(Graphics &g) override;
     void resized() override;
 
-    void setProcessor(StatefulAudioProcessorWrapper *processorWrapper);
+    void setProcessor(StatefulAudioProcessorWrapper *, const Processor *);
 
     void updatePageButtonVisibility() {
         pageLeftButton.setVisible(parametersPanel->canPageLeft());

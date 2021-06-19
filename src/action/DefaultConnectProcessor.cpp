@@ -8,14 +8,14 @@ static const Array<int> &getDefaultConnectionChannels(ConnectionType connectionT
     return connectionType == audio ? defaultAudioConnectionChannels : defaultMidiConnectionChannels;
 }
 
-DefaultConnectProcessor::DefaultConnectProcessor(const Processor *fromProcessor, AudioProcessorGraph::NodeID toNodeId, ConnectionType connectionType, Connections &connections, ProcessorGraph &processorGraph)
+DefaultConnectProcessor::DefaultConnectProcessor(const Processor *fromProcessor, AudioProcessorGraph::NodeID toNodeId, ConnectionType connectionType, Connections &connections, AllProcessors &allProcessors, ProcessorGraph &processorGraph)
         : CreateOrDeleteConnections(connections) {
     if (fromProcessor != nullptr && toNodeId.isValid()) {
         const auto fromNodeId = fromProcessor->getNodeId();
         const auto &defaultConnectionChannels = getDefaultConnectionChannels(connectionType);
         for (auto channel : defaultConnectionChannels) {
             AudioProcessorGraph::Connection connection = {{fromNodeId, channel}, {toNodeId,   channel}};
-            coalesceWith(CreateConnection(connection, true, connections, processorGraph));
+            coalesceWith(CreateConnection(connection, true, connections, allProcessors, processorGraph));
         }
     }
 }

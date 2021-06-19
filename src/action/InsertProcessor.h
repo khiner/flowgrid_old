@@ -12,8 +12,8 @@ using namespace juce;
 // Doesn't take care of any select actions! (Caller is responsible for that.)
 struct InsertProcessor : UndoableAction {
     // slot of -1 used for track-level processors (track IO processors that aren't in a lane).
-    InsertProcessor(juce::Point<int> derivedFromTrackAndSlot, int toTrackIndex, int toSlot, Tracks &tracks, View &view);
-    InsertProcessor(const PluginDescription &description, int toTrackIndex, int toSlot, Tracks &tracks, View &view);
+    InsertProcessor(juce::Point<int> derivedFromTrackAndSlot, int toTrackIndex, int toSlot, Tracks &, View &);
+    InsertProcessor(const PluginDescription &description, int toTrackIndex, int toSlot, Tracks &, View &);
 
     bool perform() override;
     bool undo() override;
@@ -22,7 +22,7 @@ struct InsertProcessor : UndoableAction {
 
 private:
     struct SetProcessorSlotAction : public UndoableAction {
-        SetProcessorSlotAction(int trackIndex, int processorIndex, int oldSlot, int newSlot, Tracks &tracks, View &view);
+        SetProcessorSlotAction(int trackIndex, int processorIndex, int oldSlot, int newSlot, Tracks &, View &);
 
         bool perform() override;
         bool undo() override;
@@ -48,8 +48,8 @@ private:
     };
 
     struct AddOrMoveProcessorAction : public UndoableAction {
-        AddOrMoveProcessorAction(juce::Point<int> derivedFromTrackAndSlot, int newTrackIndex, int newSlot, Tracks &tracks, View &view);
-        AddOrMoveProcessorAction(const PluginDescription &description, int newTrackIndex, int newSlot, Tracks &tracks, View &view);
+        AddOrMoveProcessorAction(juce::Point<int> derivedFromTrackAndSlot, int newTrackIndex, int newSlot, Tracks &, View &);
+        AddOrMoveProcessorAction(const PluginDescription &description, int newTrackIndex, int newSlot, Tracks &, View &);
 
         bool perform() override;
         bool undo() override;

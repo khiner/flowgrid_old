@@ -12,7 +12,7 @@ public:
     void resized() override;
 
     void trackSelected(Track *track) override;
-    void processorFocused(StatefulAudioProcessorWrapper *processorWrapper);
+    void processorFocused(StatefulAudioProcessorWrapper *processorWrapper, const Processor *processor);
     void aboveScreenButtonPressed(int buttonIndex) override;
     void encoderRotated(int encoderIndex, float changeAmount) override;
     void updateEnabledPush2Buttons() override;

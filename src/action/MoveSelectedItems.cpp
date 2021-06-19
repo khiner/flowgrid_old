@@ -105,12 +105,12 @@ static juce::Point<int> limitedDelta(juce::Point<int> fromTrackAndSlot, juce::Po
 }
 
 MoveSelectedItems::MoveSelectedItems(juce::Point<int> fromTrackAndSlot, juce::Point<int> toTrackAndSlot, bool makeInvalidDefaultsIntoCustom, Tracks &tracks, Connections &connections,
-                                     View &view, Input &input, Output &output, ProcessorGraph &processorGraph)
+                                     View &view, Input &input, Output &output, AllProcessors &allProcessors, ProcessorGraph &processorGraph)
         : trackAndSlotDelta(limitedDelta(fromTrackAndSlot, toTrackAndSlot, tracks, view)),
-          updateSelectionAction(trackAndSlotDelta, tracks, connections, view, input, processorGraph),
+          updateSelectionAction(trackAndSlotDelta, tracks, connections, view, input, allProcessors, processorGraph),
           insertTrackOrProcessorActions(createInserts(tracks, view)),
           updateConnectionsAction(makeInvalidDefaultsIntoCustom, true, tracks, connections, input, output,
-                                  processorGraph, updateSelectionAction.getNewFocusedTrack()) {
+                                  allProcessors, processorGraph, updateSelectionAction.getNewFocusedTrack()) {
     // cleanup - yeah it's ugly but avoids need for some copy/move madness in createUpdateConnectionsAction
     for (int i = insertTrackOrProcessorActions.size() - 1; i >= 0; i--)
         insertTrackOrProcessorActions.getUnchecked(i)->undo();
@@ -185,9 +185,8 @@ OwnedArray<UndoableAction> MoveSelectedItems::createInserts(Tracks &tracks, View
     return insertActions;
 }
 
-MoveSelectedItems::MoveSelectionsAction::MoveSelectionsAction(juce::Point<int> trackAndSlotDelta, Tracks &tracks, Connections &connections, View &view, Input &input,
-                                                              ProcessorGraph &processorGraph)
-        : Select(tracks, connections, view, input, processorGraph) {
+MoveSelectedItems::MoveSelectionsAction::MoveSelectionsAction(juce::Point<int> trackAndSlotDelta, Tracks &tracks, Connections &connections, View &view, Input &input, AllProcessors &allProcessors, ProcessorGraph &processorGraph)
+        : Select(tracks, connections, view, input, allProcessors, processorGraph) {
     if (trackAndSlotDelta.y != 0) {
         for (int i = 0; i < tracks.size(); i++) {
             if (oldTrackSelections.getUnchecked(i)) continue; // track itself is being moved, so don't move its selected slots

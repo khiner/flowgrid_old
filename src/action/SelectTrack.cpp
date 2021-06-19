@@ -1,8 +1,7 @@
 #include "SelectTrack.h"
 
-SelectTrack::SelectTrack(const Track *track, bool selected, bool deselectOthers, Tracks &tracks, Connections &connections, View &view, Input &input,
-                         ProcessorGraph &processorGraph)
-        : Select(tracks, connections, view, input, processorGraph) {
+SelectTrack::SelectTrack(const Track *track, bool selected, bool deselectOthers, Tracks &tracks, Connections &connections, View &view, Input &input, AllProcessors &allProcessors, ProcessorGraph &processorGraph)
+        : Select(tracks, connections, view, input, allProcessors, processorGraph) {
     if (track == nullptr) return; // no-op
 
     auto trackIndex = track->getIndex();

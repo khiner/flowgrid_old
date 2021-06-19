@@ -31,15 +31,9 @@ struct StatefulAudioProcessorWrappers {
         return {};
     }
 
-    Processor *getProcessorForNodeId(juce::AudioProcessorGraph::NodeID nodeId) const {
-        if (auto *processorWrapper = getProcessorWrapperForNodeId(nodeId))
-            return processorWrapper->processor;
-        return nullptr;
-    }
-
     void set(juce::AudioProcessorGraph::NodeID nodeId, std::unique_ptr<StatefulAudioProcessorWrapper> processorWrapper) { processorWrapperForNodeId[nodeId] = std::move(processorWrapper); }
     void erase(juce::AudioProcessorGraph::NodeID nodeId) { processorWrapperForNodeId.erase(nodeId); }
-    void saveProcessorInformationToState(Processor *processor) const;
+    ValueTree saveProcessorInformationToState(Processor *processor) const;
     void saveProcessorStateInformationToState(ValueTree &processorState) const;
     ValueTree copyProcessor(ValueTree &fromProcessor) const;
     bool flushAllParameterValuesToValueTree();

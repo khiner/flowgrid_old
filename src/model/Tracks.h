@@ -30,7 +30,7 @@ struct Tracks : public Stateful<Tracks>,
     void addTracksListener(Listener *listener) { listeners.add(listener); }
     void removeTracksListener(Listener *listener) { listeners.remove(listener); }
 
-    Tracks(View &view, UndoManager &undoManager);
+    Tracks(View &view, UndoManager &undoManager, AudioDeviceManager &deviceManager);
 
     ~Tracks() override {
         freeObjects();
@@ -103,6 +103,13 @@ struct Tracks : public Stateful<Tracks>,
         if (track == nullptr) return nullptr;
 
         return track->getProcessorAtSlot(trackAndSlot.y);
+    }
+
+    Processor *getProcessorByNodeId(juce::AudioProcessorGraph::NodeID nodeId) const {
+        for (auto *track : children)
+            if (auto *processor = track->getProcessorByNodeId(nodeId))
+                return processor;
+        return nullptr;
     }
 
     Processor *getProcessorAt(int trackIndex, int slot) const {
@@ -195,7 +202,7 @@ struct Tracks : public Stateful<Tracks>,
 
 protected:
     Track *createNewObject(const ValueTree &tree) override {
-        return new Track(tree);
+        return new Track(tree, undoManager, deviceManager);
     }
     void deleteObject(Track *track) override { delete track; }
     void newObjectAdded(Track *track) override {
@@ -214,6 +221,7 @@ protected:
 private:
     View &view;
     UndoManager &undoManager;
+    AudioDeviceManager &deviceManager;
 
     ListenerList<Listener> listeners;
 

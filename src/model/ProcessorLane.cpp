@@ -1,9 +1,5 @@
 #include "ProcessorLane.h"
 
-ProcessorLane::ProcessorLane() : StatefulList<Processor>(state) {
-    rebuildObjects();
-}
-
 void ProcessorLane::loadFromState(const ValueTree &fromState) {
     Stateful<ProcessorLane>::loadFromState(fromState);
     // See note in Tracks::loadFromState

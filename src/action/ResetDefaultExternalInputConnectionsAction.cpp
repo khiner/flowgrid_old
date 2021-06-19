@@ -10,7 +10,7 @@ static const Processor *findTopmostEffectProcessor(const Track *track, Connectio
     return nullptr;
 }
 
-ResetDefaultExternalInputConnectionsAction::ResetDefaultExternalInputConnectionsAction(Connections &connections, Tracks &tracks, Input &input, ProcessorGraph &processorGraph, Track *trackToTreatAsFocused)
+ResetDefaultExternalInputConnectionsAction::ResetDefaultExternalInputConnectionsAction(Connections &connections, Tracks &tracks, Input &input, AllProcessors &allProcessors, ProcessorGraph &processorGraph, Track *trackToTreatAsFocused)
         : CreateOrDeleteConnections(connections) {
     if (trackToTreatAsFocused == nullptr)
         trackToTreatAsFocused = tracks.getFocusedTrack();
@@ -25,7 +25,7 @@ ResetDefaultExternalInputConnectionsAction::ResetDefaultExternalInputConnections
         const auto *topmostEffectProcessor = findTopmostEffectProcessor(trackToTreatAsFocused, connectionType);
         if (const auto *destinationProcessor = findMostUpstreamAvailableProcessorConnectedTo(topmostEffectProcessor, connectionType, tracks, input)) {
             destinationNodeId = destinationProcessor->getNodeId();
-            coalesceWith(DefaultConnectProcessor(sourceProcessor, destinationNodeId, connectionType, connections, processorGraph));
+            coalesceWith(DefaultConnectProcessor(sourceProcessor, destinationNodeId, connectionType, connections, allProcessors, processorGraph));
         }
         coalesceWith(DisconnectProcessor(connections, sourceProcessor, connectionType, true, false, false, true, destinationNodeId));
     }

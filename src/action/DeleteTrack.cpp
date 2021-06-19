@@ -2,8 +2,8 @@
 
 DeleteTrack::DeleteTrack(Track *trackToDelete, Tracks &tracks, Connections &connections, ProcessorGraph &processorGraph)
         : deletedTrackState(trackToDelete->getState()), trackIndex(trackToDelete->getIndex()), tracks(tracks) {
-    for (const auto *processor : trackToDelete->getAllProcessors()) {
-        deleteProcessorActions.add(new DeleteProcessor(*processor, tracks.getTrackForProcessor(processor), connections, processorGraph));
+    for (auto *processor : trackToDelete->getAllProcessors()) {
+        deleteProcessorActions.add(new DeleteProcessor(processor, tracks, connections, processorGraph));
         deleteProcessorActions.getLast()->performTemporary();
     }
     for (int i = deleteProcessorActions.size() - 1; i >= 0; i--) {

@@ -12,8 +12,8 @@ public:
     ~GraphEditorProcessorLane() override;
 
     void processorAdded(Processor *processor) override {
-        addAndMakeVisible(children.insert(track->getIndex(), createEditorForProcessor(processor)));
-        children.getLast()->addMouseListener(this, true);
+        addAndMakeVisible(children.insert(processor->getIndex(), createEditorForProcessor(processor)));
+        children.getUnchecked(processor->getIndex())->addMouseListener(this, true);
         resized();
     }
     void processorRemoved(Processor *processor, int oldIndex) override {

@@ -2,11 +2,11 @@
 
 #include "processors/MidiInputProcessor.h"
 
-Array<ValueTree> Input::syncInputDevicesWithDeviceManager() {
-    Array<ValueTree> inputProcessorsToDelete;
-    for (const auto &inputProcessor : state) {
-        if (inputProcessor.hasProperty(ProcessorIDs::deviceName)) {
-            const String &deviceName = Processor::getDeviceName(inputProcessor);
+Array<Processor *> Input::syncInputDevicesWithDeviceManager() {
+    Array<Processor *> inputProcessorsToDelete;
+    for (auto *inputProcessor : children) {
+        if (inputProcessor->hasDeviceName()) {
+            const String &deviceName = inputProcessor->getDeviceName();
             if (!MidiInput::getDevices().contains(deviceName) || !deviceManager.isMidiInputEnabled(deviceName)) {
                 inputProcessorsToDelete.add(inputProcessor);
             }

@@ -11,7 +11,7 @@
 // from its default midi-input processor.)
 
 struct ResetDefaultExternalInputConnectionsAction : public CreateOrDeleteConnections {
-    ResetDefaultExternalInputConnectionsAction(Connections &connections, Tracks &tracks, Input &input, ProcessorGraph &processorGraph, Track *trackToTreatAsFocused = nullptr);
+    ResetDefaultExternalInputConnectionsAction(Connections &connections, Tracks &tracks, Input &input, AllProcessors &allProcessors, ProcessorGraph &processorGraph, Track *trackToTreatAsFocused = nullptr);
 
 private:
     // Find the upper-right-most effect processor that flows into the given processor

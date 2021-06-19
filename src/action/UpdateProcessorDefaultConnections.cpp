@@ -4,7 +4,7 @@
 #include "DisconnectProcessor.h"
 
 UpdateProcessorDefaultConnections::UpdateProcessorDefaultConnections(const Processor *processor, bool makeInvalidDefaultsIntoCustom,
-                                                                     Connections &connections, Output &output, ProcessorGraph &processorGraph)
+                                                                     Connections &connections, Output &output, AllProcessors &allProcessors, ProcessorGraph &processorGraph)
         : CreateOrDeleteConnections(connections) {
     for (auto connectionType : {audio, midi}) {
         auto customOutgoingConnections = connections.getConnectionsForNode(processor, connectionType, false, true, true, false);
@@ -23,7 +23,7 @@ UpdateProcessorDefaultConnections::UpdateProcessorDefaultConnections(const Proce
                 }
             }
         } else {
-            coalesceWith(DefaultConnectProcessor(processor, nodeIdToConnectTo, connectionType, connections, processorGraph));
+            coalesceWith(DefaultConnectProcessor(processor, nodeIdToConnectTo, connectionType, connections, allProcessors, processorGraph));
         }
     }
 }

@@ -25,8 +25,13 @@ struct ProcessorLane : public Stateful<ProcessorLane>, public StatefulList<Proce
     }
     void removeProcessorLaneListener(Listener *listener) { listeners.remove(listener); }
 
-    ProcessorLane();
-    explicit ProcessorLane(const ValueTree &state): Stateful<ProcessorLane>(state), StatefulList<Processor>(state) {
+    ProcessorLane(UndoManager &undoManager, AudioDeviceManager &deviceManager)
+            : StatefulList<Processor>(state), undoManager(undoManager), deviceManager(deviceManager) {
+        rebuildObjects();
+    }
+
+    explicit ProcessorLane(const ValueTree &state, UndoManager &undoManager, AudioDeviceManager &deviceManager)
+            : Stateful<ProcessorLane>(state), StatefulList<Processor>(state), undoManager(undoManager), deviceManager(deviceManager) {
         rebuildObjects();
     }
 
@@ -40,6 +45,19 @@ struct ProcessorLane : public Stateful<ProcessorLane>, public StatefulList<Proce
 
     int getIndex() const { return state.getParent().indexOf(state); }
 
+    Processor *getProcessorAtSlot(int slot) const {
+        for (auto *processor : children)
+            if (processor->getSlot() == slot)
+                return processor;
+        return nullptr;
+    }
+    Processor *getProcessorByNodeId(juce::AudioProcessorGraph::NodeID nodeId) const {
+        for (auto *processor : children)
+            if (processor->getNodeId() == nodeId)
+                return processor;
+        return nullptr;
+    }
+
     BigInteger getSelectedSlotsMask() const {
         BigInteger selectedSlotsMask;
         selectedSlotsMask.parseString(state[ProcessorLaneIDs::selectedSlotsMask].toString(), 2);
@@ -51,7 +69,7 @@ struct ProcessorLane : public Stateful<ProcessorLane>, public StatefulList<Proce
     static void setSelectedSlotsMask(ValueTree &state, const BigInteger &selectedSlotsMask) { state.setProperty(ProcessorLaneIDs::selectedSlotsMask, selectedSlotsMask.toString(2), nullptr); }
 
 protected:
-    Processor *createNewObject(const ValueTree &tree) override { return new Processor(tree); }
+    Processor *createNewObject(const ValueTree &tree) override { return new Processor(tree, undoManager, deviceManager); }
     void deleteObject(Processor *processor) override { delete processor; }
     void newObjectAdded(Processor *processor) override { listeners.call([processor](Listener &l) { l.processorAdded(processor); }); }
     void objectRemoved(Processor *processor, int oldIndex) override { listeners.call([processor, oldIndex](Listener &l) { l.processorRemoved(processor, oldIndex); }); }
@@ -60,4 +78,6 @@ protected:
 
 private:
     ListenerList<Listener> listeners;
+    UndoManager &undoManager;
+    AudioDeviceManager &deviceManager;
 };

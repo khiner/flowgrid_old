@@ -27,7 +27,8 @@ struct Track : public Stateful<Track>, private ProcessorLanes::Listener, private
     }
     void removeTrackListener(Listener *listener) { listeners.remove(listener); }
 
-    Track(): Stateful<Track>() {
+    Track(UndoManager &undoManager, AudioDeviceManager &deviceManager)
+            : Stateful<Track>(), processorLanes(undoManager, deviceManager), undoManager(undoManager), deviceManager(deviceManager) {
         state.appendChild(processorLanes.getState(), nullptr);
         processorLanes.addProcessorLanesListener(this);
         for (auto *lane : processorLanes.getChildren()) {
@@ -35,7 +36,10 @@ struct Track : public Stateful<Track>, private ProcessorLanes::Listener, private
         }
         state.addListener(this);
     }
-    explicit Track(ValueTree state): Stateful<Track>(std::move(state)), processorLanes(this->state.getChildWithName(ProcessorLanesIDs::PROCESSOR_LANES).isValid() ? this->state.getChildWithName(ProcessorLanesIDs::PROCESSOR_LANES) : ValueTree(ProcessorLanesIDs::PROCESSOR_LANES)) {
+    explicit Track(ValueTree state, UndoManager &undoManager, AudioDeviceManager &deviceManager)
+            : Stateful<Track>(std::move(state)),
+              processorLanes(this->state.getChildWithName(ProcessorLanesIDs::PROCESSOR_LANES).isValid() ? this->state.getChildWithName(ProcessorLanesIDs::PROCESSOR_LANES) : ValueTree(ProcessorLanesIDs::PROCESSOR_LANES), undoManager, deviceManager),
+              undoManager(undoManager), deviceManager(deviceManager) {
         processorLanes.addProcessorLanesListener(this);
         for (auto *lane : processorLanes.getChildren()) {
             processorLaneAdded(lane);
@@ -48,7 +52,7 @@ struct Track : public Stateful<Track>, private ProcessorLanes::Listener, private
         processorLanes.removeProcessorLanesListener(this);
     }
 
-    Track copy() const { return Track(state); }
+    Track copy() const { return Track(state, undoManager, deviceManager); }
 
     static Identifier getIdentifier() { return TrackIDs::TRACK; }
 
@@ -77,17 +81,20 @@ struct Track : public Stateful<Track>, private ProcessorLanes::Listener, private
         return false;
     }
 
+    Processor *getProcessorByNodeId(juce::AudioProcessorGraph::NodeID nodeId) const {
+        if (audioInputProcessor != nullptr && audioInputProcessor->getNodeId() == nodeId) return audioInputProcessor.get();
+        if (audioOutputProcessor != nullptr && audioOutputProcessor->getNodeId() == nodeId) return audioOutputProcessor.get();
+        if (midiInputProcessor != nullptr && midiInputProcessor->getNodeId() == nodeId) return midiInputProcessor.get();
+        if (midiOutputProcessor != nullptr && midiOutputProcessor->getNodeId() == nodeId) return midiOutputProcessor.get();
+        const auto *lane = getProcessorLane();
+        if (lane == nullptr) return nullptr;
+        return lane->getProcessorByNodeId(nodeId);
+    }
+
     Processor *getProcessorAtSlot(int slot) const {
         const auto *lane = getProcessorLane();
         if (lane == nullptr) return nullptr;
-        for (auto *processor : getProcessorLane()->getChildren())
-            if (processor->getSlot() == slot)
-                return processor;
-        return nullptr;
-    }
-    ValueTree getProcessorStateAtSlot(int slot) const {
-        const auto *lane = getProcessorLane();
-        return lane != nullptr ? lane->getState().getChildWithProperty(ProcessorIDs::slot, slot) : ValueTree();
+        return lane->getProcessorAtSlot(slot);
     }
     int getInsertIndexForProcessor(Processor *processor, const ProcessorLane *lane, int insertSlot) const;
     int getNumProcessors() const {
@@ -138,6 +145,8 @@ private:
     ProcessorLanes processorLanes;
     ListenerList<Listener> listeners;
     std::unique_ptr<Processor> audioInputProcessor, audioOutputProcessor, midiInputProcessor, midiOutputProcessor;
+    UndoManager &undoManager;
+    AudioDeviceManager &deviceManager;
 
     void processorLaneAdded(ProcessorLane *processorLane) override {
         processorLane->addProcessorLaneListener(this);
@@ -166,7 +175,7 @@ private:
 
     void valueTreeChildAdded(ValueTree &parent, ValueTree &tree) override {
         if (Processor::isType(tree) && parent == getState()) {
-            processorAdded(new Processor(tree));
+            processorAdded(new Processor(tree, undoManager, deviceManager));
         }
     }
     void valueTreeChildRemoved(ValueTree &exParent, ValueTree &tree, int oldIndex) override {

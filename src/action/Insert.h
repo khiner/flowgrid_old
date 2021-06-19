@@ -5,7 +5,7 @@
 // UpdateAllDefaultConnectionsAction should be performed after this
 struct Insert : UndoableAction {
     Insert(bool duplicate, const OwnedArray<Track> &copiedTracks, juce::Point<int> toTrackAndSlot,
-           Tracks &tracks, Connections &connections, View &view, Input &input, ProcessorGraph &processorGraph);
+           Tracks &, Connections &, View &, Input &, AllProcessors &, ProcessorGraph &);
 
     bool perform() override;
     bool undo() override;
@@ -22,7 +22,7 @@ private:
     std::unique_ptr<Select> selectAction;
 
     struct MoveSelections : public Select {
-        MoveSelections(const OwnedArray<UndoableAction> &createActions, Tracks &tracks, Connections &connections, View &view, Input &input, ProcessorGraph &processorGraph);
+        MoveSelections(const OwnedArray<UndoableAction> &createActions, Tracks &, Connections &, View &, Input &, AllProcessors &, ProcessorGraph &);
     };
 
     void duplicateSelectedProcessors(const Track *track, const OwnedArray<Track> &copiedTracks);

@@ -1,6 +1,7 @@
 #include "Tracks.h"
 
-Tracks::Tracks(View &view, UndoManager &undoManager) : StatefulList<Track>(state), view(view), undoManager(undoManager) {
+Tracks::Tracks(View &view, UndoManager &undoManager, AudioDeviceManager &deviceManager)
+        : StatefulList<Track>(state), view(view), undoManager(undoManager), deviceManager(deviceManager) {
     rebuildObjects();
 }
 
@@ -93,7 +94,7 @@ void Tracks::copySelectedItemsInto(OwnedArray<Track> &copiedTracks, StatefulAudi
 
         auto copiedLanes = ValueTree(ProcessorLanesIDs::PROCESSOR_LANES);
         for (const auto *lane : track->getProcessorLanes().getChildren()) {
-            ProcessorLane copiedLane;
+            ProcessorLane copiedLane(undoManager, deviceManager);
             copiedLane.setSelectedSlotsMask(lane->getSelectedSlotsMask());
             for (auto *processor : lane->getChildren())
                 if (track->isSelected() || track->isProcessorSelected(processor))

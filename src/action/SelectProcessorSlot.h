@@ -3,5 +3,5 @@
 #include "Select.h"
 
 struct SelectProcessorSlot : public Select {
-    SelectProcessorSlot(const Track *track, int slot, bool selected, bool deselectOthers, Tracks &tracks, Connections &connections, View &view, Input &input, ProcessorGraph &processorGraph);
+    SelectProcessorSlot(const Track *, int slot, bool selected, bool deselectOthers, Tracks &, Connections &, View &, Input &, AllProcessors &, ProcessorGraph &);
 };

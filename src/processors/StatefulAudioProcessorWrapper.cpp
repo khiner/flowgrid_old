@@ -1,8 +1,6 @@
-#include "model/Processor.h"
 #include "StatefulAudioProcessorWrapper.h"
 
 #include "DefaultAudioProcessor.h"
-#include "DeviceManagerUtilities.h"
 
 StatefulAudioProcessorWrapper::Parameter::Parameter(AudioProcessorParameter *parameter, StatefulAudioProcessorWrapper *processorWrapper)
         : AudioProcessorParameterWithID(parameter->getName(32), parameter->getName(32),
@@ -319,9 +317,8 @@ void StatefulAudioProcessorWrapper::Parameter::parameterControlValueChanged(Para
     setUnnormalizedValue(control->getValue());
 }
 
-StatefulAudioProcessorWrapper::StatefulAudioProcessorWrapper(AudioPluginInstance *audioProcessor, AudioProcessorGraph::NodeID nodeId, Processor *processor, UndoManager &undoManager, AudioDeviceManager &deviceManager) :
-        audioProcessor(audioProcessor), processor(processor), undoManager(undoManager), deviceManager(deviceManager) {
-    processor->setNodeId(nodeId);
+StatefulAudioProcessorWrapper::StatefulAudioProcessorWrapper(AudioPluginInstance *audioProcessor, Processor *processor, UndoManager &undoManager) :
+        audioProcessor(audioProcessor), nodeId(processor->getNodeId()) {
     audioProcessor->enableAllBuses();
     if (auto *ioProcessor = dynamic_cast<AudioProcessorGraph::AudioGraphIOProcessor *>(audioProcessor)) {
         if (ioProcessor->isInput()) {
@@ -331,16 +328,6 @@ StatefulAudioProcessorWrapper::StatefulAudioProcessorWrapper(AudioPluginInstance
         }
     }
 
-    updateValueTree();
-    audioProcessor->addListener(this);
-}
-
-StatefulAudioProcessorWrapper::~StatefulAudioProcessorWrapper() {
-    audioProcessor->removeListener(this);
-    automatableParameters.clear(false);
-}
-
-void StatefulAudioProcessorWrapper::updateValueTree() {
     for (auto parameter : audioProcessor->getParameters()) {
         auto *parameterWrapper = new Parameter(parameter, this);
         auto paramState = processor->getState().getChildWithProperty(ParamIDs::id, parameterWrapper->paramID);
@@ -354,10 +341,15 @@ void StatefulAudioProcessorWrapper::updateValueTree() {
         if (parameter->isAutomatable())
             automatableParameters.add(parameterWrapper);
     }
-    audioProcessorChanged(audioProcessor, AudioProcessorListener::ChangeDetails().withParameterInfoChanged(true));
+    processor->audioProcessorChanged(audioProcessor, AudioProcessorListener::ChangeDetails().withParameterInfoChanged(true));
     // XXX A little hacky, but maybe the best we can do.
     //  If we're loading from state, bypass state needs to make its way to the processor graph to actually mute.
     processor->getState().sendPropertyChangeMessage(ProcessorIDs::bypassed);
+    audioProcessor->addListener(processor);
+}
+
+StatefulAudioProcessorWrapper::~StatefulAudioProcessorWrapper() {
+    automatableParameters.clear(false);
 }
 
 bool StatefulAudioProcessorWrapper::flushParameterValuesToValueTree() {
@@ -373,98 +365,4 @@ bool StatefulAudioProcessorWrapper::flushParameterValuesToValueTree() {
     }
 
     return anythingUpdated;
-}
-
-void StatefulAudioProcessorWrapper::updateStateForProcessor(AudioProcessor *audioProcessor) {
-    Array<Channel> newInputs, newOutputs;
-    for (int i = 0; i < audioProcessor->getTotalNumInputChannels(); i++)
-        newInputs.add({audioProcessor, deviceManager, i, true});
-    if (audioProcessor->acceptsMidi())
-        newInputs.add({audioProcessor, deviceManager, AudioProcessorGraph::midiChannelIndex, true});
-    for (int i = 0; i < audioProcessor->getTotalNumOutputChannels(); i++)
-        newOutputs.add({audioProcessor, deviceManager, i, false});
-    if (audioProcessor->producesMidi())
-        newOutputs.add({audioProcessor, deviceManager, AudioProcessorGraph::midiChannelIndex, false});
-
-    ValueTree inputChannels = processor->getState().getChildWithName(InputChannelsIDs::INPUT_CHANNELS);
-    ValueTree outputChannels = processor->getState().getChildWithName(OutputChannelsIDs::OUTPUT_CHANNELS);
-    if (!inputChannels.isValid()) {
-        inputChannels = ValueTree(InputChannelsIDs::INPUT_CHANNELS);
-        processor->getState().appendChild(inputChannels, nullptr);
-    }
-    if (!outputChannels.isValid()) {
-        outputChannels = ValueTree(OutputChannelsIDs::OUTPUT_CHANNELS);
-        processor->getState().appendChild(outputChannels, nullptr);
-    }
-
-    Array<Channel> oldInputs, oldOutputs;
-    for (int i = 0; i < inputChannels.getNumChildren(); i++) {
-        const auto &channel = inputChannels.getChild(i);
-        oldInputs.add({channel});
-    }
-    for (int i = 0; i < outputChannels.getNumChildren(); i++) {
-        const auto &channel = outputChannels.getChild(i);
-        oldOutputs.add({channel});
-    }
-
-    if (audioProcessor->acceptsMidi())
-        processor->setAcceptsMidi(true);
-    if (audioProcessor->producesMidi())
-        processor->setProducesMidi(true);
-
-    updateChannels(oldInputs, newInputs, inputChannels);
-    updateChannels(oldOutputs, newOutputs, outputChannels);
-}
-
-void StatefulAudioProcessorWrapper::updateChannels(Array<Channel> &oldChannels, Array<Channel> &newChannels, ValueTree &channelsState) {
-    for (int i = 0; i < oldChannels.size(); i++) {
-        const auto &oldChannel = oldChannels.getUnchecked(i);
-        if (!newChannels.contains(oldChannel)) {
-            channelsState.removeChild(channelsState.getChildWithProperty(ChannelIDs::name, oldChannel.name), &undoManager);
-        }
-    }
-    for (int i = 0; i < newChannels.size(); i++) {
-        const auto &newChannel = newChannels.getUnchecked(i);
-        if (!oldChannels.contains(newChannel)) {
-            channelsState.addChild(newChannel.toState(), i, &undoManager);
-        }
-    }
-}
-
-void StatefulAudioProcessorWrapper::audioProcessorChanged(AudioProcessor *processor, const AudioProcessorListener::ChangeDetails &details) {
-    if (processor == nullptr) return;
-
-    if (MessageManager::getInstance()->isThisTheMessageThread())
-        updateStateForProcessor(processor);
-    else
-        MessageManager::callAsync([this, processor] { updateStateForProcessor(processor); });
-}
-
-StatefulAudioProcessorWrapper::Channel::Channel(AudioProcessor *processor, AudioDeviceManager &deviceManager, int channelIndex, bool isInput) :
-        channelIndex(channelIndex) {
-    if (processor->getName() == "Audio Input" || processor->getName() == "Audio Output") {
-        name = DeviceManagerUtilities::getAudioChannelName(deviceManager, channelIndex, processor->getName() == "Audio Input");
-        abbreviatedName = name;
-    } else {
-        if (channelIndex == AudioProcessorGraph::midiChannelIndex) {
-            name = isInput ? "MIDI Input" : "MIDI Output";
-            abbreviatedName = isInput ? "MIDI In" : "MIDI Out";
-        } else {
-            int busIndex = 0;
-            auto channel = processor->getOffsetInBusBufferForAbsoluteChannelIndex(isInput, channelIndex, busIndex);
-            if (auto *bus = processor->getBus(isInput, busIndex)) {
-                abbreviatedName = AudioChannelSet::getAbbreviatedChannelTypeName(bus->getCurrentLayout().getTypeOfChannel(channel));
-                name = bus->getName() + ": " + abbreviatedName;
-            } else {
-                name = (isInput ? "Main Input: " : "Main Output: ") + String(channelIndex + 1);
-                abbreviatedName = (isInput ? "Main In: " : "Main Out: ") + String(channelIndex + 1);
-            }
-        }
-    }
-}
-
-StatefulAudioProcessorWrapper::Channel::Channel(const ValueTree &state) :
-        channelIndex(fg::Channel::getChannelIndex(state)),
-        name(fg::Channel::getName(state)),
-        abbreviatedName(fg::Channel::getAbbreviatedName(state)) {
 }

@@ -13,14 +13,15 @@
 class FlowGridApplication : public JUCEApplication, public MenuBarModel, public ChangeListener {
 public:
     FlowGridApplication() : view(undoManager),
-                            tracks(view, undoManager),
+                            tracks(view, undoManager, deviceManager),
                             connections(tracks),
                             input(pluginManager, undoManager, deviceManager),
                             output(pluginManager, undoManager, deviceManager),
+                            allProcessors(tracks, input, output),
                             push2Colours(tracks),
                             push2MidiCommunicator(view, push2Colours),
-                            processorGraph(pluginManager, tracks, connections, input, output, undoManager, deviceManager, push2MidiCommunicator),
-                            project(view, tracks, connections, input, output, processorGraph, undoManager, pluginManager, deviceManager) {}
+                            processorGraph(allProcessors, pluginManager, tracks, connections, input, output, undoManager, deviceManager, push2MidiCommunicator),
+                            project(view, tracks, connections, input, output, allProcessors, processorGraph, undoManager, pluginManager, deviceManager) {}
 
     const String getApplicationName() override { return PROJECT_NAME; }
 
@@ -516,6 +517,7 @@ private:
     Connections connections;
     Input input;
     Output output;
+    AllProcessors allProcessors;
 
     Push2Colours push2Colours;
     Push2MidiCommunicator push2MidiCommunicator;
@@ -590,26 +592,24 @@ private:
             getUserSettings()->saveIfNeeded();
 
             deviceManager.updateEnabledMidiInputsAndOutputs();
-            Array<ValueTree> inputProcessorsToDelete = input.syncInputDevicesWithDeviceManager();
-            for (const auto &inputProcessorState : inputProcessorsToDelete) {
-                Processor inputProcessor(inputProcessorState);
-                undoManager.perform(new DeleteProcessor(inputProcessor, tracks.getTrackForProcessorState(inputProcessorState), connections, processorGraph));
+            auto inputProcessorsToDelete = input.syncInputDevicesWithDeviceManager();
+            for (auto *inputProcessor : inputProcessorsToDelete) {
+                undoManager.perform(new DeleteProcessor(inputProcessor, tracks, connections, processorGraph));
             }
             AudioDeviceManager::AudioDeviceSetup config;
             deviceManager.getAudioDeviceSetup(config);
             // TODO the undomanager behavior around this needs more thinking.
             //  This should be done along with the work to keep disabled IO devices in the graph if they still have connections
-            Processor::setDeviceName(input.getState(), config.inputDeviceName);
+            input.setDeviceName(config.inputDeviceName);
 
             deviceManager.updateEnabledMidiInputsAndOutputs();
-            Array<ValueTree> outputProcessorsToDelete = output.syncOutputDevicesWithDeviceManager();
-            for (const auto &outputProcessorState : outputProcessorsToDelete) {
-                Processor outputProcessor(outputProcessorState);
-                undoManager.perform(new DeleteProcessor(outputProcessor, tracks.getTrackForProcessorState(outputProcessorState), connections, processorGraph));
+            auto outputProcessorsToDelete = output.syncOutputDevicesWithDeviceManager();
+            for (auto *outputProcessor : outputProcessorsToDelete) {
+                undoManager.perform(new DeleteProcessor(outputProcessor, tracks, connections, processorGraph));
             }
             // TODO the undomanager behavior around this needs more thinking.
             //  This should be done along with the work to keep disabled IO devices in the graph if they still have connections
-            Processor::setDeviceName(output.getState(), config.outputDeviceName);
+            output.setDeviceName(config.outputDeviceName);
         }
     }
 };

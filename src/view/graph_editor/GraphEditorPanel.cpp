@@ -152,8 +152,8 @@ void GraphEditorPanel::endDraggingConnector(const MouseEvent &e) {
 
 BaseGraphEditorProcessor *GraphEditorPanel::getProcessorForNodeId(const AudioProcessorGraph::NodeID nodeId) const {
     if (auto *inputProcessor = graphEditorInput.findProcessorForNodeId(nodeId)) return inputProcessor;
-    else if (auto *outputProcessor = graphEditorOutput.findProcessorForNodeId(nodeId)) return outputProcessor;
-    else return graphEditorTracks->getProcessorForNodeId(nodeId);
+    if (auto *outputProcessor = graphEditorOutput.findProcessorForNodeId(nodeId)) return outputProcessor;
+    return graphEditorTracks->getProcessorForNodeId(nodeId);
 }
 
 bool GraphEditorPanel::closeAnyOpenPluginWindows() {

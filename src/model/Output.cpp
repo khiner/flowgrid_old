@@ -11,11 +11,11 @@ Output::~Output() {
     freeObjects();
 }
 
-Array<ValueTree> Output::syncOutputDevicesWithDeviceManager() {
-    Array<ValueTree> outputProcessorsToDelete;
-    for (const auto &outputProcessor : state) {
-        if (outputProcessor.hasProperty(ProcessorIDs::deviceName)) {
-            const String &deviceName = Processor::getDeviceName(outputProcessor);
+Array<Processor *> Output::syncOutputDevicesWithDeviceManager() {
+    Array<Processor *> outputProcessorsToDelete;
+    for (auto *outputProcessor : children) {
+        if (outputProcessor->hasDeviceName()) {
+            const String &deviceName = outputProcessor->getDeviceName();
             if (!MidiOutput::getDevices().contains(deviceName) || !deviceManager.isMidiOutputEnabled(deviceName)) {
                 outputProcessorsToDelete.add(outputProcessor);
             }

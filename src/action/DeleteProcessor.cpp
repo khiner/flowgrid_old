@@ -2,48 +2,45 @@
 
 #include "view/PluginWindowType.h"
 
-DeleteProcessor::DeleteProcessor(Processor processorToDelete, Track *track, Connections &connections, ProcessorGraph &processorGraph)
-        : track(track->copy()), trackIndex(track->getIndex()),
-          processorToDelete(std::move(processorToDelete)),
-          processorIndex(processorToDelete.getIndex()),
-          pluginWindowType(processorToDelete.getPluginWindowType()),
-          disconnectProcessorAction(DisconnectProcessor(connections, &processorToDelete, all, true, true, true, true)),
-          processorGraph(processorGraph) {}
+DeleteProcessor::DeleteProcessor(Processor *processor, Tracks &tracks, Connections &connections, ProcessorGraph &processorGraph)
+        : trackIndex(tracks.getTrackForProcessor(processor)->getIndex()), processorSlot(processor->isTrackIOProcessor() ? -1 : processor->getSlot()), processorIndex(processor->getIndex()),
+          pluginWindowType(processor->getPluginWindowType()), graphIsFrozen(processorGraph.areAudioGraphUpdatesPaused()), processorState(processorGraph.getProcessorWrappers().saveProcessorInformationToState(processor)),
+          disconnectProcessorAction(DisconnectProcessor(connections, processor, all, true, true, true, true)),
+          tracks(tracks), processorGraph(processorGraph) {}
 
 bool DeleteProcessor::perform() {
-    processorGraph.getProcessorWrappers().saveProcessorInformationToState(&processorToDelete);
-    performTemporary();
-    processorToDelete.setPluginWindowType(static_cast<int>(PluginWindowType::none));
-    processorGraph.onProcessorDestroyed(&processorToDelete);
+    tracks.getProcessorAt(trackIndex, processorSlot)->setPluginWindowType(static_cast<int>(PluginWindowType::none));
+    performTemporary(true);
     return true;
 }
 
 bool DeleteProcessor::undo() {
-    if (processorToDelete.isTrackIOProcessor())
-        track.getState().appendChild(processorToDelete.getState(), nullptr);
-    else
-        track.getProcessorLane()->add(processorToDelete.getState(), processorIndex);
-    processorGraph.onProcessorCreated(&processorToDelete);
-    processorToDelete.setPluginWindowType(pluginWindowType);
-    disconnectProcessorAction.undo();
+    undoTemporary(true);
+    tracks.getProcessorAt(trackIndex, processorSlot)->setPluginWindowType(pluginWindowType);
 
     return true;
 }
 
-bool DeleteProcessor::performTemporary() {
+bool DeleteProcessor::performTemporary(bool apply) {
+    if (!apply) processorGraph.pauseAudioGraphUpdates();
     disconnectProcessorAction.perform();
-    if (processorToDelete.isTrackIOProcessor())
-        track.getState().removeChild(processorToDelete.getState(), nullptr);
-    else
-        track.getProcessorLane()->remove(processorToDelete.getState());
+    if (processorSlot == -1) {
+        tracks.getChild(trackIndex)->getState().removeChild(processorState, nullptr);
+    } else {
+        tracks.getChild(trackIndex)->getProcessorLane()->remove(processorIndex);
+    }
+    if (!graphIsFrozen && apply) processorGraph.resumeAudioGraphUpdatesAndApplyDiffSincePause();
     return true;
 }
 
-bool DeleteProcessor::undoTemporary() {
-    if (processorToDelete.isTrackIOProcessor())
-        track.getState().appendChild(processorToDelete.getState(), nullptr);
-    else
-        track.getProcessorLane()->add(processorToDelete.getState(), processorIndex);
+bool DeleteProcessor::undoTemporary(bool apply) {
+    if (!apply) processorGraph.pauseAudioGraphUpdates();
+    if (processorSlot == -1) {
+        tracks.getChild(trackIndex)->getState().appendChild(processorState, nullptr);
+    } else {
+        tracks.getChild(trackIndex)->getProcessorLane()->add(processorState, processorIndex);
+    }
     disconnectProcessorAction.undo();
+    if (!graphIsFrozen && apply) processorGraph.resumeAudioGraphUpdatesAndApplyDiffSincePause();
     return true;
 }

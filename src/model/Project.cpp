@@ -17,13 +17,14 @@
 #include "ApplicationPropertiesAndCommandManager.h"
 
 Project::Project(View &view, Tracks &tracks, Connections &connections, Input &input, Output &output,
-                 ProcessorGraph &processorGraph, UndoManager &undoManager, PluginManager &pluginManager, AudioDeviceManager &deviceManager)
+                 AllProcessors &allProcessors, ProcessorGraph &processorGraph, UndoManager &undoManager, PluginManager &pluginManager, AudioDeviceManager &deviceManager)
         : FileBasedDocument(getFilenameSuffix(), "*" + getFilenameSuffix(), "Load a project", "Save project"),
           view(view),
           tracks(tracks),
           connections(connections),
           input(input),
           output(output),
+          allProcessors(allProcessors),
           processorGraph(processorGraph),
           undoManager(undoManager),
           pluginManager(pluginManager),
@@ -119,7 +120,7 @@ void Project::insert() {
     if (isCurrentlyDraggingProcessor())
         endDraggingProcessor();
     undoManager.beginNewTransaction();
-    undoManager.perform(new Insert(false, copiedTracks, view.getFocusedTrackAndSlot(), tracks, connections, view, input, processorGraph));
+    undoManager.perform(new Insert(false, copiedTracks, view.getFocusedTrackAndSlot(), tracks, connections, view, input, allProcessors, processorGraph));
     updateAllDefaultConnections();
 }
 
@@ -129,7 +130,7 @@ void Project::duplicateSelectedItems() {
     OwnedArray<Track> duplicateTracks;
     tracks.copySelectedItemsInto(duplicateTracks, processorGraph.getProcessorWrappers());
     undoManager.beginNewTransaction();
-    undoManager.perform(new Insert(true, duplicateTracks, view.getFocusedTrackAndSlot(), tracks, connections, view, input, processorGraph));
+    undoManager.perform(new Insert(true, duplicateTracks, view.getFocusedTrackAndSlot(), tracks, connections, view, input, allProcessors, processorGraph));
     updateAllDefaultConnections();
 }
 
@@ -174,7 +175,7 @@ void Project::dragToPosition(juce::Point<int> trackAndSlot) {
 
     if (trackAndSlot == initialDraggingTrackAndSlot ||
         undoManager.perform(new MoveSelectedItems(initialDraggingTrackAndSlot, trackAndSlot, isAltHeld(),
-                                                  tracks, connections, view, input, output, processorGraph))) {
+                                                  tracks, connections, view, input, output, allProcessors, processorGraph))) {
         currentlyDraggingTrackAndSlot = trackAndSlot;
     }
 }
@@ -186,15 +187,15 @@ void Project::setProcessorSlotSelected(Track *track, int slot, bool selected, bo
     if (selected) {
         const juce::Point<int> trackAndSlot(track->getIndex(), slot);
         if (push2ShiftHeld || shiftHeld)
-            selectAction = new SelectRectangle(selectionStartTrackAndSlot, trackAndSlot, tracks, connections, view, input, processorGraph);
+            selectAction = new SelectRectangle(selectionStartTrackAndSlot, trackAndSlot, tracks, connections, view, input, allProcessors, processorGraph);
         else
             selectionStartTrackAndSlot = trackAndSlot;
     }
     if (selectAction == nullptr) {
         if (slot == -1)
-            selectAction = new SelectTrack(track, selected, deselectOthers, tracks, connections, view, input, processorGraph);
+            selectAction = new SelectTrack(track, selected, deselectOthers, tracks, connections, view, input, allProcessors, processorGraph);
         else
-            selectAction = new SelectProcessorSlot(track, slot, selected, selected && deselectOthers, tracks, connections, view, input, processorGraph);
+            selectAction = new SelectProcessorSlot(track, slot, selected, selected && deselectOthers, tracks, connections, view, input, allProcessors, processorGraph);
     }
     undoManager.perform(selectAction);
 }
@@ -215,7 +216,7 @@ bool Project::disconnectCustom(Processor *processor) {
 void Project::setDefaultConnectionsAllowed(Processor *processor, bool defaultConnectionsAllowed) {
     undoManager.beginNewTransaction();
     undoManager.perform(new SetDefaultConnectionsAllowed(processor, defaultConnectionsAllowed, connections));
-    undoManager.perform(new ResetDefaultExternalInputConnectionsAction(connections, tracks, input, processorGraph));
+    undoManager.perform(new ResetDefaultExternalInputConnectionsAction(connections, tracks, input, allProcessors, processorGraph));
 }
 
 void Project::toggleProcessorBypass(Processor *processor) {
@@ -242,7 +243,7 @@ void Project::createDefaultProject() {
     createTrack(false);
     doCreateAndAddProcessor(SineBank::getPluginDescription(), tracks.getMostRecentlyCreatedTrack(), 0);
     // Select action only does this if the focused track changes, so we just need to do this once ourselves
-    undoManager.perform(new ResetDefaultExternalInputConnectionsAction(connections, tracks, input, processorGraph));
+    undoManager.perform(new ResetDefaultExternalInputConnectionsAction(connections, tracks, input, allProcessors, processorGraph));
     undoManager.clearUndoHistory();
     sendChangeMessage();
 }
@@ -273,7 +274,7 @@ void Project::changeListenerCallback(ChangeBroadcaster *source) {
 }
 
 void Project::updateAllDefaultConnections() {
-    undoManager.perform(new UpdateAllDefaultConnections(false, true, tracks, connections, input, output, processorGraph));
+    undoManager.perform(new UpdateAllDefaultConnections(false, true, tracks, connections, input, output, allProcessors, processorGraph));
 }
 
 Result Project::loadDocument(const File &file) {

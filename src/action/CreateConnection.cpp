@@ -1,12 +1,11 @@
 #include "CreateConnection.h"
 
 // TODO iterate through state instead of getProcessorForNodeId
-CreateConnection::CreateConnection(const AudioProcessorGraph::Connection &connection, bool isDefault, Connections &connections, ProcessorGraph &processorGraph)
+CreateConnection::CreateConnection(const AudioProcessorGraph::Connection &connection, bool isDefault, Connections &connections, AllProcessors &allProcessors, ProcessorGraph &processorGraph)
         : CreateOrDeleteConnections(connections) {
-    const auto &processorWrappers = processorGraph.getProcessorWrappers();
     if (processorGraph.canAddConnection(connection) &&
-        (!isDefault || (processorWrappers.getProcessorForNodeId(connection.source.nodeID)->allowsDefaultConnections() &&
-                        processorWrappers.getProcessorForNodeId(connection.destination.nodeID)->allowsDefaultConnections()))) {
+        (!isDefault || (allProcessors.getProcessorByNodeId(connection.source.nodeID)->allowsDefaultConnections() &&
+                        allProcessors.getProcessorByNodeId(connection.destination.nodeID)->allowsDefaultConnections()))) {
         addConnection(stateForConnection(connection, isDefault));
     }
 }

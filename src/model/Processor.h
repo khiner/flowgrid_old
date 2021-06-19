@@ -1,8 +1,10 @@
 #pragma once
 
 #include <juce_audio_processors/juce_audio_processors.h>
+#include <juce_audio_devices/juce_audio_devices.h>
 
 #include "Stateful.h"
+#include "model/Channel.h"
 #include "InputChannels.h"
 #include "OutputChannels.h"
 #include "Param.h"
@@ -32,9 +34,9 @@ ID(pluginWindowY)
 }
 
 // TODO override loadFromState
-struct Processor : public Stateful<Processor> {
-    Processor(): Stateful<Processor>() {}
-    explicit Processor(ValueTree state): Stateful<Processor>(std::move(state)) {}
+struct Processor : public Stateful<Processor>, public AudioProcessorListener {
+    Processor(UndoManager &undoManager, AudioDeviceManager &deviceManager): Stateful<Processor>(), undoManager(undoManager), deviceManager(deviceManager) {}
+    explicit Processor(ValueTree state, UndoManager &undoManager, AudioDeviceManager &deviceManager): Stateful<Processor>(std::move(state)), undoManager(undoManager), deviceManager(deviceManager) {}
 
     static ValueTree initState(const PluginDescription &description) {
         ValueTree state(getIdentifier());
@@ -53,6 +55,7 @@ struct Processor : public Stateful<Processor> {
     int getIndex() const { return state.getParent().indexOf(state); }
     String getName() const { return state[ProcessorIDs::name]; }
     String getDeviceName() const { return state[ProcessorIDs::deviceName]; }
+    bool hasDeviceName() const { return state.hasProperty(ProcessorIDs::deviceName); }
     int getSlot() const { return state[ProcessorIDs::slot]; }
     AudioProcessorGraph::NodeID getNodeId() const { return state.isValid() ? AudioProcessorGraph::NodeID(static_cast<uint32>(int(state[ProcessorIDs::nodeId]))) : AudioProcessorGraph::NodeID{}; }
     bool hasNodeId() const { return state.hasProperty(ProcessorIDs::nodeId); }
@@ -89,7 +92,6 @@ struct Processor : public Stateful<Processor> {
     void setNodeId(AudioProcessorGraph::NodeID nodeId) { state.setProperty(ProcessorIDs::nodeId, int(nodeId.uid), nullptr); }
     void setName(const String &name) { state.setProperty(ProcessorIDs::name, name, nullptr); }
     void setDeviceName(const String &deviceName) { state.setProperty(ProcessorIDs::deviceName, deviceName, nullptr); }
-    void setDeviceName(const int nodeId) { state.setProperty(ProcessorIDs::nodeId, nodeId, nullptr); }
     void setSlot(int slot) { state.setProperty(ProcessorIDs::slot, slot, nullptr); }
     void setProcessorState(const String &processorState) { state.setProperty(ProcessorIDs::state, processorState, nullptr); }
     void setInitialized(bool initialized) { state.setProperty(ProcessorIDs::initialized, initialized, nullptr); }
@@ -114,23 +116,11 @@ struct Processor : public Stateful<Processor> {
     static int getNumOutputChannels(const ValueTree &state) { return state.getChildWithName(OutputChannelsIDs::OUTPUT_CHANNELS).getNumChildren(); }
 
     static bool isIoProcessor(const ValueTree &state) { return InternalPluginFormat::isIoProcessor(state[ProcessorIDs::name]); }
-    static bool isTrackInputProcessor(const ValueTree &state) { return getName(state) == InternalPluginFormat::getTrackInputProcessorName(); }
-    static bool isTrackOutputProcessor(const ValueTree &state) { return getName(state) == InternalPluginFormat::getTrackOutputProcessorName(); }
-    static bool isTrackIOProcessor(const ValueTree &state) { return isTrackInputProcessor(state) || isTrackOutputProcessor(state); }
-    static bool isMidiInputProcessor(const ValueTree &state) { return InternalPluginFormat::isMidiInputProcessor(getName(state)); }
-    static bool isMidiOutputProcessor(const ValueTree &state) { return InternalPluginFormat::isMidiOutputProcessor(getName(state)); }
 
     static void setId(ValueTree &state, const String &id) { state.setProperty(ProcessorIDs::id, id, nullptr); }
     static void setProcessorState(ValueTree &state, const String &processorState) { state.setProperty(ProcessorIDs::state, processorState, nullptr); }
-    static void setNodeId(ValueTree &state, AudioProcessorGraph::NodeID nodeId) { state.setProperty(ProcessorIDs::nodeId, int(nodeId.uid), nullptr); }
     static void setName(ValueTree &state, const String &name) { state.setProperty(ProcessorIDs::name, name, nullptr); }
     static void setDeviceName(ValueTree &state, const String &deviceName) { state.setProperty(ProcessorIDs::deviceName, deviceName, nullptr); }
-    static void setSlot(ValueTree &state, int slot) { state.setProperty(ProcessorIDs::slot, slot, nullptr); }
-    static void setProducesMidi(ValueTree &state, bool producesMidi) { state.setProperty(ProcessorIDs::producesMidi, producesMidi, nullptr); }
-    static void setAcceptsMidi(ValueTree &state, bool acceptsMidi) { state.setProperty(ProcessorIDs::acceptsMidi, acceptsMidi, nullptr); }
-    static void setAllowsDefaultConnections(ValueTree &state, bool allowsDefaultConnections) { state.setProperty(ProcessorIDs::allowDefaultConnections, allowsDefaultConnections, nullptr); }
-    static void setPluginWindowX(ValueTree &state, int pluginWindowX) { state.setProperty(ProcessorIDs::pluginWindowX, pluginWindowX, nullptr); }
-    static void setPluginWindowY(ValueTree &state, int pluginWindowY) { state.setProperty(ProcessorIDs::pluginWindowY, pluginWindowY, nullptr); }
 
     static AudioProcessorGraph::Connection toProcessorGraphConnection(const ValueTree &state) {
         return {{fg::Connection::getSourceNodeId(state),      fg::Connection::getSourceChannel(state)},
@@ -146,4 +136,37 @@ struct Processor : public Stateful<Processor> {
         return (connectionType == audio && Processor::getNumOutputChannels(state) > 0) ||
                (connectionType == midi && Processor::producesMidi(state));
     }
+
+
+private:
+    UndoManager &undoManager;
+    AudioDeviceManager &deviceManager;
+
+    struct Channel {
+        Channel(AudioProcessor *audioProcessor, AudioDeviceManager &deviceManager, int channelIndex, bool isInput);
+        Channel(const ValueTree &state);
+
+        ValueTree toState() const {
+            ValueTree state(ChannelIDs::CHANNEL);
+            fg::Channel::setChannelIndex(state, channelIndex);
+            fg::Channel::setName(state, name);
+            fg::Channel::setAbbreviatedName(state, abbreviatedName);
+            return state;
+        }
+
+        bool operator==(const Channel &other) const noexcept { return name == other.name; }
+
+        int channelIndex;
+        String name;
+        String abbreviatedName;
+    };
+
+public:
+    void doAudioProcessorChanged(AudioProcessor *audioProcessor);
+    void updateChannels(Array<Channel> &oldChannels, Array<Channel> &newChannels, ValueTree &channelsState);
+
+    void audioProcessorChanged(AudioProcessor *processor, const ChangeDetails &details) override;
+    void audioProcessorParameterChanged(AudioProcessor *processor, int parameterIndex, float newValue) override {}
+    void audioProcessorParameterChangeGestureBegin(AudioProcessor *processor, int parameterIndex) override {}
+    void audioProcessorParameterChangeGestureEnd(AudioProcessor *processor, int parameterIndex) override {}
 };

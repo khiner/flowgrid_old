@@ -109,6 +109,7 @@ target_sources(FlowGrid PRIVATE
     src/push2/Push2DisplayBridge.h
     src/push2/Push2MidiCommunicator.cpp
     src/push2/Push2UsbCommunicator.h
+    src/model/AllProcessors.h
     src/model/Connection.cpp
     src/model/Connections.cpp
     src/model/Input.cpp

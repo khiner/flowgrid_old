@@ -4,9 +4,8 @@
 
 #include "PluginManager.h"
 #include "Stateful.h"
-#include "ConnectionType.h"
-#include "model/Tracks.h"
-
+#include "StatefulList.h"
+#include "Processor.h"
 
 namespace OutputIDs {
 #define ID(name) const juce::Identifier name(#name);
@@ -35,12 +34,21 @@ struct Output : public Stateful<Output>, private StatefulList<Processor> {
 
     void initializeDefault();
 
+    void setDeviceName(const String &deviceName) { state.setProperty(ProcessorIDs::deviceName, deviceName, nullptr); }
+
+    Processor *getProcessorByNodeId(juce::AudioProcessorGraph::NodeID nodeId) const {
+        for (auto *processor : children)
+            if (processor->getNodeId() == nodeId)
+                return processor;
+        return nullptr;
+    }
+
     ValueTree getAudioOutputProcessorState() const {
         return state.getChildWithProperty(ProcessorIDs::name, pluginManager.getAudioOutputDescription().name);
     }
 
     // Returns output processors to delete
-    Array<ValueTree> syncOutputDevicesWithDeviceManager();
+    Array<Processor *> syncOutputDevicesWithDeviceManager();
 
 private:
     ListenerList<Listener> listeners;
@@ -49,7 +57,7 @@ private:
     UndoManager &undoManager;
     AudioDeviceManager &deviceManager;
 
-    Processor *createNewObject(const ValueTree &tree) override { return new Processor(tree); }
+    Processor *createNewObject(const ValueTree &tree) override { return new Processor(tree, undoManager, deviceManager); }
     void deleteObject(Processor *processor) override { delete processor; }
     void newObjectAdded(Processor *processor) override {
         if (processor->isMidiOutputProcessor() && !deviceManager.isMidiOutputEnabled(processor->getDeviceName()))

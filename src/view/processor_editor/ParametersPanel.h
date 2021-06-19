@@ -9,9 +9,9 @@ public:
 
     ~ParametersPanel() override;
 
-    void setProcessorWrapper(StatefulAudioProcessorWrapper *processorWrapper);
+    void setProcessor(StatefulAudioProcessorWrapper *processorWrapper, const Processor *processor);
 
-    Processor *getProcessor() const { return processorWrapper != nullptr ? processorWrapper->processor : nullptr; }
+    const Processor *getProcessor() const { return processor; }
 
     void addParameter(StatefulAudioProcessorWrapper::Parameter *parameter);
 
@@ -50,6 +50,7 @@ private:
     OwnedArray<ParameterDisplayComponent> paramComponents;
     OwnedArray<StatefulAudioProcessorWrapper::Parameter> parameters;
     StatefulAudioProcessorWrapper *processorWrapper{};
+    const Processor *processor{};
 
     Colour backgroundColour = Colours::transparentBlack;
     Colour outlineColour = Colours::transparentBlack;

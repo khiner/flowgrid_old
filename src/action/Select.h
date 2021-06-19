@@ -5,8 +5,8 @@
 #include "ResetDefaultExternalInputConnectionsAction.h"
 
 struct Select : public UndoableAction {
-    Select(Tracks &tracks, Connections &connections, View &view, Input &input, ProcessorGraph &processorGraph);
-    Select(Select *coalesceLeft, Select *coalesceRight, Tracks &tracks, Connections &connections, View &view, Input &input, ProcessorGraph &processorGraph);
+    Select(Tracks &, Connections &, View &, Input &, AllProcessors &, ProcessorGraph &);
+    Select(Select *coalesceLeft, Select *coalesceRight, Tracks &, Connections &, View &, Input &, AllProcessors &, ProcessorGraph &);
 
     void setNewFocusedSlot(juce::Point<int> newFocusedSlot, bool resetDefaultExternalInputs = true);
     Track *getNewFocusedTrack() { return tracks.getChild(newFocusedSlot.x); }
@@ -27,6 +27,7 @@ protected:
     Connections &connections;
     View &view;
     Input &input;
+    AllProcessors &allProcessors;
     ProcessorGraph &processorGraph;
 
     Array<BigInteger> oldSelectedSlotsMasks, newSelectedSlotsMasks;
