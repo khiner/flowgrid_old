@@ -103,7 +103,7 @@ void BaseGraphEditorProcessor::layoutChannel(AudioProcessor *audioProcessor, Gra
 
 void BaseGraphEditorProcessor::valueTreeChildAdded(ValueTree &parent, ValueTree &child) {
     if (fg::Channel::isType(child)) {
-        auto *channel = new GraphEditorChannel(child, track, connectorDragListener, processor->isIoProcessor());
+        auto *channel = new GraphEditorChannel(child, track, processor, connectorDragListener, processor->isIoProcessor());
         addAndMakeVisible(channel);
         channels.add(channel);
         resized();

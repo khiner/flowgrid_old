@@ -6,13 +6,13 @@
 #include "ConnectorDragListener.h"
 
 struct GraphEditorChannel : public Component, public SettableTooltipClient, private ValueTree::Listener {
-    GraphEditorChannel(ValueTree state, Track *track, ConnectorDragListener &connectorDragListener, bool showChannelText = false);
+    GraphEditorChannel(ValueTree state, Track *track, Processor *processor, ConnectorDragListener &connectorDragListener, bool showChannelText = false);
 
     ~GraphEditorChannel() override;
 
     const ValueTree &getState() { return state; }
 
-    Processor *getProcessor() const { return track->getProcessorLane()->getChildForState(state.getParent().getParent()); }
+    Processor *getProcessor() const { return processor; }
     bool isInput() const { return state.getParent().hasType(InputChannelsIDs::INPUT_CHANNELS); }
     bool isMidi() const { return fg::Channel::getChannelIndex(state) == AudioProcessorGraph::midiChannelIndex; }
     AudioProcessorGraph::NodeAndChannel getNodeAndChannel() const;
@@ -42,6 +42,7 @@ private:
 
     ValueTree state;
     Track *track;
+    Processor *processor;
     int busIdx = 0;
     ConnectorDragListener &connectorDragListener;
 

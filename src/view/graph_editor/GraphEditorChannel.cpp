@@ -1,7 +1,7 @@
 #include "GraphEditorChannel.h"
 
-GraphEditorChannel::GraphEditorChannel(ValueTree state, Track *track, ConnectorDragListener &connectorDragListener, bool showChannelText)
-        : state(std::move(state)), track(track), connectorDragListener(connectorDragListener),
+GraphEditorChannel::GraphEditorChannel(ValueTree state, Track *track, Processor *processor, ConnectorDragListener &connectorDragListener, bool showChannelText)
+        : state(std::move(state)), track(track), processor(processor), connectorDragListener(connectorDragListener),
           channelLabel(isMidi(), showChannelText) {
     valueTreePropertyChanged(this->state, ChannelIDs::abbreviatedName);
     this->state.addListener(this);
