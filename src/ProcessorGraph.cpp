@@ -89,6 +89,8 @@ void ProcessorGraph::removeProcessor(Processor *processor) {
     processorWrappers.erase(nodeId);
     nodes.removeObject(AudioProcessorGraph::getNodeForId(nodeId));
     topologyChanged();
+    if (lastNodeID == nodeId)
+        lastNodeID.uid -= 1;
 }
 
 bool ProcessorGraph::canAddConnection(const Connection &c) {

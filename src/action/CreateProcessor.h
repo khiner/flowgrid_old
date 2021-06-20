@@ -21,7 +21,6 @@ struct CreateProcessor : public UndoableAction {
 
     int trackIndex, slot;
 private:
-    const PluginDescription description;
     Processor *createdProcessor;
     int pluginWindowType;
     InsertProcessor insertAction;

@@ -92,16 +92,17 @@ void Processor::doAudioProcessorChanged(AudioProcessor *audioProcessor) {
 }
 
 void Processor::updateChannels(Array<Channel> &oldChannels, Array<Channel> &newChannels, ValueTree &channelsState) {
+    auto *undoManagerToUse = undoManager.isPerformingUndoRedo() ? nullptr : &undoManager; // This can happen during initial processor creation.
     for (int i = 0; i < oldChannels.size(); i++) {
         const auto &oldChannel = oldChannels.getUnchecked(i);
         if (!newChannels.contains(oldChannel)) {
-            channelsState.removeChild(channelsState.getChildWithProperty(ChannelIDs::name, oldChannel.name), &undoManager);
+            channelsState.removeChild(channelsState.getChildWithProperty(ChannelIDs::name, oldChannel.name), undoManagerToUse);
         }
     }
     for (int i = 0; i < newChannels.size(); i++) {
         const auto &newChannel = newChannels.getUnchecked(i);
         if (!oldChannels.contains(newChannel)) {
-            channelsState.addChild(newChannel.toState(), i, &undoManager);
+            channelsState.addChild(newChannel.toState(), i, undoManagerToUse);
         }
     }
 }

@@ -18,7 +18,7 @@ CreateProcessor::CreateProcessor(juce::Point<int> derivedFromTrackAndSlot, int t
           tracks(tracks) {}
 
 CreateProcessor::CreateProcessor(const PluginDescription &description, int trackIndex, int slot, Tracks &tracks, View &view, ProcessorGraph &processorGraph)
-        :  trackIndex(trackIndex), slot(slot), description(description), pluginWindowType(static_cast<int>(PluginWindowType::none)),
+        :  trackIndex(trackIndex), slot(slot), pluginWindowType(static_cast<int>(PluginWindowType::none)),
           insertAction(description, trackIndex, slot, tracks, view),tracks(tracks) {}
 
 CreateProcessor::CreateProcessor(const PluginDescription &description, int trackIndex, Tracks &tracks, View &view, ProcessorGraph &processorGraph)
