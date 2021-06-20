@@ -9,17 +9,6 @@ TrackOutputGraphEditorProcessor::TrackOutputGraphEditorProcessor(Processor *proc
         BaseGraphEditorProcessor(processor, track, view, processorWrappers, connectorDragListener) {
 }
 
-TrackOutputGraphEditorProcessor::~TrackOutputGraphEditorProcessor() {
-    if (panSlider != nullptr && panParameter != nullptr) {
-        panParameter->detachParameterControl(panSlider.get());
-    }
-    if (levelMeter != nullptr && gainParameter != nullptr) {
-        gainParameter->detachParameterControl(levelMeter.get());
-    }
-    panParameter = nullptr;
-    gainParameter = nullptr;
-}
-
 void TrackOutputGraphEditorProcessor::resized() {
     BaseGraphEditorProcessor::resized();
 

@@ -8,8 +8,6 @@ class TrackOutputGraphEditorProcessor : public BaseGraphEditorProcessor {
 public:
     TrackOutputGraphEditorProcessor(Processor *processor, Track *track, View &view, StatefulAudioProcessorWrappers &processorWrappers, ConnectorDragListener &connectorDragListener);
 
-    ~TrackOutputGraphEditorProcessor() override;
-
     void resized() override;
     void paint(Graphics &g) override;
 

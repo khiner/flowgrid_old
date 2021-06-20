@@ -15,14 +15,6 @@ TrackInputGraphEditorProcessor::TrackInputGraphEditorProcessor(Processor *proces
 
 TrackInputGraphEditorProcessor::~TrackInputGraphEditorProcessor() {
     nameLabel.removeMouseListener(this);
-    if (audioMonitorToggle != nullptr && audioMonitorParameter != nullptr) {
-        audioMonitorParameter->detachButton(audioMonitorToggle.get());
-    }
-    if (midiMonitorToggle != nullptr && midiMonitorParameter != nullptr) {
-        midiMonitorParameter->detachButton(midiMonitorToggle.get());
-    }
-    audioMonitorParameter = nullptr;
-    midiMonitorParameter = nullptr;
 }
 
 void TrackInputGraphEditorProcessor::mouseDown(const MouseEvent &e) {

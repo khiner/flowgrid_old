@@ -33,10 +33,9 @@ StatefulAudioProcessorWrapper::Parameter::Parameter(AudioProcessorParameter *par
 }
 
 StatefulAudioProcessorWrapper::Parameter::~Parameter() {
+    if (state.isValid()) state.removeListener(this);
     listeners.call(&Listener::parameterWillBeDestroyed, this);
 
-    if (state.isValid())
-        state.removeListener(this);
     sourceParameter->removeListener(this);
     for (auto *label : attachedLabels) {
         label->onTextChange = nullptr;
