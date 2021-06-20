@@ -254,10 +254,7 @@ void Project::doCreateAndAddProcessor(const PluginDescription &description, Trac
         return doCreateAndAddProcessor(description, tracks.getMostRecentlyCreatedTrack(), slot);
     }
 
-    if (slot == -1)
-        undoManager.perform(new CreateProcessor(description, track->getIndex(), tracks, view, allProcessors, processorGraph));
-    else
-        undoManager.perform(new CreateProcessor(description, track->getIndex(), slot, tracks, view, allProcessors, processorGraph));
+    undoManager.perform(new CreateProcessor(description, track->getIndex(), slot, tracks, view, allProcessors, processorGraph));
 
     if (auto *mostRecentlyCreatedProcessor = tracks.getMostRecentlyCreatedProcessor()) {
         setProcessorSlotSelected(track, mostRecentlyCreatedProcessor->getSlot(), true);

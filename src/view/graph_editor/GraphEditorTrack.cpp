@@ -81,29 +81,3 @@ void GraphEditorTrack::onColourChanged() {
     if (trackOutputProcessorView != nullptr)
         trackOutputProcessorView->setColour(ResizableWindow::backgroundColourId, track->getColour());
 }
-
-void GraphEditorTrack::trackInputProcessorChanged() {
-    auto *trackInputProcessor = track->getInputProcessor();
-    if (trackInputProcessor != nullptr) {
-        trackInputProcessorView = std::make_unique<TrackInputGraphEditorProcessor>(trackInputProcessor, track, view, project, processorWrappers, connectorDragListener);
-        addAndMakeVisible(trackInputProcessorView.get());
-        resized();
-    } else {
-        removeChildComponent(trackInputProcessorView.get());
-        trackInputProcessorView = nullptr;
-    }
-    onColourChanged();
-}
-
-void GraphEditorTrack::trackOutputProcessorChanged() {
-    auto *trackOutputProcessor = track->getOutputProcessor();
-    if (trackOutputProcessor != nullptr) {
-        trackOutputProcessorView = std::make_unique<TrackOutputGraphEditorProcessor>(trackOutputProcessor, track, view, processorWrappers, connectorDragListener);
-        addAndMakeVisible(trackOutputProcessorView.get());
-        resized();
-    } else {
-        removeChildComponent(trackOutputProcessorView.get());
-        trackOutputProcessorView = nullptr;
-    }
-    onColourChanged();
-}

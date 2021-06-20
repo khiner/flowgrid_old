@@ -14,6 +14,7 @@ struct InsertProcessor : UndoableAction {
     // slot of -1 used for track-level processors (track IO processors that aren't in a lane).
     InsertProcessor(juce::Point<int> derivedFromTrackAndSlot, int toTrackIndex, int toSlot, Tracks &, View &);
     InsertProcessor(const PluginDescription &description, int toTrackIndex, int toSlot, Tracks &, View &);
+    InsertProcessor(const PluginDescription &description, int toTrackIndex, Tracks &, View &);
 
     bool perform() override;
     bool undo() override;
@@ -50,6 +51,7 @@ private:
     struct AddOrMoveProcessorAction : public UndoableAction {
         AddOrMoveProcessorAction(juce::Point<int> derivedFromTrackAndSlot, int newTrackIndex, int newSlot, Tracks &, View &);
         AddOrMoveProcessorAction(const PluginDescription &description, int newTrackIndex, int newSlot, Tracks &, View &);
+        AddOrMoveProcessorAction(const PluginDescription &description, int newTrackIndex, Tracks &, View &);
 
         bool perform() override;
         bool undo() override;
@@ -59,7 +61,7 @@ private:
         int oldTrackIndex, newTrackIndex;
         int oldSlot, newSlot;
         int oldIndex, newIndex;
-        SetProcessorSlotAction setProcessorSlotAction;
+        std::unique_ptr<SetProcessorSlotAction> setProcessorSlotAction;
         Tracks &tracks;
     };
 

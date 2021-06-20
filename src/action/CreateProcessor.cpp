@@ -18,16 +18,18 @@ CreateProcessor::CreateProcessor(juce::Point<int> derivedFromTrackAndSlot, int t
           allProcessors(allProcessors), processorGraph(processorGraph) {}
 
 CreateProcessor::CreateProcessor(const PluginDescription &description, int trackIndex, int slot, Tracks &tracks, View &view, AllProcessors &allProcessors, ProcessorGraph &processorGraph)
-        :  trackIndex(trackIndex), slot(slot), pluginWindowType(static_cast<int>(PluginWindowType::none)),
-          insertAction(std::make_unique<InsertProcessor>(description, trackIndex, slot, tracks, view)),
-          description(description), allProcessors(allProcessors), processorGraph(processorGraph) {}
+        :  trackIndex(trackIndex), slot(slot == -1 ? getInsertSlot(description, tracks.getChild(trackIndex)) : slot),
+           pluginWindowType(static_cast<int>(PluginWindowType::none)),
+           insertAction(std::make_unique<InsertProcessor>(description, trackIndex, slot, tracks, view)),
+           description(description), allProcessors(allProcessors), processorGraph(processorGraph) {}
 
 CreateProcessor::CreateProcessor(const PluginDescription &description, int trackIndex, Tracks &tracks, View &view, AllProcessors &allProcessors, ProcessorGraph &processorGraph)
-        : CreateProcessor(description, trackIndex, getInsertSlot(description, tracks.getChild(trackIndex)), tracks, view, allProcessors, processorGraph) {}
+        :  trackIndex(trackIndex), pluginWindowType(static_cast<int>(PluginWindowType::none)),
+           insertAction(std::make_unique<InsertProcessor>(description, trackIndex, tracks, view)),
+           description(description), allProcessors(allProcessors), processorGraph(processorGraph) {}
 
 CreateProcessor::CreateProcessor(const PluginDescription &description, AllProcessors &allProcessors, ProcessorGraph &processorGraph)
-        :  trackIndex(-1), slot(-1), pluginWindowType(static_cast<int>(PluginWindowType::none)),
-           description(description), allProcessors(allProcessors), processorGraph(processorGraph) {}
+        :  pluginWindowType(static_cast<int>(PluginWindowType::none)), description(description), allProcessors(allProcessors), processorGraph(processorGraph) {}
 
 bool CreateProcessor::perform() {
     performTemporary();

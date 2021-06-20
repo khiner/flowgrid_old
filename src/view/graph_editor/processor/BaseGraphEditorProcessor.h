@@ -49,13 +49,6 @@ public:
 
     virtual Rectangle<int> getBoxBounds() const;
 
-    class ElementComparator {
-    public:
-        static int compareElements(BaseGraphEditorProcessor *first, BaseGraphEditorProcessor *second) {
-            return first->getName().compare(second->getName());
-        }
-    };
-
 protected:
     Processor *processor;
     static constexpr float largeFontHeight = 18.0f;

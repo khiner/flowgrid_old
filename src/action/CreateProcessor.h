@@ -5,9 +5,13 @@
 #include "ProcessorGraph.h"
 
 struct CreateProcessor : public UndoableAction {
+    // Copy
     CreateProcessor(juce::Point<int> derivedFromTrackAndSlot, int trackIndex, int slot, Tracks &, View &, AllProcessors &, ProcessorGraph &);
+    // Insert in lane
     CreateProcessor(const PluginDescription &, int trackIndex, int slot, Tracks &, View &, AllProcessors &, ProcessorGraph &);
+    // Track IO
     CreateProcessor(const PluginDescription &, int trackIndex, Tracks &, View &, AllProcessors &, ProcessorGraph &);
+    // Global IO
     CreateProcessor(const PluginDescription &, AllProcessors &, ProcessorGraph &);
 
     bool perform() override;
@@ -28,7 +32,7 @@ struct CreateProcessor : public UndoableAction {
 
     int getSizeInUnits() override { return (int) sizeof(*this); }
 
-    int trackIndex, slot;
+    int trackIndex = -1, slot = -1;
 private:
     Processor *createdProcessor{};
     int pluginWindowType;

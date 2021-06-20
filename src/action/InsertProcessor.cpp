@@ -6,6 +6,9 @@ InsertProcessor::InsertProcessor(juce::Point<int> derivedFromTrackAndSlot, int t
 InsertProcessor::InsertProcessor(const PluginDescription &description, int toTrackIndex, int toSlot, Tracks &tracks, View &view)
         : addOrMoveProcessorAction(description, toTrackIndex, toSlot, tracks, view) {}
 
+InsertProcessor::InsertProcessor(const PluginDescription &description, int toTrackIndex, Tracks &tracks, View &view)
+        : addOrMoveProcessorAction(description, toTrackIndex, tracks, view) {}
+
 bool InsertProcessor::perform() {
     return addOrMoveProcessorAction.perform();
 }
@@ -65,15 +68,18 @@ InsertProcessor::AddOrMoveProcessorAction::AddOrMoveProcessorAction(juce::Point<
         : oldTrackIndex(derivedFromTrackAndSlot.getX()), newTrackIndex(newTrackIndex),
           oldSlot(derivedFromTrackAndSlot.getY()), newSlot(newSlot), oldIndex(tracks.getProcessorAt(derivedFromTrackAndSlot)->getIndex()),
           newIndex(tracks.getChild(newTrackIndex)->getInsertIndexForProcessor(tracks.getProcessorAt(derivedFromTrackAndSlot), tracks.getChild(oldTrackIndex)->getProcessorLane(), this->newSlot)),
-          setProcessorSlotAction(newTrackIndex, newIndex, derivedFromTrackAndSlot.getY(), newSlot, tracks, view),
+          setProcessorSlotAction(std::make_unique<SetProcessorSlotAction>(newTrackIndex, newIndex, derivedFromTrackAndSlot.getY(), newSlot, tracks, view)),
           tracks(tracks) {}
 
 InsertProcessor::AddOrMoveProcessorAction::AddOrMoveProcessorAction(const PluginDescription &description, int newTrackIndex, int newSlot, Tracks &tracks, View &view)
         : description(description), oldTrackIndex(-1), newTrackIndex(newTrackIndex),
           oldSlot(-1), newSlot(newSlot), oldIndex(-1),
-          newIndex(tracks.getChild(newTrackIndex)->getInsertIndexForProcessor(nullptr, nullptr, this->newSlot)),
-          setProcessorSlotAction(newTrackIndex, newIndex, oldSlot, newSlot, tracks, view),
+          newIndex(tracks.getChild(newTrackIndex)->getInsertIndexForProcessor(nullptr, nullptr, newSlot)),
+          setProcessorSlotAction(std::make_unique<SetProcessorSlotAction>(newTrackIndex, newIndex, oldSlot, newSlot, tracks, view)),
           tracks(tracks) {}
+
+InsertProcessor::AddOrMoveProcessorAction::AddOrMoveProcessorAction(const PluginDescription &description, int newTrackIndex, Tracks &tracks, View &view)
+        : description(description), oldTrackIndex(-1), newTrackIndex(newTrackIndex), oldSlot(-1), newSlot(-1), oldIndex(-1), newIndex(-1), tracks(tracks) {}
 
 bool InsertProcessor::AddOrMoveProcessorAction::perform() {
     auto *derivedFromProcessor = tracks.getProcessorAt(oldTrackIndex, oldSlot);
@@ -96,17 +102,17 @@ bool InsertProcessor::AddOrMoveProcessorAction::perform() {
         else
             newLane->getState().moveChildFromParent(oldLane->getState(), oldIndex, newIndex, nullptr);
     }
-    setProcessorSlotAction.perform();
+    if (setProcessorSlotAction != nullptr) setProcessorSlotAction->perform();
 
     return true;
 }
 
 bool InsertProcessor::AddOrMoveProcessorAction::undo() {
-    setProcessorSlotAction.undo();
+    if (setProcessorSlotAction != nullptr) setProcessorSlotAction->undo();
 
     auto *newTrack = tracks.getChild(newTrackIndex);
     if (newSlot == -1) {
-        newTrack->getState().removeChild(newIndex, nullptr);
+        newTrack->getState().removeChild(newTrack->getState().getNumChildren() - 1, nullptr);
         return true;
     }
 

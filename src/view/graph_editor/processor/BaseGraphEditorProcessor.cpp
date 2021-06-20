@@ -15,6 +15,7 @@ BaseGraphEditorProcessor::BaseGraphEditorProcessor(Processor *processor, Track *
 }
 
 BaseGraphEditorProcessor::~BaseGraphEditorProcessor() {
+    // TODO state will be removed from its parent by the time this is called. This will clean up when channels are refactored into StatefulLists.
     this->processor->getState().removeListener(this);
 }
 

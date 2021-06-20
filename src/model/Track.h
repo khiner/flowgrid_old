@@ -161,11 +161,11 @@ private:
         listeners.call([processor](Listener &l) { l.processorAdded(processor); });
     }
     void processorRemoved(Processor *processor, int oldIndex) override {
-        if (processor == audioInputProcessor.get()) audioInputProcessor.reset();
-        else if (processor == audioOutputProcessor.get()) audioOutputProcessor.reset();
-        else if (processor == midiInputProcessor.get()) midiInputProcessor.reset();
-        else if (processor == midiOutputProcessor.get()) midiOutputProcessor.reset();
         listeners.call([processor, oldIndex](Listener &l) { l.processorRemoved(processor, oldIndex); });
+        if (processor == audioInputProcessor.get()) audioInputProcessor = nullptr;
+        else if (processor == audioOutputProcessor.get()) audioOutputProcessor = nullptr;
+        else if (processor == midiInputProcessor.get()) midiInputProcessor = nullptr;
+        else if (processor == midiOutputProcessor.get()) midiOutputProcessor = nullptr;
     }
     void processorPropertyChanged(Processor *processor, const Identifier &i) override {
         listeners.call([processor, i](Listener &l) { l.processorPropertyChanged(processor, i); });

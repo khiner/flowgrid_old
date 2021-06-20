@@ -34,20 +34,30 @@ private:
     GraphEditorProcessorLanes lanes;
 
     void onColourChanged();
-    void trackInputProcessorChanged();
-    void trackOutputProcessorChanged();
 
     void processorAdded(Processor *processor) override {
-        if (processor->isTrackInputProcessor())
-            trackInputProcessorChanged();
-        else if (processor->isTrackOutputProcessor())
-            trackOutputProcessorChanged();
+        if (processor->isTrackInputProcessor()) {
+            trackInputProcessorView = std::make_unique<TrackInputGraphEditorProcessor>(processor, track, view, project, processorWrappers, connectorDragListener);
+            addAndMakeVisible(trackInputProcessorView.get());
+            resized();
+            onColourChanged();
+        } else if (processor->isTrackOutputProcessor()) {
+            trackOutputProcessorView = std::make_unique<TrackOutputGraphEditorProcessor>(processor, track, view, processorWrappers, connectorDragListener);
+            addAndMakeVisible(trackOutputProcessorView.get());
+            resized();
+            onColourChanged();
+        }
     }
     void processorRemoved(Processor *processor, int oldIndex) override {
-        if (processor->isTrackInputProcessor())
-            trackInputProcessorChanged();
-        else if (processor->isTrackOutputProcessor())
-            trackOutputProcessorChanged();
+        if (processor->isTrackInputProcessor()) {
+            removeChildComponent(trackInputProcessorView.get());
+            trackInputProcessorView = nullptr;
+            onColourChanged();
+        } else if (processor->isTrackOutputProcessor()) {
+            removeChildComponent(trackOutputProcessorView.get());
+            trackOutputProcessorView = nullptr;
+            onColourChanged();
+        }
     }
     void trackPropertyChanged(Track *track, const Identifier &i) override {
         if (i == TrackIDs::name) {
