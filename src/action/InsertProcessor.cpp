@@ -23,7 +23,7 @@ InsertProcessor::SetProcessorSlotAction::SetProcessorSlotAction(int trackIndex, 
     if (addProcessorRowActions.isEmpty()) {
         auto *conflictingProcessor = track != nullptr ? track->getProcessorAtSlot(newSlot) : nullptr;
         if (conflictingProcessor != nullptr)
-            pushConflictingProcessorAction = std::make_unique<SetProcessorSlotAction>(trackIndex, processorIndex, newSlot, newSlot + 1, tracks, view);
+            pushConflictingProcessorAction = std::make_unique<SetProcessorSlotAction>(trackIndex, conflictingProcessor->getIndex(), newSlot, newSlot + 1, tracks, view);
     }
 }
 
