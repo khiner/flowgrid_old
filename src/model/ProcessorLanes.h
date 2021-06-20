@@ -38,13 +38,13 @@ protected:
     ProcessorLane *createNewObject(const ValueTree &tree) override { return new ProcessorLane(tree, undoManager, deviceManager); }
     void deleteObject(ProcessorLane *processorLane) override { delete processorLane; }
     void newObjectAdded(ProcessorLane *processorLane) override {
-        listeners.call([processorLane](Listener &l) { l.processorLaneAdded(processorLane); });
+        listeners.call(&Listener::processorLaneAdded, processorLane);
     }
     void objectRemoved(ProcessorLane *processorLane, int oldIndex) override {
-        listeners.call([processorLane, oldIndex](Listener &l) { l.processorLaneRemoved(processorLane, oldIndex); });
+        listeners.call(&Listener::processorLaneRemoved, processorLane, oldIndex);
     }
-    void objectOrderChanged() override { listeners.call([](Listener &l) { l.processorLaneOrderChanged(); }); }
-    void objectChanged(ProcessorLane *lane, const Identifier &i) override { listeners.call([lane, i](Listener &l) { l.processorLanePropertyChanged(lane, i); }); }
+    void objectOrderChanged() override { listeners.call(&Listener::processorLaneOrderChanged); }
+    void objectChanged(ProcessorLane *lane, const Identifier &i) override {  listeners.call(&Listener::processorLanePropertyChanged, lane, i); }
 
 private:
     ListenerList<Listener> listeners;

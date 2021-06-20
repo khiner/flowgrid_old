@@ -64,10 +64,10 @@ private:
 
     void processorAdded(Processor *processor) override {
         mostRecentlyCreatedProcessor = processor;
-        listeners.call([processor](Listener &l) { l.processorAdded(processor); });
+        listeners.call(&Listener::processorAdded, processor);
     }
     void processorRemoved(Processor *processor, int oldIndex) override {
-        listeners.call([processor, oldIndex](Listener &l) { l.processorRemoved(processor, oldIndex); });
+        listeners.call(&Listener::processorRemoved, processor, oldIndex);
         mostRecentlyCreatedProcessor = nullptr;
     }
 };

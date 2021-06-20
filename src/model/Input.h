@@ -68,15 +68,15 @@ private:
     void newObjectAdded(Processor *processor) override {
         if (processor->isMidiInputProcessor() && !deviceManager.isMidiInputEnabled(processor->getDeviceName()))
             deviceManager.setMidiInputEnabled(processor->getDeviceName(), true);
-        listeners.call([processor](Listener &l) { l.processorAdded(processor); });
+        listeners.call(&Listener::processorAdded, processor);
     }
     void objectRemoved(Processor *processor, int oldIndex) override {
         if (processor->isMidiInputProcessor() && deviceManager.isMidiInputEnabled(processor->getDeviceName()))
             deviceManager.setMidiInputEnabled(processor->getDeviceName(), false);
-        listeners.call([processor, oldIndex](Listener &l) { l.processorRemoved(processor, oldIndex); });
+        listeners.call(&Listener::processorRemoved, processor, oldIndex);
     }
     void objectOrderChanged() override {
-        listeners.call([](Listener &l) { l.processorOrderChanged(); });
+        listeners.call(&Listener::processorOrderChanged);
     }
 
     void objectChanged(Processor *processor, const Identifier &i) override {
@@ -86,6 +86,6 @@ private:
             config.inputDeviceName = processor->getDeviceName();
             deviceManager.setAudioDeviceSetup(config, true);
         }
-        listeners.call([processor, i](Listener &l) { l.processorPropertyChanged(processor, i); });
+        listeners.call(&Listener::processorPropertyChanged, processor, i);
     }
 };

@@ -29,7 +29,7 @@ void Push2Colours::addColour(const Colour &colour) {
 void Push2Colours::setColour(uint8 colourIndex, const Colour &colour) {
     jassert(colourIndex > 0 && colourIndex < CHAR_MAX - 1);
     indexForColour[colour.toString()] = colourIndex;
-    listeners.call([colour, colourIndex](Listener &listener) { listener.colourAdded(colour, colourIndex); });
+    listeners.call(&Listener::colourAdded, colour, colourIndex);
 }
 
 void Push2Colours::trackAdded(Track *track) {
@@ -37,7 +37,7 @@ void Push2Colours::trackAdded(Track *track) {
     const auto &colour = track->getColour();
     auto index = findIndexForColourAddingIfNeeded(colour);
     indexForTrackUuid[uuid] = index;
-    listeners.call([uuid, colour](Listener &listener) { listener.trackColourChanged(uuid, colour); });
+    listeners.call(&Listener::trackColourChanged, uuid, colour);
 }
 void Push2Colours::trackRemoved(Track *track, int oldIndex) {
     const auto &uuid = track->getUuid();
@@ -51,6 +51,6 @@ void Push2Colours::trackPropertyChanged(Track *track, const Identifier &i) {
         auto index = indexForTrackUuid[uuid];
         const auto &colour = track->getColour();
         setColour(index, colour);
-        listeners.call([uuid, colour](Listener &listener) { listener.trackColourChanged(uuid, colour); });
+        listeners.call(&Listener::trackColourChanged, uuid, colour);
     }
 }

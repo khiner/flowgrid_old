@@ -26,8 +26,9 @@ public:
         float newValue = normalisableRange.convertTo0to1(newUnnormalisedValue);
         if (value != newValue) {
             value = newValue;
-            if (notification == sendNotificationSync)
-                listeners.call([this](Listener &l) { l.parameterControlValueChanged(this); });
+            if (notification == sendNotificationSync) {
+                listeners.call(&Listener::parameterControlValueChanged, this);
+            }
             resized(); // Could make this more efficient by only changing thumb position
             repaint();
         }
@@ -38,7 +39,7 @@ public:
     }
 
     void mouseDown(const MouseEvent &event) override {
-        listeners.call([this](Listener &l) { l.parameterControlDragStarted(this); });
+        listeners.call(&Listener::parameterControlDragStarted, this);
     }
 
     void mouseDrag(const MouseEvent &event) override {
@@ -47,7 +48,7 @@ public:
     }
 
     void mouseUp(const MouseEvent &event) override {
-        listeners.call([this](Listener &l) { l.parameterControlDragEnded(this); });
+        listeners.call(&Listener::parameterControlDragEnded, this);
     }
 
     class Listener {

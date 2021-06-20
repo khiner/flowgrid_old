@@ -208,15 +208,15 @@ protected:
     void newObjectAdded(Track *track) override {
         mostRecentlyCreatedTrack = track;
         track->addTrackListener(this);
-        listeners.call([track](Listener &l) { l.trackAdded(track); });
+        listeners.call(&Listener::trackAdded, track);
     }
     void objectRemoved(Track *track, int oldIndex) override {
-        listeners.call([track, oldIndex](Listener &l) { l.trackRemoved(track, oldIndex); });
+        listeners.call(&Listener::trackRemoved, track, oldIndex);
         track->removeTrackListener(this);
         if (track == mostRecentlyCreatedTrack) mostRecentlyCreatedTrack = nullptr;
     }
-    void objectOrderChanged() override { listeners.call([](Listener &l) { l.trackOrderChanged(); }); }
-    void objectChanged(Track *track, const Identifier &i) override { listeners.call([track, i](Listener &l) { l.trackPropertyChanged(track, i); }); }
+    void objectOrderChanged() override { listeners.call(&Listener::trackOrderChanged); }
+    void objectChanged(Track *track, const Identifier &i) override { listeners.call(&Listener::trackPropertyChanged, track, i); }
 
 private:
     View &view;
@@ -230,13 +230,13 @@ private:
 
     void processorAdded(Processor *processor) override {
         mostRecentlyCreatedProcessor = processor;
-        listeners.call([processor](Listener &l) { l.processorAdded(processor); });
+        listeners.call(&Listener::processorAdded, processor);
     }
     void processorRemoved(Processor *processor, int oldIndex) override {
-        listeners.call([processor, oldIndex](Listener &l) { l.processorRemoved(processor, oldIndex); });
+        listeners.call(&Listener::processorRemoved, processor, oldIndex);
         if (processor == mostRecentlyCreatedProcessor) mostRecentlyCreatedProcessor = nullptr;
     }
     void processorPropertyChanged(Processor *processor, const Identifier &i) override {
-        listeners.call([processor, i](Listener &l) { l.processorPropertyChanged(processor, i); });
+        listeners.call(&Listener::processorPropertyChanged, processor, i);
     }
 };

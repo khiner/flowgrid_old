@@ -71,10 +71,10 @@ struct ProcessorLane : public Stateful<ProcessorLane>, public StatefulList<Proce
 protected:
     Processor *createNewObject(const ValueTree &tree) override { return new Processor(tree, undoManager, deviceManager); }
     void deleteObject(Processor *processor) override { delete processor; }
-    void newObjectAdded(Processor *processor) override { listeners.call([processor](Listener &l) { l.processorAdded(processor); }); }
-    void objectRemoved(Processor *processor, int oldIndex) override { listeners.call([processor, oldIndex](Listener &l) { l.processorRemoved(processor, oldIndex); }); }
-    void objectOrderChanged() override { listeners.call([](Listener &l) { l.processorOrderChanged(); }); }
-    void objectChanged(Processor *processor, const Identifier &i) override { listeners.call([processor, i](Listener &l) { l.processorPropertyChanged(processor, i); }); }
+    void newObjectAdded(Processor *processor) override { listeners.call(&Listener::processorAdded, processor); }
+    void objectRemoved(Processor *processor, int oldIndex) override { listeners.call(&Listener::processorRemoved, processor, oldIndex); }
+    void objectOrderChanged() override { listeners.call(&Listener::processorOrderChanged); }
+    void objectChanged(Processor *processor, const Identifier &i) override { listeners.call(&Listener::processorPropertyChanged, processor, i); }
 
 private:
     ListenerList<Listener> listeners;

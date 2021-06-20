@@ -29,7 +29,6 @@ int SwitchParameterComponent::getSelectedItemIndex() const {
     for (int i = 0; i < buttons.size(); i++)
         if (buttons.getUnchecked(i)->getToggleState())
             return i;
-
     return 0;
 }
 
@@ -48,11 +47,9 @@ String SwitchParameterComponent::getText() const {
     for (auto *button : buttons)
         if (button->getToggleState())
             return button->getButtonText();
-
     return "";
 }
 
 void SwitchParameterComponent::buttonChanged(TextButton *button) {
-    if (button->getToggleState())
-        listeners.call([this](Listener &l) { l.switchChanged(this); });
+    if (button->getToggleState()) listeners.call(&Listener::switchChanged, this);
 }

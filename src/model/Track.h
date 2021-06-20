@@ -158,17 +158,17 @@ private:
         else if (processor->isTrackOutputProcessor()) audioOutputProcessor.reset(processor);
         else if (processor->isMidiInputProcessor()) midiInputProcessor.reset(processor);
         else if (processor->isMidiOutputProcessor()) midiOutputProcessor.reset(processor);
-        listeners.call([processor](Listener &l) { l.processorAdded(processor); });
+        listeners.call(&Listener::processorAdded, processor);
     }
     void processorRemoved(Processor *processor, int oldIndex) override {
-        listeners.call([processor, oldIndex](Listener &l) { l.processorRemoved(processor, oldIndex); });
+        listeners.call(&Listener::processorRemoved, processor, oldIndex);
         if (processor == audioInputProcessor.get()) audioInputProcessor = nullptr;
         else if (processor == audioOutputProcessor.get()) audioOutputProcessor = nullptr;
         else if (processor == midiInputProcessor.get()) midiInputProcessor = nullptr;
         else if (processor == midiOutputProcessor.get()) midiOutputProcessor = nullptr;
     }
     void processorPropertyChanged(Processor *processor, const Identifier &i) override {
-        listeners.call([processor, i](Listener &l) { l.processorPropertyChanged(processor, i); });
+        listeners.call(&Listener::processorPropertyChanged, processor, i);
     }
 
     void valueTreeChildAdded(ValueTree &parent, ValueTree &tree) override {
@@ -186,7 +186,7 @@ private:
     }
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {
         if (isType(tree)) {
-            listeners.call([this, i](Listener &l) { l.trackPropertyChanged(this, i); });
+            listeners.call(&Listener::trackPropertyChanged, this, i);
         } else if (Processor::isType(tree) && tree.getParent() == getState()) {
             if (audioInputProcessor != nullptr && audioInputProcessor->getState() == tree) processorPropertyChanged(audioInputProcessor.get(), i);
             else if (audioOutputProcessor != nullptr && audioOutputProcessor->getState() == tree) processorPropertyChanged(audioOutputProcessor.get(), i);
