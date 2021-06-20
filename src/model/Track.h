@@ -17,14 +17,12 @@ ID(isMaster)
 struct Track : public Stateful<Track>, private ProcessorLanes::Listener, private ProcessorLane::Listener, private ValueTree::Listener {
     struct Listener {
         virtual void trackPropertyChanged(Track *track, const Identifier &i) {}
-        virtual void processorAdded(Processor *) = 0;
-        virtual void processorRemoved(Processor *, int oldIndex) = 0;
-        virtual void processorPropertyChanged(Processor *track, const Identifier &i) {}
+        virtual void processorAdded(Processor *) {}
+        virtual void processorRemoved(Processor *, int oldIndex) {}
+        virtual void processorPropertyChanged(Processor *, const Identifier &) {}
     };
 
-    void addTrackListener(Listener *listener) {
-        listeners.add(listener);
-    }
+    void addTrackListener(Listener *listener) { listeners.add(listener); }
     void removeTrackListener(Listener *listener) { listeners.remove(listener); }
 
     Track(UndoManager &undoManager, AudioDeviceManager &deviceManager)

@@ -22,7 +22,3 @@ Array<Processor *> Input::syncInputDevicesWithDeviceManager() {
     }
     return inputProcessorsToDelete;
 }
-
-void Input::initializeDefault() {
-    state.appendChild(Processor::initState(pluginManager.getAudioInputDescription()), &undoManager);
-}

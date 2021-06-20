@@ -59,7 +59,7 @@ std::unique_ptr<AudioPluginInstance> InternalPluginFormat::createInstance(const 
 }
 
 bool InternalPluginFormat::isAudioInputProcessor(const String &name) {
-    return name == "Audio Output";
+    return name == "Audio Input";
 }
 
 bool InternalPluginFormat::isAudioOutputProcessor(const String &name) {

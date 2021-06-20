@@ -14,12 +14,12 @@ ID(OUTPUT)
 }
 
 // TODO Should input/output be combined into a single IOState? (Almost all behavior is symmetrical.)
-struct Output : public Stateful<Output>, private StatefulList<Processor> {
+struct Output : public Stateful<Output>, public StatefulList<Processor> {
     struct Listener {
-        virtual void processorAdded(Processor *processor) = 0;
-        virtual void processorRemoved(Processor *processor, int oldIndex) = 0;
+        virtual void processorAdded(Processor *) {}
+        virtual void processorRemoved(Processor *, int oldIndex)  {}
         virtual void processorOrderChanged() {}
-        virtual void processorPropertyChanged(Processor *processor, const Identifier &i) {}
+        virtual void processorPropertyChanged(Processor *, const Identifier &) {}
     };
 
     void addOutputListener(Listener *listener) { listeners.add(listener); }
@@ -31,8 +31,6 @@ struct Output : public Stateful<Output>, private StatefulList<Processor> {
 
     static Identifier getIdentifier() { return OutputIDs::OUTPUT; }
     bool isChildType(const ValueTree &tree) const override { return Processor::isType(tree); }
-
-    void initializeDefault();
 
     void setDeviceName(const String &deviceName) { state.setProperty(ProcessorIDs::deviceName, deviceName, nullptr); }
 
@@ -49,6 +47,11 @@ struct Output : public Stateful<Output>, private StatefulList<Processor> {
 
     // Returns output processors to delete
     Array<Processor *> syncOutputDevicesWithDeviceManager();
+
+    Processor *getDefaultOutputProcessorForConnectionType(ConnectionType connectionType) const {
+        if (connectionType == audio) return getChildForState(state.getChildWithProperty(ProcessorIDs::name, pluginManager.getAudioOutputDescription().name));
+        return {};
+    }
 
 private:
     ListenerList<Listener> listeners;

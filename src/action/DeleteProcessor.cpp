@@ -9,7 +9,6 @@ DeleteProcessor::DeleteProcessor(Processor *processor, Tracks &tracks, Connectio
           tracks(tracks), processorGraph(processorGraph) {}
 
 bool DeleteProcessor::perform() {
-    tracks.getProcessorAt(trackIndex, processorSlot)->setPluginWindowType(static_cast<int>(PluginWindowType::none));
     performTemporary(true);
     return true;
 }
@@ -22,25 +21,34 @@ bool DeleteProcessor::undo() {
 }
 
 bool DeleteProcessor::performTemporary(bool apply) {
-    if (!apply) processorGraph.pauseAudioGraphUpdates();
     disconnectProcessorAction.perform();
-    if (processorSlot == -1) {
-        tracks.getChild(trackIndex)->getState().removeChild(processorState, nullptr);
-    } else {
-        tracks.getChild(trackIndex)->getProcessorLane()->remove(processorIndex);
+    auto *processor = tracks.getProcessorAt(trackIndex, processorSlot);
+    if (apply) {
+        processor->setPluginWindowType(static_cast<int>(PluginWindowType::none));
+        processorGraph.onProcessorDestroyed(processor);
     }
-    if (!graphIsFrozen && apply) processorGraph.resumeAudioGraphUpdatesAndApplyDiffSincePause();
+    auto *track = tracks.getChild(trackIndex);
+    if (processorSlot == -1) {
+        track->getState().removeChild(processorState, nullptr);
+    } else {
+        track->getProcessorLane()->remove(processorIndex);
+    }
     return true;
 }
 
 bool DeleteProcessor::undoTemporary(bool apply) {
-    if (!apply) processorGraph.pauseAudioGraphUpdates();
+    auto *track = tracks.getChild(trackIndex);
     if (processorSlot == -1) {
-        tracks.getChild(trackIndex)->getState().appendChild(processorState, nullptr);
+        track->getState().appendChild(processorState, nullptr);
     } else {
-        tracks.getChild(trackIndex)->getProcessorLane()->add(processorState, processorIndex);
+        track->getProcessorLane()->add(processorState, processorIndex);
     }
+    auto *processor = tracks.getProcessorAt(trackIndex, processorSlot);
+    if (apply) {
+        processorGraph.onProcessorCreated(processor);
+        processor->setPluginWindowType(pluginWindowType);
+    }
+
     disconnectProcessorAction.undo();
-    if (!graphIsFrozen && apply) processorGraph.resumeAudioGraphUpdatesAndApplyDiffSincePause();
     return true;
 }

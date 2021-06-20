@@ -15,6 +15,7 @@ struct Insert : UndoableAction {
 private:
     Tracks &tracks;
     View &view;
+    AllProcessors &allProcessors;
     ProcessorGraph &processorGraph;
     juce::Point<int> fromTrackAndSlot, toTrackAndSlot;
     juce::Point<int> oldFocusedTrackAndSlot, newFocusedTrackAndSlot;

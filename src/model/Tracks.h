@@ -18,13 +18,13 @@ struct Tracks : public Stateful<Tracks>,
                 public StatefulList<Track>,
                 private Track::Listener {
     struct Listener {
-        virtual void trackAdded(Track *track) = 0;
-        virtual void trackRemoved(Track *track, int oldIndex) = 0;
+        virtual void trackAdded(Track *track) {}
+        virtual void trackRemoved(Track *track, int oldIndex) {}
         virtual void trackOrderChanged() {}
         virtual void trackPropertyChanged(Track *track, const Identifier &i) {}
         virtual void processorAdded(Processor *processor) {}
         virtual void processorRemoved(Processor *processor, int oldIndex) {}
-        virtual void processorPropertyChanged(Processor *processor, const Identifier &i) {}
+        virtual void processorPropertyChanged(Processor *processor, const Identifier &) {}
     };
 
     void addTracksListener(Listener *listener) { listeners.add(listener); }
@@ -46,8 +46,8 @@ struct Tracks : public Stateful<Tracks>,
     void copySelectedItemsInto(OwnedArray<Track> &copiedTracks, StatefulAudioProcessorWrappers &processorWrappers);
 
     int getViewIndexForTrack(const Track *track) const { return track->getIndex() - view.getGridViewTrackOffset(); }
-    Track *getMostRecentlyCreatedTrack() { return mostRecentlyCreatedTrack; }
-    Processor *getMostRecentlyCreatedProcessor() { return mostRecentlyCreatedProcessor; }
+    Track *getMostRecentlyCreatedTrack() const { return mostRecentlyCreatedTrack; }
+    Processor *getMostRecentlyCreatedProcessor() const { return mostRecentlyCreatedProcessor; }
     Track *getTrackWithViewIndex(int trackViewIndex) const { return getChild(trackViewIndex + view.getGridViewTrackOffset()); }
     Track *getMasterTrack() const {
         for (auto *track : children)

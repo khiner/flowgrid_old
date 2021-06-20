@@ -13,7 +13,7 @@
 
 using namespace fg; // Only to disambiguate `Connection` currently
 
-struct ProcessorGraph : public AudioProcessorGraph, private ValueTree::Listener, private Timer, private Tracks::Listener, private Output::Listener, private Input::Listener {
+struct ProcessorGraph : public AudioProcessorGraph, private ValueTree::Listener, private Timer {
     explicit ProcessorGraph(AllProcessors &allProcessors, PluginManager &pluginManager, Tracks &tracks, Connections &connections,
                             Input &input, Output &output, UndoManager &undoManager, AudioDeviceManager &deviceManager,
                             Push2MidiCommunicator &push2MidiCommunicator);
@@ -75,7 +75,6 @@ private:
 
     void addProcessor(Processor *processor);
     void removeProcessor(Processor *processor);
-    void recursivelyAddProcessors(const ValueTree &state);
     bool canAddConnection(Node *source, int sourceChannel, Node *dest, int destChannel);
     bool hasConnectionMatching(const Connection &connection);
     void updateIoChannelEnabled(const ValueTree &channels, const ValueTree &channel, bool enabled);
@@ -83,15 +82,6 @@ private:
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override;
     void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override;
     void valueTreeChildRemoved(ValueTree &parent, ValueTree &child, int indexFromWhichChildWasRemoved) override;
-
-    void trackAdded(Track *track) override {}
-    void trackRemoved(Track *track, int oldIndex) override {}
-    void processorAdded(Processor *processor) override {
-        if (!graphUpdatesArePaused) onProcessorCreated(processor);
-    }
-    void processorRemoved(Processor *processor, int oldIndex) override {
-        if (!graphUpdatesArePaused) onProcessorDestroyed(processor);
-    }
 
     void timerCallback() override;
 };

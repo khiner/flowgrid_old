@@ -12,23 +12,17 @@ ProcessorGraph::ProcessorGraph(AllProcessors &allProcessors, PluginManager &plug
           undoManager(undoManager), deviceManager(deviceManager), pluginManager(pluginManager), push2MidiCommunicator(push2MidiCommunicator) {
     enableAllBuses();
 
-    tracks.addTracksListener(this);
     tracks.addListener(this);
     connections.addListener(this);
-    input.addInputListener(this);
     input.addListener(this);
-    output.addOutputListener(this);
     output.addListener(this);
 }
 
 ProcessorGraph::~ProcessorGraph() {
     output.removeListener(this);
-    output.removeOutputListener(this);
     input.removeListener(this);
-    input.removeInputListener(this);
     connections.removeListener(this);
     tracks.removeListener(this);
-    tracks.removeTracksListener(this);
 }
 
 void ProcessorGraph::addProcessor(Processor *processor) {

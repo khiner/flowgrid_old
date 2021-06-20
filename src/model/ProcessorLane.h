@@ -14,10 +14,10 @@ ID(selectedSlotsMask)
 
 struct ProcessorLane : public Stateful<ProcessorLane>, public StatefulList<Processor> {
     struct Listener {
-        virtual void processorAdded(Processor *processor) = 0;
-        virtual void processorRemoved(Processor *processor, int oldIndex) = 0;
+        virtual void processorAdded(Processor *) {}
+        virtual void processorRemoved(Processor *, int oldIndex) {}
         virtual void processorOrderChanged() {}
-        virtual void processorPropertyChanged(Processor *processor, const Identifier &i) {}
+        virtual void processorPropertyChanged(Processor *, const Identifier &) {}
     };
 
     void addProcessorLaneListener(Listener *listener) {

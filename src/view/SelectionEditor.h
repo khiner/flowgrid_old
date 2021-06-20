@@ -44,7 +44,6 @@ private:
     void refreshProcessors(const Processor *singleProcessorToRefresh = nullptr, bool onlyUpdateFocusState = false);
     void assignProcessorToEditor(const Processor *processor, int processorSlot = -1, bool onlyUpdateFocusState = false) const;
 
-    void trackAdded(Track *track) override { }
     void trackRemoved(Track *track, int oldIndex) override { refreshProcessors(); }
     void valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int) override {
         if (Processor::isType(child)) refreshProcessors();

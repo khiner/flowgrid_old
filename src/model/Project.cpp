@@ -90,8 +90,8 @@ void Project::createTrack(bool isMaster) {
 
     undoManager.perform(new CreateTrack(isMaster, -1, tracks, view));
     auto *mostRecentlyCreatedTrack = tracks.getMostRecentlyCreatedTrack();
-    undoManager.perform(new CreateProcessor(TrackInputProcessor::getPluginDescription(), mostRecentlyCreatedTrack->getIndex(), tracks, view, processorGraph));
-    undoManager.perform(new CreateProcessor(TrackOutputProcessor::getPluginDescription(), mostRecentlyCreatedTrack->getIndex(), tracks, view, processorGraph));
+    undoManager.perform(new CreateProcessor(TrackInputProcessor::getPluginDescription(), mostRecentlyCreatedTrack->getIndex(), tracks, view, allProcessors, processorGraph));
+    undoManager.perform(new CreateProcessor(TrackOutputProcessor::getPluginDescription(), mostRecentlyCreatedTrack->getIndex(), tracks, view, allProcessors, processorGraph));
 
     setTrackSelected(mostRecentlyCreatedTrack, true);
     updateAllDefaultConnections();
@@ -237,8 +237,8 @@ void Project::selectTrackAndSlot(juce::Point<int> trackAndSlot) {
 
 void Project::createDefaultProject() {
     view.initializeDefault();
-    input.initializeDefault();
-    output.initializeDefault();
+    undoManager.perform(new CreateProcessor(pluginManager.getAudioInputDescription(), allProcessors, processorGraph));
+    undoManager.perform(new CreateProcessor(pluginManager.getAudioOutputDescription(), allProcessors, processorGraph));
     createTrack(true);
     createTrack(false);
     doCreateAndAddProcessor(SineBank::getPluginDescription(), tracks.getMostRecentlyCreatedTrack(), 0);
@@ -255,9 +255,9 @@ void Project::doCreateAndAddProcessor(const PluginDescription &description, Trac
     }
 
     if (slot == -1)
-        undoManager.perform(new CreateProcessor(description, track->getIndex(), tracks, view, processorGraph));
+        undoManager.perform(new CreateProcessor(description, track->getIndex(), tracks, view, allProcessors, processorGraph));
     else
-        undoManager.perform(new CreateProcessor(description, track->getIndex(), slot, tracks, view, processorGraph));
+        undoManager.perform(new CreateProcessor(description, track->getIndex(), slot, tracks, view, allProcessors, processorGraph));
 
     if (auto *mostRecentlyCreatedProcessor = tracks.getMostRecentlyCreatedProcessor()) {
         setProcessorSlotSelected(track, mostRecentlyCreatedProcessor->getSlot(), true);

@@ -62,7 +62,7 @@ static std::vector<int> findDuplicationIndices(std::vector<int> currentIndices) 
 
 Insert::Insert(bool duplicate, const OwnedArray<Track> &copiedTracks, const juce::Point<int> toTrackAndSlot,
                Tracks &tracks, Connections &connections, View &view, Input &input, AllProcessors &allProcessors, ProcessorGraph &processorGraph)
-        : tracks(tracks), view(view), processorGraph(processorGraph),
+        : tracks(tracks), view(view), allProcessors(allProcessors), processorGraph(processorGraph),
           fromTrackAndSlot(findFromTrackAndSlot(copiedTracks)), toTrackAndSlot(limitToTrackAndSlot(toTrackAndSlot, copiedTracks)),
           oldFocusedTrackAndSlot(view.getFocusedTrackAndSlot()), newFocusedTrackAndSlot(oldFocusedTrackAndSlot) {
     auto trackAndSlotDiff = this->toTrackAndSlot - this->fromTrackAndSlot;
@@ -170,7 +170,7 @@ void Insert::addAndPerformAction(UndoableAction *action) {
 }
 
 void Insert::addAndPerformCreateProcessorAction(int fromTrackIndex, int fromSlot, int toTrackIndex, int toSlot) {
-    addAndPerformAction(new CreateProcessor(juce::Point(fromTrackIndex, fromSlot), toTrackIndex, toSlot, tracks, view, processorGraph));
+    addAndPerformAction(new CreateProcessor(juce::Point(fromTrackIndex, fromSlot), toTrackIndex, toSlot, tracks, view, allProcessors, processorGraph));
     if (oldFocusedTrackAndSlot.x == fromTrackIndex && oldFocusedTrackAndSlot.y == fromSlot)
         newFocusedTrackAndSlot = {toTrackIndex, toSlot};
 }
@@ -183,7 +183,7 @@ void Insert::addAndPerformCreateTrackAction(int fromTrackIndex, int toTrackIndex
     // Create track-level processors
     for (auto *processor : track->getAllProcessors())
         if (processor->isIoProcessor())
-            addAndPerformAction(new CreateProcessor(juce::Point(fromTrackIndex, -1), toTrackIndex, -1, tracks, view, processorGraph));
+            addAndPerformAction(new CreateProcessor(juce::Point(fromTrackIndex, -1), toTrackIndex, -1, tracks, view, allProcessors, processorGraph));
 
     // Create in-lane processors
     for (auto *processor : track->getProcessorLane()->getChildren()) {

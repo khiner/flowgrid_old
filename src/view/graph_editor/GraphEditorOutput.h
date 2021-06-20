@@ -27,7 +27,6 @@ private:
     ProcessorGraph &graph;
     ConnectorDragListener &connectorDragListener;
 
-    void processorAdded(Processor *processor) override {}
     void processorRemoved(Processor *processor, int oldIndex) override {
         if (processor->isAudioOutputProcessor()) {
             audioOutputProcessor = nullptr;

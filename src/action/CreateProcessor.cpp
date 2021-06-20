@@ -12,27 +12,34 @@ static int getInsertSlot(const PluginDescription &description, const Track *trac
     return indexToInsertProcessor <= 0 || processor == nullptr ? 0 : Processor::getSlot(processor->getState()) + 1;
 }
 
-CreateProcessor::CreateProcessor(juce::Point<int> derivedFromTrackAndSlot, int trackIndex, int slot, Tracks &tracks, View &view, ProcessorGraph &processorGraph)
+CreateProcessor::CreateProcessor(juce::Point<int> derivedFromTrackAndSlot, int trackIndex, int slot, Tracks &tracks, View &view, AllProcessors &allProcessors, ProcessorGraph &processorGraph)
         : trackIndex(trackIndex), slot(slot), pluginWindowType(tracks.getProcessorAt(derivedFromTrackAndSlot)->getPluginWindowType()),
-          insertAction(derivedFromTrackAndSlot, trackIndex, slot, tracks, view),
-          tracks(tracks) {}
+          insertAction(std::make_unique<InsertProcessor>(derivedFromTrackAndSlot, trackIndex, slot, tracks, view)),
+          allProcessors(allProcessors), processorGraph(processorGraph) {}
 
-CreateProcessor::CreateProcessor(const PluginDescription &description, int trackIndex, int slot, Tracks &tracks, View &view, ProcessorGraph &processorGraph)
+CreateProcessor::CreateProcessor(const PluginDescription &description, int trackIndex, int slot, Tracks &tracks, View &view, AllProcessors &allProcessors, ProcessorGraph &processorGraph)
         :  trackIndex(trackIndex), slot(slot), pluginWindowType(static_cast<int>(PluginWindowType::none)),
-          insertAction(description, trackIndex, slot, tracks, view),tracks(tracks) {}
+          insertAction(std::make_unique<InsertProcessor>(description, trackIndex, slot, tracks, view)),
+          description(description), allProcessors(allProcessors), processorGraph(processorGraph) {}
 
-CreateProcessor::CreateProcessor(const PluginDescription &description, int trackIndex, Tracks &tracks, View &view, ProcessorGraph &processorGraph)
-        : CreateProcessor(description, trackIndex, getInsertSlot(description, tracks.getChild(trackIndex)), tracks, view, processorGraph) {}
+CreateProcessor::CreateProcessor(const PluginDescription &description, int trackIndex, Tracks &tracks, View &view, AllProcessors &allProcessors, ProcessorGraph &processorGraph)
+        : CreateProcessor(description, trackIndex, getInsertSlot(description, tracks.getChild(trackIndex)), tracks, view, allProcessors, processorGraph) {}
+
+CreateProcessor::CreateProcessor(const PluginDescription &description, AllProcessors &allProcessors, ProcessorGraph &processorGraph)
+        :  trackIndex(-1), slot(-1), pluginWindowType(static_cast<int>(PluginWindowType::none)),
+           description(description), allProcessors(allProcessors), processorGraph(processorGraph) {}
 
 bool CreateProcessor::perform() {
     performTemporary();
-    createdProcessor = tracks.getMostRecentlyCreatedProcessor();
+    createdProcessor = allProcessors.getMostRecentlyCreatedProcessor();
+    processorGraph.onProcessorCreated(createdProcessor);
     createdProcessor->setPluginWindowType(pluginWindowType);
     return true;
 }
 
 bool CreateProcessor::undo() {
     createdProcessor->setPluginWindowType(static_cast<int>(PluginWindowType::none));
+    processorGraph.onProcessorDestroyed(createdProcessor);
     createdProcessor = nullptr;
     undoTemporary();
     return true;

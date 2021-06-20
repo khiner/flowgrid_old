@@ -31,7 +31,3 @@ Array<Processor *> Output::syncOutputDevicesWithDeviceManager() {
     }
     return outputProcessorsToDelete;
 }
-
-void Output::initializeDefault() {
-    state.appendChild(Processor::initState(pluginManager.getAudioOutputDescription()), &undoManager);
-}
