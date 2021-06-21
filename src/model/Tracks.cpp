@@ -73,8 +73,8 @@ int Tracks::findSlotAt(const juce::Point<int> position, const Track *track) cons
 bool Tracks::anyNonMasterTrackHasEffectProcessor(ConnectionType connectionType) {
     for (const auto *track : children)
         if (!track->isMaster())
-            for (const auto &processor : track->getProcessorLane()->getState())
-                if (Processor::isProcessorAnEffect(processor, connectionType))
+            for (auto *processor : track->getProcessorLane()->getChildren())
+                if (processor->isProcessorAnEffect(connectionType))
                     return true;
     return false;
 }

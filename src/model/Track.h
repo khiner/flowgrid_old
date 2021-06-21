@@ -73,8 +73,8 @@ struct Track : public Stateful<Track>, private ProcessorLanes::Listener, private
     bool hasAnySlotSelected() const { return firstSelectedSlot() != -1; }
     bool hasSelections() const { return isSelected() || hasAnySlotSelected(); }
     bool hasProducerProcessor() const {
-        for (const auto &processor : getProcessorLane()->getState())
-            if (Processor::isProcessorAProducer(processor, audio) || Processor::isProcessorAProducer(processor, midi))
+        for (auto *processor : getProcessorLane()->getChildren())
+            if (processor->isProcessorAProducer(audio) || processor->isProcessorAProducer(midi))
                 return true;
         return false;
     }

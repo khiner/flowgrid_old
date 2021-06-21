@@ -12,6 +12,7 @@ ProcessorGraph::ProcessorGraph(AllProcessors &allProcessors, PluginManager &plug
           undoManager(undoManager), deviceManager(deviceManager), pluginManager(pluginManager), push2MidiCommunicator(push2MidiCommunicator) {
     enableAllBuses();
 
+    tracks.addTracksListener(this);
     tracks.addListener(this);
     connections.addListener(this);
     input.addListener(this);
@@ -23,6 +24,7 @@ ProcessorGraph::~ProcessorGraph() {
     input.removeListener(this);
     connections.removeListener(this);
     tracks.removeListener(this);
+    tracks.removeTracksListener(this);
 }
 
 void ProcessorGraph::addProcessor(Processor *processor) {
@@ -185,16 +187,6 @@ void ProcessorGraph::resumeAudioGraphUpdatesAndApplyDiffSincePause() {
         valueTreeChildAdded(connections.getState(), connection);
     connectionsSincePause.connectionsToDelete.clearQuick();
     connectionsSincePause.connectionsToCreate.clearQuick();
-}
-
-void ProcessorGraph::valueTreePropertyChanged(ValueTree &tree, const Identifier &i) {
-    if (Processor::isType(tree)) {
-        if (i == ProcessorIDs::bypassed) {
-            if (auto node = getNodeForState(tree)) {
-                node->setBypassed(Processor::isBypassed(tree));
-            }
-        }
-    }
 }
 
 void ProcessorGraph::valueTreeChildAdded(ValueTree &parent, ValueTree &child) {

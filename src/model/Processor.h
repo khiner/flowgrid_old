@@ -109,13 +109,6 @@ struct Processor : public Stateful<Processor>, public AudioProcessorListener {
     static String getDeviceName(const ValueTree &state) { return state[ProcessorIDs::deviceName]; }
     static int getSlot(const ValueTree &state) { return state[ProcessorIDs::slot]; }
     static AudioProcessorGraph::NodeID getNodeId(const ValueTree &state) { return state.isValid() ? AudioProcessorGraph::NodeID(static_cast<uint32>(int(state[ProcessorIDs::nodeId]))) : AudioProcessorGraph::NodeID{}; }
-    static bool isBypassed(const ValueTree &state) { return state[ProcessorIDs::bypassed]; }
-    static bool producesMidi(const ValueTree &state) { return state[ProcessorIDs::producesMidi]; }
-    static bool acceptsMidi(const ValueTree &state) { return state[ProcessorIDs::acceptsMidi]; }
-    static int getNumInputChannels(const ValueTree &state) { return state.getChildWithName(InputChannelsIDs::INPUT_CHANNELS).getNumChildren(); }
-    static int getNumOutputChannels(const ValueTree &state) { return state.getChildWithName(OutputChannelsIDs::OUTPUT_CHANNELS).getNumChildren(); }
-
-    static bool isIoProcessor(const ValueTree &state) { return InternalPluginFormat::isIoProcessor(state[ProcessorIDs::name]); }
 
     static void setId(ValueTree &state, const String &id) { state.setProperty(ProcessorIDs::id, id, nullptr); }
     static void setProcessorState(ValueTree &state, const String &processorState) { state.setProperty(ProcessorIDs::state, processorState, nullptr); }
@@ -126,17 +119,6 @@ struct Processor : public Stateful<Processor>, public AudioProcessorListener {
         return {{fg::Connection::getSourceNodeId(state),      fg::Connection::getSourceChannel(state)},
                 {fg::Connection::getDestinationNodeId(state), fg::Connection::getDestinationChannel(state)}};
     }
-
-    static bool isProcessorAnEffect(const ValueTree &state, ConnectionType connectionType) {
-        return (connectionType == audio && Processor::getNumInputChannels(state) > 0) ||
-               (connectionType == midi && Processor::acceptsMidi(state));
-    }
-
-    static bool isProcessorAProducer(const ValueTree &state, ConnectionType connectionType) {
-        return (connectionType == audio && Processor::getNumOutputChannels(state) > 0) ||
-               (connectionType == midi && Processor::producesMidi(state));
-    }
-
 
 private:
     UndoManager &undoManager;
