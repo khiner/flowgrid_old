@@ -201,9 +201,7 @@ struct Tracks : public Stateful<Tracks>,
     static constexpr juce::Point<int> INVALID_TRACK_AND_SLOT = {-1, -1};
 
 protected:
-    Track *createNewObject(const ValueTree &tree) override {
-        return new Track(tree, undoManager, deviceManager);
-    }
+    Track *createNewObject(const ValueTree &tree) override { return new Track(tree, undoManager, deviceManager); }
     void deleteObject(Track *track) override { delete track; }
     void newObjectAdded(Track *track) override {
         mostRecentlyCreatedTrack = track;

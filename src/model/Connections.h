@@ -10,10 +10,13 @@ ID(CONNECTIONS)
 #undef ID
 }
 
-struct Connections : public Stateful<Connections> {
-    explicit Connections(Tracks &tracks) : tracks(tracks) {}
+struct Connections : public Stateful<Connections>, StatefulList<fg::Connection> {
+    explicit Connections(Tracks &tracks) : StatefulList<fg::Connection>(state), tracks(tracks) {}
+
+    ~Connections() override { freeObjects(); }
 
     static Identifier getIdentifier() { return ConnectionsIDs::CONNECTIONS; }
+    bool isChildType(const ValueTree &tree) const override { return fg::Connection::isType(tree); }
 
     Processor *findDefaultDestinationProcessor(const Processor *sourceProcessor, ConnectionType connectionType);
 
@@ -29,6 +32,14 @@ struct Connections : public Stateful<Connections> {
                 return connectionState;
         return {};
     }
+
+protected:
+    fg::Connection *createNewObject(const ValueTree &tree) override { return new fg::Connection(tree); }
+    void deleteObject(fg::Connection *connection) override { delete connection; }
+    void newObjectAdded(fg::Connection *connection) override {}
+    void objectRemoved(fg::Connection *connection, int oldIndex) override {}
+    void objectOrderChanged() override {}
+    void objectChanged(fg::Connection *connection, const Identifier &i) override {}
 
 private:
     Tracks &tracks;

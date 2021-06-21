@@ -17,6 +17,8 @@ ID(isCustom)
 
 namespace fg {
 struct Connection : public Stateful<Connection> {
+    explicit Connection(ValueTree state) : Stateful<Connection>(std::move(state)) {}
+
     static Identifier getIdentifier() { return ConnectionIDs::CONNECTION; }
 
     static bool isCustom(const ValueTree &state) { return state.hasProperty(ConnectionIDs::isCustom) && state[ConnectionIDs::isCustom]; }
