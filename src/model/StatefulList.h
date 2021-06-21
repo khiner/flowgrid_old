@@ -6,7 +6,7 @@
 using namespace juce;
 
 // TODO merge with Stateful
-template<typename ObjectType, typename CriticalSectionType = DummyCriticalSection>
+template<typename ObjectType>
 struct StatefulList : protected ValueTree::Listener {
     explicit StatefulList(ValueTree parentTree) : parent(std::move(parentTree)) {
         parent.addListener(this);
@@ -47,8 +47,6 @@ protected:
     ValueTree parent;
 
     Array<ObjectType *> children;
-    CriticalSectionType arrayLock;
-    typedef typename CriticalSectionType::ScopedLockType ScopedLockType;
 
     virtual ObjectType *createNewObject(const ValueTree &) = 0;
     virtual void deleteObject(ObjectType *) = 0;
@@ -72,17 +70,13 @@ protected:
     }
 
     void deleteAllObjects() {
-        const ScopedLockType sl(arrayLock);
         while (children.size() > 0) {
-            {
-                // TODO can we just delete the value trees one-by-one
-                //  and have this trigger the same behavior in valueTreeChildRemoved?
-                const ScopedLockType sl(arrayLock);
-                int oldIndex = children.size() - 1;
-                ObjectType *o = children.removeAndReturn(oldIndex);
-                objectRemoved(o, oldIndex);
-                deleteObject(o);
-            }
+            // TODO can we just delete the value trees one-by-one
+            //  and have this trigger the same behavior in valueTreeChildRemoved?
+            int oldIndex = children.size() - 1;
+            ObjectType *o = children.removeAndReturn(oldIndex);
+            objectRemoved(o, oldIndex);
+            deleteObject(o);
         }
     }
 
@@ -99,14 +93,10 @@ protected:
         if (isChildTree(tree)) {
             const int index = parent.indexOf(tree);
             if (ObjectType *newObject = createNewObject(tree)) {
-                {
-                    const ScopedLockType sl(arrayLock);
-                    if (index == parent.getNumChildren() - 1)
-                        children.add(newObject);
-                    else
-                        children.addSorted(*this, newObject);
-                }
-
+                if (index == parent.getNumChildren() - 1)
+                    children.add(newObject);
+                else
+                    children.addSorted(*this, newObject);
                 newObjectAdded(newObject);
             }
         }
@@ -116,22 +106,16 @@ protected:
         if (parent == exParent && isChildType(tree)) {
             const int oldIndex = indexOf(tree);
             if (oldIndex >= 0) {
-                {
-                    const ScopedLockType sl(arrayLock);
-                    ObjectType *o = children.removeAndReturn(oldIndex);
-                    objectRemoved(o, oldIndex);
-                    deleteObject(o);
-                }
+                ObjectType *o = children.removeAndReturn(oldIndex);
+                objectRemoved(o, oldIndex);
+                deleteObject(o);
             }
         }
     }
 
     void valueTreeChildOrderChanged(ValueTree &tree, int, int) override {
         if (tree == parent) {
-            {
-                const ScopedLockType sl(arrayLock);
-                children.sort(*this);
-            }
+            children.sort(*this);
             objectOrderChanged();
         }
     }

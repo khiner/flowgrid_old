@@ -30,11 +30,8 @@ public:
     void objectRemoved(GraphEditorConnector *, int) override {}
     void objectOrderChanged() override {}
     void updateConnectors() {
-        {
-            const ScopedLockType sl(arrayLock);
-            for (auto *connector : children) {
-                connector->update();
-            }
+        for (auto *connector : children) {
+            connector->update();
         }
     }
 
