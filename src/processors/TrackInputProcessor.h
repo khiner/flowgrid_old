@@ -17,6 +17,7 @@ public:
 
     ~TrackInputProcessor() override {
         monitorAudioParameter->removeListener(this);
+        monitorMidiParameter->removeListener(this);
     }
 
     static String name() { return "Track Input"; }

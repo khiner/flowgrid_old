@@ -504,11 +504,6 @@ public:
 private:
     PluginManager pluginManager;
 
-    std::unique_ptr<Push2Component> push2Component;
-    std::unique_ptr<MainWindow> mainWindow;
-    std::unique_ptr<DocumentWindow> push2Window;
-    std::unique_ptr<PluginListComponent> pluginListComponent;
-
     UndoManager undoManager;
     AudioDeviceManager deviceManager;
 
@@ -527,6 +522,11 @@ private:
     AudioProcessorPlayer player;
 
     std::unique_ptr<DeviceChangeMonitor> deviceChangeMonitor;
+
+    std::unique_ptr<Push2Component> push2Component;
+    std::unique_ptr<MainWindow> mainWindow;
+    std::unique_ptr<DocumentWindow> push2Window;
+    std::unique_ptr<PluginListComponent> pluginListComponent;
 
     void showAudioMidiSettings() {
         auto *audioSettingsComponent = new AudioDeviceSelectorComponent(deviceManager, 2, 256, 2, 256, true, true, true, false);
