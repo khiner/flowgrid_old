@@ -3,7 +3,7 @@
 #include "model/Tracks.h"
 #include "model/View.h"
 
-class ContextPane : public Component, private ValueTree::Listener, Tracks::Listener {
+class ContextPane : public Component, private ValueTree::Listener, StatefulList<Track>::Listener {
 public:
     explicit ContextPane(Tracks &tracks, View &view);
 
@@ -21,7 +21,7 @@ private:
 
     Colour getFillColour(const Colour &trackColour, const Track *track, const Processor *processor, bool inView, bool slotSelected, bool slotFocused);
 
-    void trackAdded(Track *track) override { resized(); }
-    void trackRemoved(Track *track, int oldIndex) override { resized(); }
+    void onChildAdded(Track *) override { resized(); }
+    void onChildRemoved(Track *, int oldIndex) override { resized(); }
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override;
 };

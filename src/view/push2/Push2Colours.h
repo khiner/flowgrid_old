@@ -3,7 +3,7 @@
 #include "model/Tracks.h"
 #include "unordered_map"
 
-class Push2Colours : Tracks::Listener {
+class Push2Colours : StatefulList<Track>::Listener {
 public:
     class Listener {
     public:
@@ -32,7 +32,7 @@ private:
     void addColour(const Colour &colour);
     void setColour(uint8 colourIndex, const Colour &colour);
 
-    void trackAdded(Track *track) override;
-    void trackRemoved(Track *track, int oldIndex) override;
-    void trackPropertyChanged(Track *track, const Identifier &i) override;
+    void onChildAdded(Track *) override;
+    void onChildRemoved(Track *, int oldIndex) override;
+    void onChildChanged(Track *, const Identifier &) override;
 };

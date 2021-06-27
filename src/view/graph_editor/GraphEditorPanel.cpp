@@ -8,12 +8,13 @@ GraphEditorPanel::GraphEditorPanel(View &view, Tracks &tracks, Connections &conn
           input(input), output(output), graph(processorGraph), project(project),
           graphEditorInput(input, view, processorGraph, pluginManager, *this),
           graphEditorOutput(output, view, processorGraph, pluginManager, *this) {
-    tracks.addTracksListener(this);
-    view.addListener(this);
-    connections.addListener(this);
+    tracks.addChildListener(this);
+    tracks.addProcessorListener(this);
+    view.addStateListener(this);
+    connections.addStateListener(this);
     // TODO I think we can get away with only having GraphEditorInput/Output listening (needed for connections updates now)
-    input.addListener(this);
-    output.addListener(this);
+    input.addStateListener(this);
+    output.addStateListener(this);
 
     addAndMakeVisible(graphEditorInput);
     addAndMakeVisible(graphEditorOutput);
@@ -28,17 +29,18 @@ GraphEditorPanel::~GraphEditorPanel() {
     removeMouseListener(this);
     draggingConnector = nullptr;
 
-    output.removeListener(this);
-    input.removeListener(this);
-    connections.removeListener(this);
-    view.removeListener(this);
-    tracks.removeTracksListener(this);
+    output.removeStateListener(this);
+    input.removeStateListener(this);
+    connections.removeStateListener(this);
+    view.removeStateListener(this);
+    tracks.removeProcessorListener(this);
+    tracks.removeChildListener(this);
 }
 
 
 void GraphEditorPanel::mouseDown(const MouseEvent &e) {
     const auto &trackAndSlot = trackAndSlotAt(e);
-    auto *track = tracks.getChild(trackAndSlot.x);
+    auto *track = tracks.get(trackAndSlot.x);
 
     view.focusOnGridPane();
 
@@ -57,7 +59,7 @@ void GraphEditorPanel::mouseDrag(const MouseEvent &e) {
 
 void GraphEditorPanel::mouseUp(const MouseEvent &e) {
     const auto &trackAndSlot = trackAndSlotAt(e);
-    auto *track = tracks.getChild(trackAndSlot.x);
+    auto *track = tracks.get(trackAndSlot.x);
     if (e.mouseWasClicked() && !e.mods.isCommandDown()) {
         // single click deselects other tracks/processors
         project.setProcessorSlotSelected(track, trackAndSlot.y, true);

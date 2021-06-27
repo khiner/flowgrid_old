@@ -35,7 +35,7 @@ private:
 
     void onColourChanged();
 
-    void processorAdded(Processor *processor) override {
+    void onChildAdded(Processor *processor) override {
         if (processor->isTrackInputProcessor()) {
             trackInputProcessorView = std::make_unique<TrackInputGraphEditorProcessor>(processor, track, view, project, processorWrappers, connectorDragListener);
             addAndMakeVisible(trackInputProcessorView.get());
@@ -48,7 +48,7 @@ private:
             onColourChanged();
         }
     }
-    void processorRemoved(Processor *processor, int oldIndex) override {
+    void onChildRemoved(Processor *processor, int oldIndex) override {
         if (processor->isTrackInputProcessor()) {
             removeChildComponent(trackInputProcessorView.get());
             trackInputProcessorView = nullptr;

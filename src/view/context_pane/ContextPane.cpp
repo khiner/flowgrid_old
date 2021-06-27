@@ -4,16 +4,18 @@
 
 ContextPane::ContextPane(Tracks &tracks, View &view)
         : tracks(tracks), view(view) {
-    tracks.addListener(this);
-    view.addListener(this);
+    tracks.addStateListener(this);
+    tracks.addChildListener(this);
+    view.addStateListener(this);
     cellPath.addRoundedRectangle(Rectangle<int>(cellWidth, cellHeight).reduced(2), 3);
     trackBorderPath.addRoundedRectangle(Rectangle<int>(cellWidth, cellWidth * (View::NUM_VISIBLE_NON_MASTER_TRACK_SLOTS + 1)).reduced(1), 3);
     masterTrackBorderPath.addRoundedRectangle(Rectangle<int>(cellWidth * (View::NUM_VISIBLE_MASTER_TRACK_SLOTS + 1), cellHeight).reduced(1), 3);
 }
 
 ContextPane::~ContextPane() {
-    view.removeListener(this);
-    tracks.removeListener(this);
+    view.removeStateListener(this);
+    tracks.removeChildListener(this);
+    tracks.removeStateListener(this);
 }
 
 void ContextPane::paint(Graphics &g) {
@@ -24,7 +26,7 @@ void ContextPane::paint(Graphics &g) {
     auto masterRowY = getHeight() - cellHeight;
     const int tracksOffset = jmax(0, view.getMasterViewSlotOffset() - view.getGridViewTrackOffset()) * cellWidth;
     for (int trackIndex = 0; trackIndex < tracks.size(); trackIndex++) {
-        const auto *track = tracks.getChild(trackIndex);
+        const auto *track = tracks.get(trackIndex);
         bool isMaster = track->isMaster();
         const int trackX = tracksOffset + trackIndex * cellWidth;
         const auto &trackColour = track->getColour();

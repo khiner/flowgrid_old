@@ -14,6 +14,8 @@ ID(abbreviatedName)
 
 namespace fg {
 struct Channel : public Stateful<Channel> {
+    explicit Channel(ValueTree state): Stateful<Channel>(std::move(state)) {}
+
     static Identifier getIdentifier() { return ChannelIDs::CHANNEL; }
 
     static int getChannelIndex(const ValueTree &state) { return state[ChannelIDs::channelIndex]; }

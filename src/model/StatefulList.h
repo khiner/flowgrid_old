@@ -2,27 +2,60 @@
 
 #include <juce_core/juce_core.h>
 #include <juce_data_structures/juce_data_structures.h>
+#include "Stateful.h"
 
 using namespace juce;
 
 // TODO merge with Stateful
 template<typename ObjectType>
 struct StatefulList : protected ValueTree::Listener {
+    struct Listener {
+        virtual void onChildAdded(ObjectType *child) {}
+        virtual void onChildRemoved(ObjectType *child, int oldIndex) {}
+        virtual void onOrderChanged() {}
+        virtual void onChildChanged(ObjectType *child, const Identifier &i) {}
+    };
+
+    virtual bool isChildType(const ValueTree &tree) const = 0;
+
+protected:
+    virtual ObjectType *createNewObject(const ValueTree &) = 0;
+    virtual void onChildAdded(ObjectType *) {}
+    virtual void onChildRemoved(ObjectType *, int oldIndex) {}
+    virtual void onOrderChanged() {}
+    virtual void onChildChanged(ObjectType *, const Identifier &i) {}
+
+public:
     explicit StatefulList(ValueTree parentTree) : parent(std::move(parentTree)) {
         parent.addListener(this);
     }
-
     ~StatefulList() override {
         jassert(size() == 0); // must call freeObjects() in the subclass destructor!
     }
 
-    virtual bool isChildType(const ValueTree &) const = 0;
+    void addListener(Listener *listener) {
+        if (listener == nullptr) return;
+
+        listeners.add(listener);
+        for (auto *lane : getChildren()) {
+            listener->onChildAdded(lane);
+        }
+    }
+    void removeListener(Listener *listener) {
+        if (listener == nullptr) return;
+
+        listeners.remove(listener);
+    }
+
+    void addChildListener(Listener *listener) { addListener(listener); }
+    void removeChildListener(Listener *listener) { removeListener(listener); }
 
     int size() const noexcept { return children.size(); }
     int indexOf(ObjectType *object) const { return children.indexOf(object); }
 
-    ObjectType *getChild(int index) const noexcept { return children[index]; }
+    ObjectType *get(int index) const noexcept { return children[index]; }
     const Array<ObjectType *> &getChildren() const { return children; }
+    ObjectType *getMostRecentlyCreated() const { return mostRecentlyCreatedObject; }
 
     void add(const ValueTree &child, int index) { parent.addChild(child, index, nullptr); }
     void append(const ValueTree &child) { parent.appendChild(child, nullptr); }
@@ -45,15 +78,9 @@ struct StatefulList : protected ValueTree::Listener {
 
 protected:
     ValueTree parent;
-
     Array<ObjectType *> children;
-
-    virtual ObjectType *createNewObject(const ValueTree &) = 0;
-    virtual void deleteObject(ObjectType *) = 0;
-    virtual void newObjectAdded(ObjectType *) = 0;
-    virtual void objectRemoved(ObjectType *, int oldIndex) = 0;
-    virtual void objectOrderChanged() = 0;
-    virtual void objectChanged(ObjectType *, const Identifier &i) {}
+    ListenerList<Listener> listeners;
+    ObjectType *mostRecentlyCreatedObject{};
 
     // call in the sub-class when being created
     void rebuildObjects() {
@@ -75,8 +102,8 @@ protected:
             //  and have this trigger the same behavior in valueTreeChildRemoved?
             int oldIndex = children.size() - 1;
             ObjectType *o = children.removeAndReturn(oldIndex);
-            objectRemoved(o, oldIndex);
-            deleteObject(o);
+            onChildRemoved(o, oldIndex);
+            deleteChild(o);
         }
     }
 
@@ -97,7 +124,9 @@ protected:
                     children.add(newObject);
                 else
                     children.addSorted(*this, newObject);
-                newObjectAdded(newObject);
+                mostRecentlyCreatedObject = newObject;
+                onChildAdded(newObject);
+                listeners.call(&Listener::onChildAdded, newObject);
             }
         }
     }
@@ -106,9 +135,13 @@ protected:
         if (parent == exParent && isChildType(tree)) {
             const int oldIndex = indexOf(tree);
             if (oldIndex >= 0) {
-                ObjectType *o = children.removeAndReturn(oldIndex);
-                objectRemoved(o, oldIndex);
-                deleteObject(o);
+                auto *child = children.removeAndReturn(oldIndex);
+                listeners.call(&Listener::onChildRemoved, child, oldIndex);
+                // Not correct but doesn't leave dangling pointers
+                // TODO queue
+                if (child == mostRecentlyCreatedObject) mostRecentlyCreatedObject = nullptr;
+                onChildRemoved(child, oldIndex);
+                deleteChild(child);
             }
         }
     }
@@ -116,13 +149,19 @@ protected:
     void valueTreeChildOrderChanged(ValueTree &tree, int, int) override {
         if (tree == parent) {
             children.sort(*this);
-            objectOrderChanged();
+            onOrderChanged();
+            listeners.call(&Listener::onOrderChanged);
         }
     }
 
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {
         if (isChildTree(tree)) {
-            objectChanged(getChildForState(tree), i);
+            auto *child = getChildForState(tree);
+            onChildChanged(child, i);
+            listeners.call(&Listener::onChildChanged, child, i);
         }
     }
+
+private:
+    void deleteChild(ObjectType *child) { delete child; }
 };

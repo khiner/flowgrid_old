@@ -10,10 +10,10 @@ class SelectionEditor : public Component,
                         public DragAndDropContainer,
                         private Button::Listener,
                         private ValueTree::Listener,
-                        private Tracks::Listener {
+                        private StatefulList<Track>::Listener,
+                        private StatefulList<Processor>::Listener {
 public:
     SelectionEditor(Project &project, View &view, Tracks &tracks, StatefulAudioProcessorWrappers &processorWrappers);
-
     ~SelectionEditor() override;
 
     void mouseDown(const MouseEvent &event) override;
@@ -44,9 +44,13 @@ private:
     void refreshProcessors(const Processor *singleProcessorToRefresh = nullptr, bool onlyUpdateFocusState = false);
     void assignProcessorToEditor(const Processor *processor, int processorSlot = -1, bool onlyUpdateFocusState = false) const;
 
-    void trackRemoved(Track *track, int oldIndex) override { refreshProcessors(); }
-    void valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int) override {
-        if (Processor::isType(child)) refreshProcessors();
+    void onChildRemoved(Track *, int oldIndex) override { refreshProcessors(); }
+    void onChildChanged(Track *, const Identifier &i) override {}
+    void onChildRemoved(Processor *, int oldIndex) override { refreshProcessors(); }
+    void onChildChanged(Processor *processor, const Identifier &i) override {
+        if (i == ProcessorIDs::initialized || i == ProcessorIDs::slot) {
+            refreshProcessors();
+        }
     }
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override;
 };

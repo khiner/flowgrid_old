@@ -23,8 +23,8 @@ private:
     ParametersPanel volumeParametersPanel, panParametersPanel;
     ParametersPanel *selectedParametersPanel{};
 
-    void trackAdded(Track *track) override;
-    void trackRemoved(Track *track, int oldIndex) override;
+    void onChildAdded(Track *track) override;
+    void onChildRemoved(Track *track, int oldIndex) override;
 
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override;
     void valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int index) override;

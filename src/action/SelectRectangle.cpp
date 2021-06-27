@@ -7,7 +7,7 @@ SelectRectangle::SelectRectangle(const juce::Point<int> fromTrackAndSlot, const 
     selectionRectangle.setSize(selectionRectangle.getWidth() + 1, selectionRectangle.getHeight() + 1);
 
     for (int trackIndex = 0; trackIndex < tracks.size(); trackIndex++) {
-        auto *track = tracks.getChild(trackIndex);
+        auto *track = tracks.get(trackIndex);
         int numSlots = view.getNumProcessorSlots(track != nullptr && track->isMaster());
         bool trackSelected = selectionRectangle.contains(tracks.trackAndSlotToGridPosition({trackIndex, -1}));
         newTrackSelections.setUnchecked(trackIndex, trackSelected);
@@ -22,7 +22,7 @@ SelectRectangle::SelectRectangle(const juce::Point<int> fromTrackAndSlot, const 
     }
     int slotToFocus = toTrackAndSlot.y;
     if (slotToFocus == -1) {
-        auto *track = tracks.getChild(toTrackAndSlot.x);
+        auto *track = tracks.get(toTrackAndSlot.x);
         if (track == nullptr) {
             slotToFocus = 0;
         } else {

@@ -39,7 +39,7 @@ Processor *Track::findFirstSelectedProcessor() const {
 Processor *Track::findLastSelectedProcessor() const {
     const auto *lane = getProcessorLane();
     for (int i = lane->size() - 1; i >= 0; i--) {
-        auto *processor = lane->getChild(i);
+        auto *processor = lane->get(i);
         if (isSlotSelected(processor->getSlot()))
             return processor;
     }

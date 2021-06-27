@@ -4,7 +4,7 @@
 #include "Push2ComponentBase.h"
 #include "Push2Label.h"
 
-class Push2TrackManagingView : public Push2ComponentBase, protected ValueTree::Listener, protected Tracks::Listener {
+class Push2TrackManagingView : public Push2ComponentBase, protected ValueTree::Listener, protected StatefulList<Track>::Listener {
 public:
     explicit Push2TrackManagingView(View &view, Tracks &tracks, Project &project, Push2MidiCommunicator &push2);
 
@@ -17,10 +17,10 @@ public:
     void updateEnabledPush2Buttons() override;
 
 protected:
-    void trackAdded(Track *track) override { updateEnabledPush2Buttons(); }
-    void trackRemoved(Track *track, int oldIndex) override { updateEnabledPush2Buttons(); }
-    void trackOrderChanged() override { updateEnabledPush2Buttons(); }
-    void trackPropertyChanged(Track *track, const Identifier &i) override;
+    void onChildAdded(Track *) override { updateEnabledPush2Buttons(); }
+    void onChildRemoved(Track *, int oldIndex) override { updateEnabledPush2Buttons(); }
+    void onChildChanged(Track *, const Identifier &i) override;
+    void onOrderChanged() override { updateEnabledPush2Buttons(); }
 
     virtual void trackSelected(Track *track) { updateEnabledPush2Buttons(); }
 

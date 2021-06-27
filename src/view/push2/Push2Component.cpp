@@ -13,11 +13,11 @@ Push2Component::Push2Component(View &view, Tracks &tracks, Connections &connecti
     addChildComponent(processorSelector);
     addChildComponent(mixerView);
 
-    tracks.addTracksListener(this);
-    tracks.addListener(this);
-    tracks.addTracksListener(this);
-    connections.addListener(this);
-    view.addListener(this);
+    tracks.addStateListener(this);
+    tracks.addChildListener(this);
+    tracks.addProcessorListener(this);
+    connections.addStateListener(this);
+    view.addStateListener(this);
     this->project.getUndoManager().addChangeListener(this);
 
     setBounds(0, 0, Push2Display::WIDTH, Push2Display::HEIGHT);
@@ -31,10 +31,11 @@ Push2Component::Push2Component(View &view, Tracks &tracks, Connections &connecti
 Push2Component::~Push2Component() {
     setVisible(false);
     project.getUndoManager().removeChangeListener(this);
-    view.removeListener(this);
-    connections.removeListener(this);
-    tracks.removeListener(this);
-    tracks.removeTracksListener(this);
+    view.removeStateListener(this);
+    connections.removeStateListener(this);
+    tracks.removeProcessorListener(this);
+    tracks.removeChildListener(this);
+    tracks.removeStateListener(this);
 }
 
 void Push2Component::handleIncomingMidiMessage(MidiInput *source, const MidiMessage &message) {
@@ -243,15 +244,23 @@ void Push2Component::showChild(Push2ComponentBase *child) {
         currentlyViewingChild->setVisible(true);
 }
 
-void Push2Component::trackAdded(Track *track) {
+void Push2Component::onChildAdded(Track *) {
     updatePush2SelectionDependentButtons();
 }
-void Push2Component::trackRemoved(Track *track, int oldIndex) {
+void Push2Component::onChildRemoved(Track *, int oldIndex) {
     updatePush2SelectionDependentButtons();
     if (tracks.getFocusedTrack() == nullptr) {
         showChild(nullptr);
         processorView.processorFocused(nullptr, nullptr);
     }
+}
+void Push2Component::onChildAdded(Processor *) {
+    updateFocusedProcessor();
+    updatePush2SelectionDependentButtons();
+}
+void Push2Component::onChildRemoved(Processor *, int oldIndex) {
+    updateFocusedProcessor();
+    updatePush2SelectionDependentButtons();
 }
 
 void Push2Component::valueTreeChildAdded(ValueTree &parent, ValueTree &child) {
@@ -260,10 +269,7 @@ void Push2Component::valueTreeChildAdded(ValueTree &parent, ValueTree &child) {
     }
 }
 void Push2Component::valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int) {
-    if (Processor::isType(child)) {
-        updateFocusedProcessor();
-        updatePush2SelectionDependentButtons();
-    } else if (Connection::isType(child)) {
+    if (Connection::isType(child)) {
         updatePush2NoteModePadLedManagerVisibility();
     }
 }

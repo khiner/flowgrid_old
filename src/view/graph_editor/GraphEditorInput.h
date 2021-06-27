@@ -4,7 +4,7 @@
 #include "ProcessorGraph.h"
 #include "GraphEditorChannel.h"
 
-class GraphEditorInput : public Component, private Input::Listener {
+class GraphEditorInput : public Component, private StatefulList<Processor>::Listener {
 public:
     GraphEditorInput(Input &, View &, ProcessorGraph &, PluginManager &, ConnectorDragListener &);
 
@@ -27,7 +27,7 @@ private:
     ProcessorGraph &graph;
     ConnectorDragListener &connectorDragListener;
 
-    void processorRemoved(Processor *processor, int oldIndex) override {
+    void onChildRemoved(Processor *processor, int oldIndex) override {
         if (processor->isAudioInputProcessor()) {
             audioInputProcessor = nullptr;
         }
@@ -36,12 +36,12 @@ private:
             resized();
         }
     }
-    void processorOrderChanged() override {
+    void onOrderChanged() override {
         midiInputProcessors.sort(*this);
         resized();
     }
 
-    void processorPropertyChanged(Processor *processor, const Identifier &i) override {
+    void onChildChanged(Processor *processor, const Identifier &i) override {
         if (i == ProcessorIDs::initialized) {
             if (processor->isAudioInputProcessor()) {
                 addAndMakeVisible(*(audioInputProcessor = std::make_unique<LabelGraphEditorProcessor>(processor, nullptr, view, graph.getProcessorWrappers(), connectorDragListener)), 0);

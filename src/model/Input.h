@@ -4,7 +4,6 @@
 
 #include "push2/Push2MidiDevice.h"
 #include "PluginManager.h"
-#include "Stateful.h"
 #include "StatefulList.h"
 #include "Processor.h"
 #include "ConnectionType.h"
@@ -16,21 +15,10 @@ ID(INPUT)
 }
 
 struct Input : public Stateful<Input>, public StatefulList<Processor> {
-    struct Listener {
-        virtual void processorAdded(Processor *) {}
-        virtual void processorRemoved(Processor *, int oldIndex) {}
-        virtual void processorOrderChanged() {}
-        virtual void processorPropertyChanged(Processor *, const Identifier &) {}
-    };
-
-    void addInputListener(Listener *listener) { listeners.add(listener); }
-    void removeInputListener(Listener *listener) { listeners.remove(listener); }
-
     Input(PluginManager &pluginManager, UndoManager &undoManager, AudioDeviceManager &deviceManager)
             : StatefulList<Processor>(state), pluginManager(pluginManager), undoManager(undoManager), deviceManager(deviceManager) {
         rebuildObjects();
     }
-
     ~Input() override {
         freeObjects();
     }
@@ -57,35 +45,26 @@ struct Input : public Stateful<Input>, public StatefulList<Processor> {
     Array<Processor *> syncInputDevicesWithDeviceManager();
 
 private:
-    ListenerList<Listener> listeners;
-
     PluginManager &pluginManager;
     UndoManager &undoManager;
     AudioDeviceManager &deviceManager;
 
     Processor *createNewObject(const ValueTree &tree) override { return new Processor(tree, undoManager, deviceManager); }
-    void deleteObject(Processor *processor) override { delete processor; }
-    void newObjectAdded(Processor *processor) override {
+    void onChildAdded(Processor *processor) override {
         if (processor->isMidiInputProcessor() && !deviceManager.isMidiInputEnabled(processor->getDeviceName()))
             deviceManager.setMidiInputEnabled(processor->getDeviceName(), true);
-        listeners.call(&Listener::processorAdded, processor);
     }
-    void objectRemoved(Processor *processor, int oldIndex) override {
+    void onChildRemoved(Processor *processor, int oldIndex) override {
         if (processor->isMidiInputProcessor() && deviceManager.isMidiInputEnabled(processor->getDeviceName()))
             deviceManager.setMidiInputEnabled(processor->getDeviceName(), false);
-        listeners.call(&Listener::processorRemoved, processor, oldIndex);
-    }
-    void objectOrderChanged() override {
-        listeners.call(&Listener::processorOrderChanged);
     }
 
-    void objectChanged(Processor *processor, const Identifier &i) override {
+    void onChildChanged(Processor *processor, const Identifier &i) override {
         if (i == ProcessorIDs::deviceName) {
             AudioDeviceManager::AudioDeviceSetup config;
             deviceManager.getAudioDeviceSetup(config);
             config.inputDeviceName = processor->getDeviceName();
             deviceManager.setAudioDeviceSetup(config, true);
         }
-        listeners.call(&Listener::processorPropertyChanged, processor, i);
     }
 };

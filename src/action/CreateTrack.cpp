@@ -44,7 +44,7 @@ static ValueTree create(bool isMaster, const Track *derivedFromTrack, Tracks &tr
 }
 
 bool CreateTrack::perform() {
-    tracks.add(create(isMaster, tracks.getChild(derivedFromTrackIndex), tracks), insertIndex);
+    tracks.add(create(isMaster, tracks.get(derivedFromTrackIndex), tracks), insertIndex);
     return true;
 }
 

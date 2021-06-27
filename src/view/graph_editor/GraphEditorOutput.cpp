@@ -2,11 +2,11 @@
 
 GraphEditorOutput::GraphEditorOutput(Output &output, View &view, ProcessorGraph &processorGraph, PluginManager &pluginManager, ConnectorDragListener &connectorDragListener)
         : output(output), view(view), graph(processorGraph), connectorDragListener(connectorDragListener) {
-    output.addOutputListener(this);
+    output.addChildListener(this);
 }
 
 GraphEditorOutput::~GraphEditorOutput() {
-    output.removeOutputListener(this);
+    output.removeChildListener(this);
 }
 
 

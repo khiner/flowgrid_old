@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Stateful.h"
 #include "ProcessorLane.h"
 
 namespace ProcessorLanesIDs {
@@ -11,16 +10,6 @@ ID(PROCESSOR_LANES)
 
 
 struct ProcessorLanes : public Stateful<ProcessorLanes>, public StatefulList<ProcessorLane> {
-    struct Listener {
-        virtual void processorLaneAdded(ProcessorLane *processorLane) = 0;
-        virtual void processorLaneRemoved(ProcessorLane *processorLane, int oldIndex) = 0;
-        virtual void processorLaneOrderChanged() {}
-        virtual void processorLanePropertyChanged(ProcessorLane *processorLane, const Identifier &i) {}
-    };
-
-    void addProcessorLanesListener(Listener *listener) { listeners.add(listener); }
-    void removeProcessorLanesListener(Listener *listener) { listeners.remove(listener); }
-
     ProcessorLanes(UndoManager &undoManager, AudioDeviceManager &deviceManager);
 
     explicit ProcessorLanes(const ValueTree &state, UndoManager &undoManager, AudioDeviceManager &deviceManager);
@@ -36,15 +25,6 @@ struct ProcessorLanes : public Stateful<ProcessorLanes>, public StatefulList<Pro
 
 protected:
     ProcessorLane *createNewObject(const ValueTree &tree) override { return new ProcessorLane(tree, undoManager, deviceManager); }
-    void deleteObject(ProcessorLane *processorLane) override { delete processorLane; }
-    void newObjectAdded(ProcessorLane *processorLane) override {
-        listeners.call(&Listener::processorLaneAdded, processorLane);
-    }
-    void objectRemoved(ProcessorLane *processorLane, int oldIndex) override {
-        listeners.call(&Listener::processorLaneRemoved, processorLane, oldIndex);
-    }
-    void objectOrderChanged() override { listeners.call(&Listener::processorLaneOrderChanged); }
-    void objectChanged(ProcessorLane *lane, const Identifier &i) override {  listeners.call(&Listener::processorLanePropertyChanged, lane, i); }
 
 private:
     ListenerList<Listener> listeners;

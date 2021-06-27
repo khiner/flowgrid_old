@@ -42,7 +42,7 @@ const Processor *ResetDefaultExternalInputConnectionsAction::findMostUpstreamAva
 
     // TODO performance improvement: only iterate over connected processors
     for (int i = tracks.size() - 1; i >= 0; i--) {
-        const auto *track = tracks.getChild(i);
+        const auto *track = tracks.get(i);
         const auto *firstProcessor = track->getFirstProcessor();
         if (firstProcessor == nullptr) continue;
 

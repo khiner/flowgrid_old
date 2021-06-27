@@ -2,12 +2,12 @@
 
 GraphEditorInput::GraphEditorInput(Input &input, View &view, ProcessorGraph &processorGraph, PluginManager &pluginManager, ConnectorDragListener &connectorDragListener)
         : input(input), view(view), graph(processorGraph), connectorDragListener(connectorDragListener) {
-    input.addInputListener(this);
+    input.addChildListener(this);
 }
 
 GraphEditorInput::~GraphEditorInput() {
     removeMouseListener(this);
-    input.removeInputListener(this);
+    input.removeChildListener(this);
 }
 
 

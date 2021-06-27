@@ -5,8 +5,8 @@
 
 GraphEditorProcessorLane::GraphEditorProcessorLane(ProcessorLane *lane, Track *track, View &view, StatefulAudioProcessorWrappers &processorWrappers, ConnectorDragListener &connectorDragListener)
         : lane(lane), track(track), view(view), processorWrappers(processorWrappers), connectorDragListener(connectorDragListener) {
-    view.addListener(this);
-    lane->addProcessorLaneListener(this);
+    view.addStateListener(this);
+    lane->addChildListener(this);
     // TODO shouldn't need to do this
     valueTreePropertyChanged(view.getState(), track->isMaster() ? ViewIDs::numMasterProcessorSlots : ViewIDs::numProcessorSlots);
     addAndMakeVisible(laneDragRectangle);
@@ -14,8 +14,8 @@ GraphEditorProcessorLane::GraphEditorProcessorLane(ProcessorLane *lane, Track *t
 }
 
 GraphEditorProcessorLane::~GraphEditorProcessorLane() {
-    lane->removeProcessorLaneListener(this);
-    view.removeListener(this);
+    lane->removeChildListener(this);
+    view.removeStateListener(this);
 }
 
 void GraphEditorProcessorLane::resized() {

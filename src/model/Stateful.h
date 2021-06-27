@@ -38,6 +38,9 @@ struct Stateful {
     void addListener(ValueTree::Listener *listener) { state.addListener(listener); }
     void removeListener(ValueTree::Listener *listener) { state.removeListener(listener); }
 
+    void addStateListener(ValueTree::Listener *listener) { addListener(listener); }
+    void removeStateListener(ValueTree::Listener *listener) { addListener(listener); }
+
 protected:
     ValueTree state;
 

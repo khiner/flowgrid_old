@@ -11,7 +11,7 @@
 
 class GraphEditorPanel
         : public Component, public ConnectorDragListener, public GraphEditorProcessorContainer,
-          private ValueTree::Listener, Tracks::Listener {
+          private ValueTree::Listener, StatefulList<Track>::Listener, StatefulList<Processor>::Listener {
 public:
     GraphEditorPanel(View &view, Tracks &tracks, Connections &connections, Input &input, Output &output, ProcessorGraph &processorGraph, Project &project, PluginManager &pluginManager);
 
@@ -64,12 +64,13 @@ private:
     void closeWindowFor(const Processor *processor);
     void showPopupMenu(const Track *track, int slot);
 
-    void trackAdded(Track *track) override { connectors->updateConnectors(); }
-    void trackRemoved(Track *track, int oldIndex) override { connectors->updateConnectors(); }
-    void trackOrderChanged() override { connectors->updateConnectors(); }
-    void processorAdded(Processor *processor) override { connectors->updateConnectors(); }
-    void processorRemoved(Processor *processor, int oldIndex) override { connectors->updateConnectors(); }
-    void processorPropertyChanged(Processor *processor, const Identifier &i) override {
+    void onChildAdded(Track *track) override { connectors->updateConnectors(); }
+    void onChildChanged(Track *, const Identifier &) override {}
+    void onChildRemoved(Track *track, int oldIndex) override { connectors->updateConnectors(); }
+    void onOrderChanged() override { connectors->updateConnectors(); }
+    void onChildAdded(Processor *processor) override { connectors->updateConnectors(); }
+    void onChildRemoved(Processor *processor, int oldIndex) override { connectors->updateConnectors(); }
+    void onChildChanged(Processor *processor, const Identifier &i) override {
         if (i == ProcessorIDs::slot) {
             connectors->updateConnectors();
         } else if (i == ProcessorIDs::pluginWindowType) {

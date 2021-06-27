@@ -8,7 +8,7 @@ static int getInsertSlot(const PluginDescription &description, const Track *trac
     // Insert new effect processors right after the lane's last processor
     const auto *lane = track->getProcessorLane();
     int indexToInsertProcessor = lane->size();
-    const auto *processor = lane->getChild(indexToInsertProcessor - 1);
+    const auto *processor = lane->get(indexToInsertProcessor - 1);
     return indexToInsertProcessor <= 0 || processor == nullptr ? 0 : Processor::getSlot(processor->getState()) + 1;
 }
 
@@ -18,7 +18,7 @@ CreateProcessor::CreateProcessor(juce::Point<int> derivedFromTrackAndSlot, int t
           allProcessors(allProcessors), processorGraph(processorGraph) {}
 
 CreateProcessor::CreateProcessor(const PluginDescription &description, int trackIndex, int slot, Tracks &tracks, View &view, AllProcessors &allProcessors, ProcessorGraph &processorGraph)
-        :  trackIndex(trackIndex), slot(slot == -1 ? getInsertSlot(description, tracks.getChild(trackIndex)) : slot),
+        :  trackIndex(trackIndex), slot(slot == -1 ? getInsertSlot(description, tracks.get(trackIndex)) : slot),
            pluginWindowType(static_cast<int>(PluginWindowType::none)),
            insertAction(std::make_unique<InsertProcessor>(description, trackIndex, slot, tracks, view)),
            description(description), allProcessors(allProcessors), processorGraph(processorGraph) {}

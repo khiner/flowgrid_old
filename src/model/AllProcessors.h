@@ -4,26 +4,17 @@
 #include "Input.h"
 #include "Output.h"
 
-struct AllProcessors : private Tracks::Listener, Input::Listener, Output::Listener {
-    struct Listener {
-        virtual void processorAdded(Processor *) {}
-        virtual void processorRemoved(Processor *, int oldIndex) {}
-        virtual void processorPropertyChanged(Processor *, const Identifier &) {}
-    };
-
-    void addAllProcessorsListener(Listener *listener) { listeners.add(listener); }
-    void removeAllProcessorsListener(Listener *listener) { listeners.remove(listener); }
-
+struct AllProcessors : private StatefulList<Processor>::Listener {
     AllProcessors(Tracks &tracks, Input &input, Output &output) : tracks(tracks), input(input), output(output) {
-        tracks.addTracksListener(this);
-        input.addInputListener(this);
-        output.addOutputListener(this);
+        tracks.addProcessorListener(this);
+        input.addChildListener(this);
+        output.addChildListener(this);
     }
 
     ~AllProcessors() {
-        output.removeOutputListener(this);
-        input.removeInputListener(this);
-        tracks.removeTracksListener(this);
+        output.removeChildListener(this);
+        input.removeChildListener(this);
+        tracks.removeProcessorListener(this);
     }
 
     Processor *getMostRecentlyCreatedProcessor() const { return mostRecentlyCreatedProcessor; }
@@ -62,12 +53,10 @@ private:
     Input &input;
     Output &output;
 
-    void processorAdded(Processor *processor) override {
+    void onChildAdded(Processor *processor) override {
         mostRecentlyCreatedProcessor = processor;
-        listeners.call(&Listener::processorAdded, processor);
     }
-    void processorRemoved(Processor *processor, int oldIndex) override {
-        listeners.call(&Listener::processorRemoved, processor, oldIndex);
-        mostRecentlyCreatedProcessor = nullptr;
+    void onChildRemoved(Processor *processor, int oldIndex) override {
+        if (processor == mostRecentlyCreatedProcessor) mostRecentlyCreatedProcessor = nullptr;
     }
 };

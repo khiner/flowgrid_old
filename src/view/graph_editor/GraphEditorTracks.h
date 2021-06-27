@@ -8,17 +8,17 @@
 class GraphEditorTracks : public Component,
                           public GraphEditorProcessorContainer,
                           private ValueTree::Listener,
-                          private Tracks::Listener {
+                          private StatefulList<Track>::Listener {
 public:
     explicit GraphEditorTracks(View &view, Tracks &tracks, Project &project, StatefulAudioProcessorWrappers &processorWrappers, PluginManager &pluginManager, ConnectorDragListener &connectorDragListener)
               : view(view), tracks(tracks), project(project), processorWrappers(processorWrappers), pluginManager(pluginManager), connectorDragListener(connectorDragListener) {
-        tracks.addTracksListener(this);
-        view.addListener(this);
+        tracks.addChildListener(this);
+        view.addStateListener(this);
     }
 
     ~GraphEditorTracks() override {
-        view.removeListener(this);
-        tracks.removeTracksListener(this);
+        view.removeStateListener(this);
+        tracks.removeChildListener(this);
     }
 
     void resized() override {
@@ -93,15 +93,15 @@ private:
     PluginManager &pluginManager;
     ConnectorDragListener &connectorDragListener;
 
-    void trackAdded(Track *track) override {
+    void onChildAdded(Track *track) override {
         addAndMakeVisible(children.insert(track->getIndex(), new GraphEditorTrack(track, view, project, processorWrappers, pluginManager, connectorDragListener)));
         resized();
     }
-    void trackRemoved(Track *track, int oldIndex) override {
+    void onChildRemoved(Track *track, int oldIndex) override {
         children.remove(oldIndex);
         resized();
     }
-    void trackOrderChanged() override {
+    void onOrderChanged() override {
         children.sort(*this);
         resized();
         connectorDragListener.update();

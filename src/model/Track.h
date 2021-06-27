@@ -17,9 +17,9 @@ ID(isMaster)
 struct Track : public Stateful<Track>, private ProcessorLanes::Listener, private ProcessorLane::Listener, private ValueTree::Listener {
     struct Listener {
         virtual void trackPropertyChanged(Track *track, const Identifier &i) {}
-        virtual void processorAdded(Processor *) {}
-        virtual void processorRemoved(Processor *, int oldIndex) {}
-        virtual void processorPropertyChanged(Processor *, const Identifier &) {}
+        virtual void onChildAdded(Processor *) {}
+        virtual void onChildRemoved(Processor *, int oldIndex) {}
+        virtual void onChildChanged(Processor *, const Identifier &) {}
     };
 
     void addTrackListener(Listener *listener) { listeners.add(listener); }
@@ -28,26 +28,20 @@ struct Track : public Stateful<Track>, private ProcessorLanes::Listener, private
     Track(UndoManager &undoManager, AudioDeviceManager &deviceManager)
             : Stateful<Track>(), processorLanes(undoManager, deviceManager), undoManager(undoManager), deviceManager(deviceManager) {
         state.appendChild(processorLanes.getState(), nullptr);
-        processorLanes.addProcessorLanesListener(this);
-        for (auto *lane : processorLanes.getChildren()) {
-            processorLaneAdded(lane);
-        }
+        processorLanes.addChildListener(this);
         state.addListener(this);
     }
     explicit Track(ValueTree state, UndoManager &undoManager, AudioDeviceManager &deviceManager)
             : Stateful<Track>(std::move(state)),
               processorLanes(this->state.getChildWithName(ProcessorLanesIDs::PROCESSOR_LANES).isValid() ? this->state.getChildWithName(ProcessorLanesIDs::PROCESSOR_LANES) : ValueTree(ProcessorLanesIDs::PROCESSOR_LANES), undoManager, deviceManager),
               undoManager(undoManager), deviceManager(deviceManager) {
-        processorLanes.addProcessorLanesListener(this);
-        for (auto *lane : processorLanes.getChildren()) {
-            processorLaneAdded(lane);
-        }
+        processorLanes.addChildListener(this);
         this->state.addListener(this);
     }
 
     ~Track() override {
         state.removeListener(this);
-        processorLanes.removeProcessorLanesListener(this);
+        processorLanes.removeChildListener(this);
     }
 
     Track copy() const { return Track(state, undoManager, deviceManager); }
@@ -106,20 +100,20 @@ struct Track : public Stateful<Track>, private ProcessorLanes::Listener, private
     Array<Processor *> getAllProcessors() const;
 
     ProcessorLanes &getProcessorLanes() { return processorLanes; }
-    ProcessorLane *getProcessorLane() const { return processorLanes.getChild(0); }
-    ProcessorLane *getProcessorLaneAt(int index) const { return processorLanes.getChild(index); }
+    ProcessorLane *getProcessorLane() const { return processorLanes.get(0); }
+    ProcessorLane *getProcessorLaneAt(int index) const { return processorLanes.get(index); }
     Processor *getInputProcessor() const { return audioInputProcessor.get(); }
     Processor *getOutputProcessor() const { return audioOutputProcessor.get(); }
 
     Processor *getFirstProcessor() const {
         const auto *lane = getProcessorLane();
-        auto *processor = lane->getChild(0);
+        auto *processor = lane->get(0);
         if (processor == nullptr) return nullptr;
         return processor;
     }
     ValueTree getFirstProcessorState() const {
         const auto *lane = getProcessorLane();
-        const auto *processor = lane->getChild(0);
+        const auto *processor = lane->get(0);
         if (processor == nullptr) return {};
         return processor->getState();
     }
@@ -146,52 +140,53 @@ private:
     UndoManager &undoManager;
     AudioDeviceManager &deviceManager;
 
-    void processorLaneAdded(ProcessorLane *processorLane) override {
-        processorLane->addProcessorLaneListener(this);
+    void onChildAdded(ProcessorLane *processorLane) override {
+        processorLane->addChildListener(this);
     }
-    void processorLaneRemoved(ProcessorLane *processorLane, int oldIndex) override {
-        processorLane->removeProcessorLaneListener(this);
+    void onChildRemoved(ProcessorLane *processorLane, int oldIndex) override {
+        processorLane->removeChildListener(this);
     }
+    void onChildChanged(ProcessorLane *processorLane, const Identifier &i) override {}
 
-    void processorAdded(Processor *processor) override {
+    void onChildAdded(Processor *processor) override {
         if (processor->isTrackInputProcessor()) audioInputProcessor.reset(processor);
         else if (processor->isTrackOutputProcessor()) audioOutputProcessor.reset(processor);
         else if (processor->isMidiInputProcessor()) midiInputProcessor.reset(processor);
         else if (processor->isMidiOutputProcessor()) midiOutputProcessor.reset(processor);
-        listeners.call(&Listener::processorAdded, processor);
+        listeners.call(&Listener::onChildAdded, processor);
     }
-    void processorRemoved(Processor *processor, int oldIndex) override {
-        listeners.call(&Listener::processorRemoved, processor, oldIndex);
+    void onChildRemoved(Processor *processor, int oldIndex) override {
+        listeners.call(&Listener::onChildRemoved, processor, oldIndex);
         if (processor == audioInputProcessor.get()) audioInputProcessor = nullptr;
         else if (processor == audioOutputProcessor.get()) audioOutputProcessor = nullptr;
         else if (processor == midiInputProcessor.get()) midiInputProcessor = nullptr;
         else if (processor == midiOutputProcessor.get()) midiOutputProcessor = nullptr;
     }
-    void processorPropertyChanged(Processor *processor, const Identifier &i) override {
-        listeners.call(&Listener::processorPropertyChanged, processor, i);
+    void onChildChanged(Processor *processor, const Identifier &i) override {
+        listeners.call(&Listener::onChildChanged, processor, i);
     }
 
     void valueTreeChildAdded(ValueTree &parent, ValueTree &tree) override {
         if (Processor::isType(tree) && parent == getState()) {
-            processorAdded(new Processor(tree, undoManager, deviceManager));
+            onChildAdded(new Processor(tree, undoManager, deviceManager));
         }
     }
     void valueTreeChildRemoved(ValueTree &exParent, ValueTree &tree, int oldIndex) override {
         if (Processor::isType(tree) && exParent == getState()) {
-            if (audioInputProcessor != nullptr && audioInputProcessor->getState() == tree) processorRemoved(audioInputProcessor.get(), oldIndex);
-            else if (audioOutputProcessor != nullptr && audioOutputProcessor->getState() == tree) processorRemoved(audioOutputProcessor.get(), oldIndex);
-            else if (midiInputProcessor != nullptr && midiInputProcessor->getState() == tree) processorRemoved(midiInputProcessor.get(), oldIndex);
-            else if (midiOutputProcessor != nullptr && midiOutputProcessor->getState() == tree) processorRemoved(midiOutputProcessor.get(), oldIndex);
+            if (audioInputProcessor != nullptr && audioInputProcessor->getState() == tree) onChildRemoved(audioInputProcessor.get(), oldIndex);
+            else if (audioOutputProcessor != nullptr && audioOutputProcessor->getState() == tree) onChildRemoved(audioOutputProcessor.get(), oldIndex);
+            else if (midiInputProcessor != nullptr && midiInputProcessor->getState() == tree) onChildRemoved(midiInputProcessor.get(), oldIndex);
+            else if (midiOutputProcessor != nullptr && midiOutputProcessor->getState() == tree) onChildRemoved(midiOutputProcessor.get(), oldIndex);
         }
     }
     void valueTreePropertyChanged(ValueTree &tree, const Identifier &i) override {
         if (isType(tree)) {
             listeners.call(&Listener::trackPropertyChanged, this, i);
         } else if (Processor::isType(tree) && tree.getParent() == getState()) {
-            if (audioInputProcessor != nullptr && audioInputProcessor->getState() == tree) processorPropertyChanged(audioInputProcessor.get(), i);
-            else if (audioOutputProcessor != nullptr && audioOutputProcessor->getState() == tree) processorPropertyChanged(audioOutputProcessor.get(), i);
-            else if (midiInputProcessor != nullptr && midiInputProcessor->getState() == tree) processorPropertyChanged(midiInputProcessor.get(), i);
-            else if (midiOutputProcessor != nullptr && midiOutputProcessor->getState() == tree) processorPropertyChanged(midiOutputProcessor.get(), i);
+            if (audioInputProcessor != nullptr && audioInputProcessor->getState() == tree) onChildChanged(audioInputProcessor.get(), i);
+            else if (audioOutputProcessor != nullptr && audioOutputProcessor->getState() == tree) onChildChanged(audioOutputProcessor.get(), i);
+            else if (midiInputProcessor != nullptr && midiInputProcessor->getState() == tree) onChildChanged(midiInputProcessor.get(), i);
+            else if (midiOutputProcessor != nullptr && midiOutputProcessor->getState() == tree) onChildChanged(midiOutputProcessor.get(), i);
         }
     }
 };

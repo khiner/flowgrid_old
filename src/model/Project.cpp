@@ -112,7 +112,7 @@ void Project::deleteSelectedItems() {
     undoManager.beginNewTransaction();
     undoManager.perform(new DeleteSelectedItems(tracks, connections, processorGraph));
     if (view.getFocusedTrackIndex() >= tracks.size() && tracks.size() > 0)
-        setTrackSelected(tracks.getChild(tracks.size() - 1), true);
+        setTrackSelected(tracks.get(tracks.size() - 1), true);
     updateAllDefaultConnections();
 }
 
@@ -137,7 +137,7 @@ void Project::duplicateSelectedItems() {
 void Project::beginDragging(const juce::Point<int> trackAndSlot) {
     if (trackAndSlot.x == Tracks::INVALID_TRACK_AND_SLOT.x) return;
 
-    const auto *track = tracks.getChild(trackAndSlot.x);
+    const auto *track = tracks.get(trackAndSlot.x);
     if (trackAndSlot.y == -1 && track != nullptr && track->isMaster()) return;
 
     initialDraggingTrackAndSlot = trackAndSlot;
@@ -227,7 +227,7 @@ void Project::toggleProcessorBypass(Processor *processor) {
 void Project::selectTrackAndSlot(juce::Point<int> trackAndSlot) {
     if (trackAndSlot.x < 0 || trackAndSlot.x >= tracks.size()) return;
 
-    auto *track = tracks.getChild(trackAndSlot.x);
+    auto *track = tracks.get(trackAndSlot.x);
     const int slot = trackAndSlot.y;
     if (slot != -1)
         setProcessorSlotSelected(track, slot, true);

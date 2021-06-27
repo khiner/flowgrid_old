@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Stateful.h"
 #include "Processor.h"
 #include "StatefulList.h"
 
@@ -13,18 +12,6 @@ ID(selectedSlotsMask)
 
 
 struct ProcessorLane : public Stateful<ProcessorLane>, public StatefulList<Processor> {
-    struct Listener {
-        virtual void processorAdded(Processor *) {}
-        virtual void processorRemoved(Processor *, int oldIndex) {}
-        virtual void processorOrderChanged() {}
-        virtual void processorPropertyChanged(Processor *, const Identifier &) {}
-    };
-
-    void addProcessorLaneListener(Listener *listener) {
-        listeners.add(listener);
-    }
-    void removeProcessorLaneListener(Listener *listener) { listeners.remove(listener); }
-
     ProcessorLane(UndoManager &undoManager, AudioDeviceManager &deviceManager)
             : StatefulList<Processor>(state), undoManager(undoManager), deviceManager(deviceManager) {
         rebuildObjects();
@@ -70,14 +57,8 @@ struct ProcessorLane : public Stateful<ProcessorLane>, public StatefulList<Proce
 
 protected:
     Processor *createNewObject(const ValueTree &tree) override { return new Processor(tree, undoManager, deviceManager); }
-    void deleteObject(Processor *processor) override { delete processor; }
-    void newObjectAdded(Processor *processor) override { listeners.call(&Listener::processorAdded, processor); }
-    void objectRemoved(Processor *processor, int oldIndex) override { listeners.call(&Listener::processorRemoved, processor, oldIndex); }
-    void objectOrderChanged() override { listeners.call(&Listener::processorOrderChanged); }
-    void objectChanged(Processor *processor, const Identifier &i) override { listeners.call(&Listener::processorPropertyChanged, processor, i); }
 
 private:
-    ListenerList<Listener> listeners;
     UndoManager &undoManager;
     AudioDeviceManager &deviceManager;
 };

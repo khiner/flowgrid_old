@@ -8,14 +8,15 @@
 class BaseGraphEditorProcessor : public Component, public ValueTree::Listener {
 public:
     BaseGraphEditorProcessor(Processor *processor, Track *track, View &view, StatefulAudioProcessorWrappers &processorWrappers, ConnectorDragListener  &connectorDragListener);
-
     ~BaseGraphEditorProcessor() override;
 
     Processor *getProcessor() const { return processor; }
-
     Track *getTrack() const { return track; }
 
-    AudioProcessorGraph::NodeID getNodeId() const { return processor->getNodeId(); }
+    AudioProcessorGraph::NodeID getNodeId() const {
+        if (processor == nullptr) return {};
+        return processor->getNodeId();
+    }
 
     virtual bool isInView() {
         return processor->isIoProcessor() || view.isProcessorSlotInView(track->getIndex(), track->isMaster(), processor->getSlot());

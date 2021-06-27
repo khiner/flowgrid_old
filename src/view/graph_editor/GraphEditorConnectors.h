@@ -25,10 +25,6 @@ public:
         return connector;
     }
 
-    void deleteObject(GraphEditorConnector *connector) override { delete connector; }
-    void newObjectAdded(GraphEditorConnector *) override {}
-    void objectRemoved(GraphEditorConnector *, int) override {}
-    void objectOrderChanged() override {}
     void updateConnectors() {
         for (auto *connector : children) {
             connector->update();

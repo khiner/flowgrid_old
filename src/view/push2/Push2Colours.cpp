@@ -1,14 +1,14 @@
 #include "Push2Colours.h"
 
 Push2Colours::Push2Colours(Tracks &tracks) : tracks(tracks) {
-    this->tracks.addTracksListener(this);
+    this->tracks.addChildListener(this);
     for (uint8 colourIndex = 1; colourIndex < CHAR_MAX - 1; colourIndex++) {
         availableColourIndexes.add(colourIndex);
     }
 }
 
 Push2Colours::~Push2Colours() {
-    tracks.removeTracksListener(this);
+    tracks.removeChildListener(this);
 }
 
 uint8 Push2Colours::findIndexForColourAddingIfNeeded(const Colour &colour) {
@@ -32,20 +32,20 @@ void Push2Colours::setColour(uint8 colourIndex, const Colour &colour) {
     listeners.call(&Listener::colourAdded, colour, colourIndex);
 }
 
-void Push2Colours::trackAdded(Track *track) {
+void Push2Colours::onChildAdded(Track *track) {
     const String &uuid = track->getUuid();
     const auto &colour = track->getColour();
     auto index = findIndexForColourAddingIfNeeded(colour);
     indexForTrackUuid[uuid] = index;
     listeners.call(&Listener::trackColourChanged, uuid, colour);
 }
-void Push2Colours::trackRemoved(Track *track, int oldIndex) {
+void Push2Colours::onChildRemoved(Track *track, int oldIndex) {
     const auto &uuid = track->getUuid();
     auto index = indexForTrackUuid[uuid];
     availableColourIndexes.add(index);
     indexForTrackUuid.erase(uuid);
 }
-void Push2Colours::trackPropertyChanged(Track *track, const Identifier &i) {
+void Push2Colours::onChildChanged(Track *track, const Identifier &i) {
     if (i == TrackIDs::colour) {
         const String &uuid = track->getUuid();
         auto index = indexForTrackUuid[uuid];

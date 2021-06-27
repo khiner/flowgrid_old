@@ -11,23 +11,23 @@ public:
 
     ~GraphEditorProcessorLane() override;
 
-    void processorAdded(Processor *processor) override {
+    void onChildAdded(Processor *processor) override {
         addAndMakeVisible(children.insert(processor->getIndex(), createEditorForProcessor(processor)));
         children.getUnchecked(processor->getIndex())->addMouseListener(this, true);
         resized();
     }
-    void processorRemoved(Processor *processor, int oldIndex) override {
+    void onChildRemoved(Processor *processor, int oldIndex) override {
         children.getUnchecked(oldIndex)->removeMouseListener(this);
         children.remove(oldIndex);
         resized();
     }
-    void processorOrderChanged() override {
+    void onOrderChanged() override {
         children.sort(*this);
         resized();
         connectorDragListener.update();
     }
 
-    void processorPropertyChanged(Processor *processor, const Identifier &i) override {
+    void onChildChanged(Processor *processor, const Identifier &i) override {
         if (i == ProcessorIDs::slot) {
             resized();
         }

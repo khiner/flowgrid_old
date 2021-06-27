@@ -54,7 +54,7 @@ juce::Point<int> Tracks::gridPositionToTrackAndSlot(const juce::Point<int> gridP
         slot = gridPosition.y;
     }
 
-    if (trackIndex < 0 || slot < -1 || slot >= getNumSlotsForTrack(getChild(trackIndex)))
+    if (trackIndex < 0 || slot < -1 || slot >= getNumSlotsForTrack(get(trackIndex)))
         return INVALID_TRACK_AND_SLOT;
 
     return {trackIndex, slot};
@@ -109,7 +109,7 @@ void Tracks::copySelectedItemsInto(OwnedArray<Track> &copiedTracks, StatefulAudi
 
 juce::Point<int> Tracks::selectionPaneTrackAndSlotWithUpDownDelta(int delta) const {
     const auto focusedTrackAndSlot = view.getFocusedTrackAndSlot();
-    const auto *focusedTrack = getChild(focusedTrackAndSlot.x);
+    const auto *focusedTrack = get(focusedTrackAndSlot.x);
     if (focusedTrack == nullptr) return INVALID_TRACK_AND_SLOT;
 
     // down when track is selected deselects the track
@@ -118,7 +118,7 @@ juce::Point<int> Tracks::selectionPaneTrackAndSlotWithUpDownDelta(int delta) con
     const auto *focusedProcessor = focusedTrack->getProcessorAtSlot(focusedTrackAndSlot.y);
     Processor *siblingProcessorToSelect = nullptr;
     if (focusedProcessor != nullptr) {
-        siblingProcessorToSelect = focusedTrack->getProcessorLane()->getChild(focusedProcessor->getIndex() + delta);
+        siblingProcessorToSelect = focusedTrack->getProcessorLane()->get(focusedProcessor->getIndex() + delta);
     } else { // no focused processor - selection is on empty slot
         for (int slot = focusedTrackAndSlot.y + delta; (delta < 0 ? slot >= 0 : slot < view.getNumProcessorSlots(focusedTrack->isMaster())); slot += delta) {
             siblingProcessorToSelect = focusedTrack->getProcessorAtSlot(slot);
@@ -133,7 +133,7 @@ juce::Point<int> Tracks::selectionPaneTrackAndSlotWithUpDownDelta(int delta) con
 
 juce::Point<int> Tracks::selectionPaneTrackAndSlotWithLeftRightDelta(int delta) const {
     const auto focusedTrackAndSlot = view.getFocusedTrackAndSlot();
-    auto *focusedTrack = getChild(focusedTrackAndSlot.x);
+    auto *focusedTrack = get(focusedTrackAndSlot.x);
     if (focusedTrack == nullptr) return INVALID_TRACK_AND_SLOT;
 
     auto *siblingTrackToSelect = getChildForState(focusedTrack->getState().getSibling(delta));

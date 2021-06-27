@@ -9,25 +9,22 @@ class GraphEditorProcessorLanes : public Component,
 public:
     explicit GraphEditorProcessorLanes(ProcessorLanes &lanes, Track *track, View &view, StatefulAudioProcessorWrappers &processorWrappers, ConnectorDragListener &connectorDragListener)
             : lanes(lanes), track(track), view(view), processorWrappers(processorWrappers), connectorDragListener(connectorDragListener) {
-        lanes.addProcessorLanesListener(this);
-        for (auto *lane : lanes.getChildren()) {
-            processorLaneAdded(lane);
-        }
+        lanes.addChildListener(this);
     }
 
     ~GraphEditorProcessorLanes() override {
-        lanes.removeProcessorLanesListener(this);
+        lanes.removeChildListener(this);
     }
 
-    void processorLaneAdded(ProcessorLane *lane) override {
+    void onChildAdded(ProcessorLane *lane) override {
         addAndMakeVisible(children.insert(lane->getIndex(), new GraphEditorProcessorLane(lane, track, view, processorWrappers, connectorDragListener)));
         resized();
     }
-    void processorLaneRemoved(ProcessorLane *processorLane, int oldIndex) override {
+    void onChildRemoved(ProcessorLane *lane, int oldIndex) override {
         children.remove(oldIndex);
         resized();
     }
-    void processorLaneOrderChanged() override {
+    void onOrderChanged() override {
         children.sort(*this);
         resized();
         connectorDragListener.update();

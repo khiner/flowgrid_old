@@ -27,7 +27,7 @@ bool DeleteProcessor::performTemporary(bool apply) {
         processor->setPluginWindowType(static_cast<int>(PluginWindowType::none));
         processorGraph.onProcessorDestroyed(processor);
     }
-    auto *track = tracks.getChild(trackIndex);
+    auto *track = tracks.get(trackIndex);
     if (processorSlot == -1) {
         track->getState().removeChild(processorState, nullptr);
     } else {
@@ -37,7 +37,7 @@ bool DeleteProcessor::performTemporary(bool apply) {
 }
 
 bool DeleteProcessor::undoTemporary(bool apply) {
-    auto *track = tracks.getChild(trackIndex);
+    auto *track = tracks.get(trackIndex);
     if (processorSlot == -1) {
         track->getState().appendChild(processorState, nullptr);
     } else {

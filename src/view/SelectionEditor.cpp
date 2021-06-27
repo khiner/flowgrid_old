@@ -5,8 +5,10 @@
 SelectionEditor::SelectionEditor(Project &project, View &view, Tracks &tracks, StatefulAudioProcessorWrappers &processorWrappers)
         : project(project), view(view), tracks(tracks), pluginManager(project.getPluginManager()),
           processorWrappers(processorWrappers), contextPane(tracks, view) {
-    tracks.addListener(this);
-    view.addListener(this);
+    tracks.addStateListener(this);
+    tracks.addChildListener(this);
+    tracks.addProcessorListener(this);
+    view.addStateListener(this);
 
     addAndMakeVisible(addProcessorButton);
     addAndMakeVisible(processorEditorsViewport);
@@ -24,8 +26,10 @@ SelectionEditor::SelectionEditor(Project &project, View &view, Tracks &tracks, S
 
 SelectionEditor::~SelectionEditor() {
     removeMouseListener(this);
-    tracks.removeListener(this);
-    view.removeListener(this);
+    tracks.removeProcessorListener(this);
+    tracks.removeChildListener(this);
+    tracks.removeStateListener(this);
+    view.removeStateListener(this);
 }
 
 void SelectionEditor::mouseDown(const MouseEvent &event) {
@@ -117,8 +121,6 @@ void SelectionEditor::valueTreePropertyChanged(ValueTree &tree, const Identifier
     if (i == ViewIDs::focusedTrackIndex) {
         addProcessorButton.setVisible(tracks.getFocusedTrack() != nullptr);
         refreshProcessors();
-    } else if (i == ProcessorIDs::initialized) {
-        refreshProcessors(); // TODO only the new processor
     } else if (i == ViewIDs::focusedProcessorSlot) {
         refreshProcessors({}, true);
     } else if (i == ViewIDs::numProcessorSlots || i == ViewIDs::numMasterProcessorSlots) {
@@ -129,8 +131,6 @@ void SelectionEditor::valueTreePropertyChanged(ValueTree &tree, const Identifier
             processorEditors.add(processorEditor);
         }
         processorEditors.removeLast(processorEditors.size() - numProcessorSlots);
-    } else if (i == ProcessorIDs::slot) {
-        refreshProcessors();
     } else if (i == ViewIDs::focusedPane) {
         unfocusOverlay.setVisible(view.isGridPaneFocused());
         unfocusOverlay.toFront(false);

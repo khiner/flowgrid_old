@@ -13,7 +13,7 @@
 
 using namespace fg; // Only to disambiguate `Connection` currently
 
-struct ProcessorGraph : public AudioProcessorGraph, private ValueTree::Listener, Tracks::Listener, private Timer {
+struct ProcessorGraph : public AudioProcessorGraph, private ValueTree::Listener, StatefulList<Track>::Listener, StatefulList<Processor>::Listener, private Timer {
     explicit ProcessorGraph(AllProcessors &allProcessors, PluginManager &pluginManager, Tracks &tracks, Connections &connections,
                             Input &input, Output &output, UndoManager &undoManager, AudioDeviceManager &deviceManager,
                             Push2MidiCommunicator &push2MidiCommunicator);
@@ -76,7 +76,8 @@ private:
     bool hasConnectionMatching(const Connection &connection);
     void updateIoChannelEnabled(const ValueTree &channels, const ValueTree &channel, bool enabled);
 
-    void processorPropertyChanged(Processor *processor, const Identifier &i) override {
+    void onChildChanged(Track *track, const Identifier &i) override {}
+    void onChildChanged(Processor *processor, const Identifier &i) override {
         if (i == ProcessorIDs::bypassed) {
             if (auto node = getNodeForId(processor->getNodeId())) {
                 node->setBypassed(processor->isBypassed());

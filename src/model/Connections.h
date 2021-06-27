@@ -35,11 +35,6 @@ struct Connections : public Stateful<Connections>, StatefulList<fg::Connection> 
 
 protected:
     fg::Connection *createNewObject(const ValueTree &tree) override { return new fg::Connection(tree); }
-    void deleteObject(fg::Connection *connection) override { delete connection; }
-    void newObjectAdded(fg::Connection *connection) override {}
-    void objectRemoved(fg::Connection *connection, int oldIndex) override {}
-    void objectOrderChanged() override {}
-    void objectChanged(fg::Connection *connection, const Identifier &i) override {}
 
 private:
     Tracks &tracks;

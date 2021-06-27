@@ -13,7 +13,8 @@ class Push2Component :
         public Push2ComponentBase,
         private ChangeListener,
         private ValueTree::Listener,
-        private Tracks::Listener {
+        private StatefulList<Track>::Listener,
+        private StatefulList<Processor>::Listener {
 public:
     explicit Push2Component(View &view, Tracks &tracks, Connections &connections, Project &project, StatefulAudioProcessorWrappers &processorWrappers, Push2MidiCommunicator &push2MidiCommunicator);
 
@@ -66,8 +67,10 @@ private:
 
     void showChild(Push2ComponentBase *child);
 
-    void trackAdded(Track *track) override;
-    void trackRemoved(Track *track, int oldIndex) override;
+    void onChildAdded(Track *) override;
+    void onChildRemoved(Track *, int oldIndex) override;
+    void onChildAdded(Processor *) override;
+    void onChildRemoved(Processor *, int oldIndex) override;
 
     void valueTreeChildAdded(ValueTree &parent, ValueTree &child) override;
     void valueTreeChildRemoved(ValueTree &exParent, ValueTree &child, int) override;

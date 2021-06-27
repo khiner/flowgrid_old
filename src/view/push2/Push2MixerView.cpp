@@ -58,13 +58,13 @@ void Push2MixerView::updateEnabledPush2Buttons() {
         push2.enableWhiteLedButton(Push2::mix);
 }
 
-void Push2MixerView::trackAdded(Track *track) {
-    Push2TrackManagingView::trackAdded(track);
+void Push2MixerView::onChildAdded(Track *track) {
+    Push2TrackManagingView::onChildAdded(track);
     updateParameters();
 }
 
-void Push2MixerView::trackRemoved(Track *track, int oldIndex) {
-    Push2TrackManagingView::trackRemoved(track, oldIndex);
+void Push2MixerView::onChildRemoved(Track *track, int oldIndex) {
+    Push2TrackManagingView::onChildRemoved(track, oldIndex);
     updateParameters();
 }
 

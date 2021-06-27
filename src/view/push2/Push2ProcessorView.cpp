@@ -150,7 +150,7 @@ void Push2ProcessorView::updateProcessorButtons() {
             (buttonIndex == NUM_COLUMNS - 1 && canPageProcessorsRight())) {
             label->setVisible(false);
         } else if (processorIndex < focusedProcessorLane->size()) {
-            auto *processor = focusedProcessorLane->getChild(processorIndex);
+            auto *processor = focusedProcessorLane->get(processorIndex);
             if (processor != nullptr) {
                 label->setVisible(true);
                 label->setText(processor->getName(), dontSendNotification);
@@ -228,6 +228,6 @@ void Push2ProcessorView::selectProcessor(int processorIndex) {
 
     const auto *focusedLane = focusedTrack->getProcessorLane();
     if (focusedLane != nullptr && processorIndex < focusedLane->size()) {
-        project.selectProcessor(focusedLane->getChild(processorIndex));
+        project.selectProcessor(focusedLane->get(processorIndex));
     }
 }

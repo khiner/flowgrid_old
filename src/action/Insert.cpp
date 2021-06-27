@@ -207,7 +207,7 @@ Insert::MoveSelections::MoveSelections(const OwnedArray<UndoableAction> &createA
             newSelectedSlotsMasks.setUnchecked(createProcessorAction->trackIndex, mask);
         } else if (auto *createTrackAction = dynamic_cast<CreateTrack *>(createAction)) {
             newTrackSelections.setUnchecked(createTrackAction->insertIndex, true);
-            const auto *track = tracks.getChild(createTrackAction->insertIndex);
+            const auto *track = tracks.get(createTrackAction->insertIndex);
             const auto fullSelectionBitmask = Track::createFullSelectionBitmask(view.getNumProcessorSlots(track != nullptr && track->isMaster()));
             newSelectedSlotsMasks.setUnchecked(createTrackAction->insertIndex, fullSelectionBitmask);
         }

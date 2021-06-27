@@ -3,7 +3,6 @@
 #include "model/Track.h"
 #include "model/View.h"
 #include "view/PluginWindowType.h"
-#include "Stateful.h"
 #include "StatefulList.h"
 #include "ConnectionType.h"
 #include "StatefulAudioProcessorWrappers.h"
@@ -16,19 +15,18 @@ ID(TRACKS)
 
 struct Tracks : public Stateful<Tracks>,
                 public StatefulList<Track>,
-                private Track::Listener {
-    struct Listener {
-        virtual void trackAdded(Track *track) {}
-        virtual void trackRemoved(Track *track, int oldIndex) {}
-        virtual void trackOrderChanged() {}
-        virtual void trackPropertyChanged(Track *track, const Identifier &i) {}
-        virtual void processorAdded(Processor *processor) {}
-        virtual void processorRemoved(Processor *processor, int oldIndex) {}
-        virtual void processorPropertyChanged(Processor *processor, const Identifier &) {}
-    };
+                private Track::Listener,
+                private ProcessorLane::Listener {
+    void addProcessorListener(StatefulList<Processor>::Listener *listener) {
+        if (listener == nullptr) return;
 
-    void addTracksListener(Listener *listener) { listeners.add(listener); }
-    void removeTracksListener(Listener *listener) { listeners.remove(listener); }
+        processorListeners.add(listener);
+    }
+    void removeProcessorListener(StatefulList<Processor>::Listener *listener) {
+        if (listener == nullptr) return;
+
+        processorListeners.remove(listener);
+    }
 
     Tracks(View &view, UndoManager &undoManager, AudioDeviceManager &deviceManager);
 
@@ -48,7 +46,7 @@ struct Tracks : public Stateful<Tracks>,
     int getViewIndexForTrack(const Track *track) const { return track->getIndex() - view.getGridViewTrackOffset(); }
     Track *getMostRecentlyCreatedTrack() const { return mostRecentlyCreatedTrack; }
     Processor *getMostRecentlyCreatedProcessor() const { return mostRecentlyCreatedProcessor; }
-    Track *getTrackWithViewIndex(int trackViewIndex) const { return getChild(trackViewIndex + view.getGridViewTrackOffset()); }
+    Track *getTrackWithViewIndex(int trackViewIndex) const { return get(trackViewIndex + view.getGridViewTrackOffset()); }
     Track *getMasterTrack() const {
         for (auto *track : children)
             if (track->isMaster())
@@ -95,11 +93,11 @@ struct Tracks : public Stateful<Tracks>,
         const auto &trackState = Track::isType(processor.getParent()) ? processor.getParent() : processor.getParent().getParent().getParent();
         return getChildForState(trackState);
     }
-    Track *getFocusedTrack() const { return getChild(view.getFocusedTrackAndSlot().x); }
+    Track *getFocusedTrack() const { return get(view.getFocusedTrackAndSlot().x); }
 
     Processor *getFocusedProcessor() const {
         juce::Point<int> trackAndSlot = view.getFocusedTrackAndSlot();
-        const Track *track = getChild(trackAndSlot.x);
+        const Track *track = get(trackAndSlot.x);
         if (track == nullptr) return nullptr;
 
         return track->getProcessorAtSlot(trackAndSlot.y);
@@ -113,7 +111,7 @@ struct Tracks : public Stateful<Tracks>,
     }
 
     Processor *getProcessorAt(int trackIndex, int slot) const {
-        const Track *track = getChild(trackIndex);
+        const Track *track = get(trackIndex);
         if (track == nullptr) return nullptr;
 
         return track->getProcessorAtSlot(slot);
@@ -174,7 +172,7 @@ struct Tracks : public Stateful<Tracks>,
 
     juce::Point<int> trackAndSlotWithGridDelta(int xDelta, int yDelta) const {
         auto focusedTrackAndSlot = view.getFocusedTrackAndSlot();
-        const auto *focusedTrack = getChild(focusedTrackAndSlot.x);
+        const auto *focusedTrack = get(focusedTrackAndSlot.x);
         if (focusedTrack != nullptr && focusedTrack->isSelected())
             focusedTrackAndSlot.y = -1;
 
@@ -187,7 +185,7 @@ struct Tracks : public Stateful<Tracks>,
     juce::Point<int> selectionPaneTrackAndSlotWithLeftRightDelta(int delta) const;
 
     juce::Point<int> trackAndSlotToGridPosition(const juce::Point<int> trackAndSlot) const {
-        const auto *track = getChild(trackAndSlot.x);
+        const auto *track = get(trackAndSlot.x);
         if (track != nullptr && track->isMaster())
             return {trackAndSlot.y + view.getGridViewTrackOffset() - view.getMasterViewSlotOffset(), view.getNumProcessorSlots()};
         return trackAndSlot;
@@ -202,39 +200,36 @@ struct Tracks : public Stateful<Tracks>,
 
 protected:
     Track *createNewObject(const ValueTree &tree) override { return new Track(tree, undoManager, deviceManager); }
-    void deleteObject(Track *track) override { delete track; }
-    void newObjectAdded(Track *track) override {
-        mostRecentlyCreatedTrack = track;
-        track->addTrackListener(this);
-        listeners.call(&Listener::trackAdded, track);
-    }
-    void objectRemoved(Track *track, int oldIndex) override {
-        listeners.call(&Listener::trackRemoved, track, oldIndex);
-        track->removeTrackListener(this);
-        if (track == mostRecentlyCreatedTrack) mostRecentlyCreatedTrack = nullptr;
-    }
-    void objectOrderChanged() override { listeners.call(&Listener::trackOrderChanged); }
-    void objectChanged(Track *track, const Identifier &i) override { listeners.call(&Listener::trackPropertyChanged, track, i); }
 
 private:
+    ListenerList<StatefulList<Processor>::Listener> processorListeners;
     View &view;
     UndoManager &undoManager;
     AudioDeviceManager &deviceManager;
 
-    ListenerList<Listener> listeners;
-
     Track *mostRecentlyCreatedTrack = nullptr;
     Processor *mostRecentlyCreatedProcessor = nullptr;
 
-    void processorAdded(Processor *processor) override {
-        mostRecentlyCreatedProcessor = processor;
-        listeners.call(&Listener::processorAdded, processor);
+    void onChildAdded(Track *track) override {
+        mostRecentlyCreatedTrack = track;
+        track->addTrackListener(this);
+        track->getProcessorLane()->addChildListener(this);
     }
-    void processorRemoved(Processor *processor, int oldIndex) override {
-        listeners.call(&Listener::processorRemoved, processor, oldIndex);
+    void onChildRemoved(Track *track, int oldIndex) override {
+        track->getProcessorLane()->removeChildListener(this);
+        track->removeTrackListener(this);
+        if (track == mostRecentlyCreatedTrack) mostRecentlyCreatedTrack = nullptr;
+    }
+    void onChildChanged(Track *processor, const Identifier &i) override {}
+    void onChildAdded(Processor *processor) override {
+        mostRecentlyCreatedProcessor = processor;
+        processorListeners.call(&StatefulList<Processor>::Listener::onChildAdded, processor);
+    }
+    void onChildRemoved(Processor *processor, int oldIndex) override {
+        processorListeners.call(&StatefulList<Processor>::Listener::onChildRemoved, processor, oldIndex);
         if (processor == mostRecentlyCreatedProcessor) mostRecentlyCreatedProcessor = nullptr;
     }
-    void processorPropertyChanged(Processor *processor, const Identifier &i) override {
-        listeners.call(&Listener::processorPropertyChanged, processor, i);
+    void onChildChanged(Processor *processor, const Identifier &i) override {
+        processorListeners.call(&StatefulList<Processor>::Listener::onChildChanged, processor, i);
     }
 };

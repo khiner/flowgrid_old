@@ -3,8 +3,7 @@
 
 Push2TrackManagingView::Push2TrackManagingView(View &view, Tracks &tracks, Project &project, Push2MidiCommunicator &push2)
         : Push2ComponentBase(view, tracks, push2), project(project) {
-    tracks.addTracksListener(this);
-    tracks.addListener(this);
+    tracks.addChildListener(this);
     view.addListener(this);
 
     for (int i = 0; i < NUM_COLUMNS; i++)
@@ -14,8 +13,7 @@ Push2TrackManagingView::Push2TrackManagingView(View &view, Tracks &tracks, Proje
 Push2TrackManagingView::~Push2TrackManagingView() {
     push2.getPush2Colours().removeListener(this);
     view.removeListener(this);
-    tracks.removeListener(this);
-    tracks.removeTracksListener(this);
+    tracks.removeChildListener(this);
 }
 
 void Push2TrackManagingView::resized() {
@@ -51,13 +49,14 @@ void Push2TrackManagingView::updateEnabledPush2Buttons() {
     }
 }
 
-void Push2TrackManagingView::trackPropertyChanged(Track *track, const Identifier &i) {
+void Push2TrackManagingView::onChildChanged(Track *track, const Identifier &i) {
     if (i == TrackIDs::name || i == TrackIDs::colour) {
         int trackIndex = tracks.getViewIndexForTrack(track);
         if (trackIndex < 0 || trackIndex >= trackLabels.size()) return;
 
-        if (i == TrackIDs::name && !track->isMaster())
+        if (i == TrackIDs::name && !track->isMaster()) {
             trackLabels.getUnchecked(trackIndex)->setText(track->getName(), dontSendNotification);
+        }
     } else if (i == TrackIDs::selected && track->isSelected()) {
         trackSelected(track);
     }

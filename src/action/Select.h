@@ -9,7 +9,7 @@ struct Select : public UndoableAction {
     Select(Select *coalesceLeft, Select *coalesceRight, Tracks &, Connections &, View &, Input &, AllProcessors &, ProcessorGraph &);
 
     void setNewFocusedSlot(juce::Point<int> newFocusedSlot, bool resetDefaultExternalInputs = true);
-    Track *getNewFocusedTrack() { return tracks.getChild(newFocusedSlot.x); }
+    Track *getNewFocusedTrack() { return tracks.get(newFocusedSlot.x); }
 
     bool perform() override;
     bool undo() override;
