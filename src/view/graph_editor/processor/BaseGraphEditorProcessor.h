@@ -23,8 +23,8 @@ public:
     }
 
     int getTrackIndex() const { return track->getIndex(); }
-    int getNumInputChannels() const { return processor->getState().getChildWithName(InputChannelsIDs::INPUT_CHANNELS).getNumChildren(); }
-    int getNumOutputChannels() const { return processor->getState().getChildWithName(OutputChannelsIDs::OUTPUT_CHANNELS).getNumChildren(); }
+    int getNumInputChannels() const { return processor->getNumInputChannels(); }
+    int getNumOutputChannels() const { return processor->getNumOutputChannels(); }
     bool isSelected() { return track != nullptr && track->isProcessorSelected(processor); }
     StatefulAudioProcessorWrapper *getProcessorWrapper() const { return processorWrappers.getProcessorWrapperForProcessor(processor); }
 

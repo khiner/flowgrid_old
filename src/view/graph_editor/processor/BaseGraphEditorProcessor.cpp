@@ -5,7 +5,7 @@ BaseGraphEditorProcessor::BaseGraphEditorProcessor(Processor *processor, Track *
     this->processor->getState().addListener(this);
 
     for (auto child : this->processor->getState()) {
-        if (InputChannels::isType(child) || OutputChannels::isType(child)) {
+        if (Channels::isType(child)) {
             for (auto channel : child) {
                 // TODO shouldn't have to do this kind of thing
                 valueTreeChildAdded(child, channel);
@@ -61,7 +61,7 @@ Rectangle<int> BaseGraphEditorProcessor::getBoxBounds() const {
     auto r = getLocalBounds().reduced(1);
     bool isLeftToRight = track != nullptr && track->isProcessorLeftToRightFlowing(processor);
     if (isLeftToRight) {
-        if (getNumInputChannels() > 0)
+        if (processor->getNumInputChannels() > 0)
             r.setLeft(channelSize);
         if (getNumOutputChannels() > 0)
             r.removeFromRight(channelSize);

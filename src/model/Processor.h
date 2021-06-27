@@ -5,8 +5,7 @@
 
 #include "Stateful.h"
 #include "model/Channel.h"
-#include "InputChannels.h"
-#include "OutputChannels.h"
+#include "Channels.h"
 #include "Param.h"
 #include "Connection.h"
 #include "processors/InternalPluginFormat.h"
@@ -79,8 +78,10 @@ struct Processor : public Stateful<Processor>, public AudioProcessorListener {
     bool isMidiOutputProcessor() const { return InternalPluginFormat::isMidiOutputProcessor(getName()); }
     bool isTrackIOProcessor() const { return isTrackInputProcessor() || isTrackOutputProcessor(); }
     bool isIoProcessor() const { return InternalPluginFormat::isIoProcessor(state[ProcessorIDs::name]); }
-    int getNumInputChannels() const { return state.getChildWithName(InputChannelsIDs::INPUT_CHANNELS).getNumChildren(); }
-    int getNumOutputChannels() const { return state.getChildWithName(OutputChannelsIDs::OUTPUT_CHANNELS).getNumChildren(); }
+    ValueTree getInputChannels() const { return state.getChildWithProperty(ChannelsIDs::type, int(Channels::Type::input)); }
+    ValueTree getOutputChannels() const { return state.getChildWithProperty(ChannelsIDs::type, int(Channels::Type::output)); }
+    int getNumInputChannels() const { return getInputChannels().getNumChildren(); }
+    int getNumOutputChannels() const { return getOutputChannels().getNumChildren(); }
     bool isProcessorAnEffect(ConnectionType connectionType) const {
         return (connectionType == audio && getNumInputChannels() > 0) || (connectionType == midi && acceptsMidi());
     }

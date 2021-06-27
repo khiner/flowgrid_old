@@ -61,14 +61,16 @@ void Processor::doAudioProcessorChanged(AudioProcessor *audioProcessor) {
     if (audioProcessor->producesMidi())
         newOutputs.add({audioProcessor, deviceManager, AudioProcessorGraph::midiChannelIndex, false});
 
-    ValueTree inputChannels = getState().getChildWithName(InputChannelsIDs::INPUT_CHANNELS);
-    ValueTree outputChannels = getState().getChildWithName(OutputChannelsIDs::OUTPUT_CHANNELS);
+    auto inputChannels = getInputChannels();
+    auto outputChannels = getOutputChannels();
     if (!inputChannels.isValid()) {
-        inputChannels = ValueTree(InputChannelsIDs::INPUT_CHANNELS);
+        inputChannels = ValueTree(ChannelsIDs::CHANNELS);
+        Channels::setType(inputChannels, Channels::Type::input);
         getState().appendChild(inputChannels, nullptr);
     }
     if (!outputChannels.isValid()) {
-        outputChannels = ValueTree(OutputChannelsIDs::OUTPUT_CHANNELS);
+        outputChannels = ValueTree(ChannelsIDs::CHANNELS);
+        Channels::setType(outputChannels, Channels::Type::output);
         getState().appendChild(outputChannels, nullptr);
     }
 

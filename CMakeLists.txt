@@ -115,8 +115,7 @@ target_sources(FlowGrid PRIVATE
     src/model/Input.cpp
     src/model/Output.cpp
     src/model/Channel.cpp
-    src/model/InputChannels.cpp
-    src/model/OutputChannels.cpp
+    src/model/Channels.cpp
     src/model/Param.cpp
     src/model/Project.cpp
     src/model/Processor.cpp
