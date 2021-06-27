@@ -27,7 +27,7 @@ GraphEditorPanel::GraphEditorPanel(View &view, Tracks &tracks, Connections &conn
 
 GraphEditorPanel::~GraphEditorPanel() {
     removeMouseListener(this);
-    draggingConnector = nullptr;
+    stopDragging();
 
     output.removeStateListener(this);
     input.removeStateListener(this);
@@ -104,44 +104,38 @@ void GraphEditorPanel::resized() {
 void GraphEditorPanel::update() { connectors->updateConnectors(); }
 
 void GraphEditorPanel::beginConnectorDrag(AudioProcessorGraph::NodeAndChannel source, AudioProcessorGraph::NodeAndChannel destination, const MouseEvent &e) {
-    auto *c = dynamic_cast<GraphEditorConnector *> (e.originalComponent);
-    draggingConnector = c;
-
-    if (draggingConnector == nullptr)
-        draggingConnector = new GraphEditorConnector(ValueTree(), *this, *this, source, destination);
-    else
-        initialDraggingConnection = draggingConnector->getConnection();
-
-    addAndMakeVisible(draggingConnector);
-
+    if ((draggingGraphEditorConnection = dynamic_cast<GraphEditorConnector *> (e.originalComponent))) {
+        initialDraggingConnection = draggingGraphEditorConnection->getAudioConnection();
+    } else {
+        draggingConnection = std::make_unique<fg::Connection>(source, destination);
+        ownedDraggingGraphEditorConnection = std::make_unique<GraphEditorConnector>(draggingConnection.get(), *this, *this);
+        draggingGraphEditorConnection = ownedDraggingGraphEditorConnection.get();
+    }
+    addAndMakeVisible(draggingGraphEditorConnection);
     dragConnector(e);
 }
 
 void GraphEditorPanel::dragConnector(const MouseEvent &e) {
-    if (draggingConnector == nullptr) return;
+    if (draggingGraphEditorConnection == nullptr) return;
 
-    draggingConnector->setTooltip({});
+    draggingGraphEditorConnection->setTooltip({});
     if (auto *channel = findChannelAt(e)) {
-        draggingConnector->dragTo(channel->getNodeAndChannel(), channel->isInput());
-        auto connection = draggingConnector->getConnection();
+        draggingGraphEditorConnection->dragTo(channel->getNodeAndChannel(), channel->isInput());
+        auto connection = draggingGraphEditorConnection->getAudioConnection();
         if (graph.canConnect(connection) || graph.isConnected(connection)) {
-            draggingConnector->setTooltip(channel->getTooltip());
+            draggingGraphEditorConnection->setTooltip(channel->getTooltip());
             return;
         }
     }
     const auto &position = e.getEventRelativeTo(this).position;
-    draggingConnector->dragTo(position);
+    draggingGraphEditorConnection->dragTo(position);
 }
 
 void GraphEditorPanel::endDraggingConnector(const MouseEvent &e) {
-    if (draggingConnector == nullptr) return;
+    if (draggingGraphEditorConnection == nullptr) return;
 
-    auto newConnection = draggingConnector->getConnection();
-    draggingConnector->setTooltip({});
-    if (initialDraggingConnection == EMPTY_CONNECTION)
-        delete draggingConnector;
-    else
-        draggingConnector = nullptr;
+    auto newConnection = draggingGraphEditorConnection->getAudioConnection();
+    stopDragging();
 
     if (newConnection != initialDraggingConnection) {
         if (newConnection.source.nodeID.uid != 0 && newConnection.destination.nodeID.uid != 0)

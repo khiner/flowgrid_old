@@ -5,14 +5,15 @@
 #include "GraphEditorProcessorContainer.h"
 
 struct GraphEditorConnector : public Component, public SettableTooltipClient {
-    explicit GraphEditorConnector(ValueTree state, ConnectorDragListener &connectorDragListener,
-                                  GraphEditorProcessorContainer &graphEditorProcessorContainer,
-                                  AudioProcessorGraph::NodeAndChannel source = {},
-                                  AudioProcessorGraph::NodeAndChannel destination = {});
+    explicit GraphEditorConnector(fg::Connection *, ConnectorDragListener &, GraphEditorProcessorContainer &);
 
-    AudioProcessorGraph::Connection getConnection() { return connection; }
+    ~GraphEditorConnector() override {
+        setTooltip({});
+    }
 
-    const ValueTree &getState() const { return state; }
+    AudioProcessorGraph::Connection getAudioConnection() { return audioConnection; }
+
+    fg::Connection *getConnection() const { return connection; }
 
     void update();
 
@@ -37,10 +38,10 @@ struct GraphEditorConnector : public Component, public SettableTooltipClient {
             const bool isNearerSource = (distanceFromStart < distanceFromEnd);
 
             static const AudioProcessorGraph::NodeAndChannel dummy{AudioProcessorGraph::NodeID(), 0};
-            dragAnchor = isNearerSource ? connection.destination : connection.source;
+            dragAnchor = isNearerSource ? audioConnection.destination : audioConnection.source;
 
-            connectorDragListener.beginConnectorDrag(isNearerSource ? dummy : connection.source,
-                                                     isNearerSource ? connection.destination : dummy,
+            connectorDragListener.beginConnectorDrag(isNearerSource ? dummy : audioConnection.source,
+                                                     isNearerSource ? audioConnection.destination : dummy,
                                                      e);
         }
     }
@@ -52,7 +53,7 @@ struct GraphEditorConnector : public Component, public SettableTooltipClient {
     }
 
 private:
-    ValueTree state;
+    fg::Connection *connection;
     ConnectorDragListener &connectorDragListener;
     GraphEditorProcessorContainer &graphEditorProcessorContainer;
 
@@ -61,21 +62,21 @@ private:
     bool bothInView = false;
     AudioProcessorGraph::NodeAndChannel dragAnchor{AudioProcessorGraph::NodeID(), 0};
 
-    AudioProcessorGraph::Connection connection{
+    AudioProcessorGraph::Connection audioConnection{
             {AudioProcessorGraph::NodeID(0), 0},
             {AudioProcessorGraph::NodeID(0), 0}
     };
 
     void setSource(AudioProcessorGraph::NodeAndChannel newSource) {
-        if (connection.source != newSource) {
-            connection.source = newSource;
+        if (audioConnection.source != newSource) {
+            audioConnection.source = newSource;
             update();
         }
     }
 
     void setDestination(AudioProcessorGraph::NodeAndChannel newDestination) {
-        if (connection.destination != newDestination) {
-            connection.destination = newDestination;
+        if (audioConnection.destination != newDestination) {
+            audioConnection.destination = newDestination;
             update();
         }
     }

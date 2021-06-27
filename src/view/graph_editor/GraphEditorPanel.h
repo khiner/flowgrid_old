@@ -45,7 +45,9 @@ private:
     const AudioProcessorGraph::Connection EMPTY_CONNECTION{{ProcessorGraph::NodeID(0), 0},
                                                            {ProcessorGraph::NodeID(0), 0}};
     std::unique_ptr<GraphEditorConnectors> connectors;
-    GraphEditorConnector *draggingConnector{};
+    std::unique_ptr<fg::Connection> draggingConnection;
+    std::unique_ptr<GraphEditorConnector> ownedDraggingGraphEditorConnection; // originated from a click on a pin, in which case we create and own the new connector component
+    GraphEditorConnector *draggingGraphEditorConnection{}; // link to either `ownedDraggingGraphEditorConnection` or one owned by `connectors`
     GraphEditorInput graphEditorInput;
     GraphEditorOutput graphEditorOutput;
     std::unique_ptr<GraphEditorTracks> graphEditorTracks;
@@ -63,6 +65,11 @@ private:
     ResizableWindow *getOrCreateWindowFor(Processor *processorState, PluginWindowType type);
     void closeWindowFor(const Processor *processor);
     void showPopupMenu(const Track *track, int slot);
+
+    void stopDragging() {
+        draggingConnection = nullptr;
+        draggingGraphEditorConnection = nullptr;
+    }
 
     void onChildAdded(Track *track) override { connectors->updateConnectors(); }
     void onChildChanged(Track *, const Identifier &) override {}
