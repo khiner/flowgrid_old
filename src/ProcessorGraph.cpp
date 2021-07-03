@@ -131,23 +131,23 @@ bool ProcessorGraph::addConnection(const AudioProcessorGraph::Connection &connec
     return false;
 }
 
-bool ProcessorGraph::hasConnectionMatching(const Connection &connection) {
-    for (const auto &connectionState : connections.getState())
-        if (Processor::toProcessorGraphConnection(connectionState) == connection)
-            return true;
-    return false;
+bool ProcessorGraph::hasConnectionMatching(const Connection &audioConnection) {
+    return connections.getConnectionMatching(audioConnection) != nullptr;
 }
 
-bool ProcessorGraph::removeConnection(const AudioProcessorGraph::Connection &connection) {
-    const ValueTree &connectionState = connections.getConnectionMatching(connection);
+bool ProcessorGraph::removeConnection(const AudioProcessorGraph::Connection &audioConnection) {
+    const fg::Connection *connection = connections.getConnectionMatching(audioConnection);
+    if (connection == nullptr) {
+        throw "connection not found";
+    }
     // TODO add back isShiftHeld after refactoring key/midi event tracking into a non-project class
 //    if (!Connection::isCustom(connectionState) && isShiftHeld())
 //        return false; // no default connection stuff while shift is held
 
     undoManager.beginNewTransaction();
-    bool removed = undoManager.perform(new DeleteConnection(connectionState, true, true, connections));
-    if (removed && fg::Connection::isCustom(connectionState)) {
-        const auto *sourceProcessor = allProcessors.getProcessorByNodeId(fg::Connection::getSourceNodeId(connectionState));
+    bool removed = undoManager.perform(new DeleteConnection(connection, true, true, connections));
+    if (removed && connection->isCustom()) {
+        const auto *sourceProcessor = allProcessors.getProcessorByNodeId(connection->getSourceNodeId());
         undoManager.perform(new UpdateProcessorDefaultConnections(sourceProcessor, false, connections, output, allProcessors, *this));
         undoManager.perform(new ResetDefaultExternalInputConnectionsAction(connections, tracks, input, allProcessors, *this));
     }
@@ -183,21 +183,16 @@ void ProcessorGraph::updateIoChannelEnabled(const ValueTree &channels, const Val
 
 void ProcessorGraph::resumeAudioGraphUpdatesAndApplyDiffSincePause() {
     graphUpdatesArePaused = false;
-    for (auto &connection : connectionsSincePause.connectionsToDelete)
-        valueTreeChildRemoved(connections.getState(), connection, 0);
-    for (auto &connection : connectionsSincePause.connectionsToCreate)
-        valueTreeChildAdded(connections.getState(), connection);
-    connectionsSincePause.connectionsToDelete.clearQuick();
-    connectionsSincePause.connectionsToCreate.clearQuick();
+    for (auto *connection : connectionsSincePause.connectionsToDelete)
+        valueTreeChildRemoved(connections.getState(), connection->getState(), 0);
+    for (auto *connection : connectionsSincePause.connectionsToCreate)
+        valueTreeChildAdded(connections.getState(), connection->getState());
+    connectionsSincePause.connectionsToDelete.clear();
+    connectionsSincePause.connectionsToCreate.clear();
 }
 
 void ProcessorGraph::valueTreeChildAdded(ValueTree &parent, ValueTree &child) {
-    if (fg::Connection::isType(child)) {
-        if (graphUpdatesArePaused)
-            connectionsSincePause.addConnection(child);
-        else
-            AudioProcessorGraph::addConnection(Processor::toProcessorGraphConnection(child));
-    } else if (Channel::isType(child)) {
+    if (Channel::isType(child)) {
         updateIoChannelEnabled(parent, child, true);
         // TODO shouldn't affect state in state listeners - trace back to specific user actions and do this in the action method
         removeIllegalConnections();
@@ -205,12 +200,7 @@ void ProcessorGraph::valueTreeChildAdded(ValueTree &parent, ValueTree &child) {
 }
 
 void ProcessorGraph::valueTreeChildRemoved(ValueTree &parent, ValueTree &child, int indexFromWhichChildWasRemoved) {
-    if (fg::Connection::isType(child)) {
-        if (graphUpdatesArePaused)
-            connectionsSincePause.removeConnection(child);
-        else
-            AudioProcessorGraph::removeConnection(Processor::toProcessorGraphConnection(child));
-    } else if (Channel::isType(child)) {
+    if (Channel::isType(child)) {
         updateIoChannelEnabled(parent, child, false);
         removeIllegalConnections(); // TODO shouldn't affect state in state listeners - trace back to specific user actions and do this in the action method
     }

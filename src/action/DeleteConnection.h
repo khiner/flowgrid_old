@@ -3,5 +3,5 @@
 #include "CreateOrDeleteConnections.h"
 
 struct DeleteConnection : public CreateOrDeleteConnections {
-    DeleteConnection(const ValueTree &connection, bool allowCustom, bool allowDefaults, Connections &connections);
+    DeleteConnection(const fg::Connection *connection, bool allowCustom, bool allowDefaults, Connections &connections);
 };

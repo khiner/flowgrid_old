@@ -16,10 +16,10 @@ UpdateProcessorDefaultConnections::UpdateProcessorDefaultConnections(const Proce
         coalesceWith(disconnectDefaultsAction);
         if (makeInvalidDefaultsIntoCustom) {
             if (!disconnectDefaultsAction.connectionsToDelete.isEmpty()) {
-                for (const auto &connectionToConvert : disconnectDefaultsAction.connectionsToDelete) {
-                    auto customConnection = connectionToConvert.createCopy();
-                    Connection::setCustom(customConnection, true);
-                    connectionsToCreate.add(customConnection);
+                for (const auto *connectionToConvert : disconnectDefaultsAction.connectionsToDelete) {
+                    auto customConnection = std::make_unique<Connection>(connectionToConvert);
+                    customConnection->setCustom(true);
+                    connectionsToCreate.add(std::move(customConnection));
                 }
             }
         } else {

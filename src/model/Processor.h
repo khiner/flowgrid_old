@@ -116,11 +116,6 @@ struct Processor : public Stateful<Processor>, public AudioProcessorListener {
     static void setName(ValueTree &state, const String &name) { state.setProperty(ProcessorIDs::name, name, nullptr); }
     static void setDeviceName(ValueTree &state, const String &deviceName) { state.setProperty(ProcessorIDs::deviceName, deviceName, nullptr); }
 
-    static AudioProcessorGraph::Connection toProcessorGraphConnection(const ValueTree &state) {
-        return {{fg::Connection::getSourceNodeId(state),      fg::Connection::getSourceChannel(state)},
-                {fg::Connection::getDestinationNodeId(state), fg::Connection::getDestinationChannel(state)}};
-    }
-
 private:
     UndoManager &undoManager;
     AudioDeviceManager &deviceManager;

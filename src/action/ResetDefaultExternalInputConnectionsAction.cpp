@@ -63,12 +63,12 @@ const Processor *ResetDefaultExternalInputConnectionsAction::findMostUpstreamAva
 bool ResetDefaultExternalInputConnectionsAction::isAvailableForExternalInput(const Processor *processor, ConnectionType connectionType, Input &input) {
     if (processor == nullptr || !processor->isProcessorAnEffect(connectionType)) return false;
 
-    const auto &incomingConnections = connections.getConnectionsForNode(processor, connectionType, true, false);
+    const auto incomingConnections = connections.getConnectionsForNode(processor, connectionType, true, false);
     const auto *inputProcessor = input.getDefaultInputProcessorForConnectionType(connectionType);
     if (inputProcessor == nullptr) return false;
 
-    for (const auto &incomingConnection : incomingConnections) {
-        if (fg::Connection::getSourceNodeId(incomingConnection) != inputProcessor->getNodeId())
+    for (const auto *incomingConnection : incomingConnections) {
+        if (incomingConnection->getSourceNodeId() != inputProcessor->getNodeId())
             return false;
     }
     return true;
@@ -78,9 +78,9 @@ bool ResetDefaultExternalInputConnectionsAction::areProcessorsConnected(AudioPro
     if (upstreamNodeId == downstreamNodeId) return true;
 
     Array<AudioProcessorGraph::NodeID> exploredDownstreamNodes;
-    for (const auto &connection : connections.getState()) {
-        if (fg::Connection::getSourceNodeId(connection) == upstreamNodeId) {
-            auto otherDownstreamNodeId = fg::Connection::getDestinationNodeId(connection);
+    for (const auto *connection : connections.getChildren()) {
+        if (connection->getSourceNodeId() == upstreamNodeId) {
+            auto otherDownstreamNodeId = connection->getDestinationNodeId();
             if (!exploredDownstreamNodes.contains(otherDownstreamNodeId)) {
                 if (otherDownstreamNodeId == downstreamNodeId || areProcessorsConnected(otherDownstreamNodeId, downstreamNodeId))
                     return true;

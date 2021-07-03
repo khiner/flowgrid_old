@@ -18,10 +18,19 @@ ID(isCustom)
 namespace fg {
 struct Connection : public Stateful<Connection> {
     explicit Connection(ValueTree state) : Stateful<Connection>(std::move(state)) {}
-
     Connection(AudioProcessorGraph::NodeAndChannel source, AudioProcessorGraph::NodeAndChannel destination) {
+        setCustom(true);
         setSourceNodeAndChannel(source);
         setDestinationNodeAndChannel(destination);
+    }
+    explicit Connection(const AudioProcessorGraph::Connection &connection, bool isDefault = true) : Connection(connection.source, connection.destination) {
+        if (!isDefault) setCustom(!isDefault);
+    }
+    explicit Connection(const Connection *other) : Connection(other->toAudioConnection(), !other->isCustom()) {}
+
+    AudioProcessorGraph::Connection toAudioConnection() const {
+        return {{getSourceNodeId(),      getSourceChannel()},
+                {getDestinationNodeId(), getDestinationChannel()}};
     }
 
     AudioProcessorGraph::NodeAndChannel getSourceNodeAndChannel() const {
@@ -52,6 +61,10 @@ struct Connection : public Stateful<Connection> {
 
     bool destinationEquals(AudioProcessorGraph::NodeAndChannel nodeAndChannel) const {
         return getDestinationNodeId() == nodeAndChannel.nodeID && getDestinationChannel() == nodeAndChannel.channelIndex;
+    }
+
+    bool equals(const AudioProcessorGraph::Connection &connection) const {
+        return sourceEquals(connection.source) && destinationEquals(connection.destination);
     }
 
     void clearSource() {

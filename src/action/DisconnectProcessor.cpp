@@ -4,8 +4,8 @@ DisconnectProcessor::DisconnectProcessor(Connections &connections, const Process
                                          AudioProcessorGraph::NodeID excludingRemovalTo)
         : CreateOrDeleteConnections(connections) {
     const auto nodeConnections = connections.getConnectionsForNode(processor, connectionType, incoming, outgoing);
-    for (const auto &connection : nodeConnections) {
-        const auto destinationNodeId = fg::Connection::getDestinationNodeId(connection);
+    for (const auto *connection : nodeConnections) {
+        const auto destinationNodeId = connection->getDestinationNodeId();
         if (excludingRemovalTo != destinationNodeId) {
             coalesceWith(DeleteConnection(connection, custom, defaults, connections));
         }

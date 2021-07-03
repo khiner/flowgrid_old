@@ -1,11 +1,11 @@
 #include "DeleteConnection.h"
 
-static bool canRemoveConnection(const ValueTree &connection, bool allowDefaults, bool allowCustom) {
-    return (allowCustom && fg::Connection::isCustom(connection)) || (allowDefaults && !fg::Connection::isCustom(connection));
+static bool canRemoveConnection(const fg::Connection *connection, bool allowDefaults, bool allowCustom) {
+    return (allowCustom && connection->isCustom()) || (allowDefaults && !connection->isCustom());
 }
 
-DeleteConnection::DeleteConnection(const ValueTree &connection, bool allowCustom, bool allowDefaults, Connections &connections)
+DeleteConnection::DeleteConnection(const fg::Connection *connection, bool allowCustom, bool allowDefaults, Connections &connections)
         : CreateOrDeleteConnections(connections) {
     if (canRemoveConnection(connection, allowDefaults, allowCustom))
-        removeConnection(connection);
+        removeConnection(connection->toAudioConnection());
 }

@@ -7,6 +7,4 @@
 
 struct CreateConnection : public CreateOrDeleteConnections {
     CreateConnection(const AudioProcessorGraph::Connection &connection, bool isDefault, Connections &connections, AllProcessors &allProcessors, ProcessorGraph &processorGraph);
-
-    static ValueTree stateForConnection(const AudioProcessorGraph::Connection &connection, bool isDefault);
 };

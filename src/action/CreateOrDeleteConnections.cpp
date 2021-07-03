@@ -15,10 +15,10 @@ CreateOrDeleteConnections::CreateOrDeleteConnections(CreateOrDeleteConnections *
 bool CreateOrDeleteConnections::perform() {
     if (connectionsToCreate.isEmpty() && connectionsToDelete.isEmpty()) return false;
 
-    for (const auto &connectionToDelete : connectionsToDelete)
-        connections.getState().removeChild(connectionToDelete, nullptr);
-    for (const auto &connectionToCreate : connectionsToCreate)
-        connections.getState().appendChild(connectionToCreate, nullptr);
+    for (auto *connectionToDelete : connectionsToDelete)
+        connections.removeAudioConnection(connectionToDelete->toAudioConnection());
+    for (auto *connectionToCreate : connectionsToCreate)
+        connections.append(connectionToCreate);
     return true;
 }
 
@@ -26,9 +26,9 @@ bool CreateOrDeleteConnections::undo() {
     if (connectionsToCreate.isEmpty() && connectionsToDelete.isEmpty()) return false;
 
     for (int i = connectionsToCreate.size() - 1; i >= 0; i--)
-        connections.getState().removeChild(connectionsToCreate.getUnchecked(i), nullptr);
+        connections.removeAudioConnection(connectionsToCreate.getUnchecked(i)->toAudioConnection());
     for (int i = connectionsToDelete.size() - 1; i >= 0; i--)
-        connections.getState().appendChild(connectionsToDelete.getUnchecked(i), nullptr);
+        connections.append(connectionsToDelete.getUnchecked(i));
     return true;
 }
 
@@ -40,24 +40,41 @@ UndoableAction *CreateOrDeleteConnections::createCoalescedAction(UndoableAction 
 }
 
 void CreateOrDeleteConnections::coalesceWith(const CreateOrDeleteConnections &other) {
-    for (const auto &connectionToCreate : other.connectionsToCreate)
-        addConnection(connectionToCreate);
-    for (const auto &connectionToDelete : other.connectionsToDelete)
-        removeConnection(connectionToDelete);
+    for (const auto *connectionToCreate : other.connectionsToCreate)
+        addConnection(connectionToCreate->toAudioConnection(), !connectionToCreate->isCustom());
+    for (const auto *connectionToDelete : other.connectionsToDelete)
+        removeConnection(connectionToDelete->toAudioConnection());
 }
 
-void CreateOrDeleteConnections::addConnection(const ValueTree &connection) {
-    int deleteIndex = connectionsToDelete.indexOf(connection);
-    if (deleteIndex != -1)
+static int indexOf(OwnedArray<fg::Connection> &connections, const AudioProcessorGraph::Connection &audioConnection) {
+    for (int i = 0; i < connections.size(); i++) {
+        const auto *connection = connections.getUnchecked(i);
+        if (connection->toAudioConnection() == audioConnection) return i;
+    }
+    return -1;
+}
+
+void CreateOrDeleteConnections::addConnection(const AudioProcessorGraph::Connection &audioConnection, bool isDefault) {
+    int deleteIndex = indexOf(connectionsToDelete, audioConnection);
+    if (deleteIndex != -1) {
         connectionsToDelete.remove(deleteIndex); // cancels out
-    else if (!connectionsToCreate.contains(connection))
-        connectionsToCreate.add(connection);
+    } else {
+        int createIndex = indexOf(connectionsToCreate, audioConnection);
+        if (createIndex == -1) {
+            connectionsToCreate.add(std::make_unique<fg::Connection>(audioConnection, isDefault));
+        }
+    }
 }
 
-void CreateOrDeleteConnections::removeConnection(const ValueTree &connection) {
-    int createIndex = connectionsToCreate.indexOf(connection);
-    if (createIndex != -1)
+void CreateOrDeleteConnections::removeConnection(const AudioProcessorGraph::Connection &audioConnection) {
+    int createIndex = indexOf(connectionsToCreate, audioConnection);
+    if (createIndex != -1) {
         connectionsToCreate.remove(createIndex); // cancels out
-    else if (!connectionsToDelete.contains(connection))
-        connectionsToDelete.add(connection);
+    } else {
+        int deleteIndex = indexOf(connectionsToDelete, audioConnection);
+        if (deleteIndex == -1) {
+            connectionsToDelete.add(std::make_unique<fg::Connection>(audioConnection));
+        }
+    }
+
 }

@@ -15,11 +15,11 @@ struct CreateOrDeleteConnections : public UndoableAction {
     UndoableAction *createCoalescedAction(UndoableAction *nextAction) override;
     void coalesceWith(const CreateOrDeleteConnections &other);
 
-    void addConnection(const ValueTree &connection);
-    void removeConnection(const ValueTree &connection);
+    void addConnection(const AudioProcessorGraph::Connection &connection, bool isDefault);
+    void removeConnection(const AudioProcessorGraph::Connection &connection);
 
-    Array<ValueTree> connectionsToCreate;
-    Array<ValueTree> connectionsToDelete;
+    OwnedArray<fg::Connection> connectionsToCreate;
+    OwnedArray<fg::Connection> connectionsToDelete;
 protected:
     Connections &connections;
 };

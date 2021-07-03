@@ -22,16 +22,27 @@ struct Connections : public Stateful<Connections>, StatefulList<fg::Connection> 
 
     bool isNodeConnected(AudioProcessorGraph::NodeID nodeId) const;
 
-    Array<ValueTree> getConnectionsForNode(const Processor *processor, ConnectionType connectionType,
-                                           bool incoming = true, bool outgoing = true,
-                                           bool includeCustom = true, bool includeDefault = true);
+    Array<fg::Connection *> getConnectionsForNode(const Processor *processor, ConnectionType connectionType,
+                                                  bool incoming = true, bool outgoing = true,
+                                                  bool includeCustom = true, bool includeDefault = true);
 
-    ValueTree getConnectionMatching(const AudioProcessorGraph::Connection &connection) const {
-        for (auto connectionState : state)
-            if (Processor::toProcessorGraphConnection(connectionState) == connection)
-                return connectionState;
-        return {};
+    fg::Connection *getConnectionMatching(const AudioProcessorGraph::Connection &connection) const {
+        for (auto *child : children)
+            if (child->toAudioConnection() == connection)
+                return child;
+        return nullptr;
     }
+
+    void append(const fg::Connection *connection) {
+        fg::Connection copy(connection);
+        state.appendChild(copy.getState(), nullptr);
+    }
+    void removeAudioConnection(const AudioProcessorGraph::Connection audioConnection) {
+        if (auto *connection = getConnectionMatching(audioConnection)) {
+            remove(connection->getIndex());
+        }
+    }
+
 
 protected:
     fg::Connection *createNewObject(const ValueTree &tree) override { return new fg::Connection(tree); }

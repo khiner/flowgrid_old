@@ -37,8 +37,8 @@ Processor *Connections::findDefaultDestinationProcessor(const Processor *sourceP
 }
 
 bool Connections::isNodeConnected(AudioProcessorGraph::NodeID nodeId) const {
-    for (const auto &connection : state) {
-        if (fg::Connection::getSourceNodeId(connection) == nodeId)
+    for (const auto *connection : children) {
+        if (connection->getSourceNodeId() == nodeId)
             return true;
     }
     return false;
@@ -50,15 +50,15 @@ static bool channelMatchesConnectionType(int channel, ConnectionType connectionT
            (connectionType == midi && channel == AudioProcessorGraph::midiChannelIndex);
 }
 
-Array<ValueTree> Connections::getConnectionsForNode(const Processor *processor, ConnectionType connectionType, bool incoming, bool outgoing, bool includeCustom, bool includeDefault) {
-    Array<ValueTree> nodeConnections;
-    for (const auto &connection : state) {
-        if ((fg::Connection::isCustom(connection) && !includeCustom) || (!fg::Connection::isCustom(connection) && !includeDefault))
+Array<fg::Connection *> Connections::getConnectionsForNode(const Processor *processor, ConnectionType connectionType, bool incoming, bool outgoing, bool includeCustom, bool includeDefault) {
+    Array<fg::Connection *> nodeConnections;
+    for (auto *connection : children) {
+        if ((connection->isCustom() && !includeCustom) || (!connection->isCustom() && !includeDefault))
             continue;
 
         auto processorNodeId = processor->getNodeId();
-        if ((incoming && fg::Connection::getDestinationNodeId(connection) == processorNodeId && channelMatchesConnectionType(fg::Connection::getDestinationChannel(connection), connectionType)) ||
-            (outgoing && fg::Connection::getSourceNodeId(connection) == processorNodeId && channelMatchesConnectionType(fg::Connection::getSourceChannel(connection), connectionType)))
+        if ((incoming && connection->getDestinationNodeId() == processorNodeId && channelMatchesConnectionType(connection->getDestinationChannel(), connectionType)) ||
+            (outgoing && connection->getSourceNodeId() == processorNodeId && channelMatchesConnectionType(connection->getSourceChannel(), connectionType)))
             nodeConnections.add(connection);
     }
     return nodeConnections;
