@@ -3,4 +3,4 @@
 **/.idea/tasks.xml
 **/.idea/misc.xml
 cmake-build-debug
-
+cmake-build-release
