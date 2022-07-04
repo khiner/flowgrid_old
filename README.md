@@ -2,7 +2,7 @@
 
 ![](docs/quick-demo.gif)
 
-**This project is outdated. I'm working on a new version of this project [here](https://github.com/khiner/flowgrid2).**
+**This project is outdated, and is in fact no longer functional. I'm working on a new version of this project [here](https://github.com/khiner/flowgrid2).**
 
 Inspired by [Tim Exile's Flow Machine](https://youtu.be/SLguU77xuQA), I'm aiming to build something that:
 
