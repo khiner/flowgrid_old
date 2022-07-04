@@ -1,11 +1,10 @@
-# FlowGrid
+# FlowGrid _(old version)_
 
 ![](docs/quick-demo.gif)
 
 **This project is outdated, and is in fact no longer functional. I'm working on a new version of this project [here](https://github.com/khiner/flowgrid).**
 
-Inspired by [Tim Exile's Flow Machine](https://youtu.be/SLguU77xuQA), I'm aiming to build something that:
-
+I'm aiming to build something that:
 * is a fun jam box for the Push 2 and a Mac
 * acts as a central routing and processing interface to external gear (MIDI, audio, CV etc)
 * provides a hierarchical grid-based playing interface
@@ -19,8 +18,8 @@ It can run on any modern Mac, and it is designed to be used with Ableton's _Push
 FlowGrid is a modular patching environment and plugin host.
 It allows for arbitrary connections between internal processors and 3rd party plugins, as well as external audio and MIDI IO.
 Unlike other modular music software tools, however, it is _opinionated_.
-By default it behaves similar to a DAW, like Ableton, with separate tracks that each have sound producers and effects connected in series, each with a mixer channel that connects to a master track.
-This means it can feel a lot like using a traditional DAW - adding tracks and adding devices to tracks, adjusting mixer levels etc..
+By default, it behaves similar to a DAW, like Ableton, with separate tracks that each have sound producers and effects connected in series, each with a mixer channel that connects to a master track.
+This means it can feel a lot like using a traditional DAW - adding tracks and adding devices to tracks, adjusting mixer levels etc.
 _Unlike_ traditional DAWs, all the default connections are visible and alterable, and you can connect things however you want.
 (For a complete description of how default and custom connections behave, see [Default and Custom Connections](#default-and-custom-connections).)
 
@@ -29,27 +28,23 @@ Processors are arranged in an 8X8 grid to be selected, moved, connected and cont
 
 ## Why?
 
-I've made music off and on as a hobby for most of my life.
-A few years ago I started getting into modular synthesis, and I fell in love with the immediacy and surprise of it.
-More and more, I started thinking about and working with music as an _active_ and _improvisational_ creative process, and became less interested in the editing, arranging, mixing and mastering aspects of producing full, polished tracks.
+The main inspiration for this project is [Tim Exile's Flow Machine](https://youtu.be/hQbg-uHwcig)
+I wanted to build something with that kind of immediacy.
+This is my first attempt at building something that allows me to just sing and play and start capturing, looping and manipulating audio from the outside world into manglers in the digital world as quickly as possible.
 
-I also became really inspired and actually pretty blown away by [Tim Exile's Flow Machine](https://youtu.be/hQbg-uHwcig)
-I like the immediacy of being able to just sing and play and start capturing, looping and manipulating audio from the outside world into manglers in the digital world as quickly as possible.
-
-In addition to wanting a jambox like Tim Exile has going on, I'm very interested in the idea of making what you might call an "intelligent" music instrument.
+In addition to wanting a jam-box like Tim Exile has going on, I'm very interested in the idea of making what you might call an "intelligent" music instrument.
 One where I could, say, hum a tune, and it would translate it to MIDI and maybe even know what instrument I wanted.
-Or beatbox and it would classify the sounds and make a beat with similar sounds from my sample library.
+Or beatbox, and it would classify the sounds and make a beat with similar sounds from my sample library.
 Or generate melodies based on music in my library to play along with me.
 
 What I really want is something that:
-
 * is flexible, immediate, quick and fun
 * allows me to learn more about audio & DSP and quickly turn ideas into something I can play with and integrate, with minimal boilerplate and overhead
 * can process, mangle and loop audio and MIDI from the real world
 * integrates with other plugins and external hardware that I already use
 * allows for meta-creation, e.g. instruments that create other instruments or drum machines that choose their own samples
 
-These are pretty big goals and there's a long way to go, but this app is starting to feel like a stable foundation to iterate towards them bit by bit!
+These are some pretty big goals, and I learned a lot in this iteration about better ways to get there that I'm pursuing in the [new version](https://github.com/khiner/flowgrid).
 
 # Guide
 
@@ -220,7 +215,7 @@ The state of all external plugins is saved with the project.
 
 ### Internal processors
 
-FlowGrid is currently lacking in the internal processor department, as the effort has been (and will continue to be for awhile!) on more fundamental aspects of application behavior.
+FlowGrid is currently lacking in the internal processor department, as the effort has been on more fundamental aspects of application behavior.
 This list will be updated as new processors become available.
 
 * Mixer Channel
