@@ -3,10 +3,10 @@
 #include "ApplicationPropertiesAndCommandManager.h"
 
 Push2Component::Push2Component(View &view, Tracks &tracks, Connections &connections, Project &project, StatefulAudioProcessorWrappers &processorWrappers, Push2MidiCommunicator &push2MidiCommunicator)
-        : Push2ComponentBase(view, tracks, push2MidiCommunicator),
-          project(project), connections(connections), processorWrappers(processorWrappers),
-          processorView(view, tracks, project, push2MidiCommunicator), processorSelector(view, tracks, project, push2MidiCommunicator),
-          mixerView(view, tracks, project, processorWrappers, push2MidiCommunicator), push2NoteModePadLedManager(tracks, push2MidiCommunicator) {
+    : Push2ComponentBase(view, tracks, push2MidiCommunicator),
+      project(project), connections(connections), processorWrappers(processorWrappers),
+      processorView(view, tracks, project, push2MidiCommunicator), processorSelector(view, tracks, project, push2MidiCommunicator),
+      mixerView(view, tracks, project, processorWrappers, push2MidiCommunicator), push2NoteModePadLedManager(tracks, push2MidiCommunicator) {
     startTimer(60);
 
     addChildComponent(processorView);
@@ -125,16 +125,11 @@ void Push2Component::arrowPressed(int arrowDirection) {
         return;
     }
     switch (arrowDirection) {
-        case Push2::leftArrowDirection:
-            return project.navigateLeft();
-        case Push2::rightArrowDirection:
-            return project.navigateRight();
-        case Push2::upArrowDirection:
-            return project.navigateUp();
-        case Push2::downArrowDirection:
-            return project.navigateDown();
-        default:
-            return;
+        case Push2::leftArrowDirection:return project.navigateLeft();
+        case Push2::rightArrowDirection:return project.navigateRight();
+        case Push2::upArrowDirection:return project.navigateUp();
+        case Push2::downArrowDirection:return project.navigateDown();
+        default:return;
     }
 }
 
@@ -153,10 +148,10 @@ void Push2Component::updateEnabledPush2Buttons() {
         updatePush2SelectionDependentButtons();
         changeListenerCallback(&project.getUndoManager());
     } else {
-        for (auto buttonId : {Push2::addTrack, Push2::delete_, Push2::addDevice,
-                              Push2::mix, Push2::master, Push2::undo, Push2::note, Push2::session,
-                              Push2::shift, Push2::left, Push2::right, Push2::up, Push2::down,
-                              Push2::duplicate}) {
+        for (auto buttonId: {Push2::addTrack, Push2::delete_, Push2::addDevice,
+                             Push2::mix, Push2::master, Push2::undo, Push2::note, Push2::session,
+                             Push2::shift, Push2::left, Push2::right, Push2::up, Push2::down,
+                             Push2::duplicate}) {
             push2.disableWhiteLedButton(buttonId);
         }
     }
@@ -194,7 +189,7 @@ void Push2Component::updatePush2SelectionDependentButtons() {
         push2.activateWhiteLedButton(Push2MidiCommunicator::master);
     push2NoteModePadLedManager.trackSelected(focusedTrack);
 
-    for (int direction : {Push2::upArrowDirection, Push2::downArrowDirection, Push2::leftArrowDirection, Push2::rightArrowDirection}) {
+    for (int direction: {Push2::upArrowDirection, Push2::downArrowDirection, Push2::leftArrowDirection, Push2::rightArrowDirection}) {
         if (isVisible() && currentlyViewingChild != &processorSelector && canNavigateInDirection(direction))
             push2.activateWhiteLedButton(Push2::ccNumberForArrowButton(direction));
         else
@@ -204,16 +199,11 @@ void Push2Component::updatePush2SelectionDependentButtons() {
 
 bool Push2Component::canNavigateInDirection(int direction) const {
     switch (direction) {
-        case Push2::rightArrowDirection:
-            return project.canNavigateRight();
-        case Push2::downArrowDirection:
-            return project.canNavigateDown();
-        case Push2::leftArrowDirection:
-            return project.canNavigateLeft();
-        case Push2::upArrowDirection:
-            return project.canNavigateUp();
-        default:
-            return false;
+        case Push2::rightArrowDirection:return project.canNavigateRight();
+        case Push2::downArrowDirection:return project.canNavigateDown();
+        case Push2::leftArrowDirection:return project.canNavigateLeft();
+        case Push2::upArrowDirection:return project.canNavigateUp();
+        default:return false;
     }
 }
 
@@ -223,7 +213,7 @@ void Push2Component::updatePush2NoteModePadLedManagerVisibility() {
 
 void Push2Component::updateFocusedProcessor() {
     auto *focusedProcessor = tracks.getFocusedProcessor();
-    if (focusedProcessor == nullptr)  {
+    if (focusedProcessor == nullptr) {
         processorView.processorFocused(nullptr, nullptr);
         return;
     }

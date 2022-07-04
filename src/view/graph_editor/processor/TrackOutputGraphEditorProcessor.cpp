@@ -6,7 +6,7 @@
 #include "TrackOutputGraphEditorProcessor.h"
 
 TrackOutputGraphEditorProcessor::TrackOutputGraphEditorProcessor(Processor *processor, Track *track, View &view, StatefulAudioProcessorWrappers &processorWrappers, ConnectorDragListener &connectorDragListener) :
-        BaseGraphEditorProcessor(processor, track, view, processorWrappers, connectorDragListener) {
+    BaseGraphEditorProcessor(processor, track, view, processorWrappers, connectorDragListener) {
 }
 
 void TrackOutputGraphEditorProcessor::resized() {
@@ -31,7 +31,7 @@ void TrackOutputGraphEditorProcessor::paint(Graphics &g) {
     bool curveTopLeft = false, curveTopRight = isMaster, curveBottomLeft = !isMaster, curveBottomRight = true;
     Path p;
     p.addRoundedRectangle(r.getX(), r.getY(), r.getWidth(), r.getHeight(),
-                          4.0f, 4.0f, curveTopLeft, curveTopRight, curveBottomLeft, curveBottomRight);
+        4.0f, 4.0f, curveTopLeft, curveTopRight, curveBottomLeft, curveBottomRight);
     g.fillPath(p);
 }
 

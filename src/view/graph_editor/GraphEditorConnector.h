@@ -41,8 +41,8 @@ struct GraphEditorConnector : public Component, public SettableTooltipClient {
             dragAnchor = isNearerSource ? audioConnection.destination : audioConnection.source;
 
             connectorDragListener.beginConnectorDrag(isNearerSource ? dummy : audioConnection.source,
-                                                     isNearerSource ? audioConnection.destination : dummy,
-                                                     e);
+                isNearerSource ? audioConnection.destination : dummy,
+                e);
         }
     }
     void mouseUp(const MouseEvent &e) override {
@@ -63,8 +63,8 @@ private:
     AudioProcessorGraph::NodeAndChannel dragAnchor{AudioProcessorGraph::NodeID(), 0};
 
     AudioProcessorGraph::Connection audioConnection{
-            {AudioProcessorGraph::NodeID(0), 0},
-            {AudioProcessorGraph::NodeID(0), 0}
+        {AudioProcessorGraph::NodeID(0), 0},
+        {AudioProcessorGraph::NodeID(0), 0}
     };
 
     void setSource(AudioProcessorGraph::NodeAndChannel newSource) {

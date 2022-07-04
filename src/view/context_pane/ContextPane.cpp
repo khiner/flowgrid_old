@@ -3,7 +3,7 @@
 #include "model/Tracks.h"
 
 ContextPane::ContextPane(Tracks &tracks, View &view)
-        : tracks(tracks), view(view) {
+    : tracks(tracks), view(view) {
     tracks.addStateListener(this);
     tracks.addChildListener(this);
     view.addStateListener(this);
@@ -56,7 +56,7 @@ void ContextPane::paint(Graphics &g) {
                 // TODO should be method on track once it has a `view`
                 auto trackAndSlot = view.getFocusedTrackAndSlot();
                 bool slotFocused = track->getIndex() == trackAndSlot.x && slot == trackAndSlot.y;
-                cellColour = getFillColour(trackColour, track, processor, view.isProcessorSlotInView(track->getIndex(), track->isMaster(), slot),track->isSlotSelected(slot),slotFocused);
+                cellColour = getFillColour(trackColour, track, processor, view.isProcessorSlotInView(track->getIndex(), track->isMaster(), slot), track->isSlotSelected(slot), slotFocused);
             }
             g.setColour(cellColour);
             const auto &cellPosition = isMaster ? juce::Point<int>(gridCellIndex * cellWidth, masterRowY) : juce::Point<int>(trackX, gridCellIndex * cellHeight);

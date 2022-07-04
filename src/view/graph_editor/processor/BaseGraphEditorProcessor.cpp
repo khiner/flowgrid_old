@@ -1,12 +1,12 @@
 #include "BaseGraphEditorProcessor.h"
 
 BaseGraphEditorProcessor::BaseGraphEditorProcessor(Processor *processor, Track *track, View &view, StatefulAudioProcessorWrappers &processorWrappers, ConnectorDragListener &connectorDragListener)
-        : processor(processor), track(track), view(view), processorWrappers(processorWrappers), connectorDragListener(connectorDragListener) {
+    : processor(processor), track(track), view(view), processorWrappers(processorWrappers), connectorDragListener(connectorDragListener) {
     this->processor->getState().addListener(this);
 
-    for (auto child : this->processor->getState()) {
+    for (auto child: this->processor->getState()) {
         if (Channels::isType(child)) {
-            for (auto channel : child) {
+            for (auto channel: child) {
                 // TODO shouldn't have to do this kind of thing
                 valueTreeChildAdded(child, channel);
             }
@@ -31,7 +31,7 @@ void BaseGraphEditorProcessor::paint(Graphics &g) {
 }
 
 bool BaseGraphEditorProcessor::hitTest(int x, int y) {
-    for (auto *child : getChildren())
+    for (auto *child: getChildren())
         if (child->getBounds().contains(x, y))
             return true;
 
@@ -40,7 +40,7 @@ bool BaseGraphEditorProcessor::hitTest(int x, int y) {
 
 void BaseGraphEditorProcessor::resized() {
     if (auto *audioProcessor = processorWrappers.getAudioProcessorForProcessor(processor)) {
-        for (auto *channel : channels)
+        for (auto *channel: channels)
             layoutChannel(audioProcessor, channel);
         repaint();
         connectorDragListener.update();

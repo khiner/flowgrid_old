@@ -4,10 +4,10 @@
 #include "ApplicationPropertiesAndCommandManager.h"
 
 GraphEditorPanel::GraphEditorPanel(View &view, Tracks &tracks, Connections &connections, Input &input, Output &output, ProcessorGraph &processorGraph, Project &project, PluginManager &pluginManager)
-        : view(view), tracks(tracks), connections(connections),
-          input(input), output(output), graph(processorGraph), project(project),
-          graphEditorInput(input, view, processorGraph, pluginManager, *this),
-          graphEditorOutput(output, view, processorGraph, pluginManager, *this) {
+    : view(view), tracks(tracks), connections(connections),
+      input(input), output(output), graph(processorGraph), project(project),
+      graphEditorInput(input, view, processorGraph, pluginManager, *this),
+      graphEditorOutput(output, view, processorGraph, pluginManager, *this) {
     tracks.addChildListener(this);
     tracks.addProcessorListener(this);
     view.addStateListener(this);
@@ -167,7 +167,7 @@ GraphEditorChannel *GraphEditorPanel::findChannelAt(const MouseEvent &e) const {
 
 ResizableWindow *GraphEditorPanel::getOrCreateWindowFor(Processor *processor, PluginWindowType type) {
     auto nodeId = processor->getNodeId();
-    for (auto *pluginWindow : activePluginWindows)
+    for (auto *pluginWindow: activePluginWindows)
         if (pluginWindow->processor->getNodeId() == nodeId && pluginWindow->type == type)
             return pluginWindow;
 
@@ -191,9 +191,9 @@ juce::Point<int> GraphEditorPanel::trackAndSlotAt(const MouseEvent &e) {
 }
 
 static constexpr int
-        DELETE_MENU_ID = 1, TOGGLE_BYPASS_MENU_ID = 2, ENABLE_DEFAULTS_MENU_ID = 3, DISCONNECT_ALL_MENU_ID = 4,
-        DISABLE_DEFAULTS_MENU_ID = 5, DISCONNECT_CUSTOM_MENU_ID = 6,
-        SHOW_PLUGIN_GUI_MENU_ID = 10, SHOW_ALL_PROGRAMS_MENU_ID = 11, CONFIGURE_AUDIO_MIDI_MENU_ID = 12;
+    DELETE_MENU_ID = 1, TOGGLE_BYPASS_MENU_ID = 2, ENABLE_DEFAULTS_MENU_ID = 3, DISCONNECT_ALL_MENU_ID = 4,
+    DISABLE_DEFAULTS_MENU_ID = 5, DISCONNECT_CUSTOM_MENU_ID = 6,
+    SHOW_PLUGIN_GUI_MENU_ID = 10, SHOW_ALL_PROGRAMS_MENU_ID = 11, CONFIGURE_AUDIO_MIDI_MENU_ID = 12;
 
 void GraphEditorPanel::showPopupMenu(const Track *track, int slot) {
     PopupMenu menu;
@@ -227,45 +227,35 @@ void GraphEditorPanel::showPopupMenu(const Track *track, int slot) {
         }
 
         menu.showMenuAsync({}, ModalCallbackFunction::create
-                ([this, processor, slot, &pluginManager](int result) {
-                    const auto &description = pluginManager.getChosenType(result);
-                    if (!description.name.isEmpty()) {
-                        project.createProcessor(description, slot);
-                        return;
-                    }
+            ([this, processor, slot, &pluginManager](int result) {
+                const auto &description = pluginManager.getChosenType(result);
+                if (!description.name.isEmpty()) {
+                    project.createProcessor(description, slot);
+                    return;
+                }
 
-                    switch (result) {
-                        case DELETE_MENU_ID:
-                            getCommandManager().invokeDirectly(CommandIDs::deleteSelected, false);
-                            break;
-                        case TOGGLE_BYPASS_MENU_ID:
-                            project.toggleProcessorBypass(processor);
-                            break;
-                        case ENABLE_DEFAULTS_MENU_ID:
-                            project.setDefaultConnectionsAllowed(processor, true);
-                            break;
-                        case DISABLE_DEFAULTS_MENU_ID:
-                            project.setDefaultConnectionsAllowed(processor, false);
-                            break;
-                        case DISCONNECT_ALL_MENU_ID:
-                            graph.disconnectProcessor(processor);
-                            break;
-                        case DISCONNECT_CUSTOM_MENU_ID:
-                            project.disconnectCustom(processor);
-                            break;
-                        case SHOW_PLUGIN_GUI_MENU_ID:
-                            tracks.showWindow(processor, PluginWindowType::normal);
-                            break;
-                        case SHOW_ALL_PROGRAMS_MENU_ID:
-                            tracks.showWindow(processor, PluginWindowType::programs);
-                            break;
-                        case CONFIGURE_AUDIO_MIDI_MENU_ID:
-                            getCommandManager().invokeDirectly(CommandIDs::showAudioMidiSettings, false);
-                            break;
-                        default:
-                            break;
-                    }
-                }));
+                switch (result) {
+                    case DELETE_MENU_ID:getCommandManager().invokeDirectly(CommandIDs::deleteSelected, false);
+                        break;
+                    case TOGGLE_BYPASS_MENU_ID:project.toggleProcessorBypass(processor);
+                        break;
+                    case ENABLE_DEFAULTS_MENU_ID:project.setDefaultConnectionsAllowed(processor, true);
+                        break;
+                    case DISABLE_DEFAULTS_MENU_ID:project.setDefaultConnectionsAllowed(processor, false);
+                        break;
+                    case DISCONNECT_ALL_MENU_ID:graph.disconnectProcessor(processor);
+                        break;
+                    case DISCONNECT_CUSTOM_MENU_ID:project.disconnectCustom(processor);
+                        break;
+                    case SHOW_PLUGIN_GUI_MENU_ID:tracks.showWindow(processor, PluginWindowType::normal);
+                        break;
+                    case SHOW_ALL_PROGRAMS_MENU_ID:tracks.showWindow(processor, PluginWindowType::programs);
+                        break;
+                    case CONFIGURE_AUDIO_MIDI_MENU_ID:getCommandManager().invokeDirectly(CommandIDs::showAudioMidiSettings, false);
+                        break;
+                    default:break;
+                }
+            }));
     } else { // no processor in this slot
         pluginManager.addPluginsToMenu(menu);
 

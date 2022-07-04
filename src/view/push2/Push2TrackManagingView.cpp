@@ -2,7 +2,7 @@
 
 
 Push2TrackManagingView::Push2TrackManagingView(View &view, Tracks &tracks, Project &project, Push2MidiCommunicator &push2)
-        : Push2ComponentBase(view, tracks, push2), project(project) {
+    : Push2ComponentBase(view, tracks, push2), project(project) {
     tracks.addChildListener(this);
     view.addListener(this);
 
@@ -20,7 +20,7 @@ void Push2TrackManagingView::resized() {
     auto r = getLocalBounds();
     auto labelWidth = getWidth() / NUM_COLUMNS;
     auto bottom = r.removeFromBottom(HEADER_FOOTER_HEIGHT);
-    for (auto *trackLabel : trackLabels)
+    for (auto *trackLabel: trackLabels)
         trackLabel->setBounds(bottom.removeFromLeft(labelWidth));
 }
 
@@ -31,7 +31,7 @@ void Push2TrackManagingView::belowScreenButtonPressed(int buttonIndex) {
 }
 
 void Push2TrackManagingView::updateEnabledPush2Buttons() {
-    for (auto *label : trackLabels)
+    for (auto *label: trackLabels)
         label->setVisible(false);
 
     if (!isVisible()) return;

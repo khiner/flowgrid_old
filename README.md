@@ -2,14 +2,14 @@
 
 ![](docs/quick-demo.gif)
 
-Inspired by [Tim Exile's Flow Machine](https://youtu.be/SLguU77xuQA), I am aiming to build something that:
-* is the most fun jam box (for me) that I can make for the Push 2 and a Mac
-* acts as a central routing and processing interface to external gear (MIDI, audio, CV etc)
-* provides a hierarchically composable playing interface, with access to high-level musical control features, as well as low-level audio processor details
-* exposes as much control as possible over processes meaningful to the audio output (e.g. providing modular controls to program events like track or processor creation and deletion)
-* is an intuitive and quick functional test bed for instrument ideas
+**This project is outdated. I'm working on a new version of this project [here](https://github.com/khiner/flowgrid2).**
 
-_This tool isn't quite there yet - there's still a lot to do!_
+Inspired by [Tim Exile's Flow Machine](https://youtu.be/SLguU77xuQA), I'm aiming to build something that:
+
+* is a fun jam box for the Push 2 and a Mac
+* acts as a central routing and processing interface to external gear (MIDI, audio, CV etc)
+* provides a hierarchical grid-based playing interface
+  - _(Note: The hierarchical part is not happening with this iteration - only one grid level here.)_
 
 ## What is this?
 
@@ -33,15 +33,16 @@ I've made music off and on as a hobby for most of my life.
 A few years ago I started getting into modular synthesis, and I fell in love with the immediacy and surprise of it.
 More and more, I started thinking about and working with music as an _active_ and _improvisational_ creative process, and became less interested in the editing, arranging, mixing and mastering aspects of producing full, polished tracks.
 
-I also became really inspired and actually pretty blown away by [Tim Exile's Flow Machine](https://youtu.be/hQbg-uHwcig) - a jumble of old MIDI hardware and crazy custom Reaktor patches made by Tim to solve his own needs for a super-immediate and powerful looper-effect-jam-box.
-I really wanted that immediacy of being able to just sing and play and start capturing, looping and manipulating audio from the outside world into manglers in the digital world as quickly as possible.
+I also became really inspired and actually pretty blown away by [Tim Exile's Flow Machine](https://youtu.be/hQbg-uHwcig)
+I like the immediacy of being able to just sing and play and start capturing, looping and manipulating audio from the outside world into manglers in the digital world as quickly as possible.
 
 In addition to wanting a jambox like Tim Exile has going on, I'm very interested in the idea of making what you might call an "intelligent" music instrument.
-One where I could, say, hum a tune and it would translate it to MIDI and maybe even know what instrument I wanted.
+One where I could, say, hum a tune, and it would translate it to MIDI and maybe even know what instrument I wanted.
 Or beatbox and it would classify the sounds and make a beat with similar sounds from my sample library.
 Or generate melodies based on music in my library to play along with me.
 
 What I really want is something that:
+
 * is flexible, immediate, quick and fun
 * allows me to learn more about audio & DSP and quickly turn ideas into something I can play with and integrate, with minimal boilerplate and overhead
 * can process, mangle and loop audio and MIDI from the real world
@@ -64,9 +65,9 @@ Projects are saved with a `.smp` in a folder of your choosing, which will be rem
 Every action is undoable, from creating tracks and processors to creating and moving connections, changing parameters or changing the enabled external IO device or channels.
 
 You can undo and redo by:
-  * selecting Undo or Redo from the `Edit` menu
-  * using `ctrl+z` or `shift+ctrl+z` hotkeys
-  * using the Ableton Push 2 'Undo' or `shift+'Undo'` buttons
+* selecting Undo or Redo from the `Edit` menu
+* using `ctrl+z` or `shift+ctrl+z` hotkeys
+* using the Ableton Push 2 'Undo' or `shift+'Undo'` buttons
 
 ## Tracks
 
@@ -84,11 +85,11 @@ A track can be created by:
   - This will create a track _with a Mixer Channel_, and insert it to the right of any currently selected track.
 * selecting 'Insert track (without mixer)' from the `Edit` menu, or using the `shift+ctrl+t` hotkey,
   - This will create a track _without a Mixer Channel_, and insert it to the left of any currently selected track.
-  It will be named based on the selected track and can be thought of as a kind of _subtrack_.
-  (This is useful for connecting more generators or effects with a single mixer channel, or for connecting directly to the master track or external outs.)
+    It will be named based on the selected track and can be thought of as a kind of _subtrack_.
+    (This is useful for connecting more generators or effects with a single mixer channel, or for connecting directly to the master track or external outs.)
 * or adding a generator-type processor to a track that already has a generator.
   - This will automatically create a new track without a mixer channel, and route the new generator to the first effect processor in the selected track.
-  This is useful for, say, doubling a synth voice.
+    This is useful for, say, doubling a synth voice.
 
 Remove a track by selecting its label (or navigating to it with arrow keys or the Push 2 arrow buttons), and hitting `delete`, or the `'Delete'` button on the Push 2.
 
@@ -106,7 +107,8 @@ Move a track to a different position by clicking and dragging on its label.
 
 ## Processors
 
-_Processors_ are sound and MIDI generators, effects, synths - anything that creates or modifies sound or MIDI! Processors include both _internal_ processors and _external_ plugins.
+_Processors_ are sound and MIDI generators, effects, synths - anything that creates or modifies sound or MIDI!
+Processors include both _internal_ processors and _external_ plugins.
 Internal processors are actually implemented as plugins.
 
 The automatable parameters of any internal processor or external plugin will be shown natively in the processor editor to the right of the processor graph when it is selected.
@@ -126,7 +128,8 @@ Add a processor by:
 * using the 'Add processor' button at the top-right of the app window,
 * or hitting the Push 2 `'Add device'` button and using the Push 2 arrows and buttons to select a processor from the browser in the Push 2 display
 
-New processors are created with default connections already made. (See [Default and custom connections](#default-and-custom-connections).)
+New processors are created with default connections already made.
+(See [Default and custom connections](#default-and-custom-connections).)
 
 ### External audio and MIDI IO
 
@@ -222,9 +225,9 @@ This list will be updated as new processors become available.
 
 * Mixer Channel
   - This is the only "special" processor type, other than audio & MIDI IO processors (which can't be explicitly added or removed except through changing audio IO settings).
-  Each track can have _at most one_ Mixer Channel processor, and it can only be added to the last processor slot of the track.
-  It has gain and balance parameters that are shown inside the processor node in the graph editor, along with a level meter.
-  The Push 2 `'Mixer'` button shows a unified mixer view to control the gain and balance of all tracks that have Mixer Channels (very similar to Ableton's mixer view)
+    Each track can have _at most one_ Mixer Channel processor, and it can only be added to the last processor slot of the track.
+    It has gain and balance parameters that are shown inside the processor node in the graph editor, along with a level meter.
+    The Push 2 `'Mixer'` button shows a unified mixer view to control the gain and balance of all tracks that have Mixer Channels (very similar to Ableton's mixer view)
 
 * Gain
   - A simple linear gain control
@@ -256,7 +259,7 @@ Clone the repo (including the submodules for JUCE and libusb):
 
 This project uses CMake.
 I use the CLion IDE to configure, build, run and debug the project.
-If you're using CLion, everything should just work if you specify the root CMakeLists.txt file. 
+If you're using CLion, everything should just work if you specify the root CMakeLists.txt file.
 Theoretically though, it could be built and run using the CMake CLI as well.
 
 ### App settings files

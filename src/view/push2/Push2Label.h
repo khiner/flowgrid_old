@@ -5,7 +5,7 @@
 class Push2Label : public Label {
 public:
     Push2Label(int position, bool top, Push2MidiCommunicator &push2MidiCommunicator) :
-            Label(), position(position), top(top), push2MidiCommunicator(push2MidiCommunicator) {
+        Label(), position(position), top(top), push2MidiCommunicator(push2MidiCommunicator) {
         updateColours();
     }
 

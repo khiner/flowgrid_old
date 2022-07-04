@@ -1,12 +1,12 @@
 #include "Push2ProcessorView.h"
 
 Push2ProcessorView::Push2ProcessorView(View &view, Tracks &tracks, Project &project, Push2MidiCommunicator &push2MidiCommunicator)
-        : Push2TrackManagingView(view, tracks, project, push2MidiCommunicator),
-          escapeProcessorFocusButton("Back", 0.5, Colours::white),
-          parameterPageLeftButton("Page parameters left", 0.5, Colours::white),
-          parameterPageRightButton("Page parameters right", 0.0, Colours::white),
-          processorPageLeftButton("Page processors left", 0.5, Colours::white),
-          processorPageRightButton("Page processors right", 0.0, Colours::white) {
+    : Push2TrackManagingView(view, tracks, project, push2MidiCommunicator),
+      escapeProcessorFocusButton("Back", 0.5, Colours::white),
+      parameterPageLeftButton("Page parameters left", 0.5, Colours::white),
+      parameterPageRightButton("Page parameters right", 0.0, Colours::white),
+      processorPageLeftButton("Page processors left", 0.5, Colours::white),
+      processorPageRightButton("Page processors right", 0.0, Colours::white) {
 
     for (int i = 0; i < NUM_COLUMNS; i++) {
         addChildComponent(processorLabels.add(new Push2Label(i, true, push2MidiCommunicator)));
@@ -37,7 +37,7 @@ void Push2ProcessorView::resized() {
     parametersPanel->setBounds(r);
 
     top = getLocalBounds().removeFromTop(HEADER_FOOTER_HEIGHT);
-    for (auto *processorLabel : processorLabels) {
+    for (auto *processorLabel: processorLabels) {
         processorLabel->setBounds(top.removeFromLeft(labelWidth));
     }
 }
@@ -109,7 +109,7 @@ void Push2ProcessorView::updatePageButtonVisibility() {
         processorPageLeftButton.setVisible(false);
         processorPageRightButton.setVisible(false);
 
-        for (auto *label : processorLabels)
+        for (auto *label: processorLabels)
             label->setVisible(false);
 
         // TODO use Push2Label to unite these two sets of updates into one automagically
@@ -137,7 +137,7 @@ void Push2ProcessorView::updatePageButtonVisibility() {
 void Push2ProcessorView::updateProcessorButtons() {
     const auto *focusedTrack = tracks.getFocusedTrack();
     if (processorHasFocus || focusedTrack == nullptr) { // TODO reset when processor changes
-        for (auto *label : processorLabels)
+        for (auto *label: processorLabels)
             label->setVisible(false);
         return;
     }
@@ -169,7 +169,7 @@ void Push2ProcessorView::updateProcessorButtons() {
 
 void Push2ProcessorView::updateColours() {
     const auto &colour = getColourForTrack(tracks.getFocusedTrack());
-    for (auto *processorLabel : processorLabels) {
+    for (auto *processorLabel: processorLabels) {
         processorLabel->setMainColour(colour);
     }
     escapeProcessorFocusButton.setColour(colour);

@@ -10,8 +10,8 @@
 #include "GraphEditorConnectors.h"
 
 class GraphEditorPanel
-        : public Component, public ConnectorDragListener, public GraphEditorProcessorContainer,
-          private ValueTree::Listener, StatefulList<Track>::Listener, StatefulList<Processor>::Listener {
+    : public Component, public ConnectorDragListener, public GraphEditorProcessorContainer,
+      private ValueTree::Listener, StatefulList<Track>::Listener, StatefulList<Processor>::Listener {
 public:
     GraphEditorPanel(View &view, Tracks &tracks, Connections &connections, Input &input, Output &output, ProcessorGraph &processorGraph, Project &project, PluginManager &pluginManager);
 

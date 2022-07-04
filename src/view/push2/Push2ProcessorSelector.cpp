@@ -30,7 +30,7 @@ KnownPluginList::PluginTree *Push2ProcessorSelector::ProcessorSelectorRow::selec
 void Push2ProcessorSelector::ProcessorSelectorRow::selectFolder(KnownPluginList::PluginTree *subfolder) {
     jassert(currentTree->subFolders.contains(subfolder));
 
-    for (auto *folder : currentTree->subFolders) {
+    for (auto *folder: currentTree->subFolders) {
         folder->selected = false;
     }
     subfolder->selected = true;
@@ -72,7 +72,7 @@ void Push2ProcessorSelector::ProcessorSelectorRow::setCurrentTree(KnownPluginLis
     if (currentTree == tree) return;
 
     if (currentTree != nullptr && currentTree->subFolders.contains(tree)) {
-        for (auto *folder : currentTree->subFolders) {
+        for (auto *folder: currentTree->subFolders) {
             folder->selected = false;
         }
     }
@@ -95,12 +95,12 @@ void Push2ProcessorSelector::ProcessorSelectorRow::arrowPressed(int direction) {
         setCurrentViewOffset(jmax(0, currentViewOffset - NUM_COLUMNS));
     else if (direction == Push2::rightArrowDirection && currentTree != nullptr)
         setCurrentViewOffset(jmin(currentViewOffset + NUM_COLUMNS,
-                                  getTotalNumberOfTreeItems() - getTotalNumberOfTreeItems() % NUM_COLUMNS));
+            getTotalNumberOfTreeItems() - getTotalNumberOfTreeItems() % NUM_COLUMNS));
 }
 
 void Push2ProcessorSelector::ProcessorSelectorRow::resized() {
     auto r = getLocalBounds();
-    for (auto *label : labels) {
+    for (auto *label: labels) {
         label->setBounds(r.removeFromLeft(getWidth() / NUM_COLUMNS));
     }
     selectionRectangleOverlay.setRectangle(getLocalBounds().toFloat());
@@ -134,7 +134,7 @@ void Push2ProcessorSelector::ProcessorSelectorRow::updateLabels() const {
 }
 
 Push2ProcessorSelector::Push2ProcessorSelector(View &view, Tracks &tracks, Project &project, Push2MidiCommunicator &push2MidiCommunicator)
-        : Push2ComponentBase(view, tracks, push2MidiCommunicator), project(project) {
+    : Push2ComponentBase(view, tracks, push2MidiCommunicator), project(project) {
     topProcessorSelector = std::make_unique<ProcessorSelectorRow>(push2, true);
     bottomProcessorSelector = std::make_unique<ProcessorSelectorRow>(push2, false);
     addChildComponent(topProcessorSelector.get());
@@ -258,7 +258,7 @@ void Push2ProcessorSelector::selectProcessorRow(Push2ProcessorSelector::Processo
 }
 
 void Push2ProcessorSelector::updateEnabledPush2Arrows() {
-    for (int direction : {Push2::upArrowDirection, Push2::downArrowDirection, Push2::leftArrowDirection, Push2::rightArrowDirection}) {
+    for (int direction: {Push2::upArrowDirection, Push2::downArrowDirection, Push2::leftArrowDirection, Push2::rightArrowDirection}) {
         if (isVisible() && currentProcessorSelector != nullptr && canNavigateInDirection(direction))
             push2.activateWhiteLedButton(Push2::ccNumberForArrowButton(direction));
         else
@@ -268,15 +268,10 @@ void Push2ProcessorSelector::updateEnabledPush2Arrows() {
 
 bool Push2ProcessorSelector::canNavigateInDirection(int direction) {
     switch (direction) {
-        case Push2::rightArrowDirection:
-            return canNavigateRight();
-        case Push2::downArrowDirection:
-            return canNavigateDown();
-        case Push2::leftArrowDirection:
-            return canNavigateLeft();
-        case Push2::upArrowDirection:
-            return canNavigateUp();
-        default:
-            return false;
+        case Push2::rightArrowDirection:return canNavigateRight();
+        case Push2::downArrowDirection:return canNavigateDown();
+        case Push2::leftArrowDirection:return canNavigateLeft();
+        case Push2::upArrowDirection:return canNavigateUp();
+        default:return false;
     }
 }

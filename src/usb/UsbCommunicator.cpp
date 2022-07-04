@@ -1,7 +1,7 @@
 #include "UsbCommunicator.h"
 
 UsbCommunicator::UsbCommunicator(const uint16_t vendorId, const uint16_t productId) :
-        vendorId(vendorId), productId(productId), frameHeaderTransfer(nullptr), terminate(false) {
+    vendorId(vendorId), productId(productId), frameHeaderTransfer(nullptr), terminate(false) {
     auto errorCode = libusb_init(nullptr);
     if (errorCode < 0) throw std::runtime_error("Failed to initialize libusb");
 
@@ -18,29 +18,21 @@ UsbCommunicator::~UsbCommunicator() {
 void UsbCommunicator::onTransferFinished(libusb_transfer *transfer) {
     if (transfer->status != LIBUSB_TRANSFER_COMPLETED) {
         switch (transfer->status) {
-            case LIBUSB_TRANSFER_ERROR:
-                printf("transfer failed\n");
+            case LIBUSB_TRANSFER_ERROR:printf("transfer failed\n");
                 break;
-            case LIBUSB_TRANSFER_TIMED_OUT:
-                printf("transfer timed out\n");
+            case LIBUSB_TRANSFER_TIMED_OUT:printf("transfer timed out\n");
                 break;
-            case LIBUSB_TRANSFER_CANCELLED:
-                printf("transfer was cancelled\n");
+            case LIBUSB_TRANSFER_CANCELLED:printf("transfer was cancelled\n");
                 break;
-            case LIBUSB_TRANSFER_STALL:
-                printf("endpoint stalled/control request not supported\n");
+            case LIBUSB_TRANSFER_STALL:printf("endpoint stalled/control request not supported\n");
                 break;
-            case LIBUSB_TRANSFER_NO_DEVICE:
-                printf("device was disconnected\n");
+            case LIBUSB_TRANSFER_NO_DEVICE:printf("device was disconnected\n");
                 break;
-            case LIBUSB_TRANSFER_OVERFLOW:
-                printf("device sent more data than requested\n");
+            case LIBUSB_TRANSFER_OVERFLOW:printf("device sent more data than requested\n");
                 break;
-            case LIBUSB_TRANSFER_COMPLETED:
-                printf("Transfer completed\n");
+            case LIBUSB_TRANSFER_COMPLETED:printf("Transfer completed\n");
                 break;
-            default:
-                printf("snd transfer failed with status: %d\n", transfer->status);
+            default:printf("snd transfer failed with status: %d\n", transfer->status);
                 break;
         }
         terminate.store(true);
@@ -77,7 +69,7 @@ libusb_transfer *UsbCommunicator::allocateAndPrepareTransferChunk(libusb_device_
     if (!transfer) return nullptr;
 
     libusb_fill_bulk_transfer(transfer, handle, endpoint, buffer, bufferSize,
-                              onTransferFinishedStatic, instance, 1000);
+        onTransferFinishedStatic, instance, 1000);
     return transfer;
 }
 

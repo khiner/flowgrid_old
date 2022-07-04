@@ -2,8 +2,8 @@
 
 GraphEditorTrack::GraphEditorTrack(Track *track, View &view, Project &project, StatefulAudioProcessorWrappers &processorWrappers, PluginManager &pluginManager,
                                    ConnectorDragListener &connectorDragListener)
-        : track(track), view(view),  project(project), processorWrappers(processorWrappers), connectorDragListener(connectorDragListener),
-          lanes(track->getProcessorLanes(), track, view, processorWrappers, connectorDragListener) {
+    : track(track), view(view), project(project), processorWrappers(processorWrappers), connectorDragListener(connectorDragListener),
+      lanes(track->getProcessorLanes(), track, view, processorWrappers, connectorDragListener) {
     addAndMakeVisible(lanes);
 
     track->addTrackListener(this);
@@ -33,7 +33,7 @@ void GraphEditorTrack::paint(Graphics &g) {
     bool curveTopLeft = !isMaster, curveTopRight = true, curveBottomLeft = true, curveBottomRight = true;
     Path p;
     p.addRoundedRectangle(x, y, width, height,
-                          4.0f, 4.0f, curveTopLeft, curveTopRight, curveBottomLeft, curveBottomRight);
+        4.0f, 4.0f, curveTopLeft, curveTopRight, curveBottomLeft, curveBottomRight);
     g.strokePath(p, PathStrokeType(BORDER_WIDTH));
 }
 
@@ -42,7 +42,7 @@ void GraphEditorTrack::resized() {
 
     auto trackInputBounds = isMaster() ?
                             r.removeFromTop(View::TRACK_INPUT_HEIGHT)
-                                    .withSize(view.getTrackWidth(), View::TRACK_INPUT_HEIGHT) :
+                                .withSize(view.getTrackWidth(), View::TRACK_INPUT_HEIGHT) :
                             r.removeFromTop(View::TRACK_INPUT_HEIGHT);
     const auto processorSlotSize = view.getProcessorSlotSize(track->isMaster());
     const auto &trackOutputBounds = isMaster() ? r.removeFromRight(processorSlotSize) : r.removeFromBottom(processorSlotSize);

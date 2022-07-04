@@ -9,12 +9,12 @@
 #include "model/Project.h"
 
 class Push2Component :
-        public Timer,
-        public Push2ComponentBase,
-        private ChangeListener,
-        private ValueTree::Listener,
-        private StatefulList<Track>::Listener,
-        private StatefulList<Processor>::Listener {
+    public Timer,
+    public Push2ComponentBase,
+    private ChangeListener,
+    private ValueTree::Listener,
+    private StatefulList<Track>::Listener,
+    private StatefulList<Processor>::Listener {
 public:
     explicit Push2Component(View &view, Tracks &tracks, Connections &connections, Project &project, StatefulAudioProcessorWrappers &processorWrappers, Push2MidiCommunicator &push2MidiCommunicator);
 

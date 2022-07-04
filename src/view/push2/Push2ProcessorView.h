@@ -21,7 +21,7 @@ private:
     std::unique_ptr<ParametersPanel> parametersPanel;
     OwnedArray<Push2Label> processorLabels{};
     ArrowButton escapeProcessorFocusButton, parameterPageLeftButton, parameterPageRightButton,
-            processorPageLeftButton, processorPageRightButton;
+        processorPageLeftButton, processorPageRightButton;
 
     int processorLabelOffset = 0;
     bool processorHasFocus{false};

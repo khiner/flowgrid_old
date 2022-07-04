@@ -2,8 +2,9 @@
 
 #include "BinaryData.h"
 
-TrackInputGraphEditorProcessor::TrackInputGraphEditorProcessor(Processor *processor, Track *track, View &view, Project &project, StatefulAudioProcessorWrappers &processorWrappers, ConnectorDragListener &connectorDragListener)
-        : BaseGraphEditorProcessor(processor, track, view, processorWrappers, connectorDragListener), project(project) {
+TrackInputGraphEditorProcessor::TrackInputGraphEditorProcessor(Processor *processor, Track *track, View &view, Project &project, StatefulAudioProcessorWrappers &processorWrappers,
+                                                               ConnectorDragListener &connectorDragListener)
+    : BaseGraphEditorProcessor(processor, track, view, processorWrappers, connectorDragListener), project(project) {
     nameLabel.setJustificationType(Justification::centred);
     addAndMakeVisible(nameLabel);
     nameLabel.addMouseListener(this, false);
@@ -76,7 +77,7 @@ void TrackInputGraphEditorProcessor::paint(Graphics &g) {
     const auto &r = getBoxBounds();
     Path p;
     p.addRoundedRectangle(r.getX(), r.getY(), r.getWidth(), r.getHeight(),
-                          4.0f, 4.0f, true, true, false, false);
+        4.0f, 4.0f, true, true, false, false);
     g.fillPath(p);
 }
 
@@ -91,9 +92,9 @@ void TrackInputGraphEditorProcessor::valueTreePropertyChanged(ValueTree &v, cons
             audioMonitorToggle->setClickingTogglesState(true);
             const auto &audioImage = ImageCache::getFromMemory(BinaryData::Audio_png, BinaryData::Audio_pngSize);
             audioMonitorToggle->setImages(false, true, true,
-                                          audioImage, 1.0, Colours::black,
-                                          {}, 1.0, Colours::transparentBlack,
-                                          audioImage, 1.0, findColour(CustomColourIds::defaultAudioConnectionColourId));
+                audioImage, 1.0, Colours::black,
+                {}, 1.0, Colours::transparentBlack,
+                audioImage, 1.0, findColour(CustomColourIds::defaultAudioConnectionColourId));
 
             audioMonitorParameter = processorWrapper->getParameter(0);
             audioMonitorParameter->attachButton(audioMonitorToggle.get());
@@ -102,9 +103,9 @@ void TrackInputGraphEditorProcessor::valueTreePropertyChanged(ValueTree &v, cons
             midiMonitorToggle->setClickingTogglesState(true);
             const auto &midiImage = ImageCache::getFromMemory(BinaryData::Midi_png, BinaryData::Midi_pngSize);
             midiMonitorToggle->setImages(false, true, true,
-                                         midiImage, 1.0, Colours::black,
-                                         {}, 1.0, Colours::transparentBlack,
-                                         midiImage, 1.0, findColour(CustomColourIds::defaultMidiConnectionColourId));
+                midiImage, 1.0, Colours::black,
+                {}, 1.0, Colours::transparentBlack,
+                midiImage, 1.0, findColour(CustomColourIds::defaultMidiConnectionColourId));
 
             midiMonitorParameter = processorWrapper->getParameter(1);
             midiMonitorParameter->attachButton(midiMonitorToggle.get());

@@ -7,7 +7,7 @@
 
 class BaseGraphEditorProcessor : public Component, public ValueTree::Listener {
 public:
-    BaseGraphEditorProcessor(Processor *processor, Track *track, View &view, StatefulAudioProcessorWrappers &processorWrappers, ConnectorDragListener  &connectorDragListener);
+    BaseGraphEditorProcessor(Processor *processor, Track *track, View &view, StatefulAudioProcessorWrappers &processorWrappers, ConnectorDragListener &connectorDragListener);
     ~BaseGraphEditorProcessor() override;
 
     Processor *getProcessor() const { return processor; }
@@ -35,14 +35,14 @@ public:
     virtual juce::Point<float> getConnectorDirectionVector(bool isInput) const;
 
     juce::Point<float> getChannelConnectPosition(int index, bool isInput) const {
-        for (auto *channel : channels)
+        for (auto *channel: channels)
             if (fg::Channel::getChannelIndex(channel->getState()) == index && isInput == channel->isInput())
                 return channel->getConnectPosition();
         return {};
     }
 
     GraphEditorChannel *findChannelAt(const MouseEvent &e) {
-        for (auto *channel : channels)
+        for (auto *channel: channels)
             if (channel->contains(e.getEventRelativeTo(channel).getPosition()))
                 return channel;
         return nullptr;
@@ -70,7 +70,7 @@ protected:
 
 private:
     GraphEditorChannel *findChannelWithState(const ValueTree &state) {
-        for (auto *channel : channels)
+        for (auto *channel: channels)
             if (channel->getState() == state)
                 return channel;
         return nullptr;
